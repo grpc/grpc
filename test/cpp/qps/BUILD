@@ -81,6 +81,7 @@ grpc_cc_library(
         "//src/proto/grpc/testing:services_proto",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
     ],
 )
 
@@ -148,6 +149,7 @@ grpc_cc_binary(
         ":driver_impl",
         "//:grpc++",
         "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
     ],
     external_deps = [
         "gflags",
@@ -162,6 +164,7 @@ grpc_cc_test(
         ":driver_impl",
         ":qps_worker_impl",
         "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
     ],
 )
 
@@ -173,6 +176,7 @@ grpc_cc_test(
         ":driver_impl",
         "//:grpc++",
         "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
     ],
 )
 

@@ -1705,7 +1705,6 @@ static void lb_on_server_status_received_locked(grpc_exec_ctx *exec_ctx,
 static void glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                               const grpc_lb_policy_args *args) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)policy;
-
   if (glb_policy->updating_lb_channel) {
     if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
       gpr_log(GPR_INFO,
@@ -1813,9 +1812,11 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx *exec_ctx,
         // lb_on_server_status_received will pick up the cancel and reinit
         // lb_call.
         if (glb_policy->pending_update_args != NULL) {
-          const grpc_lb_policy_args *args = glb_policy->pending_update_args;
+          grpc_lb_policy_args *args = glb_policy->pending_update_args;
           glb_policy->pending_update_args = NULL;
           glb_update_locked(exec_ctx, &glb_policy->base, args);
+          grpc_channel_args_destroy(exec_ctx, args->args);
+          gpr_free(args);
         }
       } else if (glb_policy->started_picking && !glb_policy->shutting_down) {
         if (glb_policy->retry_timer_active) {

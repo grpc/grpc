@@ -20,9 +20,10 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-# TODO(jtattermusch): install ruby on the internal_ci worker
-gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
-# TODO(jtattermusch): grep works around https://github.com/rvm/rvm/issues/4068
-curl -sSL https://get.rvm.io | grep -v __rvm_print_headline | bash -s stable --ruby
+set +ex
+[[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
+set -e  # rvm commands are very verbose
+rvm --default use ruby-2.4.1
+set -ex
 
 tools/run_tests/task_runner.py -f artifact linux

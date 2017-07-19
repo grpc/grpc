@@ -19,9 +19,12 @@ rename C:\Python34_32bit Python34_32bits
 rename C:\Python35_32bit Python35_32bits
 rename C:\Python36_32bit Python36_32bits
 
+pacman -S --noconfirm mingw64/mingw-w64-x86_64-gcc mingw32/mingw-w64-i686-gcc
+
 @rem make sure msys binaries are preferred over cygwin binaries
 @rem set path to python 2.7
 set PATH=C:\tools\msys64\usr\bin;C:\Python27;%PATH%
+
 
 @rem enter repo root
 cd /d %~dp0\..\..\..

@@ -62,9 +62,9 @@ if EXTRA_ENV_COMPILE_ARGS is None:
       # envvars) without adding yet more GRPC-specific envvars.
       # See https://sourceforge.net/p/mingw-w64/bugs/363/
       if '32' in platform.architecture()[0]:
-        EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime32 -D_timeb=__timeb32 -D_ftime_s=_ftime32_s'
+        EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime32 -D_timeb=__timeb32 -D_ftime_s=_ftime32_s -D_hypot=hypot'
       else:
-        EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime64 -D_timeb=__timeb64'
+        EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime64 -D_timeb=__timeb64 -D_hypot=hypot'
     else:
       # We need to statically link the C++ Runtime, only the C runtime is
       # available dynamically
