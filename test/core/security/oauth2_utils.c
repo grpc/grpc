@@ -70,6 +70,7 @@ static void do_nothing(grpc_exec_ctx *exec_ctx, void *unused,
 char *grpc_test_fetch_oauth2_token_with_credentials(
     grpc_call_credentials *creds) {
   oauth2_request request;
+  memset(&request, 0, sizeof(request));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure do_nothing_closure;
   grpc_auth_metadata_context null_ctx = {"", "", NULL, NULL};
