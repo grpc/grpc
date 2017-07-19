@@ -1351,8 +1351,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
           "fetching_send_message_finished");
     } else {
       GPR_ASSERT(s->fetching_send_message == NULL);
-      uint8_t *frame_hdr =
-          grpc_slice_buffer_tiny_add(&s->flow_controlled_buffer, 5);
+      uint8_t *frame_hdr = grpc_slice_buffer_tiny_add(
+          &s->flow_controlled_buffer, GRPC_HEADER_SIZE_IN_BYTES);
       uint32_t flags = op_payload->send_message.send_message->flags;
       frame_hdr[0] = (flags & GRPC_WRITE_INTERNAL_COMPRESS) != 0;
       size_t len = op_payload->send_message.send_message->length;
@@ -1444,8 +1444,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     s->recv_message = op_payload->recv_message.recv_message;
     if (s->id != 0) {
       already_received = s->frame_storage.length;
-      incoming_byte_stream_update_flow_control(exec_ctx, t, s, 5,
-                                               already_received);
+      incoming_byte_stream_update_flow_control(
+          exec_ctx, t, s, GRPC_HEADER_SIZE_IN_BYTES, already_received);
     }
     grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
   }
@@ -1680,7 +1680,8 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
           }
           if (!grpc_stream_decompress(s->stream_decompression_ctx,
                                       &s->unprocessed_incoming_frames_buffer,
-                                      &s->decompressed_data_buffer, NULL, 5,
+                                      &s->decompressed_data_buffer, NULL,
+                                      GRPC_HEADER_SIZE_IN_BYTES,
                                       &end_of_context)) {
             grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
                                                        &s->frame_storage);
@@ -1754,7 +1755,7 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
       if (!grpc_stream_decompress(s->stream_decompression_ctx,
                                   &s->frame_storage,
                                   &s->unprocessed_incoming_frames_buffer, NULL,
-                                  5, &end_of_context)) {
+                                  GRPC_HEADER_SIZE_IN_BYTES, &end_of_context)) {
         grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &s->frame_storage);
         grpc_slice_buffer_reset_and_unref_internal(
             exec_ctx, &s->unprocessed_incoming_frames_buffer);
