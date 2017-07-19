@@ -104,6 +104,8 @@ extern void no_op(grpc_end2end_test_config config);
 extern void no_op_pre_init(void);
 extern void payload(grpc_end2end_test_config config);
 extern void payload_pre_init(void);
+extern void payload_with_proxy_auth(grpc_end2end_test_config config);
+extern void payload_with_proxy_auth_pre_init(void);
 extern void ping(grpc_end2end_test_config config);
 extern void ping_pre_init(void);
 extern void ping_pong_streaming(grpc_end2end_test_config config);
@@ -182,6 +184,7 @@ void grpc_end2end_tests_pre_init(void) {
   no_logging_pre_init();
   no_op_pre_init();
   payload_pre_init();
+  payload_with_proxy_auth_pre_init();
   ping_pre_init();
   ping_pong_streaming_pre_init();
   registered_call_pre_init();
@@ -246,6 +249,7 @@ void grpc_end2end_tests(int argc, char **argv,
     no_logging(config);
     no_op(config);
     payload(config);
+    payload_with_proxy_auth(config);
     ping(config);
     ping_pong_streaming(config);
     registered_call(config);
@@ -414,6 +418,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("payload", argv[i])) {
       payload(config);
+      continue;
+    }
+    if (0 == strcmp("payload_with_proxy_auth", argv[i])) {
+      payload_with_proxy_auth(config);
       continue;
     }
     if (0 == strcmp("ping", argv[i])) {

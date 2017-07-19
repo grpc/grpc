@@ -47,11 +47,26 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
     grpc_channel_args *client_args, grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
   memset(&f, 0, sizeof(f));
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   fullstack_fixture_data *ffd = gpr_malloc(sizeof(fullstack_fixture_data));
   const int server_port = grpc_pick_unused_port_or_die();
   gpr_join_host_port(&ffd->server_addr, "localhost", server_port);
-  ffd->proxy = grpc_end2end_http_proxy_create();
+
+  /*const grpc_arg *proxy_auth_arg =
+      grpc_channel_args_find(client_args, "test_uses_proxy_auth");
+  ffd->proxy = grpc_end2end_http_proxy_create(proxy_args);*/
+  //If we are testing proxy auth, add the proxy auth arg to proxy channel args
+  grpc_channel_args *proxy_args = NULL;
+  const grpc_arg *proxy_auth_arg = grpc_channel_args_find(
+          client_args, GRPC_END2END_HTTP_PROXY_TEST_CONNECT_AUTH_PRESENT);
+  if(proxy_auth_arg) {
+    proxy_args = grpc_channel_args_copy_and_add(NULL, proxy_auth_arg, 1);
+  }
+  ffd->proxy = grpc_end2end_http_proxy_create(proxy_args);
+  grpc_channel_args_destroy(&exec_ctx, proxy_args);
+
+  grpc_exec_ctx_finish(&exec_ctx);
 
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(NULL);
@@ -64,8 +79,17 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture *f,
                                   grpc_channel_args *client_args) {
   fullstack_fixture_data *ffd = f->fixture_data;
   char *proxy_uri;
-  gpr_asprintf(&proxy_uri, "http://%s",
-               grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
+
+  // If testing for proxy auth, add credentials to proxy uri
+  if(grpc_channel_args_find(
+      client_args, GRPC_END2END_HTTP_PROXY_TEST_CONNECT_AUTH_PRESENT) == NULL) {
+    gpr_asprintf(&proxy_uri, "http://%s",
+                 grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
+  } else {
+    gpr_asprintf(&proxy_uri, "http://%s@%s",
+                 GRPC_END2END_HTTP_PROXY_TEST_CONNECT_CRED,
+                 grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
+  }
   gpr_setenv("http_proxy", proxy_uri);
   gpr_free(proxy_uri);
   f->client = grpc_insecure_channel_create(ffd->server_addr, client_args, NULL);

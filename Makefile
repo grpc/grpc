@@ -7926,6 +7926,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/no_logging.c \
     test/core/end2end/tests/no_op.c \
     test/core/end2end/tests/payload.c \
+    test/core/end2end/tests/payload_with_proxy_auth.c \
     test/core/end2end/tests/ping.c \
     test/core/end2end/tests/ping_pong_streaming.c \
     test/core/end2end/tests/registered_call.c \
@@ -8020,6 +8021,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/no_logging.c \
     test/core/end2end/tests/no_op.c \
     test/core/end2end/tests/payload.c \
+    test/core/end2end/tests/payload_with_proxy_auth.c \
     test/core/end2end/tests/ping.c \
     test/core/end2end/tests/ping_pong_streaming.c \
     test/core/end2end/tests/registered_call.c \

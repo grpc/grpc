@@ -118,6 +118,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\payload.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\payload_with_proxy_auth.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\ping.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>

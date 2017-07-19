@@ -122,6 +122,7 @@ END2END_TESTS = {
     'no_logging': default_test_options._replace(traceable=False),
     'no_op': default_test_options,
     'payload': default_test_options,
+    'payload_with_proxy_auth': default_test_options,
     'load_reporting_hook': default_test_options,
     'ping_pong_streaming': default_test_options._replace(cpu_cost=LOWCPU),
     'ping': connectivity_test_options._replace(proxyable=False, cpu_cost=LOWCPU),

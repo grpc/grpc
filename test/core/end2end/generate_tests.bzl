@@ -106,6 +106,7 @@ END2END_TESTS = {
     'no_logging': test_options(traceable=False),
     'no_op': test_options(),
     'payload': test_options(),
+    'payload_with_proxy_auth': test_options(),
     'load_reporting_hook': test_options(),
     'ping_pong_streaming': test_options(),
     'ping': test_options(needs_fullstack=True, proxyable=False),

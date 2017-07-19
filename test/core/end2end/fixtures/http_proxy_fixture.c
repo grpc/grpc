@@ -22,6 +22,7 @@
 
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
@@ -47,6 +48,7 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/b64.h"
 #include "test/core/util/port.h"
 
 struct grpc_end2end_http_proxy {
@@ -352,6 +354,42 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
     GRPC_ERROR_UNREF(error);
     return;
   }
+  // If proxy auth is being used, check if the header is present
+  if(grpc_channel_args_find(
+      conn->proxy->channel_args,
+      GRPC_END2END_HTTP_PROXY_TEST_CONNECT_AUTH_PRESENT) != NULL) {
+    bool found = false, failed = false;
+    for(size_t i = 0; i < conn->http_request.hdr_count; i++) {
+      if(strcmp(conn->http_request.hdrs[i].key, "Proxy-Authorization") == 0) {
+        found = true;
+        // Authentication type should be Basic
+        if(strncmp(conn->http_request.hdrs[i].value, "Basic",
+                   strlen("Basic")) != 0) {
+          failed = true;
+          break;
+        }
+        // Check if encoded string is as expected
+        char *encoded_str_start =
+            strchr(conn->http_request.hdrs[i].value, ' ') + 1;
+        grpc_slice decoded_slice =
+            grpc_base64_decode(exec_ctx, encoded_str_start, 0);
+        if(grpc_slice_str_cmp(
+            decoded_slice, GRPC_END2END_HTTP_PROXY_TEST_CONNECT_CRED) != 0) {
+          failed = true;
+          break;
+        }
+        break;
+      }
+    }
+    if(!found || failed) {
+      const char *msg = "HTTP Connect could not verify authentication";
+      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+      proxy_connection_failed(exec_ctx, conn, true /* is_client */,
+                              "HTTP proxy read request", error);
+      GRPC_ERROR_UNREF(error);
+      return;
+    }
+  }
   // Resolve address.
   grpc_resolved_addresses* resolved_addresses = NULL;
   error = grpc_blocking_resolve_address(conn->http_request.path, "80",
@@ -436,7 +474,8 @@ static void thread_main(void* arg) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(void) {
+grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
+    grpc_channel_args *args) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_end2end_http_proxy* proxy =
       (grpc_end2end_http_proxy*)gpr_malloc(sizeof(*proxy));
@@ -448,7 +487,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(void) {
   gpr_join_host_port(&proxy->proxy_name, "localhost", proxy_port);
   gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name);
   // Create TCP server.
-  proxy->channel_args = grpc_channel_args_copy(NULL);
+  proxy->channel_args = grpc_channel_args_copy(args);
   grpc_error* error = grpc_tcp_server_create(
       &exec_ctx, NULL, proxy->channel_args, &proxy->server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
