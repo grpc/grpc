@@ -77,6 +77,7 @@ static size_t run_closures(grpc_exec_ctx *exec_ctx, grpc_closure_list list) {
     GRPC_ERROR_UNREF(error);
     c = next;
     n++;
+    grpc_exec_ctx_flush(exec_ctx);
   }
 
   return n;
@@ -157,6 +158,7 @@ static void executor_thread(void *arg) {
     gpr_mu_lock(&ts->mu);
     ts->depth -= subtract_depth;
     while (grpc_closure_list_empty(ts->elems) && !ts->shutdown) {
+      ts->queued_long_job = false;
       gpr_cv_wait(&ts->cv, &ts->mu, gpr_inf_future(GPR_CLOCK_REALTIME));
     }
     if (ts->shutdown) {
@@ -167,7 +169,6 @@ static void executor_thread(void *arg) {
       gpr_mu_unlock(&ts->mu);
       break;
     }
-    ts->queued_long_job = false;
     grpc_closure_list exec = ts->elems;
     ts->elems = (grpc_closure_list)GRPC_CLOSURE_LIST_INIT;
     gpr_mu_unlock(&ts->mu);
@@ -177,7 +178,6 @@ static void executor_thread(void *arg) {
     }
 
     subtract_depth = run_closures(&exec_ctx, exec);
-    grpc_exec_ctx_flush(&exec_ctx);
   }
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -204,6 +204,7 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   thread_state *orig_ts = ts;
 
   bool try_new_thread;
+  bool retry_push = false;
   for (;;) {
     if (GRPC_TRACER_ON(executor_trace)) {
 #ifndef NDEBUG
@@ -224,8 +225,9 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
       intptr_t idx = ts - g_thread_state;
       ts = &g_thread_state[(idx + 1) % g_cur_threads];
       if (ts == orig_ts) {
-        // wtf to do here
-        abort();
+        retry_push = true;
+        try_new_thread = true;
+        break;
       }
       continue;
     }
@@ -251,6 +253,9 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                   &g_thread_state[cur_thread_count], &opt);
     }
     gpr_spinlock_unlock(&g_adding_thread_lock);
+  }
+  if (retry_push) {
+    executor_push(exec_ctx, closure, error, is_short);
   }
 }
 

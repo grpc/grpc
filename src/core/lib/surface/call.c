@@ -1172,9 +1172,6 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
 }
 
 static void finish_batch_step(grpc_exec_ctx *exec_ctx, batch_control *bctl) {
-  gpr_log(GPR_DEBUG, "finish_batch_step: tag=%p steps=%" PRIdPTR,
-          bctl->completion_data.notify_tag.tag,
-          gpr_atm_no_barrier_load(&bctl->steps_to_complete.count));
   if (gpr_unref(&bctl->steps_to_complete)) {
     post_batch_completion(exec_ctx, bctl);
   }

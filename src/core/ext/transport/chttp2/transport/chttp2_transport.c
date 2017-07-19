@@ -934,7 +934,6 @@ static void write_action_begin_locked(grpc_exec_ctx *exec_ctx, void *gt,
 static void write_action(grpc_exec_ctx *exec_ctx, void *gt, grpc_error *error) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   GPR_TIMER_BEGIN("write_action", 0);
-  gpr_log(GPR_DEBUG, "W:%p write_action", t);
   grpc_endpoint_write(
       exec_ctx, t->ep, &t->outbuf,
       GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end_locked, t,
@@ -2255,6 +2254,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
   grpc_chttp2_transport *t = tp;
   bool need_bdp_ping = false;
+  gpr_log(GPR_DEBUG, "read_action_locked:%p %s", t, grpc_error_string(error));
 
   GRPC_ERROR_REF(error);
 
