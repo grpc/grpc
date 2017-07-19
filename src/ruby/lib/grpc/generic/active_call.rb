@@ -59,9 +59,9 @@ module GRPC
     include Core::TimeConsts
     include Core::CallOps
     extend Forwardable
-    attr_reader :deadline, :metadata_sent, :metadata_to_send
+    attr_reader :deadline, :metadata_sent, :metadata_to_send, :peer, :peer_cert
     def_delegators :@call, :cancel, :metadata, :write_flag, :write_flag=,
-                   :peer, :peer_cert, :trailing_metadata, :status
+                   :trailing_metadata, :status
 
     # client_invoke begins a client invocation.
     #
@@ -120,8 +120,13 @@ module GRPC
       @input_stream_done = false
       @call_finished = false
       @call_finished_mu = Mutex.new
+
       @client_call_executed = false
       @client_call_executed_mu = Mutex.new
+
+      # set the peer now so that the accessor can still function
+      # after the server closes the call
+      @peer = call.peer
     end
 
     # Sends the initial metadata that has yet to be sent.
@@ -556,6 +561,10 @@ module GRPC
       end
     end
 
+    def attach_peer_cert(peer_cert)
+      @peer_cert = peer_cert
+    end
+
     private
 
     # To be called once the "input stream" has been completelly
@@ -627,6 +636,7 @@ module GRPC
     # server client_streamer handlers.
     MultiReqView = view_class(:cancelled?, :deadline, :each_queued_msg,
                               :each_remote_read, :metadata, :output_metadata,
+                              :peer, :peer_cert,
                               :send_initial_metadata,
                               :metadata_to_send,
                               :merge_metadata_to_send,
