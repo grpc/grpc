@@ -53,9 +53,6 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   const int server_port = grpc_pick_unused_port_or_die();
   gpr_join_host_port(&ffd->server_addr, "localhost", server_port);
 
-  /*const grpc_arg *proxy_auth_arg =
-      grpc_channel_args_find(client_args, "test_uses_proxy_auth");
-  ffd->proxy = grpc_end2end_http_proxy_create(proxy_args);*/
   //If we are testing proxy auth, add the proxy auth arg to proxy channel args
   grpc_channel_args *proxy_args = NULL;
   const grpc_arg *proxy_auth_arg = grpc_channel_args_find(
