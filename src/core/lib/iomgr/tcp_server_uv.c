@@ -316,6 +316,7 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s,
   unsigned port_index = 0;
   int status;
   grpc_error *error = GRPC_ERROR_NONE;
+  int family;
 
   if (s->tail != NULL) {
     port_index = s->tail->port_index + 1;
@@ -353,7 +354,18 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s,
   }
 
   handle = gpr_malloc(sizeof(uv_tcp_t));
-  status = uv_tcp_init(uv_default_loop(), handle);
+
+  family = grpc_sockaddr_get_family(addr);
+  status = uv_tcp_init_ex(uv_default_loop(), handle, (unsigned int)family);
+#if defined(GPR_LINUX) && defined(SO_REUSEPORT)
+  if (family == AF_INET || family == AF_INET6) {
+    int fd;
+    uv_fileno((uv_handle_t *)handle, &fd);
+    int enable = 1;
+    setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
+  }
+#endif /* GPR_LINUX && SO_REUSEPORT */
+
   if (status == 0) {
     error = add_socket_to_server(s, handle, addr, port_index, &sp);
   } else {
