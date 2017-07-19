@@ -84,7 +84,14 @@ static void start_timer_thread_and_unlock(void) {
   gpr_thd_options opt = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&opt);
   completed_thread *ct = gpr_malloc(sizeof(*ct));
+  // The call to gpr_thd_new() has to be under the same lock used by
+  // gc_completed_threads(), particularly due to ct->t, which is written here
+  // (internally by gpr_thd_new) and read there. Otherwise it's possible for ct
+  // to leak through g_completed_threads and be freed in gc_completed_threads()
+  // before "&ct->t" is written to, causing a use-after-free.
+  gpr_mu_lock(&g_mu);
   gpr_thd_new(&ct->t, timer_thread, ct, &opt);
+  gpr_mu_unlock(&g_mu);
 }
 
 void grpc_timer_manager_tick() {

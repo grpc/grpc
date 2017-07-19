@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
@@ -92,16 +93,58 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
     grpc_uri_destroy(uri);
     return false;
   }
-
+  char* no_proxy_str = gpr_getenv("no_proxy");
+  if (no_proxy_str != NULL) {
+    static const char* NO_PROXY_SEPARATOR = ",";
+    bool use_proxy = true;
+    char* server_host;
+    char* server_port;
+    if (!gpr_split_host_port(uri->path[0] == '/' ? uri->path + 1 : uri->path,
+                             &server_host, &server_port)) {
+      gpr_log(GPR_INFO,
+              "unable to split host and port, not checking no_proxy list for "
+              "host '%s'",
+              server_uri);
+    } else {
+      size_t uri_len = strlen(server_host);
+      char** no_proxy_hosts;
+      size_t num_no_proxy_hosts;
+      gpr_string_split(no_proxy_str, NO_PROXY_SEPARATOR, &no_proxy_hosts,
+                       &num_no_proxy_hosts);
+      for (size_t i = 0; i < num_no_proxy_hosts; i++) {
+        char* no_proxy_entry = no_proxy_hosts[i];
+        size_t no_proxy_len = strlen(no_proxy_entry);
+        if (no_proxy_len <= uri_len &&
+            gpr_stricmp(no_proxy_entry, &server_host[uri_len - no_proxy_len]) ==
+                0) {
+          gpr_log(GPR_INFO, "not using proxy for host in no_proxy list '%s'",
+                  server_uri);
+          use_proxy = false;
+          break;
+        }
+      }
+      for (size_t i = 0; i < num_no_proxy_hosts; i++) {
+        gpr_free(no_proxy_hosts[i]);
+      }
+      gpr_free(no_proxy_hosts);
+      gpr_free(server_host);
+      gpr_free(server_port);
+      if (!use_proxy) {
+        grpc_uri_destroy(uri);
+        gpr_free(*name_to_resolve);
+        *name_to_resolve = NULL;
+        return false;
+      }
+    }
+  }
   grpc_arg args_to_add[2];
   args_to_add[0] = grpc_channel_arg_string_create(
       GRPC_ARG_HTTP_CONNECT_SERVER,
       uri->path[0] == '/' ? uri->path + 1 : uri->path);
-
   if(user_cred != NULL) {
     /* Use base64 encoding for user credentials */
     char *encoded_user_cred =
-        grpc_base64_encode(user_auth, strlen(user_cred), 0, 0);
+        grpc_base64_encode(user_cred, strlen(user_cred), 0, 0);
     char *header;
     gpr_asprintf(&header, "Proxy-Authorization:Basic %s", encoded_user_cred);
     gpr_free(encoded_user_cred);

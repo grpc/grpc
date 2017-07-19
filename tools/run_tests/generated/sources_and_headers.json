@@ -2173,6 +2173,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "stream_compression_test", 
+    "src": [
+      "test/core/compression/stream_compression_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "stream_owned_slice_test", 
     "src": [
       "test/core/transport/stream_owned_slice_test.c"
@@ -3942,6 +3959,32 @@
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
+    "headers": [
+      "src/proto/grpc/testing/echo.grpc.pb.h", 
+      "src/proto/grpc/testing/echo.pb.h", 
+      "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_messages.pb.h", 
+      "src/proto/grpc/testing/echo_messages_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "server_request_call_test", 
+    "src": [
+      "test/cpp/server/server_request_call_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -5196,6 +5239,24 @@
   }, 
   {
     "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "inproc_test", 
+    "src": [
+      "test/core/end2end/fixtures/inproc.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "end2end_nosec_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -5442,6 +5503,24 @@
     "name": "h2_uds_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_uds.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "inproc_nosec_test", 
+    "src": [
+      "test/core/end2end/fixtures/inproc.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5731,6 +5810,7 @@
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_chttp2_server_insecure", 
       "grpc_transport_chttp2_server_secure", 
+      "grpc_transport_inproc", 
       "grpc_workaround_cronet_compression_filter"
     ], 
     "headers": [], 
@@ -5836,6 +5916,7 @@
       "grpc_server_backward_compatibility", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_server_insecure", 
+      "grpc_transport_inproc", 
       "grpc_workaround_cronet_compression_filter"
     ], 
     "headers": [], 
@@ -7636,6 +7717,7 @@
       "src/core/lib/channel/handshaker_registry.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/message_compress.h", 
+      "src/core/lib/compression/stream_compression.h", 
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
@@ -7770,6 +7852,8 @@
       "src/core/lib/compression/compression.c", 
       "src/core/lib/compression/message_compress.c", 
       "src/core/lib/compression/message_compress.h", 
+      "src/core/lib/compression/stream_compression.c", 
+      "src/core/lib/compression/stream_compression.h", 
       "src/core/lib/http/format_request.c", 
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.c", 
@@ -8783,6 +8867,25 @@
   {
     "deps": [
       "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [
+      "src/core/ext/transport/inproc/inproc_transport.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_transport_inproc", 
+    "src": [
+      "src/core/ext/transport/inproc/inproc_plugin.c", 
+      "src/core/ext/transport/inproc/inproc_transport.c", 
+      "src/core/ext/transport/inproc/inproc_transport.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc_base", 
       "grpc_server_backward_compatibility"
     ], 
@@ -8817,10 +8920,12 @@
   {
     "deps": [
       "gpr", 
+      "grpc_base", 
       "grpc_trace"
     ], 
     "headers": [
       "src/core/tsi/fake_transport_security.h", 
+      "src/core/tsi/gts_transport_security.h", 
       "src/core/tsi/ssl_transport_security.h", 
       "src/core/tsi/ssl_types.h", 
       "src/core/tsi/transport_security.h", 
@@ -8833,6 +8938,8 @@
     "src": [
       "src/core/tsi/fake_transport_security.c", 
       "src/core/tsi/fake_transport_security.h", 
+      "src/core/tsi/gts_transport_security.c", 
+      "src/core/tsi/gts_transport_security.h", 
       "src/core/tsi/ssl_transport_security.c", 
       "src/core/tsi/ssl_transport_security.h", 
       "src/core/tsi/ssl_types.h", 

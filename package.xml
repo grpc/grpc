@@ -200,6 +200,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/algorithm_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/compression/stream_compression.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/format_request.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.h" role="src" />
@@ -343,6 +344,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/gts_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_types.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.h" role="src" />
@@ -369,6 +371,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h" role="src" />
@@ -416,6 +419,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/compression/stream_compression.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/format_request.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.c" role="src" />
@@ -584,6 +588,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init_secure.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.c" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/gts_transport_security.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_adapter.c" role="src" />
@@ -615,6 +620,8 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_plugin.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_transport.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c" role="src" />
