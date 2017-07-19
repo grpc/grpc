@@ -39,6 +39,7 @@ extern "C" {
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -629,18 +630,24 @@ BENCHMARK_TEMPLATE(BM_IsolatedFilter, LoadReportingFilter, SendEmptyMetadata);
 
 namespace isolated_call_filter {
 
+typedef struct {
+  grpc_call_combiner *call_combiner;
+} call_data;
+
 static void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem,
                                    grpc_transport_stream_op_batch *op) {
+  call_data *calld = static_cast<call_data *>(elem->call_data);
   if (op->recv_initial_metadata) {
-    GRPC_CLOSURE_SCHED(
-        exec_ctx,
+    GRPC_CALL_COMBINER_START(
+        exec_ctx, calld->call_combiner,
         op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-        GRPC_ERROR_NONE);
+        GRPC_ERROR_NONE, "recv_initial_metadata");
   }
   if (op->recv_message) {
-    GRPC_CLOSURE_SCHED(exec_ctx, op->payload->recv_message.recv_message_ready,
-                       GRPC_ERROR_NONE);
+    GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
+                             op->payload->recv_message.recv_message_ready,
+                             GRPC_ERROR_NONE, "recv_message");
   }
   GRPC_CLOSURE_SCHED(exec_ctx, op->on_complete, GRPC_ERROR_NONE);
 }
@@ -657,6 +664,8 @@ static void StartTransportOp(grpc_exec_ctx *exec_ctx,
 static grpc_error *InitCallElem(grpc_exec_ctx *exec_ctx,
                                 grpc_call_element *elem,
                                 const grpc_call_element_args *args) {
+  call_data *calld = static_cast<call_data *>(elem->call_data);
+  calld->call_combiner = args->call_combiner;
   return GRPC_ERROR_NONE;
 }
 
@@ -683,7 +692,7 @@ void GetChannelInfo(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
 static const grpc_channel_filter isolated_call_filter = {
     StartTransportStreamOp,
     StartTransportOp,
-    0,
+    sizeof(call_data),
     InitCallElem,
     SetPollsetOrPollsetSet,
     DestroyCallElem,
