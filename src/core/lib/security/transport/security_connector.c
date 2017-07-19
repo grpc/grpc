@@ -69,10 +69,10 @@ void grpc_set_ssl_roots_override_callback(grpc_ssl_roots_override_callback cb) {
 
 /* Defines the cipher suites that we accept by default. All these cipher suites
    are compliant with HTTP2. */
-#define GRPC_SSL_CIPHER_SUITES \
-  "ECDHE-ECDSA-AES128-GCM-SHA256:"\
-  "ECDHE-ECDSA-AES256-GCM-SHA384:"\
-  "ECDHE-RSA-AES128-GCM-SHA256:"\
+#define GRPC_SSL_CIPHER_SUITES     \
+  "ECDHE-ECDSA-AES128-GCM-SHA256:" \
+  "ECDHE-ECDSA-AES256-GCM-SHA384:" \
+  "ECDHE-RSA-AES128-GCM-SHA256:"   \
   "ECDHE-RSA-AES256-GCM-SHA384"
 
 static gpr_once cipher_suites_once = GPR_ONCE_INIT;
