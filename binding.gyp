@@ -85,7 +85,8 @@
     ],
     'include_dirs': [
       '.',
-      'include'
+      'include',
+      'third_party/nanopb'
     ],
     'defines': [
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
