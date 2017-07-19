@@ -12,8 +12,8 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
-
-set PATH=C:\%1;C:\%1\scripts;C:\msys64\mingw%2\bin;%PATH%
+@rem set path to python & mingw compiler
+set PATH=C:\%1;C:\%1\scripts;C:\msys64\mingw%2\bin;C:\tools\msys64\mingw%2\bin;%PATH%
 
 pip install --upgrade six
 pip install --upgrade setuptools

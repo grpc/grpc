@@ -344,6 +344,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/gts_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_types.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.h" role="src" />
@@ -587,6 +588,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init_secure.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.c" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/gts_transport_security.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_adapter.c" role="src" />
