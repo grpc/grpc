@@ -418,6 +418,7 @@ module GRPC
                          metadata_received: true,
                          started: false,
                          metadata_to_send: connect_md)
+      c.attach_peer_cert(an_rpc.call.peer_cert)
       mth = an_rpc.method.to_sym
       [c, mth]
     end
