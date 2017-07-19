@@ -520,9 +520,9 @@ struct grpc_chttp2_stream {
   grpc_chttp2_write_cb *finish_after_write;
   size_t sending_bytes;
 
-  /** Whether stream compression send is enabled or not */
+  /** Whether stream compression send is enabled */
   bool stream_compression_recv_enabled;
-  /** Whether stream compression recv is enabled or not */
+  /** Whether stream compression recv is enabled */
   bool stream_compression_send_enabled;
   /** Whether bytes stored in unprocessed_incoming_byte_stream is decompressed
    */
