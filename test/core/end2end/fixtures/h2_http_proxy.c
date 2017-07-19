@@ -53,11 +53,12 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   const int server_port = grpc_pick_unused_port_or_die();
   gpr_join_host_port(&ffd->server_addr, "localhost", server_port);
 
-  //If we are testing proxy auth, add the proxy auth arg to proxy channel args
+  /* If we are testing proxy auth, add the proxy auth arg to proxy channel args
+   */
   grpc_channel_args *proxy_args = NULL;
   const grpc_arg *proxy_auth_arg = grpc_channel_args_find(
           client_args, GRPC_END2END_HTTP_PROXY_TEST_CONNECT_AUTH_PRESENT);
-  if(proxy_auth_arg) {
+  if(proxy_auth_arg != NULL) {
     proxy_args = grpc_channel_args_copy_and_add(NULL, proxy_auth_arg, 1);
   }
   ffd->proxy = grpc_end2end_http_proxy_create(proxy_args);
@@ -77,7 +78,7 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture *f,
   fullstack_fixture_data *ffd = f->fixture_data;
   char *proxy_uri;
 
-  // If testing for proxy auth, add credentials to proxy uri
+  /* If testing for proxy auth, add credentials to proxy uri */
   if(grpc_channel_args_find(
       client_args, GRPC_END2END_HTTP_PROXY_TEST_CONNECT_AUTH_PRESENT) == NULL) {
     gpr_asprintf(&proxy_uri, "http://%s",

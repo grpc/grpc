@@ -47,8 +47,9 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/b64.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/support/string.h"
 #include "test/core/util/port.h"
 
 struct grpc_end2end_http_proxy {
@@ -306,6 +307,45 @@ static void on_server_connect_done(grpc_exec_ctx* exec_ctx, void* arg,
                       &conn->on_write_response_done);
 }
 
+/**
+ * Parses the proxy auth header value to check if it matches :-
+ * Basic <base64_encoded_user_cred>
+ * Returns true if it matches, false otherwise
+ */
+static bool proxy_auth_header_matches(grpc_exec_ctx *exec_ctx,
+                                      char *proxy_auth_header_val) {
+  if(proxy_auth_header_val == NULL) {
+    return false;
+  }
+  char **auth_header_strs;
+  size_t auth_header_nstrs;
+  bool auth_header_matches = false;
+  // Split the auth header value on space
+  gpr_string_split(proxy_auth_header_val, " ", &auth_header_strs,
+                   &auth_header_nstrs);
+  if(auth_header_nstrs != 2) {
+    goto done;
+  }
+  // Authentication type should be Basic
+  if(strcmp(auth_header_strs[0], "Basic") != 0) {
+    goto done;
+  }
+  // should match GRPC_END2END_HTTP_PROXY_TEST_CONNECT_CRED after decoding
+  grpc_slice decoded_slice =
+      grpc_base64_decode(exec_ctx, auth_header_strs[1], 0);
+  if(grpc_slice_str_cmp(
+      decoded_slice, GRPC_END2END_HTTP_PROXY_TEST_CONNECT_CRED) != 0) {
+    goto done;
+  }
+  auth_header_matches = true;
+done:
+  for(size_t i = 0; i < auth_header_nstrs; i++) {
+    gpr_free(auth_header_strs[i]);
+  }
+  gpr_free(auth_header_strs);
+  return auth_header_matches;
+}
+
 // Callback to read the HTTP CONNECT request.
 // TODO(roth): Technically, for any of the failure modes handled by this
 // function, we should handle the error by returning an HTTP response to
@@ -354,34 +394,22 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
     GRPC_ERROR_UNREF(error);
     return;
   }
-  // If proxy auth is being used, check if the header is present
+  // If proxy auth is being used, check if the header is present and as expected
   if(grpc_channel_args_find(
       conn->proxy->channel_args,
       GRPC_END2END_HTTP_PROXY_TEST_CONNECT_AUTH_PRESENT) != NULL) {
-    bool found = false, failed = false;
+    bool auth_header_found = false;
     for(size_t i = 0; i < conn->http_request.hdr_count; i++) {
       if(strcmp(conn->http_request.hdrs[i].key, "Proxy-Authorization") == 0) {
-        found = true;
-        // Authentication type should be Basic
-        if(strncmp(conn->http_request.hdrs[i].value, "Basic",
-                   strlen("Basic")) != 0) {
-          failed = true;
+        if(!proxy_auth_header_matches(
+            exec_ctx, conn->http_request.hdrs[i].value)) {
           break;
         }
-        // Check if encoded string is as expected
-        char *encoded_str_start =
-            strchr(conn->http_request.hdrs[i].value, ' ') + 1;
-        grpc_slice decoded_slice =
-            grpc_base64_decode(exec_ctx, encoded_str_start, 0);
-        if(grpc_slice_str_cmp(
-            decoded_slice, GRPC_END2END_HTTP_PROXY_TEST_CONNECT_CRED) != 0) {
-          failed = true;
-          break;
-        }
+        auth_header_found = true;
         break;
       }
     }
-    if(!found || failed) {
+    if(!auth_header_found) {
       const char *msg = "HTTP Connect could not verify authentication";
       error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
       proxy_connection_failed(exec_ctx, conn, true /* is_client */,

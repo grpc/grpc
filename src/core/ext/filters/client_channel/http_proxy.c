@@ -34,12 +34,19 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/slice/b64.h"
 
-static void grpc_get_http_proxy_server(grpc_exec_ctx* exec_ctx,
-                                char **name_to_resolve,
+/**
+ * Parses the 'http_proxy' env var and returns the proxy hostname to resolve or
+ * NULL on error. Also sets 'user_cred' if it is not NULL to user credentials
+ * if present in the 'http_proxy' env var.
+ */
+static char *grpc_get_http_proxy_server(grpc_exec_ctx* exec_ctx,
                                 char **user_cred) {
-  *name_to_resolve = NULL;
+  char *proxy_name = NULL;
+  if(user_cred != NULL) {
+    *user_cred = NULL;
+  }
   char* uri_str = gpr_getenv("http_proxy");
-  if (uri_str == NULL) return;
+  if (uri_str == NULL) return NULL;
   grpc_uri* uri =
       grpc_uri_parse(exec_ctx, uri_str, false /* suppress_errors */);
   if (uri == NULL || uri->authority == NULL) {
@@ -50,18 +57,33 @@ static void grpc_get_http_proxy_server(grpc_exec_ctx* exec_ctx,
     gpr_log(GPR_ERROR, "'%s' scheme not supported in proxy URI", uri->scheme);
     goto done;
   }
-  char *user_cred_end = strchr(uri->authority, '@');
-  if (user_cred_end != NULL) {
-    *name_to_resolve = gpr_strdup(user_cred_end + 1);
-    *user_cred_end = '\0';
-    *user_cred = gpr_strdup(uri->authority);
+  /* Split on '@' to separate user credentials from host */
+  char **authority_strs = NULL;
+  size_t authority_nstrs;
+  gpr_string_split(uri->authority, "@", &authority_strs, &authority_nstrs);
+  GPR_ASSERT(authority_nstrs != 0); /* should have atleast 1 string */
+  if(authority_nstrs == 1) {
+  /* User cred not present in authority */
+    proxy_name = gpr_strdup(authority_strs[0]);
+  } else if(authority_nstrs == 2) {
+  /* User cred found */
+    if(user_cred != NULL) {
+      *user_cred = gpr_strdup(authority_strs[0]);
+    }
+    proxy_name = gpr_strdup(authority_strs[1]);
     gpr_log(GPR_INFO, "userinfo found in proxy URI");
   } else {
-    *name_to_resolve = gpr_strdup(uri->authority);
+  /* Bad authority */
+    proxy_name = NULL;
   }
+  for(size_t i = 0; i < authority_nstrs; i++) {
+    gpr_free(authority_strs[i]);
+  }
+  gpr_free(authority_strs);
 done:
   gpr_free(uri_str);
   grpc_uri_destroy(uri);
+  return proxy_name;
 }
 
 static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
@@ -71,7 +93,7 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
                                   char** name_to_resolve,
                                   grpc_channel_args** new_args) {
   char *user_cred = NULL;
-  grpc_get_http_proxy_server(exec_ctx, name_to_resolve, &user_cred);
+  *name_to_resolve = grpc_get_http_proxy_server(exec_ctx, &user_cred);
   if (*name_to_resolve == NULL) return false;
   grpc_uri* uri =
       grpc_uri_parse(exec_ctx, server_uri, false /* suppress_errors */);
