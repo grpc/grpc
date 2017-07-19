@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
@@ -30,6 +31,7 @@
 #include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/support/env.h"
+#include "src/core/lib/support/string.h"
 
 static char* grpc_get_http_proxy_server(grpc_exec_ctx* exec_ctx) {
   char* uri_str = gpr_getenv("http_proxy");
@@ -79,6 +81,50 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
             server_uri);
     grpc_uri_destroy(uri);
     return false;
+  }
+  char* no_proxy_str = gpr_getenv("no_proxy");
+  if (no_proxy_str != NULL) {
+    static const char* NO_PROXY_SEPARATOR = ",";
+    bool use_proxy = true;
+    char* server_host;
+    char* server_port;
+    if (!gpr_split_host_port(uri->path[0] == '/' ? uri->path + 1 : uri->path,
+                             &server_host, &server_port)) {
+      gpr_log(GPR_INFO,
+              "unable to split host and port, not checking no_proxy list for "
+              "host '%s'",
+              server_uri);
+    } else {
+      size_t uri_len = strlen(server_host);
+      char** no_proxy_hosts;
+      size_t num_no_proxy_hosts;
+      gpr_string_split(no_proxy_str, NO_PROXY_SEPARATOR, &no_proxy_hosts,
+                       &num_no_proxy_hosts);
+      for (size_t i = 0; i < num_no_proxy_hosts; i++) {
+        char* no_proxy_entry = no_proxy_hosts[i];
+        size_t no_proxy_len = strlen(no_proxy_entry);
+        if (no_proxy_len <= uri_len &&
+            gpr_stricmp(no_proxy_entry, &server_host[uri_len - no_proxy_len]) ==
+                0) {
+          gpr_log(GPR_INFO, "not using proxy for host in no_proxy list '%s'",
+                  server_uri);
+          use_proxy = false;
+          break;
+        }
+      }
+      for (size_t i = 0; i < num_no_proxy_hosts; i++) {
+        gpr_free(no_proxy_hosts[i]);
+      }
+      gpr_free(no_proxy_hosts);
+      gpr_free(server_host);
+      gpr_free(server_port);
+      if (!use_proxy) {
+        grpc_uri_destroy(uri);
+        gpr_free(*name_to_resolve);
+        *name_to_resolve = NULL;
+        return false;
+      }
+    }
   }
   grpc_arg new_arg = grpc_channel_arg_string_create(
       GRPC_ARG_HTTP_CONNECT_SERVER,
