@@ -36,7 +36,7 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
-#include "src/core/lib/support/block_annotate.h"
+#include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/support/string.h"
 
 typedef struct {

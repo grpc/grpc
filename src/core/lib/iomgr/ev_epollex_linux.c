@@ -46,7 +46,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/block_annotate.h"
+#include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/support/spinlock.h"
 
 /*******************************************************************************

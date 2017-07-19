@@ -28,7 +28,7 @@
 #include <process.h>
 #include <sys/timeb.h>
 
-#include "src/core/lib/support/block_annotate.h"
+#include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/support/time_precise.h"
 
 static LARGE_INTEGER g_start_time;

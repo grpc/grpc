@@ -245,7 +245,8 @@ static void channel_connectivity_changed(grpc_exec_ctx* exec_ctx, void* arg,
    connection storms. Note that the MAX_CONNECTION_AGE option without jitter
    would not create connection storms by itself, but if there happened to be a
    connection storm it could cause it to repeat at a fixed period. */
-static int add_random_max_connection_age_jitter(int value) {
+static grpc_millis
+add_random_max_connection_age_jitter_and_convert_to_grpc_millis(int value) {
   /* generate a random number between 1 - MAX_CONNECTION_AGE_JITTER and
      1 + MAX_CONNECTION_AGE_JITTER */
   double multiplier = rand() * MAX_CONNECTION_AGE_JITTER * 2.0 / RAND_MAX +
@@ -253,7 +254,8 @@ static int add_random_max_connection_age_jitter(int value) {
   double result = multiplier * value;
   /* INT_MAX - 0.5 converts the value to float, so that result will not be
      cast to int implicitly before the comparison. */
-  return result > INT_MAX - 0.5 ? INT_MAX : (int)result;
+  return result > GRPC_MILLIS_INF_FUTURE - 0.5 ? GRPC_MILLIS_INF_FUTURE
+                                               : (int)result;
 }
 
 /* Constructor for call_data. */
@@ -283,9 +285,8 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
   chand->max_age_grace_timer_pending = false;
   chand->channel_stack = args->channel_stack;
   chand->max_connection_age =
-      DEFAULT_MAX_CONNECTION_AGE_MS == INT_MAX
-          ? GRPC_MILLIS_INF_FUTURE
-          : add_random_max_connection_age_jitter(DEFAULT_MAX_CONNECTION_AGE_MS);
+      add_random_max_connection_age_jitter_and_convert_to_grpc_millis(
+          DEFAULT_MAX_CONNECTION_AGE_MS);
   chand->max_connection_age_grace =
       DEFAULT_MAX_CONNECTION_AGE_GRACE_MS == INT_MAX
           ? GRPC_MILLIS_INF_FUTURE
@@ -299,8 +300,8 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
       const int value = grpc_channel_arg_get_integer(
           &args->channel_args->args[i], MAX_CONNECTION_AGE_INTEGER_OPTIONS);
       chand->max_connection_age =
-          value == INT_MAX ? GRPC_MILLIS_INF_FUTURE
-                           : add_random_max_connection_age_jitter(value);
+          add_random_max_connection_age_jitter_and_convert_to_grpc_millis(
+              value);
     } else if (0 == strcmp(args->channel_args->args[i].key,
                            GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS)) {
       const int value = grpc_channel_arg_get_integer(

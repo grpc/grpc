@@ -513,7 +513,7 @@ grpc_cc_library(
         "src/core/lib/support/atomic_with_atm.h",
         "src/core/lib/support/atomic_with_std.h",
         "src/core/lib/backoff/backoff.h",
-        "src/core/lib/support/block_annotate.h",
+        "src/core/lib/iomgr/block_annotate.h",
         "src/core/lib/support/env.h",
         "src/core/lib/support/memory.h",
         "src/core/lib/support/mpscq.h",

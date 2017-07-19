@@ -47,7 +47,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/block_annotate.h"
+#include "src/core/lib/iomgr/block_annotate.h"
 
 /* TODO: sreek - Move this to init.c and initialize this like other tracers. */
 #define GRPC_POLLING_TRACE(fmt, ...)        \

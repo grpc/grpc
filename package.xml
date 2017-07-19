@@ -100,7 +100,7 @@
     <file baseinstalldir="/" name="src/core/lib/support/atomic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/atomic_with_atm.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/atomic_with_std.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/block_annotate.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/block_annotate.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/memory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/mpscq.h" role="src" />

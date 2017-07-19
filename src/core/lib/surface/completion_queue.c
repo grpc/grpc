@@ -1114,6 +1114,7 @@ static grpc_event cq_pluck(grpc_completion_queue *cq, void *tag,
       dump_pending_tags(cq);
       break;
     }
+    cq->num_polls++;
     grpc_error *err = cq->poller_vtable->work(&exec_ctx, POLLSET_FROM_CQ(cq),
                                               &worker, deadline_millis);
     if (err != GRPC_ERROR_NONE) {

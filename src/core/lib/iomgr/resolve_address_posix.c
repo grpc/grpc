@@ -36,7 +36,7 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
-#include "src/core/lib/support/block_annotate.h"
+#include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/support/string.h"
 
 static grpc_error *blocking_resolve_address_impl(

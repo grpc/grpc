@@ -1286,7 +1286,7 @@ src/core/lib/support/atomic.h \
 src/core/lib/support/atomic_with_atm.h \
 src/core/lib/support/atomic_with_std.h \
 src/core/lib/support/avl.c \
-src/core/lib/support/block_annotate.h \
+src/core/lib/iomgr/block_annotate.h \
 src/core/lib/support/cmdline.c \
 src/core/lib/support/cpu_iphone.c \
 src/core/lib/support/cpu_linux.c \
