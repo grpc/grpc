@@ -36,6 +36,33 @@ include GRPC::Core::StatusCodes
 include GRPC::Core::TimeConsts
 include GRPC::Core::CallOps
 
+# check that methods on a finished/closed call t crash
+def check_op_view_of_finished_client_call_is_robust(op_view)
+  # use read_response_stream to try to iterate through
+  # possible response stream
+  fail('need something to attempt reads') unless block_given?
+  expect do
+    resp = op_view.execute
+    yield resp
+  end.to raise_error(GRPC::Core::CallError)
+
+  expect { op_view.start_call }.to raise_error(RuntimeError)
+
+  expect do
+    op_view.wait
+    op_view.cancel
+
+    op_view.metadata
+    op_view.trailing_metadata
+    op_view.status
+
+    op_view.cancelled?
+    op_view.deadline
+    op_view.write_flag
+    op_view.write_flag = 1
+  end.to_not raise_error
+end
+
 describe 'ClientStub' do
   let(:noop) { proc { |x| x } }
 
@@ -231,14 +258,26 @@ describe 'ClientStub' do
 
       it_behaves_like 'request response'
 
-      it 'sends metadata to the server ok when running start_call first' do
+      def run_op_view_metadata_test(run_start_call_first)
         server_port = create_test_server
         host = "localhost:#{server_port}"
         th = run_request_response(@sent_msg, @resp, @pass,
                                   k1: 'v1', k2: 'v2')
         stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
-        expect(get_response(stub)).to eq(@resp)
+        expect(
+          get_response(stub,
+                       run_start_call_first: run_start_call_first)).to eq(@resp)
         th.join
+      end
+
+      it 'sends metadata to the server ok when running start_call first' do
+        run_op_view_metadata_test(true)
+        check_op_view_of_finished_client_call_is_robust(@op) { |r| p r }
+      end
+
+      it 'does not crash when used after the call has been finished' do
+        run_op_view_metadata_test(false)
+        check_op_view_of_finished_client_call_is_robust(@op) { |r| p r }
       end
     end
   end
@@ -307,10 +346,22 @@ describe 'ClientStub' do
 
       it_behaves_like 'client streaming'
 
-      it 'sends metadata to the server ok when running start_call first' do
+      def run_op_view_metadata_test(run_start_call_first)
         th = run_client_streamer(@sent_msgs, @resp, @pass, **@metadata)
-        expect(get_response(@stub, run_start_call_first: true)).to eq(@resp)
+        expect(
+          get_response(@stub,
+                       run_start_call_first: run_start_call_first)).to eq(@resp)
         th.join
+      end
+
+      it 'sends metadata to the server ok when running start_call first' do
+        run_op_view_metadata_test(true)
+        check_op_view_of_finished_client_call_is_robust(@op) { |r| p r }
+      end
+
+      it 'does not crash when used after the call has been finished' do
+        run_op_view_metadata_test(false)
+        check_op_view_of_finished_client_call_is_robust(@op) { |r| p r }
       end
     end
   end
@@ -377,7 +428,7 @@ describe 'ClientStub' do
       end
     end
 
-    describe 'without a call operation', test2: true do
+    describe 'without a call operation' do
       def get_responses(stub, unmarshal: noop)
         e = stub.server_streamer(@method, @sent_msg, noop, unmarshal,
                                  metadata: @metadata)
@@ -405,15 +456,29 @@ describe 'ClientStub' do
 
       it_behaves_like 'server streaming'
 
-      it 'should send metadata to the server ok when start_call is run first' do
+      def run_op_view_metadata_test(run_start_call_first)
         server_port = create_test_server
         host = "localhost:#{server_port}"
         th = run_server_streamer(@sent_msg, @replys, @fail,
                                  k1: 'v1', k2: 'v2')
         stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
-        e = get_responses(stub, run_start_call_first: true)
+        e = get_responses(stub, run_start_call_first: run_start_call_first)
         expect { e.collect { |r| r } }.to raise_error(GRPC::BadStatus)
         th.join
+      end
+
+      it 'should send metadata to the server ok when start_call is run first' do
+        run_op_view_metadata_test(true)
+        check_op_view_of_finished_client_call_is_robust(@op) do |responses|
+          responses.each { |r| p r }
+        end
+      end
+
+      it 'does not crash when used after the call has been finished' do
+        run_op_view_metadata_test(false)
+        check_op_view_of_finished_client_call_is_robust(@op) do |responses|
+          responses.each { |r| p r }
+        end
       end
     end
   end
@@ -501,13 +566,27 @@ describe 'ClientStub' do
 
       it_behaves_like 'bidi streaming'
 
-      it 'can run start_call before executing the call' do
+      def run_op_view_metadata_test(run_start_call_first)
         th = run_bidi_streamer_handle_inputs_first(@sent_msgs, @replys,
                                                    @pass)
         stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
-        e = get_responses(stub, run_start_call_first: true)
+        e = get_responses(stub, run_start_call_first: run_start_call_first)
         expect(e.collect { |r| r }).to eq(@replys)
         th.join
+      end
+
+      it 'can run start_call before executing the call' do
+        run_op_view_metadata_test(true)
+        check_op_view_of_finished_client_call_is_robust(@op) do |responses|
+          responses.each { |r| p r }
+        end
+      end
+
+      it 'doesnt crash when op_view used after call has finished' do
+        run_op_view_metadata_test(false)
+        check_op_view_of_finished_client_call_is_robust(@op) do |responses|
+          responses.each { |r| p r }
+        end
       end
     end
   end
