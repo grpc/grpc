@@ -187,7 +187,6 @@ grpc_subchannel *grpc_subchannel_index_register(grpc_exec_ctx *exec_ctx,
     gpr_avl_unref(index, exec_ctx);
   }
 
-
   if (need_to_unref_constructed) {
     GRPC_SUBCHANNEL_UNREF(exec_ctx, constructed, "index_register");
   }
