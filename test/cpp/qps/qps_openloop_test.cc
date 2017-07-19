@@ -25,6 +25,7 @@
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/report.h"
 #include "test/cpp/util/test_config.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 namespace grpc {
 namespace testing {
@@ -48,8 +49,8 @@ static void RunQPS() {
   server_config.set_server_type(ASYNC_SERVER);
   server_config.set_async_server_threads(8);
 
-  const auto result =
-      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
+  const auto result = RunScenario(client_config, 1, server_config, 1, WARMUP,
+                                  BENCHMARK, -2, "", kInsecureCredentialsType);
 
   GetReporter()->ReportQPSPerCore(*result);
   GetReporter()->ReportLatency(*result);

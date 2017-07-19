@@ -21,6 +21,7 @@
 
 #include <memory>
 
+#include <grpc++/support/config.h>
 #include <grpc/support/atm.h>
 
 namespace grpc {
@@ -33,7 +34,8 @@ class WorkerServiceImpl;
 
 class QpsWorker {
  public:
-  explicit QpsWorker(int driver_port, int server_port = 0);
+  explicit QpsWorker(int driver_port, int server_port,
+                     const grpc::string& credential_type);
   ~QpsWorker();
 
   bool Done() const;
