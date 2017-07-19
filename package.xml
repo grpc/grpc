@@ -201,6 +201,8 @@
     <file baseinstalldir="/" name="src/core/lib/compression/algorithm_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/stream_compression.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/stats.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/stats_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/format_request.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.h" role="src" />
@@ -301,8 +303,6 @@
     <file baseinstalldir="/" name="src/core/lib/transport/transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_impl.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/debug/stats.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/debug/stats_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_decoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.h" role="src" />
@@ -422,6 +422,8 @@
     <file baseinstalldir="/" name="src/core/lib/compression/compression.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/stream_compression.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/stats.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/stats_data.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/format_request.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.c" role="src" />
@@ -538,8 +540,6 @@
     <file baseinstalldir="/" name="src/core/lib/transport/transport.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_op_string.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/debug/stats.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/debug/stats_data.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_decoder.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.c" role="src" />

@@ -7691,7 +7691,6 @@
     "deps": [
       "gpr", 
       "grpc_codegen", 
-      "grpc_stats", 
       "grpc_trace"
     ], 
     "headers": [
@@ -7717,6 +7716,8 @@
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/message_compress.h", 
       "src/core/lib/compression/stream_compression.h", 
+      "src/core/lib/debug/stats.h", 
+      "src/core/lib/debug/stats_data.h", 
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
@@ -7853,6 +7854,10 @@
       "src/core/lib/compression/message_compress.h", 
       "src/core/lib/compression/stream_compression.c", 
       "src/core/lib/compression/stream_compression.h", 
+      "src/core/lib/debug/stats.c", 
+      "src/core/lib/debug/stats.h", 
+      "src/core/lib/debug/stats_data.c", 
+      "src/core/lib/debug/stats_data.h", 
       "src/core/lib/http/format_request.c", 
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.c", 
@@ -8548,26 +8553,6 @@
     "src": [
       "src/core/ext/filters/workarounds/workaround_utils.c", 
       "src/core/ext/filters/workarounds/workaround_utils.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
-      "gpr"
-    ], 
-    "headers": [
-      "src/core/lib/debug/stats.h", 
-      "src/core/lib/debug/stats_data.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c", 
-    "name": "grpc_stats", 
-    "src": [
-      "src/core/lib/debug/stats.c", 
-      "src/core/lib/debug/stats.h", 
-      "src/core/lib/debug/stats_data.c", 
-      "src/core/lib/debug/stats_data.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

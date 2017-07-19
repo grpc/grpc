@@ -957,6 +957,8 @@ add_library(grpc
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1073,8 +1075,6 @@ add_library(grpc
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
   src/core/lib/debug/trace.c
-  src/core/lib/debug/stats.c
-  src/core/lib/debug/stats_data.c
   src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c
   src/core/ext/transport/chttp2/transport/bin_decoder.c
   src/core/ext/transport/chttp2/transport/bin_encoder.c
@@ -1302,6 +1302,8 @@ add_library(grpc_cronet
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1418,8 +1420,6 @@ add_library(grpc_cronet
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
   src/core/lib/debug/trace.c
-  src/core/lib/debug/stats.c
-  src/core/lib/debug/stats_data.c
   src/core/ext/transport/cronet/client/secure/cronet_channel_create.c
   src/core/ext/transport/cronet/transport/cronet_api_dummy.c
   src/core/ext/transport/cronet/transport/cronet_transport.c
@@ -1625,6 +1625,8 @@ add_library(grpc_test_util
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1741,8 +1743,6 @@ add_library(grpc_test_util
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
   src/core/lib/debug/trace.c
-  src/core/lib/debug/stats.c
-  src/core/lib/debug/stats_data.c
 )
 
 if(WIN32 AND MSVC)
@@ -1890,6 +1890,8 @@ add_library(grpc_unsecure
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -2006,8 +2008,6 @@ add_library(grpc_unsecure
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
   src/core/lib/debug/trace.c
-  src/core/lib/debug/stats.c
-  src/core/lib/debug/stats_data.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
   src/core/ext/transport/chttp2/transport/bin_decoder.c
@@ -2551,6 +2551,8 @@ add_library(grpc++_cronet
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -2667,8 +2669,6 @@ add_library(grpc++_cronet
   src/core/lib/transport/transport.c
   src/core/lib/transport/transport_op_string.c
   src/core/lib/debug/trace.c
-  src/core/lib/debug/stats.c
-  src/core/lib/debug/stats_data.c
   src/core/ext/transport/chttp2/alpn/alpn.c
   src/core/ext/filters/http/client/http_client_filter.c
   src/core/ext/filters/http/http_filters_plugin.c
