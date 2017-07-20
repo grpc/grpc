@@ -35,7 +35,7 @@
 
 #define INVALID_HEAP_INDEX 0xffffffffu
 
-#define LOG2_NUM_SHARDS 5
+#define LOG2_NUM_SHARDS 0
 #define NUM_SHARDS (1 << LOG2_NUM_SHARDS)
 #define ADD_DEADLINE_SCALE 0.33
 #define MIN_QUEUE_WINDOW_DURATION 0.01
@@ -199,6 +199,7 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
   int is_first_timer = 0;
   timer_shard *shard = &g_shards[GPR_HASH_POINTER(timer, NUM_SHARDS)];
   timer->closure = closure;
+  timer->deadline = deadline;
 
   if (GRPC_TRACER_ON(grpc_timer_trace)) {
     gpr_log(GPR_DEBUG,
@@ -362,8 +363,9 @@ static grpc_timer *pop_one(timer_shard *shard, gpr_atm now) {
     }
     if (timer->deadline > now) return NULL;
     if (GRPC_TRACER_ON(grpc_timer_trace)) {
-      gpr_log(GPR_DEBUG, "TIMER %p: FIRE %" PRIdPTR "ms late", timer,
-              now - timer->deadline);
+      gpr_log(GPR_DEBUG, "TIMER %p: FIRE %" PRIdPTR "ms late via %s scheduler",
+              timer, now - timer->deadline,
+              timer->closure->scheduler->vtable->name);
     }
     timer->pending = false;
     grpc_timer_heap_pop(&shard->heap);
@@ -384,6 +386,10 @@ static size_t pop_timers(grpc_exec_ctx *exec_ctx, timer_shard *shard,
   }
   *new_min_deadline = compute_min_deadline(shard);
   gpr_mu_unlock(&shard->mu);
+  if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
+    gpr_log(GPR_DEBUG, "  .. shard[%d] popped %" PRIdPTR,
+            (int)(shard - g_shards), n);
+  }
   return n;
 }
 
@@ -495,7 +501,8 @@ grpc_timer_check_result grpc_timer_check(grpc_exec_ctx *exec_ctx,
     gpr_free(next_str);
   }
   // actual code
-  bool r = run_some_expired_timers(exec_ctx, now, next, shutdown_error);
+  grpc_timer_check_result r =
+      run_some_expired_timers(exec_ctx, now, next, shutdown_error);
   // tracing
   if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
     char *next_str;
