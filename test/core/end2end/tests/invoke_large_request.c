@@ -18,6 +18,7 @@
 
 #include "test/core/end2end/end2end_tests.h"
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -28,6 +29,12 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
+
+#ifdef GPR_ARCH_64
+#define LARGE_TEST_SIZE (1000 * 1000 * 1000)
+#else
+#define LARGE_TEST_SIZE (100 * 1000 * 1000)
+#endif
 
 static void *tag(intptr_t t) { return (void *)t; }
 
@@ -82,7 +89,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 }
 
 static grpc_slice large_slice(void) {
-  grpc_slice slice = grpc_slice_malloc(1000000);
+  grpc_slice slice = grpc_slice_malloc(LARGE_TEST_SIZE);
   memset(GRPC_SLICE_START_PTR(slice), 'x', GRPC_SLICE_LENGTH(slice));
   return slice;
 }
@@ -94,13 +101,16 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
                "test_invoke_large_request:max_frame_size=%d:lookahead_bytes=%d",
                max_frame_size, lookahead_bytes);
 
-  grpc_arg args[2];
+  grpc_arg args[3];
   args[0].type = GRPC_ARG_INTEGER;
   args[0].key = GRPC_ARG_HTTP2_MAX_FRAME_SIZE;
   args[0].value.integer = max_frame_size;
   args[1].type = GRPC_ARG_INTEGER;
   args[1].key = GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES;
   args[1].value.integer = lookahead_bytes;
+  args[2].type = GRPC_ARG_INTEGER;
+  args[2].key = GRPC_ARG_MAX_MESSAGE_LENGTH;
+  args[2].value.integer = INT_MAX;
   grpc_channel_args channel_args = {GPR_ARRAY_SIZE(args), args};
 
   grpc_end2end_test_fixture f =
@@ -129,7 +139,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
   grpc_slice details;
   int was_cancelled = 2;
 
-  gpr_timespec deadline = n_seconds_from_now(30);
+  gpr_timespec deadline = n_seconds_from_now(300);
   c = grpc_channel_create_call(
       f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
       grpc_slice_from_static_string("/foo"),
@@ -183,7 +193,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cq_verify_custom(cqv, 100);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -201,7 +211,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  cq_verify(cqv);
+  cq_verify_custom(cqv, 100);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -228,7 +238,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
 
   CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cq_verify_custom(cqv, 100);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
