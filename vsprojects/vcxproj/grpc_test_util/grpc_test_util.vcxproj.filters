@@ -10,6 +10,12 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\server1_key.c">
       <Filter>test\core\end2end\data</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\server2_cert.c">
+      <Filter>test\core\end2end\data</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\server2_key.c">
+      <Filter>test\core\end2end\data</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\test_root_cert.c">
       <Filter>test\core\end2end\data</Filter>
     </ClCompile>

@@ -314,6 +314,10 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\server1_key.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\server2_cert.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\server2_key.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\test_root_cert.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\security\oauth2_utils.c">
