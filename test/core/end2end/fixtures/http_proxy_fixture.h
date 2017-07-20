@@ -22,20 +22,18 @@
 #include <grpc/grpc.h>
 
 /* The test credentials being used for HTTP Proxy Authorization */
-#define GRPC_END2END_HTTP_PROXY_TEST_CONNECT_CRED "aladdin:opensesame"
+#define GRPC_TEST_HTTP_PROXY_AUTH_CREDS "aladdin:opensesame"
 
 /* A channel arg key used to indicate that the channel uses proxy authorization.
- * The value is of no consequence as just the presence of the argument is
- * enough. It is currently kept as of type integer but can be changed as seen
- * fit.
+ * The value (string) should be the proxy auth credentials that should be
+ * checked.
  */
-#define GRPC_END2END_HTTP_PROXY_TEST_CONNECT_AUTH_PRESENT \
-    "grpc.test.connect_auth"
+#define GRPC_ARG_HTTP_PROXY_AUTH_CREDS "grpc.test.proxy_auth"
 
 typedef struct grpc_end2end_http_proxy grpc_end2end_http_proxy;
 
 grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
-    grpc_channel_args *args);
+    grpc_channel_args* args);
 
 void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy);
 

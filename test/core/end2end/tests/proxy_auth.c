@@ -16,6 +16,10 @@
  *
  */
 
+/**
+ * This test is for checking whether proxy authentication is working with HTTP
+ * Connect.
+ */
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/http_proxy_fixture.h"
 
@@ -23,10 +27,12 @@
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
 static void *tag(intptr_t t) { return (void *)t; }
@@ -85,59 +91,35 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-/* Creates and returns a grpc_slice containing random alphanumeric characters.
- */
-static grpc_slice generate_random_slice() {
-  size_t i;
-  static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
-  char *output;
-  const size_t output_size = 1024 * 1024;
-  output = gpr_malloc(output_size);
-  for (i = 0; i < output_size - 1; ++i) {
-    output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
-  }
-  output[output_size - 1] = '\0';
-  grpc_slice out = grpc_slice_from_copied_string(output);
-  gpr_free(output);
-  return out;
-}
-
-static void request_response_with_payload_and_proxy_auth
-              (grpc_end2end_test_config config,
-               grpc_end2end_test_fixture f) {
-  /* Create large request and response bodies. These are big enough to require
-   * multiple round trips to deliver to the peer, and their exact contents of
-   * will be verified on completion. */
-  grpc_slice request_payload_slice = generate_random_slice();
-  grpc_slice response_payload_slice = generate_random_slice();
-
+static void simple_request_body(grpc_end2end_test_config config,
+                                grpc_end2end_test_fixture f) {
   grpc_call *c;
   grpc_call *s;
-  grpc_byte_buffer *request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer *response_payload =
-      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer *request_payload_recv = NULL;
-  grpc_byte_buffer *response_payload_recv = NULL;
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
   int was_cancelled = 2;
+  char *peer;
 
-  gpr_timespec deadline = n_seconds_from_now(60);
+  gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(
       f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
       grpc_slice_from_static_string("/foo"),
       get_host_override_slice("foo.test.google.fr:1234", config), deadline,
       NULL);
   GPR_ASSERT(c);
+
+  peer = grpc_call_get_peer(c);
+  GPR_ASSERT(peer != NULL);
+  gpr_log(GPR_DEBUG, "client_peer_before_call=%s", peer);
+  gpr_free(peer);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -151,22 +133,12 @@ static void request_response_with_payload_and_proxy_auth
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = request_payload;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &response_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -187,6 +159,15 @@ static void request_response_with_payload_and_proxy_auth
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
+  peer = grpc_call_get_peer(s);
+  GPR_ASSERT(peer != NULL);
+  gpr_log(GPR_DEBUG, "server_peer=%s", peer);
+  gpr_free(peer);
+  peer = grpc_call_get_peer(c);
+  GPR_ASSERT(peer != NULL);
+  gpr_log(GPR_DEBUG, "client_peer=%s", peer);
+  gpr_free(peer);
+
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -194,8 +175,16 @@ static void request_response_with_payload_and_proxy_auth
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &request_payload_recv;
+  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+  op->data.send_status_from_server.trailing_metadata_count = 0;
+  op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  op->data.send_status_from_server.status_details = &status_details;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -203,44 +192,16 @@ static void request_response_with_payload_and_proxy_auth
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  cq_verify(cqv);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = response_payload;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(status == GRPC_STATUS_OK);
+  GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   validate_host_override_string("foo.test.google.fr:1234", call_details.host,
                                 config);
-  GPR_ASSERT(was_cancelled == 0);
-  GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
-  GPR_ASSERT(
-      byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
+  GPR_ASSERT(0 == call_details.flags);
+  GPR_ASSERT(was_cancelled == 1);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -252,51 +213,23 @@ static void request_response_with_payload_and_proxy_auth
   grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
-
-  grpc_byte_buffer_destroy(request_payload);
-  grpc_byte_buffer_destroy(response_payload);
-  grpc_byte_buffer_destroy(request_payload_recv);
-  grpc_byte_buffer_destroy(response_payload_recv);
 }
 
-/* Client sends a request with payload, server reads then returns a response
-   payload and status. */
-static void test_invoke_request_response_with_payload_and_proxy_auth(
-    grpc_end2end_test_config config) {
+static void test_invoke_proxy_auth(grpc_end2end_test_config config) {
   /* Indicate that the proxy requires user auth */
-  grpc_arg client_arg = {.type = GRPC_ARG_INTEGER,
-      .key = GRPC_END2END_HTTP_PROXY_TEST_CONNECT_AUTH_PRESENT,
-      .value.integer = 0};
+  grpc_arg client_arg = {.type = GRPC_ARG_STRING,
+                         .key = GRPC_ARG_HTTP_PROXY_AUTH_CREDS,
+                         .value.string = GRPC_TEST_HTTP_PROXY_AUTH_CREDS};
   grpc_channel_args client_args = {.num_args = 1, .args = &client_arg};
-  grpc_end2end_test_fixture f = begin_test(
-      config, "test_invoke_request_response_with_payload_and_proxy_auth",
-      &client_args, NULL);
-  request_response_with_payload_and_proxy_auth(config, f);
+  grpc_end2end_test_fixture f =
+      begin_test(config, "test_invoke_proxy_auth", &client_args, NULL);
+  simple_request_body(config, f);
   end_test(&f);
   config.tear_down_data(&f);
 }
 
-static void test_invoke_10_request_response_with_payload_and_proxy_auth(
-    grpc_end2end_test_config config) {
-  int i;
-  /* Indicate that the proxy requires user auth */
-  grpc_arg client_arg = {.type = GRPC_ARG_INTEGER,
-      .key = GRPC_END2END_HTTP_PROXY_TEST_CONNECT_AUTH_PRESENT,
-      .value.integer = 0};
-  grpc_channel_args client_args = {.num_args = 1, .args = &client_arg};
-  grpc_end2end_test_fixture f = begin_test(
-      config, "test_invoke_10_request_response_with_payload_and_proxy_auth",
-      &client_args, NULL);
-  for (i = 0; i < 10; i++) {
-    request_response_with_payload_and_proxy_auth(config, f);
-  }
-  end_test(&f);
-  config.tear_down_data(&f);
+void proxy_auth(grpc_end2end_test_config config) {
+  test_invoke_proxy_auth(config);
 }
 
-void payload_with_proxy_auth(grpc_end2end_test_config config) {
-  test_invoke_request_response_with_payload_and_proxy_auth(config);
-  test_invoke_10_request_response_with_payload_and_proxy_auth(config);
-}
-
-void payload_with_proxy_auth_pre_init(void) {}
+void proxy_auth_pre_init(void) {}

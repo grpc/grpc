@@ -30,21 +30,19 @@
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/slice/b64.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/slice/b64.h"
 
 /**
  * Parses the 'http_proxy' env var and returns the proxy hostname to resolve or
- * NULL on error. Also sets 'user_cred' to user credentials present in the
- * 'http_proxy' env var, NULL if not present.
+ * NULL on error. Also sets 'user_cred' to user credentials if present in the
+ * 'http_proxy' env var, otherwise leaves it unchanged. It is caller's
+ * responsibility to gpr_free user_cred.
  */
-static char *grpc_get_http_proxy_server(grpc_exec_ctx* exec_ctx,
-                                char **user_cred) {
-  char *proxy_name = NULL;
-  if(user_cred != NULL) {
-    *user_cred = NULL;
-  }
+static char* get_http_proxy_server(grpc_exec_ctx* exec_ctx, char** user_cred) {
+  GPR_ASSERT(user_cred != NULL);
+  char* proxy_name = NULL;
   char* uri_str = gpr_getenv("http_proxy");
   if (uri_str == NULL) return NULL;
   grpc_uri* uri =
@@ -58,26 +56,24 @@ static char *grpc_get_http_proxy_server(grpc_exec_ctx* exec_ctx,
     goto done;
   }
   /* Split on '@' to separate user credentials from host */
-  char **authority_strs = NULL;
+  char** authority_strs = NULL;
   size_t authority_nstrs;
   gpr_string_split(uri->authority, "@", &authority_strs, &authority_nstrs);
   GPR_ASSERT(authority_nstrs != 0); /* should have at least 1 string */
-  if(authority_nstrs == 1) {
-  /* User cred not present in authority */
-    proxy_name = gpr_strdup(authority_strs[0]);
-  } else if(authority_nstrs == 2) {
-  /* User cred found */
-    if(user_cred != NULL) {
-      *user_cred = gpr_strdup(authority_strs[0]);
-    }
-    proxy_name = gpr_strdup(authority_strs[1]);
+  if (authority_nstrs == 1) {
+    /* User cred not present in authority */
+    proxy_name = authority_strs[0];
+  } else if (authority_nstrs == 2) {
+    /* User cred found */
+    *user_cred = authority_strs[0];
+    proxy_name = authority_strs[1];
     gpr_log(GPR_INFO, "userinfo found in proxy URI");
   } else {
-  /* Bad authority */
+    /* Bad authority */
+    for (size_t i = 0; i < authority_nstrs; i++) {
+      gpr_free(authority_strs[i]);
+    }
     proxy_name = NULL;
-  }
-  for(size_t i = 0; i < authority_nstrs; i++) {
-    gpr_free(authority_strs[i]);
   }
   gpr_free(authority_strs);
 done:
@@ -92,8 +88,8 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
                                   const grpc_channel_args* args,
                                   char** name_to_resolve,
                                   grpc_channel_args** new_args) {
-  char *user_cred = NULL;
-  *name_to_resolve = grpc_get_http_proxy_server(exec_ctx, &user_cred);
+  char* user_cred = NULL;
+  *name_to_resolve = get_http_proxy_server(exec_ctx, &user_cred);
   if (*name_to_resolve == NULL) return false;
   grpc_uri* uri =
       grpc_uri_parse(exec_ctx, server_uri, false /* suppress_errors */);
@@ -163,15 +159,15 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
   args_to_add[0] = grpc_channel_arg_string_create(
       GRPC_ARG_HTTP_CONNECT_SERVER,
       uri->path[0] == '/' ? uri->path + 1 : uri->path);
-  if(user_cred != NULL) {
-    /* Use base64 encoding for user credentials */
-    char *encoded_user_cred =
+  if (user_cred != NULL) {
+    /* Use base64 encoding for user credentials as stated in RFC 7617 */
+    char* encoded_user_cred =
         grpc_base64_encode(user_cred, strlen(user_cred), 0, 0);
-    char *header;
+    char* header;
     gpr_asprintf(&header, "Proxy-Authorization:Basic %s", encoded_user_cred);
     gpr_free(encoded_user_cred);
-    args_to_add[1] = grpc_channel_arg_string_create(
-        GRPC_ARG_HTTP_CONNECT_HEADERS, header);
+    args_to_add[1] =
+        grpc_channel_arg_string_create(GRPC_ARG_HTTP_CONNECT_HEADERS, header);
     *new_args = grpc_channel_args_copy_and_add(args, args_to_add, 2);
     gpr_free(header);
   } else {
