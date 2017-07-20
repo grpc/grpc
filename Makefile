@@ -6040,6 +6040,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/crypto/pem/pem_xaux.c \
     third_party/boringssl/crypto/pkcs8/p5_pbev2.c \
     third_party/boringssl/crypto/pkcs8/pkcs8.c \
+    third_party/boringssl/crypto/pkcs8/pkcs8_x509.c \
     third_party/boringssl/crypto/poly1305/poly1305.c \
     third_party/boringssl/crypto/poly1305/poly1305_arm.c \
     third_party/boringssl/crypto/poly1305/poly1305_vec.c \
