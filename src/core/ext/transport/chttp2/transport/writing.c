@@ -288,6 +288,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       s->send_initial_metadata = NULL;
       s->sent_initial_metadata = true;
       sent_initial_metadata = true;
+      result.early_results_scheduled = true;
       grpc_chttp2_complete_closure_step(
           exec_ctx, t, s, &s->send_initial_metadata_finished, GRPC_ERROR_NONE,
           "send_initial_metadata_finished");
@@ -402,6 +403,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                               s->id, GRPC_HTTP2_NO_ERROR, &s->stats.outgoing));
         }
         now_writing = true;
+        result.early_results_scheduled = true;
         grpc_chttp2_complete_closure_step(
             exec_ctx, t, s, &s->send_trailing_metadata_finished,
             GRPC_ERROR_NONE, "send_trailing_metadata_finished");
