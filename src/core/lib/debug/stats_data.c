@@ -20,5 +20,6 @@
 
 #include "src/core/lib/debug/stats_data.h"
 const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
-    "client_calls_created", "server_calls_created",
+    "client_calls_created", "server_calls_created", "syscall_write",
+    "syscall_read",         "syscall_poll",         "syscall_wait",
 };
