@@ -138,13 +138,13 @@ class CheckCallAfterFinishedService
   attr_reader :server_side_call
 
   def an_rpc(req, call)
-    fail 'shouldnt reuse service' unless @call.nil?
+    fail 'shouldnt reuse service' unless @server_side_call.nil?
     @server_side_call = call
     req
   end
 
   def a_client_streaming_rpc(call)
-    fail 'shouldnt reuse service' unless @call.nil?
+    fail 'shouldnt reuse service' unless @server_side_call.nil?
     @server_side_call = call
     # iterate through requests so call can complete
     call.each_remote_read.each { |r| p r }
@@ -152,13 +152,13 @@ class CheckCallAfterFinishedService
   end
 
   def a_server_streaming_rpc(_, call)
-    fail 'shouldnt reuse service' unless @call.nil?
+    fail 'shouldnt reuse service' unless @server_side_call.nil?
     @server_side_call = call
     [EchoMsg.new, EchoMsg.new]
   end
 
   def a_bidi_rpc(requests, call)
-    fail 'shouldnt reuse service' unless @call.nil?
+    fail 'shouldnt reuse service' unless @server_side_call.nil?
     @server_side_call = call
     requests.each { |r| p r }
     [EchoMsg.new, EchoMsg.new]
