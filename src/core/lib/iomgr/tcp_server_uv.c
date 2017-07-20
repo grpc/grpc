@@ -108,7 +108,7 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
 }
 
 grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s) {
-  GRPC_ASSERT_SAME_THREAD();
+  GRPC_UV_ASSERT_SAME_THREAD();
   gpr_ref(&s->refs);
   return s;
 }
@@ -147,12 +147,10 @@ static void handle_close_callback(uv_handle_t *handle) {
 }
 
 static void close_listener(grpc_tcp_listener *sp) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   if (!sp->closed) {
     sp->closed = true;
     uv_close((uv_handle_t *)sp->handle, handle_close_callback);
   }
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
@@ -175,7 +173,7 @@ static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
 }
 
 void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
-  GRPC_ASSERT_SAME_THREAD();
+  GRPC_UV_ASSERT_SAME_THREAD();
   if (gpr_unref(&s->refs)) {
     /* Complete shutdown_starting work before destroying. */
     grpc_exec_ctx local_exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -248,7 +246,9 @@ static void on_connect(uv_stream_t *server, int status) {
 
   GPR_ASSERT(!sp->has_pending_connection);
 
-  gpr_log(GPR_DEBUG, "SERVER_CONNECT: %p incoming connection", sp->server);
+  if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+    gpr_log(GPR_DEBUG, "SERVER_CONNECT: %p incoming connection", sp->server);
+  }
 
   // Create acceptor.
   if (sp->server->on_accept_cb) {
@@ -338,7 +338,7 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s,
   int status;
   grpc_error *error = GRPC_ERROR_NONE;
 
-  GRPC_ASSERT_SAME_THREAD();
+  GRPC_UV_ASSERT_SAME_THREAD();
 
   if (s->tail != NULL) {
     port_index = s->tail->port_index + 1;
@@ -420,7 +420,7 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *server,
   grpc_tcp_listener *sp;
   (void)pollsets;
   (void)pollset_count;
-  GRPC_ASSERT_SAME_THREAD();
+  GRPC_UV_ASSERT_SAME_THREAD();
   if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "SERVER_START %p", server);
   }

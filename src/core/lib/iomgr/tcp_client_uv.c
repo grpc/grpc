@@ -125,7 +125,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   (void)channel_args;
   (void)interested_parties;
 
-  GRPC_ASSERT_SAME_THREAD();
+  GRPC_UV_ASSERT_SAME_THREAD();
 
   if (channel_args != NULL) {
     for (size_t i = 0; i < channel_args->num_args; i++) {

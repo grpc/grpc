@@ -25,13 +25,13 @@
 
 /* The thread ID of the thread on which grpc was initialized. Used to verify
  * that all calls into libuv are made on that same thread */
-extern gpr_thd_id grpc_init_thread;
+extern gpr_thd_id g_init_thread;
 
 #ifdef GRPC_UV_THREAD_CHECK
-#define GRPC_ASSERT_SAME_THREAD() \
-  GPR_ASSERT(gpr_thd_currentid() == grpc_init_thread)
+#define GRPC_UV_ASSERT_SAME_THREAD() \
+  GPR_ASSERT(gpr_thd_currentid() == g_init_thread)
 #else
-#define GRPC_ASSERT_SAME_THREAD()
+#define GRPC_UV_ASSERT_SAME_THREAD()
 #endif /* GRPC_UV_THREAD_CHECK */
 
 #endif /* GRPC_CORE_LIB_IOMGR_IOMGR_UV_H */

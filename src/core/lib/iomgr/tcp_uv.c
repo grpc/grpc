@@ -184,7 +184,7 @@ static void uv_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   grpc_tcp *tcp = (grpc_tcp *)ep;
   int status;
   grpc_error *error = GRPC_ERROR_NONE;
-  GRPC_ASSERT_SAME_THREAD();
+  GRPC_UV_ASSERT_SAME_THREAD();
   GPR_ASSERT(tcp->read_cb == NULL);
   tcp->read_cb = cb;
   tcp->read_slices = read_slices;
@@ -238,7 +238,7 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   unsigned int i;
   grpc_slice *slice;
   uv_write_t *write_req;
-  GRPC_ASSERT_SAME_THREAD();
+  GRPC_UV_ASSERT_SAME_THREAD();
 
   if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     size_t j;
