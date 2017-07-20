@@ -351,7 +351,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                 s->uncompressed_data_size = s->flow_controlled_buffer.length;
                 GPR_ASSERT(grpc_stream_compress(
                     s->stream_compression_ctx, &s->flow_controlled_buffer,
-                    &s->compressed_data_buffer, NULL, ~(size_t)0,
+                    &s->compressed_data_buffer, NULL, MAX_SIZE_T,
                     GRPC_STREAM_COMPRESSION_FLUSH_SYNC));
               }
             }

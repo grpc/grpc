@@ -520,9 +520,9 @@ struct grpc_chttp2_stream {
   grpc_chttp2_write_cb *finish_after_write;
   size_t sending_bytes;
 
-  /** Whether stream compression send is enabled or not */
+  /** Whether stream compression send is enabled */
   bool stream_compression_recv_enabled;
-  /** Whether stream compression recv is enabled or not */
+  /** Whether stream compression recv is enabled */
   bool stream_compression_send_enabled;
   /** Whether bytes stored in unprocessed_incoming_byte_stream is decompressed
    */
@@ -633,6 +633,9 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
                                        grpc_chttp2_stream *s,
                                        grpc_closure **pclosure,
                                        grpc_error *error, const char *desc);
+
+#define GRPC_HEADER_SIZE_IN_BYTES 5
+#define MAX_SIZE_T (~(size_t)0)
 
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
