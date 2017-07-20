@@ -254,8 +254,9 @@ add_random_max_connection_age_jitter_and_convert_to_grpc_millis(int value) {
   double result = multiplier * value;
   /* INT_MAX - 0.5 converts the value to float, so that result will not be
      cast to int implicitly before the comparison. */
-  return result > GRPC_MILLIS_INF_FUTURE - 0.5 ? GRPC_MILLIS_INF_FUTURE
-                                               : (int)result;
+  return result > ((double)GRPC_MILLIS_INF_FUTURE) - 0.5
+             ? GRPC_MILLIS_INF_FUTURE
+             : (grpc_millis)result;
 }
 
 /* Constructor for call_data. */
