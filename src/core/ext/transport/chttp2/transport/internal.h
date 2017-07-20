@@ -223,6 +223,10 @@ struct grpc_chttp2_transport {
 
   /** write execution state of the transport */
   grpc_chttp2_write_state write_state;
+  /** is this the first write in a series of writes?
+      set when we initiate writing from idle, cleared when we
+      initiate writing from writing+more */
+  bool is_first_write_in_batch;
 
   /** is the transport destroying itself? */
   uint8_t destroying;

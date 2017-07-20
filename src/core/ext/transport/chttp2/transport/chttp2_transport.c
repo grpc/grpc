@@ -844,6 +844,7 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
   switch (t->write_state) {
     case GRPC_CHTTP2_WRITE_STATE_IDLE:
       set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_WRITING, reason);
+      t->is_first_write_in_batch = true;
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
       GRPC_CLOSURE_SCHED(
           exec_ctx,
@@ -876,13 +877,20 @@ void grpc_chttp2_become_writable(grpc_exec_ctx *exec_ctx,
 
 static grpc_closure_scheduler *write_scheduler(grpc_chttp2_transport *t,
                                                bool early_results_scheduled) {
+  /* if it's not the first write in a batch, always offload to the executor:
+     we'll probably end up queuing against the kernel anyway, so we'll likely
+     get better latency overall if we switch writing work elsewhere and continue
+     with application work above */
+  if (!t->is_first_write_in_batch) {
+    return grpc_executor_scheduler(GRPC_EXECUTOR_SHORT);
+  }
   switch (t->opt_target) {
     case GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT:
+      /* executor gives us the largest probability of being able to batch a
+       * write with others on this transport */
       return grpc_executor_scheduler(GRPC_EXECUTOR_SHORT);
     case GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY:
-      return early_results_scheduled
-                 ? grpc_executor_scheduler(GRPC_EXECUTOR_SHORT)
-                 : grpc_schedule_on_exec_ctx;
+      return grpc_schedule_on_exec_ctx;
   }
   GPR_UNREACHABLE_CODE(return NULL);
 }
@@ -970,6 +978,7 @@ static void write_action_end_locked(grpc_exec_ctx *exec_ctx, void *tp,
       GPR_TIMER_MARK("state=writing_stale_no_poller", 0);
       set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_WRITING,
                       "continue writing");
+      t->is_first_write_in_batch = false;
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
       GRPC_CLOSURE_RUN(
           exec_ctx,
