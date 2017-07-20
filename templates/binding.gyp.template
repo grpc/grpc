@@ -176,7 +176,8 @@
                 '${item}',
               % endfor
               '-stdlib=libc++',
-              '-std=c++11'
+              '-std=c++11',
+              '-Wno-error=deprecated-declarations'
             ],
             % endif
           },

@@ -193,7 +193,8 @@
               '-Wno-unused-parameter',
               '-DOSATOMIC_USE_INLINED=1',
             '-stdlib=libc++',
-            '-std=c++11'
+            '-std=c++11',
+            '-Wno-error=deprecated-declarations'
           ],
         },
       }]
