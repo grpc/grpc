@@ -262,7 +262,6 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             .stats = &s->stats.outgoing};
         grpc_chttp2_encode_header(exec_ctx, &t->hpack_compressor, NULL, 0,
                                   s->send_initial_metadata, &hopt, &t->outbuf);
-        now_writing = true;
         t->ping_state.pings_before_data_required =
             t->ping_policy.max_pings_without_data;
         if (!t->is_client) {
@@ -289,6 +288,9 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       s->send_initial_metadata = NULL;
       s->sent_initial_metadata = true;
       sent_initial_metadata = true;
+      grpc_chttp2_complete_closure_step(
+          exec_ctx, t, s, &s->send_initial_metadata_finished, GRPC_ERROR_NONE,
+          "send_initial_metadata_finished");
     }
     /* send any window updates */
     if (s->announce_window > 0) {
@@ -400,6 +402,9 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                               s->id, GRPC_HTTP2_NO_ERROR, &s->stats.outgoing));
         }
         now_writing = true;
+        grpc_chttp2_complete_closure_step(
+            exec_ctx, t, s, &s->send_trailing_metadata_finished,
+            GRPC_ERROR_NONE, "send_trailing_metadata_finished");
       }
     }
 
@@ -458,11 +463,6 @@ void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_chttp2_stream *s;
 
   while (grpc_chttp2_list_pop_writing_stream(t, &s)) {
-    if (s->sent_initial_metadata) {
-      grpc_chttp2_complete_closure_step(
-          exec_ctx, t, s, &s->send_initial_metadata_finished,
-          GRPC_ERROR_REF(error), "send_initial_metadata_finished");
-    }
     if (s->sending_bytes != 0) {
       update_list(exec_ctx, t, s, (int64_t)s->sending_bytes,
                   &s->on_write_finished_cbs, &s->flow_controlled_bytes_written,
@@ -470,9 +470,6 @@ void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       s->sending_bytes = 0;
     }
     if (s->sent_trailing_metadata) {
-      grpc_chttp2_complete_closure_step(
-          exec_ctx, t, s, &s->send_trailing_metadata_finished,
-          GRPC_ERROR_REF(error), "send_trailing_metadata_finished");
       grpc_chttp2_mark_stream_closed(exec_ctx, t, s, !t->is_client, 1,
                                      GRPC_ERROR_REF(error));
     }
