@@ -142,9 +142,12 @@ static void start_max_age_grace_timer_after_goaway_op(grpc_exec_ctx* exec_ctx,
   gpr_mu_lock(&chand->max_age_timer_mu);
   chand->max_age_grace_timer_pending = true;
   GRPC_CHANNEL_STACK_REF(chand->channel_stack, "max_age max_age_grace_timer");
-  grpc_timer_init(exec_ctx, &chand->max_age_grace_timer,
-                  grpc_exec_ctx_now(exec_ctx) + chand->max_connection_age_grace,
-                  &chand->force_close_max_age_channel);
+  grpc_timer_init(
+      exec_ctx, &chand->max_age_grace_timer,
+      chand->max_connection_age_grace == GRPC_MILLIS_INF_FUTURE
+          ? GRPC_MILLIS_INF_FUTURE
+          : grpc_exec_ctx_now(exec_ctx) + chand->max_connection_age_grace,
+      &chand->force_close_max_age_channel);
   gpr_mu_unlock(&chand->max_age_timer_mu);
   GRPC_CHANNEL_STACK_UNREF(exec_ctx, chand->channel_stack,
                            "max_age start_max_age_grace_timer_after_goaway_op");
