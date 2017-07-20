@@ -2254,7 +2254,9 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
   grpc_chttp2_transport *t = tp;
   bool need_bdp_ping = false;
-  gpr_log(GPR_DEBUG, "read_action_locked:%p %s", t, grpc_error_string(error));
+  if (GRPC_TRACER_ON(grpc_http_trace)) {
+    gpr_log(GPR_DEBUG, "read_action_locked:%p %s", t, grpc_error_string(error));
+  }
 
   GRPC_ERROR_REF(error);
 
