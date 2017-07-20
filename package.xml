@@ -791,8 +791,6 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/tasn_typ.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/tasn_utl.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/time_support.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/x_bignum.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/x_long.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/base64/base64.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bio/bio.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bio/bio_mem.c" role="src" />
@@ -914,8 +912,8 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pem/pem_x509.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pem/pem_xaux.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pkcs8/p5_pbev2.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/pkcs8/p8_pkey.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pkcs8/pkcs8.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/pkcs8/pkcs8_x509.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/poly1305/poly1305.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/poly1305/poly1305_arm.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/poly1305/poly1305_vec.c" role="src" />
