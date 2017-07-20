@@ -15,21 +15,70 @@
 # limitations under the License.
 
 import collections
+import ctypes
+import math
 import sys
 import yaml
 
 with open('src/core/lib/debug/stats_data.yaml') as f:
   attrs = yaml.load(f.read())
 
-Counter = collections.namedtuple('Counter', 'name')
+types = (
+  (collections.namedtuple('Counter', 'name'), []),
+  (collections.namedtuple('Histogram', 'name max buckets'), []),
+)
 
-counters = []
+inst_map = dict((t[0].__name__, t[1]) for t in types)
+
+stats = []
 
 for attr in attrs:
-  if 'counter' in attr:
-    counters.append(Counter(name=attr['counter']))
-  else:
-    print 'Error: bad attr %r' % attr
+  found = False
+  for t, lst in types:
+    t_name = t.__name__.lower()
+    if t_name in attr:
+      name = attr[t_name]
+      del attr[t_name]
+      lst.append(t(name=name, **attr))
+      found = True
+      break
+  assert found, "Bad decl: %s" % attr
+
+def dbl2u64(d):
+  return ctypes.c_ulonglong.from_buffer(ctypes.c_double(d)).value
+
+def shift_works(mapped_bounds, shift_bits):
+  for a, b in zip(mapped_bounds, mapped_bounds[1:]):
+    if (a >> shift_bits) == (b >> shift_bits):
+      return False
+  return True
+
+def find_max_shift(mapped_bounds):
+  for shift_bits in reversed(range(0,64)):
+    if shift_works(mapped_bounds, shift_bits):
+      return shift_bits
+  return -1
+
+def gen_bucket_code(histogram):
+  bounds = [0, 1]
+  done_trivial = False
+  done_unmapped = False
+  first_nontrivial = None
+  first_unmapped = None
+  while len(bounds) < histogram.buckets:
+    mul = math.pow(float(histogram.max) / bounds[-1],
+                   1.0 / (histogram.buckets - len(bounds)))
+    nextb = bounds[-1] * mul
+    if nextb < bounds[-1] + 1:
+      nextb = bounds[-1] + 1
+    elif not done_trivial:
+      done_trivial = True
+      first_nontrivial = len(bounds)
+    bounds.append(nextb)
+  if done_trivial:
+    code_bounds = [dbl2u64(x - first_nontrivial) for x in bounds]
+    shift_bits = find_max_shift(code_bounds[first_nontrivial:])
+  print first_nontrivial, shift_bits, bounds, [hex(x >> shift_bits) for x in code_bounds[first_nontrivial:]]
 
 # utility: print a big comment block into a set of files
 def put_banner(files, banner):
@@ -62,14 +111,25 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
   print >>H, "#define GRPC_CORE_LIB_DEBUG_STATS_DATA_H"
   print >>H
 
-  print >>H, "typedef enum {"
-  for ctr in counters:
-    print >>H, "  GRPC_STATS_COUNTER_%s," % ctr.name.upper()
-  print >>H, "  GRPC_STATS_COUNTER_COUNT"
-  print >>H, "} grpc_stats_counters;"
+  for typename, instances in sorted(inst_map.items()):
+    print >>H, "typedef enum {"
+    for inst in instances:
+      print >>H, "  GRPC_STATS_%s_%s," % (typename.upper(), inst.name.upper())
+    print >>H, "  GRPC_STATS_%s_COUNT" % (typename.upper())
+    print >>H, "} grpc_stats_%ss;" % (typename.lower())
 
-  for ctr in counters:
-    print >>H, "#define GRPC_STATS_INC_%s(exec_ctx) GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_%s)" % (ctr.name.upper(), ctr.name.upper())
+  for ctr in inst_map['Counter']:
+    print >>H, ("#define GRPC_STATS_INC_%s(exec_ctx) " +
+                "GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_%s)") % (
+                ctr.name.upper(), ctr.name.upper())
+  for histogram in inst_map['Histogram']:
+    print >>H, ("#define GRPC_STATS_INC_%s(exec_ctx, value) " +
+                "GRPC_STATS_INC_HISTOGRAM((exec_ctx), " +
+                    "GRPC_STATS_HISTOGRAM_%s," +
+                    "%s)") % (
+                histogram.name.upper(),
+                histogram.name.upper(),
+                gen_bucket_code(histogram))
 
   print >>H, "extern const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT];"
 
@@ -97,6 +157,6 @@ with open('src/core/lib/debug/stats_data.c', 'w') as C:
   print >>C, "#include \"src/core/lib/debug/stats_data.h\""
 
   print >>C, "const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {";
-  for ctr in counters:
+  for ctr in inst_map['Counter']:
     print >>C, "  \"%s\"," % ctr.name
   print >>C, "};"

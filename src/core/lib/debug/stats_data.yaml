@@ -7,3 +7,12 @@
 - counter: syscall_read
 - counter: syscall_poll
 - counter: syscall_wait
+- histogram: tcp_write_size
+  max: 16777216 # 16 meg max write tracked
+  buckets: 64
+- histogram: tcp_read_size
+  max: 16777216
+  buckets: 64
+- histogram: client_latency
+  max: 60e9
+  buckets: 128
