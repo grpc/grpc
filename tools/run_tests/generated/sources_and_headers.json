@@ -3961,6 +3961,32 @@
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
+    "headers": [
+      "src/proto/grpc/testing/echo.grpc.pb.h", 
+      "src/proto/grpc/testing/echo.pb.h", 
+      "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_messages.pb.h", 
+      "src/proto/grpc/testing/echo_messages_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "server_request_call_test", 
+    "src": [
+      "test/cpp/server/server_request_call_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -8894,10 +8920,12 @@
   {
     "deps": [
       "gpr", 
+      "grpc_base", 
       "grpc_trace"
     ], 
     "headers": [
       "src/core/tsi/fake_transport_security.h", 
+      "src/core/tsi/gts_transport_security.h", 
       "src/core/tsi/ssl_transport_security.h", 
       "src/core/tsi/ssl_types.h", 
       "src/core/tsi/transport_security.h", 
@@ -8910,6 +8938,8 @@
     "src": [
       "src/core/tsi/fake_transport_security.c", 
       "src/core/tsi/fake_transport_security.h", 
+      "src/core/tsi/gts_transport_security.c", 
+      "src/core/tsi/gts_transport_security.h", 
       "src/core/tsi/ssl_transport_security.c", 
       "src/core/tsi/ssl_transport_security.h", 
       "src/core/tsi/ssl_types.h", 

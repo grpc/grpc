@@ -250,14 +250,6 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       has_sync_methods && num_frequently_polled_cqs > 0;
 
   if (has_sync_methods) {
-    // This is a Sync server
-    gpr_log(GPR_INFO,
-            "Synchronous server. Num CQs: %d, Min pollers: %d, Max Pollers: "
-            "%d, CQ timeout (msec): %d",
-            sync_server_settings_.num_cqs, sync_server_settings_.min_pollers,
-            sync_server_settings_.max_pollers,
-            sync_server_settings_.cq_timeout_msec);
-
     grpc_cq_polling_type polling_type =
         is_hybrid_server ? GRPC_CQ_NON_POLLING : GRPC_CQ_DEFAULT_POLLING;
 
@@ -271,6 +263,16 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       max_receive_message_size_, &args, sync_server_cqs,
       sync_server_settings_.min_pollers, sync_server_settings_.max_pollers,
       sync_server_settings_.cq_timeout_msec));
+
+  if (has_sync_methods) {
+    // This is a Sync server
+    gpr_log(GPR_INFO,
+            "Synchronous server. Num CQs: %d, Min pollers: %d, Max Pollers: "
+            "%d, CQ timeout (msec): %d",
+            sync_server_settings_.num_cqs, sync_server_settings_.min_pollers,
+            sync_server_settings_.max_pollers,
+            sync_server_settings_.cq_timeout_msec);
+  }
 
   ServerInitializer* initializer = server->initializer();
 

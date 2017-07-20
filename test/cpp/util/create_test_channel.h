@@ -45,6 +45,12 @@ std::shared_ptr<Channel> CreateTestChannel(
     const ChannelArguments& args);
 
 std::shared_ptr<Channel> CreateTestChannel(
+    const grpc::string& server, const grpc::string& cred_type,
+    const grpc::string& override_hostname, bool use_prod_roots,
+    const std::shared_ptr<CallCredentials>& creds,
+    const ChannelArguments& args);
+
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& credential_type,
     const std::shared_ptr<CallCredentials>& creds);
 

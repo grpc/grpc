@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016 gRPC authors.
+ * Copyright 2017 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,22 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_COMPILER_PHP_GENERATOR_H
-#define GRPC_INTERNAL_COMPILER_PHP_GENERATOR_H
+#ifndef GRPC_CORE_TSI_GTS_TRANSPORT_SECURITY_H
+#define GRPC_CORE_TSI_GTS_TRANSPORT_SECURITY_H
 
-#include "src/compiler/config.h"
+#include <grpc/grpc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/thd.h>
 
-namespace grpc_php_generator {
+typedef struct gts_shared_resource {
+  gpr_thd_id thread_id;
+  grpc_channel *channel;
+  grpc_completion_queue *cq;
+  gpr_mu mu;
+} gts_shared_resource;
 
-grpc::string GenerateFile(const grpc::protobuf::FileDescriptor *file,
-                          const grpc::protobuf::ServiceDescriptor *service,
-                          const grpc::string &parameter);
+/* This method returns the address of gts_shared_resource object shared by all
+ *    TSI handshakes. */
+gts_shared_resource *gts_get_shared_resource(void);
 
-}  // namespace grpc_php_generator
-
-#endif  // GRPC_INTERNAL_COMPILER_PHP_GENERATOR_H
+#endif /* GRPC_CORE_TSI_GTS_TRANSPORT_SECURITY_H */
