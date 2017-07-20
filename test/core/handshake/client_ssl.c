@@ -166,7 +166,11 @@ static void server_thread(void *arg) {
   }
 
   // Enable automatic DHE and ECDHE selection
-  SSL_CTX_set_ecdh_auto(ctx, 1);
+  if (!SSL_CTX_set_ecdh_auto(ctx, 1)) {
+    ERR_print_errors_fp(stderr);
+    gpr_log(GPR_ERROR, "Couldn't auto configure DHE/ECDHE in context.");
+    abort();
+  }
 
   // Set the cipher list to match the one expressed in
   // src/core/tsi/ssl_transport_security.c.
