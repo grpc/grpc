@@ -877,9 +877,9 @@ void grpc_chttp2_become_writable(grpc_exec_ctx *exec_ctx,
 static grpc_closure_scheduler *write_scheduler(grpc_chttp2_transport *t,
                                                bool early_results_scheduled) {
   switch (t->opt_target) {
-    case GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY:
-      return grpc_executor_scheduler(GRPC_EXECUTOR_SHORT);
     case GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT:
+      return grpc_executor_scheduler(GRPC_EXECUTOR_SHORT);
+    case GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY:
       return early_results_scheduled
                  ? grpc_executor_scheduler(GRPC_EXECUTOR_SHORT)
                  : grpc_schedule_on_exec_ctx;
