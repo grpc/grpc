@@ -184,79 +184,79 @@ static void executor_thread(void *arg) {
 
 static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_error *error, bool is_short) {
-  size_t cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
-  if (cur_thread_count == 0) {
-    if (GRPC_TRACER_ON(executor_trace)) {
+  bool retry_push;
+  do {
+    retry_push = false;
+    size_t cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
+    if (cur_thread_count == 0) {
+      if (GRPC_TRACER_ON(executor_trace)) {
 #ifndef NDEBUG
-      gpr_log(GPR_DEBUG, "EXECUTOR: schedule %p inline", closure);
+        gpr_log(GPR_DEBUG, "EXECUTOR: schedule %p (created %s:%d) inline",
+                closure, closure->file_created, closure->line_created);
 #else
-      gpr_log(GPR_DEBUG, "EXECUTOR: schedule %p (created %s:%d) inline",
-              closure, closure->file_created, closure->line_created);
+        gpr_log(GPR_DEBUG, "EXECUTOR: schedule %p inline", closure);
 #endif
-    }
-    grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
-    return;
-  }
-  thread_state *ts = (thread_state *)gpr_tls_get(&g_this_thread_state);
-  if (ts == NULL) {
-    ts = &g_thread_state[GPR_HASH_POINTER(exec_ctx, cur_thread_count)];
-  }
-  thread_state *orig_ts = ts;
-
-  bool try_new_thread;
-  bool retry_push = false;
-  for (;;) {
-    if (GRPC_TRACER_ON(executor_trace)) {
-#ifndef NDEBUG
-      gpr_log(GPR_DEBUG,
-              "EXECUTOR: try to schedule %p (%s) (created %s:%d) to thread "
-              "%" PRIdPTR,
-              closure, is_short ? "short" : "long", closure->file_created,
-              closure->line_created, ts - g_thread_state);
-#else
-      gpr_log(GPR_DEBUG,
-              "EXECUTOR: try to schedule %p (%s) to thread %" PRIdPTR, closure,
-              is_short ? "short" : "long", ts - g_thread_state);
-#endif
-    }
-    gpr_mu_lock(&ts->mu);
-    if (ts->queued_long_job) {
-      gpr_mu_unlock(&ts->mu);
-      intptr_t idx = ts - g_thread_state;
-      ts = &g_thread_state[(idx + 1) % g_cur_threads];
-      if (ts == orig_ts) {
-        retry_push = true;
-        try_new_thread = true;
-        break;
       }
-      continue;
+      grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
+      return;
     }
-    if (grpc_closure_list_empty(ts->elems)) {
-      gpr_cv_signal(&ts->cv);
+    thread_state *ts = (thread_state *)gpr_tls_get(&g_this_thread_state);
+    if (ts == NULL) {
+      ts = &g_thread_state[GPR_HASH_POINTER(exec_ctx, cur_thread_count)];
     }
-    grpc_closure_list_append(&ts->elems, closure, error);
-    ts->depth++;
-    try_new_thread = ts->depth > MAX_DEPTH &&
-                     cur_thread_count < g_max_threads && !ts->shutdown;
-    if (!is_short) ts->queued_long_job = true;
-    gpr_mu_unlock(&ts->mu);
-    break;
-  }
-  if (try_new_thread && gpr_spinlock_trylock(&g_adding_thread_lock)) {
-    cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
-    if (cur_thread_count < g_max_threads) {
-      gpr_atm_no_barrier_store(&g_cur_threads, cur_thread_count + 1);
+    thread_state *orig_ts = ts;
 
-      gpr_thd_options opt = gpr_thd_options_default();
-      gpr_thd_options_set_joinable(&opt);
-      gpr_thd_new(&g_thread_state[cur_thread_count].id, executor_thread,
-                  &g_thread_state[cur_thread_count], &opt);
+    bool try_new_thread;
+    for (;;) {
+      if (GRPC_TRACER_ON(executor_trace)) {
+#ifndef NDEBUG
+        gpr_log(GPR_DEBUG,
+                "EXECUTOR: try to schedule %p (%s) (created %s:%d) to thread "
+                "%" PRIdPTR,
+                closure, is_short ? "short" : "long", closure->file_created,
+                closure->line_created, ts - g_thread_state);
+#else
+        gpr_log(GPR_DEBUG,
+                "EXECUTOR: try to schedule %p (%s) to thread %" PRIdPTR,
+                closure, is_short ? "short" : "long", ts - g_thread_state);
+#endif
+      }
+      gpr_mu_lock(&ts->mu);
+      if (ts->queued_long_job) {
+        gpr_mu_unlock(&ts->mu);
+        intptr_t idx = ts - g_thread_state;
+        ts = &g_thread_state[(idx + 1) % g_cur_threads];
+        if (ts == orig_ts) {
+          retry_push = true;
+          try_new_thread = true;
+          break;
+        }
+        continue;
+      }
+      if (grpc_closure_list_empty(ts->elems)) {
+        gpr_cv_signal(&ts->cv);
+      }
+      grpc_closure_list_append(&ts->elems, closure, error);
+      ts->depth++;
+      try_new_thread = ts->depth > MAX_DEPTH &&
+                       cur_thread_count < g_max_threads && !ts->shutdown;
+      if (!is_short) ts->queued_long_job = true;
+      gpr_mu_unlock(&ts->mu);
+      break;
     }
-    gpr_spinlock_unlock(&g_adding_thread_lock);
-  }
-  if (retry_push) {
-    executor_push(exec_ctx, closure, error, is_short);
-  }
+    if (try_new_thread && gpr_spinlock_trylock(&g_adding_thread_lock)) {
+      cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
+      if (cur_thread_count < g_max_threads) {
+        gpr_atm_no_barrier_store(&g_cur_threads, cur_thread_count + 1);
+
+        gpr_thd_options opt = gpr_thd_options_default();
+        gpr_thd_options_set_joinable(&opt);
+        gpr_thd_new(&g_thread_state[cur_thread_count].id, executor_thread,
+                    &g_thread_state[cur_thread_count], &opt);
+      }
+      gpr_spinlock_unlock(&g_adding_thread_lock);
+    }
+  } while (retry_push);
 }
 
 static void executor_push_short(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
