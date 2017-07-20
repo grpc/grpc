@@ -36,8 +36,8 @@
 
 /**
  * Parses the 'http_proxy' env var and returns the proxy hostname to resolve or
- * NULL on error. Also sets 'user_cred' if it is not NULL to user credentials
- * if present in the 'http_proxy' env var.
+ * NULL on error. Also sets 'user_cred' to user credentials present in the
+ * 'http_proxy' env var, NULL if not present.
  */
 static char *grpc_get_http_proxy_server(grpc_exec_ctx* exec_ctx,
                                 char **user_cred) {
@@ -61,7 +61,7 @@ static char *grpc_get_http_proxy_server(grpc_exec_ctx* exec_ctx,
   char **authority_strs = NULL;
   size_t authority_nstrs;
   gpr_string_split(uri->authority, "@", &authority_strs, &authority_nstrs);
-  GPR_ASSERT(authority_nstrs != 0); /* should have atleast 1 string */
+  GPR_ASSERT(authority_nstrs != 0); /* should have at least 1 string */
   if(authority_nstrs == 1) {
   /* User cred not present in authority */
     proxy_name = gpr_strdup(authority_strs[0]);
