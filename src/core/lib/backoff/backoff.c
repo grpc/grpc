@@ -20,9 +20,10 @@
 
 #include <grpc/support/useful.h>
 
-void grpc_backoff_init(grpc_backoff *backoff, int64_t initial_connect_timeout,
-                       double multiplier, double jitter,
-                       int64_t min_timeout_millis, int64_t max_timeout_millis) {
+void grpc_backoff_init(grpc_backoff *backoff,
+                       grpc_millis initial_connect_timeout, double multiplier,
+                       double jitter, grpc_millis min_timeout_millis,
+                       grpc_millis max_timeout_millis) {
   backoff->initial_connect_timeout = initial_connect_timeout;
   backoff->multiplier = multiplier;
   backoff->jitter = jitter;

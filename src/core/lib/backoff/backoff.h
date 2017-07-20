@@ -23,15 +23,15 @@
 
 typedef struct {
   /// const:  how long to wait after the first failure before retrying
-  int64_t initial_connect_timeout;
+  grpc_millis initial_connect_timeout;
   /// const: factor with which to multiply backoff after a failed retry
   double multiplier;
   /// const: amount to randomize backoffs
   double jitter;
   /// const: minimum time between retries in milliseconds
-  int64_t min_timeout_millis;
+  grpc_millis min_timeout_millis;
   /// const: maximum time between retries in milliseconds
-  int64_t max_timeout_millis;
+  grpc_millis max_timeout_millis;
 
   /// random number generator
   uint32_t rng_state;
@@ -41,9 +41,10 @@ typedef struct {
 } grpc_backoff;
 
 /// Initialize backoff machinery - does not need to be destroyed
-void grpc_backoff_init(grpc_backoff *backoff, int64_t initial_connect_timeout,
-                       double multiplier, double jitter,
-                       int64_t min_timeout_millis, int64_t max_timeout_millis);
+void grpc_backoff_init(grpc_backoff *backoff,
+                       grpc_millis initial_connect_timeout, double multiplier,
+                       double jitter, grpc_millis min_timeout_millis,
+                       grpc_millis max_timeout_millis);
 
 /// Begin retry loop: returns a timespec for the NEXT retry
 grpc_millis grpc_backoff_begin(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff);
