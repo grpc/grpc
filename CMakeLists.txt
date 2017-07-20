@@ -189,7 +189,7 @@ if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
       set(_gRPC_PROTOBUF_PROTOC_LIBRARIES libprotoc)
     endif()
     if(TARGET protoc)
-      set(_gRPC_PROTOBUF_PROTOC protoc)
+      set(_gRPC_PROTOBUF_PROTOC ${PROTOBUF_ROOT_DIR}/protoc)
     endif()
   else()
       message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
@@ -339,7 +339,7 @@ function(protobuf_generate_grpc_cpp)
              "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h"
              "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc"
              "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h"
-      COMMAND $<TARGET_FILE:${_gRPC_PROTOBUF_PROTOC}>
+      COMMAND ${_gRPC_PROTOBUF_PROTOC}
       ARGS --grpc_out=generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}
            --cpp_out=${_gRPC_PROTO_GENS_DIR}
            --plugin=protoc-gen-grpc=$<TARGET_FILE:grpc_cpp_plugin>
