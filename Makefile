@@ -3165,6 +3165,7 @@ LIBGRPC_SRC = \
     src/core/plugin_registry/grpc_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
+    include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
@@ -3471,6 +3472,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/plugin_registry/grpc_cronet_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
+    include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
@@ -3748,6 +3750,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/filters/http/server/http_server_filter.c \
 
 PUBLIC_HEADERS_C += \
+    include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
@@ -3999,6 +4002,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/filters/http/server/http_server_filter.c \
 
 PUBLIC_HEADERS_C += \
+    include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
@@ -4271,6 +4275,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/plugin_registry/grpc_unsecure_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
+    include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
@@ -4559,6 +4564,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/support/workaround_list.h \
+    include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
@@ -4569,6 +4575,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/status.h \
     include/grpc++/impl/codegen/async_stream.h \
     include/grpc++/impl/codegen/async_unary_call.h \
+    include/grpc++/impl/codegen/byte_buffer.h \
     include/grpc++/impl/codegen/call.h \
     include/grpc++/impl/codegen/call_hook.h \
     include/grpc++/impl/codegen/channel_interface.h \
@@ -5000,6 +5007,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/support/workaround_list.h \
+    include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
@@ -5010,6 +5018,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/status.h \
     include/grpc++/impl/codegen/async_stream.h \
     include/grpc++/impl/codegen/async_unary_call.h \
+    include/grpc++/impl/codegen/byte_buffer.h \
     include/grpc++/impl/codegen/call.h \
     include/grpc++/impl/codegen/call_hook.h \
     include/grpc++/impl/codegen/channel_interface.h \
@@ -5363,6 +5372,7 @@ LIBGRPC++_TEST_UTIL_SRC = \
 PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/async_stream.h \
     include/grpc++/impl/codegen/async_unary_call.h \
+    include/grpc++/impl/codegen/byte_buffer.h \
     include/grpc++/impl/codegen/call.h \
     include/grpc++/impl/codegen/call_hook.h \
     include/grpc++/impl/codegen/channel_interface.h \
@@ -5390,6 +5400,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
@@ -5478,6 +5489,7 @@ LIBGRPC++_TEST_UTIL_UNSECURE_SRC = \
 PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/async_stream.h \
     include/grpc++/impl/codegen/async_unary_call.h \
+    include/grpc++/impl/codegen/byte_buffer.h \
     include/grpc++/impl/codegen/call.h \
     include/grpc++/impl/codegen/call_hook.h \
     include/grpc++/impl/codegen/channel_interface.h \
@@ -5505,6 +5517,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
@@ -5712,6 +5725,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/support/workaround_list.h \
+    include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
@@ -5722,6 +5736,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/status.h \
     include/grpc++/impl/codegen/async_stream.h \
     include/grpc++/impl/codegen/async_unary_call.h \
+    include/grpc++/impl/codegen/byte_buffer.h \
     include/grpc++/impl/codegen/call.h \
     include/grpc++/impl/codegen/call_hook.h \
     include/grpc++/impl/codegen/channel_interface.h \

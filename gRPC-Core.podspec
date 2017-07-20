@@ -141,6 +141,7 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/codegen/sync_generic.h',
                       'include/grpc/impl/codegen/sync_posix.h',
                       'include/grpc/impl/codegen/sync_windows.h',
+                      'include/grpc/impl/codegen/byte_buffer.h',
                       'include/grpc/impl/codegen/byte_buffer_reader.h',
                       'include/grpc/impl/codegen/compression_types.h',
                       'include/grpc/impl/codegen/connectivity_state.h',

@@ -22,16 +22,6 @@
 
 #include "rb_grpc_imports.generated.h"
 
-grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
-grpc_raw_compressed_byte_buffer_create_type grpc_raw_compressed_byte_buffer_create_import;
-grpc_byte_buffer_copy_type grpc_byte_buffer_copy_import;
-grpc_byte_buffer_length_type grpc_byte_buffer_length_import;
-grpc_byte_buffer_destroy_type grpc_byte_buffer_destroy_import;
-grpc_byte_buffer_reader_init_type grpc_byte_buffer_reader_init_import;
-grpc_byte_buffer_reader_destroy_type grpc_byte_buffer_reader_destroy_import;
-grpc_byte_buffer_reader_next_type grpc_byte_buffer_reader_next_import;
-grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_import;
-grpc_raw_byte_buffer_from_reader_type grpc_raw_byte_buffer_from_reader_import;
 census_initialize_type census_initialize_import;
 census_shutdown_type census_shutdown_import;
 census_supported_type census_supported_import;
@@ -167,6 +157,16 @@ grpc_ssl_server_credentials_create_ex_type grpc_ssl_server_credentials_create_ex
 grpc_server_add_secure_http2_port_type grpc_server_add_secure_http2_port_import;
 grpc_call_set_credentials_type grpc_call_set_credentials_import;
 grpc_server_credentials_set_auth_metadata_processor_type grpc_server_credentials_set_auth_metadata_processor_import;
+grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
+grpc_raw_compressed_byte_buffer_create_type grpc_raw_compressed_byte_buffer_create_import;
+grpc_byte_buffer_copy_type grpc_byte_buffer_copy_import;
+grpc_byte_buffer_length_type grpc_byte_buffer_length_import;
+grpc_byte_buffer_destroy_type grpc_byte_buffer_destroy_import;
+grpc_byte_buffer_reader_init_type grpc_byte_buffer_reader_init_import;
+grpc_byte_buffer_reader_destroy_type grpc_byte_buffer_reader_destroy_import;
+grpc_byte_buffer_reader_next_type grpc_byte_buffer_reader_next_import;
+grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_import;
+grpc_raw_byte_buffer_from_reader_type grpc_raw_byte_buffer_from_reader_import;
 grpc_slice_ref_type grpc_slice_ref_import;
 grpc_slice_unref_type grpc_slice_unref_import;
 grpc_slice_copy_type grpc_slice_copy_import;
@@ -329,16 +329,6 @@ gpr_sleep_until_type gpr_sleep_until_import;
 gpr_timespec_to_micros_type gpr_timespec_to_micros_import;
 
 void grpc_rb_load_imports(HMODULE library) {
-  grpc_raw_byte_buffer_create_import = (grpc_raw_byte_buffer_create_type) GetProcAddress(library, "grpc_raw_byte_buffer_create");
-  grpc_raw_compressed_byte_buffer_create_import = (grpc_raw_compressed_byte_buffer_create_type) GetProcAddress(library, "grpc_raw_compressed_byte_buffer_create");
-  grpc_byte_buffer_copy_import = (grpc_byte_buffer_copy_type) GetProcAddress(library, "grpc_byte_buffer_copy");
-  grpc_byte_buffer_length_import = (grpc_byte_buffer_length_type) GetProcAddress(library, "grpc_byte_buffer_length");
-  grpc_byte_buffer_destroy_import = (grpc_byte_buffer_destroy_type) GetProcAddress(library, "grpc_byte_buffer_destroy");
-  grpc_byte_buffer_reader_init_import = (grpc_byte_buffer_reader_init_type) GetProcAddress(library, "grpc_byte_buffer_reader_init");
-  grpc_byte_buffer_reader_destroy_import = (grpc_byte_buffer_reader_destroy_type) GetProcAddress(library, "grpc_byte_buffer_reader_destroy");
-  grpc_byte_buffer_reader_next_import = (grpc_byte_buffer_reader_next_type) GetProcAddress(library, "grpc_byte_buffer_reader_next");
-  grpc_byte_buffer_reader_readall_import = (grpc_byte_buffer_reader_readall_type) GetProcAddress(library, "grpc_byte_buffer_reader_readall");
-  grpc_raw_byte_buffer_from_reader_import = (grpc_raw_byte_buffer_from_reader_type) GetProcAddress(library, "grpc_raw_byte_buffer_from_reader");
   census_initialize_import = (census_initialize_type) GetProcAddress(library, "census_initialize");
   census_shutdown_import = (census_shutdown_type) GetProcAddress(library, "census_shutdown");
   census_supported_import = (census_supported_type) GetProcAddress(library, "census_supported");
@@ -474,6 +464,16 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_server_add_secure_http2_port_import = (grpc_server_add_secure_http2_port_type) GetProcAddress(library, "grpc_server_add_secure_http2_port");
   grpc_call_set_credentials_import = (grpc_call_set_credentials_type) GetProcAddress(library, "grpc_call_set_credentials");
   grpc_server_credentials_set_auth_metadata_processor_import = (grpc_server_credentials_set_auth_metadata_processor_type) GetProcAddress(library, "grpc_server_credentials_set_auth_metadata_processor");
+  grpc_raw_byte_buffer_create_import = (grpc_raw_byte_buffer_create_type) GetProcAddress(library, "grpc_raw_byte_buffer_create");
+  grpc_raw_compressed_byte_buffer_create_import = (grpc_raw_compressed_byte_buffer_create_type) GetProcAddress(library, "grpc_raw_compressed_byte_buffer_create");
+  grpc_byte_buffer_copy_import = (grpc_byte_buffer_copy_type) GetProcAddress(library, "grpc_byte_buffer_copy");
+  grpc_byte_buffer_length_import = (grpc_byte_buffer_length_type) GetProcAddress(library, "grpc_byte_buffer_length");
+  grpc_byte_buffer_destroy_import = (grpc_byte_buffer_destroy_type) GetProcAddress(library, "grpc_byte_buffer_destroy");
+  grpc_byte_buffer_reader_init_import = (grpc_byte_buffer_reader_init_type) GetProcAddress(library, "grpc_byte_buffer_reader_init");
+  grpc_byte_buffer_reader_destroy_import = (grpc_byte_buffer_reader_destroy_type) GetProcAddress(library, "grpc_byte_buffer_reader_destroy");
+  grpc_byte_buffer_reader_next_import = (grpc_byte_buffer_reader_next_type) GetProcAddress(library, "grpc_byte_buffer_reader_next");
+  grpc_byte_buffer_reader_readall_import = (grpc_byte_buffer_reader_readall_type) GetProcAddress(library, "grpc_byte_buffer_reader_readall");
+  grpc_raw_byte_buffer_from_reader_import = (grpc_raw_byte_buffer_from_reader_type) GetProcAddress(library, "grpc_raw_byte_buffer_from_reader");
   grpc_slice_ref_import = (grpc_slice_ref_type) GetProcAddress(library, "grpc_slice_ref");
   grpc_slice_unref_import = (grpc_slice_unref_type) GetProcAddress(library, "grpc_slice_unref");
   grpc_slice_copy_import = (grpc_slice_copy_type) GetProcAddress(library, "grpc_slice_copy");
