@@ -19,7 +19,6 @@
 #include <thread>
 
 #include <grpc++/impl/codegen/config.h>
-#include <gtest/gtest.h>
 
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
@@ -31,6 +30,8 @@
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
+
+#include <gtest/gtest.h>
 
 namespace grpc {
 namespace {
