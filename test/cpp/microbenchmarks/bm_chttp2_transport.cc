@@ -218,17 +218,17 @@ class Stream {
                                NULL, arena_);
   }
 
-  void DestroyThen(grpc_closure *closure) {
+  void DestroyThen(grpc_exec_ctx *exec_ctx, grpc_closure *closure) {
     destroy_closure_ = closure;
 #ifndef NDEBUG
-    grpc_stream_unref(f_->exec_ctx(), &refcount_, "DestroyThen");
+    grpc_stream_unref(exec_ctx, &refcount_, "DestroyThen");
 #else
-    grpc_stream_unref(f_->exec_ctx(), &refcount_);
+    grpc_stream_unref(exec_ctx, &refcount_);
 #endif
   }
 
-  void Op(grpc_transport_stream_op_batch *op) {
-    grpc_transport_perform_stream_op(f_->exec_ctx(), f_->transport(),
+  void Op(grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *op) {
+    grpc_transport_perform_stream_op(exec_ctx, f_->transport(),
                                      static_cast<grpc_stream *>(stream_), op);
   }
 
@@ -273,8 +273,8 @@ static void BM_StreamCreateDestroy(benchmark::State &state) {
       MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
         if (!state.KeepRunning()) return;
         s.Init(state);
-        s.Op(&op);
-        s.DestroyThen(next.get());
+        s.Op(exec_ctx, &op);
+        s.DestroyThen(exec_ctx, next.get());
       });
   GRPC_CLOSURE_RUN(f.exec_ctx(), next.get(), GRPC_ERROR_NONE);
   f.FlushExecCtx();
@@ -337,14 +337,14 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State &state) {
     op.on_complete = done.get();
     op.send_initial_metadata = true;
     op.payload->send_initial_metadata.send_initial_metadata = &b;
-    s.Op(&op);
+    s.Op(exec_ctx, &op);
   });
   done = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
     reset_op();
     op.cancel_stream = true;
     op.payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
-    s.Op(&op);
-    s.DestroyThen(start.get());
+    s.Op(exec_ctx, &op);
+    s.DestroyThen(exec_ctx, start.get());
   });
   GRPC_CLOSURE_SCHED(f.exec_ctx(), start.get(), GRPC_ERROR_NONE);
   f.FlushExecCtx();
@@ -370,20 +370,22 @@ static void BM_TransportEmptyOp(benchmark::State &state) {
         if (!state.KeepRunning()) return;
         reset_op();
         op.on_complete = c.get();
-        s.Op(&op);
+        s.Op(exec_ctx, &op);
       });
   GRPC_CLOSURE_SCHED(f.exec_ctx(), c.get(), GRPC_ERROR_NONE);
   f.FlushExecCtx();
   reset_op();
   op.cancel_stream = true;
   op_payload.cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
-  s.Op(&op);
-  s.DestroyThen(
-      MakeOnceClosure([](grpc_exec_ctx *exec_ctx, grpc_error *error) {}));
+  s.Op(f.exec_ctx(), &op);
+  s.DestroyThen(f.exec_ctx(), MakeOnceClosure([](grpc_exec_ctx *exec_ctx,
+                                                 grpc_error *error) {}));
   f.FlushExecCtx();
   track_counters.Finish(state);
 }
 BENCHMARK(BM_TransportEmptyOp);
+
+std::vector<std::unique_ptr<gpr_event>> done_events;
 
 static void BM_TransportStreamSend(benchmark::State &state) {
   TrackCounters track_counters;
@@ -415,9 +417,15 @@ static void BM_TransportStreamSend(benchmark::State &state) {
         grpc_metadata_batch_add_tail(f.exec_ctx(), &b, &storage[i], elems[i])));
   }
 
+  gpr_event *bm_done = new gpr_event;
+  gpr_event_init(bm_done);
+
   std::unique_ptr<Closure> c =
       MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
-        if (!state.KeepRunning()) return;
+        if (!state.KeepRunning()) {
+          gpr_event_set(bm_done, (void *)1);
+          return;
+        }
         // force outgoing window to be yuge
         s->chttp2_stream()->outgoing_window_delta = 1024 * 1024 * 1024;
         f.chttp2_transport()->outgoing_window = 1024 * 1024 * 1024;
@@ -426,22 +434,25 @@ static void BM_TransportStreamSend(benchmark::State &state) {
         op.on_complete = c.get();
         op.send_message = true;
         op.payload->send_message.send_message = &send_stream.base;
-        s->Op(&op);
+        s->Op(exec_ctx, &op);
       });
 
   reset_op();
   op.send_initial_metadata = true;
   op.payload->send_initial_metadata.send_initial_metadata = &b;
   op.on_complete = c.get();
-  s->Op(&op);
+  s->Op(f.exec_ctx(), &op);
 
   f.FlushExecCtx();
+  gpr_event_wait(bm_done, gpr_inf_future(GPR_CLOCK_REALTIME));
+  done_events.emplace_back(bm_done);
+
   reset_op();
   op.cancel_stream = true;
   op.payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
-  s->Op(&op);
-  s->DestroyThen(
-      MakeOnceClosure([](grpc_exec_ctx *exec_ctx, grpc_error *error) {}));
+  s->Op(f.exec_ctx(), &op);
+  s->DestroyThen(f.exec_ctx(), MakeOnceClosure([](grpc_exec_ctx *exec_ctx,
+                                                  grpc_error *error) {}));
   f.FlushExecCtx();
   s.reset();
   track_counters.Finish(state);
@@ -558,7 +569,7 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
         op.recv_message = true;
         op.payload->recv_message.recv_message = &recv_stream;
         op.payload->recv_message.recv_message_ready = drain_start.get();
-        s.Op(&op);
+        s.Op(exec_ctx, &op);
         f.PushInput(grpc_slice_ref(incoming_data));
       });
 
@@ -601,7 +612,7 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
   op.payload->recv_initial_metadata.recv_initial_metadata_ready =
       do_nothing.get();
   op.on_complete = c.get();
-  s.Op(&op);
+  s.Op(f.exec_ctx(), &op);
   f.PushInput(SLICE_FROM_BUFFER(
       "\x00\x00\x00\x04\x00\x00\x00\x00\x00"
       // Generated using:
@@ -619,9 +630,9 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
   reset_op();
   op.cancel_stream = true;
   op.payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
-  s.Op(&op);
-  s.DestroyThen(
-      MakeOnceClosure([](grpc_exec_ctx *exec_ctx, grpc_error *error) {}));
+  s.Op(f.exec_ctx(), &op);
+  s.DestroyThen(f.exec_ctx(), MakeOnceClosure([](grpc_exec_ctx *exec_ctx,
+                                                 grpc_error *error) {}));
   f.FlushExecCtx();
   track_counters.Finish(state);
   grpc_metadata_batch_destroy(f.exec_ctx(), &b);
