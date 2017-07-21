@@ -90,6 +90,7 @@ CONFIG = [
     ('authorization', ''),
     ('cache-control', ''),
     ('content-disposition', ''),
+    ('content-encoding', 'identity'),
     ('content-encoding', 'gzip'),
     ('content-language', ''),
     ('content-length', ''),

@@ -491,6 +491,10 @@ typedef struct grpc_op {
         uint8_t is_set;
         grpc_compression_level level;
       } maybe_compression_level;
+      struct {
+        uint8_t is_set;
+        grpc_stream_compression_level level;
+      } maybe_stream_compression_level;
     } send_initial_metadata;
     struct {
       struct grpc_byte_buffer *send_message;
