@@ -603,7 +603,7 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
 
   worker_insert(pollset, worker);
   pollset->begin_refs--;
-  if (worker->kick_state == UNKICKED) {
+  if (worker->kick_state == UNKICKED && !pollset->kicked_without_poller) {
     GPR_ASSERT(gpr_atm_no_barrier_load(&g_active_poller) != (gpr_atm)worker);
     worker->initialized_cv = true;
     gpr_cv_init(&worker->cv);
@@ -623,10 +623,13 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
     }
     *now = gpr_now(now->clock_type);
   }
+
   if (GRPC_TRACER_ON(grpc_polling_trace)) {
-    gpr_log(GPR_ERROR, "PS:%p BEGIN_DONE:%p kick_state=%s shutdown=%d", pollset,
-            worker, kick_state_string(worker->kick_state),
-            pollset->shutting_down);
+    gpr_log(GPR_ERROR,
+            "PS:%p BEGIN_DONE:%p kick_state=%s shutdown=%d "
+            "kicked_without_poller: %d",
+            pollset, worker, kick_state_string(worker->kick_state),
+            pollset->shutting_down, pollset->kicked_without_poller);
   }
 
   /* We release pollset lock in this function at a couple of places:
