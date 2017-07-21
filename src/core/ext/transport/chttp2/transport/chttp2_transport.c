@@ -668,8 +668,6 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[1], arena);
   grpc_chttp2_data_parser_init(&s->data_parser);
   grpc_slice_buffer_init(&s->flow_controlled_buffer);
-  grpc_slice_buffer_init(&s->compressed_data_buffer);
-  grpc_slice_buffer_init(&s->decompressed_data_buffer);
   s->deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   GRPC_CLOSURE_INIT(&s->complete_fetch_locked, complete_fetch_locked, s,
                     grpc_schedule_on_exec_ctx);
@@ -708,8 +706,14 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   grpc_slice_buffer_destroy_internal(exec_ctx,
                                      &s->unprocessed_incoming_frames_buffer);
   grpc_slice_buffer_destroy_internal(exec_ctx, &s->frame_storage);
-  grpc_slice_buffer_destroy_internal(exec_ctx, &s->compressed_data_buffer);
-  grpc_slice_buffer_destroy_internal(exec_ctx, &s->decompressed_data_buffer);
+  if (s->compressed_data_buffer) {
+    grpc_slice_buffer_destroy_internal(exec_ctx, s->compressed_data_buffer);
+    gpr_free(s->compressed_data_buffer);
+  }
+  if (s->decompressed_data_buffer) {
+    grpc_slice_buffer_destroy_internal(exec_ctx, s->decompressed_data_buffer);
+    gpr_free(s->decompressed_data_buffer);
+  }
 
   grpc_chttp2_list_remove_stalled_by_transport(t, s);
   grpc_chttp2_list_remove_stalled_by_stream(t, s);
@@ -1671,7 +1675,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
         }
         if (s->stream_compression_recv_enabled &&
             !s->unprocessed_incoming_frames_decompressed) {
-          GPR_ASSERT(s->decompressed_data_buffer.length == 0);
+          GPR_ASSERT(s->decompressed_data_buffer->length == 0);
           bool end_of_context;
           if (!s->stream_decompression_ctx) {
             s->stream_decompression_ctx =
@@ -1680,7 +1684,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
           }
           if (!grpc_stream_decompress(s->stream_decompression_ctx,
                                       &s->unprocessed_incoming_frames_buffer,
-                                      &s->decompressed_data_buffer, NULL,
+                                      s->decompressed_data_buffer, NULL,
                                       GRPC_HEADER_SIZE_IN_BYTES,
                                       &end_of_context)) {
             grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
@@ -1691,8 +1695,8 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
                 "Stream decompression error.");
           } else {
             error = grpc_deframe_unprocessed_incoming_frames(
-                exec_ctx, &s->data_parser, s, &s->decompressed_data_buffer,
-                NULL, s->recv_message);
+                exec_ctx, &s->data_parser, s, s->decompressed_data_buffer, NULL,
+                s->recv_message);
             if (end_of_context) {
               grpc_stream_compression_context_destroy(
                   s->stream_decompression_ctx);
@@ -2713,15 +2717,15 @@ static grpc_error *incoming_byte_stream_pull(grpc_exec_ctx *exec_ctx,
       }
       if (!grpc_stream_decompress(s->stream_decompression_ctx,
                                   &s->unprocessed_incoming_frames_buffer,
-                                  &s->decompressed_data_buffer, NULL,
-                                  MAX_SIZE_T, &end_of_context)) {
+                                  s->decompressed_data_buffer, NULL, MAX_SIZE_T,
+                                  &end_of_context)) {
         error =
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Stream decompression error.");
         return error;
       }
       GPR_ASSERT(s->unprocessed_incoming_frames_buffer.length == 0);
       grpc_slice_buffer_swap(&s->unprocessed_incoming_frames_buffer,
-                             &s->decompressed_data_buffer);
+                             s->decompressed_data_buffer);
       s->unprocessed_incoming_frames_decompressed = true;
       if (end_of_context) {
         grpc_stream_compression_context_destroy(s->stream_decompression_ctx);
