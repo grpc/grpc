@@ -4364,6 +4364,7 @@ add_library(end2end_tests
   test/core/end2end/tests/payload.c
   test/core/end2end/tests/ping.c
   test/core/end2end/tests/ping_pong_streaming.c
+  test/core/end2end/tests/proxy_auth.c
   test/core/end2end/tests/registered_call.c
   test/core/end2end/tests/request_with_flags.c
   test/core/end2end/tests/request_with_payload.c
@@ -4463,6 +4464,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/payload.c
   test/core/end2end/tests/ping.c
   test/core/end2end/tests/ping_pong_streaming.c
+  test/core/end2end/tests/proxy_auth.c
   test/core/end2end/tests/registered_call.c
   test/core/end2end/tests/request_with_flags.c
   test/core/end2end/tests/request_with_payload.c

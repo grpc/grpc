@@ -473,7 +473,7 @@ describe GRPC::ActiveCall do
       server_call.remote_send('server_response')
       expect(client_call.remote_read).to eq('server_response')
       server_call.send_status(OK, 'status code is OK')
-      expect { client_call.finished }.to_not raise_error
+      expect { client_call.receive_and_check_status }.to_not raise_error
     end
 
     it 'finishes ok if the server sends an early status response' do
@@ -490,7 +490,7 @@ describe GRPC::ActiveCall do
       expect do
         call.run_batch(CallOps::SEND_CLOSE_FROM_CLIENT => nil)
       end.to_not raise_error
-      expect { client_call.finished }.to_not raise_error
+      expect { client_call.receive_and_check_status }.to_not raise_error
     end
 
     it 'finishes ok if SEND_CLOSE and RECV_STATUS has been sent' do

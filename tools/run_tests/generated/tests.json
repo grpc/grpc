@@ -1390,7 +1390,9 @@
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
@@ -3991,7 +3993,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "timeout_seconds": 1200
   }, 
   {
     "args": [], 
@@ -16351,6 +16354,30 @@
   }, 
   {
     "args": [
+      "proxy_auth"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_http_proxy_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "registered_call"
     ], 
     "ci_platforms": [
@@ -38848,6 +38875,30 @@
       "posix"
     ], 
     "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_http_proxy_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "proxy_auth"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [
       "uv"
