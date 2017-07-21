@@ -1288,7 +1288,8 @@ static void pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
 }
 
 /* NOTE: This function may modify 'now' */
-static bool acquire_polling_lease(grpc_pollset_worker *worker,
+static bool acquire_polling_lease(grpc_exec_ctx *exec_ctx,
+                                  grpc_pollset_worker *worker,
                                   polling_island *pi, gpr_timespec deadline,
                                   gpr_timespec *now) {
   bool is_lease_acquired = false;
@@ -1381,7 +1382,7 @@ static void pollset_do_epoll_pwait(grpc_exec_ctx *exec_ctx, int epoll_fd,
                                    sigset_t *sig_mask, grpc_error **error) {
   /* Only g_max_pollers_per_pi threads can be doing polling in parallel.
      If we cannot get a lease, we cannot continue to do epoll_pwait() */
-  if (!acquire_polling_lease(worker, pi, deadline, &now)) {
+  if (!acquire_polling_lease(exec_ctx, worker, pi, deadline, &now)) {
     return;
   }
 
