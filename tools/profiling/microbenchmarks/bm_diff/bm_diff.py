@@ -144,7 +144,7 @@ def _read_json(filename, badjson_files, nonexistant_files):
 def fmt_dict(d):
   return ''.join(["    " + k + ": " + str(d[k]) + "\n" for k in d])
 
-def diff(bms, loops, track, old, new, counters):
+def diff(bms, loops, regex, track, old, new, counters):
   benchmarks = collections.defaultdict(Benchmark)
 
   badjson_files = {}
@@ -153,7 +153,8 @@ def diff(bms, loops, track, old, new, counters):
     for loop in range(0, loops):
       for line in subprocess.check_output(
         ['bm_diff_%s/opt/%s' % (old, bm),
-         '--benchmark_list_tests']).splitlines():
+         '--benchmark_list_tests', 
+         '--benchmark_filter=%s' % regex]).splitlines():
         stripped_line = line.strip().replace("/", "_").replace(
           "<", "_").replace(">", "_").replace(", ", "_")
         js_new_opt = _read_json('%s.%s.opt.%s.%d.json' %
