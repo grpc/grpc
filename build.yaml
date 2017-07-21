@@ -4496,6 +4496,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  timeout_seconds: 1200
 - name: writes_per_rpc_test
   gtest: true
   cpu_cost: 0.5
