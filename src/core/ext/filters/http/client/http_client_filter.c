@@ -233,7 +233,7 @@ static void on_send_message_next_done(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 static char *slice_buffer_to_string(grpc_slice_buffer *slice_buffer) {
-  char *payload_bytes = gpr_malloc(slice_buffer->length);
+  char *payload_bytes = gpr_malloc(slice_buffer->length + 1);
   size_t offset = 0;
   for (size_t i = 0; i < slice_buffer->count; ++i) {
     memcpy(payload_bytes + offset,
@@ -241,6 +241,7 @@ static char *slice_buffer_to_string(grpc_slice_buffer *slice_buffer) {
            GRPC_SLICE_LENGTH(slice_buffer->slices[i]));
     offset += GRPC_SLICE_LENGTH(slice_buffer->slices[i]);
   }
+  *(payload_bytes + offset) = '\0';
   return payload_bytes;
 }
 
