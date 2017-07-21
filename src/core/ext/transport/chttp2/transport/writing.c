@@ -391,7 +391,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
           }
           now_writing = true;
           if (s->flow_controlled_buffer.length > 0 ||
-              s->compressed_data_buffer->length > 0) {
+              (s->stream_compression_send_enabled &&
+               s->compressed_data_buffer->length > 0)) {
             GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing:fork");
             grpc_chttp2_list_add_writable_stream(t, s);
           }
@@ -406,7 +407,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       if (s->send_trailing_metadata != NULL &&
           s->fetching_send_message == NULL &&
           s->flow_controlled_buffer.length == 0 &&
-          s->compressed_data_buffer->length == 0) {
+          (!s->stream_compression_send_enabled ||
+           s->compressed_data_buffer->length == 0)) {
         GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "sending trailing_metadata"));
         if (grpc_metadata_batch_is_empty(s->send_trailing_metadata)) {
           grpc_chttp2_encode_data(s->id, &s->flow_controlled_buffer, 0, true,
