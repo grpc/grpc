@@ -56,10 +56,10 @@ def _args():
   )
   argp.add_argument(
     '-r',
-    '--repetitions',
-    type=int,
-    default=1,
-    help='Number of repetitions to pass to the benchmarks')
+    '--regex',
+    type=str,
+    default="",
+    help='Regex to filter benchmarks run')
   argp.add_argument(
     '-l',
     '--loops',
@@ -77,18 +77,17 @@ def _args():
   return args
 
 
-def _collect_bm_data(bm, cfg, name, reps, idx, loops):
+def _collect_bm_data(bm, cfg, name, regex, idx, loops):
   jobs_list = []
   for line in subprocess.check_output(
     ['bm_diff_%s/%s/%s' % (name, cfg, bm),
-     '--benchmark_list_tests']).splitlines():
+     '--benchmark_list_tests', '--benchmark_filter=%s' % regex]).splitlines():
     stripped_line = line.strip().replace("/", "_").replace(
       "<", "_").replace(">", "_").replace(", ", "_")
     cmd = [
       'bm_diff_%s/%s/%s' % (name, cfg, bm), '--benchmark_filter=^%s$' %
       line, '--benchmark_out=%s.%s.%s.%s.%d.json' %
       (bm, stripped_line, cfg, name, idx), '--benchmark_out_format=json',
-      '--benchmark_repetitions=%d' % (reps)
     ]
     jobs_list.append(
       jobset.JobSpec(
@@ -100,13 +99,13 @@ def _collect_bm_data(bm, cfg, name, reps, idx, loops):
   return jobs_list
 
 
-def run(name, benchmarks, jobs, loops, reps, counters):
+def run(name, benchmarks, jobs, loops, regex, counters):
   jobs_list = []
   for loop in range(0, loops):
     for bm in benchmarks:
-      jobs_list += _collect_bm_data(bm, 'opt', name, reps, loop, loops)
+      jobs_list += _collect_bm_data(bm, 'opt', name, regex, loop, loops)
       if counters:
-        jobs_list += _collect_bm_data(bm, 'counters', name, reps, loop,
+        jobs_list += _collect_bm_data(bm, 'counters', name, regex, loop,
                         loops)
   random.shuffle(jobs_list, random.SystemRandom().random)
   jobset.run(jobs_list, maxjobs=jobs)
@@ -114,4 +113,4 @@ def run(name, benchmarks, jobs, loops, reps, counters):
 
 if __name__ == '__main__':
   args = _args()
-  run(args.name, args.benchmarks, args.jobs, args.loops, args.repetitions, args.counters)
+  run(args.name, args.benchmarks, args.jobs, args.loops, args.regex, args.counters)
