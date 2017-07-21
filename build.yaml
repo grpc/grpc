@@ -87,13 +87,12 @@ filegroups:
   - include/grpc/support/tls_pthread.h
   - include/grpc/support/useful.h
   headers:
-  - src/core/lib/backoff/backoff.h
+  - src/core/lib/iomgr/block_annotate.h
   - src/core/lib/profiling/timers.h
   - src/core/lib/support/arena.h
   - src/core/lib/support/atomic.h
   - src/core/lib/support/atomic_with_atm.h
   - src/core/lib/support/atomic_with_std.h
-  - src/core/lib/iomgr/block_annotate.h
   - src/core/lib/support/env.h
   - src/core/lib/support/memory.h
   - src/core/lib/support/mpscq.h
@@ -106,7 +105,6 @@ filegroups:
   - src/core/lib/support/time_precise.h
   - src/core/lib/support/tmpfile.h
   src:
-  - src/core/lib/backoff/backoff.c
   - src/core/lib/profiling/basic_timers.c
   - src/core/lib/profiling/stap_timers.c
   - src/core/lib/support/alloc.c
@@ -181,6 +179,7 @@ filegroups:
   - include/grpc/status.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/lib/backoff/backoff.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
@@ -293,6 +292,7 @@ filegroups:
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
   src:
+  - src/core/lib/backoff/backoff.c
   - src/core/lib/channel/channel_args.c
   - src/core/lib/channel/channel_stack.c
   - src/core/lib/channel/channel_stack_builder.c

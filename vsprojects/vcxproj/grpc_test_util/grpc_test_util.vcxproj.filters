@@ -61,6 +61,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\util\trickle_endpoint.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\backoff\backoff.c">
+      <Filter>src\core\lib\backoff</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
@@ -584,6 +587,9 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\util\trickle_endpoint.h">
       <Filter>test\core\util</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\backoff\backoff.h">
+      <Filter>src\core\lib\backoff</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
@@ -961,6 +967,9 @@
     </Filter>
     <Filter Include="src\core\lib">
       <UniqueIdentifier>{f4e8c61e-1ca6-0fdd-7b5e-b7f9a30c9a21}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\lib\backoff">
+      <UniqueIdentifier>{2fa7432f-c05f-eafe-2284-b8e7a6ac8313}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib\channel">
       <UniqueIdentifier>{1cd1503c-bec0-5ade-c75f-aa25c80975ec}</UniqueIdentifier>

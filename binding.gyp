@@ -579,7 +579,6 @@
       'dependencies': [
       ],
       'sources': [
-        'src/core/lib/backoff/backoff.c',
         'src/core/lib/profiling/basic_timers.c',
         'src/core/lib/profiling/stap_timers.c',
         'src/core/lib/support/alloc.c',
@@ -636,6 +635,7 @@
       ],
       'sources': [
         'src/core/lib/surface/init.c',
+        'src/core/lib/backoff/backoff.c',
         'src/core/lib/channel/channel_args.c',
         'src/core/lib/channel/channel_stack.c',
         'src/core/lib/channel/channel_stack_builder.c',

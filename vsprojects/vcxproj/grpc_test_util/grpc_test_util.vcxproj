@@ -196,6 +196,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\util\port_server_client.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\slice_splitter.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\trickle_endpoint.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\backoff\backoff.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.h" />
@@ -349,6 +350,8 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\util\slice_splitter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\trickle_endpoint.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\backoff\backoff.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
     </ClCompile>

@@ -291,6 +291,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\backoff\backoff.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.h" />
@@ -490,6 +491,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init_unsecure.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\backoff\backoff.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
     </ClCompile>

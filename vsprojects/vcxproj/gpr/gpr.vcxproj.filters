@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\backoff\backoff.c">
-      <Filter>src\core\lib\backoff</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\profiling\basic_timers.c">
       <Filter>src\core\lib\profiling</Filter>
     </ClCompile>
@@ -254,8 +251,8 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\backoff\backoff.h">
-      <Filter>src\core\lib\backoff</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\block_annotate.h">
+      <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\profiling\timers.h">
       <Filter>src\core\lib\profiling</Filter>
@@ -270,9 +267,6 @@
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\atomic_with_std.h">
-      <Filter>src\core\lib\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\block_annotate.h">
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\env.h">
@@ -335,8 +329,8 @@
     <Filter Include="src\core\lib">
       <UniqueIdentifier>{52037bcb-5719-a548-224d-834fbe569045}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\lib\backoff">
-      <UniqueIdentifier>{5a917a34-e4b4-01c0-4565-2be560176bec}</UniqueIdentifier>
+    <Filter Include="src\core\lib\iomgr">
+      <UniqueIdentifier>{05787953-1d14-fd71-51b0-03be31463e6a}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib\profiling">
       <UniqueIdentifier>{ba38d79d-d5de-a89e-9ca2-c5235a03ca7f}</UniqueIdentifier>

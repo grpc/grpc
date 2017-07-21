@@ -15,7 +15,6 @@
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_core_dependencies.py.template`!!!
 
 CORE_SOURCE_FILES = [
-  'src/core/lib/backoff/backoff.c',
   'src/core/lib/profiling/basic_timers.c',
   'src/core/lib/profiling/stap_timers.c',
   'src/core/lib/support/alloc.c',
@@ -62,6 +61,7 @@ CORE_SOURCE_FILES = [
   'src/core/lib/support/tmpfile_windows.c',
   'src/core/lib/support/wrap_memcpy.c',
   'src/core/lib/surface/init.c',
+  'src/core/lib/backoff/backoff.c',
   'src/core/lib/channel/channel_args.c',
   'src/core/lib/channel/channel_stack.c',
   'src/core/lib/channel/channel_stack_builder.c',

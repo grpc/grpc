@@ -7,6 +7,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init_unsecure.c">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\backoff\backoff.c">
+      <Filter>src\core\lib\backoff</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
@@ -767,6 +770,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\backoff\backoff.h">
+      <Filter>src\core\lib\backoff</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
@@ -1486,6 +1492,9 @@
     </Filter>
     <Filter Include="src\core\lib">
       <UniqueIdentifier>{8bd5b461-bff8-6aa8-b5a6-85da2834eb8a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\lib\backoff">
+      <UniqueIdentifier>{f724061f-f10a-014b-33d7-45b931e3a908}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib\channel">
       <UniqueIdentifier>{fb964f3d-a59c-a7ba-fee5-6072dbb94a7b}</UniqueIdentifier>

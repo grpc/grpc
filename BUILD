@@ -465,7 +465,6 @@ grpc_cc_library(
         "src/core/lib/support/arena.c",
         "src/core/lib/support/atm.c",
         "src/core/lib/support/avl.c",
-        "src/core/lib/backoff/backoff.c",
         "src/core/lib/support/cmdline.c",
         "src/core/lib/support/cpu_iphone.c",
         "src/core/lib/support/cpu_linux.c",
@@ -512,7 +511,6 @@ grpc_cc_library(
         "src/core/lib/support/atomic.h",
         "src/core/lib/support/atomic_with_atm.h",
         "src/core/lib/support/atomic_with_std.h",
-        "src/core/lib/backoff/backoff.h",
         "src/core/lib/iomgr/block_annotate.h",
         "src/core/lib/support/env.h",
         "src/core/lib/support/memory.h",
@@ -686,6 +684,7 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.c",
         "src/core/lib/transport/transport.c",
         "src/core/lib/transport/transport_op_string.c",
+        "src/core/lib/backoff/backoff.c",
     ],
     hdrs = [
         "src/core/lib/channel/channel_args.h",
@@ -799,6 +798,7 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
+        "src/core/lib/backoff/backoff.h",
     ],
     external_deps = [
         "zlib",

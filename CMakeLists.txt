@@ -770,7 +770,6 @@ endif (gRPC_BUILD_TESTS)
 
 
 add_library(gpr
-  src/core/lib/backoff/backoff.c
   src/core/lib/profiling/basic_timers.c
   src/core/lib/profiling/stap_timers.c
   src/core/lib/support/alloc.c
@@ -947,6 +946,7 @@ endif (gRPC_BUILD_TESTS)
 
 add_library(grpc
   src/core/lib/surface/init.c
+  src/core/lib/backoff/backoff.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -1290,6 +1290,7 @@ endif()
 
 add_library(grpc_cronet
   src/core/lib/surface/init.c
+  src/core/lib/backoff/backoff.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -1611,6 +1612,7 @@ add_library(grpc_test_util
   test/core/util/port_server_client.c
   test/core/util/slice_splitter.c
   test/core/util/trickle_endpoint.c
+  src/core/lib/backoff/backoff.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -1874,6 +1876,7 @@ endif (gRPC_BUILD_TESTS)
 add_library(grpc_unsecure
   src/core/lib/surface/init.c
   src/core/lib/surface/init_unsecure.c
+  src/core/lib/backoff/backoff.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -2533,6 +2536,7 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/transport/stream_map.c
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
+  src/core/lib/backoff/backoff.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
