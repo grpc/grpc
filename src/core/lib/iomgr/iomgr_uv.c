@@ -21,12 +21,20 @@
 #ifdef GRPC_UV
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/iomgr/iomgr_uv.h"
 #include "src/core/lib/iomgr/pollset_uv.h"
 #include "src/core/lib/iomgr/tcp_uv.h"
 
+gpr_thd_id g_init_thread;
+
 void grpc_iomgr_platform_init(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_pollset_global_init();
   grpc_register_tracer(&grpc_tcp_trace);
+  grpc_executor_set_threading(&exec_ctx, false);
+  g_init_thread = gpr_thd_currentid();
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 void grpc_iomgr_platform_flush(void) {}
 void grpc_iomgr_platform_shutdown(void) { grpc_pollset_global_shutdown(); }

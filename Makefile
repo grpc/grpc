@@ -1075,6 +1075,7 @@ sockaddr_utils_test: $(BINDIR)/$(CONFIG)/sockaddr_utils_test
 socket_utils_test: $(BINDIR)/$(CONFIG)/socket_utils_test
 ssl_server_fuzzer: $(BINDIR)/$(CONFIG)/ssl_server_fuzzer
 status_conversion_test: $(BINDIR)/$(CONFIG)/status_conversion_test
+stream_compression_test: $(BINDIR)/$(CONFIG)/stream_compression_test
 stream_owned_slice_test: $(BINDIR)/$(CONFIG)/stream_owned_slice_test
 tcp_client_posix_test: $(BINDIR)/$(CONFIG)/tcp_client_posix_test
 tcp_client_uv_test: $(BINDIR)/$(CONFIG)/tcp_client_uv_test
@@ -1166,6 +1167,7 @@ server_builder_test: $(BINDIR)/$(CONFIG)/server_builder_test
 server_context_test_spouse_test: $(BINDIR)/$(CONFIG)/server_context_test_spouse_test
 server_crash_test: $(BINDIR)/$(CONFIG)/server_crash_test
 server_crash_test_client: $(BINDIR)/$(CONFIG)/server_crash_test_client
+server_request_call_test: $(BINDIR)/$(CONFIG)/server_request_call_test
 shutdown_test: $(BINDIR)/$(CONFIG)/shutdown_test
 status_test: $(BINDIR)/$(CONFIG)/status_test
 streaming_throughput_test: $(BINDIR)/$(CONFIG)/streaming_throughput_test
@@ -1445,6 +1447,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/sockaddr_utils_test \
   $(BINDIR)/$(CONFIG)/socket_utils_test \
   $(BINDIR)/$(CONFIG)/status_conversion_test \
+  $(BINDIR)/$(CONFIG)/stream_compression_test \
   $(BINDIR)/$(CONFIG)/stream_owned_slice_test \
   $(BINDIR)/$(CONFIG)/tcp_client_posix_test \
   $(BINDIR)/$(CONFIG)/tcp_client_uv_test \
@@ -1593,6 +1596,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_context_test_spouse_test \
   $(BINDIR)/$(CONFIG)/server_crash_test \
   $(BINDIR)/$(CONFIG)/server_crash_test_client \
+  $(BINDIR)/$(CONFIG)/server_request_call_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
   $(BINDIR)/$(CONFIG)/status_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
@@ -1707,6 +1711,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_context_test_spouse_test \
   $(BINDIR)/$(CONFIG)/server_crash_test \
   $(BINDIR)/$(CONFIG)/server_crash_test_client \
+  $(BINDIR)/$(CONFIG)/server_request_call_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
   $(BINDIR)/$(CONFIG)/status_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
@@ -1929,6 +1934,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/socket_utils_test || ( echo test socket_utils_test failed ; exit 1 )
 	$(E) "[RUN]     Testing status_conversion_test"
 	$(Q) $(BINDIR)/$(CONFIG)/status_conversion_test || ( echo test status_conversion_test failed ; exit 1 )
+	$(E) "[RUN]     Testing stream_compression_test"
+	$(Q) $(BINDIR)/$(CONFIG)/stream_compression_test || ( echo test stream_compression_test failed ; exit 1 )
 	$(E) "[RUN]     Testing stream_owned_slice_test"
 	$(Q) $(BINDIR)/$(CONFIG)/stream_owned_slice_test || ( echo test stream_owned_slice_test failed ; exit 1 )
 	$(E) "[RUN]     Testing tcp_client_posix_test"
@@ -2099,6 +2106,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/server_context_test_spouse_test || ( echo test server_context_test_spouse_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_crash_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_crash_test || ( echo test server_crash_test failed ; exit 1 )
+	$(E) "[RUN]     Testing server_request_call_test"
+	$(Q) $(BINDIR)/$(CONFIG)/server_request_call_test || ( echo test server_request_call_test failed ; exit 1 )
 	$(E) "[RUN]     Testing shutdown_test"
 	$(Q) $(BINDIR)/$(CONFIG)/shutdown_test || ( echo test shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing status_test"
@@ -2891,6 +2900,7 @@ LIBGRPC_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
+    src/core/lib/compression/stream_compression.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
@@ -3060,6 +3070,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/util/json_util.c \
     src/core/lib/surface/init_secure.c \
     src/core/tsi/fake_transport_security.c \
+    src/core/tsi/gts_transport_security.c \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
     src/core/tsi/transport_security_adapter.c \
@@ -3231,6 +3242,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
+    src/core/lib/compression/stream_compression.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
@@ -3424,6 +3436,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/security/util/json_util.c \
     src/core/lib/surface/init_secure.c \
     src/core/tsi/fake_transport_security.c \
+    src/core/tsi/gts_transport_security.c \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
     src/core/tsi/transport_security_adapter.c \
@@ -3548,6 +3561,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
+    src/core/lib/compression/stream_compression.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
@@ -3783,6 +3797,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
+    src/core/lib/compression/stream_compression.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
@@ -4426,6 +4441,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
+    src/core/lib/compression/stream_compression.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
@@ -12270,6 +12286,38 @@ endif
 endif
 
 
+STREAM_COMPRESSION_TEST_SRC = \
+    test/core/compression/stream_compression_test.c \
+
+STREAM_COMPRESSION_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(STREAM_COMPRESSION_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/stream_compression_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/stream_compression_test: $(STREAM_COMPRESSION_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(STREAM_COMPRESSION_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/stream_compression_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/compression/stream_compression_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_stream_compression_test: $(STREAM_COMPRESSION_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(STREAM_COMPRESSION_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 STREAM_OWNED_SLICE_TEST_SRC = \
     test/core/transport/stream_owned_slice_test.c \
 
@@ -15974,6 +16022,56 @@ endif
 endif
 
 
+SERVER_REQUEST_CALL_TEST_SRC = \
+    $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc \
+    test/cpp/server/server_request_call_test.cc \
+
+SERVER_REQUEST_CALL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_REQUEST_CALL_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/server_request_call_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/server_request_call_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/server_request_call_test: $(PROTOBUF_DEP) $(SERVER_REQUEST_CALL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(SERVER_REQUEST_CALL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/server_request_call_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/echo_messages.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/echo.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/server/server_request_call_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_server_request_call_test: $(SERVER_REQUEST_CALL_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SERVER_REQUEST_CALL_TEST_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/cpp/server/server_request_call_test.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc
+
+
 SHUTDOWN_TEST_SRC = \
     test/cpp/end2end/shutdown_test.cc \
 
@@ -19138,6 +19236,7 @@ src/core/lib/surface/init_secure.c: $(OPENSSL_DEP)
 src/core/plugin_registry/grpc_cronet_plugin_registry.c: $(OPENSSL_DEP)
 src/core/plugin_registry/grpc_plugin_registry.c: $(OPENSSL_DEP)
 src/core/tsi/fake_transport_security.c: $(OPENSSL_DEP)
+src/core/tsi/gts_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/transport_security_adapter.c: $(OPENSSL_DEP)

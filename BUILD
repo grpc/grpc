@@ -571,6 +571,7 @@ grpc_cc_library(
         "src/core/lib/channel/handshaker_registry.c",
         "src/core/lib/compression/compression.c",
         "src/core/lib/compression/message_compress.c",
+        "src/core/lib/compression/stream_compression.c",
         "src/core/lib/http/format_request.c",
         "src/core/lib/http/httpcli.c",
         "src/core/lib/http/parser.c",
@@ -698,6 +699,7 @@ grpc_cc_library(
         "src/core/lib/channel/handshaker_registry.h",
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/message_compress.h",
+        "src/core/lib/compression/stream_compression.h",
         "src/core/lib/http/format_request.h",
         "src/core/lib/http/httpcli.h",
         "src/core/lib/http/parser.h",
@@ -721,6 +723,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr.h",
         "src/core/lib/iomgr/iomgr_internal.h",
         "src/core/lib/iomgr/iomgr_posix.h",
+        "src/core/lib/iomgr/iomgr_uv.h",
         "src/core/lib/iomgr/is_epollexclusive_available.h",
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
@@ -1404,12 +1407,14 @@ grpc_cc_library(
     name = "tsi",
     srcs = [
         "src/core/tsi/fake_transport_security.c",
+        "src/core/tsi/gts_transport_security.c",
         "src/core/tsi/ssl_transport_security.c",
         "src/core/tsi/transport_security.c",
         "src/core/tsi/transport_security_adapter.c",
     ],
     hdrs = [
         "src/core/tsi/fake_transport_security.h",
+        "src/core/tsi/gts_transport_security.h",
         "src/core/tsi/ssl_transport_security.h",
         "src/core/tsi/ssl_types.h",
         "src/core/tsi/transport_security.h",
@@ -1422,6 +1427,7 @@ grpc_cc_library(
     language = "c",
     deps = [
         "gpr",
+        "grpc_base",
         "grpc_trace",
     ],
 )
@@ -1540,6 +1546,7 @@ grpc_cc_library(
         ":grpc++",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_library(

@@ -33,6 +33,7 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -1172,6 +1173,7 @@ static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
       return;  /* early out */
     }
     if (s->fetched_send_message_length == s->fetching_send_message->length) {
+      grpc_byte_stream_destroy(exec_ctx, s->fetching_send_message);
       int64_t notify_offset = s->next_message_end_offset;
       if (notify_offset <= s->flow_controlled_bytes_written) {
         grpc_chttp2_complete_closure_step(
@@ -1194,9 +1196,14 @@ static void continue_fetching_send_locked(grpc_exec_ctx *exec_ctx,
       return; /* early out */
     } else if (grpc_byte_stream_next(exec_ctx, s->fetching_send_message,
                                      UINT32_MAX, &s->complete_fetch_locked)) {
-      grpc_byte_stream_pull(exec_ctx, s->fetching_send_message,
-                            &s->fetching_slice);
-      add_fetched_slice_locked(exec_ctx, t, s);
+      grpc_error *error = grpc_byte_stream_pull(
+          exec_ctx, s->fetching_send_message, &s->fetching_slice);
+      if (error != GRPC_ERROR_NONE) {
+        grpc_byte_stream_destroy(exec_ctx, s->fetching_send_message);
+        grpc_chttp2_cancel_stream(exec_ctx, t, s, error);
+      } else {
+        add_fetched_slice_locked(exec_ctx, t, s);
+      }
     }
   }
 }
@@ -1213,10 +1220,9 @@ static void complete_fetch_locked(grpc_exec_ctx *exec_ctx, void *gs,
       continue_fetching_send_locked(exec_ctx, t, s);
     }
   }
-
   if (error != GRPC_ERROR_NONE) {
-    /* TODO(ctiller): what to do here */
-    abort();
+    grpc_byte_stream_destroy(exec_ctx, s->fetching_send_message);
+    grpc_chttp2_cancel_stream(exec_ctx, t, s, error);
   }
 }
 
@@ -2689,22 +2695,9 @@ static grpc_error *incoming_byte_stream_pull(grpc_exec_ctx *exec_ctx,
   return GRPC_ERROR_NONE;
 }
 
-static void incoming_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
-                                         grpc_byte_stream *byte_stream);
-
 static void incoming_byte_stream_destroy_locked(grpc_exec_ctx *exec_ctx,
                                                 void *byte_stream,
-                                                grpc_error *error_ignored) {
-  grpc_chttp2_incoming_byte_stream *bs = byte_stream;
-  grpc_chttp2_stream *s = bs->stream;
-  grpc_chttp2_transport *t = s->t;
-
-  GPR_ASSERT(bs->base.destroy == incoming_byte_stream_destroy);
-  incoming_byte_stream_unref(exec_ctx, bs);
-  s->pending_byte_stream = false;
-  grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
-  grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
-}
+                                                grpc_error *error_ignored);
 
 static void incoming_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
                                          grpc_byte_stream *byte_stream) {
@@ -2771,6 +2764,33 @@ grpc_error *grpc_chttp2_incoming_byte_stream_finished(
   return error;
 }
 
+static void incoming_byte_stream_shutdown(grpc_exec_ctx *exec_ctx,
+                                          grpc_byte_stream *byte_stream,
+                                          grpc_error *error) {
+  grpc_chttp2_incoming_byte_stream *bs =
+      (grpc_chttp2_incoming_byte_stream *)byte_stream;
+  GRPC_ERROR_UNREF(grpc_chttp2_incoming_byte_stream_finished(
+      exec_ctx, bs, error, true /* reset_on_error */));
+}
+
+static const grpc_byte_stream_vtable grpc_chttp2_incoming_byte_stream_vtable = {
+    incoming_byte_stream_next, incoming_byte_stream_pull,
+    incoming_byte_stream_shutdown, incoming_byte_stream_destroy};
+
+static void incoming_byte_stream_destroy_locked(grpc_exec_ctx *exec_ctx,
+                                                void *byte_stream,
+                                                grpc_error *error_ignored) {
+  grpc_chttp2_incoming_byte_stream *bs = byte_stream;
+  grpc_chttp2_stream *s = bs->stream;
+  grpc_chttp2_transport *t = s->t;
+
+  GPR_ASSERT(bs->base.vtable == &grpc_chttp2_incoming_byte_stream_vtable);
+  incoming_byte_stream_unref(exec_ctx, bs);
+  s->pending_byte_stream = false;
+  grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
+  grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
+}
+
 grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t, grpc_chttp2_stream *s,
     uint32_t frame_size, uint32_t flags) {
@@ -2779,9 +2799,7 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
   incoming_byte_stream->base.length = frame_size;
   incoming_byte_stream->remaining_bytes = frame_size;
   incoming_byte_stream->base.flags = flags;
-  incoming_byte_stream->base.next = incoming_byte_stream_next;
-  incoming_byte_stream->base.pull = incoming_byte_stream_pull;
-  incoming_byte_stream->base.destroy = incoming_byte_stream_destroy;
+  incoming_byte_stream->base.vtable = &grpc_chttp2_incoming_byte_stream_vtable;
   gpr_ref_init(&incoming_byte_stream->refs, 2);
   incoming_byte_stream->transport = t;
   incoming_byte_stream->stream = s;

@@ -1390,7 +1390,9 @@
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
@@ -2264,6 +2266,28 @@
     "gtest": false, 
     "language": "c", 
     "name": "status_conversion_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "stream_compression_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -3839,6 +3863,28 @@
       "linux", 
       "mac", 
       "posix"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": true, 
+    "language": "c++", 
+    "name": "server_request_call_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
     ]
   }, 
   {

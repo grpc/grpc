@@ -163,6 +163,11 @@ struct grpc_transport_stream_op_batch_payload {
   } send_trailing_metadata;
 
   struct {
+    // The transport (or a filter that decides to return a failure before
+    // the op gets down to the transport) is responsible for calling
+    // grpc_byte_stream_destroy() on this.
+    // The batch's on_complete will not be called until after the byte
+    // stream is destroyed.
     grpc_byte_stream *send_message;
   } send_message;
 
@@ -178,6 +183,10 @@ struct grpc_transport_stream_op_batch_payload {
   } recv_initial_metadata;
 
   struct {
+    // Will be set by the transport to point to the byte stream
+    // containing a received message.
+    // The caller is responsible for calling grpc_byte_stream_destroy()
+    // on this byte stream.
     grpc_byte_stream **recv_message;
     /** Should be enqueued when one message is ready to be processed. */
     grpc_closure *recv_message_ready;

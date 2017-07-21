@@ -44,6 +44,20 @@ class Slice final {
   /// Construct a slice from \a slice, stealing a reference.
   Slice(grpc_slice slice, StealRef);
 
+  /// Allocate a slice of specified size
+  Slice(size_t len);
+
+  /// Construct a slice from a copied buffer
+  Slice(const void* buf, size_t len);
+
+  /// Construct a slice from a copied string
+  Slice(const grpc::string& str);
+
+  enum StaticSlice { STATIC_SLICE };
+
+  /// Construct a slice from a static buffer
+  Slice(const void* buf, size_t len, StaticSlice);
+
   /// Copy constructor, adds a reference.
   Slice(const Slice& other);
 
