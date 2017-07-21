@@ -332,8 +332,15 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     return;
   }
   if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
-    gpr_log(GPR_INFO, "Pick First %p received update with %lu addresses",
+    gpr_log(GPR_INFO, "Pick First %p received update with %lu addresses.",
             (void *)p, (unsigned long)num_addrs);
+    for (size_t i = 0; i < addresses->num_addresses; ++i) {
+      if (addresses->addresses[i].is_balancer) continue;
+      char *address_uri =
+          grpc_sockaddr_to_uri(&addresses->addresses[i].address);
+      gpr_log(GPR_DEBUG, "\t-> Update address: %s", address_uri);
+      gpr_free(address_uri);
+    }
   }
   grpc_subchannel_args *sc_args = gpr_zalloc(sizeof(*sc_args) * num_addrs);
   /* We remove the following keys in order for subchannel keys belonging to
@@ -468,10 +475,11 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_log(
         GPR_DEBUG,
         "Pick First %p connectivity changed. Updating selected: %d; Updating "
-        "subchannels: %d; Checking %lu index (%lu total); State: %d; ",
+        "subchannels: %d; Checking %lu index (%lu total), new state: %s",
         (void *)p, p->updating_selected, p->updating_subchannels,
         (unsigned long)p->checking_subchannel,
-        (unsigned long)p->num_subchannels, p->checking_connectivity);
+        (unsigned long)p->num_subchannels,
+        grpc_connectivity_state_name(p->checking_connectivity));
   }
   bool restart = false;
   if (p->updating_selected && error != GRPC_ERROR_NONE) {
