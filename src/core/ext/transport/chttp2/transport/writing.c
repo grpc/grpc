@@ -159,7 +159,7 @@ uint32_t grpc_chttp2_target_incoming_window(grpc_chttp2_transport *t) {
 
 /* How many bytes would we like to put on the wire during a single syscall */
 static uint32_t target_write_size(grpc_chttp2_transport *t) {
-  return 1024 * 1024;
+  return 1024;
 }
 
 // Returns true if initial_metadata contains only default headers.
