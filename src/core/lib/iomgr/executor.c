@@ -225,7 +225,7 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
       if (ts->queued_long_job) {
         gpr_mu_unlock(&ts->mu);
         intptr_t idx = ts - g_thread_state;
-        ts = &g_thread_state[(idx + 1) % g_cur_threads];
+        ts = &g_thread_state[(idx + 1) % cur_thread_count];
         if (ts == orig_ts) {
           retry_push = true;
           try_new_thread = true;
