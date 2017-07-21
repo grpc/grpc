@@ -190,8 +190,11 @@ typedef struct inproc_stream {
 static bool inproc_slice_byte_stream_next(grpc_exec_ctx *exec_ctx,
                                           grpc_byte_stream *bs, size_t max,
                                           grpc_closure *on_complete) {
-  inproc_slice_byte_stream *stream = (inproc_slice_byte_stream *)bs;
-  return (stream->le->sb.count != 0);
+  // Because inproc transport always provides the entire message atomically,
+  // the byte stream always has data available when this function is called.
+  // Thus, this function always returns true (unlike other transports) and
+  // there is never any need to schedule a closure
+  return true;
 }
 
 static grpc_error *inproc_slice_byte_stream_pull(grpc_exec_ctx *exec_ctx,

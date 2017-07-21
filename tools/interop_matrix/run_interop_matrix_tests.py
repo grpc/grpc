@@ -168,7 +168,7 @@ def run_tests_for_lang(lang, runtime, images):
         _xml_report_tree,
         resultset,
         'grpc_interop_matrix',
-        '%s__%s:%s'%(lang,runtime,release),
+        '%s__%s %s'%(lang,runtime,release),
         str(uuid.uuid4()))
 
 _docker_images_cleanup = []

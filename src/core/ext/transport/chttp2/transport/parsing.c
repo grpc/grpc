@@ -658,6 +658,10 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
           "ignoring grpc_chttp2_stream with non-client generated index %d",
           t->incoming_stream_id));
       return init_skip_frame_parser(exec_ctx, t, 1);
+    } else if (grpc_chttp2_stream_map_size(&t->stream_map) >=
+               t->settings[GRPC_ACKED_SETTINGS]
+                          [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS]) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Max stream count exceeded");
     }
     t->last_new_stream_id = t->incoming_stream_id;
     s = t->incoming_stream =
