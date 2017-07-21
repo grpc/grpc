@@ -68,13 +68,13 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture *f,
   char *proxy_uri;
 
   /* If testing for proxy auth, add credentials to proxy uri */
-  const grpc_arg *proxy_auth =
+  const grpc_arg *proxy_auth_arg =
       grpc_channel_args_find(client_args, GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
-  if (proxy_auth == NULL) {
+  if (proxy_auth_arg == NULL || proxy_auth_arg->type != GRPC_ARG_STRING) {
     gpr_asprintf(&proxy_uri, "http://%s",
                  grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
   } else {
-    gpr_asprintf(&proxy_uri, "http://%s@%s", proxy_auth->value.string,
+    gpr_asprintf(&proxy_uri, "http://%s@%s", proxy_auth_arg->value.string,
                  grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
   }
   gpr_setenv("http_proxy", proxy_uri);

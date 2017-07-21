@@ -67,7 +67,7 @@ static char* get_http_proxy_server(grpc_exec_ctx* exec_ctx, char** user_cred) {
     /* User cred found */
     *user_cred = authority_strs[0];
     proxy_name = authority_strs[1];
-    gpr_log(GPR_INFO, "userinfo found in proxy URI");
+    gpr_log(GPR_DEBUG, "userinfo found in proxy URI");
   } else {
     /* Bad authority */
     for (size_t i = 0; i < authority_nstrs; i++) {

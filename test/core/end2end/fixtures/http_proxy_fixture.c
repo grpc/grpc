@@ -315,7 +315,8 @@ static void on_server_connect_done(grpc_exec_ctx* exec_ctx, void* arg,
 static bool proxy_auth_header_matches(grpc_exec_ctx* exec_ctx,
                                       char* proxy_auth_header_val,
                                       char* expected_cred) {
-  GPR_ASSERT(proxy_auth_header_val != NULL && expected_cred != NULL);
+  GPR_ASSERT(proxy_auth_header_val != NULL);
+  GPR_ASSERT(expected_cred != NULL);
   if (strncmp(proxy_auth_header_val, "Basic ", 6) != 0) {
     return false;
   }
@@ -377,19 +378,19 @@ static void on_read_request_done(grpc_exec_ctx* exec_ctx, void* arg,
     return;
   }
   // If proxy auth is being used, check if the header is present and as expected
-  const grpc_arg* proxy_auth = grpc_channel_args_find(
+  const grpc_arg* proxy_auth_arg = grpc_channel_args_find(
       conn->proxy->channel_args, GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
-  if (proxy_auth != NULL) {
-    bool auth_header_found = false;
+  if (proxy_auth_arg != NULL && proxy_auth_arg->type == GRPC_ARG_STRING) {
+    bool client_authenticated = false;
     for (size_t i = 0; i < conn->http_request.hdr_count; i++) {
       if (strcmp(conn->http_request.hdrs[i].key, "Proxy-Authorization") == 0) {
-        auth_header_found = proxy_auth_header_matches(
+        client_authenticated = proxy_auth_header_matches(
             exec_ctx, conn->http_request.hdrs[i].value,
-            proxy_auth->value.string);
+            proxy_auth_arg->value.string);
         break;
       }
     }
-    if (!auth_header_found) {
+    if (!client_authenticated) {
       const char* msg = "HTTP Connect could not verify authentication";
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(msg);
       proxy_connection_failed(exec_ctx, conn, true /* is_client */,
