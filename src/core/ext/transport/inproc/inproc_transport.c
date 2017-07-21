@@ -972,10 +972,10 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
         GPR_ASSERT(grpc_byte_stream_next(exec_ctx,
                                          op->payload->send_message.send_message,
                                          SIZE_MAX, &unused));
-        grpc_error *error = grpc_byte_stream_pull(
+        error = grpc_byte_stream_pull(
             exec_ctx, op->payload->send_message.send_message, &message_slice);
         if (error != GRPC_ERROR_NONE) {
-          cancel_stream_locked(exec_ctx, t->stream_list, GRPC_ERROR_REF(error));
+          cancel_stream_locked(exec_ctx, s, GRPC_ERROR_REF(error));
           break;
         }
         GPR_ASSERT(error == GRPC_ERROR_NONE);
