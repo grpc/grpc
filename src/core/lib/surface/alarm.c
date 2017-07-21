@@ -52,8 +52,8 @@ grpc_alarm *grpc_alarm_create(grpc_completion_queue *cq, gpr_timespec deadline,
   grpc_cq_begin_op(cq, tag);
   GRPC_CLOSURE_INIT(&alarm->on_alarm, alarm_cb, alarm,
                     grpc_schedule_on_exec_ctx);
-  grpc_timer_init(&exec_ctx, &alarm->alarm, grpc_timespec_to_millis(deadline),
-                  &alarm->on_alarm);
+  grpc_timer_init(&exec_ctx, &alarm->alarm,
+                  grpc_timespec_to_millis_round_up(deadline), &alarm->on_alarm);
   grpc_exec_ctx_finish(&exec_ctx);
   return alarm;
 }

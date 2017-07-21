@@ -815,7 +815,7 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
 
   GRPC_CQ_INTERNAL_REF(cq, "next");
 
-  grpc_millis deadline_millis = grpc_timespec_to_millis(deadline);
+  grpc_millis deadline_millis = grpc_timespec_to_millis_round_up(deadline);
   cq_is_finished_arg is_finished_arg = {
       .last_seen_things_queued_ever =
           gpr_atm_no_barrier_load(&cqd->things_queued_ever),
@@ -1048,7 +1048,7 @@ static grpc_event cq_pluck(grpc_completion_queue *cq, void *tag,
 
   GRPC_CQ_INTERNAL_REF(cq, "pluck");
   gpr_mu_lock(cq->mu);
-  grpc_millis deadline_millis = grpc_timespec_to_millis(deadline);
+  grpc_millis deadline_millis = grpc_timespec_to_millis_round_up(deadline);
   cq_is_finished_arg is_finished_arg = {
       .last_seen_things_queued_ever =
           gpr_atm_no_barrier_load(&cqd->things_queued_ever),

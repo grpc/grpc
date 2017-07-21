@@ -956,7 +956,7 @@ static void apply_service_config_to_call_locked(grpc_exec_ctx *exec_ctx,
       if (chand->deadline_checking_enabled &&
           calld->method_params->timeout != 0) {
         const grpc_millis per_method_deadline =
-            grpc_timespec_to_millis(calld->call_start_time) +
+            grpc_timespec_to_millis_round_up(calld->call_start_time) +
             calld->method_params->timeout;
         if (per_method_deadline < calld->deadline) {
           calld->deadline = per_method_deadline;

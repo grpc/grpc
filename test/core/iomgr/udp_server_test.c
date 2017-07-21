@@ -252,7 +252,8 @@ static void test_receive(int number_of_clients) {
   gpr_mu_lock(g_mu);
 
   for (i = 0; i < number_of_clients; i++) {
-    deadline = grpc_timespec_to_millis(grpc_timeout_seconds_to_deadline(10));
+    deadline =
+        grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
 
     number_of_reads_before = g_number_of_reads;
     /* Create a socket, send a packet to the UDP server. */

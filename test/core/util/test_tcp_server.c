@@ -80,8 +80,8 @@ void test_tcp_server_start(test_tcp_server *server, int port) {
 void test_tcp_server_poll(test_tcp_server *server, int seconds) {
   grpc_pollset_worker *worker = NULL;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_millis deadline =
-      grpc_timespec_to_millis(grpc_timeout_seconds_to_deadline(seconds));
+  grpc_millis deadline = grpc_timespec_to_millis_round_up(
+      grpc_timeout_seconds_to_deadline(seconds));
   gpr_mu_lock(server->mu);
   GRPC_LOG_IF_ERROR(
       "pollset_work",

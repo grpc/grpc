@@ -231,7 +231,7 @@ static void test_no_op_with_port_and_start(void) {
 static grpc_error *tcp_connect(grpc_exec_ctx *exec_ctx, const test_addr *remote,
                                on_connect_result *result) {
   grpc_millis deadline =
-      grpc_timespec_to_millis(grpc_timeout_seconds_to_deadline(10));
+      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
   int clifd;
   int nconnects_before;
   const struct sockaddr *remote_addr =

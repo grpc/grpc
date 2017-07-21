@@ -47,7 +47,7 @@ static int g_connections_complete = 0;
 static grpc_endpoint *g_connecting = NULL;
 
 static grpc_millis test_deadline(void) {
-  return grpc_timespec_to_millis(grpc_timeout_seconds_to_deadline(10));
+  return grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
 }
 
 static void finish_connection() {
@@ -124,9 +124,9 @@ void test_succeeds(void) {
     grpc_pollset_worker *worker = NULL;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
-        grpc_pollset_work(
-            &exec_ctx, g_pollset, &worker,
-            grpc_timespec_to_millis(grpc_timeout_seconds_to_deadline(5)))));
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                          grpc_timespec_to_millis_round_up(
+                              grpc_timeout_seconds_to_deadline(5)))));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_flush(&exec_ctx);
     gpr_mu_lock(g_mu);
