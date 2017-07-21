@@ -876,12 +876,19 @@ void grpc_chttp2_become_writable(grpc_exec_ctx *exec_ctx,
 }
 
 static grpc_closure_scheduler *write_scheduler(grpc_chttp2_transport *t,
-                                               bool early_results_scheduled) {
+                                               bool early_results_scheduled,
+                                               bool partial_write) {
   /* if it's not the first write in a batch, always offload to the executor:
      we'll probably end up queuing against the kernel anyway, so we'll likely
      get better latency overall if we switch writing work elsewhere and continue
      with application work above */
   if (!t->is_first_write_in_batch) {
+    return grpc_executor_scheduler(GRPC_EXECUTOR_SHORT);
+  }
+  /* equivalently, if it's a partial write, we *know* we're going to be taking a
+     thread jump to write it because of the above, may as well do so
+     immediately */
+  if (partial_write) {
     return grpc_executor_scheduler(GRPC_EXECUTOR_SHORT);
   }
   switch (t->opt_target) {
@@ -923,7 +930,7 @@ static void write_action_begin_locked(grpc_exec_ctx *exec_ctx, void *gt,
   }
   if (r.writing) {
     grpc_closure_scheduler *scheduler =
-        write_scheduler(t, r.early_results_scheduled);
+        write_scheduler(t, r.early_results_scheduled, r.partial);
     set_write_state(
         exec_ctx, t, r.partial ? GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE
                                : GRPC_CHTTP2_WRITE_STATE_WRITING,
