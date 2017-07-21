@@ -21,7 +21,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_sh_test", "grpc_cc_binary", "grpc_cc
 def fixture_options(fullstack=True, includes_proxy=False, dns_resolver=True,
                     name_resolution=True, secure=True, tracing=False,
                     platforms=['windows', 'linux', 'mac', 'posix'],
-                    is_inproc=False, is_http2=True):
+                    is_inproc=False, is_http2=True, supports_proxy_auth=False):
   return struct(
     fullstack=fullstack,
     includes_proxy=includes_proxy,
@@ -30,7 +30,8 @@ def fixture_options(fullstack=True, includes_proxy=False, dns_resolver=True,
     secure=secure,
     tracing=tracing,
     is_inproc=is_inproc,
-    is_http2=is_http2
+    is_http2=is_http2,
+    supports_proxy_auth=supports_proxy_auth
     #platforms=platforms
   )
 
@@ -47,7 +48,7 @@ END2END_FIXTURES = {
     'h2_full+pipe': fixture_options(platforms=['linux']),
     'h2_full+trace': fixture_options(tracing=True),
     'h2_full+workarounds': fixture_options(),
-    'h2_http_proxy': fixture_options(),
+    'h2_http_proxy': fixture_options(supports_proxy_auth=True),
     'h2_oauth2': fixture_options(),
     'h2_proxy': fixture_options(includes_proxy=True),
     'h2_sockpair_1byte': fixture_options(fullstack=False, dns_resolver=False),
@@ -67,7 +68,8 @@ END2END_FIXTURES = {
 
 def test_options(needs_fullstack=False, needs_dns=False, needs_names=False,
                  proxyable=True, secure=False, traceable=False,
-                 exclude_inproc=False, needs_http2=False):
+                 exclude_inproc=False, needs_http2=False,
+                 needs_proxy_auth=False):
   return struct(
     needs_fullstack=needs_fullstack,
     needs_dns=needs_dns,
@@ -76,7 +78,8 @@ def test_options(needs_fullstack=False, needs_dns=False, needs_names=False,
     secure=secure,
     traceable=traceable,
     exclude_inproc=exclude_inproc,
-    needs_http2=needs_http2
+    needs_http2=needs_http2,
+    needs_proxy_auth=needs_proxy_auth
   )
 
 
@@ -123,6 +126,7 @@ END2END_TESTS = {
     'load_reporting_hook': test_options(),
     'ping_pong_streaming': test_options(),
     'ping': test_options(needs_fullstack=True, proxyable=False),
+    'proxy_auth': test_options(needs_proxy_auth=True),
     'registered_call': test_options(),
     'request_with_flags': test_options(proxyable=False),
     'request_with_payload': test_options(),
@@ -164,6 +168,9 @@ def compatible(fopt, topt):
       return False
   if topt.needs_http2:
     if not fopt.is_http2:
+      return False
+  if topt.needs_proxy_auth:
+    if not fopt.supports_proxy_auth:
       return False
   return True
 

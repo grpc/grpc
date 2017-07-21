@@ -165,19 +165,22 @@
         }],
         ['OS == "mac"', {
           'xcode_settings': {
-            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+            % if defaults['global'].get('CPPFLAGS', None) is not None:
+            'OTHER_CFLAGS': [
+              % for item in defaults['global'].get('CPPFLAGS').split():
+                '${item}',
+              % endfor
+            ],
+            'OTHER_CPLUSPLUSFLAGS': [
+              % for item in defaults['global'].get('CPPFLAGS').split():
+                '${item}',
+              % endfor
+              '-stdlib=libc++',
+              '-std=c++11',
+              '-Wno-error=deprecated-declarations'
+            ],
+            % endif
           },
-          % if defaults['global'].get('CPPFLAGS', None) is not None:
-          'OTHER_CFLAGS': [
-            % for item in defaults['global'].get('CPPFLAGS').split():
-              '${item}',
-            % endfor
-          ],
-          'OTHER_CPLUSPLUSFLAGS': [
-            '-stdlib=libc++',
-            '-std=c++11'
-          ],
-          % endif
         }]
       ]
     },
@@ -201,6 +204,13 @@
               '${source}',
               % endfor
             ],
+            'conditions': [
+              ['OS == "mac"', {
+                'xcode_settings': {
+                  'MACOSX_DEPLOYMENT_TARGET': '10.9'
+                }
+              }]
+            ]
           },
           % endif
           % endfor
@@ -282,6 +292,13 @@
           '${source}',
           % endfor
         ],
+        'conditions': [
+          ['OS == "mac"', {
+            'xcode_settings': {
+              'MACOSX_DEPLOYMENT_TARGET': '10.9'
+            }
+          }]
+        ]
       },
       % endif
       % endfor
@@ -317,6 +334,11 @@
             'ldflags': [
               '-Wl,-wrap,memcpy'
             ]
+          }],
+          ['OS == "mac"', {
+            'xcode_settings': {
+              'MACOSX_DEPLOYMENT_TARGET': '10.9'
+            }
           }]
         ],
         "target_name": "${module.name}",

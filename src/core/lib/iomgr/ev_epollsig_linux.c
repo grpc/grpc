@@ -934,12 +934,12 @@ static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
 
 static void fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                               grpc_closure *closure) {
-  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure);
+  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure, "read");
 }
 
 static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_closure *closure) {
-  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure);
+  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure, "write");
 }
 
 /*******************************************************************************
@@ -1102,7 +1102,7 @@ static int poll_deadline_to_millis_timeout(grpc_exec_ctx *exec_ctx,
 
 static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_pollset *notifier) {
-  grpc_lfev_set_ready(exec_ctx, &fd->read_closure);
+  grpc_lfev_set_ready(exec_ctx, &fd->read_closure, "read");
 
   /* Note, it is possible that fd_become_readable might be called twice with
      different 'notifier's when an fd becomes readable and it is in two epoll
@@ -1114,7 +1114,7 @@ static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 }
 
 static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
-  grpc_lfev_set_ready(exec_ctx, &fd->write_closure);
+  grpc_lfev_set_ready(exec_ctx, &fd->write_closure, "write");
 }
 
 static void pollset_release_polling_island(grpc_exec_ctx *exec_ctx,
@@ -1718,7 +1718,7 @@ const grpc_event_engine_vtable *grpc_init_epollsig_linux(
   if (!is_grpc_wakeup_signal_initialized) {
     /* TODO(ctiller): when other epoll engines are ready, remove the true || to
      * force this to be explitly chosen if needed */
-    if (true || explicit_request) {
+    if (explicit_request) {
       grpc_use_signal(SIGRTMIN + 6);
     } else {
       return NULL;

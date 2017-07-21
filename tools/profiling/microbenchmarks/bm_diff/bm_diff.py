@@ -67,6 +67,12 @@ def _args():
     default=20,
     help='Number of times to loops the benchmarks. Must match what was passed to bm_run.py'
   )
+  argp.add_argument(
+    '-r',
+    '--regex',
+    type=str,
+    default="",
+    help='Regex to filter benchmarks run')
   argp.add_argument('--counters', dest='counters', action='store_true')
   argp.add_argument('--no-counters', dest='counters', action='store_false')
   argp.set_defaults(counters=True)
@@ -212,6 +218,6 @@ def diff(bms, loops, regex, track, old, new, counters):
 
 if __name__ == '__main__':
   args = _args()
-  diff, note = diff(args.benchmarks, args.loops, args.track, args.old,
+  diff, note = diff(args.benchmarks, args.loops, args.regex, args.track, args.old,
             args.new, args.counters)
   print('%s\n%s' % (note, diff if diff else "No performance differences"))
