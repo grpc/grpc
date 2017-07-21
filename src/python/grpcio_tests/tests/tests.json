@@ -9,6 +9,8 @@
   "protoc_plugin._split_definitions_test.SplitSeparateTest",
   "protoc_plugin.beta_python_plugin_test.PythonPluginTest",
   "reflection._reflection_servicer_test.ReflectionServicerTest",
+  "testing._time_test.StrictFakeTimeTest",
+  "testing._time_test.StrictRealTimeTest",
   "unit._api_test.AllTest",
   "unit._api_test.ChannelConnectivityTest",
   "unit._api_test.ChannelTest",
