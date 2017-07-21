@@ -30,14 +30,10 @@
 extern "C" {
 #endif
 
-/** Parses \a value as a grpc_compression_algorithm instance, updating \a
- * algorithm. Returns 1 upon success, 0 otherwise. */
+/** Parses the first \a name_length bytes of \a name as a
+ * grpc_compression_algorithm instance, updating \a algorithm. Returns 1 upon
+ * success, 0 otherwise. */
 GRPCAPI int grpc_compression_algorithm_parse(
-    grpc_slice value, grpc_compression_algorithm *algorithm);
-
-/** Parses \a value as a grpc_compression_algorithm instance for stream
- * compression, updating \a algorithm. Returns 1 upon success, 0 otherwise. */
-GRPCAPI int grpc_stream_compression_algorithm_parse(
     grpc_slice value, grpc_compression_algorithm *algorithm);
 
 /** Updates \a name with the encoding name corresponding to a valid \a

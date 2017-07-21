@@ -155,9 +155,6 @@ static int compress_inner(grpc_exec_ctx* exec_ctx,
     case GRPC_COMPRESS_GZIP:
       return zlib_compress(exec_ctx, input, output, 1);
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
-      /* Stream compression is taken care of in transport layer */
-      return 0;
-    default:
       break;
   }
   gpr_log(GPR_ERROR, "invalid compression algorithm %d", algorithm);
@@ -185,8 +182,6 @@ int grpc_msg_decompress(grpc_exec_ctx* exec_ctx,
     case GRPC_COMPRESS_GZIP:
       return zlib_decompress(exec_ctx, input, output, 1);
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
-      break;
-    default:
       break;
   }
   gpr_log(GPR_ERROR, "invalid compression algorithm %d", algorithm);

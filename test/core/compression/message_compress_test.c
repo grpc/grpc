@@ -297,9 +297,6 @@ int main(int argc, char **argv) {
   grpc_init();
 
   for (i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
-    if (i != GRPC_COMPRESS_NONE && !GRPC_IS_MESSAGE_COMPRESSION_ALGORITHM(i)) {
-      continue;
-    }
     for (j = 0; j < GPR_ARRAY_SIZE(uncompressed_split_modes); j++) {
       for (k = 0; k < GPR_ARRAY_SIZE(compressed_split_modes); k++) {
         for (m = 0; m < TEST_VALUE_COUNT; m++) {

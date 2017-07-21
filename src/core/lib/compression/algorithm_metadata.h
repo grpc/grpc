@@ -35,9 +35,4 @@ grpc_mdelem grpc_compression_encoding_mdelem(
 grpc_compression_algorithm grpc_compression_algorithm_from_slice(
     grpc_slice str);
 
-/** Find stream compression algorithm based on passed in mdstr - returns
- * GRPC_COMPRESS_ALGORITHM_COUNT on failure */
-grpc_compression_algorithm grpc_stream_compression_algorithm_from_slice(
-    grpc_slice str);
-
 #endif /* GRPC_CORE_LIB_COMPRESSION_ALGORITHM_METADATA_H */
