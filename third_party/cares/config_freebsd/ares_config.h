@@ -19,6 +19,9 @@
 /* Definition to make a library symbol externally visible. */
 #define CARES_SYMBOL_SCOPE_EXTERN __attribute__ ((__visibility__ ("default")))
 
+/* the signed version of size_t */
+#define CARES_TYPEOF_ARES_SSIZE_T ssize_t
+
 /* Use resolver library to configure cares */
 /* #undef CARES_USE_LIBRESOLV */
 
@@ -378,7 +381,7 @@
 #define RANDOM_FILE "/dev/urandom"
 
 /* Define to the type qualifier pointed by arg 5 for recvfrom. */
-#define RECVFROM_QUAL_ARG5 
+#define RECVFROM_QUAL_ARG5
 
 /* Define to the type of arg 1 for recvfrom. */
 #define RECVFROM_TYPE_ARG1 int
