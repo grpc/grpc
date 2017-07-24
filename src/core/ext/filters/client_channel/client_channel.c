@@ -1156,18 +1156,15 @@ static void pick_callback_cancel_locked(grpc_exec_ctx *exec_ctx,
   grpc_call_element *elem = arg;
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
-// FIXME: is this assert right?  what if this callback is scheduled but
-// not yet invoked when the pick finishes?  may need to make this
-// conditional and make the callback hold a ref to the call-stack... but
-// then what if it is never invoked?
-  GPR_ASSERT(calld->lb_policy != NULL);
-  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-    gpr_log(GPR_DEBUG, "chand=%p calld=%p: cancelling pick from LB policy %p",
-            chand, calld, calld->lb_policy);
+  if (calld->lb_policy != NULL) {
+    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      gpr_log(GPR_DEBUG, "chand=%p calld=%p: cancelling pick from LB policy %p",
+              chand, calld, calld->lb_policy);
+    }
+    grpc_lb_policy_cancel_pick_locked(exec_ctx, calld->lb_policy,
+                                      &calld->connected_subchannel,
+                                      GRPC_ERROR_REF(error));
   }
-  grpc_lb_policy_cancel_pick_locked(exec_ctx, calld->lb_policy,
-                                    &calld->connected_subchannel,
-                                    GRPC_ERROR_REF(error));
 }
 
 // Callback invoked by grpc_lb_policy_pick_locked() for async picks.
@@ -1283,18 +1280,17 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
   // If this is a cancellation, cancel the pending pick (if any) and
   // fail any pending batches.
   if (batch->cancel_stream) {
-// FIXME: do we want to reset this, or just stick with the original value?
+    // Stash a copy of cancel_error in our call data, so that we can use
+    // it for subsequent operations.  This ensures that if the call is
+    // cancelled before any batches are passed down (e.g., if the deadline
+    // is in the past when the call starts), we can return the right
+    // error to the caller when the first batch does get passed down.
     if (calld->error != GRPC_ERROR_NONE) GRPC_ERROR_UNREF(calld->error);
     calld->error = GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: recording cancel_error=%s", chand,
               calld, grpc_error_string(calld->error));
     }
-    /* Stash a copy of cancel_error in our call data, so that we can use
-       it for subsequent operations.  This ensures that if the call is
-       cancelled before any batches are passed down (e.g., if the deadline
-       is in the past when the call starts), we can return the right
-       error to the caller when the first batch does get passed down. */
     if (calld->lb_policy != NULL) {
       pick_callback_cancel_locked(exec_ctx, elem, calld->error);
     } else {
@@ -1313,7 +1309,6 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
       // Pick was returned synchronously.
       GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
       if (calld->connected_subchannel == NULL) {
-// FIXME: do we want to reset this, or just stick with the original value?
         if (calld->error != GRPC_ERROR_NONE) GRPC_ERROR_UNREF(calld->error);
         calld->error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Call dropped by load balancing policy");
