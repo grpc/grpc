@@ -159,7 +159,7 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   ///
   /// \param addr The address to try to bind to the server (eg, localhost:1234,
   /// 192.168.1.1:31416, [::1]:27182, etc.).
-  /// \params creds The credentials associated with the server.
+  /// \param creds The credentials associated with the server.
   ///
   /// \return bound port number on success, 0 on failure.
   ///
