@@ -29,7 +29,7 @@ typedef struct {
   // the service_url for a more sophisticated one.
   gpr_mu cache_mu;
   struct {
-    grpc_credentials_md_store *jwt_md;
+    grpc_mdelem jwt_md;
     char *service_url;
     gpr_timespec jwt_expiration;
   } cached;
