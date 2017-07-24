@@ -33,6 +33,8 @@ namespace Grpc.Core.Internal
     internal class GrpcThreadPool
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<GrpcThreadPool>();
+        static readonly WaitCallback RunCompletionQueueEventCallbackSuccess = new WaitCallback((callback) => RunCompletionQueueEventCallback((OpCompletionDelegate) callback, true));
+        static readonly WaitCallback RunCompletionQueueEventCallbackFailure = new WaitCallback((callback) => RunCompletionQueueEventCallback((OpCompletionDelegate) callback, false));
 
         readonly GrpcEnvironment environment;
         readonly object myLock = new object();
@@ -165,11 +167,12 @@ namespace Grpc.Core.Internal
                     try
                     {
                         var callback = cq.CompletionRegistry.Extract(tag);
-                        callback(success);
+                        // Use cached delegates to avoid unnecessary allocations
+                        ThreadPool.QueueUserWorkItem(success ? RunCompletionQueueEventCallbackSuccess : RunCompletionQueueEventCallbackFailure, callback);
                     }
                     catch (Exception e)
                     {
-                        Logger.Error(e, "Exception occured while invoking completion delegate");
+                        Logger.Error(e, "Exception occured while extracting event from completion registry.");
                     }
                 }
             }
@@ -185,6 +188,18 @@ namespace Grpc.Core.Internal
                 list.Add(CompletionQueueSafeHandle.CreateAsync(completionRegistry));
             }
             return list.AsReadOnly();
+        }
+
+        private static void RunCompletionQueueEventCallback(OpCompletionDelegate callback, bool success)
+        {
+            try
+            {
+                callback(success);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Exception occured while invoking completion delegate");
+            }
         }
     }
 }
