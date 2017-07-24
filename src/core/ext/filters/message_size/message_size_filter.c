@@ -68,7 +68,7 @@ static void* message_size_limits_create_from_json(const grpc_json* json) {
 }
 
 typedef struct call_data {
-  grpc_call_combiner *call_combiner;
+  grpc_call_combiner* call_combiner;
   message_size_limits limits;
   // Receive closures are chained: we inject this closure as the
   // recv_message_ready up-call on transport_stream_op, and remember to

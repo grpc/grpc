@@ -605,8 +605,8 @@ static void execute_batch(grpc_exec_ctx *exec_ctx, grpc_call *call,
                           grpc_transport_stream_op_batch *batch,
                           grpc_closure *start_batch_closure) {
   batch->handler_private.extra_arg = call;
-  GRPC_CLOSURE_INIT(start_batch_closure, execute_batch_in_call_combiner,
-                    batch, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(start_batch_closure, execute_batch_in_call_combiner, batch,
+                    grpc_schedule_on_exec_ctx);
   GRPC_CALL_COMBINER_START(exec_ctx, &call->call_combiner, start_batch_closure,
                            GRPC_ERROR_NONE, "executing batch");
 }

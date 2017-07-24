@@ -172,8 +172,8 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
   grpc_slice_buffer_init(&tmp);
   uint32_t send_flags =
       calld->send_message_batch->payload->send_message.send_message->flags;
-  bool did_compress = grpc_msg_compress(
-      exec_ctx, calld->compression_algorithm, &calld->slices, &tmp);
+  bool did_compress = grpc_msg_compress(exec_ctx, calld->compression_algorithm,
+                                        &calld->slices, &tmp);
   if (did_compress) {
     if (GRPC_TRACER_ON(grpc_compression_trace)) {
       char *algo_name;
@@ -312,8 +312,8 @@ static void compress_start_transport_stream_op_batch(
       if (calld->send_initial_metadata_state == INITIAL_METADATA_UNSEEN) {
         GRPC_CALL_COMBINER_START(
             exec_ctx, calld->call_combiner,
-            GRPC_CLOSURE_CREATE(fail_send_message_batch_in_call_combiner,
-                                calld, grpc_schedule_on_exec_ctx),
+            GRPC_CLOSURE_CREATE(fail_send_message_batch_in_call_combiner, calld,
+                                grpc_schedule_on_exec_ctx),
             GRPC_ERROR_REF(calld->cancel_error), "failing send_message op");
       } else {
         grpc_byte_stream_shutdown(
@@ -352,8 +352,8 @@ static void compress_start_transport_stream_op_batch(
     if (calld->send_message_batch != NULL) {
       GRPC_CALL_COMBINER_START(
           exec_ctx, calld->call_combiner,
-          &calld->start_send_message_batch_in_call_combiner,
-          GRPC_ERROR_NONE, "starting send_message after send_initial_metadata");
+          &calld->start_send_message_batch_in_call_combiner, GRPC_ERROR_NONE,
+          "starting send_message after send_initial_metadata");
     }
   }
   // Handle send_message.

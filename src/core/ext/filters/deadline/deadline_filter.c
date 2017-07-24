@@ -46,7 +46,7 @@ static void send_cancel_op_in_call_combiner(grpc_exec_ctx* exec_ctx, void* arg,
                                             grpc_error* error) {
   grpc_call_element* elem = arg;
   grpc_deadline_state* deadline_state = elem->call_data;
-  grpc_transport_stream_op_batch *batch = grpc_make_transport_stream_op(
+  grpc_transport_stream_op_batch* batch = grpc_make_transport_stream_op(
       GRPC_CLOSURE_INIT(&deadline_state->timer_callback, yield_call_combiner,
                         deadline_state, grpc_schedule_on_exec_ctx));
   batch->cancel_stream = true;
@@ -96,14 +96,14 @@ static void start_timer_if_needed(grpc_exec_ctx* exec_ctx,
       // If we've already created and destroyed a timer, we always create a
       // new closure: we have no other guarantee that the inlined closure is
       // not in use (it may hold a pending call to timer_callback)
-      closure = GRPC_CLOSURE_CREATE(timer_callback, elem,
-                                    grpc_schedule_on_exec_ctx);
+      closure =
+          GRPC_CLOSURE_CREATE(timer_callback, elem, grpc_schedule_on_exec_ctx);
       break;
     case GRPC_DEADLINE_STATE_INITIAL:
       deadline_state->timer_state = GRPC_DEADLINE_STATE_PENDING;
-      closure = GRPC_CLOSURE_INIT(&deadline_state->timer_callback,
-                                  timer_callback, elem,
-                                  grpc_schedule_on_exec_ctx);
+      closure =
+          GRPC_CLOSURE_INIT(&deadline_state->timer_callback, timer_callback,
+                            elem, grpc_schedule_on_exec_ctx);
       break;
   }
   GPR_ASSERT(closure != NULL);

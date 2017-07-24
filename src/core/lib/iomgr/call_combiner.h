@@ -53,38 +53,38 @@ void grpc_call_combiner_init(grpc_call_combiner* call_combiner);
 void grpc_call_combiner_destroy(grpc_call_combiner* call_combiner);
 
 #ifndef NDEBUG
-#define GRPC_CALL_COMBINER_START(exec_ctx, call_combiner, closure, error, \
-                                 reason) \
-    grpc_call_combiner_start((exec_ctx), (call_combiner), (closure), (error), \
-                             __FILE__, __LINE__, (reason))
-#define GRPC_CALL_COMBINER_STOP(exec_ctx, call_combiner, reason) \
-    grpc_call_combiner_stop((exec_ctx), (call_combiner), \
-                            __FILE__, __LINE__, (reason))
+#define GRPC_CALL_COMBINER_START(exec_ctx, call_combiner, closure, error,   \
+                                 reason)                                    \
+  grpc_call_combiner_start((exec_ctx), (call_combiner), (closure), (error), \
+                           __FILE__, __LINE__, (reason))
+#define GRPC_CALL_COMBINER_STOP(exec_ctx, call_combiner, reason)           \
+  grpc_call_combiner_stop((exec_ctx), (call_combiner), __FILE__, __LINE__, \
+                          (reason))
 /// Starts processing \a closure on \a call_combiner.
 void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
                               grpc_call_combiner* call_combiner,
                               grpc_closure* closure, grpc_error* error,
-                              const char *file, int line, const char *reason);
+                              const char* file, int line, const char* reason);
 /// Yeilds the call combiner to the next closure in the queue, if any.
 void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
                              grpc_call_combiner* call_combiner,
-                             const char *file, int line, const char *reason);
+                             const char* file, int line, const char* reason);
 #else
-#define GRPC_CALL_COMBINER_START(exec_ctx, call_combiner, closure, error, \
-                                 reason) \
-    grpc_call_combiner_start((exec_ctx), (call_combiner), (closure), (error), \
-                             (reason))
+#define GRPC_CALL_COMBINER_START(exec_ctx, call_combiner, closure, error,   \
+                                 reason)                                    \
+  grpc_call_combiner_start((exec_ctx), (call_combiner), (closure), (error), \
+                           (reason))
 #define GRPC_CALL_COMBINER_STOP(exec_ctx, call_combiner, reason) \
-    grpc_call_combiner_stop((exec_ctx), (call_combiner), (reason))
+  grpc_call_combiner_stop((exec_ctx), (call_combiner), (reason))
 /// Starts processing \a closure on \a call_combiner.
 void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
                               grpc_call_combiner* call_combiner,
                               grpc_closure* closure, grpc_error* error,
-                              const char *reason);
+                              const char* reason);
 /// Yeilds the call combiner to the next closure in the queue, if any.
 void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
                              grpc_call_combiner* call_combiner,
-                             const char *reason);
+                             const char* reason);
 #endif
 
 /// Tells \a call_combiner to invoke \a closure when

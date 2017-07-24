@@ -25,12 +25,12 @@ grpc_tracer_flag grpc_call_combiner_trace =
 
 static grpc_error* decode_cancel_state_error(gpr_atm cancel_state) {
   if (cancel_state & 1) {
-    return (grpc_error *)(cancel_state & ~(gpr_atm)1);
+    return (grpc_error*)(cancel_state & ~(gpr_atm)1);
   }
   return GRPC_ERROR_NONE;
 }
 
-static gpr_atm encode_cancel_state_error(grpc_error *error) {
+static gpr_atm encode_cancel_state_error(grpc_error* error) {
   return (gpr_atm)1 | (gpr_atm)error;
 }
 
@@ -55,12 +55,13 @@ void grpc_call_combiner_destroy(grpc_call_combiner* call_combiner) {
 
 void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
                               grpc_call_combiner* call_combiner,
-                              grpc_closure *closure,
+                              grpc_closure* closure,
                               grpc_error* error DEBUG_ARGS,
-                              const char *reason) {
+                              const char* reason) {
   if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
-    gpr_log(GPR_DEBUG, "==> grpc_call_combiner_start() [%p] closure=%p ["
-                      DEBUG_FMT_STR "%s]",
+    gpr_log(GPR_DEBUG,
+            "==> grpc_call_combiner_start() [%p] closure=%p [" DEBUG_FMT_STR
+            "%s]",
             call_combiner, closure DEBUG_FMT_ARGS, reason);
   }
   size_t prev_size =
@@ -86,7 +87,7 @@ void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
 
 void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
                              grpc_call_combiner* call_combiner DEBUG_ARGS,
-                             const char *reason) {
+                             const char* reason) {
   if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
     gpr_log(GPR_DEBUG,
             "==> grpc_call_combiner_stop() [%p] [" DEBUG_FMT_STR "%s]",

@@ -89,8 +89,7 @@ static void lame_start_transport_stream_op_batch(
                   op->payload->recv_trailing_metadata.recv_trailing_metadata);
   }
   grpc_transport_stream_op_batch_finish_with_failure(
-      exec_ctx, op,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"),
+      exec_ctx, op, GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"),
       calld->call_combiner);
 }
 

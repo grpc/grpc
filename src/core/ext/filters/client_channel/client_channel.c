@@ -864,8 +864,7 @@ static void waiting_for_pick_batches_add(
 }
 
 static void fail_pending_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
-                                                void *arg,
-                                                grpc_error *error) {
+                                                void *arg, grpc_error *error) {
   call_data *calld = arg;
   --calld->waiting_for_pick_batches_count;
   grpc_transport_stream_op_batch_finish_with_failure(
@@ -1010,19 +1009,17 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx,
                                            chand->interested_parties);
   if (calld->connected_subchannel == NULL) {
     // Failed to create subchannel.
-    calld->error =
-        error == GRPC_ERROR_NONE
-            ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "Call dropped by load balancing policy")
-            : GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                  "Failed to create subchannel", &error, 1);
+    calld->error = error == GRPC_ERROR_NONE
+                       ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                             "Call dropped by load balancing policy")
+                       : GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                             "Failed to create subchannel", &error, 1);
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: failed to create subchannel: error=%s", chand,
               calld, grpc_error_string(calld->error));
     }
-    waiting_for_pick_batches_fail(exec_ctx, elem,
-                                  GRPC_ERROR_REF(calld->error));
+    waiting_for_pick_batches_fail(exec_ctx, elem, GRPC_ERROR_REF(calld->error));
   } else if (calld->error != GRPC_ERROR_NONE) {
     /* already cancelled before subchannel became ready */
     grpc_error *child_errors[] = {error, calld->error};
@@ -1147,12 +1144,12 @@ static void pick_after_resolver_result_start_locked(grpc_exec_ctx *exec_ctx,
   grpc_call_combiner_set_notify_on_cancel(
       exec_ctx, calld->call_combiner,
       GRPC_CLOSURE_INIT(&calld->cancel_closure,
-                        pick_after_resolver_result_cancel_locked,
-                        elem, grpc_combiner_scheduler(chand->combiner)));
+                        pick_after_resolver_result_cancel_locked, elem,
+                        grpc_combiner_scheduler(chand->combiner)));
 }
 
-static void pick_callback_cancel_locked(grpc_exec_ctx *exec_ctx,
-                                        void *arg, grpc_error *error) {
+static void pick_callback_cancel_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                        grpc_error *error) {
   grpc_call_element *elem = arg;
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
@@ -1178,8 +1175,7 @@ static void pick_callback_done_locked(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: pick completed asynchronously",
             chand, calld);
   }
-  grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner,
-                                          NULL);
+  grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner, NULL);
   GPR_ASSERT(calld->lb_policy != NULL);
   GRPC_LB_POLICY_UNREF(exec_ctx, calld->lb_policy, "pick_subchannel");
   calld->lb_policy = NULL;
@@ -1296,8 +1292,7 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
     } else {
       pick_after_resolver_result_cancel_locked(exec_ctx, elem, calld->error);
     }
-    waiting_for_pick_batches_fail(exec_ctx, elem,
-                                  GRPC_ERROR_REF(calld->error));
+    waiting_for_pick_batches_fail(exec_ctx, elem, GRPC_ERROR_REF(calld->error));
   } else if (batch->send_initial_metadata) {
     // For send_initial_metadata, try to pick a subchannel.
     GPR_ASSERT(calld->connected_subchannel == NULL);
@@ -1415,8 +1410,8 @@ static void cc_start_transport_stream_op_batch(
     // For all other batches, release the call combiner.
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG,
-              "chand=%p calld=%p: saved batch, yeilding call combiner",
-              chand, calld);
+              "chand=%p calld=%p: saved batch, yeilding call combiner", chand,
+              calld);
     }
     GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
                             "batch does not include send_initial_metadata");

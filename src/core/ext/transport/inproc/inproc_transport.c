@@ -1256,11 +1256,10 @@ static grpc_endpoint *get_endpoint(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
 }
 
 static const grpc_transport_vtable inproc_vtable = {
-    sizeof(inproc_stream), "inproc",
-    init_stream,           set_pollset,
-    set_pollset_set,       perform_stream_op,
-    perform_transport_op,  destroy_stream,
-    destroy_transport,     get_endpoint};
+    sizeof(inproc_stream), "inproc",        init_stream,
+    set_pollset,           set_pollset_set, perform_stream_op,
+    perform_transport_op,  destroy_stream,  destroy_transport,
+    get_endpoint};
 
 /*******************************************************************************
  * GLOBAL INIT AND DESTROY

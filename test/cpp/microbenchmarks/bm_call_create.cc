@@ -630,9 +630,7 @@ BENCHMARK_TEMPLATE(BM_IsolatedFilter, LoadReportingFilter, SendEmptyMetadata);
 
 namespace isolated_call_filter {
 
-typedef struct {
-  grpc_call_combiner *call_combiner;
-} call_data;
+typedef struct { grpc_call_combiner *call_combiner; } call_data;
 
 static void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem,

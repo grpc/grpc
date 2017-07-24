@@ -27,9 +27,9 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 typedef enum {
-    STATE_INIT = 0,
-    STATE_DONE,
-    STATE_CANCELLED,
+  STATE_INIT = 0,
+  STATE_DONE,
+  STATE_CANCELLED,
 } async_state;
 
 typedef struct call_data {
@@ -88,11 +88,13 @@ static grpc_filtered_mdelem remove_consumed_md(grpc_exec_ctx *exec_ctx,
   return GRPC_FILTERED_MDELEM(md);
 }
 
-static void on_md_processing_done_inner(
-    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-    const grpc_metadata *consumed_md, size_t num_consumed_md,
-    const grpc_metadata *response_md, size_t num_response_md,
-    grpc_error *error) {
+static void on_md_processing_done_inner(grpc_exec_ctx *exec_ctx,
+                                        grpc_call_element *elem,
+                                        const grpc_metadata *consumed_md,
+                                        size_t num_consumed_md,
+                                        const grpc_metadata *response_md,
+                                        size_t num_response_md,
+                                        grpc_error *error) {
   call_data *calld = elem->call_data;
   grpc_transport_stream_op_batch *batch = calld->recv_initial_metadata_batch;
   grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner, NULL);
