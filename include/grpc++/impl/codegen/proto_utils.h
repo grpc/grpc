@@ -247,8 +247,8 @@ class SerializationTraits<
     T, typename std::enable_if<
            internal::proto_util::QuacksLikeAProto<T>::value>::type> {
  public:
-  static Status Serialize(const T& msg,
-                          grpc_byte_buffer** bp, bool* own_buffer) {
+  static Status Serialize(const T& msg, grpc_byte_buffer** bp,
+                          bool* own_buffer) {
     *own_buffer = true;
     int byte_size = msg.ByteSize();
     if (byte_size <= internal::kGrpcBufferWriterMaxBufferLength) {
@@ -268,8 +268,7 @@ class SerializationTraits<
     }
   }
 
-  static Status Deserialize(grpc_byte_buffer* buffer,
-                            T* msg) {
+  static Status Deserialize(grpc_byte_buffer* buffer, T* msg) {
     if (buffer == nullptr) {
       return Status(StatusCode::INTERNAL, "No payload");
     }
