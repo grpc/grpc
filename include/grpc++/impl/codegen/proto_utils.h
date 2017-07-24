@@ -169,65 +169,83 @@ class GrpcBufferReader final
 };
 
 namespace proto_util {
-  template <class T, class Y = void> class HasByteSize {
-  public:
+template <class T, class Y = void>
+class HasByteSize {
+ public:
   static constexpr bool value = false;
-  };
+};
 template <class T>
-  class HasByteSize<T, typename std::enable_if<std::is_same<int, decltype(static_cast<T*>(nullptr)->ByteSize())>::value>::type> {
-  public:
+class HasByteSize<
+    T, typename std::enable_if<std::is_same<
+           int, decltype(static_cast<T*>(nullptr)->ByteSize())>::value>::type> {
+ public:
   static constexpr bool value = true;
- };
+};
 
-  template <class T, class Y = void> class HasSerializeWithCached {
-  public:
-  static constexpr bool value = false;
-  };
-
- template <class T>
-   class HasSerializeWithCached<T, typename std::enable_if<std::is_same<::grpc::protobuf::uint8*, decltype(static_cast<T*>(nullptr)->SerializeWithCachedSizesToArray(static_cast<::grpc::protobuf::uint8*>(nullptr)))>::value>::type>  {
-  public:
-  static constexpr bool value = true;
- };
-
-   template <class T, class Y = void> class HasSerializeToZero {
-  public:
-  static constexpr bool value = false;
-   };
-
-template <class T>
- class HasSerializeToZero<T, typename std::enable_if<std::is_same<bool, decltype(static_cast<T*>(nullptr)->SerializeToZeroCopyStream(static_cast<internal::GrpcBufferWriter*>(nullptr)))>::value>::type>  {
-  public:
-  static constexpr bool value = true;
- };
-
-template <class T, class Y = void> class HasParseFromCoded {
-  public:
+template <class T, class Y = void>
+class HasSerializeWithCached {
+ public:
   static constexpr bool value = false;
 };
 
- template <class T>
-  class HasParseFromCoded<T, typename std::enable_if<std::is_same<bool, decltype(static_cast<T*>(nullptr)->ParseFromCodedStream(static_cast<::grpc::protobuf::io::CodedInputStream*>(nullptr)))>::value>::type>  {
-  public:
-  static constexpr bool value = true;
- };
-
- template <class T>
-   class QuacksLikeAProto {
+template <class T>
+class HasSerializeWithCached<
+    T,
+    typename std::enable_if<std::is_same<
+        ::grpc::protobuf::uint8*,
+        decltype(static_cast<T*>(nullptr)->SerializeWithCachedSizesToArray(
+            static_cast<::grpc::protobuf::uint8*>(nullptr)))>::value>::type> {
  public:
-   static constexpr bool value =
-     HasByteSize<T>::value &&
-     HasSerializeWithCached<T>::value &&
-     HasSerializeToZero<T>::value &&
-     HasParseFromCoded<T>::value &&
-     true;
- };
+  static constexpr bool value = true;
+};
+
+template <class T, class Y = void>
+class HasSerializeToZero {
+ public:
+  static constexpr bool value = false;
+};
+
+template <class T>
+class HasSerializeToZero<
+    T, typename std::enable_if<std::is_same<
+           bool, decltype(static_cast<T*>(nullptr)->SerializeToZeroCopyStream(
+                     static_cast<internal::GrpcBufferWriter*>(
+                         nullptr)))>::value>::type> {
+ public:
+  static constexpr bool value = true;
+};
+
+template <class T, class Y = void>
+class HasParseFromCoded {
+ public:
+  static constexpr bool value = false;
+};
+
+template <class T>
+class HasParseFromCoded<
+    T, typename std::enable_if<std::is_same<
+           bool, decltype(static_cast<T*>(nullptr)->ParseFromCodedStream(
+                     static_cast<::grpc::protobuf::io::CodedInputStream*>(
+                         nullptr)))>::value>::type> {
+ public:
+  static constexpr bool value = true;
+};
+
+template <class T>
+class QuacksLikeAProto {
+ public:
+  static constexpr bool value =
+      HasByteSize<T>::value && HasSerializeWithCached<T>::value &&
+      HasSerializeToZero<T>::value && HasParseFromCoded<T>::value && true;
+};
 }  // namespace proto_util
- 
+
 }  // namespace internal
 
 template <class T>
-  class SerializationTraits<T, typename std::enable_if<internal::proto_util::QuacksLikeAProto<T>::value>::type> {
+class SerializationTraits<
+    T, typename std::enable_if<
+           internal::proto_util::QuacksLikeAProto<T>::value>::type> {
  public:
   static Status Serialize(const grpc::protobuf::Message& msg,
                           grpc_byte_buffer** bp, bool* own_buffer) {
