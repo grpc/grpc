@@ -70,10 +70,7 @@ grpc_error *grpc_byte_stream_pull(grpc_exec_ctx *exec_ctx,
 // If there is a pending call to on_complete from grpc_byte_stream_next(),
 // it will be invoked with the error passed to grpc_byte_stream_shutdown().
 //
-// Any subsequent call to grpc_byte_stream_next() will return true (in
-// which case the caller is expected to call grpc_byte_stream_pull()).
-//
-// Any subsequent call to grpc_byte_stream_pull() will return the error
+// The next call to grpc_byte_stream_pull() (if any) will return the error
 // passed to grpc_byte_stream_shutdown().
 void grpc_byte_stream_shutdown(grpc_exec_ctx *exec_ctx,
                                grpc_byte_stream *byte_stream,
