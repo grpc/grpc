@@ -125,7 +125,6 @@ static bool caching_byte_stream_next(grpc_exec_ctx *exec_ctx,
   grpc_caching_byte_stream *stream = (grpc_caching_byte_stream *)byte_stream;
   if (stream->shutdown_error != GRPC_ERROR_NONE) return true;
   if (stream->cursor < stream->cache->cache_buffer.count) return true;
-  stream->cursor = SIZE_MAX;
   return grpc_byte_stream_next(exec_ctx, stream->cache->underlying_stream,
                                max_size_hint, on_complete);
 }
@@ -146,6 +145,7 @@ static grpc_error *caching_byte_stream_pull(grpc_exec_ctx *exec_ctx,
   grpc_error *error =
       grpc_byte_stream_pull(exec_ctx, stream->cache->underlying_stream, slice);
   if (error == GRPC_ERROR_NONE) {
+    ++stream->cursor;
     grpc_slice_buffer_add(&stream->cache->cache_buffer,
                           grpc_slice_ref_internal(*slice));
   }

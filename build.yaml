@@ -1704,6 +1704,16 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+- name: byte_stream_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/byte_stream_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: census_context_test
   build: test
   language: c
