@@ -137,7 +137,8 @@ static void cleanup_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds,
      * grpc_wakeup_fd and we would like to destroy it ourselves (by calling
      * grpc_wakeup_fd_destroy). To prevent grpc_fd from calling close() on the
      * underlying fd, call it with a non-NULL 'release_fd' parameter */
-    grpc_fd_orphan(exec_ctx, tfds[i].fd, NULL, &release_fd, "test_fd_cleanup");
+    grpc_fd_orphan(exec_ctx, tfds[i].fd, NULL, &release_fd,
+                   false /* already_closed */, "test_fd_cleanup");
     grpc_exec_ctx_flush(exec_ctx);
 
     grpc_wakeup_fd_destroy(&tfds[i].wakeup_fd);

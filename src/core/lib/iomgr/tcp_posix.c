@@ -156,7 +156,7 @@ static void tcp_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
 static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   grpc_fd_orphan(exec_ctx, tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
-                 "tcp_unref_orphan");
+                 false /* already_closed */, "tcp_unref_orphan");
   grpc_slice_buffer_destroy_internal(exec_ctx, &tcp->last_read_buffer);
   grpc_resource_user_unref(exec_ctx, tcp->resource_user);
   gpr_free(tcp->peer_string);
