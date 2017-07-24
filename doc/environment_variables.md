@@ -40,6 +40,7 @@ some configuration as environment variables that can be set.
   gRPC C core is processing requests via debug logs. Available tracers include:
   - api - traces api calls to the C core
   - bdp_estimator - traces behavior of bdp estimation logic
+  - call_combiner - traces call combiner state
   - call_error - traces the possible errors contributing to final call status
   - channel - traces operations on the C core channel stack
   - client_channel - traces client channel activity, including resolver
