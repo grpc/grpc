@@ -47,11 +47,13 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
     grpc_channel_args *client_args, grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
   memset(&f, 0, sizeof(f));
-
   fullstack_fixture_data *ffd = gpr_malloc(sizeof(fullstack_fixture_data));
   const int server_port = grpc_pick_unused_port_or_die();
   gpr_join_host_port(&ffd->server_addr, "localhost", server_port);
-  ffd->proxy = grpc_end2end_http_proxy_create();
+
+  /* Passing client_args to proxy_create for the case of checking for proxy auth
+   */
+  ffd->proxy = grpc_end2end_http_proxy_create(client_args);
 
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(NULL);
@@ -64,8 +66,17 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture *f,
                                   grpc_channel_args *client_args) {
   fullstack_fixture_data *ffd = f->fixture_data;
   char *proxy_uri;
-  gpr_asprintf(&proxy_uri, "http://%s",
-               grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
+
+  /* If testing for proxy auth, add credentials to proxy uri */
+  const grpc_arg *proxy_auth_arg =
+      grpc_channel_args_find(client_args, GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
+  if (proxy_auth_arg == NULL || proxy_auth_arg->type != GRPC_ARG_STRING) {
+    gpr_asprintf(&proxy_uri, "http://%s",
+                 grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
+  } else {
+    gpr_asprintf(&proxy_uri, "http://%s@%s", proxy_auth_arg->value.string,
+                 grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
+  }
   gpr_setenv("http_proxy", proxy_uri);
   gpr_free(proxy_uri);
   f->client = grpc_insecure_channel_create(ffd->server_addr, client_args, NULL);
