@@ -47,7 +47,7 @@ grpc::string ModuleAlias(const grpc::string filename) {
   grpc::string basename = grpc_generator::StripProto(filename);
   basename = grpc_generator::StringReplace(basename, "-", "$");
   basename = grpc_generator::StringReplace(basename, "/", "_");
-  basename = grpc_generator::StringReplace(basename, “.”, "_");
+  basename = grpc_generator::StringReplace(basename, ".", "_");
   return basename + "_pb";
 }
 
