@@ -954,6 +954,7 @@ bad_server_response_test: $(BINDIR)/$(CONFIG)/bad_server_response_test
 bdp_estimator_test: $(BINDIR)/$(CONFIG)/bdp_estimator_test
 bin_decoder_test: $(BINDIR)/$(CONFIG)/bin_decoder_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
+byte_stream_test: $(BINDIR)/$(CONFIG)/byte_stream_test
 census_context_test: $(BINDIR)/$(CONFIG)/census_context_test
 census_intrusive_hash_map_test: $(BINDIR)/$(CONFIG)/census_intrusive_hash_map_test
 census_resource_test: $(BINDIR)/$(CONFIG)/census_resource_test
@@ -1345,6 +1346,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/bdp_estimator_test \
   $(BINDIR)/$(CONFIG)/bin_decoder_test \
   $(BINDIR)/$(CONFIG)/bin_encoder_test \
+  $(BINDIR)/$(CONFIG)/byte_stream_test \
   $(BINDIR)/$(CONFIG)/census_context_test \
   $(BINDIR)/$(CONFIG)/census_intrusive_hash_map_test \
   $(BINDIR)/$(CONFIG)/census_resource_test \
@@ -1746,6 +1748,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/bin_decoder_test || ( echo test bin_decoder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_encoder_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bin_encoder_test || ( echo test bin_encoder_test failed ; exit 1 )
+	$(E) "[RUN]     Testing byte_stream_test"
+	$(Q) $(BINDIR)/$(CONFIG)/byte_stream_test || ( echo test byte_stream_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_context_test"
 	$(Q) $(BINDIR)/$(CONFIG)/census_context_test || ( echo test census_context_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_intrusive_hash_map_test"
@@ -8405,6 +8409,38 @@ deps_bin_encoder_test: $(BIN_ENCODER_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(BIN_ENCODER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+BYTE_STREAM_TEST_SRC = \
+    test/core/transport/byte_stream_test.c \
+
+BYTE_STREAM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BYTE_STREAM_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/byte_stream_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/byte_stream_test: $(BYTE_STREAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BYTE_STREAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/byte_stream_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/byte_stream_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_byte_stream_test: $(BYTE_STREAM_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BYTE_STREAM_TEST_OBJS:.o=.dep)
 endif
 endif
 
