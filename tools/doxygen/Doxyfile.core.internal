@@ -1131,6 +1131,7 @@ src/core/lib/iomgr/load_file.c \
 src/core/lib/iomgr/load_file.h \
 src/core/lib/iomgr/lockfree_event.c \
 src/core/lib/iomgr/lockfree_event.h \
+src/core/lib/iomgr/nameser.h \
 src/core/lib/iomgr/network_status_tracker.c \
 src/core/lib/iomgr/network_status_tracker.h \
 src/core/lib/iomgr/polling_entity.c \

@@ -38,8 +38,8 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/nameser.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/nameser.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/support/string.h"
 
@@ -358,9 +358,6 @@ static grpc_ares_request *grpc_dns_lookup_ares_impl(
     grpc_ares_request_ref(r);
     char *service_name;
     gpr_asprintf(&service_name, "_grpclb._tcp.%s", host);
-    // see: RFC 1035, section 3.2.4. CLASS values
-    const int ns_c_in = 1; // internet
-    const int ns_t_srv = 33; // SRV record (RFC 2782)
     ares_query(*channel, service_name, ns_c_in, ns_t_srv, on_srv_query_done_cb,
                r);
     gpr_free(service_name);

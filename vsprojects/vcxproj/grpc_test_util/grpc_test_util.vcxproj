@@ -233,6 +233,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\is_epollexclusive_available.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\lockfree_event.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\nameser.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\network_status_tracker.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\polling_entity.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset.h" />
