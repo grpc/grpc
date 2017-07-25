@@ -73,8 +73,8 @@ extern "C" {
 
 using std::chrono::system_clock;
 
-using grpc::lb::v1::LoadBalanceResponse;
 using grpc::lb::v1::LoadBalanceRequest;
+using grpc::lb::v1::LoadBalanceResponse;
 using grpc::lb::v1::LoadBalancer;
 
 namespace grpc {
@@ -647,7 +647,6 @@ class UpdatesTest : public GrpclbEnd2endTest {
 TEST_F(UpdatesTest, UpdateBalancers) {
   const std::vector<int> first_backend{GetBackendPorts()[0]};
   const std::vector<int> second_backend{GetBackendPorts()[1]};
-
   ScheduleResponseForBalancer(
       0, BalancerServiceImpl::BuildResponseForBackends(first_backend, 0, 0), 0);
   ScheduleResponseForBalancer(
@@ -932,6 +931,45 @@ TEST_F(SingleBalancerTest, Drop) {
   EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   // and sent a single response.
   EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+}
+
+TEST_F(SingleBalancerTest, DropAllFirst) {
+  // All registered addresses are marked as "drop".
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends({}, 1, 1), 0);
+  const auto& statuses_and_responses = SendRpc(kMessage_, 1);
+  for (const auto& status_and_response : statuses_and_responses) {
+    const Status& status = status_and_response.first;
+    EXPECT_FALSE(status.ok());
+    EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
+  }
+}
+
+TEST_F(SingleBalancerTest, DropAll) {
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), 0, 0),
+      0);
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends({}, 1, 1), 1000);
+
+  // First call succeeds.
+  auto statuses_and_responses = SendRpc(kMessage_, 1);
+  for (const auto& status_and_response : statuses_and_responses) {
+    const Status& status = status_and_response.first;
+    const EchoResponse& response = status_and_response.second;
+    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                             << " message=" << status.error_message();
+    EXPECT_EQ(response.message(), kMessage_);
+  }
+  // But eventually, the update with only dropped servers is processed and calls
+  // fail.
+  do {
+    statuses_and_responses = SendRpc(kMessage_, 1);
+    ASSERT_EQ(statuses_and_responses.size(), 1UL);
+  } while (statuses_and_responses[0].first.ok());
+  const Status& status = statuses_and_responses[0].first;
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
 }
 
 class SingleBalancerWithClientLoadReportingTest : public GrpclbEnd2endTest {
