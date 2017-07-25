@@ -60,7 +60,7 @@ CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
       case GRPC_QUEUE_SHUTDOWN:
         return SHUTDOWN;
       case GRPC_OP_COMPLETE:
-        auto cq_tag = static_cast<internal::CompletionQueueTag*>(ev.tag);
+        auto cq_tag = static_cast<CompletionQueueTag*>(ev.tag);
         *ok = ev.success != 0;
         *tag = cq_tag;
         if (cq_tag->FinalizeResult(tag, ok)) {
