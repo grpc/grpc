@@ -36,12 +36,11 @@ const char kHealthCheckMethodName[] = "/grpc.health.v1.Health/Check";
 DefaultHealthCheckService::HealthCheckServiceImpl::HealthCheckServiceImpl(
     DefaultHealthCheckService* service)
     : service_(service), method_(nullptr) {
-  internal::MethodHandler* handler =
-      new internal::RpcMethodHandler<HealthCheckServiceImpl, ByteBuffer,
-                                     ByteBuffer>(
+  MethodHandler* handler =
+      new RpcMethodHandler<HealthCheckServiceImpl, ByteBuffer, ByteBuffer>(
           std::mem_fn(&HealthCheckServiceImpl::Check), this);
-  method_ = new internal::RpcServiceMethod(
-      kHealthCheckMethodName, internal::RpcMethod::NORMAL_RPC, handler);
+  method_ = new RpcServiceMethod(kHealthCheckMethodName, RpcMethod::NORMAL_RPC,
+                                 handler);
   AddMethod(method_);
 }
 
