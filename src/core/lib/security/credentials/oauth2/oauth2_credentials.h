@@ -58,11 +58,20 @@ typedef void (*grpc_fetch_oauth2_func)(grpc_exec_ctx *exec_ctx,
                                        grpc_polling_entity *pollent,
                                        grpc_iomgr_cb_func cb,
                                        gpr_timespec deadline);
+
+typedef struct grpc_oauth2_pending_get_request_metadata {
+  grpc_credentials_mdelem_array *md_array;
+  grpc_closure *on_request_metadata;
+  struct grpc_oauth2_pending_get_request_metadata *next;
+} grpc_oauth2_pending_get_request_metadata;
+
 typedef struct {
   grpc_call_credentials base;
   gpr_mu mu;
-  grpc_credentials_md_store *access_token_md;
+  grpc_mdelem access_token_md;
   gpr_timespec token_expiration;
+  bool token_fetch_pending;
+  grpc_oauth2_pending_get_request_metadata *pending_requests;
   grpc_httpcli_context httpcli_context;
   grpc_fetch_oauth2_func fetch_func;
 } grpc_oauth2_token_fetcher_credentials;
@@ -76,7 +85,7 @@ typedef struct {
 // Access token credentials.
 typedef struct {
   grpc_call_credentials base;
-  grpc_credentials_md_store *access_token_md;
+  grpc_mdelem access_token_md;
 } grpc_access_token_credentials;
 
 // Private constructor for refresh token credentials from an already parsed
@@ -89,6 +98,6 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
     grpc_exec_ctx *exec_ctx, const struct grpc_http_response *response,
-    grpc_credentials_md_store **token_md, gpr_timespec *token_lifetime);
+    grpc_mdelem *token_md, gpr_timespec *token_lifetime);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H */

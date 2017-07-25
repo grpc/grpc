@@ -119,8 +119,7 @@ void CliCall::WritesDone() {
 }
 
 void CliCall::WriteAndWait(const grpc::string& request) {
-  grpc_slice s = grpc_slice_from_copied_string(request.c_str());
-  grpc::Slice req_slice(s, grpc::Slice::STEAL_REF);
+  grpc::Slice req_slice(request);
   grpc::ByteBuffer send_buffer(&req_slice, 1);
 
   gpr_mu_lock(&write_mu_);

@@ -23,6 +23,6 @@
 #include "src/core/lib/debug/trace.h"
 
 grpc_tracer_flag grpc_polling_trace =
-    GRPC_TRACER_INITIALIZER(false); /* Disabled by default */
+    GRPC_TRACER_INITIALIZER(false, "polling"); /* Disabled by default */
 
 #endif  // GRPC_WINSOCK_SOCKET

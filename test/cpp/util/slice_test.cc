@@ -28,12 +28,40 @@ const char* kContent = "hello xxxxxxxxxxxxxxxxxxxx world";
 
 class SliceTest : public ::testing::Test {
  protected:
+  void CheckSliceSize(const Slice& s, const grpc::string& content) {
+    EXPECT_EQ(content.size(), s.size());
+  }
   void CheckSlice(const Slice& s, const grpc::string& content) {
     EXPECT_EQ(content.size(), s.size());
     EXPECT_EQ(content,
               grpc::string(reinterpret_cast<const char*>(s.begin()), s.size()));
   }
 };
+
+TEST_F(SliceTest, Empty) {
+  Slice empty_slice;
+  CheckSlice(empty_slice, "");
+}
+
+TEST_F(SliceTest, Sized) {
+  Slice sized_slice(strlen(kContent));
+  CheckSliceSize(sized_slice, kContent);
+}
+
+TEST_F(SliceTest, String) {
+  Slice spp(kContent);
+  CheckSlice(spp, kContent);
+}
+
+TEST_F(SliceTest, Buf) {
+  Slice spp(kContent, strlen(kContent));
+  CheckSlice(spp, kContent);
+}
+
+TEST_F(SliceTest, StaticBuf) {
+  Slice spp(kContent, strlen(kContent), Slice::STATIC_SLICE);
+  CheckSlice(spp, kContent);
+}
 
 TEST_F(SliceTest, Steal) {
   grpc_slice s = grpc_slice_from_copied_string(kContent);
@@ -46,11 +74,6 @@ TEST_F(SliceTest, Add) {
   Slice spp(s, Slice::ADD_REF);
   grpc_slice_unref(s);
   CheckSlice(spp, kContent);
-}
-
-TEST_F(SliceTest, Empty) {
-  Slice empty_slice;
-  CheckSlice(empty_slice, "");
 }
 
 TEST_F(SliceTest, Cslice) {

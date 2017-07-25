@@ -23,7 +23,8 @@
 #include "src/core/lib/surface/completion_queue.h"
 
 #ifndef NDEBUG
-grpc_tracer_flag grpc_trace_alarm_refcount = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_trace_alarm_refcount =
+    GRPC_TRACER_INITIALIZER(false, "alarm_refcount");
 #endif
 
 struct grpc_alarm {

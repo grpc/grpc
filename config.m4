@@ -63,6 +63,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/support/log_windows.c \
     src/core/lib/support/mpscq.c \
     src/core/lib/support/murmur_hash.c \
+    src/core/lib/support/stack_lockfree.c \
     src/core/lib/support/string.c \
     src/core/lib/support/string_posix.c \
     src/core/lib/support/string_util_windows.c \
@@ -94,6 +95,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
+    src/core/lib/compression/stream_compression.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
@@ -262,6 +264,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/util/json_util.c \
     src/core/lib/surface/init_secure.c \
     src/core/tsi/fake_transport_security.c \
+    src/core/tsi/gts_transport_security.c \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
     src/core/tsi/transport_security_adapter.c \
@@ -293,6 +296,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
+    src/core/ext/transport/inproc/inproc_plugin.c \
+    src/core/ext/transport/inproc/inproc_transport.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c \
@@ -672,6 +677,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/insecure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/secure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/transport)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/inproc)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)

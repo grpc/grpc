@@ -14,6 +14,13 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
 
+package(
+    features = [
+        "-layering_check",
+        "-parse_headers",
+    ],
+)
+
 licenses(["notice"])  # Apache v2
 
 load(":generate_tests.bzl", "grpc_bad_ssl_tests")

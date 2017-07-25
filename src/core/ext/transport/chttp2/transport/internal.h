@@ -33,6 +33,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
+#include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -65,6 +66,11 @@ typedef enum {
   GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE,
   GRPC_CHTTP2_PING_TYPE_COUNT /* must be last */
 } grpc_chttp2_ping_type;
+
+typedef enum {
+  GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY,
+  GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT,
+} grpc_chttp2_optimization_target;
 
 typedef enum {
   GRPC_CHTTP2_PCL_INITIATE = 0,
@@ -228,6 +234,8 @@ struct grpc_chttp2_transport {
 
   /** should we probe bdp? */
   bool enable_bdp_probe;
+
+  grpc_chttp2_optimization_target opt_target;
 
   /** various lists of streams */
   grpc_chttp2_stream_list lists[STREAM_LIST_COUNT];

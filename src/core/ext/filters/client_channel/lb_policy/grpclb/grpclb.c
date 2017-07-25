@@ -123,7 +123,7 @@
 #define GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_GRPCLB_RECONNECT_JITTER 0.2
 
-grpc_tracer_flag grpc_lb_glb_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_lb_glb_trace = GRPC_TRACER_INITIALIZER(false, "glb");
 
 /* add lb_token of selected subchannel (address) to the call's initial
  * metadata */
@@ -1705,7 +1705,6 @@ static void lb_on_server_status_received_locked(grpc_exec_ctx *exec_ctx,
 static void glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                               const grpc_lb_policy_args *args) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)policy;
-
   if (glb_policy->updating_lb_channel) {
     if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
       gpr_log(GPR_INFO,
@@ -1813,9 +1812,11 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx *exec_ctx,
         // lb_on_server_status_received will pick up the cancel and reinit
         // lb_call.
         if (glb_policy->pending_update_args != NULL) {
-          const grpc_lb_policy_args *args = glb_policy->pending_update_args;
+          grpc_lb_policy_args *args = glb_policy->pending_update_args;
           glb_policy->pending_update_args = NULL;
           glb_update_locked(exec_ctx, &glb_policy->base, args);
+          grpc_channel_args_destroy(exec_ctx, args->args);
+          gpr_free(args);
         }
       } else if (glb_policy->started_picking && !glb_policy->shutting_down) {
         if (glb_policy->retry_timer_active) {
@@ -1879,9 +1880,9 @@ static bool maybe_add_client_load_reporting_filter(
 
 void grpc_lb_policy_grpclb_init() {
   grpc_register_lb_policy(grpc_glb_lb_factory_create());
-  grpc_register_tracer("glb", &grpc_lb_glb_trace);
+  grpc_register_tracer(&grpc_lb_glb_trace);
 #ifndef NDEBUG
-  grpc_register_tracer("lb_policy_refcount", &grpc_trace_lb_policy_refcount);
+  grpc_register_tracer(&grpc_trace_lb_policy_refcount);
 #endif
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,

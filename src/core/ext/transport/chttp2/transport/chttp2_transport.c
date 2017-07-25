@@ -33,7 +33,9 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -73,11 +75,12 @@ static bool g_default_keepalive_permit_without_calls =
     DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS;
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
-grpc_tracer_flag grpc_http_trace = GRPC_TRACER_INITIALIZER(false);
-grpc_tracer_flag grpc_flowctl_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_http_trace = GRPC_TRACER_INITIALIZER(false, "http");
+grpc_tracer_flag grpc_flowctl_trace = GRPC_TRACER_INITIALIZER(false, "flowctl");
 
 #ifndef NDEBUG
-grpc_tracer_flag grpc_trace_chttp2_refcount = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_trace_chttp2_refcount =
+    GRPC_TRACER_INITIALIZER(false, "chttp2_refcount");
 #endif
 
 static const grpc_transport_vtable vtable;
@@ -280,8 +283,6 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_slice_buffer_init(&t->outbuf);
   grpc_chttp2_hpack_compressor_init(&t->hpack_compressor);
 
-  GRPC_CLOSURE_INIT(&t->write_action, write_action, t,
-                    grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&t->read_action_locked, read_action_locked, t,
                     grpc_combiner_scheduler(t->combiner));
   GRPC_CLOSURE_INIT(&t->benign_reclaimer_locked, benign_reclaimer_locked, t,
@@ -399,6 +400,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
   t->keepalive_permit_without_calls = g_default_keepalive_permit_without_calls;
 
+  t->opt_target = GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY;
+
   if (channel_args) {
     for (i = 0; i < channel_args->num_args; i++) {
       if (0 == strcmp(channel_args->args[i].key,
@@ -487,6 +490,23 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
         t->keepalive_permit_without_calls =
             (uint32_t)grpc_channel_arg_get_integer(
                 &channel_args->args[i], (grpc_integer_options){0, 0, 1});
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_OPTIMIZATION_TARGET)) {
+        if (channel_args->args[i].type != GRPC_ARG_STRING) {
+          gpr_log(GPR_ERROR, "%s should be a string",
+                  GRPC_ARG_OPTIMIZATION_TARGET);
+        } else if (0 == strcmp(channel_args->args[i].value.string, "blend")) {
+          t->opt_target = GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY;
+        } else if (0 == strcmp(channel_args->args[i].value.string, "latency")) {
+          t->opt_target = GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY;
+        } else if (0 ==
+                   strcmp(channel_args->args[i].value.string, "throughput")) {
+          t->opt_target = GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT;
+        } else {
+          gpr_log(GPR_ERROR, "%s value '%s' unknown, assuming 'blend'",
+                  GRPC_ARG_OPTIMIZATION_TARGET,
+                  channel_args->args[i].value.string);
+        }
       } else {
         static const struct {
           const char *channel_arg_name;
@@ -539,6 +559,11 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       }
     }
   }
+
+  GRPC_CLOSURE_INIT(&t->write_action, write_action, t,
+                    t->opt_target == GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT
+                        ? grpc_executor_scheduler
+                        : grpc_schedule_on_exec_ctx);
 
   t->ping_state.pings_before_data_required =
       t->ping_policy.max_pings_without_data;
@@ -1200,7 +1225,7 @@ static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
 
 static void log_metadata(const grpc_metadata_batch *md_batch, uint32_t id,
                          bool is_client, bool is_initial) {
-  for (grpc_linked_mdelem *md = md_batch->list.head; md != md_batch->list.tail;
+  for (grpc_linked_mdelem *md = md_batch->list.head; md != NULL;
        md = md->next) {
     char *key = grpc_slice_to_c_string(GRPC_MDKEY(md->md));
     char *value = grpc_slice_to_c_string(GRPC_MDVALUE(md->md));
@@ -1463,6 +1488,21 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   GPR_TIMER_BEGIN("perform_stream_op", 0);
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
+
+  if (!t->is_client) {
+    if (op->send_initial_metadata) {
+      gpr_timespec deadline =
+          op->payload->send_initial_metadata.send_initial_metadata->deadline;
+      GPR_ASSERT(0 ==
+                 gpr_time_cmp(gpr_inf_future(deadline.clock_type), deadline));
+    }
+    if (op->send_trailing_metadata) {
+      gpr_timespec deadline =
+          op->payload->send_trailing_metadata.send_trailing_metadata->deadline;
+      GPR_ASSERT(0 ==
+                 gpr_time_cmp(gpr_inf_future(deadline.clock_type), deadline));
+    }
+  }
 
   if (GRPC_TRACER_ON(grpc_http_trace)) {
     char *str = grpc_transport_stream_op_batch_string(op);
@@ -2129,8 +2169,8 @@ static void update_bdp(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
 static void update_frame(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                          double bw_dbl, double bdp_dbl) {
-  int32_t bdp = GPR_CLAMP((int32_t)bdp_dbl, 128, INT32_MAX);
-  int32_t target = GPR_MAX((int32_t)bw_dbl / 1000, bdp);
+  int32_t bdp = (int32_t)GPR_CLAMP(bdp_dbl, 128.0, INT32_MAX);
+  int32_t target = (int32_t)GPR_MAX(bw_dbl / 1000, bdp);
   // frame size is bounded [2^14,2^24-1]
   int32_t frame_size = GPR_CLAMP(target, 16384, 16777215);
   int64_t delta = (int64_t)frame_size -

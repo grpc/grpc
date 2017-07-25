@@ -26,9 +26,22 @@
 
 namespace grpc_php_generator {
 
+inline grpc::string GetPHPServiceClassname(
+    const grpc::protobuf::ServiceDescriptor *service,
+    const grpc::string &parameter) {
+  grpc::string suffix;
+  if (parameter == "") {
+    suffix = "Client";
+  } else {
+    suffix = parameter;
+  }
+  return service->name() + suffix;
+}
+
 inline grpc::string GetPHPServiceFilename(
     const grpc::protobuf::FileDescriptor *file,
-    const grpc::protobuf::ServiceDescriptor *service) {
+    const grpc::protobuf::ServiceDescriptor *service,
+    const grpc::string &parameter) {
   std::vector<grpc::string> tokens =
       grpc_generator::tokenize(file->package(), ".");
   std::ostringstream oss;
@@ -36,7 +49,7 @@ inline grpc::string GetPHPServiceFilename(
     oss << (i == 0 ? "" : "/")
         << grpc_generator::CapitalizeFirstLetter(tokens[i]);
   }
-  return oss.str() + "/" + service->name() + "Client.php";
+  return oss.str() + "/" + GetPHPServiceClassname(service, parameter) + ".php";
 }
 
 // ReplaceAll replaces all instances of search with replace in s.

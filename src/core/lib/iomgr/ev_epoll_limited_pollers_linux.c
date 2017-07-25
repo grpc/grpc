@@ -57,9 +57,6 @@
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
 
-/* Uncomment the following to enable extra checks on poll_object operations */
-/* #define PO_DEBUG */
-
 /* The maximum number of polling threads per polling island. By default no
    limit */
 static int g_max_pollers_per_pi = INT_MAX;
@@ -92,7 +89,7 @@ typedef enum {
 } poll_obj_type;
 
 typedef struct poll_obj {
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   poll_obj_type obj_type;
 #endif
   gpr_mu mu;
@@ -893,7 +890,7 @@ static grpc_fd *fd_create(int fd, const char *name) {
    * would be holding a lock to it anyway. */
   gpr_mu_lock(&new_fd->po.mu);
   new_fd->po.pi = NULL;
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   new_fd->po.obj_type = POLL_OBJ_FD;
 #endif
 
@@ -934,24 +931,12 @@ static int fd_wrapped_fd(grpc_fd *fd) {
 
 static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                       grpc_closure *on_done, int *release_fd,
-                      const char *reason) {
-  bool is_fd_closed = false;
+                      bool already_closed, const char *reason) {
   grpc_error *error = GRPC_ERROR_NONE;
   polling_island *unref_pi = NULL;
 
   gpr_mu_lock(&fd->po.mu);
   fd->on_done_closure = on_done;
-
-  /* If release_fd is not NULL, we should be relinquishing control of the file
-     descriptor fd->fd (but we still own the grpc_fd structure). */
-  if (release_fd != NULL) {
-    *release_fd = fd->fd;
-  } else {
-    close(fd->fd);
-    is_fd_closed = true;
-  }
-
-  fd->orphaned = true;
 
   /* Remove the active status but keep referenced. We want this grpc_fd struct
      to be alive (and not added to freelist) until the end of this function */
@@ -967,12 +952,22 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
        before doing this.) */
   if (fd->po.pi != NULL) {
     polling_island *pi_latest = polling_island_lock(fd->po.pi);
-    polling_island_remove_fd_locked(pi_latest, fd, is_fd_closed, &error);
+    polling_island_remove_fd_locked(pi_latest, fd, already_closed, &error);
     gpr_mu_unlock(&pi_latest->mu);
 
     unref_pi = fd->po.pi;
     fd->po.pi = NULL;
   }
+
+  /* If release_fd is not NULL, we should be relinquishing control of the file
+     descriptor fd->fd (but we still own the grpc_fd structure). */
+  if (release_fd != NULL) {
+    *release_fd = fd->fd;
+  } else {
+    close(fd->fd);
+  }
+
+  fd->orphaned = true;
 
   GRPC_CLOSURE_SCHED(exec_ctx, fd->on_done_closure, GRPC_ERROR_REF(error));
 
@@ -1011,12 +1006,12 @@ static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
 
 static void fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                               grpc_closure *closure) {
-  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure);
+  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure, "read");
 }
 
 static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_closure *closure) {
-  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure);
+  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure, "write");
 }
 
 /*******************************************************************************
@@ -1171,7 +1166,7 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   gpr_mu_init(&pollset->po.mu);
   *mu = &pollset->po.mu;
   pollset->po.pi = NULL;
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   pollset->po.obj_type = POLL_OBJ_POLLSET;
 #endif
 
@@ -1227,7 +1222,7 @@ static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
 
 static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_pollset *notifier) {
-  grpc_lfev_set_ready(exec_ctx, &fd->read_closure);
+  grpc_lfev_set_ready(exec_ctx, &fd->read_closure, "read");
 
   /* Note, it is possible that fd_become_readable might be called twice with
      different 'notifier's when an fd becomes readable and it is in two epoll
@@ -1239,7 +1234,7 @@ static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 }
 
 static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
-  grpc_lfev_set_ready(exec_ctx, &fd->write_closure);
+  grpc_lfev_set_ready(exec_ctx, &fd->write_closure, "write");
 }
 
 static void pollset_release_polling_island(grpc_exec_ctx *exec_ctx,
@@ -1625,7 +1620,7 @@ static void add_poll_object(grpc_exec_ctx *exec_ctx, poll_obj *bag,
                             poll_obj_type item_type) {
   GPR_TIMER_BEGIN("add_poll_object", 0);
 
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   GPR_ASSERT(item->obj_type == item_type);
   GPR_ASSERT(bag->obj_type == bag_type);
 #endif
@@ -1784,7 +1779,7 @@ static grpc_pollset_set *pollset_set_create(void) {
   grpc_pollset_set *pss = gpr_malloc(sizeof(*pss));
   gpr_mu_init(&pss->po.mu);
   pss->po.pi = NULL;
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   pss->po.obj_type = POLL_OBJ_POLLSET_SET;
 #endif
   return pss;

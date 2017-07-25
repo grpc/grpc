@@ -37,8 +37,8 @@
 // Timer callback.
 static void timer_callback(grpc_exec_ctx* exec_ctx, void* arg,
                            grpc_error* error) {
-  grpc_call_element* elem = arg;
-  grpc_deadline_state* deadline_state = elem->call_data;
+  grpc_call_element* elem = (grpc_call_element*)arg;
+  grpc_deadline_state* deadline_state = (grpc_deadline_state*)elem->call_data;
   if (error != GRPC_ERROR_CANCELLED) {
     grpc_call_element_signal_error(
         exec_ctx, elem,
@@ -57,7 +57,7 @@ static void start_timer_if_needed(grpc_exec_ctx* exec_ctx,
   if (gpr_time_cmp(deadline, gpr_inf_future(GPR_CLOCK_MONOTONIC)) == 0) {
     return;
   }
-  grpc_deadline_state* deadline_state = elem->call_data;
+  grpc_deadline_state* deadline_state = (grpc_deadline_state*)elem->call_data;
   grpc_deadline_timer_state cur_state;
   grpc_closure* closure = NULL;
 retry:
@@ -112,7 +112,7 @@ static void cancel_timer_if_needed(grpc_exec_ctx* exec_ctx,
 
 // Callback run when the call is complete.
 static void on_complete(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
-  grpc_deadline_state* deadline_state = arg;
+  grpc_deadline_state* deadline_state = (grpc_deadline_state*)arg;
   cancel_timer_if_needed(exec_ctx, deadline_state);
   // Invoke the next callback.
   GRPC_CLOSURE_RUN(exec_ctx, deadline_state->next_on_complete,
@@ -145,7 +145,7 @@ static void start_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
 void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               grpc_call_stack* call_stack,
                               gpr_timespec deadline) {
-  grpc_deadline_state* deadline_state = elem->call_data;
+  grpc_deadline_state* deadline_state = (grpc_deadline_state*)elem->call_data;
   deadline_state->call_stack = call_stack;
   // Deadline will always be infinite on servers, so the timer will only be
   // set on clients with a finite deadline.
@@ -169,13 +169,13 @@ void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
 
 void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
                                  grpc_call_element* elem) {
-  grpc_deadline_state* deadline_state = elem->call_data;
+  grpc_deadline_state* deadline_state = (grpc_deadline_state*)elem->call_data;
   cancel_timer_if_needed(exec_ctx, deadline_state);
 }
 
 void grpc_deadline_state_reset(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                                gpr_timespec new_deadline) {
-  grpc_deadline_state* deadline_state = elem->call_data;
+  grpc_deadline_state* deadline_state = (grpc_deadline_state*)elem->call_data;
   cancel_timer_if_needed(exec_ctx, deadline_state);
   start_timer_if_needed(exec_ctx, elem, new_deadline);
 }
@@ -183,7 +183,7 @@ void grpc_deadline_state_reset(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
 void grpc_deadline_state_client_start_transport_stream_op_batch(
     grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     grpc_transport_stream_op_batch* op) {
-  grpc_deadline_state* deadline_state = elem->call_data;
+  grpc_deadline_state* deadline_state = (grpc_deadline_state*)elem->call_data;
   if (op->cancel_stream) {
     cancel_timer_if_needed(exec_ctx, deadline_state);
   } else {
@@ -256,8 +256,8 @@ static void client_start_transport_stream_op_batch(
 // Callback for receiving initial metadata on the server.
 static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx, void* arg,
                                         grpc_error* error) {
-  grpc_call_element* elem = arg;
-  server_call_data* calld = elem->call_data;
+  grpc_call_element* elem = (grpc_call_element*)arg;
+  server_call_data* calld = (server_call_data*)elem->call_data;
   // Get deadline from metadata and start the timer if needed.
   start_timer_if_needed(exec_ctx, elem, calld->recv_initial_metadata->deadline);
   // Invoke the next callback.
@@ -269,7 +269,7 @@ static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx, void* arg,
 static void server_start_transport_stream_op_batch(
     grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     grpc_transport_stream_op_batch* op) {
-  server_call_data* calld = elem->call_data;
+  server_call_data* calld = (server_call_data*)elem->call_data;
   if (op->cancel_stream) {
     cancel_timer_if_needed(exec_ctx, &calld->base.deadline_state);
   } else {
@@ -341,8 +341,8 @@ static bool maybe_add_deadline_filter(grpc_exec_ctx* exec_ctx,
                                       void* arg) {
   return grpc_deadline_checking_enabled(
              grpc_channel_stack_builder_get_channel_arguments(builder))
-             ? grpc_channel_stack_builder_prepend_filter(builder, arg, NULL,
-                                                         NULL)
+             ? grpc_channel_stack_builder_prepend_filter(
+                   builder, (const grpc_channel_filter*)arg, NULL, NULL)
              : true;
 }
 

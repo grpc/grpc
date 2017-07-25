@@ -14,6 +14,7 @@
 # limitations under the License.
 
 NODE_TARGET_ARCH=$1
+NODE_TARGET_OS=$2
 source ~/.nvm/nvm.sh
 
 nvm use 8
@@ -35,6 +36,12 @@ for version in ${node_versions[@]}
 do
   ./node_modules/.bin/node-pre-gyp configure rebuild package --target=$version --target_arch=$NODE_TARGET_ARCH --grpc_alpine=true
   cp -r build/stage/* "${ARTIFACTS_OUT}"/
+  if [ "$NODE_TARGET_ARCH" == 'x64' ] && [ "$NODE_TARGET_OS" == 'linux' ]
+  then
+    # Cross compile for ARM on x64
+    CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++ LD=arm-linux-gnueabihf-g++ ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --target=$version --target_arch=arm
+    cp -r build/stage/* "${ARTIFACTS_OUT}"/
+  fi
 done
 
 for version in ${electron_versions[@]}

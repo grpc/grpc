@@ -146,7 +146,7 @@ class InteropClientContextInspector;
 ///
 /// Context settings are only relevant to the call they are invoked with, that
 /// is to say, they aren't sticky. Some of these settings, such as the
-/// compression options, can be made persistant at channel construction time
+/// compression options, can be made persistent at channel construction time
 /// (see \a grpc::CreateCustomChannel).
 ///
 /// \warning ClientContext instances should \em not be reused across rpcs.
@@ -229,7 +229,7 @@ class ClientContext {
 
   /// EXPERIMENTAL: Set this request to be cacheable.
   /// If set, grpc is free to use the HTTP GET verb for sending the request,
-  /// with the possibility of receiving a cached respone.
+  /// with the possibility of receiving a cached response.
   void set_cacheable(bool cacheable) { cacheable_ = cacheable; }
 
   /// EXPERIMENTAL: Trigger wait-for-ready or not on this request.
@@ -275,7 +275,7 @@ class ClientContext {
   /// client’s identity, role, or whether it is authorized to make a particular
   /// call.
   ///
-  /// \see  http://www.grpc.io/docs/guides/auth.html
+  /// \see  https://grpc.io/docs/guides/auth.html
   void set_credentials(const std::shared_ptr<CallCredentials>& creds) {
     creds_ = creds;
   }

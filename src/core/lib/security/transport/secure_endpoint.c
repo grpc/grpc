@@ -60,7 +60,8 @@ typedef struct {
   gpr_refcount ref;
 } secure_endpoint;
 
-grpc_tracer_flag grpc_trace_secure_endpoint = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_trace_secure_endpoint =
+    GRPC_TRACER_INITIALIZER(false, "secure_endpoint");
 
 static void destroy(grpc_exec_ctx *exec_ctx, secure_endpoint *secure_ep) {
   secure_endpoint *ep = secure_ep;

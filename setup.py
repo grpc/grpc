@@ -281,7 +281,7 @@ setuptools.setup(
   description='HTTP/2-based RPC framework',
   author='The gRPC Authors',
   author_email='grpc-io@googlegroups.com',
-  url='http://www.grpc.io',
+  url='https://grpc.io',
   license=LICENSE,
   long_description=open(README).read(),
   ext_modules=CYTHON_EXTENSION_MODULES,

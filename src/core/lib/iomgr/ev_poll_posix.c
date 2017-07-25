@@ -398,11 +398,14 @@ static int fd_wrapped_fd(grpc_fd *fd) {
 
 static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                       grpc_closure *on_done, int *release_fd,
-                      const char *reason) {
+                      bool already_closed, const char *reason) {
   fd->on_done_closure = on_done;
   fd->released = release_fd != NULL;
-  if (fd->released) {
+  if (release_fd != NULL) {
     *release_fd = fd->fd;
+    fd->released = true;
+  } else if (already_closed) {
+    fd->released = true;
   }
   gpr_mu_lock(&fd->mu);
   REF_BY(fd, 1, reason); /* remove active status, but keep referenced */

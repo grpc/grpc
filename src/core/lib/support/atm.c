@@ -21,12 +21,12 @@
 
 gpr_atm gpr_atm_no_barrier_clamped_add(gpr_atm *value, gpr_atm delta,
                                        gpr_atm min, gpr_atm max) {
-  gpr_atm current;
-  gpr_atm new;
+  gpr_atm current_value;
+  gpr_atm new_value;
   do {
-    current = gpr_atm_no_barrier_load(value);
-    new = GPR_CLAMP(current + delta, min, max);
-    if (new == current) break;
-  } while (!gpr_atm_no_barrier_cas(value, current, new));
-  return new;
+    current_value = gpr_atm_no_barrier_load(value);
+    new_value = GPR_CLAMP(current_value + delta, min, max);
+    if (new_value == current_value) break;
+  } while (!gpr_atm_no_barrier_cas(value, current_value, new_value));
+  return new_value;
 }

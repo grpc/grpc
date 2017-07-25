@@ -444,6 +444,7 @@ add_dependencies(buildtests_c gpr_host_port_test)
 add_dependencies(buildtests_c gpr_log_test)
 add_dependencies(buildtests_c gpr_mpscq_test)
 add_dependencies(buildtests_c gpr_spinlock_test)
+add_dependencies(buildtests_c gpr_stack_lockfree_test)
 add_dependencies(buildtests_c gpr_string_test)
 add_dependencies(buildtests_c gpr_sync_test)
 add_dependencies(buildtests_c gpr_thd_test)
@@ -527,6 +528,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c socket_utils_test)
 endif()
 add_dependencies(buildtests_c status_conversion_test)
+add_dependencies(buildtests_c stream_compression_test)
 add_dependencies(buildtests_c stream_owned_slice_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c tcp_client_posix_test)
@@ -598,6 +600,7 @@ add_dependencies(buildtests_c h2_ssl_proxy_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c h2_uds_test)
 endif()
+add_dependencies(buildtests_c inproc_test)
 add_dependencies(buildtests_c h2_census_nosec_test)
 add_dependencies(buildtests_c h2_compress_nosec_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -618,6 +621,7 @@ add_dependencies(buildtests_c h2_sockpair_1byte_nosec_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c h2_uds_nosec_test)
 endif()
+add_dependencies(buildtests_c inproc_nosec_test)
 add_dependencies(buildtests_c api_fuzzer_one_entry)
 add_dependencies(buildtests_c client_fuzzer_one_entry)
 add_dependencies(buildtests_c hpack_parser_fuzzer_test_one_entry)
@@ -747,6 +751,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx server_crash_test)
 endif()
 add_dependencies(buildtests_cxx server_crash_test_client)
+add_dependencies(buildtests_cxx server_request_call_test)
 add_dependencies(buildtests_cxx shutdown_test)
 add_dependencies(buildtests_cxx status_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -789,6 +794,7 @@ add_library(gpr
   src/core/lib/support/log_windows.c
   src/core/lib/support/mpscq.c
   src/core/lib/support/murmur_hash.c
+  src/core/lib/support/stack_lockfree.c
   src/core/lib/support/string.c
   src/core/lib/support/string_posix.c
   src/core/lib/support/string_util_windows.c
@@ -950,6 +956,7 @@ add_library(grpc
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
+  src/core/lib/compression/stream_compression.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1118,6 +1125,7 @@ add_library(grpc
   src/core/lib/security/util/json_util.c
   src/core/lib/surface/init_secure.c
   src/core/tsi/fake_transport_security.c
+  src/core/tsi/gts_transport_security.c
   src/core/tsi/ssl_transport_security.c
   src/core/tsi/transport_security.c
   src/core/tsi/transport_security_adapter.c
@@ -1149,6 +1157,8 @@ add_library(grpc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
   src/core/ext/transport/chttp2/client/insecure/channel_create.c
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
+  src/core/ext/transport/inproc/inproc_plugin.c
+  src/core/ext/transport/inproc/inproc_transport.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c
@@ -1289,6 +1299,7 @@ add_library(grpc_cronet
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
+  src/core/lib/compression/stream_compression.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1481,6 +1492,7 @@ add_library(grpc_cronet
   src/core/lib/security/util/json_util.c
   src/core/lib/surface/init_secure.c
   src/core/tsi/fake_transport_security.c
+  src/core/tsi/gts_transport_security.c
   src/core/tsi/ssl_transport_security.c
   src/core/tsi/transport_security.c
   src/core/tsi/transport_security_adapter.c
@@ -1608,6 +1620,7 @@ add_library(grpc_test_util
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
+  src/core/lib/compression/stream_compression.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1870,6 +1883,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
+  src/core/lib/compression/stream_compression.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -2039,6 +2053,8 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/subchannel_index.c
   src/core/ext/filters/client_channel/uri_parser.c
   src/core/ext/filters/deadline/deadline_filter.c
+  src/core/ext/transport/inproc/inproc_plugin.c
+  src/core/ext/transport/inproc/inproc_transport.c
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c
@@ -2526,6 +2542,7 @@ add_library(grpc++_cronet
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
+  src/core/lib/compression/stream_compression.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -4337,6 +4354,7 @@ add_library(end2end_tests
   test/core/end2end/tests/payload.c
   test/core/end2end/tests/ping.c
   test/core/end2end/tests/ping_pong_streaming.c
+  test/core/end2end/tests/proxy_auth.c
   test/core/end2end/tests/registered_call.c
   test/core/end2end/tests/request_with_flags.c
   test/core/end2end/tests/request_with_payload.c
@@ -4436,6 +4454,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/payload.c
   test/core/end2end/tests/ping.c
   test/core/end2end/tests/ping_pong_streaming.c
+  test/core/end2end/tests/proxy_auth.c
   test/core/end2end/tests/registered_call.c
   test/core/end2end/tests/request_with_flags.c
   test/core/end2end/tests/request_with_payload.c
@@ -6008,6 +6027,35 @@ target_include_directories(gpr_spinlock_test
 )
 
 target_link_libraries(gpr_spinlock_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(gpr_stack_lockfree_test
+  test/core/support/stack_lockfree_test.c
+)
+
+
+target_include_directories(gpr_stack_lockfree_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(gpr_stack_lockfree_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
@@ -8134,6 +8182,37 @@ target_include_directories(status_conversion_test
 )
 
 target_link_libraries(status_conversion_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(stream_compression_test
+  test/core/compression/stream_compression_test.c
+)
+
+
+target_include_directories(stream_compression_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(stream_compression_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -11374,6 +11453,7 @@ target_link_libraries(qps_interarrival_test
   grpc
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -11725,6 +11805,7 @@ target_link_libraries(secure_sync_unary_ping_pong_test
   grpc
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -11950,6 +12031,62 @@ target_link_libraries(server_crash_test_client
   grpc++
   grpc
   gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(server_request_call_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  test/cpp/server/server_request_call_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/echo_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/echo.proto
+)
+
+target_include_directories(server_request_call_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(server_request_call_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  gpr_test_util
+  grpc++
+  grpc
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
@@ -13324,6 +13461,38 @@ endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(inproc_test
+  test/core/end2end/fixtures/inproc.c
+)
+
+
+target_include_directories(inproc_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(inproc_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  end2end_tests
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(h2_census_nosec_test
   test/core/end2end/fixtures/h2_census.c
 )
@@ -13775,6 +13944,38 @@ target_link_libraries(h2_uds_nosec_test
 )
 
 endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(inproc_nosec_test
+  test/core/end2end/fixtures/inproc.c
+)
+
+
+target_include_directories(inproc_nosec_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(inproc_nosec_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  end2end_nosec_tests
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+)
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 

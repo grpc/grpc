@@ -64,4 +64,4 @@ You can find a more detailed tutorial in [gRPC Basics: C#][]
 
 [helloworld-from-cli]:../helloworld-from-cli/README.md
 [helloworld.proto]:../../protos/helloworld.proto
-[gRPC Basics: C#]:http://www.grpc.io/docs/tutorials/basic/csharp.html
+[gRPC Basics: C#]:https://grpc.io/docs/tutorials/basic/csharp.html

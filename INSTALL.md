@@ -77,7 +77,7 @@ For developers who are interested to contribute, here is how to compile the
 gRPC C Core library.
 
 ```sh
- $ git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc
+ $ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
  $ cd grpc
  $ git submodule update --init
  $ make
@@ -95,7 +95,7 @@ on experience with the tools involved.
 
 Builds gRPC C and C++ with boringssl.
 - Install [CMake](https://cmake.org/download/).
-- Install [Active State Perl](http://www.activestate.com/activeperl/) (`choco install activeperl`)
+- Install [Active State Perl](https://www.activestate.com/activeperl/) (`choco install activeperl`)
 - Install [Ninja](https://ninja-build.org/) (`choco install ninja`)
 - Install [Go](https://golang.org/dl/) (`choco install golang`)
 - Install [yasm](http://yasm.tortall.net/) and add it to `PATH` (`choco install yasm`)

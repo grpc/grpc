@@ -14,7 +14,13 @@
 
 licenses(["notice"])  # Apache v2
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_visibility = ["//visibility:public"],
+    features = [
+        "-layering_check",
+        "-parse_headers",
+    ],
+)
 
 load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
 

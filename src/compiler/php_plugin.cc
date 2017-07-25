@@ -41,10 +41,11 @@ class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     }
 
     for (int i = 0; i < file->service_count(); i++) {
-      grpc::string code = GenerateFile(file, file->service(i));
+      grpc::string code = GenerateFile(file, file->service(i), parameter);
 
       // Get output file name
-      grpc::string file_name = GetPHPServiceFilename(file, file->service(i));
+      grpc::string file_name =
+          GetPHPServiceFilename(file, file->service(i), parameter);
 
       std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
           context->Open(file_name));
