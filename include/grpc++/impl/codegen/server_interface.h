@@ -212,7 +212,7 @@ class ServerInterface : public CallHook {
     void* const registered_method_;
     ServerInterface* const server_;
     ServerContext* const context_;
-    internal::ServerAsyncStreamingInterface* const stream_;
+    ServerAsyncStreamingInterface* const stream_;
     CompletionQueue* const call_cq_;
     ServerCompletionQueue* const notification_cq_;
     void* const tag_;
