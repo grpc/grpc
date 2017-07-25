@@ -58,29 +58,34 @@ typedef struct gpr_avl {
   gpr_avl_node *root;
 } gpr_avl;
 
-/** create an immutable AVL tree */
+/** Create an immutable AVL tree. */
 GPRAPI gpr_avl gpr_avl_create(const gpr_avl_vtable *vtable);
-/** add a reference to an existing tree - returns
-    the tree as a convenience */
+/** Add a reference to an existing tree - returns
+    the tree as a convenience. The optional user_data will be passed to vtable
+    functions. */
 GPRAPI gpr_avl gpr_avl_ref(gpr_avl avl, void *user_data);
-/** remove a reference to a tree - destroying it if there
-    are no references left */
+/** Remove a reference to a tree - destroying it if there
+    are no references left. The optional user_data will be passed to vtable
+    functions. */
 GPRAPI void gpr_avl_unref(gpr_avl avl, void *user_data);
-/** return a new tree with (key, value) added to avl.
+/** Return a new tree with (key, value) added to avl.
     implicitly unrefs avl to allow easy chaining.
     if key exists in avl, the new tree's key entry updated
-    (i.e. a duplicate is not created) */
+    (i.e. a duplicate is not created). The optional user_data will be passed to
+    vtable functions. */
 GPRAPI gpr_avl gpr_avl_add(gpr_avl avl, void *key, void *value,
                            void *user_data);
-/** return a new tree with key deleted
-    implicitly unrefs avl to allow easy chaining. */
+/** Return a new tree with key deleted
+    implicitly unrefs avl to allow easy chaining. The optional user_data will be
+    passed to vtable functions. */
 GPRAPI gpr_avl gpr_avl_remove(gpr_avl avl, void *key, void *user_data);
-/** lookup key, and return the associated value.
-    does not mutate avl.
-    returns NULL if key is not found. */
+/** Lookup key, and return the associated value.
+    Does not mutate avl.
+    Returns NULL if key is not found. The optional user_data will be passed to
+    vtable functions.*/
 GPRAPI void *gpr_avl_get(gpr_avl avl, void *key, void *user_data);
 /** Return 1 if avl contains key, 0 otherwise; if it has the key, sets *value to
-    its value*/
+    its value. THe optional user_data will be passed to vtable functions. */
 GPRAPI int gpr_avl_maybe_get(gpr_avl avl, void *key, void **value,
                              void *user_data);
 /** Return 1 if avl is empty, 0 otherwise */
