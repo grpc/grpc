@@ -1453,6 +1453,10 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
         op_payload->recv_initial_metadata.recv_initial_metadata;
     s->trailing_metadata_available =
         op_payload->recv_initial_metadata.trailing_metadata_available;
+    if (op_payload->recv_initial_metadata.peer_string != NULL) {
+      gpr_atm_rel_store(op_payload->recv_initial_metadata.peer_string,
+                        (gpr_atm)gpr_strdup(t->peer_string));
+    }
     grpc_chttp2_maybe_complete_recv_initial_metadata(exec_ctx, t, s);
   }
 

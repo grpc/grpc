@@ -1553,8 +1553,10 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
             &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */];
         stream_op_payload->send_initial_metadata.send_initial_metadata_flags =
             op->flags;
-        stream_op_payload->send_initial_metadata.peer_string =
-            &call->peer_string;
+        if (call->is_client) {
+          stream_op_payload->send_initial_metadata.peer_string =
+              &call->peer_string;
+        }
         break;
       case GRPC_OP_SEND_MESSAGE:
         if (!are_write_flags_valid(op->flags)) {
@@ -1687,6 +1689,10 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
             &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
         stream_op_payload->recv_initial_metadata.recv_initial_metadata_ready =
             &call->receiving_initial_metadata_ready;
+        if (!call->is_client) {
+          stream_op_payload->recv_initial_metadata.peer_string =
+              &call->peer_string;
+        }
         num_completion_callbacks_needed++;
         break;
       case GRPC_OP_RECV_MESSAGE:
