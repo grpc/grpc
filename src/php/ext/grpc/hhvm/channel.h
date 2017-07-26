@@ -32,6 +32,13 @@
 
 namespace HPHP {
 
+struct GlobalChannelsCache {
+  std::forward_list<grpc_channel *> globalChannelMap;
+};
+
+extern GlobalChannelsCache s_global_channels_cache;
+extern Mutex s_global_channels_cache_mutex;
+
 class ChannelData {
   private:
     grpc_channel* wrapped{nullptr};

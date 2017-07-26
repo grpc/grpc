@@ -46,6 +46,9 @@
 
 namespace HPHP {
 
+GlobalChannelsCache s_global_channels_cache;
+Mutex s_global_channels_cache_mutex;
+
 Class* ChannelData::s_class = nullptr;
 const StaticString ChannelData::s_className("Grpc\\Channel");
 
@@ -77,6 +80,11 @@ IMPLEMENT_THREAD_LOCAL(ChannelsCache, ChannelsCache::tl_obj);
 ChannelsCache::ChannelsCache() {}
 void ChannelsCache::addChannel(const String& key, grpc_channel *channel) {
   channelMap[key.toCppString()] = channel;
+
+  {
+    Lock l1(s_global_channels_cache_mutex);
+    s_global_channels_cache.globalChannelMap.push_front(channel);
+  }
 }
 
 grpc_channel *ChannelsCache::getChannel(const String& key) {

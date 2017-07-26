@@ -147,6 +147,15 @@ class GrpcExtension : public Extension {
     }
 
     virtual void moduleShutdown() {
+      {
+        Lock l1(s_global_channels_cache_mutex);
+        for (auto it = s_global_channels_cache.globalChannelMap.begin(); it != s_global_channels_cache.globalChannelMap.end(); ++it) {
+          grpc_channel_destroy(*it);
+        }
+
+        s_global_channels_cache.globalChannelMap.clear();
+      }
+
       grpc_shutdown();
     }
 
