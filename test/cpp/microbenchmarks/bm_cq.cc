@@ -69,7 +69,7 @@ BENCHMARK(BM_CreateDestroyCore);
 static void DoneWithCompletionOnStack(grpc_exec_ctx* exec_ctx, void* arg,
                                       grpc_cq_completion* completion) {}
 
-class DummyTag final : public internal::CompletionQueueTag {
+class DummyTag final : public CompletionQueueTag {
  public:
   bool FinalizeResult(void** tag, bool* status) override { return true; }
 };

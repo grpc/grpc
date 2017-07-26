@@ -24,7 +24,7 @@
 #include <grpc++/impl/codegen/channel_interface.h>
 
 namespace grpc {
-namespace internal {
+
 /// Descriptor of an RPC method
 class RpcMethod {
  public:
@@ -55,7 +55,6 @@ class RpcMethod {
   void* const channel_tag_;
 };
 
-}  // namespace internal
 }  // namespace grpc
 
 #endif  // GRPCXX_IMPL_CODEGEN_RPC_METHOD_H

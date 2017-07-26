@@ -88,8 +88,7 @@ class Server::UnimplementedAsyncRequest final
   ServerCompletionQueue* const cq_;
 };
 
-typedef internal::SneakyCallOpSet<internal::CallOpSendInitialMetadata,
-                                  internal::CallOpServerSendStatus>
+typedef SneakyCallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus>
     UnimplementedAsyncResponseOp;
 class Server::UnimplementedAsyncResponse final
     : public UnimplementedAsyncResponseOp {
@@ -107,12 +106,12 @@ class Server::UnimplementedAsyncResponse final
   UnimplementedAsyncRequest* const request_;
 };
 
-class ShutdownTag : public internal::CompletionQueueTag {
+class ShutdownTag : public CompletionQueueTag {
  public:
   bool FinalizeResult(void** tag, bool* status) { return false; }
 };
 
-class DummyTag : public internal::CompletionQueueTag {
+class DummyTag : public CompletionQueueTag {
  public:
   bool FinalizeResult(void** tag, bool* status) {
     *status = true;
@@ -120,15 +119,15 @@ class DummyTag : public internal::CompletionQueueTag {
   }
 };
 
-class Server::SyncRequest final : public internal::CompletionQueueTag {
+class Server::SyncRequest final : public CompletionQueueTag {
  public:
-  SyncRequest(internal::RpcServiceMethod* method, void* tag)
+  SyncRequest(RpcServiceMethod* method, void* tag)
       : method_(method),
         tag_(tag),
         in_flight_(false),
-        has_request_payload_(
-            method->method_type() == internal::RpcMethod::NORMAL_RPC ||
-            method->method_type() == internal::RpcMethod::SERVER_STREAMING),
+        has_request_payload_(method->method_type() == RpcMethod::NORMAL_RPC ||
+                             method->method_type() ==
+                                 RpcMethod::SERVER_STREAMING),
         call_details_(nullptr),
         cq_(nullptr) {
     grpc_metadata_array_init(&request_metadata_);
@@ -205,14 +204,14 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
     void Run(std::shared_ptr<GlobalCallbacks> global_callbacks) {
       ctx_.BeginCompletionOp(&call_);
       global_callbacks->PreSynchronousRequest(&ctx_);
-      method_->handler()->RunHandler(internal::MethodHandler::HandlerParameter(
-          &call_, &ctx_, request_payload_));
+      method_->handler()->RunHandler(
+          MethodHandler::HandlerParameter(&call_, &ctx_, request_payload_));
       global_callbacks->PostSynchronousRequest(&ctx_);
       request_payload_ = nullptr;
 
       cq_.Shutdown();
 
-      internal::CompletionQueueTag* op_tag = ctx_.GetCompletionOpTag();
+      CompletionQueueTag* op_tag = ctx_.GetCompletionOpTag();
       cq_.TryPluck(op_tag, gpr_inf_future(GPR_CLOCK_REALTIME));
 
       /* Ensure the cq_ is shutdown */
@@ -222,15 +221,15 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
 
    private:
     CompletionQueue cq_;
-    internal::Call call_;
+    Call call_;
     ServerContext ctx_;
     const bool has_request_payload_;
     grpc_byte_buffer* request_payload_;
-    internal::RpcServiceMethod* const method_;
+    RpcServiceMethod* const method_;
   };
 
  private:
-  internal::RpcServiceMethod* const method_;
+  RpcServiceMethod* const method_;
   void* const tag_;
   bool in_flight_;
   const bool has_request_payload_;
@@ -303,15 +302,14 @@ class Server::SyncRequestThreadManager : public ThreadManager {
     // object
   }
 
-  void AddSyncMethod(internal::RpcServiceMethod* method, void* tag) {
+  void AddSyncMethod(RpcServiceMethod* method, void* tag) {
     sync_requests_.emplace_back(new SyncRequest(method, tag));
   }
 
   void AddUnknownSyncMethod() {
     if (!sync_requests_.empty()) {
-      unknown_method_.reset(new internal::RpcServiceMethod(
-          "unknown", internal::RpcMethod::BIDI_STREAMING,
-          new internal::UnknownMethodHandler));
+      unknown_method_.reset(new RpcServiceMethod(
+          "unknown", RpcMethod::BIDI_STREAMING, new UnknownMethodHandler));
       sync_requests_.emplace_back(
           new SyncRequest(unknown_method_.get(), nullptr));
     }
@@ -348,8 +346,8 @@ class Server::SyncRequestThreadManager : public ThreadManager {
   CompletionQueue* server_cq_;
   int cq_timeout_msec_;
   std::vector<std::unique_ptr<SyncRequest>> sync_requests_;
-  std::unique_ptr<internal::RpcServiceMethod> unknown_method_;
-  std::unique_ptr<internal::RpcServiceMethod> health_check_;
+  std::unique_ptr<RpcServiceMethod> unknown_method_;
+  std::unique_ptr<RpcServiceMethod> health_check_;
   std::shared_ptr<Server::GlobalCallbacks> global_callbacks_;
 };
 
@@ -432,13 +430,13 @@ std::shared_ptr<Channel> Server::InProcessChannel(
 }
 
 static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
-    internal::RpcServiceMethod* method) {
+    RpcServiceMethod* method) {
   switch (method->method_type()) {
-    case internal::RpcMethod::NORMAL_RPC:
-    case internal::RpcMethod::SERVER_STREAMING:
+    case RpcMethod::NORMAL_RPC:
+    case RpcMethod::SERVER_STREAMING:
       return GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER;
-    case internal::RpcMethod::CLIENT_STREAMING:
-    case internal::RpcMethod::BIDI_STREAMING:
+    case RpcMethod::CLIENT_STREAMING:
+    case RpcMethod::BIDI_STREAMING:
       return GRPC_SRM_PAYLOAD_NONE;
   }
   GPR_UNREACHABLE_CODE(return GRPC_SRM_PAYLOAD_NONE;);
@@ -459,7 +457,7 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
       continue;
     }
 
-    internal::RpcServiceMethod* method = it->get();
+    RpcServiceMethod* method = it->get();
     void* tag = grpc_server_register_method(
         server_, method->name(), host ? host->c_str() : nullptr,
         PayloadHandlingForMethod(method), 0);
@@ -599,8 +597,7 @@ void Server::Wait() {
   }
 }
 
-void Server::PerformOpsOnCall(internal::CallOpSetInterface* ops,
-                              internal::Call* call) {
+void Server::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
   static const size_t MAX_OPS = 8;
   size_t nops = 0;
   grpc_op cops[MAX_OPS];
@@ -611,8 +608,8 @@ void Server::PerformOpsOnCall(internal::CallOpSetInterface* ops,
 
 ServerInterface::BaseAsyncRequest::BaseAsyncRequest(
     ServerInterface* server, ServerContext* context,
-    internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
-    void* tag, bool delete_on_finalize)
+    ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag,
+    bool delete_on_finalize)
     : server_(server),
       context_(context),
       stream_(stream),
@@ -634,8 +631,7 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
   }
   context_->set_call(call_);
   context_->cq_ = call_cq_;
-  internal::Call call(call_, server_, call_cq_,
-                      server_->max_receive_message_size());
+  Call call(call_, server_, call_cq_, server_->max_receive_message_size());
   if (*status && call_) {
     context_->BeginCompletionOp(&call);
   }
@@ -650,8 +646,7 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
 
 ServerInterface::RegisteredAsyncRequest::RegisteredAsyncRequest(
     ServerInterface* server, ServerContext* context,
-    internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
-    void* tag)
+    ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag)
     : BaseAsyncRequest(server, context, stream, call_cq, tag, true) {}
 
 void ServerInterface::RegisteredAsyncRequest::IssueRequest(
@@ -665,7 +660,7 @@ void ServerInterface::RegisteredAsyncRequest::IssueRequest(
 
 ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
     ServerInterface* server, GenericServerContext* context,
-    internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
+    ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
     ServerCompletionQueue* notification_cq, void* tag, bool delete_on_finalize)
     : BaseAsyncRequest(server, context, stream, call_cq, tag,
                        delete_on_finalize) {
@@ -707,7 +702,7 @@ Server::UnimplementedAsyncResponse::UnimplementedAsyncResponse(
     UnimplementedAsyncRequest* request)
     : request_(request) {
   Status status(StatusCode::UNIMPLEMENTED, "");
-  internal::UnknownMethodHandler::FillOps(request_->context(), this);
+  UnknownMethodHandler::FillOps(request_->context(), this);
   request_->stream()->call_.PerformOps(this);
 }
 

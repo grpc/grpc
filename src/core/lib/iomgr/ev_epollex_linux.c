@@ -380,8 +380,8 @@ static int fd_wrapped_fd(grpc_fd *fd) {
 
 static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                       grpc_closure *on_done, int *release_fd,
-                      const char *reason) {
-  bool is_fd_closed = false;
+                      bool already_closed, const char *reason) {
+  bool is_fd_closed = already_closed;
   grpc_error *error = GRPC_ERROR_NONE;
 
   gpr_mu_lock(&fd->pollable.po.mu);
@@ -392,7 +392,7 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
      descriptor fd->fd (but we still own the grpc_fd structure). */
   if (release_fd != NULL) {
     *release_fd = fd->fd;
-  } else {
+  } else if (!is_fd_closed) {
     close(fd->fd);
     is_fd_closed = true;
   }

@@ -172,8 +172,8 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
   grpc_slice_buffer_init(&tmp);
   uint32_t send_flags =
       calld->send_message_batch->payload->send_message.send_message->flags;
-  bool did_compress = grpc_msg_compress(exec_ctx, calld->compression_algorithm,
-                                        &calld->slices, &tmp);
+  bool did_compress = grpc_msg_compress(
+      exec_ctx, calld->compression_algorithm, &calld->slices, &tmp);
   if (did_compress) {
     if (GRPC_TRACER_ON(grpc_compression_trace)) {
       char *algo_name;
@@ -240,14 +240,19 @@ static grpc_error *pull_slice_from_send_message(grpc_exec_ctx *exec_ctx,
   return error;
 }
 
-static void continue_send_message(grpc_exec_ctx *exec_ctx,
-                                  grpc_call_element *elem) {
+// Reads as many slices as possible from the send_message byte stream.
+// If all data has been read, invokes finish_send_message().  Otherwise,
+// an async call to grpc_byte_stream_next() has been started, which will
+// eventually result in calling on_send_message_next_done().
+static void continue_reading_send_message(grpc_exec_ctx *exec_ctx,
+                                          grpc_call_element *elem) {
   call_data *calld = (call_data *)elem->call_data;
   while (grpc_byte_stream_next(
       exec_ctx, calld->send_message_batch->payload->send_message.send_message,
       ~(size_t)0, &calld->on_send_message_next_done)) {
     grpc_error *error = pull_slice_from_send_message(exec_ctx, calld);
     if (error != GRPC_ERROR_NONE) {
+      // Closure callback; does not take ownership of error.
       fail_send_message_batch_in_call_combiner(exec_ctx, calld, error);
       GRPC_ERROR_UNREF(error);
       return;
@@ -266,21 +271,23 @@ static void on_send_message_next_done(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_call_element *elem = (grpc_call_element *)arg;
   call_data *calld = (call_data *)elem->call_data;
   if (error != GRPC_ERROR_NONE) {
-    GRPC_ERROR_REF(error);
-    goto fail;
+    // Closure callback; does not take ownership of error.
+    fail_send_message_batch_in_call_combiner(exec_ctx, calld, error);
+    return;
   }
   error = pull_slice_from_send_message(exec_ctx, calld);
-  if (error != GRPC_ERROR_NONE) goto fail;
+  if (error != GRPC_ERROR_NONE) {
+    // Closure callback; does not take ownership of error.
+    fail_send_message_batch_in_call_combiner(exec_ctx, calld, error);
+    GRPC_ERROR_UNREF(error);
+    return;
+  }
   if (calld->slices.length ==
       calld->send_message_batch->payload->send_message.send_message->length) {
     finish_send_message(exec_ctx, elem);
   } else {
-    continue_send_message(exec_ctx, elem);
+    continue_reading_send_message(exec_ctx, elem);
   }
-  return;
-fail:
-  fail_send_message_batch_in_call_combiner(exec_ctx, calld, error);
-  GRPC_ERROR_UNREF(error);
 }
 
 static void start_send_message_batch(grpc_exec_ctx *exec_ctx, void *arg,
@@ -294,7 +301,7 @@ static void start_send_message_batch(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_call_next_op(exec_ctx, elem, calld->send_message_batch);
     calld->send_message_batch = NULL;
   } else {
-    continue_send_message(exec_ctx, elem);
+    continue_reading_send_message(exec_ctx, elem);
   }
 }
 

@@ -1230,6 +1230,11 @@ try:
       _HTTP2_TEST_CASES, http2_server_test_cases, resultset, num_failures,
       args.cloud_to_prod_auth or args.cloud_to_prod, args.prod_servers,
       args.http2_interop)
+  
+  if num_failures:
+    sys.exit(1)
+  else:
+    sys.exit(0)
 except Exception as e:
   print('exception occurred:')
   traceback.print_exc(file=sys.stdout)

@@ -75,18 +75,17 @@ class ClientAsyncResponseReader final
   /// intitial metadata sent) and \a request has been written out.
   /// Note that \a context will be used to fill in custom initial metadata
   /// used to send to the server when starting the call.
-  struct internal {
-    template <class W>
-    static ClientAsyncResponseReader* Create(
-        ::grpc::ChannelInterface* channel, CompletionQueue* cq,
-        const ::grpc::internal::RpcMethod& method, ClientContext* context,
-        const W& request) {
-      ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
-      return new (g_core_codegen_interface->grpc_call_arena_alloc(
-          call.call(), sizeof(ClientAsyncResponseReader)))
-          ClientAsyncResponseReader(call, context, request);
-    }
-  };
+  template <class W>
+  static ClientAsyncResponseReader* Create(ChannelInterface* channel,
+                                           CompletionQueue* cq,
+                                           const RpcMethod& method,
+                                           ClientContext* context,
+                                           const W& request) {
+    Call call = channel->CreateCall(method, context, cq);
+    return new (g_core_codegen_interface->grpc_call_arena_alloc(
+        call.call(), sizeof(ClientAsyncResponseReader)))
+        ClientAsyncResponseReader(call, context, request);
+  }
 
   /// TODO(vjpai): Delete the below constructor
   /// PLEASE DO NOT USE THIS CONSTRUCTOR IN NEW CODE
@@ -95,10 +94,9 @@ class ClientAsyncResponseReader final
   /// created this struct rather than properly using a stub.
   /// This code will not remain a valid public constructor for long.
   template <class W>
-  ClientAsyncResponseReader(::grpc::ChannelInterface* channel,
-                            CompletionQueue* cq,
-                            const ::grpc::internal::RpcMethod& method,
-                            ClientContext* context, const W& request)
+  ClientAsyncResponseReader(ChannelInterface* channel, CompletionQueue* cq,
+                            const RpcMethod& method, ClientContext* context,
+                            const W& request)
       : context_(context),
         call_(channel->CreateCall(method, context, cq)),
         collection_(std::make_shared<Ops>()) {
@@ -166,11 +164,10 @@ class ClientAsyncResponseReader final
 
  private:
   ClientContext* const context_;
-  ::grpc::internal::Call call_;
+  Call call_;
 
   template <class W>
-  ClientAsyncResponseReader(::grpc::internal::Call call, ClientContext* context,
-                            const W& request)
+  ClientAsyncResponseReader(Call call, ClientContext* context, const W& request)
       : context_(context), call_(call) {
     ops_.init_buf.SendInitialMetadata(context->send_initial_metadata_,
                                       context->initial_metadata_flags());
@@ -186,17 +183,13 @@ class ClientAsyncResponseReader final
 
   // TODO(vjpai): Remove the reference to CallOpSetCollectionInterface
   // as soon as the related workaround (public constructor) is deleted
-  struct Ops : public ::grpc::internal::CallOpSetCollectionInterface {
-    ::grpc::internal::SneakyCallOpSet<
-        ::grpc::internal::CallOpSendInitialMetadata,
-        ::grpc::internal::CallOpSendMessage,
-        ::grpc::internal::CallOpClientSendClose>
+  struct Ops : public CallOpSetCollectionInterface {
+    SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
+                    CallOpClientSendClose>
         init_buf;
-    ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
-        meta_buf;
-    ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                                ::grpc::internal::CallOpRecvMessage<R>,
-                                ::grpc::internal::CallOpClientRecvStatus>
+    CallOpSet<CallOpRecvInitialMetadata> meta_buf;
+    CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>,
+              CallOpClientRecvStatus>
         finish_buf;
   } ops_;
 
@@ -208,8 +201,7 @@ class ClientAsyncResponseReader final
 /// Async server-side API for handling unary calls, where the single
 /// response message sent to the client is of type \a W.
 template <class W>
-class ServerAsyncResponseWriter final
-    : public internal::ServerAsyncStreamingInterface {
+class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
  public:
   explicit ServerAsyncResponseWriter(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
@@ -297,15 +289,13 @@ class ServerAsyncResponseWriter final
   }
 
  private:
-  void BindCall(::grpc::internal::Call* call) override { call_ = *call; }
+  void BindCall(Call* call) override { call_ = *call; }
 
-  ::grpc::internal::Call call_;
+  Call call_;
   ServerContext* ctx_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
-      meta_buf_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpSendMessage,
-                              ::grpc::internal::CallOpServerSendStatus>
+  CallOpSet<CallOpSendInitialMetadata> meta_buf_;
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
+            CallOpServerSendStatus>
       finish_buf_;
 };
 

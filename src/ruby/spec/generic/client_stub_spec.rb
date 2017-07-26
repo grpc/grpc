@@ -170,14 +170,40 @@ describe 'ClientStub' do
         th.join
       end
 
-      it 'should send metadata to the server ok' do
+      def metadata_test(md)
         server_port = create_test_server
         host = "localhost:#{server_port}"
         th = run_request_response(@sent_msg, @resp, @pass,
-                                  expected_metadata: { k1: 'v1', k2: 'v2' })
+                                  expected_metadata: md)
         stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
+        @metadata = md
         expect(get_response(stub)).to eq(@resp)
         th.join
+      end
+
+      it 'should send metadata to the server ok' do
+        metadata_test(k1: 'v1', k2: 'v2')
+      end
+
+      # these tests mostly try to exercise when md might be allocated
+      # instead of inlined
+      it 'should send metadata with multiple large md to the server ok' do
+        val_array = %w(
+          '00000000000000000000000000000000000000000000000000000000000000',
+          '11111111111111111111111111111111111111111111111111111111111111',
+          '22222222222222222222222222222222222222222222222222222222222222',
+        )
+        md = {
+          k1: val_array,
+          k2: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          k3: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+          k4: 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
+          keeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeey5: 'v5',
+          'k66666666666666666666666666666666666666666666666666666' => 'v6',
+          'k77777777777777777777777777777777777777777777777777777' => 'v7',
+          'k88888888888888888888888888888888888888888888888888888' => 'v8'
+        }
+        metadata_test(md)
       end
 
       it 'should send a request when configured using an override channel' do
@@ -451,10 +477,31 @@ describe 'ClientStub' do
                            /Header values must be of type string or array/)
       end
 
+      def run_server_streamer_against_client_with_unmarshal_error(
+        expected_input, replys)
+        wakey_thread do |notifier|
+          c = expect_server_to_be_invoked(notifier)
+          expect(c.remote_read).to eq(expected_input)
+          begin
+            replys.each { |r| c.remote_send(r) }
+          rescue GRPC::Core::CallError
+            # An attempt to write to the client might fail. This is ok
+            # because the client call is expected to fail when
+            # unmarshalling the first response, and to cancel the call,
+            # and there is a race as for when the server-side call will
+            # start to fail.
+            p 'remote_send failed (allowed because call expected to cancel)'
+          ensure
+            c.send_status(OK, 'OK', true)
+          end
+        end
+      end
+
       it 'the call terminates when there is an unmarshalling error' do
         server_port = create_test_server
         host = "localhost:#{server_port}"
-        th = run_server_streamer(@sent_msg, @replys, @pass)
+        th = run_server_streamer_against_client_with_unmarshal_error(
+          @sent_msg, @replys)
         stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
 
         unmarshal = proc { fail(ArgumentError, 'test unmarshalling error') }

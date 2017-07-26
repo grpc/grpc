@@ -249,7 +249,7 @@ static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
 
 static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                       grpc_closure *on_done, int *release_fd,
-                      const char *reason) {
+                      bool already_closed, const char *reason) {
   grpc_error *error = GRPC_ERROR_NONE;
 
   if (!grpc_lfev_is_shutdown(&fd->read_closure)) {
@@ -260,7 +260,7 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
      descriptor fd->fd (but we still own the grpc_fd structure). */
   if (release_fd != NULL) {
     *release_fd = fd->fd;
-  } else {
+  } else if (!already_closed) {
     close(fd->fd);
   }
 
@@ -1030,6 +1030,12 @@ static const grpc_event_engine_vtable vtable = {
 /* It is possible that GLIBC has epoll but the underlying kernel doesn't.
  * Create a dummy epoll_fd to make sure epoll support is available */
 const grpc_event_engine_vtable *grpc_init_epoll1_linux(bool explicit_request) {
+  /* TODO(sreek): Temporarily disable this poller unless explicitly requested
+   * via GRPC_POLL_STRATEGY */
+  if (!explicit_request) {
+    return NULL;
+  }
+
   if (!grpc_has_wakeup_fd()) {
     return NULL;
   }
