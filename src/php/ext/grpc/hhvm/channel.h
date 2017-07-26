@@ -28,6 +28,7 @@
 #include <grpc/grpc.h>
 
 #include <map>
+#include <string>
 
 namespace HPHP {
 
@@ -58,7 +59,7 @@ struct ChannelsCache {
   bool hasChannel(const String& key);
   void deleteChannel(const String& key);
 
-  std::map<String, grpc_channel *> channelMap;
+  std::map<std::string, grpc_channel *> channelMap;
 
   static DECLARE_THREAD_LOCAL(ChannelsCache, tl_obj);
 };

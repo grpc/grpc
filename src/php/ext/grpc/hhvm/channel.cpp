@@ -26,6 +26,7 @@
 
 #include <stdbool.h>
 #include <map>
+#include <string>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -75,16 +76,16 @@ IMPLEMENT_THREAD_LOCAL(ChannelsCache, ChannelsCache::tl_obj);
 
 ChannelsCache::ChannelsCache() {}
 void ChannelsCache::addChannel(const String& key, grpc_channel *channel) {
-  channelMap[key] = channel;
+  channelMap[key.toCppString()] = channel;
 }
 
 grpc_channel *ChannelsCache::getChannel(const String& key) {
-  return channelMap[key];
+  return channelMap[key.toCppString()];
 }
 
 bool ChannelsCache::hasChannel(const String& key) {
-  std::map<String, grpc_channel *>::iterator it;
-  it = channelMap.find(key);
+  std::map<std::string, grpc_channel *>::iterator it;
+  it = channelMap.find(key.toCppString());
   if (it == channelMap.end()) {
     return false;
   }
@@ -94,7 +95,7 @@ bool ChannelsCache::hasChannel(const String& key) {
 
 void ChannelsCache::deleteChannel(const String& key) {
   if (hasChannel(key)) {
-    channelMap.erase(key);
+    channelMap.erase(key.toCppString());
   }
 }
 
