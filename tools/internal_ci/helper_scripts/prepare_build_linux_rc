@@ -30,6 +30,8 @@
 
 # Source this rc script to prepare the environment for linux builds
 
+tools/internal_ci/helper_scripts/gen_report_index.sh
+
 # Need to increase open files limit for c tests
 ulimit -n 32768
 
