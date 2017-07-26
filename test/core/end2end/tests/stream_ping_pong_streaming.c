@@ -90,10 +90,12 @@ static void end_test(grpc_end2end_test_fixture *f) {
 /* Client pings and server pongs. Repeat messages rounds before finishing. */
 static void test_pingpong_streaming(grpc_end2end_test_config config,
                                     int messages) {
-  grpc_channel_args *client_args = grpc_channel_args_set_compression_algorithm(
-      NULL, GRPC_STREAM_COMPRESS_GZIP);
-  grpc_channel_args *server_args = grpc_channel_args_set_compression_algorithm(
-      NULL, GRPC_STREAM_COMPRESS_GZIP);
+  grpc_channel_args *client_args =
+      grpc_channel_args_set_stream_compression_algorithm(
+          NULL, GRPC_STREAM_COMPRESS_GZIP);
+  grpc_channel_args *server_args =
+      grpc_channel_args_set_stream_compression_algorithm(
+          NULL, GRPC_STREAM_COMPRESS_GZIP);
   grpc_end2end_test_fixture f =
       begin_test(config, "test_pingpong_streaming", client_args, server_args);
   grpc_call *c;

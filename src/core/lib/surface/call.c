@@ -1613,14 +1613,15 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         /* process compression level */
         memset(&compression_md, 0, sizeof(compression_md));
         size_t additional_metadata_count = 0;
-        grpc_compression_level effective_compression_level = GRPC_COMPRESS_NONE;
+        grpc_compression_level effective_compression_level =
+            GRPC_COMPRESS_LEVEL_NONE;
         grpc_stream_compression_level effective_stream_compression_level =
-            GRPC_STREAM_COMPRESS_NONE;
+            GRPC_STREAM_COMPRESS_LEVEL_NONE;
         bool level_set = false;
         bool stream_compression = false;
         if (op->data.send_initial_metadata.maybe_stream_compression_level
                 .is_set) {
-          effective_compression_level =
+          effective_stream_compression_level =
               op->data.send_initial_metadata.maybe_stream_compression_level
                   .level;
           level_set = true;

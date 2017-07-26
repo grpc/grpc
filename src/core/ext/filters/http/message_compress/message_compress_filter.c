@@ -118,7 +118,8 @@ static grpc_error *process_send_initial_metadata(
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
   *has_compression_algorithm = false;
-  grpc_stream_compression_algorithm stream_compression_algorithm;
+  grpc_stream_compression_algorithm stream_compression_algorithm =
+      GRPC_STREAM_COMPRESS_NONE;
   if (initial_metadata->idx.named.grpc_internal_stream_encoding_request !=
       NULL) {
     grpc_mdelem md =

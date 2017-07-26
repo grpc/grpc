@@ -172,6 +172,8 @@ void grpc_compression_options_init(grpc_compression_options *opts) {
   memset(opts, 0, sizeof(*opts));
   /* all enabled by default */
   opts->enabled_algorithms_bitset = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
+  opts->enabled_stream_compression_algorithms_bitset =
+      (1u << GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT) - 1;
 }
 
 void grpc_compression_options_enable_algorithm(

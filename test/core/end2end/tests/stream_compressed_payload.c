@@ -560,7 +560,7 @@ static void test_invoke_request_with_compressed_payload(
       GRPC_STREAM_COMPRESS_GZIP, GRPC_STREAM_COMPRESS_GZIP,
       GRPC_STREAM_COMPRESS_GZIP, GRPC_STREAM_COMPRESS_GZIP, NULL,
       false, /* ignored */
-      GRPC_COMPRESS_LEVEL_NONE, false, false, GRPC_COMPRESS_NONE);
+      GRPC_STREAM_COMPRESS_LEVEL_NONE, false, false, GRPC_COMPRESS_NONE);
 }
 
 static void test_invoke_request_with_send_message_before_initial_metadata(
@@ -570,7 +570,7 @@ static void test_invoke_request_with_send_message_before_initial_metadata(
       0, GRPC_STREAM_COMPRESS_GZIP, GRPC_STREAM_COMPRESS_GZIP,
       GRPC_STREAM_COMPRESS_GZIP, GRPC_STREAM_COMPRESS_GZIP, NULL,
       false, /* ignored */
-      GRPC_COMPRESS_LEVEL_NONE, true, false, GRPC_COMPRESS_NONE);
+      GRPC_STREAM_COMPRESS_LEVEL_NONE, true, false, GRPC_COMPRESS_NONE);
 }
 
 static void test_invoke_request_with_server_level(
@@ -607,7 +607,8 @@ static void test_invoke_request_with_compressed_payload_md_override(
       GRPC_STREAM_COMPRESS_NONE, GRPC_STREAM_COMPRESS_NONE,
       GRPC_STREAM_COMPRESS_GZIP, GRPC_STREAM_COMPRESS_NONE,
       &gzip_compression_override, false,
-      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE, false, false, GRPC_COMPRESS_NONE);
+      /*ignored*/ GRPC_STREAM_COMPRESS_LEVEL_NONE, false, false,
+      GRPC_COMPRESS_NONE);
 
   /* Channel default stream GZIP, call override to NONE (aka IDENTITY) */
   request_with_payload_template(
@@ -615,7 +616,8 @@ static void test_invoke_request_with_compressed_payload_md_override(
       GRPC_STREAM_COMPRESS_GZIP, GRPC_STREAM_COMPRESS_NONE,
       GRPC_STREAM_COMPRESS_NONE, GRPC_STREAM_COMPRESS_NONE,
       &identity_compression_override, false,
-      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE, false, false, GRPC_COMPRESS_NONE);
+      /*ignored*/ GRPC_STREAM_COMPRESS_LEVEL_NONE, false, false,
+      GRPC_COMPRESS_NONE);
 }
 
 static void test_invoke_request_with_disabled_algorithm(
