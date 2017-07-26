@@ -19,7 +19,7 @@ set -e
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-# Jenkins URLs are in form "grpc/job/macos/job/experimental/job/jtattermusch_experiment"
+# Kororo URLs are in the form "grpc/job/macos/job/master/job/grpc_build_artifacts"
 KOKORO_JOB_PATH=$(echo "${KOKORO_JOB_NAME}" | sed "s|/|/job/|g")
 
 mkdir -p reports
