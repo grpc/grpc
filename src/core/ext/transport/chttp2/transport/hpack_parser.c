@@ -1665,6 +1665,8 @@ static void parse_stream_compression_md(grpc_exec_ctx *exec_ctx,
     if (!grpc_slice_eq(content_encoding, GRPC_MDSTR_IDENTITY)) {
       if (grpc_slice_eq(content_encoding, GRPC_MDSTR_GZIP)) {
         s->stream_compression_recv_enabled = true;
+        s->decompressed_data_buffer = gpr_malloc(sizeof(grpc_slice_buffer));
+        grpc_slice_buffer_init(s->decompressed_data_buffer);
       }
     }
   }
