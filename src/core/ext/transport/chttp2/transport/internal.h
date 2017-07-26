@@ -533,12 +533,12 @@ struct grpc_chttp2_stream {
   grpc_stream_compression_context *stream_compression_ctx;
 
   /** Buffer storing data that is compressed but not sent */
-  grpc_slice_buffer compressed_data_buffer;
+  grpc_slice_buffer *compressed_data_buffer;
   /** Amount of uncompressed bytes sent out when compressed_data_buffer is
    * emptied */
   size_t uncompressed_data_size;
   /** Temporary buffer storing decompressed data */
-  grpc_slice_buffer decompressed_data_buffer;
+  grpc_slice_buffer *decompressed_data_buffer;
 };
 
 /** Transport writing call flow:
