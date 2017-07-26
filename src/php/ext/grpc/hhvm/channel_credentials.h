@@ -45,6 +45,7 @@ struct DefaultPemRootCerts {
 class ChannelCredentialsData {
   private:
     grpc_channel_credentials* wrapped{nullptr};
+    String key;
   public:
     static Class* s_class;
     static const StaticString s_className;
@@ -57,6 +58,8 @@ class ChannelCredentialsData {
     void init(grpc_channel_credentials* channel_credentials);
     void sweep();
     grpc_channel_credentials* getWrapped();
+    void setHashKey(const String& hashKey);
+    String getHashKey();
 };
 
 void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,

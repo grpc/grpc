@@ -78,7 +78,10 @@ void HHVM_METHOD(Server, __construct,
     serverData->init(grpc_server_create(NULL, NULL));
   } else {
     grpc_channel_args args;
-    hhvm_grpc_read_args_array(args_array_or_null.toArray(), &args);
+    if (hhvm_grpc_read_args_array(args_array_or_null.toArray(), &args) == -1) {
+      req::free(args.args);
+      return;
+    }
     serverData->init(grpc_server_create(&args, NULL));
     req::free(args.args);
   }

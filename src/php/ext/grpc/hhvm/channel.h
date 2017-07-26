@@ -27,11 +27,14 @@
 
 #include <grpc/grpc.h>
 
+#include <map>
+
 namespace HPHP {
 
 class ChannelData {
   private:
     grpc_channel* wrapped{nullptr};
+    String key;
   public:
     static Class* s_class;
     static const StaticString s_className;
@@ -44,6 +47,20 @@ class ChannelData {
     void init(grpc_channel* channel);
     void sweep();
     grpc_channel* getWrapped();
+    void setHashKey(const String& hashKey);
+    String getHashKey();
+};
+
+struct ChannelsCache {
+  ChannelsCache();
+  void addChannel(const String& key, grpc_channel *channel);
+  grpc_channel *getChannel(const String& key);
+  bool hasChannel(const String& key);
+  void deleteChannel(const String& key);
+
+  std::map<String, grpc_channel *> channelMap;
+
+  static DECLARE_THREAD_LOCAL(ChannelsCache, tl_obj);
 };
 
 void HHVM_METHOD(Channel, __construct,
@@ -61,7 +78,7 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
 
 void HHVM_METHOD(Channel, close);
 
-void hhvm_grpc_read_args_array(const Array& args_array, grpc_channel_args *args);
+int hhvm_grpc_read_args_array(const Array& args_array, grpc_channel_args *args);
 
 }
 

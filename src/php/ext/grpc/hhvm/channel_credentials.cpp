@@ -27,6 +27,7 @@
 #include "hphp/runtime/base/req-containers.h"
 #include "hphp/runtime/vm/native-data.h"
 #include "hphp/runtime/base/builtin-functions.h"
+#include "hphp/runtime/base/string-util.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/grpc.h>
@@ -61,7 +62,8 @@ const StaticString ChannelCredentialsData::s_className("Grpc\\ChannelCredentials
 
 IMPLEMENT_GET_CLASS(ChannelCredentialsData);
 
-ChannelCredentialsData::ChannelCredentialsData() {}
+ChannelCredentialsData::ChannelCredentialsData() : key(String("")) {}
+
 ChannelCredentialsData::~ChannelCredentialsData() { sweep(); }
 
 void ChannelCredentialsData::init(grpc_channel_credentials* channel_credentials) {
@@ -77,6 +79,14 @@ void ChannelCredentialsData::sweep() {
 
 grpc_channel_credentials* ChannelCredentialsData::getWrapped() {
   return wrapped;
+}
+
+void ChannelCredentialsData::setHashKey(const String& hashKey) {
+  key = hashKey;
+}
+
+String ChannelCredentialsData::getHashKey() {
+  return key;
 }
 
 void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,
@@ -107,15 +117,26 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createSsl,
   auto newChannelCredentialsObj = Object{ChannelCredentialsData::getClass()};
   auto channelCredentialsData = Native::data<ChannelCredentialsData>(newChannelCredentialsObj);
 
+  String unhashedKey = String("");
+
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
   pem_key_cert_pair.private_key = pem_key_cert_pair.cert_chain = NULL;
 
   if (pem_key_cert_pair__private_key.isString()) {
     pem_key_cert_pair.private_key = pem_key_cert_pair__private_key.toString().c_str();
+    unhashedKey += pem_key_cert_pair__private_key.toString();
   }
 
   if (pem_key_cert_pair__cert_chain.isString()) {
     pem_key_cert_pair.cert_chain = pem_key_cert_pair__cert_chain.toString().c_str();
+    unhashedKey += pem_key_cert_pair__cert_chain.toString();
+  }
+
+  if (unhashedKey != String("")) {
+    String hashKey = StringUtil::SHA1(unhashedKey, false);
+    channelCredentialsData->setHashKey(hashKey);
+  } else {
+    channelCredentialsData->setHashKey(String(""));
   }
 
   channelCredentialsData->init(grpc_ssl_credentials_create(
@@ -141,6 +162,7 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createComposite,
   auto newChannelCredentialsObj = Object{ChannelCredentialsData::getClass()};
   auto newChannelCredentialsData = Native::data<ChannelCredentialsData>(newChannelCredentialsObj);
   newChannelCredentialsData->init(channel_credentials);
+  newChannelCredentialsData->setHashKey(channelCredentialsData->getHashKey());
 
   return newChannelCredentialsObj;
 }
