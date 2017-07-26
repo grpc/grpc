@@ -986,11 +986,13 @@ static void queue_setting_update(grpc_exec_ctx *exec_ctx,
 
 void grpc_chttp2_add_incoming_goaway(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t,
+                                     uint32_t last_stream_index,
                                      uint32_t goaway_error,
                                      grpc_slice goaway_text) {
   // GRPC_CHTTP2_IF_TRACING(
   //     gpr_log(GPR_DEBUG, "got goaway [%d]: %s", goaway_error, msg));
   t->seen_goaway = 1;
+  t->goaway_last_stream_index = last_stream_index;
 
   /* When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
    * data equal to "too_many_pings", it should log the occurrence at a log level
@@ -1121,6 +1123,13 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
         grpc_error_add_child(closure->error_data.error, error);
   }
   if (closure->next_data.scratch < CLOSURE_BARRIER_FIRST_REF_BIT) {
+    if (s->sent_initial_metadata && !s->write_initial_metadata_done) {
+      grpc_error *top_level_error = grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Request not seen by server"),
+          GRPC_ERROR_INT_NOT_SEEN_BY_SERVER, 1);
+      closure->error_data.error =
+          grpc_error_add_child(top_level_error, closure->error_data.error);
+    }
     if (closure->next_data.scratch & CLOSURE_BARRIER_STATS_BIT) {
       grpc_transport_move_stats(&s->stats, s->collecting_stats);
       s->collecting_stats = NULL;

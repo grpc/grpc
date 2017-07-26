@@ -519,6 +519,7 @@ struct grpc_chttp2_stream {
 
   bool sent_initial_metadata;
   bool sent_trailing_metadata;
+  bool write_initial_metadata_done;
   /** how much window should we announce? */
   uint32_t announce_window;
   grpc_slice_buffer flow_controlled_buffer;
@@ -609,6 +610,7 @@ grpc_chttp2_stream *grpc_chttp2_parsing_accept_stream(grpc_exec_ctx *exec_ctx,
 
 void grpc_chttp2_add_incoming_goaway(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t,
+                                     uint32_t last_stream_index,
                                      uint32_t goaway_error,
                                      grpc_slice goaway_text);
 

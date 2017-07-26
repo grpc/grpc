@@ -453,6 +453,7 @@ void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
   while (grpc_chttp2_list_pop_writing_stream(t, &s)) {
     if (s->sent_initial_metadata) {
+      s->write_initial_metadata_done = true;
       grpc_chttp2_complete_closure_step(
           exec_ctx, t, s, &s->send_initial_metadata_finished,
           GRPC_ERROR_REF(error), "send_initial_metadata_finished");

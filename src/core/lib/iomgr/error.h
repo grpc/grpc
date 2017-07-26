@@ -75,6 +75,8 @@ typedef enum {
   GRPC_ERROR_INT_LIMIT,
   /// chttp2: did the error occur while a write was in progress
   GRPC_ERROR_INT_OCCURRED_DURING_WRITE,
+  /// chttp2: is the request seen by server
+  GRPC_ERROR_INT_NOT_SEEN_BY_SERVER,
 
   /// Must always be last
   GRPC_ERROR_INT_MAX,
