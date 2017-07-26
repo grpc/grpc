@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,27 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_reflection/grpc_version.py.template`!!!
 
-# change to root directory
-cd "$(dirname "$0")/../.."
-
-DIRS=(
-    'src/python/grpcio/grpc'
-    'src/python/grpcio_health_checking/grpc_health'
-    'src/python/grpcio_reflection/grpc_reflection'
-    'src/python/grpcio_testing/grpc_testing'
-)
-
-VIRTUALENV=python_pylint_venv
-
-virtualenv $VIRTUALENV
-PYTHON=$(realpath $VIRTUALENV/bin/python)
-$PYTHON -m pip install --upgrade pip
-$PYTHON -m pip install pylint==1.6.5
-
-for dir in "${DIRS[@]}"; do
-  $PYTHON -m pylint --rcfile=.pylintrc -rn "$dir" || exit $?
-done
-
-exit 0
+VERSION = '1.5.0.dev0'
