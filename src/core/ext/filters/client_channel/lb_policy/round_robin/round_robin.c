@@ -584,10 +584,16 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
   // Dispose of outdated subchannel lists.
   if (sd->subchannel_list != p->subchannel_list &&
       sd->subchannel_list != p->latest_pending_subchannel_list) {
-    // sd belongs to an outdated subchannel_list: get rid of it.
-    rr_subchannel_list_shutdown_and_unref(exec_ctx, sd->subchannel_list,
-                                          "sl_outdated");
-    GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base, "sl_outdated");
+    char *reason = NULL;
+    if (sd->subchannel_list->shutting_down) {
+      reason = "sl_outdated_straggler";
+      rr_subchannel_list_unref(exec_ctx, sd->subchannel_list, reason);
+    } else {
+      reason = "sl_outdated";
+      rr_subchannel_list_shutdown_and_unref(exec_ctx, sd->subchannel_list,
+                                            reason);
+    }
+    GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base, reason);
     return;
   }
   // Now that we're inside the combiner, copy the pending connectivity
@@ -753,6 +759,7 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
   for (size_t i = 0; i < addresses->num_addresses; i++) {
     if (!addresses->addresses[i].is_balancer) ++num_addrs;
   }
+  rr_subchannel_list *subchannel_list = rr_subchannel_list_create(p, num_addrs);
   if (num_addrs == 0) {
     grpc_connectivity_state_set(
         exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
@@ -761,18 +768,16 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     if (p->subchannel_list != NULL) {
       rr_subchannel_list_shutdown_and_unref(exec_ctx, p->subchannel_list,
                                             "sl_shutdown_empty_update");
-      p->subchannel_list = NULL;
     }
+    p->subchannel_list = subchannel_list;  // empty list
     return;
   }
   size_t subchannel_index = 0;
-  rr_subchannel_list *subchannel_list = rr_subchannel_list_create(p, num_addrs);
   if (p->latest_pending_subchannel_list != NULL && p->started_picking) {
     if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_DEBUG,
               "[RR %p] Shutting down latest pending subchannel list %p, about "
-              "to be "
-              "replaced by newer latest %p",
+              "to be replaced by newer latest %p",
               (void *)p, (void *)p->latest_pending_subchannel_list,
               (void *)subchannel_list);
     }
@@ -876,10 +881,10 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
                                           grpc_lb_policy_args *args) {
   GPR_ASSERT(args->client_channel_factory != NULL);
   round_robin_lb_policy *p = gpr_zalloc(sizeof(*p));
-  rr_update_locked(exec_ctx, &p->base, args);
   grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable, args->combiner);
   grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,
                                "round_robin");
+  rr_update_locked(exec_ctx, &p->base, args);
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG, "[RR %p] Created with %lu subchannels", (void *)p,
             (unsigned long)p->subchannel_list->num_subchannels);
