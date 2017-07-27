@@ -45,6 +45,7 @@ extern "C" {
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 // TODO(dgq): Other scenarios in need of testing:
@@ -142,22 +143,20 @@ grpc::string Ip4ToPackedString(const char* ip_str) {
 struct ClientStats {
   size_t num_calls_started = 0;
   size_t num_calls_finished = 0;
-  size_t num_calls_finished_with_drop_for_rate_limiting = 0;
-  size_t num_calls_finished_with_drop_for_load_balancing = 0;
   size_t num_calls_finished_with_client_failed_to_send = 0;
   size_t num_calls_finished_known_received = 0;
+  std::map<grpc::string, size_t> drop_token_counts;
 
   ClientStats& operator+=(const ClientStats& other) {
     num_calls_started += other.num_calls_started;
     num_calls_finished += other.num_calls_finished;
-    num_calls_finished_with_drop_for_rate_limiting +=
-        other.num_calls_finished_with_drop_for_rate_limiting;
-    num_calls_finished_with_drop_for_load_balancing +=
-        other.num_calls_finished_with_drop_for_load_balancing;
     num_calls_finished_with_client_failed_to_send +=
         other.num_calls_finished_with_client_failed_to_send;
     num_calls_finished_known_received +=
         other.num_calls_finished_known_received;
+    for (const auto& p : other.drop_token_counts) {
+      drop_token_counts[p.first] += p.second;
+    }
     return *this;
   }
 };
@@ -218,17 +217,17 @@ class BalancerServiceImpl : public BalancerService {
           request.client_stats().num_calls_started();
       client_stats_.num_calls_finished +=
           request.client_stats().num_calls_finished();
-      client_stats_.num_calls_finished_with_drop_for_rate_limiting +=
-          request.client_stats()
-              .num_calls_finished_with_drop_for_rate_limiting();
-      client_stats_.num_calls_finished_with_drop_for_load_balancing +=
-          request.client_stats()
-              .num_calls_finished_with_drop_for_load_balancing();
       client_stats_.num_calls_finished_with_client_failed_to_send +=
           request.client_stats()
               .num_calls_finished_with_client_failed_to_send();
       client_stats_.num_calls_finished_known_received +=
           request.client_stats().num_calls_finished_known_received();
+      for (const auto& drop_token_count :
+           request.client_stats().calls_finished_with_drop()) {
+        client_stats_
+            .drop_token_counts[drop_token_count.load_balance_token()] +=
+            drop_token_count.num_calls();
+      }
       load_report_cond_.notify_one();
     }
   done:
@@ -252,16 +251,15 @@ class BalancerServiceImpl : public BalancerService {
   }
 
   static LoadBalanceResponse BuildResponseForBackends(
-      const std::vector<int>& backend_ports, int num_drops_for_rate_limiting,
-      int num_drops_for_load_balancing) {
+      const std::vector<int>& backend_ports,
+      const std::map<grpc::string, size_t>& drop_token_counts) {
     LoadBalanceResponse response;
-    for (int i = 0; i < num_drops_for_rate_limiting; ++i) {
-      auto* server = response.mutable_server_list()->add_servers();
-      server->set_drop_for_rate_limiting(true);
-    }
-    for (int i = 0; i < num_drops_for_load_balancing; ++i) {
-      auto* server = response.mutable_server_list()->add_servers();
-      server->set_drop_for_load_balancing(true);
+    for (const auto& drop_token_count : drop_token_counts) {
+      for (size_t i = 0; i < drop_token_count.second; ++i) {
+        auto* server = response.mutable_server_list()->add_servers();
+        server->set_drop(true);
+        server->set_load_balance_token(drop_token_count.first);
+      }
     }
     for (const int& backend_port : backend_ports) {
       auto* server = response.mutable_server_list()->add_servers();
@@ -499,7 +497,7 @@ class SingleBalancerTest : public GrpclbEnd2endTest {
 TEST_F(SingleBalancerTest, Vanilla) {
   const size_t kNumRpcsPerAddress = 100;
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), 0, 0),
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
       0);
   // Make sure that trying to connect works without a call.
   channel_->GetState(true /* try_to_connect */);
@@ -538,7 +536,7 @@ TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   ScheduleResponseForBalancer(0, LoadBalanceResponse(), 0);
   // Send non-empty serverlist only after kServerlistDelayMs
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), 0, 0),
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
       kServerlistDelayMs);
 
   const auto t0 = system_clock::now();
@@ -580,11 +578,11 @@ TEST_F(SingleBalancerTest, RepeatedServerlist) {
 
   // Send a serverlist right away.
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), 0, 0),
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
       0);
   // ... and the same one a bit later.
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), 0, 0),
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
       kServerlistDelayMs);
 
   // Send num_backends/2 requests.
@@ -648,10 +646,9 @@ TEST_F(UpdatesTest, UpdateBalancers) {
   const std::vector<int> first_backend{GetBackendPorts()[0]};
   const std::vector<int> second_backend{GetBackendPorts()[1]};
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(first_backend, 0, 0), 0);
+      0, BalancerServiceImpl::BuildResponseForBackends(first_backend, {}), 0);
   ScheduleResponseForBalancer(
-      1, BalancerServiceImpl::BuildResponseForBackends(second_backend, 0, 0),
-      0);
+      1, BalancerServiceImpl::BuildResponseForBackends(second_backend, {}), 0);
 
   // Start servers and send 10 RPCs per server.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
@@ -726,10 +723,9 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   const std::vector<int> second_backend{GetBackendPorts()[0]};
 
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(first_backend, 0, 0), 0);
+      0, BalancerServiceImpl::BuildResponseForBackends(first_backend, {}), 0);
   ScheduleResponseForBalancer(
-      1, BalancerServiceImpl::BuildResponseForBackends(second_backend, 0, 0),
-      0);
+      1, BalancerServiceImpl::BuildResponseForBackends(second_backend, {}), 0);
 
   // Start servers and send 10 RPCs per server.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
@@ -809,10 +805,9 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   const std::vector<int> second_backend{GetBackendPorts()[1]};
 
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(first_backend, 0, 0), 0);
+      0, BalancerServiceImpl::BuildResponseForBackends(first_backend, {}), 0);
   ScheduleResponseForBalancer(
-      1, BalancerServiceImpl::BuildResponseForBackends(second_backend, 0, 0),
-      0);
+      1, BalancerServiceImpl::BuildResponseForBackends(second_backend, {}), 0);
 
   // Start servers and send 10 RPCs per server.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
@@ -901,7 +896,8 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
 TEST_F(SingleBalancerTest, Drop) {
   const size_t kNumRpcsPerAddress = 100;
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), 1, 2),
+      0, BalancerServiceImpl::BuildResponseForBackends(
+             GetBackendPorts(), {{"rate_limiting", 1}, {"load_balancing", 2}}),
       0);
   // Send 100 RPCs for each server and drop address.
   const auto& statuses_and_responses =
@@ -936,7 +932,9 @@ TEST_F(SingleBalancerTest, Drop) {
 TEST_F(SingleBalancerTest, DropAllFirst) {
   // All registered addresses are marked as "drop".
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends({}, 1, 1), 0);
+      0, BalancerServiceImpl::BuildResponseForBackends(
+             {}, {{"rate_limiting", 1}, {"load_balancing", 1}}),
+      0);
   const auto& statuses_and_responses = SendRpc(kMessage_, 1);
   for (const auto& status_and_response : statuses_and_responses) {
     const Status& status = status_and_response.first;
@@ -947,10 +945,12 @@ TEST_F(SingleBalancerTest, DropAllFirst) {
 
 TEST_F(SingleBalancerTest, DropAll) {
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), 0, 0),
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
       0);
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends({}, 1, 1), 1000);
+      0, BalancerServiceImpl::BuildResponseForBackends(
+             {}, {{"rate_limiting", 1}, {"load_balancing", 1}}),
+      1000);
 
   // First call succeeds.
   auto statuses_and_responses = SendRpc(kMessage_, 1);
@@ -980,7 +980,7 @@ class SingleBalancerWithClientLoadReportingTest : public GrpclbEnd2endTest {
 TEST_F(SingleBalancerWithClientLoadReportingTest, Vanilla) {
   const size_t kNumRpcsPerAddress = 100;
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), 0, 0),
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
       0);
   // Send 100 RPCs per server.
   const auto& statuses_and_responses =
@@ -1009,17 +1009,17 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Vanilla) {
   EXPECT_EQ(kNumRpcsPerAddress * num_backends_, client_stats.num_calls_started);
   EXPECT_EQ(kNumRpcsPerAddress * num_backends_,
             client_stats.num_calls_finished);
-  EXPECT_EQ(0U, client_stats.num_calls_finished_with_drop_for_rate_limiting);
-  EXPECT_EQ(0U, client_stats.num_calls_finished_with_drop_for_load_balancing);
   EXPECT_EQ(0U, client_stats.num_calls_finished_with_client_failed_to_send);
   EXPECT_EQ(kNumRpcsPerAddress * num_backends_,
             client_stats.num_calls_finished_known_received);
+  EXPECT_THAT(client_stats.drop_token_counts, ::testing::ElementsAre());
 }
 
 TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
   const size_t kNumRpcsPerAddress = 3;
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), 2, 1),
+      0, BalancerServiceImpl::BuildResponseForBackends(
+             GetBackendPorts(), {{"rate_limiting", 2}, {"load_balancing", 1}}),
       0);
   // Send 100 RPCs for each server and drop address.
   const auto& statuses_and_responses =
@@ -1056,13 +1056,13 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
             client_stats.num_calls_started);
   EXPECT_EQ(kNumRpcsPerAddress * (num_backends_ + 3),
             client_stats.num_calls_finished);
-  EXPECT_EQ(kNumRpcsPerAddress * 2,
-            client_stats.num_calls_finished_with_drop_for_rate_limiting);
-  EXPECT_EQ(kNumRpcsPerAddress,
-            client_stats.num_calls_finished_with_drop_for_load_balancing);
   EXPECT_EQ(0U, client_stats.num_calls_finished_with_client_failed_to_send);
   EXPECT_EQ(kNumRpcsPerAddress * num_backends_,
             client_stats.num_calls_finished_known_received);
+  EXPECT_THAT(client_stats.drop_token_counts,
+              ::testing::ElementsAre(
+                  ::testing::Pair("load_balancing", kNumRpcsPerAddress),
+                  ::testing::Pair("rate_limiting", kNumRpcsPerAddress * 2)));
 }
 
 }  // namespace
