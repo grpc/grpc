@@ -63,10 +63,10 @@ def _args():
     help='Name of baseline run to compare to. Ususally just called "old"')
   argp.add_argument(
     '-r',
-    '--repetitions',
-    type=int,
-    default=1,
-    help='Number of repetitions to pass to the benchmarks')
+    '--regex',
+    type=str,
+    default="",
+    help='Regex to filter benchmarks run')
   argp.add_argument(
     '-l',
     '--loops',
@@ -80,6 +80,14 @@ def _args():
     type=int,
     default=multiprocessing.cpu_count(),
     help='Number of CPUs to use')
+  argp.add_argument(
+    '--pr_comment_name',
+    type=str,
+    default="microbenchmarks",
+    help='Name that Jenkins will use to commen on the PR')
+  argp.add_argument('--counters', dest='counters', action='store_true')
+  argp.add_argument('--no-counters', dest='counters', action='store_false')
+  argp.set_defaults(counters=True)
   args = argp.parse_args()
   assert args.diff_base or args.old, "One of diff_base or old must be set!"
   if args.loops < 3:
@@ -103,7 +111,7 @@ def eintr_be_gone(fn):
 
 def main(args):
 
-  bm_build.build('new', args.benchmarks, args.jobs)
+  bm_build.build('new', args.benchmarks, args.jobs, args.counters)
 
   old = args.old
   if args.diff_base:
@@ -112,20 +120,20 @@ def main(args):
       ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
     subprocess.check_call(['git', 'checkout', args.diff_base])
     try:
-      bm_build.build('old', args.benchmarks, args.jobs)
+      bm_build.build(old, args.benchmarks, args.jobs, args.counters)
     finally:
       subprocess.check_call(['git', 'checkout', where_am_i])
       subprocess.check_call(['git', 'submodule', 'update'])
 
-  bm_run.run('new', args.benchmarks, args.jobs, args.loops, args.repetitions)
-  bm_run.run(old, args.benchmarks, args.jobs, args.loops, args.repetitions)
+  bm_run.run('new', args.benchmarks, args.jobs, args.loops, args.regex, args.counters)
+  bm_run.run(old, args.benchmarks, args.jobs, args.loops, args.regex, args.counters)
 
-  diff, note = bm_diff.diff(args.benchmarks, args.loops, args.track, old,
-                'new')
+  diff, note = bm_diff.diff(args.benchmarks, args.loops, args.regex, args.track, old,
+                'new', args.counters)
   if diff:
-    text = 'Performance differences noted:\n' + diff
+    text = '[%s] Performance differences noted:\n%s' % (args.pr_comment_name, diff)
   else:
-    text = 'No significant performance differences'
+    text = '[%s] No significant performance differences' % args.pr_comment_name
   if note:
     text = note + '\n\n' + text
   print('%s' % text)

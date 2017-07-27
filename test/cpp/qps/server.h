@@ -19,8 +19,11 @@
 #ifndef TEST_QPS_SERVER_H
 #define TEST_QPS_SERVER_H
 
+#include <grpc++/resource_quota.h>
 #include <grpc++/security/server_credentials.h>
+#include <grpc++/server_builder.h>
 #include <grpc/support/cpu.h>
+#include <grpc/support/log.h>
 #include <vector>
 
 #include "src/core/lib/surface/completion_queue.h"
@@ -29,6 +32,7 @@
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/cpp/qps/usage_timer.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 namespace grpc {
 namespace testing {
@@ -86,12 +90,14 @@ class Server {
   static std::shared_ptr<ServerCredentials> CreateServerCredentials(
       const ServerConfig& config) {
     if (config.has_security_params()) {
-      SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
-                                                          test_server1_cert};
-      SslServerCredentialsOptions ssl_opts;
-      ssl_opts.pem_root_certs = "";
-      ssl_opts.pem_key_cert_pairs.push_back(pkcp);
-      return SslServerCredentials(ssl_opts);
+      grpc::string type;
+      if (config.security_params().cred_type().empty()) {
+        type = kTlsCredentialsType;
+      } else {
+        type = config.security_params().cred_type();
+      }
+
+      return GetCredentialsProvider()->GetServerCredentials(type);
     } else {
       return InsecureServerCredentials();
     }
@@ -100,6 +106,31 @@ class Server {
   virtual int GetPollCount() {
     // For sync server.
     return 0;
+  }
+
+ protected:
+  static void ApplyConfigToBuilder(const ServerConfig& config,
+                                   ServerBuilder* builder) {
+    if (config.resource_quota_size() > 0) {
+      builder->SetResourceQuota(ResourceQuota("AsyncQpsServerTest")
+                                    .Resize(config.resource_quota_size()));
+    }
+    for (const auto& channel_arg : config.channel_args()) {
+      switch (channel_arg.value_case()) {
+        case ChannelArg::kStrValue:
+          builder->AddChannelArgument(channel_arg.name(),
+                                      channel_arg.str_value());
+          break;
+        case ChannelArg::kIntValue:
+          builder->AddChannelArgument(channel_arg.name(),
+                                      channel_arg.int_value());
+          break;
+        case ChannelArg::VALUE_NOT_SET:
+          gpr_log(GPR_ERROR, "Channel arg '%s' does not have a value",
+                  channel_arg.name().c_str());
+          break;
+      }
+    }
   }
 
  private:

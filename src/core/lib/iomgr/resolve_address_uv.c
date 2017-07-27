@@ -30,6 +30,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_uv.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -54,7 +55,7 @@ static int retry_named_port_failure(int status, request *r,
         int retry_status;
         uv_getaddrinfo_t *req = gpr_malloc(sizeof(uv_getaddrinfo_t));
         req->data = r;
-        r->port = svc[i][1];
+        r->port = gpr_strdup(svc[i][1]);
         retry_status = uv_getaddrinfo(uv_default_loop(), req, getaddrinfo_cb,
                                       r->host, r->port, r->hints);
         if (retry_status < 0 || getaddrinfo_cb == NULL) {
@@ -114,11 +115,14 @@ static void getaddrinfo_callback(uv_getaddrinfo_t *req, int status,
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_error *error;
   int retry_status;
+  char *port = r->port;
 
   gpr_free(req);
   retry_status = retry_named_port_failure(status, r, getaddrinfo_callback);
   if (retry_status == 0) {
-    // The request is being retried. Nothing should be done here
+    /* The request is being retried. It is using its own port string, so we free
+     * the original one */
+    gpr_free(port);
     return;
   }
   /* Either no retry was attempted, or the retry failed. Either way, the
@@ -127,6 +131,8 @@ static void getaddrinfo_callback(uv_getaddrinfo_t *req, int status,
   GRPC_CLOSURE_SCHED(&exec_ctx, r->on_done, error);
   grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(r->hints);
+  gpr_free(r->host);
+  gpr_free(r->port);
   gpr_free(r);
   uv_freeaddrinfo(res);
 }
@@ -168,6 +174,8 @@ static grpc_error *blocking_resolve_address_impl(
   int s;
   grpc_error *err;
   int retry_status;
+
+  GRPC_UV_ASSERT_SAME_THREAD();
 
   req.addrinfo = NULL;
 
@@ -216,16 +224,19 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                  grpc_pollset_set *interested_parties,
                                  grpc_closure *on_done,
                                  grpc_resolved_addresses **addrs) {
-  uv_getaddrinfo_t *req;
-  request *r;
-  struct addrinfo *hints;
-  char *host;
-  char *port;
+  uv_getaddrinfo_t *req = NULL;
+  request *r = NULL;
+  struct addrinfo *hints = NULL;
+  char *host = NULL;
+  char *port = NULL;
   grpc_error *err;
   int s;
+  GRPC_UV_ASSERT_SAME_THREAD();
   err = try_split_host_port(name, default_port, &host, &port);
   if (err != GRPC_ERROR_NONE) {
     GRPC_CLOSURE_SCHED(exec_ctx, on_done, err);
+    gpr_free(host);
+    gpr_free(port);
     return;
   }
   r = gpr_malloc(sizeof(request));

@@ -140,25 +140,13 @@ struct grpc_subchannel_call {
 static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *subchannel,
                                  grpc_error *error);
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define REF_REASON reason
-#define REF_LOG(name, p)                                                  \
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "%s: %p   ref %d -> %d %s", \
-          (name), (p), (p)->refs.count, (p)->refs.count + 1, reason)
-#define UNREF_LOG(name, p)                                                \
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "%s: %p unref %d -> %d %s", \
-          (name), (p), (p)->refs.count, (p)->refs.count - 1, reason)
 #define REF_MUTATE_EXTRA_ARGS \
   GRPC_SUBCHANNEL_REF_EXTRA_ARGS, const char *purpose
 #define REF_MUTATE_PURPOSE(x) , file, line, reason, x
 #else
 #define REF_REASON ""
-#define REF_LOG(name, p) \
-  do {                   \
-  } while (0)
-#define UNREF_LOG(name, p) \
-  do {                     \
-  } while (0)
 #define REF_MUTATE_EXTRA_ARGS
 #define REF_MUTATE_PURPOSE(x)
 #endif
@@ -200,6 +188,7 @@ static void subchannel_destroy(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_connector_unref(exec_ctx, c->connector);
   grpc_pollset_set_destroy(exec_ctx, c->pollset_set);
   grpc_subchannel_key_destroy(exec_ctx, c->key);
+  gpr_mu_destroy(&c->mu);
   gpr_free(c);
 }
 
@@ -207,10 +196,12 @@ static gpr_atm ref_mutate(grpc_subchannel *c, gpr_atm delta,
                           int barrier REF_MUTATE_EXTRA_ARGS) {
   gpr_atm old_val = barrier ? gpr_atm_full_fetch_add(&c->ref_pair, delta)
                             : gpr_atm_no_barrier_fetch_add(&c->ref_pair, delta);
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "SUBCHANNEL: %p %s 0x%08" PRIxPTR " -> 0x%08" PRIxPTR " [%s]", c,
-          purpose, old_val, old_val + delta, reason);
+#ifndef NDEBUG
+  if (GRPC_TRACER_ON(grpc_trace_stream_refcount)) {
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "SUBCHANNEL: %p %12s 0x%" PRIxPTR " -> 0x%" PRIxPTR " [%s]", c,
+            purpose, old_val, old_val + delta, reason);
+  }
 #endif
   return old_val;
 }
@@ -734,13 +725,6 @@ void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
   GRPC_CALL_STACK_UNREF(exec_ctx, SUBCHANNEL_CALL_TO_CALL_STACK(c), REF_REASON);
 }
 
-char *grpc_subchannel_call_get_peer(grpc_exec_ctx *exec_ctx,
-                                    grpc_subchannel_call *call) {
-  grpc_call_stack *call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(call);
-  grpc_call_element *top_elem = grpc_call_stack_element(call_stack, 0);
-  return top_elem->filter->get_peer(exec_ctx, top_elem);
-}
-
 void grpc_subchannel_call_process_op(grpc_exec_ctx *exec_ctx,
                                      grpc_subchannel_call *call,
                                      grpc_transport_stream_op_batch *op) {
@@ -771,13 +755,15 @@ grpc_error *grpc_connected_subchannel_create_call(
                    args->parent_data_size);
   grpc_call_stack *callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
   (*call)->connection = GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
-  const grpc_call_element_args call_args = {.call_stack = callstk,
-                                            .server_transport_data = NULL,
-                                            .context = args->context,
-                                            .path = args->path,
-                                            .start_time = args->start_time,
-                                            .deadline = args->deadline,
-                                            .arena = args->arena};
+  const grpc_call_element_args call_args = {
+      .call_stack = callstk,
+      .server_transport_data = NULL,
+      .context = args->context,
+      .path = args->path,
+      .start_time = args->start_time,
+      .deadline = args->deadline,
+      .arena = args->arena,
+      .call_combiner = args->call_combiner};
   grpc_error *error = grpc_call_stack_init(
       exec_ctx, chanstk, 1, subchannel_call_destroy, *call, &call_args);
   if (error != GRPC_ERROR_NONE) {

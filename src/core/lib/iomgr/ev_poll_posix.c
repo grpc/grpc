@@ -134,9 +134,7 @@ static void fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *rec,
 /* Return 1 if this fd is orphaned, 0 otherwise */
 static bool fd_is_orphaned(grpc_fd *fd);
 
-/* Reference counting for fds */
-//#define GRPC_FD_REF_COUNT_DEBUG
-#ifdef GRPC_FD_REF_COUNT_DEBUG
+#ifndef NDEBUG
 static void fd_ref(grpc_fd *fd, const char *reason, const char *file, int line);
 static void fd_unref(grpc_fd *fd, const char *reason, const char *file,
                      int line);
@@ -263,14 +261,17 @@ cv_fd_table g_cvfds;
  * fd_posix.c
  */
 
-#ifdef GRPC_FD_REF_COUNT_DEBUG
+#ifndef NDEBUG
 #define REF_BY(fd, n, reason) ref_by(fd, n, reason, __FILE__, __LINE__)
 #define UNREF_BY(fd, n, reason) unref_by(fd, n, reason, __FILE__, __LINE__)
 static void ref_by(grpc_fd *fd, int n, const char *reason, const char *file,
                    int line) {
-  gpr_log(GPR_DEBUG, "FD %d %p   ref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
-          (int)gpr_atm_no_barrier_load(&fd->refst),
-          (int)gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
+  if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
+    gpr_log(GPR_DEBUG,
+            "FD %d %p   ref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
+            fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
+            gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
+  }
 #else
 #define REF_BY(fd, n, reason) ref_by(fd, n)
 #define UNREF_BY(fd, n, reason) unref_by(fd, n)
@@ -279,18 +280,19 @@ static void ref_by(grpc_fd *fd, int n) {
   GPR_ASSERT(gpr_atm_no_barrier_fetch_add(&fd->refst, n) > 0);
 }
 
-#ifdef GRPC_FD_REF_COUNT_DEBUG
+#ifndef NDEBUG
 static void unref_by(grpc_fd *fd, int n, const char *reason, const char *file,
                      int line) {
-  gpr_atm old;
-  gpr_log(GPR_DEBUG, "FD %d %p unref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
-          (int)gpr_atm_no_barrier_load(&fd->refst),
-          (int)gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
+  if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
+    gpr_log(GPR_DEBUG,
+            "FD %d %p unref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
+            fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
+            gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
+  }
 #else
 static void unref_by(grpc_fd *fd, int n) {
-  gpr_atm old;
 #endif
-  old = gpr_atm_full_fetch_add(&fd->refst, -n);
+  gpr_atm old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
     gpr_mu_destroy(&fd->mu);
     grpc_iomgr_unregister_object(&fd->iomgr_object);
@@ -321,9 +323,6 @@ static grpc_fd *fd_create(int fd, const char *name) {
   gpr_asprintf(&name2, "%s fd=%d", name, fd);
   grpc_iomgr_register_object(&r->iomgr_object, name2);
   gpr_free(name2);
-#ifdef GRPC_FD_REF_COUNT_DEBUG
-  gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, r, name);
-#endif
   return r;
 }
 
@@ -399,11 +398,14 @@ static int fd_wrapped_fd(grpc_fd *fd) {
 
 static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                       grpc_closure *on_done, int *release_fd,
-                      const char *reason) {
+                      bool already_closed, const char *reason) {
   fd->on_done_closure = on_done;
   fd->released = release_fd != NULL;
-  if (fd->released) {
+  if (release_fd != NULL) {
     *release_fd = fd->fd;
+    fd->released = true;
+  } else if (already_closed) {
+    fd->released = true;
   }
   gpr_mu_lock(&fd->mu);
   REF_BY(fd, 1, reason); /* remove active status, but keep referenced */
@@ -417,7 +419,7 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 }
 
 /* increment refcount by two to avoid changing the orphan bit */
-#ifdef GRPC_FD_REF_COUNT_DEBUG
+#ifndef NDEBUG
 static void fd_ref(grpc_fd *fd, const char *reason, const char *file,
                    int line) {
   ref_by(fd, 2, reason, file, line);

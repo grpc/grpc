@@ -64,6 +64,7 @@ message LoadParams {
 message SecurityParams {
   bool use_test_ca = 1;
   string server_host_override = 2;
+  string cred_type = 3;
 }
 
 message ChannelArg {
@@ -152,6 +153,7 @@ message ServerConfig {
 
   // Buffer pool size (no buffer pool specified if unset)
   int32 resource_quota_size = 1001;
+  repeated ChannelArg channel_args = 1002;
 }
 
 message ServerArgs {
@@ -239,6 +241,10 @@ message ScenarioResultSummary
   // Number of polls called inside completion queue per request
   double client_polls_per_request = 15;
   double server_polls_per_request = 16;
+
+  // Queries per CPU-sec over all servers or clients
+  double server_queries_per_cpu_sec = 17;
+  double client_queries_per_cpu_sec = 18;
 }
 
 // Results of a single benchmark scenario.

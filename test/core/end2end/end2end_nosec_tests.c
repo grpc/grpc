@@ -44,6 +44,8 @@ extern void cancel_after_client_done(grpc_end2end_test_config config);
 extern void cancel_after_client_done_pre_init(void);
 extern void cancel_after_invoke(grpc_end2end_test_config config);
 extern void cancel_after_invoke_pre_init(void);
+extern void cancel_after_round_trip(grpc_end2end_test_config config);
+extern void cancel_after_round_trip_pre_init(void);
 extern void cancel_before_invoke(grpc_end2end_test_config config);
 extern void cancel_before_invoke_pre_init(void);
 extern void cancel_in_a_vacuum(grpc_end2end_test_config config);
@@ -104,6 +106,8 @@ extern void ping(grpc_end2end_test_config config);
 extern void ping_pre_init(void);
 extern void ping_pong_streaming(grpc_end2end_test_config config);
 extern void ping_pong_streaming_pre_init(void);
+extern void proxy_auth(grpc_end2end_test_config config);
+extern void proxy_auth_pre_init(void);
 extern void registered_call(grpc_end2end_test_config config);
 extern void registered_call_pre_init(void);
 extern void request_with_flags(grpc_end2end_test_config config);
@@ -150,6 +154,7 @@ void grpc_end2end_tests_pre_init(void) {
   cancel_after_accept_pre_init();
   cancel_after_client_done_pre_init();
   cancel_after_invoke_pre_init();
+  cancel_after_round_trip_pre_init();
   cancel_before_invoke_pre_init();
   cancel_in_a_vacuum_pre_init();
   cancel_with_status_pre_init();
@@ -180,6 +185,7 @@ void grpc_end2end_tests_pre_init(void) {
   payload_pre_init();
   ping_pre_init();
   ping_pong_streaming_pre_init();
+  proxy_auth_pre_init();
   registered_call_pre_init();
   request_with_flags_pre_init();
   request_with_payload_pre_init();
@@ -213,6 +219,7 @@ void grpc_end2end_tests(int argc, char **argv,
     cancel_after_accept(config);
     cancel_after_client_done(config);
     cancel_after_invoke(config);
+    cancel_after_round_trip(config);
     cancel_before_invoke(config);
     cancel_in_a_vacuum(config);
     cancel_with_status(config);
@@ -243,6 +250,7 @@ void grpc_end2end_tests(int argc, char **argv,
     payload(config);
     ping(config);
     ping_pong_streaming(config);
+    proxy_auth(config);
     registered_call(config);
     request_with_flags(config);
     request_with_payload(config);
@@ -290,6 +298,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("cancel_after_invoke", argv[i])) {
       cancel_after_invoke(config);
+      continue;
+    }
+    if (0 == strcmp("cancel_after_round_trip", argv[i])) {
+      cancel_after_round_trip(config);
       continue;
     }
     if (0 == strcmp("cancel_before_invoke", argv[i])) {
@@ -410,6 +422,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("ping_pong_streaming", argv[i])) {
       ping_pong_streaming(config);
+      continue;
+    }
+    if (0 == strcmp("proxy_auth", argv[i])) {
+      proxy_auth(config);
       continue;
     }
     if (0 == strcmp("registered_call", argv[i])) {

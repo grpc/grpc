@@ -33,6 +33,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
+#include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -65,6 +66,11 @@ typedef enum {
   GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE,
   GRPC_CHTTP2_PING_TYPE_COUNT /* must be last */
 } grpc_chttp2_ping_type;
+
+typedef enum {
+  GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY,
+  GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT,
+} grpc_chttp2_optimization_target;
 
 typedef enum {
   GRPC_CHTTP2_PCL_INITIATE = 0,
@@ -228,6 +234,8 @@ struct grpc_chttp2_transport {
 
   /** should we probe bdp? */
   bool enable_bdp_probe;
+
+  grpc_chttp2_optimization_target opt_target;
 
   /** various lists of streams */
   grpc_chttp2_stream_list lists[STREAM_LIST_COUNT];
@@ -447,7 +455,7 @@ struct grpc_chttp2_stream {
 
   grpc_metadata_batch *recv_initial_metadata;
   grpc_closure *recv_initial_metadata_ready;
-  bool *initial_metadata_received;
+  bool *trailing_metadata_available;
   grpc_byte_stream **recv_message;
   grpc_closure *recv_message_ready;
   grpc_metadata_batch *recv_trailing_metadata;
@@ -518,6 +526,26 @@ struct grpc_chttp2_stream {
   grpc_chttp2_write_cb *on_write_finished_cbs;
   grpc_chttp2_write_cb *finish_after_write;
   size_t sending_bytes;
+
+  /** Whether stream compression send is enabled */
+  bool stream_compression_recv_enabled;
+  /** Whether stream compression recv is enabled */
+  bool stream_compression_send_enabled;
+  /** Whether bytes stored in unprocessed_incoming_byte_stream is decompressed
+   */
+  bool unprocessed_incoming_frames_decompressed;
+  /** Stream compression decompress context */
+  grpc_stream_compression_context *stream_decompression_ctx;
+  /** Stream compression compress context */
+  grpc_stream_compression_context *stream_compression_ctx;
+
+  /** Buffer storing data that is compressed but not sent */
+  grpc_slice_buffer *compressed_data_buffer;
+  /** Amount of uncompressed bytes sent out when compressed_data_buffer is
+   * emptied */
+  size_t uncompressed_data_size;
+  /** Temporary buffer storing decompressed data */
+  grpc_slice_buffer *decompressed_data_buffer;
 };
 
 /** Transport writing call flow:
@@ -612,6 +640,9 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
                                        grpc_chttp2_stream *s,
                                        grpc_closure **pclosure,
                                        grpc_error *error, const char *desc);
+
+#define GRPC_HEADER_SIZE_IN_BYTES 5
+#define MAX_SIZE_T (~(size_t)0)
 
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
@@ -749,7 +780,7 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_start_writing(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_transport *t);
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define GRPC_CHTTP2_STREAM_REF(stream, reason) \
   grpc_chttp2_stream_ref(stream, reason)
 #define GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream, reason) \
@@ -765,8 +796,7 @@ void grpc_chttp2_stream_ref(grpc_chttp2_stream *s);
 void grpc_chttp2_stream_unref(grpc_exec_ctx *exec_ctx, grpc_chttp2_stream *s);
 #endif
 
-//#define GRPC_CHTTP2_REFCOUNTING_DEBUG 1
-#ifdef GRPC_CHTTP2_REFCOUNTING_DEBUG
+#ifndef NDEBUG
 #define GRPC_CHTTP2_REF_TRANSPORT(t, r) \
   grpc_chttp2_ref_transport(t, r, __FILE__, __LINE__)
 #define GRPC_CHTTP2_UNREF_TRANSPORT(cl, t, r) \

@@ -67,6 +67,14 @@
     'ldflags': [
         '-g',
     ],
+    'cflags_c': [
+      '-Werror',
+      '-std=c99'
+    ],
+    'cflags_cc': [
+      '-Werror',
+      '-std=c++11'
+    ],
     'include_dirs': [
       '.',
       'include'
@@ -115,6 +123,15 @@
         ]
       }, {
         'conditions': [
+          ["target_arch=='ia32'", {
+             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
+          }],
+          ["target_arch=='x64'", {
+             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
+          }],
+          ["target_arch=='arm'", {
+             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
+          }],
           ['grpc_alpn=="true"', {
             'defines': [
               'TSI_OPENSSL_ALPN_SUPPORT=1'
@@ -127,17 +144,6 @@
         ],
         'include_dirs': [
           '<(node_root_dir)/deps/openssl/openssl/include',
-        ],
-        'conditions': [
-         ["target_arch=='ia32'", {
-             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
-         }],
-         ["target_arch=='x64'", {
-             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
-         }],
-         ["target_arch=='arm'", {
-             "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
-         }]
         ]
       }],
       ['OS == "win"', {
@@ -166,6 +172,31 @@
           '<(node_root_dir)/deps/zlib',
           '<(node_root_dir)/deps/cares/include'
         ]
+      }],
+      ['OS == "mac"', {
+        'xcode_settings': {
+          'OTHER_CFLAGS': [
+              '-g',
+              '-Wall',
+              '-Wextra',
+              '-Werror',
+              '-Wno-long-long',
+              '-Wno-unused-parameter',
+              '-DOSATOMIC_USE_INLINED=1',
+          ],
+          'OTHER_CPLUSPLUSFLAGS': [
+              '-g',
+              '-Wall',
+              '-Wextra',
+              '-Werror',
+              '-Wno-long-long',
+              '-Wno-unused-parameter',
+              '-DOSATOMIC_USE_INLINED=1',
+            '-stdlib=libc++',
+            '-std=c++11',
+            '-Wno-error=deprecated-declarations'
+          ],
+        },
       }]
     ]
   },
@@ -173,11 +204,6 @@
     ['OS=="win" or runtime=="electron"', {
       'targets': [
         {
-          'cflags': [
-            '-std=c99',
-            '-Wall',
-            '-Werror'
-          ],
           'target_name': 'boringssl',
           'product_prefix': 'lib',
           'type': 'static_library',
@@ -186,6 +212,7 @@
           'sources': [
             'src/boringssl/err_data.c',
             'third_party/boringssl/crypto/aes/aes.c',
+            'third_party/boringssl/crypto/aes/key_wrap.c',
             'third_party/boringssl/crypto/aes/mode_wrappers.c',
             'third_party/boringssl/crypto/asn1/a_bitstr.c',
             'third_party/boringssl/crypto/asn1/a_bool.c',
@@ -217,12 +244,12 @@
             'third_party/boringssl/crypto/asn1/tasn_new.c',
             'third_party/boringssl/crypto/asn1/tasn_typ.c',
             'third_party/boringssl/crypto/asn1/tasn_utl.c',
+            'third_party/boringssl/crypto/asn1/time_support.c',
             'third_party/boringssl/crypto/asn1/x_bignum.c',
             'third_party/boringssl/crypto/asn1/x_long.c',
             'third_party/boringssl/crypto/base64/base64.c',
             'third_party/boringssl/crypto/bio/bio.c',
             'third_party/boringssl/crypto/bio/bio_mem.c',
-            'third_party/boringssl/crypto/bio/buffer.c',
             'third_party/boringssl/crypto/bio/connect.c',
             'third_party/boringssl/crypto/bio/fd.c',
             'third_party/boringssl/crypto/bio/file.c',
@@ -329,12 +356,7 @@
             'third_party/boringssl/crypto/modes/ctr.c',
             'third_party/boringssl/crypto/modes/gcm.c',
             'third_party/boringssl/crypto/modes/ofb.c',
-            'third_party/boringssl/crypto/newhope/error_correction.c',
-            'third_party/boringssl/crypto/newhope/newhope.c',
-            'third_party/boringssl/crypto/newhope/ntt.c',
-            'third_party/boringssl/crypto/newhope/poly.c',
-            'third_party/boringssl/crypto/newhope/precomp.c',
-            'third_party/boringssl/crypto/newhope/reduce.c',
+            'third_party/boringssl/crypto/modes/polyval.c',
             'third_party/boringssl/crypto/obj/obj.c',
             'third_party/boringssl/crypto/obj/obj_xref.c',
             'third_party/boringssl/crypto/pem/pem_all.c',
@@ -345,14 +367,15 @@
             'third_party/boringssl/crypto/pem/pem_pkey.c',
             'third_party/boringssl/crypto/pem/pem_x509.c',
             'third_party/boringssl/crypto/pem/pem_xaux.c',
-            'third_party/boringssl/crypto/pkcs8/p5_pbe.c',
             'third_party/boringssl/crypto/pkcs8/p5_pbev2.c',
             'third_party/boringssl/crypto/pkcs8/p8_pkey.c',
             'third_party/boringssl/crypto/pkcs8/pkcs8.c',
             'third_party/boringssl/crypto/poly1305/poly1305.c',
             'third_party/boringssl/crypto/poly1305/poly1305_arm.c',
             'third_party/boringssl/crypto/poly1305/poly1305_vec.c',
+            'third_party/boringssl/crypto/pool/pool.c',
             'third_party/boringssl/crypto/rand/deterministic.c',
+            'third_party/boringssl/crypto/rand/fuchsia.c',
             'third_party/boringssl/crypto/rand/rand.c',
             'third_party/boringssl/crypto/rand/urandom.c',
             'third_party/boringssl/crypto/rand/windows.c',
@@ -364,6 +387,7 @@
             'third_party/boringssl/crypto/rsa/rsa.c',
             'third_party/boringssl/crypto/rsa/rsa_asn1.c',
             'third_party/boringssl/crypto/rsa/rsa_impl.c',
+            'third_party/boringssl/crypto/sha/sha1-altivec.c',
             'third_party/boringssl/crypto/sha/sha1.c',
             'third_party/boringssl/crypto/sha/sha256.c',
             'third_party/boringssl/crypto/sha/sha512.c',
@@ -372,7 +396,6 @@
             'third_party/boringssl/crypto/thread_none.c',
             'third_party/boringssl/crypto/thread_pthread.c',
             'third_party/boringssl/crypto/thread_win.c',
-            'third_party/boringssl/crypto/time_support.c',
             'third_party/boringssl/crypto/x509/a_digest.c',
             'third_party/boringssl/crypto/x509/a_sign.c',
             'third_party/boringssl/crypto/x509/a_strex.c',
@@ -456,6 +479,7 @@
             'third_party/boringssl/crypto/x509v3/v3_skey.c',
             'third_party/boringssl/crypto/x509v3/v3_sxnet.c',
             'third_party/boringssl/crypto/x509v3/v3_utl.c',
+            'third_party/boringssl/ssl/bio_ssl.c',
             'third_party/boringssl/ssl/custom_extensions.c',
             'third_party/boringssl/ssl/d1_both.c',
             'third_party/boringssl/ssl/d1_lib.c',
@@ -466,7 +490,6 @@
             'third_party/boringssl/ssl/handshake_client.c',
             'third_party/boringssl/ssl/handshake_server.c',
             'third_party/boringssl/ssl/s3_both.c',
-            'third_party/boringssl/ssl/s3_enc.c',
             'third_party/boringssl/ssl/s3_lib.c',
             'third_party/boringssl/ssl/s3_pkt.c',
             'third_party/boringssl/ssl/ssl_aead_ctx.c',
@@ -477,9 +500,12 @@
             'third_party/boringssl/ssl/ssl_ecdh.c',
             'third_party/boringssl/ssl/ssl_file.c',
             'third_party/boringssl/ssl/ssl_lib.c',
-            'third_party/boringssl/ssl/ssl_rsa.c',
+            'third_party/boringssl/ssl/ssl_privkey.c',
+            'third_party/boringssl/ssl/ssl_privkey_cc.cc',
             'third_party/boringssl/ssl/ssl_session.c',
             'third_party/boringssl/ssl/ssl_stat.c',
+            'third_party/boringssl/ssl/ssl_transcript.c',
+            'third_party/boringssl/ssl/ssl_x509.c',
             'third_party/boringssl/ssl/t1_enc.c',
             'third_party/boringssl/ssl/t1_lib.c',
             'third_party/boringssl/ssl/tls13_both.c',
@@ -488,9 +514,16 @@
             'third_party/boringssl/ssl/tls13_server.c',
             'third_party/boringssl/ssl/tls_method.c',
             'third_party/boringssl/ssl/tls_record.c',
+          ],
+          'conditions': [
+            ['OS == "mac"', {
+              'xcode_settings': {
+                'MACOSX_DEPLOYMENT_TARGET': '10.9'
+              }
+            }]
           ]
         },
-      ]
+      ],
     }],
     ['OS == "win" and runtime!="electron"', {
       'targets': [
@@ -526,11 +559,6 @@
       'targets': [
         # Only want to compile zlib under Windows
         {
-          'cflags': [
-            '-std=c99',
-            '-Wall',
-            '-Werror'
-          ],
           'target_name': 'z',
           'product_prefix': 'lib',
           'type': 'static_library',
@@ -559,11 +587,6 @@
   ],
   'targets': [
     {
-      'cflags': [
-        '-std=c99',
-        '-Wall',
-        '-Werror'
-      ],
       'target_name': 'gpr',
       'product_prefix': 'lib',
       'type': 'static_library',
@@ -617,7 +640,7 @@
         'src/core/lib/support/tmpfile_windows.c',
         'src/core/lib/support/wrap_memcpy.c',
       ],
-      "conditions": [
+      'conditions': [
         ['OS == "mac"', {
           'xcode_settings': {
             'MACOSX_DEPLOYMENT_TARGET': '10.9'
@@ -626,11 +649,6 @@
       ]
     },
     {
-      'cflags': [
-        '-std=c99',
-        '-Wall',
-        '-Werror'
-      ],
       'target_name': 'grpc',
       'product_prefix': 'lib',
       'type': 'static_library',
@@ -648,9 +666,11 @@
         'src/core/lib/channel/handshaker_registry.c',
         'src/core/lib/compression/compression.c',
         'src/core/lib/compression/message_compress.c',
+        'src/core/lib/compression/stream_compression.c',
         'src/core/lib/http/format_request.c',
         'src/core/lib/http/httpcli.c',
         'src/core/lib/http/parser.c',
+        'src/core/lib/iomgr/call_combiner.c',
         'src/core/lib/iomgr/closure.c',
         'src/core/lib/iomgr/combiner.c',
         'src/core/lib/iomgr/endpoint.c',
@@ -817,6 +837,7 @@
         'src/core/lib/security/util/json_util.c',
         'src/core/lib/surface/init_secure.c',
         'src/core/tsi/fake_transport_security.c',
+        'src/core/tsi/gts_transport_security.c',
         'src/core/tsi/ssl_transport_security.c',
         'src/core/tsi/transport_security.c',
         'src/core/tsi/transport_security_adapter.c',
@@ -849,6 +870,8 @@
         'src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c',
         'src/core/ext/transport/chttp2/client/insecure/channel_create.c',
         'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c',
+        'src/core/ext/transport/inproc/inproc_plugin.c',
+        'src/core/ext/transport/inproc/inproc_transport.c',
         'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c',
         'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c',
         'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c',
@@ -890,7 +913,7 @@
         'src/core/ext/filters/workarounds/workaround_utils.c',
         'src/core/plugin_registry/grpc_plugin_registry.c',
       ],
-      "conditions": [
+      'conditions': [
         ['OS == "mac"', {
           'xcode_settings': {
             'MACOSX_DEPLOYMENT_TARGET': '10.9'
@@ -903,7 +926,6 @@
         "<!(node -e \"require('nan')\")"
       ],
       'cflags': [
-        '-std=c++11',
         '-pthread',
         '-zdefs',
         '-Wno-error=deprecated-declarations'
@@ -914,15 +936,6 @@
             "boringssl",
           ]
         }],
-        ['OS=="mac"', {
-          'xcode_settings': {
-            'MACOSX_DEPLOYMENT_TARGET': '10.9',
-            'OTHER_CFLAGS': [
-              '-stdlib=libc++',
-              '-std=c++11'
-            ]
-          }
-        }],
         ['OS=="win"', {
           'dependencies': [
             "z",
@@ -932,6 +945,11 @@
           'ldflags': [
             '-Wl,-wrap,memcpy'
           ]
+        }],
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
         }]
       ],
       "target_name": "grpc_node",

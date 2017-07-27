@@ -93,20 +93,18 @@ static void fd_global_shutdown(void);
  * epoll set Declarations
  */
 
-//#define EPS_REFCOUNT_DEBUG
-
-#ifdef EPS_REFCOUNT_DEBUG
+#ifndef NDEBUG
 
 #define EPS_ADD_REF(p, r) eps_add_ref_dbg((p), (r), __FILE__, __LINE__)
 #define EPS_UNREF(exec_ctx, p, r) \
   eps_unref_dbg((exec_ctx), (p), (r), __FILE__, __LINE__)
 
-#else /* defined(EPS_REFCOUNT_DEBUG) */
+#else
 
 #define EPS_ADD_REF(p, r) eps_add_ref((p))
 #define EPS_UNREF(exec_ctx, p, r) eps_unref((exec_ctx), (p))
 
-#endif /* !defined(GRPC_EPS_REF_COUNT_DEBUG) */
+#endif
 
 typedef struct epoll_set {
   /* Mutex poller should acquire to poll this. This enforces that only one
@@ -226,21 +224,27 @@ gpr_atm g_epoll_sync;
 static void eps_add_ref(epoll_set *eps);
 static void eps_unref(grpc_exec_ctx *exec_ctx, epoll_set *eps);
 
-#ifdef EPS_REFCOUNT_DEBUG
+#ifndef NDEBUG
 static void eps_add_ref_dbg(epoll_set *eps, const char *reason,
                             const char *file, int line) {
-  long old_cnt = gpr_atm_acq_load(&eps->ref_count);
+  if (GRPC_TRACER_ON(grpc_polling_trace)) {
+    gpr_atm old_cnt = gpr_atm_acq_load(&eps->ref_count);
+    gpr_log(GPR_DEBUG, "Add ref eps: %p, old:%" PRIdPTR " -> new:%" PRIdPTR
+                       " (%s) - (%s, %d)",
+            eps, old_cnt, old_cnt + 1, reason, file, line);
+  }
   eps_add_ref(eps);
-  gpr_log(GPR_DEBUG, "Add ref eps: %p, old: %ld -> new:%ld (%s) - (%s, %d)",
-          (void *)eps, old_cnt, old_cnt + 1, reason, file, line);
 }
 
 static void eps_unref_dbg(grpc_exec_ctx *exec_ctx, epoll_set *eps,
                           const char *reason, const char *file, int line) {
-  long old_cnt = gpr_atm_acq_load(&eps->ref_count);
+  if (GRPC_TRACER_ON(grpc_polling_trace)) {
+    gpr_atm old_cnt = gpr_atm_acq_load(&eps->ref_count);
+    gpr_log(GPR_DEBUG, "Unref eps: %p, old:%" PRIdPTR " -> new:%" PRIdPTR
+                       " (%s) - (%s, %d)",
+            eps, old_cnt, (old_cnt - 1), reason, file, line);
+  }
   eps_unref(exec_ctx, eps);
-  gpr_log(GPR_DEBUG, "Unref eps: %p, old:%ld -> new:%ld (%s) - (%s, %d)",
-          (void *)eps, old_cnt, (old_cnt - 1), reason, file, line);
 }
 #endif
 
@@ -489,8 +493,8 @@ static int fd_wrapped_fd(grpc_fd *fd) {
 
 static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                       grpc_closure *on_done, int *release_fd,
-                      const char *reason) {
-  bool is_fd_closed = false;
+                      bool already_closed, const char *reason) {
+  bool is_fd_closed = already_closed;
   grpc_error *error = GRPC_ERROR_NONE;
   epoll_set *unref_eps = NULL;
 
@@ -501,7 +505,7 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
      descriptor fd->fd (but we still own the grpc_fd structure). */
   if (release_fd != NULL) {
     *release_fd = fd->fd;
-  } else {
+  } else if (!is_fd_closed) {
     close(fd->fd);
     is_fd_closed = true;
   }
@@ -556,12 +560,12 @@ static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
 
 static void fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                               grpc_closure *closure) {
-  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure);
+  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure, "read");
 }
 
 static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_closure *closure) {
-  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure);
+  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure, "write");
 }
 
 /*******************************************************************************
@@ -692,11 +696,11 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
 }
 
 static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
-  grpc_lfev_set_ready(exec_ctx, &fd->read_closure);
+  grpc_lfev_set_ready(exec_ctx, &fd->read_closure, "read");
 }
 
 static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
-  grpc_lfev_set_ready(exec_ctx, &fd->write_closure);
+  grpc_lfev_set_ready(exec_ctx, &fd->write_closure, "write");
 }
 
 static void pollset_release_epoll_set(grpc_exec_ctx *exec_ctx, grpc_pollset *ps,

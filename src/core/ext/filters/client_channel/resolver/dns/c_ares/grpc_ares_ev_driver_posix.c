@@ -19,6 +19,8 @@
 #include "src/core/lib/iomgr/port.h"
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET)
 
+#include <ares.h>
+
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 
 #include <grpc/support/alloc.h>
@@ -101,10 +103,9 @@ static void fd_node_destroy(grpc_exec_ctx *exec_ctx, fd_node *fdn) {
   grpc_pollset_set_del_fd(exec_ctx, fdn->ev_driver->pollset_set, fdn->grpc_fd);
   /* c-ares library has closed the fd inside grpc_fd. This fd may be picked up
      immediately by another thread, and should not be closed by the following
-     grpc_fd_orphan. To prevent this fd from being closed by grpc_fd_orphan,
-     a fd pointer is provided. */
-  int fd;
-  grpc_fd_orphan(exec_ctx, fdn->grpc_fd, NULL, &fd, "c-ares query finished");
+     grpc_fd_orphan. */
+  grpc_fd_orphan(exec_ctx, fdn->grpc_fd, NULL, NULL, true /* already_closed */,
+                 "c-ares query finished");
   gpr_free(fdn);
 }
 

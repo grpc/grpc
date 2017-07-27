@@ -544,6 +544,14 @@ class CallOpClientRecvStatus {
   grpc_slice error_message_;
 };
 
+/// TODO(vjpai): Remove the existence of CallOpSetCollectionInterface
+/// and references to it. This code is deprecated-on-arrival and is
+/// only added for users that bypassed the code-generator.
+class CallOpSetCollectionInterface {
+ public:
+  virtual ~CallOpSetCollectionInterface() {}
+};
+
 /// An abstract collection of call ops, used to generate the
 /// grpc_call_op structure to pass down to the lower layers,
 /// and as it is-a CompletionQueueTag, also massages the final
@@ -554,6 +562,18 @@ class CallOpSetInterface : public CompletionQueueTag {
   /// Fills in grpc_op, starting from ops[*nops] and moving
   /// upwards.
   virtual void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) = 0;
+
+  /// TODO(vjpai): Remove the SetCollection method and comment. This is only
+  /// a short-term workaround for users that bypassed the code generator
+  /// Mark this as belonging to a collection if needed
+  void SetCollection(std::shared_ptr<CallOpSetCollectionInterface> collection) {
+    collection_ = collection;
+  }
+
+ protected:
+  /// TODO(vjpai): Remove the collection_ field once the idea of bypassing the
+  /// code generator is forbidden. This is already deprecated
+  std::shared_ptr<CallOpSetCollectionInterface> collection_;
 };
 
 /// Primary implementaiton of CallOpSetInterface.
@@ -593,7 +613,14 @@ class CallOpSet : public CallOpSetInterface,
     this->Op5::FinishOp(status);
     this->Op6::FinishOp(status);
     *tag = return_tag_;
-    g_core_codegen_interface->grpc_call_unref(call_);
+
+    // TODO(vjpai): Remove the reference to collection_ once the idea of
+    // bypassing the code generator is forbidden. It is already deprecated
+    grpc_call* call = call_;
+    collection_.reset();
+
+    g_core_codegen_interface->grpc_call_unref(call);
+
     return true;
   }
 

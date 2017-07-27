@@ -174,6 +174,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "byte_stream_test", 
+    "src": [
+      "test/core/transport/byte_stream_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "census_context_test", 
     "src": [
       "test/core/census/context_test.c"
@@ -2173,6 +2190,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "stream_compression_test", 
+    "src": [
+      "test/core/compression/stream_compression_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "stream_owned_slice_test", 
     "src": [
       "test/core/transport/stream_owned_slice_test.c"
@@ -3049,6 +3083,7 @@
   }, 
   {
     "deps": [
+      "grpc", 
       "grpc++"
     ], 
     "headers": [], 
@@ -3645,6 +3680,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
       "qps"
@@ -3814,6 +3850,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
       "qps"
@@ -3926,6 +3963,32 @@
     "name": "server_crash_test_client", 
     "src": [
       "test/cpp/end2end/server_crash_test_client.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/echo.grpc.pb.h", 
+      "src/proto/grpc/testing/echo.pb.h", 
+      "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_messages.pb.h", 
+      "src/proto/grpc/testing/echo_messages_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "server_request_call_test", 
+    "src": [
+      "test/cpp/server/server_request_call_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4189,20 +4252,6 @@
   {
     "deps": [
       "boringssl", 
-      "boringssl_chacha_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_chacha_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
       "boringssl_aead_test_lib", 
       "boringssl_test_util"
     ], 
@@ -4301,20 +4350,6 @@
   {
     "deps": [
       "boringssl", 
-      "boringssl_dh_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_dh_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
       "boringssl_digest_test_lib", 
       "boringssl_test_util"
     ], 
@@ -4329,34 +4364,6 @@
   {
     "deps": [
       "boringssl", 
-      "boringssl_dsa_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_dsa_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_ec_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_ec_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
       "boringssl_example_mul_lib", 
       "boringssl_test_util"
     ], 
@@ -4364,6 +4371,20 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_example_mul", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_p256-x86_64_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_p256-x86_64_test", 
     "src": [], 
     "third_party": true, 
     "type": "target"
@@ -4420,20 +4441,6 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_ecdsa_verify_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_err_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_err_test", 
     "src": [], 
     "third_party": true, 
     "type": "target"
@@ -4539,48 +4546,6 @@
   {
     "deps": [
       "boringssl", 
-      "boringssl_newhope_statistical_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_newhope_statistical_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_newhope_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_newhope_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_newhope_vectors_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_newhope_vectors_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
       "boringssl_obj_test_lib", 
       "boringssl_test_util"
     ], 
@@ -4637,13 +4602,13 @@
   {
     "deps": [
       "boringssl", 
-      "boringssl_refcount_test_lib", 
+      "boringssl_pool_test_lib", 
       "boringssl_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "boringssl_refcount_test", 
+    "name": "boringssl_pool_test", 
     "src": [], 
     "third_party": true, 
     "type": "target"
@@ -4651,13 +4616,13 @@
   {
     "deps": [
       "boringssl", 
-      "boringssl_rsa_test_lib", 
+      "boringssl_refcount_test_lib", 
       "boringssl_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "boringssl_rsa_test", 
+    "name": "boringssl_refcount_test", 
     "src": [], 
     "third_party": true, 
     "type": "target"
@@ -4728,20 +4693,6 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_v3name_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_ssl_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_ssl_test", 
     "src": [], 
     "third_party": true, 
     "type": "target"
@@ -5305,6 +5256,24 @@
   }, 
   {
     "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "inproc_test", 
+    "src": [
+      "test/core/end2end/fixtures/inproc.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "end2end_nosec_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -5551,6 +5520,24 @@
     "name": "h2_uds_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_uds.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "inproc_nosec_test", 
+    "src": [
+      "test/core/end2end/fixtures/inproc.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5840,6 +5827,7 @@
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_chttp2_server_insecure", 
       "grpc_transport_chttp2_server_secure", 
+      "grpc_transport_inproc", 
       "grpc_workaround_cronet_compression_filter"
     ], 
     "headers": [], 
@@ -5945,6 +5933,7 @@
       "grpc_server_backward_compatibility", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_server_insecure", 
+      "grpc_transport_inproc", 
       "grpc_workaround_cronet_compression_filter"
     ], 
     "headers": [], 
@@ -6080,6 +6069,7 @@
   }, 
   {
     "deps": [
+      "grpc", 
       "grpc++", 
       "grpc++_config_proto", 
       "grpc++_reflection_proto"
@@ -6099,6 +6089,7 @@
   }, 
   {
     "deps": [
+      "grpc", 
       "grpc++", 
       "grpc++_reflection_proto"
     ], 
@@ -6135,6 +6126,7 @@
   }, 
   {
     "deps": [
+      "grpc", 
       "grpc++", 
       "grpc++_codegen_base", 
       "grpc++_codegen_base_src", 
@@ -6229,6 +6221,7 @@
   }, 
   {
     "deps": [
+      "grpc", 
       "grpc++", 
       "grpc++_config_proto", 
       "grpc++_proto_reflection_desc_db", 
@@ -6480,6 +6473,7 @@
   }, 
   {
     "deps": [
+      "grpc", 
       "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util"
@@ -6574,14 +6568,14 @@
       "third_party/boringssl/crypto/digest/md32_common.h", 
       "third_party/boringssl/crypto/ec/internal.h", 
       "third_party/boringssl/crypto/ec/p256-x86_64-table.h", 
+      "third_party/boringssl/crypto/ec/p256-x86_64.h", 
       "third_party/boringssl/crypto/evp/internal.h", 
       "third_party/boringssl/crypto/internal.h", 
       "third_party/boringssl/crypto/modes/internal.h", 
-      "third_party/boringssl/crypto/newhope/internal.h", 
       "third_party/boringssl/crypto/obj/obj_dat.h", 
-      "third_party/boringssl/crypto/obj/obj_xref.h", 
       "third_party/boringssl/crypto/pkcs8/internal.h", 
       "third_party/boringssl/crypto/poly1305/internal.h", 
+      "third_party/boringssl/crypto/pool/internal.h", 
       "third_party/boringssl/crypto/rand/internal.h", 
       "third_party/boringssl/crypto/rsa/internal.h", 
       "third_party/boringssl/crypto/x509/charmap.h", 
@@ -6631,7 +6625,6 @@
       "third_party/boringssl/include/openssl/md4.h", 
       "third_party/boringssl/include/openssl/md5.h", 
       "third_party/boringssl/include/openssl/mem.h", 
-      "third_party/boringssl/include/openssl/newhope.h", 
       "third_party/boringssl/include/openssl/nid.h", 
       "third_party/boringssl/include/openssl/obj.h", 
       "third_party/boringssl/include/openssl/obj_mac.h", 
@@ -6644,6 +6637,7 @@
       "third_party/boringssl/include/openssl/pkcs7.h", 
       "third_party/boringssl/include/openssl/pkcs8.h", 
       "third_party/boringssl/include/openssl/poly1305.h", 
+      "third_party/boringssl/include/openssl/pool.h", 
       "third_party/boringssl/include/openssl/rand.h", 
       "third_party/boringssl/include/openssl/rc4.h", 
       "third_party/boringssl/include/openssl/ripemd.h", 
@@ -6656,7 +6650,6 @@
       "third_party/boringssl/include/openssl/stack.h", 
       "third_party/boringssl/include/openssl/stack_macros.h", 
       "third_party/boringssl/include/openssl/thread.h", 
-      "third_party/boringssl/include/openssl/time_support.h", 
       "third_party/boringssl/include/openssl/tls1.h", 
       "third_party/boringssl/include/openssl/type_check.h", 
       "third_party/boringssl/include/openssl/x509.h", 
@@ -6769,19 +6762,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "boringssl_chacha_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
     "name": "boringssl_aead_test_lib", 
     "src": [], 
     "third_party": true, 
@@ -6820,7 +6800,7 @@
     ], 
     "headers": [], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "boringssl_constant_time_test_lib", 
     "src": [], 
     "third_party": true, 
@@ -6873,19 +6853,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "boringssl_dh_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
     "name": "boringssl_digest_test_lib", 
     "src": [], 
     "third_party": true, 
@@ -6899,7 +6866,7 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "boringssl_dsa_test_lib", 
+    "name": "boringssl_example_mul_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
@@ -6912,20 +6879,7 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "boringssl_ec_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "boringssl_example_mul_lib", 
+    "name": "boringssl_p256-x86_64_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
@@ -6990,19 +6944,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "boringssl_err_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
     "name": "boringssl_evp_extra_test_lib", 
     "src": [], 
     "third_party": true, 
@@ -7041,7 +6982,7 @@
     ], 
     "headers": [], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "boringssl_hkdf_test_lib", 
     "src": [], 
     "third_party": true, 
@@ -7067,7 +7008,7 @@
     ], 
     "headers": [], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "boringssl_lhash_test_lib", 
     "src": [], 
     "third_party": true, 
@@ -7082,45 +7023,6 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_gcm_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_newhope_statistical_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_newhope_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_newhope_vectors_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
@@ -7184,8 +7086,8 @@
     ], 
     "headers": [], 
     "is_filegroup": false, 
-    "language": "c", 
-    "name": "boringssl_refcount_test_lib", 
+    "language": "c++", 
+    "name": "boringssl_pool_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
@@ -7198,7 +7100,7 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "boringssl_rsa_test_lib", 
+    "name": "boringssl_refcount_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
@@ -7264,19 +7166,6 @@
     "is_filegroup": false, 
     "language": "c", 
     "name": "boringssl_v3name_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_ssl_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
@@ -7435,6 +7324,7 @@
       "test/core/end2end/tests/cancel_after_accept.c", 
       "test/core/end2end/tests/cancel_after_client_done.c", 
       "test/core/end2end/tests/cancel_after_invoke.c", 
+      "test/core/end2end/tests/cancel_after_round_trip.c", 
       "test/core/end2end/tests/cancel_before_invoke.c", 
       "test/core/end2end/tests/cancel_in_a_vacuum.c", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
@@ -7466,6 +7356,7 @@
       "test/core/end2end/tests/payload.c", 
       "test/core/end2end/tests/ping.c", 
       "test/core/end2end/tests/ping_pong_streaming.c", 
+      "test/core/end2end/tests/proxy_auth.c", 
       "test/core/end2end/tests/registered_call.c", 
       "test/core/end2end/tests/request_with_flags.c", 
       "test/core/end2end/tests/request_with_payload.c", 
@@ -7512,6 +7403,7 @@
       "test/core/end2end/tests/cancel_after_accept.c", 
       "test/core/end2end/tests/cancel_after_client_done.c", 
       "test/core/end2end/tests/cancel_after_invoke.c", 
+      "test/core/end2end/tests/cancel_after_round_trip.c", 
       "test/core/end2end/tests/cancel_before_invoke.c", 
       "test/core/end2end/tests/cancel_in_a_vacuum.c", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
@@ -7543,6 +7435,7 @@
       "test/core/end2end/tests/payload.c", 
       "test/core/end2end/tests/ping.c", 
       "test/core/end2end/tests/ping_pong_streaming.c", 
+      "test/core/end2end/tests/proxy_auth.c", 
       "test/core/end2end/tests/registered_call.c", 
       "test/core/end2end/tests/request_with_flags.c", 
       "test/core/end2end/tests/request_with_payload.c", 
@@ -7843,9 +7736,11 @@
       "src/core/lib/channel/handshaker_registry.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/message_compress.h", 
+      "src/core/lib/compression/stream_compression.h", 
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
+      "src/core/lib/iomgr/call_combiner.h", 
       "src/core/lib/iomgr/closure.h", 
       "src/core/lib/iomgr/combiner.h", 
       "src/core/lib/iomgr/endpoint.h", 
@@ -7865,6 +7760,7 @@
       "src/core/lib/iomgr/iomgr.h", 
       "src/core/lib/iomgr/iomgr_internal.h", 
       "src/core/lib/iomgr/iomgr_posix.h", 
+      "src/core/lib/iomgr/iomgr_uv.h", 
       "src/core/lib/iomgr/is_epollexclusive_available.h", 
       "src/core/lib/iomgr/load_file.h", 
       "src/core/lib/iomgr/lockfree_event.h", 
@@ -7978,12 +7874,16 @@
       "src/core/lib/compression/compression.c", 
       "src/core/lib/compression/message_compress.c", 
       "src/core/lib/compression/message_compress.h", 
+      "src/core/lib/compression/stream_compression.c", 
+      "src/core/lib/compression/stream_compression.h", 
       "src/core/lib/http/format_request.c", 
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.c", 
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.c", 
       "src/core/lib/http/parser.h", 
+      "src/core/lib/iomgr/call_combiner.c", 
+      "src/core/lib/iomgr/call_combiner.h", 
       "src/core/lib/iomgr/closure.c", 
       "src/core/lib/iomgr/closure.h", 
       "src/core/lib/iomgr/combiner.c", 
@@ -8024,6 +7924,7 @@
       "src/core/lib/iomgr/iomgr_posix.c", 
       "src/core/lib/iomgr/iomgr_posix.h", 
       "src/core/lib/iomgr/iomgr_uv.c", 
+      "src/core/lib/iomgr/iomgr_uv.h", 
       "src/core/lib/iomgr/iomgr_windows.c", 
       "src/core/lib/iomgr/is_epollexclusive_available.c", 
       "src/core/lib/iomgr/is_epollexclusive_available.h", 
@@ -8996,6 +8897,25 @@
   {
     "deps": [
       "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [
+      "src/core/ext/transport/inproc/inproc_transport.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_transport_inproc", 
+    "src": [
+      "src/core/ext/transport/inproc/inproc_plugin.c", 
+      "src/core/ext/transport/inproc/inproc_transport.c", 
+      "src/core/ext/transport/inproc/inproc_transport.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc_base", 
       "grpc_server_backward_compatibility"
     ], 
@@ -9030,10 +8950,12 @@
   {
     "deps": [
       "gpr", 
+      "grpc_base", 
       "grpc_trace"
     ], 
     "headers": [
       "src/core/tsi/fake_transport_security.h", 
+      "src/core/tsi/gts_transport_security.h", 
       "src/core/tsi/ssl_transport_security.h", 
       "src/core/tsi/ssl_types.h", 
       "src/core/tsi/transport_security.h", 
@@ -9046,6 +8968,8 @@
     "src": [
       "src/core/tsi/fake_transport_security.c", 
       "src/core/tsi/fake_transport_security.h", 
+      "src/core/tsi/gts_transport_security.c", 
+      "src/core/tsi/gts_transport_security.h", 
       "src/core/tsi/ssl_transport_security.c", 
       "src/core/tsi/ssl_transport_security.h", 
       "src/core/tsi/ssl_types.h", 
@@ -9344,6 +9268,7 @@
   }, 
   {
     "deps": [
+      "grpc", 
       "grpc++"
     ], 
     "headers": [

@@ -325,7 +325,7 @@ grpc_error *grpc_metadata_batch_copy(grpc_exec_ctx *exec_ctx,
        elem = elem->next) {
     grpc_error *error = grpc_metadata_batch_add_tail(exec_ctx, dst,
                                                      &(*storage)[i++],
-                                                     grpc_mdelem_ref(elem->md));
+                                                     GRPC_MDELEM_REF(elem->md));
     if (error != GRPC_ERROR_NONE) return error;
   }
   return GRPC_ERROR_NONE;

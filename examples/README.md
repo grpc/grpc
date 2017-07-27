@@ -9,7 +9,7 @@ Examples for Go and Java gRPC live in their own repositories:
 * [Android Java](https://github.com/grpc/grpc-java/tree/master/examples/android)
 * [Go](https://github.com/grpc/grpc-go/tree/master/examples)
 
-For more comprehensive documentation, including an [overview](http://www.grpc.io/docs/) and tutorials that use this example code, visit [grpc.io](http://www.grpc.io/docs/).
+For more comprehensive documentation, including an [overview](https://grpc.io/docs/) and tutorials that use this example code, visit [grpc.io](https://grpc.io/docs/).
 
 ## Quick start
 

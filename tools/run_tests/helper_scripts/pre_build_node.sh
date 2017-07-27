@@ -22,8 +22,7 @@ set -ex
 
 export GRPC_CONFIG=${CONFIG:-opt}
 
-# Expire cache after 1 day
-npm update --cache-min 86400
+npm update --prefer-online
 
 npm install node-gyp-install
 ./node_modules/.bin/node-gyp-install

@@ -657,6 +657,10 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
           "ignoring grpc_chttp2_stream with non-client generated index %d",
           t->incoming_stream_id));
       return init_skip_frame_parser(exec_ctx, t, 1);
+    } else if (grpc_chttp2_stream_map_size(&t->stream_map) >=
+               t->settings[GRPC_ACKED_SETTINGS]
+                          [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS]) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Max stream count exceeded");
     }
     t->last_new_stream_id = t->incoming_stream_id;
     s = t->incoming_stream =
@@ -683,12 +687,12 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
     case 0:
       if (t->is_client && t->header_eof) {
         GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing Trailers-Only"));
+        if (s->trailing_metadata_available != NULL) {
+          *s->trailing_metadata_available = true;
+        }
         t->hpack_parser.on_header = on_trailing_header;
       } else {
         GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing initial_metadata"));
-        if (s->initial_metadata_received != NULL) {
-          *s->initial_metadata_received = true;
-        }
         t->hpack_parser.on_header = on_initial_header;
       }
       break;

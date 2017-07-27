@@ -31,25 +31,34 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/transport_impl.h"
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_stream_refcount =
+    GRPC_TRACER_INITIALIZER(false, "stream_refcount");
+#endif
+
+#ifndef NDEBUG
 void grpc_stream_ref(grpc_stream_refcount *refcount, const char *reason) {
-  gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
-  gpr_log(GPR_DEBUG, "%s %p:%p   REF %" PRIdPTR "->%" PRIdPTR " %s",
-          refcount->object_type, refcount, refcount->destroy.cb_arg, val,
-          val + 1, reason);
+  if (GRPC_TRACER_ON(grpc_trace_stream_refcount)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
+    gpr_log(GPR_DEBUG, "%s %p:%p   REF %" PRIdPTR "->%" PRIdPTR " %s",
+            refcount->object_type, refcount, refcount->destroy.cb_arg, val,
+            val + 1, reason);
+  }
 #else
 void grpc_stream_ref(grpc_stream_refcount *refcount) {
 #endif
   gpr_ref_non_zero(&refcount->refs);
 }
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 void grpc_stream_unref(grpc_exec_ctx *exec_ctx, grpc_stream_refcount *refcount,
                        const char *reason) {
-  gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
-  gpr_log(GPR_DEBUG, "%s %p:%p UNREF %" PRIdPTR "->%" PRIdPTR " %s",
-          refcount->object_type, refcount, refcount->destroy.cb_arg, val,
-          val - 1, reason);
+  if (GRPC_TRACER_ON(grpc_trace_stream_refcount)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
+    gpr_log(GPR_DEBUG, "%s %p:%p UNREF %" PRIdPTR "->%" PRIdPTR " %s",
+            refcount->object_type, refcount, refcount->destroy.cb_arg, val,
+            val - 1, reason);
+  }
 #else
 void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
                        grpc_stream_refcount *refcount) {
@@ -74,7 +83,7 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
                             offsetof(grpc_stream_refcount, slice_refcount)))
 
 static void slice_stream_ref(void *p) {
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
   grpc_stream_ref(STREAM_REF_FROM_SLICE_REF(p), "slice");
 #else
   grpc_stream_ref(STREAM_REF_FROM_SLICE_REF(p));
@@ -82,7 +91,7 @@ static void slice_stream_ref(void *p) {
 }
 
 static void slice_stream_unref(grpc_exec_ctx *exec_ctx, void *p) {
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
   grpc_stream_unref(exec_ctx, STREAM_REF_FROM_SLICE_REF(p), "slice");
 #else
   grpc_stream_unref(exec_ctx, STREAM_REF_FROM_SLICE_REF(p));
@@ -102,7 +111,7 @@ static const grpc_slice_refcount_vtable stream_ref_slice_vtable = {
     .eq = grpc_slice_default_eq_impl,
     .hash = grpc_slice_default_hash_impl};
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void *cb_arg,
                           const char *object_type) {
@@ -188,32 +197,40 @@ void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
                                     then_schedule_closure);
 }
 
-char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
-                              grpc_transport *transport) {
-  return transport->vtable->get_peer(exec_ctx, transport);
-}
-
 grpc_endpoint *grpc_transport_get_endpoint(grpc_exec_ctx *exec_ctx,
                                            grpc_transport *transport) {
   return transport->vtable->get_endpoint(exec_ctx, transport);
 }
 
+// This comment should be sung to the tune of
+// "Supercalifragilisticexpialidocious":
+//
+// grpc_transport_stream_op_batch_finish_with_failure
+// is a function that must always unref cancel_error
+// though it lives in lib, it handles transport stream ops sure
+// it's grpc_transport_stream_op_batch_finish_with_failure
 void grpc_transport_stream_op_batch_finish_with_failure(
-    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *op,
-    grpc_error *error) {
-  if (op->recv_message) {
-    GRPC_CLOSURE_SCHED(exec_ctx, op->payload->recv_message.recv_message_ready,
-                       GRPC_ERROR_REF(error));
+    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *batch,
+    grpc_error *error, grpc_call_combiner *call_combiner) {
+  if (batch->send_message) {
+    grpc_byte_stream_destroy(exec_ctx,
+                             batch->payload->send_message.send_message);
   }
-  if (op->recv_initial_metadata) {
-    GRPC_CLOSURE_SCHED(
-        exec_ctx,
-        op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-        GRPC_ERROR_REF(error));
+  if (batch->recv_message) {
+    GRPC_CALL_COMBINER_START(exec_ctx, call_combiner,
+                             batch->payload->recv_message.recv_message_ready,
+                             GRPC_ERROR_REF(error),
+                             "failing recv_message_ready");
   }
-  GRPC_CLOSURE_SCHED(exec_ctx, op->on_complete, error);
-  if (op->cancel_stream) {
-    GRPC_ERROR_UNREF(op->payload->cancel_stream.cancel_error);
+  if (batch->recv_initial_metadata) {
+    GRPC_CALL_COMBINER_START(
+        exec_ctx, call_combiner,
+        batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
+        GRPC_ERROR_REF(error), "failing recv_initial_metadata_ready");
+  }
+  GRPC_CLOSURE_SCHED(exec_ctx, batch->on_complete, error);
+  if (batch->cancel_stream) {
+    GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
   }
 }
 

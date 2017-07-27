@@ -62,5 +62,6 @@ struct grpc_channel_credentials;
                                      channelArgs:(nullable NSDictionary *)channelArgs;
 
 - (nullable grpc_call *)unmanagedCallWithPath:(nonnull NSString *)path
+                                   serverName:(nonnull NSString *)serverName
                               completionQueue:(nonnull GRPCCompletionQueue *)queue;
 @end

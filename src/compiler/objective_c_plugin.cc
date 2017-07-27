@@ -44,7 +44,8 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       return true;
     }
 
-    ::grpc::string file_name = grpc_generator::FileNameInUpperCamel(file);
+    ::grpc::string file_name =
+        google::protobuf::compiler::objectivec::FilePath(file);
     ::grpc::string prefix = file->options().objc_class_prefix();
 
     {

@@ -29,6 +29,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_auth_context_refcount =
+    GRPC_TRACER_INITIALIZER(false, "auth_context_refcount");
+#endif
+
 /* --- grpc_call --- */
 
 grpc_call_error grpc_call_set_credentials(grpc_call *call,
@@ -122,14 +127,17 @@ grpc_auth_context *grpc_auth_context_create(grpc_auth_context *chained) {
   return ctx;
 }
 
-#ifdef GRPC_AUTH_CONTEXT_REFCOUNT_DEBUG
+#ifndef NDEBUG
 grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *ctx,
                                          const char *file, int line,
                                          const char *reason) {
   if (ctx == NULL) return NULL;
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "AUTH_CONTEXT:%p   ref %d -> %d %s", ctx, (int)ctx->refcount.count,
-          (int)ctx->refcount.count + 1, reason);
+  if (GRPC_TRACER_ON(grpc_trace_auth_context_refcount)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&ctx->refcount.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "AUTH_CONTEXT:%p   ref %" PRIdPTR " -> %" PRIdPTR " %s", ctx, val,
+            val + 1, reason);
+  }
 #else
 grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *ctx) {
   if (ctx == NULL) return NULL;
@@ -138,13 +146,16 @@ grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *ctx) {
   return ctx;
 }
 
-#ifdef GRPC_AUTH_CONTEXT_REFCOUNT_DEBUG
+#ifndef NDEBUG
 void grpc_auth_context_unref(grpc_auth_context *ctx, const char *file, int line,
                              const char *reason) {
   if (ctx == NULL) return;
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "AUTH_CONTEXT:%p unref %d -> %d %s", ctx, (int)ctx->refcount.count,
-          (int)ctx->refcount.count - 1, reason);
+  if (GRPC_TRACER_ON(grpc_trace_auth_context_refcount)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&ctx->refcount.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "AUTH_CONTEXT:%p unref %" PRIdPTR " -> %" PRIdPTR " %s", ctx, val,
+            val - 1, reason);
+  }
 #else
 void grpc_auth_context_unref(grpc_auth_context *ctx) {
   if (ctx == NULL) return;

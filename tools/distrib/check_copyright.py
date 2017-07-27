@@ -72,7 +72,6 @@ LICENSE_PREFIX = {
   '.mak':       r'#\s*',
   'Makefile':   r'#\s*',
   'Dockerfile': r'#\s*',
-  'LICENSE':    r'\s*',
   'BUILD':      r'#\s*',
 }
 
@@ -124,7 +123,7 @@ def save(name, text):
   with open(name, 'w') as f:
     f.write(text)
 
-assert(re.search(RE_LICENSE['LICENSE'], load('LICENSE')))
+
 assert(re.search(RE_LICENSE['Makefile'], load('Makefile')))
 
 

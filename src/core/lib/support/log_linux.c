@@ -64,6 +64,8 @@ void gpr_default_log(gpr_log_func_args *args) {
   time_t timer;
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   struct tm tm;
+  static __thread long tid = 0;
+  if (tid == 0) tid = gettid();
 
   timer = (time_t)now.tv_sec;
   final_slash = strrchr(args->file, '/');
@@ -81,7 +83,7 @@ void gpr_default_log(gpr_log_func_args *args) {
 
   gpr_asprintf(&prefix, "%s%s.%09" PRId32 " %7ld %s:%d]",
                gpr_log_severity_string(args->severity), time_buffer,
-               now.tv_nsec, gettid(), display_file, args->line);
+               now.tv_nsec, tid, display_file, args->line);
 
   fprintf(stderr, "%-60s %s\n", prefix, args->message);
   gpr_free(prefix);
