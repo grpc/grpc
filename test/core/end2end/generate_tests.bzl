@@ -139,7 +139,6 @@ END2END_TESTS = {
     'simple_request': test_options(),
     'streaming_error_response': test_options(),
     'stream_compressed_payload': test_options(proxyable=False, exclude_inproc=True),
-    'stream_compression': test_options(),
     'stream_payload': test_options(exclude_inproc=True),
     'stream_ping_pong_streaming': test_options(exclude_inproc=True),
     'trailing_metadata': test_options(),
