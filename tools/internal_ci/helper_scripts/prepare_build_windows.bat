@@ -18,4 +18,7 @@ set PATH=C:\tools\msys64\usr\bin;C:\Python27;%PATH%
 
 bash tools/internal_ci/helper_scripts/gen_report_index.sh
 
+@rem Needed for big_query_utils
+python -m pip install google-api-python-client
+
 git submodule update --init
