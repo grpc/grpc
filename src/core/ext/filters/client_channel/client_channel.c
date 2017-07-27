@@ -891,9 +891,6 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 //   send_trailing_metadata
 #define MAX_WAITING_BATCHES 6
 
-// FIXME: eliminate a lot of atomics and synchronization now that the
-// call combiner code has been merged in
-
 // Retry support:
 //
 // There are 2 sets of data to maintain:
@@ -953,15 +950,15 @@ typedef struct {
 typedef struct {
   // These fields indicate which ops have been sent down to this
   // subchannel call.
-  gpr_atm send_initial_metadata;  // bool
-  gpr_atm send_message_count;  // size_t
-  gpr_atm send_trailing_metadata;  // bool
-  gpr_atm recv_initial_metadata;  // bool
-  gpr_atm recv_message;  // bool
-  gpr_atm recv_trailing_metadata;  // bool
+  bool send_initial_metadata;
+  size_t send_message_count;
+  bool send_trailing_metadata;
+  bool recv_initial_metadata;
+  bool recv_message;
+  bool recv_trailing_metadata;
   // subchannel_batch_data.batch.payload points to this.
   grpc_transport_stream_op_batch_payload batch_payload;
-  gpr_atm retry_dispatched;  // bool
+  bool retry_dispatched;
 } subchannel_call_retry_state;
 
 /** Call data.  Holds a pointer to grpc_subchannel_call and the
@@ -1017,7 +1014,7 @@ typedef struct client_channel_call_data {
   grpc_call_context_element *context;
   // Batches received from above that still have a on_complete,
   // recv_initial_metadata_ready, or recv_message_ready callback pending.
-// FIXME: should this be an array of gpr_atm's?
+// FIXME: combine this with waiting_for_pick_batches above?
   grpc_transport_stream_op_batch* pending_batches[MAX_WAITING_BATCHES];
   // Copy of initial metadata.
   // Populated when we receive a send_initial_metadata op.
@@ -1033,7 +1030,6 @@ typedef struct client_channel_call_data {
   // send_messages, which are dynamically allocated as needed.
   grpc_byte_stream_cache initial_send_message;
   grpc_byte_stream_cache *send_messages;
-// FIXME: does this need to be a gpr_atm?
   size_t num_send_message_ops;
   // Non-NULL if we've received a send_trailing_metadata op.
   grpc_metadata_batch *send_trailing_metadata;
@@ -1331,10 +1327,8 @@ static bool maybe_retry(grpc_exec_ctx *exec_ctx,
     subchannel_call_retry_state *retry_state =
         grpc_connected_subchannel_call_get_parent_data(
             batch_data->subchannel_call);
-    if (!gpr_atm_full_cas(&retry_state->retry_dispatched, (gpr_atm)0,
-                          (gpr_atm)1)) {
-      return true;
-    }
+    if (retry_state->retry_dispatched) return true;
+    retry_state->retry_dispatched = true;
     // Check whether the status is retryable and whether we're being throttled.
     bool okay_to_retry = false;
     if (is_status_code_in_list(status, retry_policy->retryable_status_codes,
@@ -1554,10 +1548,8 @@ gpr_log(GPR_INFO, "  batch:%s%s%s%s%s%s%s",
   subchannel_call_retry_state *retry_state =
       grpc_connected_subchannel_call_get_parent_data(
           batch_data->subchannel_call);
-  const size_t send_message_count =
-      (size_t)gpr_atm_acq_load(&retry_state->send_message_count);
   const bool have_pending_send_message_ops =
-      send_message_count < calld->num_send_message_ops;
+      retry_state->send_message_count < calld->num_send_message_ops;
   // There are several possible cases here:
   // 1. The batch failed (error != GRPC_ERROR_NONE).  In this case, the
   //    call is complete and has failed.
@@ -1659,8 +1651,8 @@ gpr_log(GPR_INFO, "RETRIES CONFIGURED");
     batch_data->batch.payload = &retry_state->batch_payload;
     // send_initial_metadata.
     if (send_initial_metadata_idx != INT_MAX &&
-        gpr_atm_full_cas(&retry_state->send_initial_metadata, (gpr_atm)0,
-                         (gpr_atm)1)) {
+        !retry_state->send_initial_metadata) {
+      retry_state->send_initial_metadata = true;
       batch_data->batch.send_initial_metadata = true;
       batch_data->batch.payload->send_initial_metadata.send_initial_metadata =
           &calld->send_initial_metadata;
@@ -1676,16 +1668,12 @@ gpr_log(GPR_INFO, "RETRIES CONFIGURED");
 // succeeded and then we had to retry and had already re-sent the first
 // message when we got the next send_message op), then we need to queue
 // it without sending it right away
-    const size_t send_message_count =
-        (size_t)gpr_atm_acq_load(&retry_state->send_message_count);
     const bool have_pending_send_message_ops =
-        send_message_count < calld->num_send_message_ops;
-    if (have_pending_send_message_ops &&
-        gpr_atm_full_cas(&retry_state->send_trailing_metadata,
-                         (gpr_atm)send_message_count,
-                         (gpr_atm)send_message_count + 1)) {
+        retry_state->send_message_count < calld->num_send_message_ops;
+    if (have_pending_send_message_ops) {
       grpc_byte_stream_cache *cache =
-          get_send_message_cache(calld, send_message_count);
+          get_send_message_cache(calld, retry_state->send_message_count);
+      ++retry_state->send_message_count;
       grpc_caching_byte_stream_init(&batch_data->send_message, cache);
       batch_data->batch.send_message = true;
       batch_data->batch.payload->send_message.send_message =
@@ -1694,16 +1682,16 @@ gpr_log(GPR_INFO, "RETRIES CONFIGURED");
     // send_trailing_metadata.
 // FIXME: don't do this yet if there are pending send_message ops
     if (send_trailing_metadata_idx != INT_MAX &&
-        gpr_atm_full_cas(&retry_state->send_trailing_metadata, (gpr_atm)0,
-                         (gpr_atm)1)) {
+        !retry_state->send_trailing_metadata) {
+      retry_state->send_trailing_metadata = true;
       batch_data->batch.send_trailing_metadata = true;
       batch_data->batch.payload->send_trailing_metadata.send_trailing_metadata =
           calld->send_trailing_metadata;
     }
     // recv_initial_metadata.
     if (recv_initial_metadata_idx != INT_MAX &&
-        gpr_atm_full_cas(&retry_state->recv_initial_metadata, (gpr_atm)0,
-                         (gpr_atm)1)) {
+        !retry_state->recv_initial_metadata) {
+      retry_state->recv_initial_metadata = true;
       batch_data->batch.recv_initial_metadata = true;
       grpc_metadata_batch_init(&batch_data->recv_initial_metadata);
       batch_data->batch.payload->recv_initial_metadata.recv_initial_metadata =
@@ -1725,8 +1713,8 @@ gpr_log(GPR_INFO, "RETRIES CONFIGURED");
                                "client_channel_recv_initial_metadata_ready");
     }
     // recv_message.
-    if (recv_message_idx != INT_MAX &&
-        gpr_atm_full_cas(&retry_state->recv_message, (gpr_atm)0, (gpr_atm)1)) {
+    if (recv_message_idx != INT_MAX && !retry_state->recv_message) {
+      retry_state->recv_message = true;
       batch_data->batch.recv_message = true;
       batch_data->batch.payload->recv_message.recv_message =
           &batch_data->recv_message;
@@ -1740,8 +1728,8 @@ gpr_log(GPR_INFO, "RETRIES CONFIGURED");
     }
     // recv_trailing_metadata.
     if (recv_trailing_metadata_idx != INT_MAX &&
-        gpr_atm_full_cas(&retry_state->recv_trailing_metadata, (gpr_atm)0,
-                         (gpr_atm)1)) {
+        !retry_state->recv_trailing_metadata) {
+      retry_state->recv_trailing_metadata = true;
       batch_data->batch.recv_trailing_metadata = true;
       grpc_metadata_batch_init(&batch_data->recv_trailing_metadata);
       batch_data->batch.payload->recv_trailing_metadata.recv_trailing_metadata =
