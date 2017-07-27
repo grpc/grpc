@@ -416,9 +416,7 @@ struct rr_connectivity_data {
 
 static bool is_server_valid(const grpc_grpclb_server *server, size_t idx,
                             bool log) {
-  if (server->drop_for_rate_limiting || server->drop_for_load_balancing) {
-    return false;
-  }
+  if (server->drop) return false;
   const grpc_grpclb_ip_address *ip = &server->ip_address;
   if (server->port >> 16 != 0) {
     if (log) {
@@ -462,7 +460,7 @@ static const grpc_lb_user_data_vtable lb_token_vtable = {
 static void parse_server(const grpc_grpclb_server *server,
                          grpc_resolved_address *addr) {
   memset(addr, 0, sizeof(*addr));
-  if (server->drop_for_rate_limiting || server->drop_for_load_balancing) return;
+  if (server->drop) return;
   const uint16_t netorder_port = htons((uint16_t)server->port);
   /* the addresses are given in binary format (a in(6)_addr struct) in
    * server->ip_address.bytes. */
@@ -610,7 +608,7 @@ static bool pick_from_internal_rr_locked(
   if (glb_policy->serverlist_index == glb_policy->serverlist->num_servers) {
     glb_policy->serverlist_index = 0;  // Wrap-around.
   }
-  if (server->drop_for_rate_limiting || server->drop_for_load_balancing) {
+  if (server->drop) {
     // Not using the RR policy, so unref it.
     if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
       gpr_log(GPR_INFO, "Unreffing RR for drop (0x%" PRIxPTR ")",
@@ -622,11 +620,8 @@ static bool pick_from_internal_rr_locked(
     // the client_load_reporting filter, because we do not create a
     // subchannel call (and therefore no client_load_reporting filter)
     // for dropped calls.
-    grpc_grpclb_client_stats_add_call_started(wc_arg->client_stats);
-    grpc_grpclb_client_stats_add_call_finished(
-        server->drop_for_rate_limiting, server->drop_for_load_balancing,
-        false /* failed_to_send */, false /* known_received */,
-        wc_arg->client_stats);
+    grpc_grpclb_client_stats_add_call_dropped_locked(server->load_balance_token,
+                                                     wc_arg->client_stats);
     grpc_grpclb_client_stats_unref(wc_arg->client_stats);
     if (force_async) {
       GPR_ASSERT(wc_arg->wrapped_closure != NULL);
@@ -1309,15 +1304,14 @@ static void do_send_client_load_report_locked(grpc_exec_ctx *exec_ctx,
 }
 
 static bool load_report_counters_are_zero(grpc_grpclb_request *request) {
+  grpc_grpclb_dropped_call_counts *drop_entries =
+      request->client_stats.calls_finished_with_drop.arg;
   return request->client_stats.num_calls_started == 0 &&
          request->client_stats.num_calls_finished == 0 &&
-         request->client_stats.num_calls_finished_with_drop_for_rate_limiting ==
-             0 &&
-         request->client_stats
-                 .num_calls_finished_with_drop_for_load_balancing == 0 &&
          request->client_stats.num_calls_finished_with_client_failed_to_send ==
              0 &&
-         request->client_stats.num_calls_finished_known_received == 0;
+         request->client_stats.num_calls_finished_known_received == 0 &&
+         (drop_entries == NULL || drop_entries->num_entries == 0);
 }
 
 static void send_client_load_report_locked(grpc_exec_ctx *exec_ctx, void *arg,
@@ -1332,7 +1326,7 @@ static void send_client_load_report_locked(grpc_exec_ctx *exec_ctx, void *arg,
   // Construct message payload.
   GPR_ASSERT(glb_policy->client_load_report_payload == NULL);
   grpc_grpclb_request *request =
-      grpc_grpclb_load_report_request_create(glb_policy->client_stats);
+      grpc_grpclb_load_report_request_create_locked(glb_policy->client_stats);
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   if (load_report_counters_are_zero(request)) {
