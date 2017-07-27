@@ -2043,10 +2043,6 @@ grpc_call_error grpc_call_start_batch_and_execute(grpc_exec_ctx *exec_ctx,
                                                   const grpc_op *ops,
                                                   size_t nops,
                                                   grpc_closure *closure) {
-  GRPC_API_TRACE(
-      "grpc_call_start_batch_and_execute(call=%p, ops=%p, nops=%lu, tag=%p, "
-      "reserved=%p)",
-      5, (call, ops, (unsigned long)nops, NULL, NULL));
   return call_start_batch(exec_ctx, call, ops, nops, closure, 1);
 }
 

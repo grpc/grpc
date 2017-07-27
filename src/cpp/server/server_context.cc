@@ -40,25 +40,19 @@ namespace grpc {
 class ServerContext::CompletionOp final : public CallOpSetInterface {
  public:
   // initial refs: one in the server context, one in the cq
-  CompletionOp()
-      : has_tag_(false), tag_(nullptr), refs_(2), finalized_(false) {}
+  CompletionOp(void* tag) : tag_(tag), refs_(2), finalized_(false) {}
 
   void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override{};
   bool FinalizeResult(void** tag, bool* status) override;
 
-  bool got_finalized() {
+  bool IsFinalized() {
     std::lock_guard<std::mutex> g(mu_);
     return finalized_;
-  }
-  void set_tag(void* tag) {
-    has_tag_ = true;
-    tag_ = tag;
   }
 
   void Unref();
 
  private:
-  bool has_tag_;
   void* tag_;
   std::mutex mu_;
   int refs_;
@@ -76,40 +70,35 @@ void ServerContext::CompletionOp::Unref() {
 bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
   std::unique_lock<std::mutex> lock(mu_);
   finalized_ = true;
-  bool ret = false;
-  if (has_tag_) {
-    *tag = tag_;
-    ret = true;
-  }
+  *tag = tag_;
   if (--refs_ == 0) {
     lock.unlock();
     delete this;
   }
-  return ret;
+  return true;
 }
 
 // ServerContext body
 
 ServerContext::ServerContext()
-    : has_notify_when_done_tag_(false),
+    : completion_op_(nullptr),
+      has_notify_when_done_tag_(false),
       deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),
       call_(nullptr),
       cq_(nullptr),
       sent_initial_metadata_(false),
       compression_level_set_(false),
-      has_pending_ops_(false) {
-  completion_op_ = new CompletionOp();
-}
+      has_pending_ops_(false) {}
 
 ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
-    : has_notify_when_done_tag_(false),
+    : completion_op_(nullptr),
+      has_notify_when_done_tag_(false),
       deadline_(deadline),
       call_(nullptr),
       cq_(nullptr),
       sent_initial_metadata_(false),
       compression_level_set_(false),
       has_pending_ops_(false) {
-  completion_op_ = new CompletionOp();
   std::swap(*client_metadata_.arr(), *arr);
   client_metadata_.FillMap();
 }
@@ -121,15 +110,6 @@ ServerContext::~ServerContext() {
   if (completion_op_) {
     completion_op_->Unref();
   }
-}
-
-void ServerContext::BeginCompletionOp(Call* call) {
-  // GPR_ASSERT(!completion_op_);
-  // completion_op_ = new CompletionOp();
-  // if (has_notify_when_done_tag_) {
-  //   completion_op_->set_tag(async_notify_when_done_tag_);
-  // }
-  // call->PerformOps(completion_op_);
 }
 
 CompletionQueueTag* ServerContext::GetCompletionOpTag() {
@@ -155,27 +135,22 @@ void ServerContext::TryCancel() const {
 }
 
 bool ServerContext::IsCancelled() const {
-  if (!has_notify_when_done_tag_) {
-    if (call_ == nullptr) {
-      gpr_log(GPR_ERROR,
-              "Call shouldn't be NULL, might call IsCancelled when not having "
-              "called AsyncNotifyWhenDone.");
-    }
-    // For Sync case, call_ will always be set when ServerContext is
+  if (has_notify_when_done_tag_) {
+    return completion_op_->IsFinalized()
+               ? (call_ ? grpc_call_get_cancelled(call_) : true)
+               : false;
+  } else {
+    // For Sync case. call_ will always be set when ServerContext is
     // initialized.
     return grpc_call_recv_close_finalized(call_)
                ? grpc_call_get_cancelled(call_)
-               : false;
-  } else {
-    return completion_op_->got_finalized()
-               ? (call_ ? grpc_call_get_cancelled(call_) : true)
                : false;
   }
 }
 
 void ServerContext::AsyncNotifyWhenDone(void* tag) {
   has_notify_when_done_tag_ = true;
-  completion_op_->set_tag(tag);
+  completion_op_ = new CompletionOp(tag);
 }
 
 void ServerContext::set_compression_algorithm(

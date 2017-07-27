@@ -213,6 +213,7 @@ class Server::SyncRequest final : public CompletionQueueTag {
           MethodHandler::HandlerParameter(&call_, &ctx_, request_payload_));
       global_callbacks->PostSynchronousRequest(&ctx_);
       request_payload_ = nullptr;
+
       cq_.Shutdown();
 
       CompletionQueueTag* op_tag = ctx_.GetCompletionOpTag();
@@ -286,6 +287,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
       gpr_log(GPR_ERROR, "Sync server. DoWork() was called with NULL tag");
       return;
     }
+
     if (ok) {
       // Calldata takes ownership of the completion queue inside sync_req
       SyncRequest::CallData cd(server_, sync_req);
@@ -633,9 +635,6 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
   context_->set_call(call_);
   context_->cq_ = call_cq_;
   Call call(call_, server_, call_cq_, server_->max_receive_message_size());
-  // if (*status && call_) {
-  //   context_->BeginCompletionOp(&call);
-  // }
   // just the pointers inside call are copied here
   stream_->BindCall(&call);
   *tag = tag_;
