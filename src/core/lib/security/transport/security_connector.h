@@ -117,27 +117,38 @@ grpc_security_connector *grpc_security_connector_find_in_args(
 
 typedef struct grpc_channel_security_connector grpc_channel_security_connector;
 
-typedef void (*grpc_security_call_host_check_cb)(grpc_exec_ctx *exec_ctx,
-                                                 void *user_data,
-                                                 grpc_security_status status);
-
 struct grpc_channel_security_connector {
   grpc_security_connector base;
   grpc_call_credentials *request_metadata_creds;
-  void (*check_call_host)(grpc_exec_ctx *exec_ctx,
+  bool (*check_call_host)(grpc_exec_ctx *exec_ctx,
                           grpc_channel_security_connector *sc, const char *host,
                           grpc_auth_context *auth_context,
-                          grpc_security_call_host_check_cb cb, void *user_data);
+                          grpc_closure *on_call_host_checked,
+                          grpc_error **error);
+  void (*cancel_check_call_host)(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_security_connector *sc,
+                                 grpc_closure *on_call_host_checked,
+                                 grpc_error *error);
   void (*add_handshakers)(grpc_exec_ctx *exec_ctx,
                           grpc_channel_security_connector *sc,
                           grpc_handshake_manager *handshake_mgr);
 };
 
-/* Checks that the host that will be set for a call is acceptable. */
-void grpc_channel_security_connector_check_call_host(
+/// Checks that the host that will be set for a call is acceptable.
+/// Returns true if completed synchronously, in which case \a error will
+/// be set to indicate the result.  Otherwise, \a on_call_host_checked
+/// will be invoked when complete.
+bool grpc_channel_security_connector_check_call_host(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
     const char *host, grpc_auth_context *auth_context,
-    grpc_security_call_host_check_cb cb, void *user_data);
+    grpc_closure *on_call_host_checked, grpc_error **error);
+
+/// Cancels a pending asychronous call to
+/// grpc_channel_security_connector_check_call_host() with
+/// \a on_call_host_checked as its callback.
+void grpc_channel_security_connector_cancel_check_call_host(
+    grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
+    grpc_closure *on_call_host_checked, grpc_error *error);
 
 /* Registers handshakers with \a handshake_mgr. */
 void grpc_channel_security_connector_add_handshakers(

@@ -30,6 +30,7 @@
 // actually appended to this in a single string, since the string would
 // be longer than the C99 string literal limit.  Instead, we dynamically
 // construct it by adding the large headers one at a time.
+
 #define PFX_TOO_MUCH_METADATA_FROM_CLIENT_PREFIX_STR                       \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"     /* settings frame */              \
   "\x00\x00\x00\x04\x00\x00\x00\x00\x00" /* headers: generated from        \
@@ -63,15 +64,15 @@
 
 // The number of headers we're adding and the total size of the client
 // payload.
-#define NUM_HEADERS 95
+#define NUM_HEADERS 46
 #define PFX_TOO_MUCH_METADATA_FROM_CLIENT_PAYLOAD_SIZE          \
   ((sizeof(PFX_TOO_MUCH_METADATA_FROM_CLIENT_PREFIX_STR) - 1) + \
    (NUM_HEADERS * PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_SIZE) + 1)
 
 #define PFX_TOO_MUCH_METADATA_FROM_SERVER_STR                                              \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" /* settings frame: sets                               \
-                                        MAX_HEADER_LIST_SIZE to 16K */                     \
-  "\x00\x00\x06\x04\x00\x00\x00\x00\x00\x00\x06\x00\x00\x40\x00" /* headers:               \
+                                        MAX_HEADER_LIST_SIZE to 8K */                      \
+  "\x00\x00\x06\x04\x00\x00\x00\x00\x00\x00\x06\x00\x00\x20\x00" /* headers:               \
                                                                     generated              \
                                                                     from                   \
                                                                     simple_request.headers \
@@ -141,7 +142,7 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
 
-  const size_t metadata_value_size = 16 * 1024;
+  const size_t metadata_value_size = 8 * 1024;
   grpc_metadata meta;
   meta.key = grpc_slice_from_static_string("key");
   meta.value = grpc_slice_malloc(metadata_value_size);
@@ -166,34 +167,41 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   cq_verifier_destroy(cqv);
 }
 
-static void client_validator(grpc_slice_buffer *incoming) {
+static bool client_validator(grpc_slice_buffer *incoming) {
+  for (size_t i = 0; i < incoming->count; ++i) {
+    const char *s = (const char *)GRPC_SLICE_START_PTR(incoming->slices[i]);
+    char *hex = gpr_dump(s, GRPC_SLICE_LENGTH(incoming->slices[i]),
+                         GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    gpr_log(GPR_INFO, "RESPONSE SLICE %" PRIdPTR ": %s", i, hex);
+    gpr_free(hex);
+  }
+
   // Get last frame from incoming slice buffer.
   grpc_slice_buffer last_frame_buffer;
   grpc_slice_buffer_init(&last_frame_buffer);
   grpc_slice_buffer_trim_end(incoming, 13, &last_frame_buffer);
   GPR_ASSERT(last_frame_buffer.count == 1);
   grpc_slice last_frame = last_frame_buffer.slices[0];
+
   const uint8_t *p = GRPC_SLICE_START_PTR(last_frame);
-  // Length = 4
-  GPR_ASSERT(*p++ == 0);
-  GPR_ASSERT(*p++ == 0);
-  GPR_ASSERT(*p++ == 4);
-  // Frame type (RST_STREAM)
-  GPR_ASSERT(*p++ == 3);
-  // Flags
-  GPR_ASSERT(*p++ == 0);
-  // Stream ID.
-  GPR_ASSERT(*p++ == 0);
-  GPR_ASSERT(*p++ == 0);
-  GPR_ASSERT(*p++ == 0);
-  GPR_ASSERT(*p++ == 1);
-  // Payload (error code)
-  GPR_ASSERT(*p++ == 0);
-  GPR_ASSERT(*p++ == 0);
-  GPR_ASSERT(*p++ == 0);
-  GPR_ASSERT(*p == 0 || *p == 11);
+  bool success =
+      // Length == 4
+      *p++ != 0 || *p++ != 0 || *p++ != 4 ||
+      // Frame type (RST_STREAM)
+      *p++ != 3 ||
+      // Flags
+      *p++ != 0 ||
+      // Stream ID.
+      *p++ != 0 || *p++ != 0 || *p++ != 0 || *p++ != 1 ||
+      // Payload (error code)
+      *p++ == 0 || *p++ == 0 || *p++ == 0 || *p == 0 || *p == 11;
+
+  if (!success) {
+    gpr_log(GPR_INFO, "client expected RST_STREAM frame, not found");
+  }
 
   grpc_slice_buffer_destroy(&last_frame_buffer);
+  return success;
 }
 
 int main(int argc, char **argv) {

@@ -470,7 +470,8 @@ grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b) {
   if (a == -1 || b == -1) return GRPC_MDNULL;
   uint32_t k = (uint32_t)(a * 100 + b);
   uint32_t h = elems_phash(k);
-  return h < GPR_ARRAY_SIZE(elem_keys) && elem_keys[h] == k
+  return h < GPR_ARRAY_SIZE(elem_keys) && elem_keys[h] == k &&
+                 elem_idxs[h] != 255
              ? GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[elem_idxs[h]],
                                 GRPC_MDELEM_STORAGE_STATIC)
              : GRPC_MDNULL;

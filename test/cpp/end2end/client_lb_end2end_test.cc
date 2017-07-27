@@ -21,8 +21,6 @@
 #include <mutex>
 #include <thread>
 
-#include <gtest/gtest.h>
-
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
@@ -37,12 +35,15 @@
 
 extern "C" {
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/ext/filters/client_channel/subchannel_index.h"
 }
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
+
+#include <gtest/gtest.h>
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -331,10 +332,14 @@ TEST_F(ClientLbEnd2endTest, PickFirstManyUpdates) {
   for (size_t i = 0; i < servers_.size(); ++i) {
     ports.emplace_back(servers_[i]->port_);
   }
-  for (size_t i = 0; i < 1000; ++i) {
-    std::random_shuffle(ports.begin(), ports.end());
-    SetNextResolution(ports);
-    if (i % 10 == 0) SendRpc();
+  for (const bool force_creation : {true, false}) {
+    grpc_subchannel_index_test_only_set_force_creation(force_creation);
+    gpr_log(GPR_INFO, "Force subchannel creation: %d", force_creation);
+    for (size_t i = 0; i < 1000; ++i) {
+      std::random_shuffle(ports.begin(), ports.end());
+      SetNextResolution(ports);
+      if (i % 10 == 0) SendRpc();
+    }
   }
   // Check LB policy name for the channel.
   EXPECT_EQ("pick_first", channel_->GetLoadBalancingPolicyName());
@@ -461,6 +466,11 @@ TEST_F(ClientLbEnd2endTest, RoundRobinManyUpdates) {
   }
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(ClientLbEnd2endTest, RoundRobinConcurrentUpdates) {
+  // TODO(dgq): replicate the way internal testing exercises the concurrent
+  // update provisions of RR.
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobinReconnect) {

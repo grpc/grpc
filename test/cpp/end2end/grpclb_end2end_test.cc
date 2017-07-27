@@ -32,7 +32,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
 
 extern "C" {
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
@@ -45,6 +44,8 @@ extern "C" {
 
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+
+#include <gtest/gtest.h>
 
 // TODO(dgq): Other scenarios in need of testing:
 // - Send a serverlist with faulty ip:port addresses (port > 2^16, etc).
@@ -72,8 +73,8 @@ extern "C" {
 
 using std::chrono::system_clock;
 
-using grpc::lb::v1::LoadBalanceResponse;
 using grpc::lb::v1::LoadBalanceRequest;
+using grpc::lb::v1::LoadBalanceResponse;
 using grpc::lb::v1::LoadBalancer;
 
 namespace grpc {
@@ -194,12 +195,13 @@ class BalancerServiceImpl : public BalancerService {
     for (const auto& response_and_delay : responses_and_delays) {
       {
         std::unique_lock<std::mutex> lock(mu_);
-        if (shutdown_) break;
+        if (shutdown_) goto done;
       }
       SendResponse(stream, response_and_delay.first, response_and_delay.second);
     }
     {
       std::unique_lock<std::mutex> lock(mu_);
+      if (shutdown_) goto done;
       serverlist_cond_.wait(lock);
     }
 
@@ -209,6 +211,9 @@ class BalancerServiceImpl : public BalancerService {
       gpr_log(GPR_INFO, "LB: recv client load report msg: '%s'",
               request.DebugString().c_str());
       GPR_ASSERT(request.has_client_stats());
+      // We need to acquire the lock here in order to prevent the notify_one
+      // below from firing before its corresponding wait is executed.
+      std::lock_guard<std::mutex> lock(mu_);
       client_stats_.num_calls_started +=
           request.client_stats().num_calls_started();
       client_stats_.num_calls_finished +=
@@ -224,10 +229,9 @@ class BalancerServiceImpl : public BalancerService {
               .num_calls_finished_with_client_failed_to_send();
       client_stats_.num_calls_finished_known_received +=
           request.client_stats().num_calls_finished_known_received();
-      std::lock_guard<std::mutex> lock(mu_);
       load_report_cond_.notify_one();
     }
-
+  done:
     gpr_log(GPR_INFO, "LB: done");
     return Status::OK;
   }
@@ -428,19 +432,24 @@ class GrpclbEnd2endTest : public ::testing::Test {
     explicit ServerThread(const grpc::string& type,
                           const grpc::string& server_host, T* service)
         : type_(type), service_(service) {
+      std::mutex mu;
+      // We need to acquire the lock here in order to prevent the notify_one
+      // by ServerThread::Start from firing before the wait below is hit.
+      std::unique_lock<std::mutex> lock(mu);
       port_ = grpc_pick_unused_port_or_die();
       gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
-      std::mutex mu;
       std::condition_variable cond;
       thread_.reset(new std::thread(
           std::bind(&ServerThread::Start, this, server_host, &mu, &cond)));
-      std::unique_lock<std::mutex> lock(mu);
       cond.wait(lock);
       gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());
     }
 
     void Start(const grpc::string& server_host, std::mutex* mu,
                std::condition_variable* cond) {
+      // We need to acquire the lock here in order to prevent the notify_one
+      // below from firing before its corresponding wait is executed.
+      std::lock_guard<std::mutex> lock(*mu);
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
@@ -448,13 +457,12 @@ class GrpclbEnd2endTest : public ::testing::Test {
                                InsecureServerCredentials());
       builder.RegisterService(service_);
       server_ = builder.BuildAndStart();
-      std::lock_guard<std::mutex> lock(*mu);
       cond->notify_one();
     }
 
     void Shutdown() {
       gpr_log(GPR_INFO, "%s about to shutdown", type_.c_str());
-      server_->Shutdown();
+      server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
       thread_->join();
       gpr_log(GPR_INFO, "%s shutdown completed", type_.c_str());
     }
@@ -639,7 +647,6 @@ class UpdatesTest : public GrpclbEnd2endTest {
 TEST_F(UpdatesTest, UpdateBalancers) {
   const std::vector<int> first_backend{GetBackendPorts()[0]};
   const std::vector<int> second_backend{GetBackendPorts()[1]};
-
   ScheduleResponseForBalancer(
       0, BalancerServiceImpl::BuildResponseForBackends(first_backend, 0, 0), 0);
   ScheduleResponseForBalancer(
@@ -820,6 +827,7 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
 
   // Kill balancer 0
   gpr_log(GPR_INFO, "********** ABOUT TO KILL BALANCER 0 *************");
+  balancers_[0]->NotifyDoneWithServerlists();
   if (balancers_[0]->Shutdown()) balancer_servers_[0].Shutdown();
   gpr_log(GPR_INFO, "********** KILLED BALANCER 0 *************");
 
@@ -923,6 +931,45 @@ TEST_F(SingleBalancerTest, Drop) {
   EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   // and sent a single response.
   EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+}
+
+TEST_F(SingleBalancerTest, DropAllFirst) {
+  // All registered addresses are marked as "drop".
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends({}, 1, 1), 0);
+  const auto& statuses_and_responses = SendRpc(kMessage_, 1);
+  for (const auto& status_and_response : statuses_and_responses) {
+    const Status& status = status_and_response.first;
+    EXPECT_FALSE(status.ok());
+    EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
+  }
+}
+
+TEST_F(SingleBalancerTest, DropAll) {
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), 0, 0),
+      0);
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends({}, 1, 1), 1000);
+
+  // First call succeeds.
+  auto statuses_and_responses = SendRpc(kMessage_, 1);
+  for (const auto& status_and_response : statuses_and_responses) {
+    const Status& status = status_and_response.first;
+    const EchoResponse& response = status_and_response.second;
+    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                             << " message=" << status.error_message();
+    EXPECT_EQ(response.message(), kMessage_);
+  }
+  // But eventually, the update with only dropped servers is processed and calls
+  // fail.
+  do {
+    statuses_and_responses = SendRpc(kMessage_, 1);
+    ASSERT_EQ(statuses_and_responses.size(), 1UL);
+  } while (statuses_and_responses[0].first.ok());
+  const Status& status = statuses_and_responses[0].first;
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
 }
 
 class SingleBalancerWithClientLoadReportingTest : public GrpclbEnd2endTest {

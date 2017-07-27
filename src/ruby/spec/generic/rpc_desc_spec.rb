@@ -38,14 +38,14 @@ describe GRPC::RpcDesc do
 
   shared_examples 'it handles errors' do
     it 'sends the specified status if BadStatus is raised' do
-      expect(@call).to receive(:remote_read).once.and_return(Object.new)
+      expect(@call).to receive(:read_unary_request).once.and_return(Object.new)
       expect(@call).to receive(:send_status).once.with(@bs_code, 'NOK', false,
                                                        metadata: {})
       this_desc.run_server_method(@call, method(:bad_status))
     end
 
     it 'sends status UNKNOWN if other StandardErrors are raised' do
-      expect(@call).to receive(:remote_read).once.and_return(Object.new)
+      expect(@call).to receive(:read_unary_request).once.and_return(Object.new)
       expect(@call).to receive(:send_status).once.with(UNKNOWN,
                                                        arg_error_msg,
                                                        false, metadata: {})
@@ -53,7 +53,7 @@ describe GRPC::RpcDesc do
     end
 
     it 'absorbs CallError with no further action' do
-      expect(@call).to receive(:remote_read).once.and_raise(CallError)
+      expect(@call).to receive(:read_unary_request).once.and_raise(CallError)
       blk = proc do
         this_desc.run_server_method(@call, method(:fake_reqresp))
       end
@@ -75,7 +75,7 @@ describe GRPC::RpcDesc do
 
       it 'sends a response and closes the stream if there no errors' do
         req = Object.new
-        expect(@call).to receive(:remote_read).once.and_return(req)
+        expect(@call).to receive(:read_unary_request).once.and_return(req)
         expect(@call).to receive(:output_metadata).once.and_return(fake_md)
         expect(@call).to receive(:server_unary_response).once
           .with(@ok_response, trailing_metadata: fake_md)
@@ -133,7 +133,7 @@ describe GRPC::RpcDesc do
 
       it 'sends a response and closes the stream if there no errors' do
         req = Object.new
-        expect(@call).to receive(:remote_read).once.and_return(req)
+        expect(@call).to receive(:read_unary_request).once.and_return(req)
         expect(@call).to receive(:remote_send).twice.with(@ok_response)
         expect(@call).to receive(:output_metadata).and_return(fake_md)
         expect(@call).to receive(:send_status).once.with(OK, 'OK', true,

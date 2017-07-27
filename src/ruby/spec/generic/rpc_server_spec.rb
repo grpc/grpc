@@ -111,6 +111,47 @@ end
 
 SlowStub = SlowService.rpc_stub_class
 
+# a test service that hangs onto call objects
+# and uses them after the server-side call has been
+# finished
+class CheckCallAfterFinishedService
+  include GRPC::GenericService
+  rpc :an_rpc, EchoMsg, EchoMsg
+  rpc :a_client_streaming_rpc, stream(EchoMsg), EchoMsg
+  rpc :a_server_streaming_rpc, EchoMsg, stream(EchoMsg)
+  rpc :a_bidi_rpc, stream(EchoMsg), stream(EchoMsg)
+  attr_reader :server_side_call
+
+  def an_rpc(req, call)
+    fail 'shouldnt reuse service' unless @server_side_call.nil?
+    @server_side_call = call
+    req
+  end
+
+  def a_client_streaming_rpc(call)
+    fail 'shouldnt reuse service' unless @server_side_call.nil?
+    @server_side_call = call
+    # iterate through requests so call can complete
+    call.each_remote_read.each { |r| p r }
+    EchoMsg.new
+  end
+
+  def a_server_streaming_rpc(_, call)
+    fail 'shouldnt reuse service' unless @server_side_call.nil?
+    @server_side_call = call
+    [EchoMsg.new, EchoMsg.new]
+  end
+
+  def a_bidi_rpc(requests, call)
+    fail 'shouldnt reuse service' unless @server_side_call.nil?
+    @server_side_call = call
+    requests.each { |r| p r }
+    [EchoMsg.new, EchoMsg.new]
+  end
+end
+
+CheckCallAfterFinishedServiceStub = CheckCallAfterFinishedService.rpc_stub_class
+
 describe GRPC::RpcServer do
   RpcServer = GRPC::RpcServer
   StatusCodes = GRPC::Core::StatusCodes
@@ -503,6 +544,110 @@ describe GRPC::RpcServer do
         expect(op.trailing_metadata).to eq(wanted_trailers)
         @srv.stop
         t.join
+      end
+    end
+
+    context 'when call objects are used after calls have completed' do
+      before(:each) do
+        server_opts = {
+          poll_period: 1
+        }
+        @srv = RpcServer.new(**server_opts)
+        alt_port = @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
+        @alt_host = "0.0.0.0:#{alt_port}"
+
+        @service = CheckCallAfterFinishedService.new
+        @srv.handle(@service)
+        @srv_thd  = Thread.new { @srv.run }
+        @srv.wait_till_running
+      end
+
+      # check that the server-side call is still in a usable state even
+      # after it has finished
+      def check_single_req_view_of_finished_call(call)
+        common_check_of_finished_server_call(call)
+
+        expect(call.peer).to be_a(String)
+        expect(call.peer_cert).to be(nil)
+      end
+
+      def check_multi_req_view_of_finished_call(call)
+        common_check_of_finished_server_call(call)
+
+        expect do
+          call.each_remote_read.each { |r| p r }
+        end.to raise_error(GRPC::Core::CallError)
+      end
+
+      def common_check_of_finished_server_call(call)
+        expect do
+          call.merge_metadata_to_send({})
+        end.to raise_error(RuntimeError)
+
+        expect do
+          call.send_initial_metadata
+        end.to_not raise_error
+
+        expect(call.cancelled?).to be(false)
+        expect(call.metadata).to be_a(Hash)
+        expect(call.metadata['user-agent']).to be_a(String)
+
+        expect(call.metadata_sent).to be(true)
+        expect(call.output_metadata).to eq({})
+        expect(call.metadata_to_send).to eq({})
+        expect(call.deadline.is_a?(Time)).to be(true)
+      end
+
+      it 'should not crash when call used after an unary call is finished' do
+        req = EchoMsg.new
+        stub = CheckCallAfterFinishedServiceStub.new(@alt_host,
+                                                     :this_channel_is_insecure)
+        resp = stub.an_rpc(req)
+        expect(resp).to be_a(EchoMsg)
+        @srv.stop
+        @srv_thd.join
+
+        check_single_req_view_of_finished_call(@service.server_side_call)
+      end
+
+      it 'should not crash when call used after client streaming finished' do
+        requests = [EchoMsg.new, EchoMsg.new]
+        stub = CheckCallAfterFinishedServiceStub.new(@alt_host,
+                                                     :this_channel_is_insecure)
+        resp = stub.a_client_streaming_rpc(requests)
+        expect(resp).to be_a(EchoMsg)
+        @srv.stop
+        @srv_thd.join
+
+        check_multi_req_view_of_finished_call(@service.server_side_call)
+      end
+
+      it 'should not crash when call used after server streaming finished' do
+        req = EchoMsg.new
+        stub = CheckCallAfterFinishedServiceStub.new(@alt_host,
+                                                     :this_channel_is_insecure)
+        responses = stub.a_server_streaming_rpc(req)
+        responses.each do |r|
+          expect(r).to be_a(EchoMsg)
+        end
+        @srv.stop
+        @srv_thd.join
+
+        check_single_req_view_of_finished_call(@service.server_side_call)
+      end
+
+      it 'should not crash when call used after a bidi call is finished' do
+        requests = [EchoMsg.new, EchoMsg.new]
+        stub = CheckCallAfterFinishedServiceStub.new(@alt_host,
+                                                     :this_channel_is_insecure)
+        responses = stub.a_bidi_rpc(requests)
+        responses.each do |r|
+          expect(r).to be_a(EchoMsg)
+        end
+        @srv.stop
+        @srv_thd.join
+
+        check_multi_req_view_of_finished_call(@service.server_side_call)
       end
     end
   end

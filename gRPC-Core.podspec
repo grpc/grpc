@@ -25,15 +25,13 @@ Pod::Spec.new do |s|
   version = '1.5.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
-  s.homepage = 'http://www.grpc.io'
+  s.homepage = 'https://grpc.io'
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
     :tag => "v#{version}",
-    # TODO(jcanizales): Depend explicitly on the nanopb pod, and disable submodules.
-    :submodules => true,
   }
 
   s.ios.deployment_target = '7.0'
@@ -179,6 +177,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'BoringSSL', '~> 8.0'
+    ss.dependency 'nanopb', '~> 0.3'
 
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/profiling/timers.h',
@@ -193,6 +192,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/mpscq.h',
                       'src/core/lib/support/murmur_hash.h',
                       'src/core/lib/support/spinlock.h',
+                      'src/core/lib/support/stack_lockfree.h',
                       'src/core/lib/support/string.h',
                       'src/core/lib/support/string_windows.h',
                       'src/core/lib/support/thd_internal.h',
@@ -222,6 +222,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/log_windows.c',
                       'src/core/lib/support/mpscq.c',
                       'src/core/lib/support/murmur_hash.c',
+                      'src/core/lib/support/stack_lockfree.c',
                       'src/core/lib/support/string.c',
                       'src/core/lib/support/string_posix.c',
                       'src/core/lib/support/string_util_windows.c',
@@ -276,6 +277,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/iomgr.h',
                       'src/core/lib/iomgr/iomgr_internal.h',
                       'src/core/lib/iomgr/iomgr_posix.h',
+                      'src/core/lib/iomgr/iomgr_uv.h',
                       'src/core/lib/iomgr/is_epollexclusive_available.h',
                       'src/core/lib/iomgr/load_file.h',
                       'src/core/lib/iomgr/lockfree_event.h',
@@ -397,6 +399,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/transport/tsi_error.h',
                       'src/core/lib/security/util/json_util.h',
                       'src/core/tsi/fake_transport_security.h',
+                      'src/core/tsi/gts_transport_security.h',
                       'src/core/tsi/ssl_transport_security.h',
                       'src/core/tsi/ssl_types.h',
                       'src/core/tsi/transport_security.h',
@@ -423,16 +426,13 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/uri_parser.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',
+                      'src/core/ext/transport/inproc/inproc_transport.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
-                      'third_party/nanopb/pb.h',
-                      'third_party/nanopb/pb_common.h',
-                      'third_party/nanopb/pb_decode.h',
-                      'third_party/nanopb/pb_encode.h',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
@@ -639,6 +639,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/util/json_util.c',
                       'src/core/lib/surface/init_secure.c',
                       'src/core/tsi/fake_transport_security.c',
+                      'src/core/tsi/gts_transport_security.c',
                       'src/core/tsi/ssl_transport_security.c',
                       'src/core/tsi/transport_security.c',
                       'src/core/tsi/transport_security_adapter.c',
@@ -670,15 +671,14 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c',
                       'src/core/ext/transport/chttp2/client/insecure/channel_create.c',
                       'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c',
+                      'src/core/ext/transport/inproc/inproc_plugin.c',
+                      'src/core/ext/transport/inproc/inproc_transport.c',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
-                      'third_party/nanopb/pb_common.c',
-                      'third_party/nanopb/pb_decode.c',
-                      'third_party/nanopb/pb_encode.c',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c',
                       'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c',
                       'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c',
@@ -723,6 +723,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/support/mpscq.h',
                               'src/core/lib/support/murmur_hash.h',
                               'src/core/lib/support/spinlock.h',
+                              'src/core/lib/support/stack_lockfree.h',
                               'src/core/lib/support/string.h',
                               'src/core/lib/support/string_windows.h',
                               'src/core/lib/support/thd_internal.h',
@@ -761,6 +762,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/iomgr.h',
                               'src/core/lib/iomgr/iomgr_internal.h',
                               'src/core/lib/iomgr/iomgr_posix.h',
+                              'src/core/lib/iomgr/iomgr_uv.h',
                               'src/core/lib/iomgr/is_epollexclusive_available.h',
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
@@ -882,6 +884,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/transport/tsi_error.h',
                               'src/core/lib/security/util/json_util.h',
                               'src/core/tsi/fake_transport_security.h',
+                              'src/core/tsi/gts_transport_security.h',
                               'src/core/tsi/ssl_transport_security.h',
                               'src/core/tsi/ssl_types.h',
                               'src/core/tsi/transport_security.h',
@@ -908,16 +911,13 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/uri_parser.h',
                               'src/core/ext/filters/deadline/deadline_filter.h',
                               'src/core/ext/transport/chttp2/client/chttp2_connector.h',
+                              'src/core/ext/transport/inproc/inproc_transport.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
-                              'third_party/nanopb/pb.h',
-                              'third_party/nanopb/pb_common.h',
-                              'third_party/nanopb/pb_decode.h',
-                              'third_party/nanopb/pb_encode.h',
                               'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',

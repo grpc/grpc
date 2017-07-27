@@ -30,6 +30,8 @@
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/parse_json.h"
 #include "test/cpp/qps/report.h"
+#include "test/cpp/util/test_config.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 DEFINE_string(scenarios_file, "",
               "JSON file containing an array of Scenario objects");
@@ -60,6 +62,9 @@ DEFINE_string(qps_server_target_override, "",
 
 DEFINE_string(json_file_out, "", "File to write the JSON output to.");
 
+DEFINE_string(credential_type, grpc::testing::kInsecureCredentialsType,
+              "Credential type for communication with workers");
+
 namespace grpc {
 namespace testing {
 
@@ -71,7 +76,7 @@ static std::unique_ptr<ScenarioResult> RunAndReport(const Scenario& scenario,
                   scenario.server_config(), scenario.num_servers(),
                   scenario.warmup_seconds(), scenario.benchmark_seconds(),
                   scenario.spawn_local_worker_count(),
-                  FLAGS_qps_server_target_override.c_str());
+                  FLAGS_qps_server_target_override, FLAGS_credential_type);
 
   // Amend the result with scenario config. Eventually we should adjust
   // RunScenario contract so we don't need to touch the result here.
@@ -83,6 +88,7 @@ static std::unique_ptr<ScenarioResult> RunAndReport(const Scenario& scenario,
   GetReporter()->ReportTimes(*result);
   GetReporter()->ReportCpuUsage(*result);
   GetReporter()->ReportPollCount(*result);
+  GetReporter()->ReportQueriesPerCpuSec(*result);
 
   for (int i = 0; *success && i < result->client_success_size(); i++) {
     *success = result->client_success(i);
@@ -184,7 +190,7 @@ static bool QpsDriver() {
   } else if (scjson) {
     json = FLAGS_scenarios_json.c_str();
   } else if (FLAGS_quit) {
-    return RunQuit();
+    return RunQuit(FLAGS_credential_type);
   }
 
   // Parse into an array of scenarios
@@ -219,7 +225,7 @@ static bool QpsDriver() {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::InitBenchmark(&argc, &argv, true);
+  grpc::testing::InitTest(&argc, &argv, true);
 
   bool ok = grpc::testing::QpsDriver();
 

@@ -68,6 +68,11 @@ typedef enum {
 } grpc_chttp2_ping_type;
 
 typedef enum {
+  GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY,
+  GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT,
+} grpc_chttp2_optimization_target;
+
+typedef enum {
   GRPC_CHTTP2_PCL_INITIATE = 0,
   GRPC_CHTTP2_PCL_NEXT,
   GRPC_CHTTP2_PCL_INFLIGHT,
@@ -229,6 +234,8 @@ struct grpc_chttp2_transport {
 
   /** should we probe bdp? */
   bool enable_bdp_probe;
+
+  grpc_chttp2_optimization_target opt_target;
 
   /** various lists of streams */
   grpc_chttp2_stream_list lists[STREAM_LIST_COUNT];

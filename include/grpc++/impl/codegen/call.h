@@ -547,7 +547,10 @@ class CallOpClientRecvStatus {
 /// TODO(vjpai): Remove the existence of CallOpSetCollectionInterface
 /// and references to it. This code is deprecated-on-arrival and is
 /// only added for users that bypassed the code-generator.
-class CallOpSetCollectionInterface {};
+class CallOpSetCollectionInterface {
+ public:
+  virtual ~CallOpSetCollectionInterface() {}
+};
 
 /// An abstract collection of call ops, used to generate the
 /// grpc_call_op structure to pass down to the lower layers,
@@ -613,9 +616,11 @@ class CallOpSet : public CallOpSetInterface,
 
     // TODO(vjpai): Remove the reference to collection_ once the idea of
     // bypassing the code generator is forbidden. It is already deprecated
+    grpc_call* call = call_;
     collection_.reset();
 
-    g_core_codegen_interface->grpc_call_unref(call_);
+    g_core_codegen_interface->grpc_call_unref(call);
+
     return true;
   }
 

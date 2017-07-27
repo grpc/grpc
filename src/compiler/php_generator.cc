@@ -97,13 +97,14 @@ void PrintMethod(const MethodDescriptor *method, Printer *out) {
 }
 
 // Prints out the service descriptor object
-void PrintService(const ServiceDescriptor *service, Printer *out) {
+void PrintService(const ServiceDescriptor *service,
+                  const grpc::string &parameter, Printer *out) {
   map<grpc::string, grpc::string> vars;
   out->Print("/**\n");
   out->Print(GetPHPComments(service, " *").c_str());
   out->Print(" */\n");
-  vars["name"] = service->name();
-  out->Print(vars, "class $name$Client extends \\Grpc\\BaseStub {\n\n");
+  vars["name"] = GetPHPServiceClassname(service, parameter);
+  out->Print(vars, "class $name$ extends \\Grpc\\BaseStub {\n\n");
   out->Indent();
   out->Indent();
   out->Print(
@@ -131,7 +132,8 @@ void PrintService(const ServiceDescriptor *service, Printer *out) {
 }
 
 grpc::string GenerateFile(const FileDescriptor *file,
-                          const ServiceDescriptor *service) {
+                          const ServiceDescriptor *service,
+                          const grpc::string &parameter) {
   grpc::string output;
   {
     StringOutputStream output_stream(&output);
@@ -150,7 +152,7 @@ grpc::string GenerateFile(const FileDescriptor *file,
     vars["package"] = MessageIdentifierName(file->package());
     out.Print(vars, "namespace $package$;\n\n");
 
-    PrintService(service, &out);
+    PrintService(service, parameter, &out);
   }
   return output;
 }

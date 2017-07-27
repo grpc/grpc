@@ -15,7 +15,14 @@
 
 # Source this rc script to prepare the environment for macos builds
 
-ulimit -n 1000
+tools/internal_ci/helper_scripts/gen_report_index.sh
+
+sudo launchctl limit maxfiles unlimited unlimited
+
+# show current maxfiles
+launchctl limit maxfiles
+
+ulimit -n 10000
 
 # show current limits
 ulimit -a
@@ -26,8 +33,8 @@ brew install gflags
 
 set +ex  # rvm script is very verbose and exits with errorcode
 source $HOME/.rvm/scripts/rvm
-set -e  # rvm commands are very verbose  
-rvm install ruby-2.3
+set -e  # rvm commands are very verbose
+rvm install ruby-2.4
 rvm osx-ssl-certs status all
 rvm osx-ssl-certs update all
 set -ex
@@ -37,6 +44,7 @@ gem install bundler
 # cocoapods
 export LANG=en_US.UTF-8
 gem install cocoapods
+gem install xcpretty
 pod repo update  # needed by python
 
 # python
@@ -47,5 +55,8 @@ sudo pip install -U six tox setuptools
 # python 3.4
 wget -q https://www.python.org/ftp/python/3.4.4/python-3.4.4-macosx10.6.pkg
 sudo installer -pkg python-3.4.4-macosx10.6.pkg -target /
+
+# set xcode version for Obj-C tests
+sudo xcode-select -switch /Applications/Xcode_8.2.1.app/Contents/Developer
 
 git submodule update --init

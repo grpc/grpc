@@ -236,12 +236,12 @@ static void on_srv_query_done_cb(void *arg, int status, int timeouts,
            srv_it = srv_it->next) {
         if (grpc_ipv6_loopback_available()) {
           grpc_ares_hostbyname_request *hr = create_hostbyname_request(
-              r, srv_it->host, srv_it->port, true /* is_balancer */);
+              r, srv_it->host, htons(srv_it->port), true /* is_balancer */);
           ares_gethostbyname(*channel, hr->host, AF_INET6,
                              on_hostbyname_done_cb, hr);
         }
         grpc_ares_hostbyname_request *hr = create_hostbyname_request(
-            r, srv_it->host, srv_it->port, true /* is_balancer */);
+            r, srv_it->host, htons(srv_it->port), true /* is_balancer */);
         ares_gethostbyname(*channel, hr->host, AF_INET, on_hostbyname_done_cb,
                            hr);
         grpc_ares_ev_driver_start(&exec_ctx, r->ev_driver);

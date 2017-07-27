@@ -174,6 +174,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "byte_stream_test", 
+    "src": [
+      "test/core/transport/byte_stream_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "census_context_test", 
     "src": [
       "test/core/census/context_test.c"
@@ -823,6 +840,21 @@
     "name": "gpr_spinlock_test", 
     "src": [
       "test/core/support/spinlock_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "gpr_stack_lockfree_test", 
+    "src": [
+      "test/core/support/stack_lockfree_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3648,6 +3680,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
       "qps"
@@ -3817,6 +3850,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
       "qps"
@@ -3929,6 +3963,32 @@
     "name": "server_crash_test_client", 
     "src": [
       "test/cpp/end2end/server_crash_test_client.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/echo.grpc.pb.h", 
+      "src/proto/grpc/testing/echo.pb.h", 
+      "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_messages.pb.h", 
+      "src/proto/grpc/testing/echo_messages_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "server_request_call_test", 
+    "src": [
+      "test/cpp/server/server_request_call_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5196,6 +5256,24 @@
   }, 
   {
     "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "inproc_test", 
+    "src": [
+      "test/core/end2end/fixtures/inproc.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "end2end_nosec_tests", 
       "gpr", 
       "gpr_test_util", 
@@ -5442,6 +5520,24 @@
     "name": "h2_uds_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_uds.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "inproc_nosec_test", 
+    "src": [
+      "test/core/end2end/fixtures/inproc.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5731,6 +5827,7 @@
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_chttp2_server_insecure", 
       "grpc_transport_chttp2_server_secure", 
+      "grpc_transport_inproc", 
       "grpc_workaround_cronet_compression_filter"
     ], 
     "headers": [], 
@@ -5836,6 +5933,7 @@
       "grpc_server_backward_compatibility", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_server_insecure", 
+      "grpc_transport_inproc", 
       "grpc_workaround_cronet_compression_filter"
     ], 
     "headers": [], 
@@ -7226,6 +7324,7 @@
       "test/core/end2end/tests/cancel_after_accept.c", 
       "test/core/end2end/tests/cancel_after_client_done.c", 
       "test/core/end2end/tests/cancel_after_invoke.c", 
+      "test/core/end2end/tests/cancel_after_round_trip.c", 
       "test/core/end2end/tests/cancel_before_invoke.c", 
       "test/core/end2end/tests/cancel_in_a_vacuum.c", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
@@ -7257,6 +7356,7 @@
       "test/core/end2end/tests/payload.c", 
       "test/core/end2end/tests/ping.c", 
       "test/core/end2end/tests/ping_pong_streaming.c", 
+      "test/core/end2end/tests/proxy_auth.c", 
       "test/core/end2end/tests/registered_call.c", 
       "test/core/end2end/tests/request_with_flags.c", 
       "test/core/end2end/tests/request_with_payload.c", 
@@ -7305,6 +7405,7 @@
       "test/core/end2end/tests/cancel_after_accept.c", 
       "test/core/end2end/tests/cancel_after_client_done.c", 
       "test/core/end2end/tests/cancel_after_invoke.c", 
+      "test/core/end2end/tests/cancel_after_round_trip.c", 
       "test/core/end2end/tests/cancel_before_invoke.c", 
       "test/core/end2end/tests/cancel_in_a_vacuum.c", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
@@ -7336,6 +7437,7 @@
       "test/core/end2end/tests/payload.c", 
       "test/core/end2end/tests/ping.c", 
       "test/core/end2end/tests/ping_pong_streaming.c", 
+      "test/core/end2end/tests/proxy_auth.c", 
       "test/core/end2end/tests/registered_call.c", 
       "test/core/end2end/tests/request_with_flags.c", 
       "test/core/end2end/tests/request_with_payload.c", 
@@ -7471,6 +7573,7 @@
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.h", 
       "src/core/lib/support/spinlock.h", 
+      "src/core/lib/support/stack_lockfree.h", 
       "src/core/lib/support/string.h", 
       "src/core/lib/support/string_windows.h", 
       "src/core/lib/support/thd_internal.h", 
@@ -7543,6 +7646,8 @@
       "src/core/lib/support/murmur_hash.c", 
       "src/core/lib/support/murmur_hash.h", 
       "src/core/lib/support/spinlock.h", 
+      "src/core/lib/support/stack_lockfree.c", 
+      "src/core/lib/support/stack_lockfree.h", 
       "src/core/lib/support/string.c", 
       "src/core/lib/support/string.h", 
       "src/core/lib/support/string_posix.c", 
@@ -7658,6 +7763,7 @@
       "src/core/lib/iomgr/iomgr.h", 
       "src/core/lib/iomgr/iomgr_internal.h", 
       "src/core/lib/iomgr/iomgr_posix.h", 
+      "src/core/lib/iomgr/iomgr_uv.h", 
       "src/core/lib/iomgr/is_epollexclusive_available.h", 
       "src/core/lib/iomgr/load_file.h", 
       "src/core/lib/iomgr/lockfree_event.h", 
@@ -7818,6 +7924,7 @@
       "src/core/lib/iomgr/iomgr_posix.c", 
       "src/core/lib/iomgr/iomgr_posix.h", 
       "src/core/lib/iomgr/iomgr_uv.c", 
+      "src/core/lib/iomgr/iomgr_uv.h", 
       "src/core/lib/iomgr/iomgr_windows.c", 
       "src/core/lib/iomgr/is_epollexclusive_available.c", 
       "src/core/lib/iomgr/is_epollexclusive_available.h", 
@@ -8785,6 +8892,25 @@
   {
     "deps": [
       "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [
+      "src/core/ext/transport/inproc/inproc_transport.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_transport_inproc", 
+    "src": [
+      "src/core/ext/transport/inproc/inproc_plugin.c", 
+      "src/core/ext/transport/inproc/inproc_transport.c", 
+      "src/core/ext/transport/inproc/inproc_transport.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc_base", 
       "grpc_server_backward_compatibility"
     ], 
@@ -8819,10 +8945,12 @@
   {
     "deps": [
       "gpr", 
+      "grpc_base", 
       "grpc_trace"
     ], 
     "headers": [
       "src/core/tsi/fake_transport_security.h", 
+      "src/core/tsi/gts_transport_security.h", 
       "src/core/tsi/ssl_transport_security.h", 
       "src/core/tsi/ssl_types.h", 
       "src/core/tsi/transport_security.h", 
@@ -8835,6 +8963,8 @@
     "src": [
       "src/core/tsi/fake_transport_security.c", 
       "src/core/tsi/fake_transport_security.h", 
+      "src/core/tsi/gts_transport_security.c", 
+      "src/core/tsi/gts_transport_security.h", 
       "src/core/tsi/ssl_transport_security.c", 
       "src/core/tsi/ssl_transport_security.h", 
       "src/core/tsi/ssl_types.h", 
