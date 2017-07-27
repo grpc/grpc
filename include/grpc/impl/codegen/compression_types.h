@@ -29,6 +29,11 @@ extern "C" {
  * algorithm */
 #define GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY \
   "grpc-internal-encoding-request"
+/** To be used as initial metadata key for the request of a concrete stream
+ * compression
+ * algorithm */
+#define GRPC_STREAM_COMPRESSION_REQUEST_ALGORITHM_MD_KEY \
+  "grpc-internal-stream-encoding-request"
 
 /** To be used in channel arguments.
  *
