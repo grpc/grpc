@@ -92,6 +92,7 @@ CONFIG = [
     ('content-disposition', ''),
     ('content-encoding', 'identity'),
     ('content-encoding', 'gzip'),
+    ('content-encoding', ''),
     ('content-language', ''),
     ('content-length', ''),
     ('content-location', ''),
