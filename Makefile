@@ -7914,6 +7914,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/end2end_tests.c \
     test/core/end2end/end2end_test_utils.c \
     test/core/end2end/tests/authority_not_supported.c \
+    test/core/end2end/tests/auto_reconnect_channel.c \
     test/core/end2end/tests/bad_hostname.c \
     test/core/end2end/tests/bad_ping.c \
     test/core/end2end/tests/binary_metadata.c \
@@ -8010,6 +8011,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/end2end_nosec_tests.c \
     test/core/end2end/end2end_test_utils.c \
     test/core/end2end/tests/authority_not_supported.c \
+    test/core/end2end/tests/auto_reconnect_channel.c \
     test/core/end2end/tests/bad_hostname.c \
     test/core/end2end/tests/bad_ping.c \
     test/core/end2end/tests/binary_metadata.c \

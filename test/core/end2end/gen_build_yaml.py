@@ -78,6 +78,7 @@ LOWCPU = 0.1
 # maps test names to options
 END2END_TESTS = {
     'authority_not_supported': default_test_options,
+    'auto_reconnect_channel': connectivity_test_options._replace(flaky=True,needs_names=True),
     'bad_hostname': default_test_options._replace(needs_names=True),
     'bad_ping': connectivity_test_options._replace(proxyable=False),
     'binary_metadata': default_test_options._replace(cpu_cost=LOWCPU),

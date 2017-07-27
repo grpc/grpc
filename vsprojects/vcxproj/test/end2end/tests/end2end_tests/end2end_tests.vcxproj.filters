@@ -10,6 +10,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\authority_not_supported.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\auto_reconnect_channel.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\bad_hostname.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>

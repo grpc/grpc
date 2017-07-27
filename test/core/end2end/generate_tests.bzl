@@ -85,6 +85,8 @@ def test_options(needs_fullstack=False, needs_dns=False, needs_names=False,
 
 # maps test names to options
 END2END_TESTS = {
+    'auto_reconnect_channel': test_options(needs_fullstack=True,
+                                           needs_names=True),
     'bad_hostname': test_options(needs_names=True),
     'bad_ping': test_options(needs_fullstack=True,proxyable=False),
     'binary_metadata': test_options(),
