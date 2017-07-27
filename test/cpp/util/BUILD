@@ -29,6 +29,7 @@ package(
 grpc_cc_binary(
     name = "testso.so",
     srcs = [],
+    linkopts = ['-Wl,--no-undefined'],
     linkshared = 1,
     deps = ["//:grpc++_unsecure"],
 )
