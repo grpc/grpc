@@ -1123,12 +1123,15 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
         grpc_error_add_child(closure->error_data.error, error);
   }
   if (closure->next_data.scratch < CLOSURE_BARRIER_FIRST_REF_BIT) {
-    if (s->sent_initial_metadata && !s->write_initial_metadata_done) {
-      grpc_error *top_level_error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Request not seen by server"),
-          GRPC_ERROR_INT_NOT_SEEN_BY_SERVER, 1);
-      closure->error_data.error =
-          grpc_error_add_child(top_level_error, closure->error_data.error);
+    if (t->is_client) {
+      if ((s->sent_initial_metadata && !s->write_initial_metadata_done) ||
+          s->not_processed_by_peer) {
+        grpc_error *top_level_error = grpc_error_set_int(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Request not seen by server"),
+            GRPC_ERROR_INT_NOT_SEEN_BY_SERVER, 1);
+        closure->error_data.error =
+            grpc_error_add_child(top_level_error, closure->error_data.error);
+      }
     }
     if (closure->next_data.scratch & CLOSURE_BARRIER_STATS_BIT) {
       grpc_transport_move_stats(&s->stats, s->collecting_stats);
@@ -1933,6 +1936,9 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
     grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
     GRPC_ERROR_UNREF(error);
     return;
+  }
+  if (t->seen_goaway && t->goaway_last_stream_index < s->id) {
+    s->not_processed_by_peer = true;
   }
   bool closed_read = false;
   bool became_closed = false;

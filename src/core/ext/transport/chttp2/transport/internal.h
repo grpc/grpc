@@ -520,6 +520,8 @@ struct grpc_chttp2_stream {
   bool sent_initial_metadata;
   bool sent_trailing_metadata;
   bool write_initial_metadata_done;
+  /** has the stream been processed by peer */
+  bool not_processed_by_peer;
   /** how much window should we announce? */
   uint32_t announce_window;
   grpc_slice_buffer flow_controlled_buffer;
