@@ -18,6 +18,8 @@
 
 #import "GRPCCall.h"
 
+#import "GRPCCall+OAuth2.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 #import <RxLibrary/GRXConcurrentWriteable.h>
