@@ -21,21 +21,12 @@
 #import <AuthTestService/AuthSample.pbrpc.h>
 #import <Google/SignIn.h>
 #import <ProtoRPC/ProtoRPC.h>
+#import <GRPCClient/GRPCCall+OAuth2.h>
+#import <GRPCClient/GRPCCall+GID.h>
 
 NSString * const kTestScope = @"https://www.googleapis.com/auth/xapi.zoo";
 
 static NSString * const kTestHostAddress = @"grpc-test.sandbox.googleapis.com";
-
-@interface OAuthAuthenticator : NSObject<GRPCAuthorizationProtocol>
-@end
-
-@implementation OAuthAuthenticator
-- (void)getTokenWithHandler:(void (^)(NSString *token))handler {
-  NSString *token = GIDSignIn.sharedInstance.currentUser.authentication.accessToken;
-  handler(token);
-}
-
-@end
 
 // Category for RPC errors to create the descriptions as we want them to appear on our view.
 @interface NSError (AuthSample)
@@ -83,7 +74,7 @@ static NSString * const kTestHostAddress = @"grpc-test.sandbox.googleapis.com";
       }];
 
   // Set the access token to be used.
-  call.tokenProvider = [[OAuthAuthenticator alloc] init];
+  call.tokenProvider = GIDSignIn.sharedInstance;
 
   // Start the RPC.
   [call start];
