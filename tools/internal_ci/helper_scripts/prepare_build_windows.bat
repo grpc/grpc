@@ -18,13 +18,12 @@ set PATH=C:\tools\msys64\usr\bin;C:\Python27;%PATH%
 
 bash tools/internal_ci/helper_scripts/gen_report_index.sh
 
-@rem Add GCE DNS server and disable IPv6 to:
+@rem Update DNS settings to:
 @rem 1. allow resolving metadata.google.internal hostname
 @rem 2. make fetching default GCE credential by oauth2client work
-netsh interface ipv4 add dnsservers "Local Area Connection 8" 10.240.0.1 index=1
-netsh interface teredo set state disabled
-netsh interface 6to4 set state disabled
-netsh interface isatap set state disabled
+netsh interface ip set dns "Local Area Connection 8" static 169.254.169.254 primary
+netsh interface ip add dnsservers "Local Area Connection 8" 8.8.8.8 index=2
+netsh interface ip add dnsservers "Local Area Connection 8" 8.8.4.4 index=3
 
 @rem Needed for big_query_utils
 python -m pip install google-api-python-client
