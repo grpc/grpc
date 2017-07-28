@@ -590,8 +590,22 @@ describe 'ClientStub' do
         th.join
       end
 
-      # TODO: add test for metadata-related ArgumentError in a bidi call once
-      # issue mentioned in https://github.com/grpc/grpc/issues/10526 is fixed
+      it 'should raise ArgumentError if metadata contains invalid values' do
+        @metadata.merge!(k3: 3)
+        stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
+        expect do
+          get_responses(stub).collect { |r| r }
+        end.to raise_error(ArgumentError,
+                           /Header values must be of type string or array/)
+      end
+
+      it 'terminates if the call fails to start' do
+        # don't start the server
+        stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
+        expect do
+          get_responses(stub, deadline: from_relative_time(0)).collect { |r| r }
+        end.to raise_error(GRPC::BadStatus)
+      end
 
       it 'should send metadata to the server ok' do
         th = run_bidi_streamer_echo_ping_pong(@sent_msgs, @pass, true,
@@ -604,9 +618,9 @@ describe 'ClientStub' do
     end
 
     describe 'without a call operation' do
-      def get_responses(stub)
+      def get_responses(stub, deadline: nil)
         e = stub.bidi_streamer(@method, @sent_msgs, noop, noop,
-                               metadata: @metadata)
+                               metadata: @metadata, deadline: deadline)
         expect(e).to be_a(Enumerator)
         e
       end
@@ -618,10 +632,10 @@ describe 'ClientStub' do
       after(:each) do
         @op.wait # make sure wait doesn't hang
       end
-      def get_responses(stub, run_start_call_first: false)
+      def get_responses(stub, run_start_call_first: false, deadline: nil)
         @op = stub.bidi_streamer(@method, @sent_msgs, noop, noop,
                                  return_op: true,
-                                 metadata: @metadata)
+                                 metadata: @metadata, deadline: deadline)
         expect(@op).to be_a(GRPC::ActiveCall::Operation)
         @op.start_call if run_start_call_first
         e = @op.execute
