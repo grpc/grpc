@@ -19,8 +19,10 @@
 #ifndef NET_GRPC_HHVM_GRPC_CALL_H_
 #define NET_GRPC_HHVM_GRPC_CALL_H_
 
+#include <cstdint>
+
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
 
 #include "hphp/runtime/ext/extension.h"
@@ -31,29 +33,40 @@
 
 namespace HPHP {
 
-class CallData {
-  private:
-    grpc_call* wrapped{nullptr};
-    bool owned = false;
-    ChannelData* channelData{nullptr};
-    int32_t timeout;
-  public:
-    static Class* s_class;
-    static const StaticString s_className;
+// forward declarations
+class ChannelData;
 
-    static Class* getClass();
+class CallData
+{
+private:
+    // member variables
+    grpc_call* m_Wrapped;
+    bool m_Owned;
+    ChannelData* m_ChannelData;
+    int32_t m_Timeout;
+    static Class* s_Class;
+    static const StaticString s_ClassName;
 
-    CallData();
-    ~CallData();
+public:
+    // constructors/destructors
+    CallData(void) : m_Wrapped{ nullptr }, m_Owned{ false },
+        m_ChannelData{ nullptr }, m_Timeout{ 0 } {}
+     CallData(grpc_call* const call) : m_Wrapped{ call },
+        m_Owned{ false }, m_ChannelData{ nullptr }, m_Timeout{ 0 } {}
+    ~CallData(void);
 
-    void init(grpc_call* call);
-    void sweep();
-    grpc_call* getWrapped();
-    bool getOwned();
-    void setChannelData(ChannelData* channelData_);
-    void setOwned(bool owned_);
-    void setTimeout(int32_t timeout_);
-    int32_t getTimeout();
+    // interface functions
+    void sweep(void);
+    void init(grpc_call* call) { m_Wrapped = call; }
+    grpc_call* const getWrapped(void) { return m_Wrapped; }
+    bool getOwned(void) const { return m_Owned; }
+    void setChannelData(ChannelData* channelData) { m_ChannelData = channelData; }
+    void setOwned(const bool owned) { m_Owned = owned; }
+    void setTimeout(const int32_t timeout) { m_Timeout = timeout; }
+    int32_t getTimeout(void) const { return m_Timeout; }
+
+    static Class* const getClass(void) { return s_Class; }
+    static const StaticString& className(void) { return s_ClassName; }
 };
 
 void *cq_pluck_async(void *params_ptr);

@@ -141,7 +141,7 @@ class GrpcExtension : public Extension {
       Native::registerNativeDataInfo<ChannelData>(ChannelData::s_className.get());
 
       Native::registerNativeDataInfo<CallCredentialsData>(CallCredentialsData::s_className.get());
-      Native::registerNativeDataInfo<CallData>(CallData::s_className.get());
+      Native::registerNativeDataInfo<CallData>(CallData::className().get());
 
       loadSystemlib();
     }

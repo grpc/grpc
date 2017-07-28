@@ -16,8 +16,10 @@
  *
  */
 
+ #include <mutex>
+
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
 
 #include "common.h"
@@ -38,92 +40,63 @@
 #include <sys/eventfd.h>
 #include <sys/poll.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/grpc.h>
+#include "grpc/support/alloc.h"
+#include "grpc/grpc_security.h"
+#include "grpc/grpc.h"
+
+#include "utility.h"
 
 namespace HPHP {
 
-Mutex s_grpc_call_start_batch_mutex;
+Class* CallData::s_Class = nullptr;
+const StaticString CallData::s_ClassName{ "Grpc\\Call" };
 
-Class* CallData::s_class = nullptr;
-const StaticString CallData::s_className("Grpc\\Call");
-
-IMPLEMENT_GET_CLASS(CallData);
-
-CallData::CallData() {}
 CallData::~CallData() { sweep(); }
 
-void CallData::init(grpc_call* call) {
-  wrapped = call;
-}
-
-void CallData::sweep() {
-  if (wrapped) {
-    if (owned) {
-      grpc_call_unref(wrapped);
+void CallData::sweep(void) {
+    if (m_Wrapped)
+    {
+        if (m_Owned)
+        {
+            grpc_call_unref(m_Wrapped);
+            m_Owned = false;
+        }
+        m_Wrapped = nullptr;
     }
-    wrapped = nullptr;
-  }
-  if (channelData) {
-    channelData = nullptr;
-  }
-}
-
-grpc_call* CallData::getWrapped() {
-  return wrapped;
-}
-
-bool CallData::getOwned() {
-  return owned;
-}
-
-void CallData::setChannelData(ChannelData* channelData_) {
-  channelData = channelData_;
-}
-
-void CallData::setOwned(bool owned_) {
-  owned = owned_;
-}
-
-void CallData::setTimeout(int32_t timeout_) {
-  timeout = timeout_;
-}
-
-int32_t CallData::getTimeout() {
-  return timeout;
+    if (m_ChannelData)
+    {
+        m_ChannelData = nullptr;
+    }
 }
 
 void HHVM_METHOD(Call, __construct,
-  const Object& channel_obj,
-  const String& method,
-  const Object& deadline_obj,
-  const Variant& host_override /* = null */) {
-  auto callData = Native::data<CallData>(this_);
-  auto channelData = Native::data<ChannelData>(channel_obj);
+                 const Object& channel_obj,
+                 const String& method,
+                 const Object& deadline_obj,
+                 const Variant& host_override /* = null */)
+{
+    CallData* pCallData{ Native::data<CallData>(this_) };
+    ChannelData* pChannelData{ Native::data<ChannelData>(channel_obj) };
 
-  if (channelData->getWrapped() == nullptr) {
-    SystemLib::throwInvalidArgumentExceptionObject("Call cannot be constructed from a closed Channel");
-    return;
-  }
+    if (pChannelData->getWrapped() == nullptr) {
+        SystemLib::throwInvalidArgumentExceptionObject("Call cannot be constructed from a closed Channel");
+        return;
+    }
 
-  callData->setChannelData(channelData);
+    pCallData->setChannelData(pChannelData);
 
-  auto deadlineTimevalData = Native::data<TimevalData>(deadline_obj);
-  callData->setTimeout(gpr_time_to_millis(gpr_convert_clock_type(deadlineTimevalData->getWrapped(), GPR_TIMESPAN)));
+    TimevalData* pDeadlineTimevalData{ Native::data<TimevalData>(deadline_obj) };
+    pCallData->setTimeout(gpr_time_to_millis(gpr_convert_clock_type(pDeadlineTimevalData->getWrapped(),
+                                             GPR_TIMESPAN)));
 
-  grpc_slice method_slice = grpc_slice_from_copied_string(method.c_str());
-  grpc_slice host_slice = !host_override.isNull() ? grpc_slice_from_copied_string(host_override.toString().c_str())
-                              : grpc_empty_slice();
-  callData->init(grpc_channel_create_call(channelData->getWrapped(), NULL, GRPC_PROPAGATE_DEFAULTS,
-                             CompletionQueue::tl_obj.get()->getQueue(), method_slice,
-                             !host_override.isNull() ? &host_slice : NULL,
-                             deadlineTimevalData->getWrapped(), NULL));
+    Slice method_slice{ !method.empty() ? Slice{ method.c_str() } : Slice{} };
+    Slice host_slice{  !host_override.isNull() ? Slice{ host_override.toString().c_str() } : Slice{} };
+    pCallData->init(grpc_channel_create_call(pChannelData->getWrapped(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                             CompletionQueue::tl_obj.get()->getQueue(), method_slice.slice(),
+                                             !host_override.isNull() ? &host_slice.slice() : nullptr,
+                                             pDeadlineTimevalData->getWrapped(), nullptr));
 
-  grpc_slice_unref(method_slice);
-  grpc_slice_unref(host_slice);
-
-  callData->setOwned(true);
+    pCallData->setOwned(true);
 }
 
 Object HHVM_METHOD(Call, startBatch,
@@ -307,8 +280,10 @@ Object HHVM_METHOD(Call, startBatch,
     PluginGetMetadataFd::tl_obj.get()->setFd(fd);
   }
 
+  static std::mutex s_WriteStartBatchMutex, s_ReadStartBatchMutex;
   {
-    Lock l1(s_grpc_call_start_batch_mutex);
+    // TODO : Update for read and write locks for efficiency
+    std::lock_guard<std::mutex> lock{ s_WriteStartBatchMutex };
     error = grpc_call_start_batch(callData->getWrapped(), ops, op_num, callData->getWrapped(), NULL);
   }
 

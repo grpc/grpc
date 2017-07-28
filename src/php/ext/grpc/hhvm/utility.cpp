@@ -16,26 +16,30 @@
  *
  */
 
-#ifndef NET_GRPC_HHVM_GRPC_COMMON_H_
-#define NET_GRPC_HHVM_GRPC_COMMON_H_
-
 #ifdef HAVE_CONFIG_H
     #include "config.h"
 #endif
 
-#include "hphp/runtime/ext/extension.h"
+#include "utility.h"
 
-namespace HPHP {
+#include "grpc/byte_buffer_reader.h"
 
-#define IMPLEMENT_GET_CLASS(cls) \
-  Class* cls::getClass() { \
-    if (s_class == nullptr) { \
-        s_class = Unit::lookupClass(s_className.get()); \
-        assert(s_class); \
-    } \
-    return s_class; \
-  }
-
+Slice::Slice(const char* const string) :
+    m_Slice{ grpc_slice_from_copied_string(string) }
+{
 }
 
-#endif /* NET_GRPC_HHVM_GRPC_COMMON_H_ */
+Slice::Slice(const char* const string, const size_t length) :
+    m_Slice{ grpc_slice_from_copied_buffer(string, length) }
+{
+}
+
+Slice::Slice(grpc_byte_buffer_reader& reader) :
+    m_Slice{ grpc_byte_buffer_reader_readall(&reader) }
+{
+}
+
+Slice::~Slice(void)
+{
+    grpc_slice_unref(m_Slice);
+}

@@ -17,7 +17,7 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
 
 #include <string.h>
@@ -26,33 +26,36 @@
 
 #include "hphp/runtime/base/memory-manager.h"
 
-#include <grpc/grpc.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/slice.h>
+#include "grpc/grpc.h"
+#include "grpc/byte_buffer_reader.h"
 
-grpc_byte_buffer *string_to_byte_buffer(const char *string, size_t length) {
-  grpc_slice slice = grpc_slice_from_copied_buffer(string, length);
-  grpc_byte_buffer *buffer = grpc_raw_byte_buffer_create(&slice, 1);
-  grpc_slice_unref(slice);
-  return buffer;
+#include "utility.h"
+
+grpc_byte_buffer* string_to_byte_buffer(const char *string, const size_t length)
+{
+    Slice slice{ string, length };
+    grpc_byte_buffer* buffer{ grpc_raw_byte_buffer_create(&slice.slice(), 1) };
+    return buffer;
 }
 
-void byte_buffer_to_string(grpc_byte_buffer *buffer, char **out_string,
-                           size_t *out_length) {
-  grpc_byte_buffer_reader reader;
-  if (buffer == NULL || !grpc_byte_buffer_reader_init(&reader, buffer)) {
-    /* TODO(dgq): distinguish between the error cases. */
-    *out_string = NULL;
-    *out_length = 0;
-    return;
-  }
+void byte_buffer_to_string(grpc_byte_buffer* const buffer, char** const out_string,
+                           size_t* const out_length)
+{
+    grpc_byte_buffer_reader reader;
+    if (buffer == nullptr || !grpc_byte_buffer_reader_init(&reader, buffer))
+    {
+        /* TODO(dgq): distinguish between the error cases. */
+        *out_string = nullptr;
+        *out_length = 0;
+        return;
+    }
 
-  grpc_slice slice = grpc_byte_buffer_reader_readall(&reader);
-  size_t length = GRPC_SLICE_LENGTH(slice);
-  char *string = (char *)HPHP::req::calloc(length + 1, sizeof(char));
-  memcpy(string, GRPC_SLICE_START_PTR(slice), length);
-  grpc_slice_unref(slice);
+    Slice slice{ reader };
+    // acquire HPHP zeroed memory to hold string plus null terminator
+    size_t length{ slice.length() };
+    char* const string{ reinterpret_cast<char*>(HPHP::req::calloc(length + 1, sizeof(char))) };
+    std::memcpy(string, reinterpret_cast<const void*>(slice.data()), length);
 
-  *out_string = string;
-  *out_length = length;
+    *out_string = string;
+    *out_length = length;
 }
