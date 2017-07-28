@@ -175,21 +175,28 @@
       }],
       ['OS == "mac"', {
         'xcode_settings': {
-          'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          'OTHER_CFLAGS': [
+              '-g',
+              '-Wall',
+              '-Wextra',
+              '-Werror',
+              '-Wno-long-long',
+              '-Wno-unused-parameter',
+              '-DOSATOMIC_USE_INLINED=1',
+          ],
+          'OTHER_CPLUSPLUSFLAGS': [
+              '-g',
+              '-Wall',
+              '-Wextra',
+              '-Werror',
+              '-Wno-long-long',
+              '-Wno-unused-parameter',
+              '-DOSATOMIC_USE_INLINED=1',
+            '-stdlib=libc++',
+            '-std=c++11',
+            '-Wno-error=deprecated-declarations'
+          ],
         },
-        'OTHER_CFLAGS': [
-            '-g',
-            '-Wall',
-            '-Wextra',
-            '-Werror',
-            '-Wno-long-long',
-            '-Wno-unused-parameter',
-            '-DOSATOMIC_USE_INLINED=1',
-        ],
-        'OTHER_CPLUSPLUSFLAGS': [
-          '-stdlib=libc++',
-          '-std=c++11'
-        ],
       }]
     ]
   },
@@ -508,6 +515,13 @@
             'third_party/boringssl/ssl/tls_method.c',
             'third_party/boringssl/ssl/tls_record.c',
           ],
+          'conditions': [
+            ['OS == "mac"', {
+              'xcode_settings': {
+                'MACOSX_DEPLOYMENT_TARGET': '10.9'
+              }
+            }]
+          ]
         },
       ],
     }],
@@ -626,6 +640,13 @@
         'src/core/lib/support/tmpfile_windows.c',
         'src/core/lib/support/wrap_memcpy.c',
       ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
     },
     {
       'target_name': 'grpc',
@@ -890,6 +911,13 @@
         'src/core/ext/filters/workarounds/workaround_utils.c',
         'src/core/plugin_registry/grpc_plugin_registry.c',
       ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
     },
     {
       'include_dirs': [
@@ -915,6 +943,11 @@
           'ldflags': [
             '-Wl,-wrap,memcpy'
           ]
+        }],
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
         }]
       ],
       "target_name": "grpc_node",

@@ -855,8 +855,7 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
          inconsistent state. If it is the latter, we shold do a 0-timeout poll
          so that the thread comes back quickly from poll to make a second
          attempt at popping. Not doing this can potentially deadlock this
-         thread
-         forever (if the deadline is infinity) */
+         thread forever (if the deadline is infinity) */
       if (cq_event_queue_num_items(&cqd->queue) > 0) {
         iteration_deadline = gpr_time_0(GPR_CLOCK_MONOTONIC);
       }
@@ -869,10 +868,8 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
       if (cq_event_queue_num_items(&cqd->queue) > 0) {
         /* Go to the beginning of the loop. No point doing a poll because
            (cq->shutdown == true) is only possible when there is no pending
-           work
-           (i.e cq->pending_events == 0) and any outstanding
-           grpc_cq_completion
-           events are already queued on this cq */
+           work (i.e cq->pending_events == 0) and any outstanding completion
+           events should have already been queued on this cq */
         continue;
       }
 
@@ -909,17 +906,17 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
     is_finished_arg.first_loop = false;
   }
 
-  GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, &ret);
-  GRPC_CQ_INTERNAL_UNREF(&exec_ctx, cq, "next");
-  grpc_exec_ctx_finish(&exec_ctx);
-  GPR_ASSERT(is_finished_arg.stolen_completion == NULL);
-
   if (cq_event_queue_num_items(&cqd->queue) > 0 &&
       gpr_atm_no_barrier_load(&cqd->pending_events) > 0) {
     gpr_mu_lock(cq->mu);
     cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), NULL);
     gpr_mu_unlock(cq->mu);
   }
+
+  GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, &ret);
+  GRPC_CQ_INTERNAL_UNREF(&exec_ctx, cq, "next");
+  grpc_exec_ctx_finish(&exec_ctx);
+  GPR_ASSERT(is_finished_arg.stolen_completion == NULL);
 
   GPR_TIMER_END("grpc_completion_queue_next", 0);
 

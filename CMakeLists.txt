@@ -394,6 +394,7 @@ add_dependencies(buildtests_c bad_server_response_test)
 add_dependencies(buildtests_c bdp_estimator_test)
 add_dependencies(buildtests_c bin_decoder_test)
 add_dependencies(buildtests_c bin_encoder_test)
+add_dependencies(buildtests_c byte_stream_test)
 add_dependencies(buildtests_c census_context_test)
 add_dependencies(buildtests_c census_intrusive_hash_map_test)
 add_dependencies(buildtests_c census_resource_test)
@@ -4358,6 +4359,7 @@ add_library(end2end_tests
   test/core/end2end/tests/payload.c
   test/core/end2end/tests/ping.c
   test/core/end2end/tests/ping_pong_streaming.c
+  test/core/end2end/tests/proxy_auth.c
   test/core/end2end/tests/registered_call.c
   test/core/end2end/tests/request_with_flags.c
   test/core/end2end/tests/request_with_payload.c
@@ -4457,6 +4459,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/payload.c
   test/core/end2end/tests/ping.c
   test/core/end2end/tests/ping_pong_streaming.c
+  test/core/end2end/tests/proxy_auth.c
   test/core/end2end/tests/registered_call.c
   test/core/end2end/tests/request_with_flags.c
   test/core/end2end/tests/request_with_payload.c
@@ -4782,6 +4785,37 @@ target_link_libraries(bin_encoder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(byte_stream_test
+  test/core/transport/byte_stream_test.c
+)
+
+
+target_include_directories(byte_stream_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(byte_stream_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
 )
 
 endif (gRPC_BUILD_TESTS)

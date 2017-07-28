@@ -416,9 +416,7 @@ struct rr_connectivity_data {
 
 static bool is_server_valid(const grpc_grpclb_server *server, size_t idx,
                             bool log) {
-  if (server->drop_for_rate_limiting || server->drop_for_load_balancing) {
-    return false;
-  }
+  if (server->drop) return false;
   const grpc_grpclb_ip_address *ip = &server->ip_address;
   if (server->port >> 16 != 0) {
     if (log) {
@@ -462,7 +460,7 @@ static const grpc_lb_user_data_vtable lb_token_vtable = {
 static void parse_server(const grpc_grpclb_server *server,
                          grpc_resolved_address *addr) {
   memset(addr, 0, sizeof(*addr));
-  if (server->drop_for_rate_limiting || server->drop_for_load_balancing) return;
+  if (server->drop) return;
   const uint16_t netorder_port = htons((uint16_t)server->port);
   /* the addresses are given in binary format (a in(6)_addr struct) in
    * server->ip_address.bytes. */
@@ -491,11 +489,8 @@ static grpc_lb_addresses *process_serverlist_locked(
   for (size_t i = 0; i < serverlist->num_servers; ++i) {
     if (is_server_valid(serverlist->servers[i], i, true)) ++num_valid;
   }
-  if (num_valid == 0) return NULL;
-
   grpc_lb_addresses *lb_addresses =
       grpc_lb_addresses_create(num_valid, &lb_token_vtable);
-
   /* second pass: actually populate the addresses and LB tokens (aka user data
    * to the outside world) to be read by the RR policy during its creation.
    * Given that the validity tests are very cheap, they are performed again
@@ -503,14 +498,12 @@ static grpc_lb_addresses *process_serverlist_locked(
    * incurr in an allocation due to the arbitrary number of server */
   size_t addr_idx = 0;
   for (size_t sl_idx = 0; sl_idx < serverlist->num_servers; ++sl_idx) {
-    GPR_ASSERT(addr_idx < num_valid);
     const grpc_grpclb_server *server = serverlist->servers[sl_idx];
     if (!is_server_valid(serverlist->servers[sl_idx], sl_idx, false)) continue;
-
+    GPR_ASSERT(addr_idx < num_valid);
     /* address processing */
     grpc_resolved_address addr;
     parse_server(server, &addr);
-
     /* lb token processing */
     void *user_data;
     if (server->has_load_balance_token) {
@@ -596,7 +589,7 @@ static void update_lb_connectivity_status_locked(
         grpc_connectivity_state_name(rr_state), (void *)glb_policy->rr_policy);
   }
   grpc_connectivity_state_set(exec_ctx, &glb_policy->state_tracker, rr_state,
-                              GRPC_ERROR_REF(rr_state_error),
+                              rr_state_error,
                               "update_lb_connectivity_status_locked");
 }
 
@@ -615,7 +608,7 @@ static bool pick_from_internal_rr_locked(
   if (glb_policy->serverlist_index == glb_policy->serverlist->num_servers) {
     glb_policy->serverlist_index = 0;  // Wrap-around.
   }
-  if (server->drop_for_rate_limiting || server->drop_for_load_balancing) {
+  if (server->drop) {
     // Not using the RR policy, so unref it.
     if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
       gpr_log(GPR_INFO, "Unreffing RR for drop (0x%" PRIxPTR ")",
@@ -627,11 +620,8 @@ static bool pick_from_internal_rr_locked(
     // the client_load_reporting filter, because we do not create a
     // subchannel call (and therefore no client_load_reporting filter)
     // for dropped calls.
-    grpc_grpclb_client_stats_add_call_started(wc_arg->client_stats);
-    grpc_grpclb_client_stats_add_call_finished(
-        server->drop_for_rate_limiting, server->drop_for_load_balancing,
-        false /* failed_to_send */, false /* known_received */,
-        wc_arg->client_stats);
+    grpc_grpclb_client_stats_add_call_dropped_locked(server->load_balance_token,
+                                                     wc_arg->client_stats);
     grpc_grpclb_client_stats_unref(wc_arg->client_stats);
     if (force_async) {
       GPR_ASSERT(wc_arg->wrapped_closure != NULL);
@@ -678,11 +668,12 @@ static bool pick_from_internal_rr_locked(
 
 static grpc_lb_policy_args *lb_policy_args_create(grpc_exec_ctx *exec_ctx,
                                                   glb_lb_policy *glb_policy) {
+  grpc_lb_addresses *addresses =
+      process_serverlist_locked(exec_ctx, glb_policy->serverlist);
+  GPR_ASSERT(addresses != NULL);
   grpc_lb_policy_args *args = gpr_zalloc(sizeof(*args));
   args->client_channel_factory = glb_policy->cc_factory;
   args->combiner = glb_policy->base.combiner;
-  grpc_lb_addresses *addresses =
-      process_serverlist_locked(exec_ctx, glb_policy->serverlist);
   // Replace the LB addresses in the channel args that we pass down to
   // the subchannel.
   static const char *keys_to_remove[] = {GRPC_ARG_LB_ADDRESSES};
@@ -719,7 +710,6 @@ static void create_rr_locked(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
     return;
   }
   glb_policy->rr_policy = new_rr_policy;
-
   grpc_error *rr_state_error = NULL;
   const grpc_connectivity_state rr_state =
       grpc_lb_policy_check_connectivity_locked(exec_ctx, glb_policy->rr_policy,
@@ -727,7 +717,6 @@ static void create_rr_locked(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
   /* Connectivity state is a function of the RR policy updated/created */
   update_lb_connectivity_status_locked(exec_ctx, glb_policy, rr_state,
                                        rr_state_error);
-
   /* Add the gRPC LB's interested_parties pollset_set to that of the newly
    * created RR policy. This will make the RR policy progress upon activity on
    * gRPC LB, which in turn is tied to the application's call */
@@ -746,7 +735,7 @@ static void create_rr_locked(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
   rr_connectivity->state = rr_state;
 
   /* Subscribe to changes to the connectivity of the new RR */
-  GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "rr_connectivity_sched");
+  GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "glb_rr_connectivity_cb");
   grpc_lb_policy_notify_on_state_change_locked(exec_ctx, glb_policy->rr_policy,
                                                &rr_connectivity->state,
                                                &rr_connectivity->on_change);
@@ -761,8 +750,8 @@ static void create_rr_locked(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
     pp->wrapped_on_complete_arg.client_stats =
         grpc_grpclb_client_stats_ref(glb_policy->client_stats);
     if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
-      gpr_log(GPR_INFO, "Pending pick about to PICK from 0x%" PRIxPTR "",
-              (intptr_t)glb_policy->rr_policy);
+      gpr_log(GPR_INFO, "Pending pick about to (async) PICK from %p",
+              (void *)glb_policy->rr_policy);
     }
     pick_from_internal_rr_locked(exec_ctx, glb_policy, &pp->pick_args,
                                  true /* force_async */, pp->target,
@@ -788,10 +777,9 @@ static void rr_handover_locked(grpc_exec_ctx *exec_ctx,
                                glb_lb_policy *glb_policy) {
   GPR_ASSERT(glb_policy->serverlist != NULL &&
              glb_policy->serverlist->num_servers > 0);
-
   if (glb_policy->shutting_down) return;
-
   grpc_lb_policy_args *args = lb_policy_args_create(exec_ctx, glb_policy);
+  GPR_ASSERT(args != NULL);
   if (glb_policy->rr_policy != NULL) {
     if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
       gpr_log(GPR_DEBUG, "Updating Round Robin policy (%p)",
@@ -812,32 +800,31 @@ static void glb_rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx,
                                                void *arg, grpc_error *error) {
   rr_connectivity_data *rr_connectivity = arg;
   glb_lb_policy *glb_policy = rr_connectivity->glb_policy;
-
-  const bool shutting_down = glb_policy->shutting_down;
-  bool unref_needed = false;
-  GRPC_ERROR_REF(error);
-
-  if (rr_connectivity->state == GRPC_CHANNEL_SHUTDOWN || shutting_down) {
-    /* RR policy shutting down. Don't renew subscription and free the arg of
-     * this callback. In addition  we need to stash away the current policy to
-     * be UNREF'd after releasing the lock. Otherwise, if the UNREF is the last
-     * one, the policy would be destroyed, alongside the lock, which would
-     * result in a use-after-free */
-    unref_needed = true;
-    gpr_free(rr_connectivity);
-  } else { /* rr state != SHUTDOWN && !shutting down: biz as usual */
-    update_lb_connectivity_status_locked(exec_ctx, glb_policy,
-                                         rr_connectivity->state, error);
-    /* Resubscribe. Reuse the "rr_connectivity_cb" weak ref. */
-    grpc_lb_policy_notify_on_state_change_locked(
-        exec_ctx, glb_policy->rr_policy, &rr_connectivity->state,
-        &rr_connectivity->on_change);
-  }
-  if (unref_needed) {
+  if (glb_policy->shutting_down) {
     GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
-                              "rr_connectivity_cb");
+                              "glb_rr_connectivity_cb");
+    gpr_free(rr_connectivity);
+    return;
   }
-  GRPC_ERROR_UNREF(error);
+  if (rr_connectivity->state == GRPC_CHANNEL_SHUTDOWN) {
+    /* An RR policy that has transitioned into the SHUTDOWN connectivity state
+     * should not be considered for picks or updates: the SHUTDOWN state is a
+     * sink, policies can't transition back from it. .*/
+    GRPC_LB_POLICY_UNREF(exec_ctx, glb_policy->rr_policy,
+                         "rr_connectivity_shutdown");
+    glb_policy->rr_policy = NULL;
+    GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
+                              "glb_rr_connectivity_cb");
+    gpr_free(rr_connectivity);
+    return;
+  }
+  /* rr state != SHUTDOWN && !glb_policy->shutting down: biz as usual */
+  update_lb_connectivity_status_locked(
+      exec_ctx, glb_policy, rr_connectivity->state, GRPC_ERROR_REF(error));
+  /* Resubscribe. Reuse the "glb_rr_connectivity_cb" weak ref. */
+  grpc_lb_policy_notify_on_state_change_locked(exec_ctx, glb_policy->rr_policy,
+                                               &rr_connectivity->state,
+                                               &rr_connectivity->on_change);
 }
 
 static void destroy_balancer_name(grpc_exec_ctx *exec_ctx,
@@ -1001,7 +988,6 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
     gpr_free(glb_policy);
     return NULL;
   }
-
   GRPC_CLOSURE_INIT(&glb_policy->lb_channel_on_connectivity_changed,
                     glb_lb_channel_on_connectivity_changed_cb, glb_policy,
                     grpc_combiner_scheduler(args->combiner));
@@ -1058,7 +1044,7 @@ static void glb_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   glb_policy->pending_picks = NULL;
   pending_ping *pping = glb_policy->pending_pings;
   glb_policy->pending_pings = NULL;
-  if (glb_policy->rr_policy) {
+  if (glb_policy->rr_policy != NULL) {
     GRPC_LB_POLICY_UNREF(exec_ctx, glb_policy->rr_policy, "glb_shutdown");
   }
   // We destroy the LB channel here because
@@ -1089,6 +1075,16 @@ static void glb_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   }
 }
 
+// Cancel a specific pending pick.
+//
+// A grpclb pick progresses as follows:
+// - If there's a Round Robin policy (glb_policy->rr_policy) available, it'll be
+//   handed over to the RR policy (in create_rr_locked()). From that point
+//   onwards, it'll be RR's responsibility. For cancellations, that implies the
+//   pick needs also be cancelled by the RR instance.
+// - Otherwise, without an RR instance, picks stay pending at this policy's
+//   level (grpclb), inside the glb_policy->pending_picks list. To cancel these,
+//   we invoke the completion closure and set *target to NULL right here.
 static void glb_cancel_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                                    grpc_connected_subchannel **target,
                                    grpc_error *error) {
@@ -1108,9 +1104,23 @@ static void glb_cancel_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     }
     pp = next;
   }
+  if (glb_policy->rr_policy != NULL) {
+    grpc_lb_policy_cancel_pick_locked(exec_ctx, glb_policy->rr_policy, target,
+                                      GRPC_ERROR_REF(error));
+  }
   GRPC_ERROR_UNREF(error);
 }
 
+// Cancel all pending picks.
+//
+// A grpclb pick progresses as follows:
+// - If there's a Round Robin policy (glb_policy->rr_policy) available, it'll be
+//   handed over to the RR policy (in create_rr_locked()). From that point
+//   onwards, it'll be RR's responsibility. For cancellations, that implies the
+//   pick needs also be cancelled by the RR instance.
+// - Otherwise, without an RR instance, picks stay pending at this policy's
+//   level (grpclb), inside the glb_policy->pending_picks list. To cancel these,
+//   we invoke the completion closure and set *target to NULL right here.
 static void glb_cancel_picks_locked(grpc_exec_ctx *exec_ctx,
                                     grpc_lb_policy *pol,
                                     uint32_t initial_metadata_flags_mask,
@@ -1131,6 +1141,11 @@ static void glb_cancel_picks_locked(grpc_exec_ctx *exec_ctx,
       glb_policy->pending_picks = pp;
     }
     pp = next;
+  }
+  if (glb_policy->rr_policy != NULL) {
+    grpc_lb_policy_cancel_picks_locked(
+        exec_ctx, glb_policy->rr_policy, initial_metadata_flags_mask,
+        initial_metadata_flags_eq, GRPC_ERROR_REF(error));
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -1286,15 +1301,14 @@ static void do_send_client_load_report_locked(grpc_exec_ctx *exec_ctx,
 }
 
 static bool load_report_counters_are_zero(grpc_grpclb_request *request) {
+  grpc_grpclb_dropped_call_counts *drop_entries =
+      request->client_stats.calls_finished_with_drop.arg;
   return request->client_stats.num_calls_started == 0 &&
          request->client_stats.num_calls_finished == 0 &&
-         request->client_stats.num_calls_finished_with_drop_for_rate_limiting ==
-             0 &&
-         request->client_stats
-                 .num_calls_finished_with_drop_for_load_balancing == 0 &&
          request->client_stats.num_calls_finished_with_client_failed_to_send ==
              0 &&
-         request->client_stats.num_calls_finished_known_received == 0;
+         request->client_stats.num_calls_finished_known_received == 0 &&
+         (drop_entries == NULL || drop_entries->num_entries == 0);
 }
 
 static void send_client_load_report_locked(grpc_exec_ctx *exec_ctx, void *arg,
@@ -1309,7 +1323,7 @@ static void send_client_load_report_locked(grpc_exec_ctx *exec_ctx, void *arg,
   // Construct message payload.
   GPR_ASSERT(glb_policy->client_load_report_payload == NULL);
   grpc_grpclb_request *request =
-      grpc_grpclb_load_report_request_create(glb_policy->client_stats);
+      grpc_grpclb_load_report_request_create_locked(glb_policy->client_stats);
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   if (load_report_counters_are_zero(request)) {
@@ -1463,7 +1477,8 @@ static void query_for_backends_locked(grpc_exec_ctx *exec_ctx,
   op++;
   /* take a weak ref (won't prevent calling of \a glb_shutdown if the strong ref
    * count goes to zero) to be unref'd in lb_on_sent_initial_request_locked() */
-  GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "lb_on_server_status_received");
+  GRPC_LB_POLICY_WEAK_REF(&glb_policy->base,
+                          "lb_on_sent_initial_request_locked");
   call_error = grpc_call_start_batch_and_execute(
       exec_ctx, glb_policy->lb_call, ops, (size_t)(op - ops),
       &glb_policy->lb_on_sent_initial_request);
@@ -1480,8 +1495,9 @@ static void query_for_backends_locked(grpc_exec_ctx *exec_ctx,
   op->reserved = NULL;
   op++;
   /* take a weak ref (won't prevent calling of \a glb_shutdown if the strong ref
-   * count goes to zero) to be unref'd in lb_on_server_status_received */
-  GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "lb_on_server_status_received");
+   * count goes to zero) to be unref'd in lb_on_server_status_received_locked */
+  GRPC_LB_POLICY_WEAK_REF(&glb_policy->base,
+                          "lb_on_server_status_received_locked");
   call_error = grpc_call_start_batch_and_execute(
       exec_ctx, glb_policy->lb_call, ops, (size_t)(op - ops),
       &glb_policy->lb_on_server_status_received);
@@ -1493,8 +1509,9 @@ static void query_for_backends_locked(grpc_exec_ctx *exec_ctx,
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  /* take another weak ref to be unref'd in lb_on_response_received */
-  GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "lb_on_response_received");
+  /* take another weak ref to be unref'd/reused in
+   * lb_on_response_received_locked */
+  GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "lb_on_response_received_locked");
   call_error = grpc_call_start_batch_and_execute(
       exec_ctx, glb_policy->lb_call, ops, (size_t)(op - ops),
       &glb_policy->lb_on_response_received);
@@ -1511,13 +1528,12 @@ static void lb_on_sent_initial_request_locked(grpc_exec_ctx *exec_ctx,
     do_send_client_load_report_locked(exec_ctx, glb_policy);
   }
   GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
-                            "lb_on_response_received_locked");
+                            "lb_on_sent_initial_request_locked");
 }
 
 static void lb_on_response_received_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                            grpc_error *error) {
   glb_lb_policy *glb_policy = arg;
-
   grpc_op ops[2];
   memset(ops, 0, sizeof(ops));
   grpc_op *op = ops;
@@ -1548,7 +1564,7 @@ static void lb_on_response_received_locked(grpc_exec_ctx *exec_ctx, void *arg,
         }
         /* take a weak ref (won't prevent calling of \a glb_shutdown() if the
          * strong ref count goes to zero) to be unref'd in
-         * send_client_load_report() */
+         * send_client_load_report_locked() */
         glb_policy->client_load_report_timer_pending = true;
         GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "client_load_report");
         schedule_next_client_load_report(exec_ctx, glb_policy);
@@ -1576,7 +1592,6 @@ static void lb_on_response_received_locked(grpc_exec_ctx *exec_ctx, void *arg,
             gpr_free(ipport);
           }
         }
-
         /* update serverlist */
         if (serverlist->num_servers > 0) {
           if (grpc_grpclb_serverlist_equals(glb_policy->serverlist,
@@ -1611,9 +1626,7 @@ static void lb_on_response_received_locked(grpc_exec_ctx *exec_ctx, void *arg,
                 grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX));
       }
     }
-
     grpc_slice_unref_internal(exec_ctx, response_slice);
-
     if (!glb_policy->shutting_down) {
       /* keep listening for serverlist updates */
       op->op = GRPC_OP_RECV_MESSAGE;
@@ -1621,7 +1634,7 @@ static void lb_on_response_received_locked(grpc_exec_ctx *exec_ctx, void *arg,
       op->flags = 0;
       op->reserved = NULL;
       op++;
-      /* reuse the "lb_on_response_received" weak ref taken in
+      /* reuse the "lb_on_response_received_locked" weak ref taken in
        * query_for_backends_locked() */
       const grpc_call_error call_error = grpc_call_start_batch_and_execute(
           exec_ctx, glb_policy->lb_call, ops, (size_t)(op - ops),
@@ -1629,10 +1642,10 @@ static void lb_on_response_received_locked(grpc_exec_ctx *exec_ctx, void *arg,
       GPR_ASSERT(GRPC_CALL_OK == call_error);
     }
   } else { /* empty payload: call cancelled. */
-           /* dispose of the "lb_on_response_received" weak ref taken in
+           /* dispose of the "lb_on_response_received_locked" weak ref taken in
             * query_for_backends_locked() and reused in every reception loop */
     GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
-                              "lb_on_response_received_empty_payload");
+                              "lb_on_response_received_locked_empty_payload");
   }
 }
 
@@ -1699,13 +1712,12 @@ static void lb_on_server_status_received_locked(grpc_exec_ctx *exec_ctx,
                     &glb_policy->lb_on_call_retry, now);
   }
   GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
-                            "lb_on_server_status_received");
+                            "lb_on_server_status_received_locked");
 }
 
 static void glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                               const grpc_lb_policy_args *args) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)policy;
-
   if (glb_policy->updating_lb_channel) {
     if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
       gpr_log(GPR_INFO,
@@ -1757,7 +1769,8 @@ static void glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
 
   if (!glb_policy->watching_lb_channel) {
     // Watch the LB channel connectivity for connection.
-    glb_policy->lb_channel_connectivity = GRPC_CHANNEL_INIT;
+    glb_policy->lb_channel_connectivity = grpc_channel_check_connectivity_state(
+        glb_policy->lb_channel, true /* try to connect */);
     grpc_channel_element *client_channel_elem = grpc_channel_stack_last_element(
         grpc_channel_get_channel_stack(glb_policy->lb_channel));
     GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
@@ -1813,9 +1826,11 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx *exec_ctx,
         // lb_on_server_status_received will pick up the cancel and reinit
         // lb_call.
         if (glb_policy->pending_update_args != NULL) {
-          const grpc_lb_policy_args *args = glb_policy->pending_update_args;
+          grpc_lb_policy_args *args = glb_policy->pending_update_args;
           glb_policy->pending_update_args = NULL;
           glb_update_locked(exec_ctx, &glb_policy->base, args);
+          grpc_channel_args_destroy(exec_ctx, args->args);
+          gpr_free(args);
         }
       } else if (glb_policy->started_picking && !glb_policy->shutting_down) {
         if (glb_policy->retry_timer_active) {

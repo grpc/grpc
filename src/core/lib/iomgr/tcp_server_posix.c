@@ -166,7 +166,7 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
       GRPC_CLOSURE_INIT(&sp->destroyed_closure, destroyed_port, s,
                         grpc_schedule_on_exec_ctx);
       grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, NULL,
-                     "tcp_listener_shutdown");
+                     false /* already_closed */, "tcp_listener_shutdown");
     }
     gpr_mu_unlock(&s->mu);
   } else {

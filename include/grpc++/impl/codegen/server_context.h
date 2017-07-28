@@ -55,6 +55,7 @@ class ServerWriter;
 namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody;
+}
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler;
 template <class ServiceType, class RequestType, class ResponseType>
@@ -64,11 +65,9 @@ class ServerStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler;
 class UnknownMethodHandler;
-template <class Streamer, bool WriteNeeded>
-class TemplatedBidiStreamingHandler;
-class Call;
-}  // namespace internal
 
+class Call;
+class CallOpBuffer;
 class CompletionQueue;
 class Server;
 class ServerInterface;
@@ -248,14 +247,14 @@ class ServerContext {
   template <class W, class R>
   friend class ::grpc::internal::ServerReaderWriterBody;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::RpcMethodHandler;
+  friend class RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::ClientStreamingHandler;
+  friend class ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::ServerStreamingHandler;
+  friend class ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
-  friend class ::grpc::internal::TemplatedBidiStreamingHandler;
-  friend class ::grpc::internal::UnknownMethodHandler;
+  friend class TemplatedBidiStreamingHandler;
+  friend class UnknownMethodHandler;
   friend class ::grpc::ClientContext;
 
   /// Prevent copying.
@@ -264,9 +263,9 @@ class ServerContext {
 
   class CompletionOp;
 
-  void BeginCompletionOp(internal::Call* call);
+  void BeginCompletionOp(Call* call);
   /// Return the tag queued by BeginCompletionOp()
-  internal::CompletionQueueTag* GetCompletionOpTag();
+  CompletionQueueTag* GetCompletionOpTag();
 
   ServerContext(gpr_timespec deadline, grpc_metadata_array* arr);
 
@@ -283,7 +282,7 @@ class ServerContext {
   CompletionQueue* cq_;
   bool sent_initial_metadata_;
   mutable std::shared_ptr<const AuthContext> auth_context_;
-  internal::MetadataMap client_metadata_;
+  MetadataMap client_metadata_;
   std::multimap<grpc::string, grpc::string> initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
 
@@ -291,9 +290,7 @@ class ServerContext {
   grpc_compression_level compression_level_;
   grpc_compression_algorithm compression_algorithm_;
 
-  internal::CallOpSet<internal::CallOpSendInitialMetadata,
-                      internal::CallOpSendMessage>
-      pending_ops_;
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> pending_ops_;
   bool has_pending_ops_;
 };
 

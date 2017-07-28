@@ -214,6 +214,7 @@ filegroups:
   - src/core/lib/iomgr/iomgr.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/iomgr/iomgr_posix.h
+  - src/core/lib/iomgr/iomgr_uv.h
   - src/core/lib/iomgr/is_epollexclusive_available.h
   - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/lockfree_event.h
@@ -1702,6 +1703,16 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+- name: byte_stream_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/byte_stream_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: census_context_test
   build: test
   language: c
@@ -2387,6 +2398,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_iomgrs:
+  - uv
   platforms:
   - linux
   secure: true
@@ -4494,6 +4507,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  timeout_seconds: 1200
 - name: writes_per_rpc_test
   gtest: true
   cpu_cost: 0.5

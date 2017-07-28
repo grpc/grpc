@@ -30,9 +30,27 @@ LANG_RUNTIME_MATRIX = {
 }
 
 # Dictionary of releases per language.  For each language, we need to provide
-# a tuple of release tag (used as the tag for the GCR image) and also github hash.
+# a release tag pointing to the latest build of the branch.
 LANG_RELEASE_MATRIX = {
-    'cxx': ['v1.0.1', 'v1.1.2'],
-    'go': ['v1.0.1-GA', 'v1.3.0'],
-    'java': ['v1.0.3', 'v1.1.2'],
+    'cxx': [
+        'v1.0.1',
+        'v1.1.4',
+        'v1.2.5',
+        'v1.3.9',
+        'v1.4.2',
+    ],
+    'go': [
+        'v1.0.5',
+        'v1.2.1',
+        'v1.3.0',
+        'v1.4.2',
+    ],
+    'java': [
+        'v1.0.3',
+        'v1.1.2',
+        'v1.2.0',
+        'v1.3.1',
+        'v1.4.0',
+        'v1.5.0',
+    ],
 }
