@@ -17,9 +17,8 @@
 #endregion
 
 using System;
-using System.Runtime.InteropServices;
-using System.Text;
-using Grpc.Core;
+using System.Threading;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
@@ -29,6 +28,8 @@ namespace Grpc.Core.Internal
     internal class BatchContextSafeHandle : SafeHandleZeroIsInvalid
     {
         static readonly NativeMethods Native = NativeMethods.Get();
+
+        SimpleObjectPool<BatchContextSafeHandle> pool;
 
         private BatchContextSafeHandle()
         {
@@ -45,6 +46,12 @@ namespace Grpc.Core.Internal
             {
                 return handle;
             }
+        }
+
+        public void SetPool(SimpleObjectPool<BatchContextSafeHandle> pool)
+        {
+            GrpcPreconditions.CheckNotNull(pool);
+            this.pool = pool;
         }
 
         // Gets data of recv_initial_metadata completion.
@@ -85,6 +92,24 @@ namespace Grpc.Core.Internal
         public bool GetReceivedCloseOnServerCancelled()
         {
             return Native.grpcsharp_batch_context_recv_close_on_server_cancelled(this) != 0;
+        }
+
+        public void Reset()
+        {
+            Native.grpcsharp_batch_context_reset(this);
+        }
+
+        public void Recycle()
+        {
+            if (pool != null && object.ReferenceEquals(Thread.CurrentThread, pool.Thread))
+            {
+                Reset();
+                pool.Return(this);
+            }
+            else
+            {
+                Dispose();
+            }
         }
             
         protected override bool ReleaseHandle()

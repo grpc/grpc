@@ -39,6 +39,8 @@ namespace Grpc.Core.Internal
         readonly List<Thread> threads = new List<Thread>();
         readonly int poolSize;
         readonly int completionQueueCount;
+        readonly int batchContextPoolCapacityPerThread;
+        readonly ThreadLocal<SimpleObjectPool<BatchContextSafeHandle>> batchContextPools;
 
         readonly List<BasicProfiler> threadProfilers = new List<BasicProfiler>();  // profilers assigned to threadpool threads
 
@@ -52,13 +54,17 @@ namespace Grpc.Core.Internal
         /// <param name="environment">Environment.</param>
         /// <param name="poolSize">Pool size.</param>
         /// <param name="completionQueueCount">Completion queue count.</param>
-        public GrpcThreadPool(GrpcEnvironment environment, int poolSize, int completionQueueCount)
+        /// <param name="batchContextPoolCapacityPerThread">Batch context pool capacity (per thread).</param>
+        public GrpcThreadPool(GrpcEnvironment environment, int poolSize, int completionQueueCount,
+            int batchContextPoolCapacityPerThread)
         {
+            GrpcPreconditions.CheckArgument(poolSize >= completionQueueCount,
+                "Thread pool size cannot be smaller than the number of completion queues used.");
             this.environment = environment;
             this.poolSize = poolSize;
             this.completionQueueCount = completionQueueCount;
-            GrpcPreconditions.CheckArgument(poolSize >= completionQueueCount,
-                "Thread pool size cannot be smaller than the number of completion queues used.");
+            this.batchContextPoolCapacityPerThread = batchContextPoolCapacityPerThread;
+            this.batchContextPools = new ThreadLocal<SimpleObjectPool<BatchContextSafeHandle>>(true);
         }
 
         public void Start()
@@ -101,6 +107,11 @@ namespace Grpc.Core.Internal
                     cq.Dispose();
                 }
 
+                foreach (var pool in batchContextPools.Values)
+                {
+                    pool.Dispose();
+                }
+
                 for (int i = 0; i < threadProfilers.Count; i++)
                 {
                     threadProfilers[i].Dump(string.Format("grpc_trace_thread_{0}.txt", i));
@@ -131,6 +142,18 @@ namespace Grpc.Core.Internal
             }
         }
 
+        /// <summary>
+        /// Each thread in <c>GrpcThreadPool</c> gets assigned a thread-local
+        /// pool so that <c>BatchContextSafeHandle</c> objects get reused.
+        /// </summary>
+        internal ThreadLocal<SimpleObjectPool<BatchContextSafeHandle>> BatchContextPools
+        {
+            get
+            {
+                return batchContextPools;
+            }
+        }
+
         private Thread CreateAndStartThread(int threadIndex, IProfiler optionalProfiler)
         {
             var cqIndex = threadIndex % completionQueues.Count;
@@ -149,6 +172,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         private void RunHandlerLoop(CompletionQueueSafeHandle cq, IProfiler optionalProfiler)
         {
+            this.batchContextPools.Value = new SimpleObjectPool<BatchContextSafeHandle>(Thread.CurrentThread, () => BatchContextSafeHandle.Create(), batchContextPoolCapacityPerThread);
             if (optionalProfiler != null)
             {
                 Profilers.SetForCurrentThread(optionalProfiler);

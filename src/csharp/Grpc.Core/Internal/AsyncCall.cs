@@ -392,7 +392,7 @@ namespace Grpc.Core.Internal
             var credentials = details.Options.Credentials;
             using (var nativeCredentials = credentials != null ? credentials.ToNativeCredentials() : null)
             {
-                var result = details.Channel.Handle.CreateCall(
+                var result = details.Channel.Handle.CreateCall(details.Channel.Environment,
                              parentCall, ContextPropagationToken.DefaultMask, cq,
                              details.Method, details.Host, Timespec.FromDateTime(details.Options.Deadline.Value), nativeCredentials);
                 return result;

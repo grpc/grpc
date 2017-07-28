@@ -48,14 +48,14 @@ namespace Grpc.Core.Internal
             return Native.grpcsharp_secure_channel_create(credentials, target, channelArgs);
         }
 
-        public CallSafeHandle CreateCall(CallSafeHandle parentCall, ContextPropagationFlags propagationMask, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline, CallCredentialsSafeHandle credentials)
+        public CallSafeHandle CreateCall(GrpcEnvironment environment, CallSafeHandle parentCall, ContextPropagationFlags propagationMask, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline, CallCredentialsSafeHandle credentials)
         {
             var result = Native.grpcsharp_channel_create_call(this, parentCall, propagationMask, cq, method, host, deadline);
             if (credentials != null)
             {
                 result.SetCredentials(credentials);
             }
-            result.Initialize(cq);
+            result.Initialize(environment, cq);
             return result;
         }
 
