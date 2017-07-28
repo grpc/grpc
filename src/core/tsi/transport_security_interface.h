@@ -62,6 +62,15 @@ const char *tsi_result_to_string(tsi_result result);
 
 extern grpc_tracer_flag tsi_tracing_enabled;
 
+/* -- tsi_zero_copy_grpc_protector object --
+
+  This object protects and unprotects grpc slice buffers with zero or minimized
+  memory copy once the handshake is done. Implementations of this object must be
+  thread compatible. This object depends on grpc and the details of this object
+  is defined in transport_security_grpc.h.  */
+
+typedef struct tsi_zero_copy_grpc_protector tsi_zero_copy_grpc_protector;
+
 /* --- tsi_frame_protector object ---
 
   This object protects and unprotects buffers once the handshake is done.

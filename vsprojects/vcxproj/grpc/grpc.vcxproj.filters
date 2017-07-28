@@ -550,6 +550,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security_adapter.c">
       <Filter>src\core\tsi</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security_grpc.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.c">
       <Filter>src\core\ext\transport\chttp2\server</Filter>
     </ClCompile>
@@ -1338,6 +1341,9 @@
       <Filter>src\core\tsi</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_adapter.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_grpc.h">
       <Filter>src\core\tsi</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_interface.h">

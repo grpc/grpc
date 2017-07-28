@@ -25,7 +25,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/useful.h>
-#include "src/core/tsi/transport_security.h"
+#include "src/core/tsi/transport_security_grpc.h"
 
 /* --- Constants. ---*/
 #define TSI_FAKE_FRAME_HEADER_SIZE 4
@@ -407,8 +407,10 @@ static void fake_handshaker_result_destroy(tsi_handshaker_result *self) {
 
 static const tsi_handshaker_result_vtable handshaker_result_vtable = {
     fake_handshaker_result_extract_peer,
+    NULL, /* create_zero_copy_grpc_protector */
     fake_handshaker_result_create_frame_protector,
-    fake_handshaker_result_get_unused_bytes, fake_handshaker_result_destroy,
+    fake_handshaker_result_get_unused_bytes,
+    fake_handshaker_result_destroy,
 };
 
 static tsi_result fake_handshaker_result_create(

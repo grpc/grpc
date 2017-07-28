@@ -1414,6 +1414,8 @@ src/core/tsi/transport_security.c \
 src/core/tsi/transport_security.h \
 src/core/tsi/transport_security_adapter.c \
 src/core/tsi/transport_security_adapter.h \
+src/core/tsi/transport_security_grpc.c \
+src/core/tsi/transport_security_grpc.h \
 src/core/tsi/transport_security_interface.h \
 third_party/nanopb/pb.h \
 third_party/nanopb/pb_common.c \

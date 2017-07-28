@@ -1409,6 +1409,7 @@ grpc_cc_library(
         "src/core/tsi/ssl_transport_security.c",
         "src/core/tsi/transport_security.c",
         "src/core/tsi/transport_security_adapter.c",
+        "src/core/tsi/transport_security_grpc.c",
     ],
     hdrs = [
         "src/core/tsi/fake_transport_security.h",
@@ -1417,6 +1418,7 @@ grpc_cc_library(
         "src/core/tsi/ssl_types.h",
         "src/core/tsi/transport_security.h",
         "src/core/tsi/transport_security_adapter.h",
+        "src/core/tsi/transport_security_grpc.h",
         "src/core/tsi/transport_security_interface.h",
     ],
     external_deps = [
