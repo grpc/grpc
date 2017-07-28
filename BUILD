@@ -206,6 +206,7 @@ grpc_cc_library(
     standalone = True,
     deps = [
         "grpc_common",
+        "grpc_lb_policy_grpclb",
     ],
 )
 
@@ -221,7 +222,6 @@ grpc_cc_library(
     deps = [
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
-        "grpc_resolver_dns_ares",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_secure",
@@ -287,6 +287,7 @@ grpc_cc_library(
         "grpc++_base_unsecure",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
+        "grpc++_codegen_proto",
         "grpc_unsecure",
     ],
 )
@@ -837,6 +838,8 @@ grpc_cc_library(
         "grpc_load_reporting",
         "grpc_max_age_filter",
         "grpc_message_size_filter",
+        "grpc_resolver_dns_ares",
+        "grpc_resolver_fake",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
         "grpc_transport_chttp2_client_insecure",
