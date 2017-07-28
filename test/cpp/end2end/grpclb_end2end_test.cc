@@ -172,11 +172,12 @@ class BalancerServiceImpl : public BalancerService {
         shutdown_(false) {}
 
   Status BalanceLoad(ServerContext* context, Stream* stream) override {
-    gpr_log(GPR_INFO, "LB: BalanceLoad");
+    gpr_log(GPR_INFO, "LB[%p]: BalanceLoad", this);
     LoadBalanceRequest request;
     stream->Read(&request);
     IncreaseRequestCount();
-    gpr_log(GPR_INFO, "LB: recv msg '%s'", request.DebugString().c_str());
+    gpr_log(GPR_INFO, "LB[%p]: recv msg '%s'", this,
+            request.DebugString().c_str());
 
     if (client_load_reporting_interval_seconds_ > 0) {
       LoadBalanceResponse initial_response;
@@ -207,7 +208,7 @@ class BalancerServiceImpl : public BalancerService {
     if (client_load_reporting_interval_seconds_ > 0) {
       request.Clear();
       stream->Read(&request);
-      gpr_log(GPR_INFO, "LB: recv client load report msg: '%s'",
+      gpr_log(GPR_INFO, "LB[%p]: recv client load report msg: '%s'", this,
               request.DebugString().c_str());
       GPR_ASSERT(request.has_client_stats());
       // We need to acquire the lock here in order to prevent the notify_one
@@ -231,7 +232,7 @@ class BalancerServiceImpl : public BalancerService {
       load_report_cond_.notify_one();
     }
   done:
-    gpr_log(GPR_INFO, "LB: done");
+    gpr_log(GPR_INFO, "LB[%p]: done", this);
     return Status::OK;
   }
 
@@ -246,7 +247,7 @@ class BalancerServiceImpl : public BalancerService {
     std::unique_lock<std::mutex> lock(mu_);
     const bool prev = !shutdown_;
     shutdown_ = true;
-    gpr_log(GPR_INFO, "LB: shut down");
+    gpr_log(GPR_INFO, "LB[%p]: shut down", this);
     return prev;
   }
 
@@ -283,13 +284,13 @@ class BalancerServiceImpl : public BalancerService {
  private:
   void SendResponse(Stream* stream, const LoadBalanceResponse& response,
                     int delay_ms) {
-    gpr_log(GPR_INFO, "LB: sleeping for %d ms...", delay_ms);
+    gpr_log(GPR_INFO, "LB[%p]: sleeping for %d ms...", this, delay_ms);
     if (delay_ms > 0) {
       gpr_sleep_until(
           gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                        gpr_time_from_millis(delay_ms, GPR_TIMESPAN)));
     }
-    gpr_log(GPR_INFO, "LB: Woke up! Sending response '%s'",
+    gpr_log(GPR_INFO, "LB[%p]: Woke up! Sending response '%s'", this,
             response.DebugString().c_str());
     IncreaseResponseCount();
     stream->Write(response);

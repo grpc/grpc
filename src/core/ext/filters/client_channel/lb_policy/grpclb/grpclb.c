@@ -1772,7 +1772,8 @@ static void glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
 
   if (!glb_policy->watching_lb_channel) {
     // Watch the LB channel connectivity for connection.
-    glb_policy->lb_channel_connectivity = GRPC_CHANNEL_INIT;
+    glb_policy->lb_channel_connectivity = grpc_channel_check_connectivity_state(
+        glb_policy->lb_channel, true /* try to connect */);
     grpc_channel_element *client_channel_elem = grpc_channel_stack_last_element(
         grpc_channel_get_channel_stack(glb_policy->lb_channel));
     GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
