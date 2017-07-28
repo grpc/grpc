@@ -644,6 +644,8 @@ static void cancel_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
 
 static grpc_error *error_from_status(grpc_status_code status,
                                      const char *description) {
+  // copying 'description' is needed to ensure the grpc_call_cancel_with_status
+  // guarantee that can be short-lived.
   return grpc_error_set_int(
       grpc_error_set_str(GRPC_ERROR_CREATE_FROM_COPIED_STRING(description),
                          GRPC_ERROR_STR_GRPC_MESSAGE,
