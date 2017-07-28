@@ -710,7 +710,6 @@ static void create_rr_locked(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
     return;
   }
   glb_policy->rr_policy = new_rr_policy;
-
   grpc_error *rr_state_error = NULL;
   const grpc_connectivity_state rr_state =
       grpc_lb_policy_check_connectivity_locked(exec_ctx, glb_policy->rr_policy,
@@ -736,7 +735,7 @@ static void create_rr_locked(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
   rr_connectivity->state = rr_state;
 
   /* Subscribe to changes to the connectivity of the new RR */
-  GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "rr_connectivity_sched");
+  GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "glb_rr_connectivity_cb");
   grpc_lb_policy_notify_on_state_change_locked(exec_ctx, glb_policy->rr_policy,
                                                &rr_connectivity->state,
                                                &rr_connectivity->on_change);
@@ -801,32 +800,31 @@ static void glb_rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx,
                                                void *arg, grpc_error *error) {
   rr_connectivity_data *rr_connectivity = arg;
   glb_lb_policy *glb_policy = rr_connectivity->glb_policy;
-
-  const bool shutting_down = glb_policy->shutting_down;
-  bool unref_needed = false;
-  GRPC_ERROR_REF(error);
-
-  if (rr_connectivity->state == GRPC_CHANNEL_SHUTDOWN || shutting_down) {
-    /* RR policy shutting down. Don't renew subscription and free the arg of
-     * this callback. In addition  we need to stash away the current policy to
-     * be UNREF'd after releasing the lock. Otherwise, if the UNREF is the last
-     * one, the policy would be destroyed, alongside the lock, which would
-     * result in a use-after-free */
-    unref_needed = true;
-    gpr_free(rr_connectivity);
-  } else { /* rr state != SHUTDOWN && !shutting down: biz as usual */
-    update_lb_connectivity_status_locked(
-        exec_ctx, glb_policy, rr_connectivity->state, GRPC_ERROR_REF(error));
-    /* Resubscribe. Reuse the "rr_connectivity_cb" weak ref. */
-    grpc_lb_policy_notify_on_state_change_locked(
-        exec_ctx, glb_policy->rr_policy, &rr_connectivity->state,
-        &rr_connectivity->on_change);
-  }
-  if (unref_needed) {
+  if (glb_policy->shutting_down) {
     GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
-                              "rr_connectivity_cb");
+                              "glb_rr_connectivity_cb");
+    gpr_free(rr_connectivity);
+    return;
   }
-  GRPC_ERROR_UNREF(error);
+  if (rr_connectivity->state == GRPC_CHANNEL_SHUTDOWN) {
+    /* An RR policy that has transitioned into the SHUTDOWN connectivity state
+     * should not be considered for picks or updates: the SHUTDOWN state is a
+     * sink, policies can't transition back from it. .*/
+    GRPC_LB_POLICY_UNREF(exec_ctx, glb_policy->rr_policy,
+                         "rr_connectivity_shutdown");
+    glb_policy->rr_policy = NULL;
+    GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
+                              "glb_rr_connectivity_cb");
+    gpr_free(rr_connectivity);
+    return;
+  }
+  /* rr state != SHUTDOWN && !glb_policy->shutting down: biz as usual */
+  update_lb_connectivity_status_locked(
+      exec_ctx, glb_policy, rr_connectivity->state, GRPC_ERROR_REF(error));
+  /* Resubscribe. Reuse the "glb_rr_connectivity_cb" weak ref. */
+  grpc_lb_policy_notify_on_state_change_locked(exec_ctx, glb_policy->rr_policy,
+                                               &rr_connectivity->state,
+                                               &rr_connectivity->on_change);
 }
 
 static void destroy_balancer_name(grpc_exec_ctx *exec_ctx,
@@ -990,7 +988,6 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
     gpr_free(glb_policy);
     return NULL;
   }
-
   GRPC_CLOSURE_INIT(&glb_policy->lb_channel_on_connectivity_changed,
                     glb_lb_channel_on_connectivity_changed_cb, glb_policy,
                     grpc_combiner_scheduler(args->combiner));
@@ -1047,7 +1044,7 @@ static void glb_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   glb_policy->pending_picks = NULL;
   pending_ping *pping = glb_policy->pending_pings;
   glb_policy->pending_pings = NULL;
-  if (glb_policy->rr_policy) {
+  if (glb_policy->rr_policy != NULL) {
     GRPC_LB_POLICY_UNREF(exec_ctx, glb_policy->rr_policy, "glb_shutdown");
   }
   // We destroy the LB channel here because
