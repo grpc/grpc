@@ -151,10 +151,11 @@ class Server::SyncRequest final : public CompletionQueueTag {
     GPR_ASSERT(cq_ && !in_flight_);
     in_flight_ = true;
     if (tag_) {
-      if (grpc_server_request_registered_call(
+      if (GRPC_CALL_OK !=
+          grpc_server_request_registered_call(
               server, tag_, &call_, &deadline_, &request_metadata_,
               has_request_payload_ ? &request_payload_ : nullptr, cq_,
-              notify_cq, this) != GRPC_CALL_OK) {
+              notify_cq, this)) {
         TeardownRequest();
         return;
       }

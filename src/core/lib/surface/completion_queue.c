@@ -554,7 +554,6 @@ static bool cq_begin_op_for_next(grpc_completion_queue *cq, void *tag) {
   while (true) {
     gpr_atm count = gpr_atm_no_barrier_load(&cqd->pending_events);
     if (count == 0) {
-      cq_check_tag(cq, tag, true); /* Used in debug builds only */
       return false;
     } else if (gpr_atm_no_barrier_cas(&cqd->pending_events, count, count + 1)) {
       break;
