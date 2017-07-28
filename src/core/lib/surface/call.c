@@ -1329,8 +1329,8 @@ static void receiving_stream_ready_in_call_combiner(grpc_exec_ctx *exec_ctx,
                                                     grpc_error *error) {
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
-  receiving_stream_ready(exec_ctx, bctlp, error);
   GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner, "recv_message_ready");
+  receiving_stream_ready(exec_ctx, bctlp, error);
 }
 
 static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
@@ -1400,6 +1400,9 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
 
+  GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner,
+                          "recv_initial_metadata_ready");
+
   add_batch_error(exec_ctx, bctl, GRPC_ERROR_REF(error), false);
   if (error == GRPC_ERROR_NONE) {
     grpc_metadata_batch *md =
@@ -1429,17 +1432,15 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
   }
 
   finish_batch_step(exec_ctx, bctl);
-  GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner,
-                          "recv_initial_metadata_ready");
 }
 
 static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
                          grpc_error *error) {
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
+  GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner, "on_complete");
   add_batch_error(exec_ctx, bctl, GRPC_ERROR_REF(error), false);
   finish_batch_step(exec_ctx, bctl);
-  GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner, "on_complete");
 }
 
 static void free_no_op_completion(grpc_exec_ctx *exec_ctx, void *p,
