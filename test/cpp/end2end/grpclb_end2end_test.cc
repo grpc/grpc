@@ -132,6 +132,19 @@ class BackendServiceImpl : public BackendService {
     IncreaseResponseCount();
     return status;
   }
+
+  // Returns true on its first invocation, false otherwise.
+  bool Shutdown() {
+    std::unique_lock<std::mutex> lock(mu_);
+    const bool prev = !shutdown_;
+    shutdown_ = true;
+    gpr_log(GPR_INFO, "Backend: shut down");
+    return prev;
+  }
+
+ private:
+  std::mutex mu_;
+  bool shutdown_ = false;
 };
 
 grpc::string Ip4ToPackedString(const char* ip_str) {
@@ -339,7 +352,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
 
   void TearDown() override {
     for (size_t i = 0; i < backends_.size(); ++i) {
-      backend_servers_[i].Shutdown();
+      if (backends_[i]->Shutdown()) backend_servers_[i].Shutdown();
     }
     for (size_t i = 0; i < balancers_.size(); ++i) {
       if (balancers_[i]->Shutdown()) balancer_servers_[i].Shutdown();
@@ -633,6 +646,61 @@ TEST_F(SingleBalancerTest, RepeatedServerlist) {
   balancers_[0]->NotifyDoneWithServerlists();
   // The balancer got a single request.
   EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  // Check LB policy name for the channel.
+  EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(SingleBalancerTest, BackendsRestart) {
+  const size_t kNumRpcsPerAddress = 100;
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
+      0);
+  // Make sure that trying to connect works without a call.
+  channel_->GetState(true /* try_to_connect */);
+  // Send 100 RPCs per server.
+  auto statuses_and_responses =
+      SendRpc(kMessage_, kNumRpcsPerAddress * num_backends_);
+  for (const auto& status_and_response : statuses_and_responses) {
+    const Status& status = status_and_response.first;
+    const EchoResponse& response = status_and_response.second;
+    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                             << " message=" << status.error_message();
+    EXPECT_EQ(response.message(), kMessage_);
+  }
+  // Each backend should have gotten 100 requests.
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_EQ(kNumRpcsPerAddress,
+              backend_servers_[i].service_->request_count());
+  }
+  balancers_[0]->NotifyDoneWithServerlists();
+  // The balancer got a single request.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  // and sent a single response.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    if (backends_[i]->Shutdown()) backend_servers_[i].Shutdown();
+  }
+  statuses_and_responses = SendRpc(kMessage_, 1);
+  for (const auto& status_and_response : statuses_and_responses) {
+    const Status& status = status_and_response.first;
+    EXPECT_FALSE(status.ok());
+  }
+  for (size_t i = 0; i < num_backends_; ++i) {
+    backends_.emplace_back(new BackendServiceImpl());
+    backend_servers_.emplace_back(ServerThread<BackendService>(
+        "backend", server_host_, backends_.back().get()));
+  }
+  // The following RPC will fail due to the backend ports having changed. It
+  // will nonetheless exercise the grpclb-roundrobin handling of the RR policy
+  // having gone into shutdown.
+  // TODO(dgq): implement the "backend restart" component as well. We need extra
+  // machinery to either update the LB responses "on the fly" or instruct
+  // backends which ports to restart on.
+  statuses_and_responses = SendRpc(kMessage_, 1);
+  for (const auto& status_and_response : statuses_and_responses) {
+    const Status& status = status_and_response.first;
+    EXPECT_FALSE(status.ok());
+  }
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
