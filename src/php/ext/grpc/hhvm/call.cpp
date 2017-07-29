@@ -16,7 +16,11 @@
  *
  */
 
- #include <mutex>
+#include <mutex>
+#include <sstream>
+
+#include <sys/eventfd.h>
+#include <sys/poll.h>
 
 #ifdef HAVE_CONFIG_H
     #include "config.h"
@@ -30,15 +34,7 @@
 #include "byte_buffer.h"
 #include "call_credentials.h"
 
-#include "hphp/runtime/ext/extension.h"
-#include "hphp/runtime/base/req-containers.h"
 #include "hphp/runtime/vm/native-data.h"
-#include "hphp/runtime/base/builtin-functions.h"
-#include "hphp/runtime/base/type-variant.h"
-#include "hphp/util/process.h"
-
-#include <sys/eventfd.h>
-#include <sys/poll.h>
 
 #include "grpc/support/alloc.h"
 #include "grpc/grpc_security.h"
@@ -75,8 +71,8 @@ void HHVM_METHOD(Call, __construct,
                  const Object& deadline_obj,
                  const Variant& host_override /* = null */)
 {
-    CallData* pCallData{ Native::data<CallData>(this_) };
-    ChannelData* pChannelData{ Native::data<ChannelData>(channel_obj) };
+    CallData* const pCallData{ Native::data<CallData>(this_) };
+    ChannelData* const pChannelData{ Native::data<ChannelData>(channel_obj) };
 
     if (pChannelData->getWrapped() == nullptr) {
         SystemLib::throwInvalidArgumentExceptionObject("Call cannot be constructed from a closed Channel");
@@ -85,7 +81,7 @@ void HHVM_METHOD(Call, __construct,
 
     pCallData->setChannelData(pChannelData);
 
-    TimevalData* pDeadlineTimevalData{ Native::data<TimevalData>(deadline_obj) };
+    TimevalData* const pDeadlineTimevalData{ Native::data<TimevalData>(deadline_obj) };
     pCallData->setTimeout(gpr_time_to_millis(gpr_convert_clock_type(pDeadlineTimevalData->getWrapped(),
                                              GPR_TIMESPAN)));
 
@@ -100,31 +96,36 @@ void HHVM_METHOD(Call, __construct,
 }
 
 Object HHVM_METHOD(Call, startBatch,
-  const Array& actions) { // array<int, mixed>
-  auto resultObj = SystemLib::AllocStdClassObject();
+                   const Array& actions) // array<int, mixed>
+{
+    Object resultObj{ SystemLib::AllocStdClassObject() };
 
-  if (actions.size() > 8) {
-    SystemLib::throwInvalidArgumentExceptionObject("actions array must not be longer than 8 operations");
-    return resultObj;
-  }
+    const size_t maxActions{ 8 };
 
-  auto callData = Native::data<CallData>(this_);
+    if (actions.size() > maxActions) {
+        std::stringstream oSS;
+        oSS << "actions array must not be longer than " << maxActions << " operations" << std::endl;
+        SystemLib::throwInvalidArgumentExceptionObject("oSS.str()");
+        return resultObj;
+    }
 
-  size_t op_num = 0;
-  grpc_op ops[8];
+    CallData* const pCallData{ Native::data<CallData>(this_) };
 
-  grpc_metadata_array metadata;
-  grpc_metadata_array trailing_metadata;
-  grpc_metadata_array recv_metadata;
-  grpc_metadata_array recv_trailing_metadata;
-  grpc_status_code status;
-  grpc_slice recv_status_details = grpc_empty_slice();
-  grpc_slice send_status_details = grpc_empty_slice();
-  grpc_byte_buffer *message = nullptr;
-  int cancelled;
-  grpc_call_error error;
-  grpc_event *event_ptr = nullptr;
-  grpc_event event;
+    size_t op_num = 0;
+    grpc_op ops[8];
+
+    grpc_metadata_array metadata;
+    grpc_metadata_array trailing_metadata;
+    grpc_metadata_array recv_metadata;
+    grpc_metadata_array recv_trailing_metadata;
+    grpc_status_code status;
+    grpc_slice recv_status_details = grpc_empty_slice();
+    grpc_slice send_status_details = grpc_empty_slice();
+    grpc_byte_buffer *message = nullptr;
+    int cancelled;
+    grpc_call_error error;
+    grpc_event *event_ptr = nullptr;
+    grpc_event event;
 
   int fd = -1;
 
@@ -284,7 +285,7 @@ Object HHVM_METHOD(Call, startBatch,
   {
     // TODO : Update for read and write locks for efficiency
     std::lock_guard<std::mutex> lock{ s_WriteStartBatchMutex };
-    error = grpc_call_start_batch(callData->getWrapped(), ops, op_num, callData->getWrapped(), NULL);
+    error = grpc_call_start_batch(pCallData->getWrapped(), ops, op_num, pCallData->getWrapped(), NULL);
   }
 
   if (error != GRPC_CALL_OK) {
@@ -304,7 +305,7 @@ Object HHVM_METHOD(Call, startBatch,
     cq_pluck_async_params *cq_pluck_params;
     cq_pluck_params = (cq_pluck_async_params *)gpr_zalloc(sizeof(cq_pluck_async_params));
     cq_pluck_params->cq = CompletionQueue::tl_obj.get()->getQueue();
-    cq_pluck_params->tag = callData->getWrapped();
+    cq_pluck_params->tag = pCallData->getWrapped();
     cq_pluck_params->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
     cq_pluck_params->reserved = nullptr;
     cq_pluck_params->fd = fd;
@@ -316,7 +317,7 @@ Object HHVM_METHOD(Call, startBatch,
     struct pollfd fds[] = {
         { fd, POLLIN },
     };
-    int r = poll(fds, 1, callData->getTimeout()); // Timeout after N seconds as defined by the application
+    int r = poll(fds, 1, pCallData->getTimeout()); // Timeout after N seconds as defined by the application
     if (r > 0) {
       plugin_get_metadata_params *params;
       int numBytes = read(fd, &params, sizeof(plugin_get_metadata_params *));
@@ -330,7 +331,7 @@ Object HHVM_METHOD(Call, startBatch,
     pthread_join(cq_pluck_thread_id, (void **)&event_ptr);
     event = *event_ptr;
   } else {
-    event = grpc_completion_queue_pluck(CompletionQueue::tl_obj.get()->getQueue(), callData->getWrapped(),
+    event = grpc_completion_queue_pluck(CompletionQueue::tl_obj.get()->getQueue(), pCallData->getWrapped(),
                                         gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   }
 
