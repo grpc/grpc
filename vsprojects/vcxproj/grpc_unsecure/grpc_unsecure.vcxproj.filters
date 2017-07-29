@@ -878,6 +878,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\lockfree_event.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\nameser.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\network_status_tracker.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>

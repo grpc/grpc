@@ -213,6 +213,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/is_epollexclusive_available.h )
   s.files += %w( src/core/lib/iomgr/load_file.h )
   s.files += %w( src/core/lib/iomgr/lockfree_event.h )
+  s.files += %w( src/core/lib/iomgr/nameser.h )
   s.files += %w( src/core/lib/iomgr/network_status_tracker.h )
   s.files += %w( src/core/lib/iomgr/polling_entity.h )
   s.files += %w( src/core/lib/iomgr/pollset.h )
