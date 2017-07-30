@@ -105,6 +105,7 @@ Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
 Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
   const Variant& callback) {
 
+  std::cout << "CallCredentials" << std::endl;
   if (!is_callable(callback)) {
     throw_invalid_argument("Callback argument is not a valid callback");
   }
@@ -159,6 +160,7 @@ void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
 void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
                          grpc_credentials_plugin_metadata_cb cb,
                          void *user_data) {
+  std::cout << "CallCredentials get metadata" << std::endl;
   plugin_state *state = (plugin_state *)ptr;
   PluginGetMetadataFd *fd_obj = state->fd_obj;
 

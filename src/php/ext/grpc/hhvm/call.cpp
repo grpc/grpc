@@ -323,7 +323,6 @@ Object HHVM_METHOD(Call, startBatch,
         ops[op_num].reserved = nullptr;
     }
 
-    std::cout << "Sending Call" << std::endl;
     static std::mutex s_WriteStartBatchMutex, s_ReadStartBatchMutex;
     {
         // TODO : Update for read and write locks for efficiency
@@ -340,6 +339,7 @@ Object HHVM_METHOD(Call, startBatch,
             return resultObj;
         }
     }
+    std::cout << "Sending Call" << std::endl;
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
     // has it's own thread and you cannot run application code on a single request in more than
@@ -354,13 +354,19 @@ Object HHVM_METHOD(Call, startBatch,
     grpc_event event{ grpc_completion_queue_pluck(CompletionQueue::getQueue().queue(),
                                                   pCallData->getWrapped(),
                                                   gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) };
-    std::cout << "Reciving Call: " << event.success << std::endl;
+    std::cout << "Reciving Call: " << event.type << std::endl;
     // An error occured if success = 0
-    if (event.success == 0)
+    if (event.success != 0 )
     {
         std::stringstream oSS;
-        oSS << "There was a problem with the request. Event error code: " << event.type << std::endl;
+        oSS << "There was a problem with the request. Event success code: " << event.success << std::endl;
         SystemLib::throwRuntimeExceptionObject(oSS.str());
+        return resultObj;
+    }
+
+    if (event.type != GRPC_OP_COMPLETE)
+    {
+        // we timed out or ar shutting down so just return
         return resultObj;
     }
 
