@@ -38,22 +38,17 @@ class ChannelData;
 
 class CallData
 {
-private:
-    // member variables
-    grpc_call* m_Wrapped;
-    bool m_Owned;
-    ChannelData* m_ChannelData;
-    int32_t m_Timeout;
-    static Class* s_Class;
-    static const StaticString s_ClassName;
-
 public:
     // constructors/destructors
     CallData(void) : m_Wrapped{ nullptr }, m_Owned{ false },
         m_ChannelData{ nullptr }, m_Timeout{ 0 } {}
-     CallData(grpc_call* const call) : m_Wrapped{ call },
+    CallData(grpc_call* const call) : m_Wrapped{ call },
         m_Owned{ false }, m_ChannelData{ nullptr }, m_Timeout{ 0 } {}
     ~CallData(void);
+    CallData(const CallData& otherCallData) = delete;
+    CallData(CallData&& otherCallData) = delete;
+    CallData& operator=(const CallData& otherCallData) = delete;
+    CallData& operator&(CallData&& otherCallData) = delete;
 
     // interface functions
     void sweep(void);
@@ -67,37 +62,32 @@ public:
 
     static Class* const getClass(void) { return s_Class; }
     static const StaticString& className(void) { return s_ClassName; }
+
+private:
+    // member variables
+    grpc_call* m_Wrapped;
+    bool m_Owned;
+    ChannelData* m_ChannelData;
+    int32_t m_Timeout;
+    static Class* s_Class;
+    static const StaticString s_ClassName;
 };
 
-void *cq_pluck_async(void *params_ptr);
-
-typedef struct cq_pluck_async_params {
-  grpc_completion_queue* cq;
-  void* tag;
-  gpr_timespec deadline;
-  void* reserved;
-  int fd;
-} cq_pluck_async_params;
-
 void HHVM_METHOD(Call, __construct,
-  const Object& channel_obj,
-  const String& method,
-  const Object& deadline_obj,
-  const Variant& host_override /* = null */);
+                 const Object& channel_obj,
+                 const String& method,
+                 const Object& deadline_obj,
+                 const Variant& host_override /* = null */);
 
 Object HHVM_METHOD(Call, startBatch,
-  const Array& actions);
+                   const Array& actions);
 
 String HHVM_METHOD(Call, getPeer);
 
 void HHVM_METHOD(Call, cancel);
 
 int64_t HHVM_METHOD(Call, setCredentials,
-  const Object& creds_obj);
-
-Variant grpc_parse_metadata_array(grpc_metadata_array *metadata_array);
-bool hhvm_create_metadata_array(const Array& array, grpc_metadata_array *metadata);
-
+                    const Object& creds_obj);
 };
 
 #endif /* NET_GRPC_HHVM_GRPC_CALL_H_ */

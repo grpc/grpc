@@ -42,6 +42,8 @@
 #include "hphp/runtime/vm/native-data.h"
 #include "hphp/runtime/base/builtin-functions.h"
 
+#include "utility.h"
+
 namespace HPHP {
 
 Class* ServerData::s_class = nullptr;
@@ -100,15 +102,14 @@ Object HHVM_METHOD(Server, requestCall) {
   grpc_call_error error_code;
   grpc_call *call;
   grpc_call_details details;
-  grpc_metadata_array metadata;
+  MetadataArray metadata;
   grpc_event event;
   Object resultObj = SystemLib::AllocStdClassObject();;
 
   auto serverData = Native::data<ServerData>(this_);
 
   grpc_call_details_init(&details);
-  grpc_metadata_array_init(&metadata);
-  error_code = grpc_server_request_call(serverData->getWrapped(), &call, &details, &metadata,
+  error_code = grpc_server_request_call(serverData->getWrapped(), &call, &details, &metadata.array(),
                                  CompletionQueue::tl_obj.get()->getQueue(), CompletionQueue::tl_obj.get()->getQueue(), NULL);
 
   if (error_code != GRPC_CALL_OK) {
@@ -144,11 +145,10 @@ Object HHVM_METHOD(Server, requestCall) {
 
   resultObj.o_set("call", callObj);
   resultObj.o_set("absolute_deadline", timevalObj);
-  resultObj.o_set("metadata", grpc_parse_metadata_array(&metadata));
+  resultObj.o_set("metadata", metadata.phpData());
 
 cleanup:
     grpc_call_details_destroy(&details);
-    grpc_metadata_array_destroy(&metadata);
     return resultObj;
 }
 

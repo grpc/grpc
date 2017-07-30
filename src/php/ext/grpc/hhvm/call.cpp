@@ -16,6 +16,8 @@
  *
  */
 
+#include <array>
+#include <cstdint>
 #include <mutex>
 #include <sstream>
 
@@ -85,10 +87,11 @@ void HHVM_METHOD(Call, __construct,
     pCallData->setTimeout(gpr_time_to_millis(gpr_convert_clock_type(pDeadlineTimevalData->getWrapped(),
                                              GPR_TIMESPAN)));
 
-    Slice method_slice{ !method.empty() ? Slice{ method.c_str() } : Slice{} };
-    Slice host_slice{  !host_override.isNull() ? Slice{ host_override.toString().c_str() } : Slice{} };
+    const Slice method_slice{ !method.empty() ? method.c_str() : "" };
+    const Slice host_slice{  !host_override.isNull() ? host_override.toString().c_str() : "" };
     pCallData->init(grpc_channel_create_call(pChannelData->getWrapped(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                                             CompletionQueue::tl_obj.get()->getQueue(), method_slice.slice(),
+                                             CompletionQueue::tl_obj.get()->getQueue(),
+                                             method_slice.slice(),
                                              !host_override.isNull() ? &host_slice.slice() : nullptr,
                                              pDeadlineTimevalData->getWrapped(), nullptr));
 
@@ -102,468 +105,345 @@ Object HHVM_METHOD(Call, startBatch,
 
     const size_t maxActions{ 8 };
 
-    if (actions.size() > maxActions) {
+    if (actions.size() > maxActions)
+    {
         std::stringstream oSS;
         oSS << "actions array must not be longer than " << maxActions << " operations" << std::endl;
         SystemLib::throwInvalidArgumentExceptionObject("oSS.str()");
         return resultObj;
     }
 
+    typedef struct OpsManaged // this structure is managed data for the ops array
+    {
+        // constructors/destructors
+        OpsManaged(void) : metadata{}, trailing_metadata{}, recv_metadata{ false },
+            recv_trailing_metadata{ false }, send_message{ nullptr },
+            recv_message{ nullptr }, recv_status_details{}, send_status_details{},
+            cancelled{ 0 }, pEvent{ nullptr }, status{ GRPC_STATUS_OK }
+        {
+        }
+        ~OpsManaged(void)
+        {
+            recycle();
+        }
+
+        // interface functions
+        void recycle(void)
+        {
+            // free allocated messages
+            if (send_message)
+            {
+                grpc_byte_buffer_destroy(send_message);
+                send_message = nullptr;
+            }
+            if (recv_message)
+            {
+                grpc_byte_buffer_destroy(recv_message);
+                recv_message = nullptr;
+            }
+            if (pEvent)
+            {
+                gpr_free(pEvent);
+                pEvent = nullptr;
+            }
+            cancelled = false;
+        }
+
+        // managed data
+        MetadataArray metadata;
+        MetadataArray trailing_metadata;
+        MetadataArray recv_metadata;
+        MetadataArray recv_trailing_metadata;
+        grpc_byte_buffer* send_message;
+        grpc_byte_buffer* recv_message;
+        Slice recv_status_details;
+        Slice send_status_details;
+        int cancelled;
+        gpr_event* pEvent;
+        grpc_status_code status;
+    } OpsManaged;
+
+    // NOTE:  Come back and look at make ops and opsManaged data thread_local
+    std::array<grpc_op, maxActions> ops;
+    OpsManaged opsManaged{};
+
+    // clear any existing ops data and recycle managed data
+    memset(ops.data(), 0, sizeof(grpc_op) * maxActions);
+    //opsManaged.recycle();
+
     CallData* const pCallData{ Native::data<CallData>(this_) };
 
-    size_t op_num = 0;
-    grpc_op ops[8];
+    size_t op_num{ 0 };
+    bool sending_initial_metadata{ false };
+    for (ArrayIter iter(actions); iter; ++iter, ++op_num)
+    {
+        Variant key{ iter.first() };
+        Variant value{ iter.second() };
+        if (key.isNull() || !key.isInteger())
+        {
+            SystemLib::throwInvalidArgumentExceptionObject("batch keys must be integers");
+            return resultObj;
+        }
 
-    grpc_metadata_array metadata;
-    grpc_metadata_array trailing_metadata;
-    grpc_metadata_array recv_metadata;
-    grpc_metadata_array recv_trailing_metadata;
-    grpc_status_code status;
-    grpc_slice recv_status_details = grpc_empty_slice();
-    grpc_slice send_status_details = grpc_empty_slice();
-    grpc_byte_buffer *message = nullptr;
-    int cancelled;
-    grpc_call_error error;
-    grpc_event *event_ptr = nullptr;
-    grpc_event event;
+        int32_t index{ key.toInt32() };
+        switch(index)
+        {
+        case GRPC_OP_SEND_INITIAL_METADATA:
+        {
+            if (value.isNull() || !value.isArray())
+            {
+                SystemLib::throwInvalidArgumentExceptionObject("Expected an array value for the metadata");
+                return resultObj;
+            }
 
-  int fd = -1;
+            if (!opsManaged.metadata.init(value.toArray(), false))
+            {
+                SystemLib::throwInvalidArgumentExceptionObject("Bad metadata value given");
+                return resultObj;
+            }
 
-  grpc_metadata_array_init(&metadata);
-  grpc_metadata_array_init(&trailing_metadata);
-  grpc_metadata_array_init(&recv_metadata);
-  grpc_metadata_array_init(&recv_trailing_metadata);
-  memset(ops, 0, sizeof(ops));
+            ops[op_num].data.send_initial_metadata.count = opsManaged.metadata.size();
+            ops[op_num].data.send_initial_metadata.metadata = opsManaged.metadata.data();
+            sending_initial_metadata = true;
+            break;
+        }
+        case GRPC_OP_SEND_MESSAGE:
+        {
+            if (value.isNull() || !value.isArray())
+            {
+                SystemLib::throwInvalidArgumentExceptionObject("Expected an array for send message");
+                return resultObj;
+            }
 
-  bool expect_send_initial_metadata = false;
+            Array messageArr{ value.toArray() };
+            if (messageArr.exists(String{ "flags" }, true))
+            {
+                Variant messageFlags{ messageArr[String{ "flags" }] };
+                if (messageFlags.isNull() || !messageFlags.isInteger())
+                {
+                    SystemLib::throwInvalidArgumentExceptionObject("Expected an int for message flags");
+                    return resultObj;
+                }
+                ops[op_num].flags = messageFlags.toInt32() & GRPC_WRITE_USED_MASK;
+            }
 
-  for (ArrayIter iter(actions); iter; ++iter) {
-    Variant key = iter.first();
-    if (!key.isInteger()) {
-      SystemLib::throwInvalidArgumentExceptionObject("batch keys must be integers");
-      goto cleanup;
+            if (messageArr.exists(String{ "message" }, true))
+            {
+                Variant messageValue{ messageArr[String{ "message" }] };
+                if (messageValue.isNull() || !messageValue.isString())
+                {
+                    SystemLib::throwInvalidArgumentExceptionObject("Expected a string for send message");
+                    return resultObj;
+                }
+                // convert string to byte buffer and store message in managed data
+                String messageValueString{ messageValue.toString() };
+                const Slice send_message{ messageValueString.c_str(), static_cast<size_t>(messageValueString.size()) };
+                opsManaged.send_message = send_message.byteBuffer();
+                ops[op_num].data.send_message.send_message = opsManaged.send_message;
+            }
+            break;
+        }
+        case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+            break;
+        case GRPC_OP_SEND_STATUS_FROM_SERVER:
+        {
+            if (value.isNull() || !value.isArray())
+            {
+                SystemLib::throwInvalidArgumentExceptionObject("Expected an array for server status");
+                return resultObj;
+            }
+
+            Array statusArr{ value.toArray() };
+            if (statusArr.exists(String{ "metadata" }, true))
+            {
+                Variant innerMetadata{ statusArr[String{ "metadata" }] };
+                if (innerMetadata.isNull() || !innerMetadata.isArray())
+                {
+                    SystemLib::throwInvalidArgumentExceptionObject("Expected an array for server status metadata value");
+                    return resultObj;
+                }
+
+                if (!opsManaged.trailing_metadata.init(innerMetadata.toArray(), false))
+                {
+                    SystemLib::throwInvalidArgumentExceptionObject("Bad trailing metadata value given");
+                    return resultObj;
+                }
+
+                ops[op_num].data.send_status_from_server.trailing_metadata_count = opsManaged.trailing_metadata.size();
+                ops[op_num].data.send_status_from_server.trailing_metadata = opsManaged.trailing_metadata.data();
+            }
+
+            if (!statusArr.exists(String{ "code" }, true))
+            {
+                SystemLib::throwInvalidArgumentExceptionObject("Integer status code is required");
+            }
+
+            Variant innerCode{ statusArr[String{ "code" }] };
+            if (innerCode.isNull() || !innerCode.isInteger())
+            {
+                SystemLib::throwInvalidArgumentExceptionObject("Status code must be an integer");
+                return resultObj;
+            }
+            ops[op_num].data.send_status_from_server.status = static_cast<grpc_status_code>(innerCode.toInt32());
+
+            if (!statusArr.exists(String{ "details" }, true))
+            {
+                SystemLib::throwInvalidArgumentExceptionObject("String status details is required");
+                return resultObj;
+            }
+
+            Variant innerDetails{ statusArr[String{ "details" }] };
+            if (innerDetails.isNull() || !innerDetails.isString())
+            {
+                SystemLib::throwInvalidArgumentExceptionObject("Status details must be a string");
+                return resultObj;
+            }
+
+            Slice innerDetailsSlice{ innerDetails.toString().c_str() };
+            opsManaged.send_status_details = innerDetailsSlice;
+            ops[op_num].data.send_status_from_server.status_details = &opsManaged.send_status_details.slice();
+            break;
+        }
+        case GRPC_OP_RECV_INITIAL_METADATA:
+            ops[op_num].data.recv_initial_metadata.recv_initial_metadata = &opsManaged.recv_metadata.array();
+            break;
+        case GRPC_OP_RECV_MESSAGE:
+            ops[op_num].data.recv_message.recv_message = &opsManaged.recv_message;
+            break;
+        case GRPC_OP_RECV_STATUS_ON_CLIENT:
+            ops[op_num].data.recv_status_on_client.trailing_metadata = &opsManaged.recv_trailing_metadata.array();
+            ops[op_num].data.recv_status_on_client.status = &opsManaged.status;
+            ops[op_num].data.recv_status_on_client.status_details = &opsManaged.recv_status_details.slice();
+            break;
+        case GRPC_OP_RECV_CLOSE_ON_SERVER:
+            ops[op_num].data.recv_close_on_server.cancelled = &opsManaged.cancelled;
+            break;
+        default:
+            SystemLib::throwInvalidArgumentExceptionObject("Unrecognized key in batch");
+            return resultObj;
+        }
+
+        ops[op_num].op = static_cast<grpc_op_type>(index);
+        ops[op_num].flags = 0;
+        ops[op_num].reserved = nullptr;
     }
 
-    int index = key.toInt32();
-
-    Variant value = iter.second();
-
-    switch(index) {
-      case GRPC_OP_SEND_INITIAL_METADATA:
-        if (!value.isArray()) {
-          SystemLib::throwInvalidArgumentExceptionObject("Expected an array value for the metadata");
-          goto cleanup;
-        }
-
-        if (!hhvm_create_metadata_array(value.toArray(), &metadata)) {
-          SystemLib::throwInvalidArgumentExceptionObject("Bad metadata value given");
-          goto cleanup;
-        }
-
-        ops[op_num].data.send_initial_metadata.count = metadata.count;
-        ops[op_num].data.send_initial_metadata.metadata = metadata.metadata;
-        expect_send_initial_metadata = true;
-        break;
-      case GRPC_OP_SEND_MESSAGE:
-        {
-          if (!value.isArray()) {
-            SystemLib::throwInvalidArgumentExceptionObject("Expected an array for send message");
-            goto cleanup;
-          }
-
-          auto messageArr = value.toArray();
-          if (messageArr.exists(String("flags"), true)) {
-            auto messageFlags = messageArr[String("flags")];
-            if (!messageFlags.isInteger()) {
-              SystemLib::throwInvalidArgumentExceptionObject("Expected an int for message flags");
-              goto cleanup;
-            }
-            ops[op_num].flags = messageFlags.toInt32() & GRPC_WRITE_USED_MASK;
-          }
-
-          if (messageArr.exists(String("message"), true)) {
-            auto messageValue = messageArr[String("message")];
-            if (!messageValue.isString()) {
-              SystemLib::throwInvalidArgumentExceptionObject("Expected a string for send message");
-              goto cleanup;
-            }
-            String messageValueString = messageValue.toString();
-            ops[op_num].data.send_message.send_message = string_to_byte_buffer(messageValueString.c_str(),
-                                                              messageValueString.size());
-          }
-        }
-        break;
-      case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
-        break;
-      case GRPC_OP_SEND_STATUS_FROM_SERVER:
-        {
-          if (!value.isArray()) {
-            SystemLib::throwInvalidArgumentExceptionObject("Expected an array for server status");
-            goto cleanup;
-          }
-
-          auto statusArr = value.toArray();
-          if (statusArr.exists(String("metadata"), true)) {
-            auto innerMetadata = statusArr[String("metadata")];
-            if (!innerMetadata.isArray()) {
-              SystemLib::throwInvalidArgumentExceptionObject("Expected an array for server status metadata value");
-              goto cleanup;
-            }
-
-            if (!hhvm_create_metadata_array(innerMetadata.toArray(), &trailing_metadata)) {
-              SystemLib::throwInvalidArgumentExceptionObject("Bad trailing metadata value given");
-              goto cleanup;
-            }
-
-            ops[op_num].data.send_status_from_server.trailing_metadata =
-                trailing_metadata.metadata;
-            ops[op_num].data.send_status_from_server.trailing_metadata_count =
-                trailing_metadata.count;
-          }
-
-          if (!statusArr.exists(String("code"), true)) {
-            SystemLib::throwInvalidArgumentExceptionObject("Integer status code is required");
-          }
-
-          auto innerCode = statusArr[String("code")];
-
-          if (!innerCode.isInteger()) {
-            SystemLib::throwInvalidArgumentExceptionObject("Status code must be an integer");
-            goto cleanup;
-          }
-
-          ops[op_num].data.send_status_from_server.status = (grpc_status_code)innerCode.toInt32();
-
-          if (!statusArr.exists(String("details"), true)) {
-            SystemLib::throwInvalidArgumentExceptionObject("String status details is required");
-            goto cleanup;
-          }
-
-          auto innerDetails = statusArr[String("details")];
-          if (!innerDetails.isString()) {
-            SystemLib::throwInvalidArgumentExceptionObject("Status details must be a string");
-            goto cleanup;
-          }
-
-          send_status_details = grpc_slice_from_copied_string(innerDetails.toString().c_str());
-          ops[op_num].data.send_status_from_server.status_details = &send_status_details;
-        }
-        break;
-      case GRPC_OP_RECV_INITIAL_METADATA:
-        ops[op_num].data.recv_initial_metadata.recv_initial_metadata = &recv_metadata;
-        break;
-      case GRPC_OP_RECV_MESSAGE:
-        ops[op_num].data.recv_message.recv_message = &message;
-        break;
-      case GRPC_OP_RECV_STATUS_ON_CLIENT:
-        ops[op_num].data.recv_status_on_client.trailing_metadata = &recv_trailing_metadata;
-        ops[op_num].data.recv_status_on_client.status = &status;
-        ops[op_num].data.recv_status_on_client.status_details = &recv_status_details;
-        break;
-      case GRPC_OP_RECV_CLOSE_ON_SERVER:
-        ops[op_num].data.recv_close_on_server.cancelled = &cancelled;
-        break;
-      default:
-        SystemLib::throwInvalidArgumentExceptionObject("Unrecognized key in batch");
-        goto cleanup;
+    grpc_call_error errorCode;
+    static std::mutex s_WriteStartBatchMutex, s_ReadStartBatchMutex;
+    {
+        // TODO : Update for read and write locks for efficiency
+        std::lock_guard<std::mutex> lock{ s_WriteStartBatchMutex };
+        errorCode = grpc_call_start_batch(pCallData->getWrapped(), ops.data(), op_num, pCallData->getWrapped(), NULL);
     }
 
-    ops[op_num].op = (grpc_op_type)index;
-    ops[op_num].flags = 0;
-    ops[op_num].reserved = NULL;
-    op_num++;
-  }
+    if (errorCode != GRPC_CALL_OK)
+    {
+        std::stringstream oSS;
+        oSS << "start_batch was called incorrectly: " << errorCode << std::endl;
+        SystemLib::throwInvalidArgumentExceptionObject("oSS.str()");
+        return resultObj;
+    }
 
-  if (expect_send_initial_metadata == true) {
-    // We do this above grpc_call_start_batch because it can also sometimes execute the callback
-    // from within itself and we need to have the fd setup by that point
-    fd = eventfd(0, EFD_CLOEXEC|EFD_NONBLOCK);
-    PluginGetMetadataFd::tl_obj.get()->setFd(fd);
-  }
-
-  static std::mutex s_WriteStartBatchMutex, s_ReadStartBatchMutex;
-  {
-    // TODO : Update for read and write locks for efficiency
-    std::lock_guard<std::mutex> lock{ s_WriteStartBatchMutex };
-    error = grpc_call_start_batch(pCallData->getWrapped(), ops, op_num, pCallData->getWrapped(), NULL);
-  }
-
-  if (error != GRPC_CALL_OK) {
-    SystemLib::throwInvalidArgumentExceptionObject(folly::sformat("start_batch was called incorrectly: {}", (int)error));
-    goto cleanup;
-  }
-
-  if (expect_send_initial_metadata == true) {
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
     // has it's own thread and you cannot run application code on a single request in more than
     // one thread. However gRPC calls call_credentials.cpp:plugin_get_metadata in a different thread
     // in many cases and that violates the thread safety within a request in HHVM and causes segfaults
-    // at any reasonable concurrency. Our workaround here is to pass in a file descriptor that can be
-    // used by the concurrent thread to send back the parameters to this main thread so we can execute
-    // it here.
-
-    cq_pluck_async_params *cq_pluck_params;
-    cq_pluck_params = (cq_pluck_async_params *)gpr_zalloc(sizeof(cq_pluck_async_params));
-    cq_pluck_params->cq = CompletionQueue::tl_obj.get()->getQueue();
-    cq_pluck_params->tag = pCallData->getWrapped();
-    cq_pluck_params->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
-    cq_pluck_params->reserved = nullptr;
-    cq_pluck_params->fd = fd;
-
-    pthread_t cq_pluck_thread_id;
-    pthread_create(&cq_pluck_thread_id, NULL, cq_pluck_async, (void *)cq_pluck_params);
-
-    // Block, wait for signal from callback
-    struct pollfd fds[] = {
-        { fd, POLLIN },
-    };
-    int r = poll(fds, 1, pCallData->getTimeout()); // Timeout after N seconds as defined by the application
-    if (r > 0) {
-      plugin_get_metadata_params *params;
-      int numBytes = read(fd, &params, sizeof(plugin_get_metadata_params *));
-      PluginGetMetadataFd::tl_obj.get()->setFd(-1);
-
-      if (numBytes > 0 && params != nullptr) {
-        plugin_do_get_metadata(params->ptr, params->context, params->cb, params->user_data);
-        gpr_free(params);
-      }
+    // at any reasonable concurrency.
+    // TODO: See if this is necessary and if so use condition variable
+    if (   sending_initial_metadata == true)
+    {
     }
-    pthread_join(cq_pluck_thread_id, (void **)&event_ptr);
-    event = *event_ptr;
-  } else {
-    event = grpc_completion_queue_pluck(CompletionQueue::tl_obj.get()->getQueue(), pCallData->getWrapped(),
-                                        gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-  }
 
-  // An error occured if success = 0
-  if (event.success == 0) {
-    SystemLib::throwInvalidArgumentExceptionObject(folly::sformat("There was a problem with the request. Event error code: {}", (int)event.type));
-    goto cleanup;
-  }
+    grpc_event event{ grpc_completion_queue_pluck(CompletionQueue::tl_obj.get()->getQueue(),
+                                                  pCallData->getWrapped(),
+                                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) };
+    // An error occured if success = 0
+    if (event.success == 0)
+    {
+        std::stringstream oSS;
+        oSS << "There was a problem with the request. Event error code: " << event.type << std::endl;
+        SystemLib::throwRuntimeExceptionObject(oSS.str());
+        return resultObj;
+    }
 
-  for (int i = 0; i < op_num; i++) {
-    switch(ops[i].op) {
-      case GRPC_OP_SEND_INITIAL_METADATA:
-        resultObj.o_set("send_metadata", Variant(true));
-        break;
-      case GRPC_OP_SEND_MESSAGE:
-        resultObj.o_set("send_message", Variant(true));
-        break;
-      case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
-        resultObj.o_set("send_close", Variant(true));
-        break;
-      case GRPC_OP_SEND_STATUS_FROM_SERVER:
-        resultObj.o_set("send_status", Variant(true));
-        break;
-      case GRPC_OP_RECV_INITIAL_METADATA:
-        resultObj.o_set("metadata", grpc_parse_metadata_array(&recv_metadata));
-        break;
-      case GRPC_OP_RECV_MESSAGE:
-        char *message_str;
-        size_t message_len;
-        byte_buffer_to_string(message, &message_str, &message_len);
-        if (message_str == NULL) {
-          resultObj.o_set("message", Variant());
-        } else {
-          resultObj.o_set("message", Variant(String(message_str, message_len, CopyString)));
-        }
-        req::free(message_str);
-        break;
-      case GRPC_OP_RECV_STATUS_ON_CLIENT:
+    // process results of call
+    for (size_t i{ 0 }; i < op_num; ++i)
+    {
+        switch(ops[i].op)
         {
-          auto recvStatusObj = SystemLib::AllocStdClassObject();
-          recvStatusObj.o_set("metadata", grpc_parse_metadata_array(&recv_trailing_metadata));
-          recvStatusObj.o_set("code", Variant((int64_t)status));
-          char *status_details_text = grpc_slice_to_c_string(recv_status_details);
-          recvStatusObj.o_set("details", Variant(String(status_details_text, CopyString)));
-          gpr_free(status_details_text);
-          resultObj.o_set("status", Variant(recvStatusObj));
+        case GRPC_OP_SEND_INITIAL_METADATA:
+            resultObj.o_set("send_metadata", Variant{ true });
+            break;
+        case GRPC_OP_SEND_MESSAGE:
+            resultObj.o_set("send_message", Variant{ true });
+            break;
+        case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+            resultObj.o_set("send_close", Variant{ true });
+            break;
+        case GRPC_OP_SEND_STATUS_FROM_SERVER:
+            resultObj.o_set("send_status", Variant{ true });
+            break;
+        case GRPC_OP_RECV_INITIAL_METADATA:
+            resultObj.o_set("metadata", opsManaged.recv_metadata.phpData());
+            break;
+        case GRPC_OP_RECV_MESSAGE:
+        {
+            if (!opsManaged.recv_message)
+            {
+                resultObj.o_set("message", Variant());
+            }
+            else
+            {
+                Slice slice{ opsManaged.recv_message };
+                resultObj.o_set("message",
+                                Variant{ String{ reinterpret_cast<const char*>(slice.data()),
+                                                 slice.length(), CopyString } });
+            }
+            break;
         }
-        break;
-      case GRPC_OP_RECV_CLOSE_ON_SERVER:
-        resultObj.o_set("cancelled", (bool)cancelled);
-        break;
-      default:
-        break;
+        case GRPC_OP_RECV_STATUS_ON_CLIENT:
+        {
+            Object recvStatusObj{ SystemLib::AllocStdClassObject() };
+            recvStatusObj.o_set("metadata", opsManaged.recv_trailing_metadata.phpData());
+            recvStatusObj.o_set("code", Variant{ static_cast<int64_t>(opsManaged.status) });
+            recvStatusObj.o_set("details",
+                                Variant{ String{ reinterpret_cast<const char*>(opsManaged.recv_status_details.data()),
+                                                 opsManaged.recv_status_details.length(), CopyString } });
+            resultObj.o_set("status", Variant{ recvStatusObj });
+            break;
+        }
+        case GRPC_OP_RECV_CLOSE_ON_SERVER:
+            resultObj.o_set("cancelled", opsManaged.cancelled != 0);
+            break;
+        default:
+            break;
+        }
     }
-  }
 
-  cleanup:
-    if (fd != -1) {
-      close(fd);
-    }
-    if (event_ptr != nullptr) {
-      gpr_free(event_ptr);
-    }
-    for (int i = 0; i < metadata.count; i++) {
-      grpc_slice_unref(metadata.metadata[i].key);
-      grpc_slice_unref(metadata.metadata[i].value);
-    }
-    grpc_metadata_array_destroy(&metadata);
-    for (int i = 0; i < trailing_metadata.count; i++) {
-      grpc_slice_unref(trailing_metadata.metadata[i].key);
-      grpc_slice_unref(trailing_metadata.metadata[i].value);
-    }
-    grpc_metadata_array_destroy(&trailing_metadata);
-    grpc_metadata_array_destroy(&recv_metadata);
-    grpc_metadata_array_destroy(&recv_trailing_metadata);
-    grpc_slice_unref(recv_status_details);
-    grpc_slice_unref(send_status_details);
-    for (int i = 0; i < op_num; i++) {
-      if (ops[i].op == GRPC_OP_SEND_MESSAGE) {
-        grpc_byte_buffer_destroy(ops[i].data.send_message.send_message);
-      }
-      if (ops[i].op == GRPC_OP_RECV_MESSAGE) {
-        grpc_byte_buffer_destroy(message);
-      }
-    }
     return resultObj;
 }
 
-void *cq_pluck_async(void *params_ptr) {
-  cq_pluck_async_params *params = (cq_pluck_async_params *)params_ptr;
-  grpc_event event;
-  grpc_event *event_copy = (grpc_event *)gpr_zalloc(sizeof(grpc_event));
-
-
-  // This doesn't need a lock b/c we use a completion queue per HHVM request thread
-  event = grpc_completion_queue_pluck(params->cq, params->tag, params->deadline, params->reserved);
-
-  // An error occured if success = 0
-  if (event.success == 0) {
-    // If there was an error then our callback wouldn't have been called but the main
-    // thread is still blocking on the read, so we need to unblock it somehow. We do
-    // this by writing nullptr to the fd which is then handled on the other side.
-    write(params->fd, nullptr, sizeof(plugin_get_metadata_params *));
-  }
-
-  *event_copy = event;
-
-  return (void *)event_copy;
+String HHVM_METHOD(Call, getPeer)
+{
+    CallData* const pCallData{ Native::data<CallData>(this_) };
+    return String{ grpc_call_get_peer(pCallData->getWrapped()), CopyString };
 }
 
-
-String HHVM_METHOD(Call, getPeer) {
-  auto callData = Native::data<CallData>(this_);
-  return String(grpc_call_get_peer(callData->getWrapped()), CopyString);
-}
-
-void HHVM_METHOD(Call, cancel) {
-  auto callData = Native::data<CallData>(this_);
-  grpc_call_cancel(callData->getWrapped(), NULL);
+void HHVM_METHOD(Call, cancel)
+{
+    CallData* const pCallData{ Native::data<CallData>(this_) };
+    grpc_call_cancel(pCallData->getWrapped(), NULL);
 }
 
 int64_t HHVM_METHOD(Call, setCredentials,
-  const Object& creds_obj) {
-  auto callCredentialsData = Native::data<CallCredentialsData>(creds_obj);
-  auto callData = Native::data<CallData>(this_);
+                    const Object& creds_obj)
+{
+    CallData* const pCallData{ Native::data<CallData>(this_) };
+    CallCredentialsData* const pCallCredentialsData{ Native::data<CallCredentialsData>(creds_obj) };
 
-  grpc_call_error error = GRPC_CALL_ERROR;
-  error = grpc_call_set_credentials(callData->getWrapped(), callCredentialsData->getWrapped());
-
-  return (int64_t)error;
-}
-
-/* Creates and returns a PHP array object with the data in a
- * grpc_metadata_array. Returns NULL on failure */
-Variant grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
-  char *str_key;
-  char *str_val;
-  size_t key_len;
-
-  int count = metadata_array->count;
-  grpc_metadata *elements = metadata_array->metadata;
-
-  auto array = Array::Create();
-
-  grpc_metadata *elem;
-  for (int i = 0; i < count; i++) {
-    elem = &elements[i];
-
-    key_len = GRPC_SLICE_LENGTH(elem->key);
-    str_key = (char *) req::calloc(key_len + 1, sizeof(char));
-    memcpy(str_key, GRPC_SLICE_START_PTR(elem->key), key_len);
-
-    str_val = (char *) req::calloc(GRPC_SLICE_LENGTH(elem->value) + 1, sizeof(char));
-    memcpy(str_val, GRPC_SLICE_START_PTR(elem->value), GRPC_SLICE_LENGTH(elem->value));
-
-    auto key = String(str_key, key_len, CopyString);
-    auto val = String(str_val, GRPC_SLICE_LENGTH(elem->value), CopyString);
-
-    req::free(str_key);
-    req::free(str_val);
-
-    if (!array.exists(key, true)) {
-      array.set(key, Array::Create(), true);
-    }
-
-    Variant current = array[key];
-    if (!current.isArray()) {
-      SystemLib::throwInvalidArgumentExceptionObject("Metadata hash somehow contains wrong types.");
-      return Variant();
-    }
-
-    Array currArray = current.toArray();
-
-    currArray.append(Variant(val));
-  }
-
-  return Variant(array);
-}
-
-/* Populates a grpc_metadata_array with the data in a PHP array object.
-   Returns true on success and false on failure */
-bool hhvm_create_metadata_array(const Array& array, grpc_metadata_array *metadata) {
-  // Must call grpc_metadata_array_init(&metadata); before calling this function
-
-  for (ArrayIter iter(array); iter; ++iter) {
-    Variant key = iter.first();
-    if (!key.isString() || key.isNull()) {
-      return false;
-    }
-
-    Variant value = iter.second();
-    if (!value.isArray()) {
-      return false;
-    }
-
-    metadata->capacity += value.toArray().size();
-  }
-
-  metadata->metadata = (grpc_metadata *)gpr_malloc(metadata->capacity * sizeof(grpc_metadata));
-
-  for (ArrayIter iter(array); iter; ++iter) {
-    Variant key = iter.first();
-    if (!key.isString()) {
-      return false;
-    }
-
-    if (!grpc_header_key_is_legal(grpc_slice_from_static_string(key.toString().c_str()))) {
-      return false;
-    }
-
-    Variant value = iter.second();
-    if (!value.isArray()) {
-      return false;
-    }
-
-    Array innerArray = value.toArray();
-    for (ArrayIter iter2(innerArray); iter2; ++iter2) {
-      Variant key2 = iter2.first();
-      Variant value2 = iter2.second();
-      if (!value2.isString()) {
-        return false;
-      }
-
-      String value2String = value2.toString();
-
-      metadata->metadata[metadata->count].key = grpc_slice_from_copied_string(key.toString().c_str());
-      metadata->metadata[metadata->count].value = grpc_slice_from_copied_buffer(value2String.c_str(), value2String.length());
-      metadata->count += 1;
-    }
-  }
-
-  return true;
+    grpc_call_error error{ grpc_call_set_credentials(pCallData->getWrapped(),
+                                                     pCallCredentialsData->getWrapped()) };
+    return static_cast<int64_t>(error);
 }
 
 } // namespace HPHP

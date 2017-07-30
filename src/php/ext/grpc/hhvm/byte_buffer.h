@@ -21,8 +21,6 @@
 
 #include "grpc/grpc.h"
 
-grpc_byte_buffer *string_to_byte_buffer(const char *string, const size_t length);
-
 void byte_buffer_to_string(grpc_byte_buffer* const buffer, char** const out_string,
                            size_t* const out_length);
 

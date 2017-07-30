@@ -40,6 +40,8 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 
+#include "utility.h"
+
 namespace HPHP {
 
 Class* CallCredentialsData::s_class = nullptr;
@@ -143,21 +145,15 @@ void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
 
   grpc_status_code code = GRPC_STATUS_OK;
 
-  grpc_metadata_array metadata;
-  grpc_metadata_array_init(&metadata);
+  MetadataArray metadata;
 
-  if (!hhvm_create_metadata_array(retval.toArray(), &metadata)) {
+  if (!metadata.init(retval.toArray(), true))
+  {
     code = GRPC_STATUS_INVALID_ARGUMENT;
   }
 
   /* Pass control back to core */
-  cb(user_data, metadata.metadata, metadata.count, code, NULL);
-
-  for (int i = 0; i < metadata.count; i++) {
-    grpc_slice_unref(metadata.metadata[i].key);
-    grpc_slice_unref(metadata.metadata[i].value);
-  }
-  grpc_metadata_array_destroy(&metadata);
+  cb(user_data, metadata.data(), metadata.size(), code, NULL);
 }
 
 void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,

@@ -31,20 +31,13 @@
 
 #include "utility.h"
 
-grpc_byte_buffer* string_to_byte_buffer(const char *string, const size_t length)
-{
-    Slice slice{ string, length };
-    grpc_byte_buffer* buffer{ grpc_raw_byte_buffer_create(&slice.slice(), 1) };
-    return buffer;
-}
-
+/*
 void byte_buffer_to_string(grpc_byte_buffer* const buffer, char** const out_string,
                            size_t* const out_length)
 {
     grpc_byte_buffer_reader reader;
     if (buffer == nullptr || !grpc_byte_buffer_reader_init(&reader, buffer))
     {
-        /* TODO(dgq): distinguish between the error cases. */
         *out_string = nullptr;
         *out_length = 0;
         return;
@@ -59,3 +52,5 @@ void byte_buffer_to_string(grpc_byte_buffer* const buffer, char** const out_stri
     *out_string = string;
     *out_length = length;
 }
+*/
+
