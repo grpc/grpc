@@ -26,8 +26,6 @@
 #endif
 
 #include "hphp/runtime/ext/extension.h"
-#include "channel.h"
-#include "timeval.h"
 
 #include "grpc/grpc.h"
 

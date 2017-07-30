@@ -30,18 +30,16 @@
 
 #include "common.h"
 
-#include "call.h"
-#include "timeval.h"
-#include "completion_queue.h"
-#include "byte_buffer.h"
-#include "call_credentials.h"
-
 #include "hphp/runtime/vm/native-data.h"
 
-#include "grpc/support/alloc.h"
 #include "grpc/grpc_security.h"
-#include "grpc/grpc.h"
+#include "grpc/support/alloc.h"
 
+#include "call.h"
+#include "call_credentials.h"
+#include "channel.h"
+#include "completion_queue.h"
+#include "timeval.h"
 #include "utility.h"
 
 namespace HPHP {
@@ -73,6 +71,7 @@ void HHVM_METHOD(Call, __construct,
                  const Object& deadline_obj,
                  const Variant& host_override /* = null */)
 {
+    std::cout << "Method Call __construct" << std::endl;
     CallData* const pCallData{ Native::data<CallData>(this_) };
     ChannelData* const pChannelData{ Native::data<ChannelData>(channel_obj) };
 
@@ -96,6 +95,8 @@ void HHVM_METHOD(Call, __construct,
                                              pDeadlineTimevalData->getWrapped(), nullptr));
 
     pCallData->setOwned(true);
+
+    return;
 }
 
 Object HHVM_METHOD(Call, startBatch,
@@ -116,10 +117,10 @@ Object HHVM_METHOD(Call, startBatch,
     typedef struct OpsManaged // this structure is managed data for the ops array
     {
         // constructors/destructors
-        OpsManaged(void) : metadata{}, trailing_metadata{}, recv_metadata{ false },
+        OpsManaged(void) : metadata{ true }, trailing_metadata{ true }, recv_metadata{ false },
             recv_trailing_metadata{ false }, send_message{ nullptr },
             recv_message{ nullptr }, recv_status_details{}, send_status_details{},
-            cancelled{ 0 }, pEvent{ nullptr }, status{ GRPC_STATUS_OK }
+            cancelled{ 0 }, status{ GRPC_STATUS_OK }
         {
         }
         ~OpsManaged(void)
@@ -141,25 +142,19 @@ Object HHVM_METHOD(Call, startBatch,
                 grpc_byte_buffer_destroy(recv_message);
                 recv_message = nullptr;
             }
-            if (pEvent)
-            {
-                gpr_free(pEvent);
-                pEvent = nullptr;
-            }
             cancelled = false;
         }
 
         // managed data
-        MetadataArray metadata;
-        MetadataArray trailing_metadata;
-        MetadataArray recv_metadata;
-        MetadataArray recv_trailing_metadata;
-        grpc_byte_buffer* send_message;
-        grpc_byte_buffer* recv_message;
-        Slice recv_status_details;
-        Slice send_status_details;
+        MetadataArray metadata;                 // owned by caller
+        MetadataArray trailing_metadata;        // owned by caller
+        MetadataArray recv_metadata;            // owned by call object
+        MetadataArray recv_trailing_metadata;   // owned by call object
+        grpc_byte_buffer* send_message;         // owned by caller
+        grpc_byte_buffer* recv_message;         // owned by caller
+        Slice recv_status_details;              // owned by caller
+        Slice send_status_details;              // owned by caller
         int cancelled;
-        gpr_event* pEvent;
         grpc_status_code status;
     } OpsManaged;
 
@@ -196,7 +191,7 @@ Object HHVM_METHOD(Call, startBatch,
                 return resultObj;
             }
 
-            if (!opsManaged.metadata.init(value.toArray(), false))
+            if (!opsManaged.metadata.init(value.toArray(), true))
             {
                 SystemLib::throwInvalidArgumentExceptionObject("Bad metadata value given");
                 return resultObj;
@@ -263,7 +258,7 @@ Object HHVM_METHOD(Call, startBatch,
                     return resultObj;
                 }
 
-                if (!opsManaged.trailing_metadata.init(innerMetadata.toArray(), false))
+                if (!opsManaged.trailing_metadata.init(innerMetadata.toArray(), true))
                 {
                     SystemLib::throwInvalidArgumentExceptionObject("Bad trailing metadata value given");
                     return resultObj;
