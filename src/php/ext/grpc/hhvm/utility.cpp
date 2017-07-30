@@ -159,7 +159,6 @@ bool MetadataArray::init(const HPHP::Array& phpArray, const bool ownPHP)
         HPHP::Array innerArray{ value.toArray() };
         for (HPHP::ArrayIter iter2(innerArray); iter2; ++iter2, ++elem)
         {
-            HPHP::Variant key2{ iter2.first() };
             HPHP::Variant value2{ iter2.second() };
 
             Slice keySlice{ key.toString().c_str() };
@@ -169,6 +168,7 @@ bool MetadataArray::init(const HPHP::Array& phpArray, const bool ownPHP)
             m_Array.metadata[elem].value = valueSlice.slice();
 
             m_PHPData.emplace_back(keySlice, valueSlice);
+            std::cout << m_PHPData.back().first.data() << ' ' << m_PHPData.back().second.data() << std::endl;
         }
     }
     m_Array.count = count;

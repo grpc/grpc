@@ -74,7 +74,7 @@ Object HHVM_STATIC_METHOD(ServerCredentials, createSsl,
     &pem_key_cert_pair,
     1,
     GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
-    NULL
+    nullptr
   ));
 
   return newServerCredentialsObj;

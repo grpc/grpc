@@ -39,7 +39,7 @@ IMPLEMENT_THREAD_LOCAL(DefaultPemRootCerts, DefaultPemRootCerts::tl_obj);
 
 static grpc_ssl_roots_override_result get_ssl_roots_override(char **pem_root_certs) {
   *pem_root_certs = DefaultPemRootCerts::tl_obj.get()->getCerts();
-  if (*pem_root_certs == NULL) {
+  if (*pem_root_certs == nullptr) {
     return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
   }
   return GRPC_SSL_ROOTS_OVERRIDE_OK;
@@ -49,7 +49,7 @@ DefaultPemRootCerts::DefaultPemRootCerts() {}
 
 char * DefaultPemRootCerts::getCerts() { return default_pem_root_certs; }
 void DefaultPemRootCerts::setCerts(const String& pem_roots) {
-  if (default_pem_root_certs != NULL) {
+  if (default_pem_root_certs != nullptr) {
     gpr_free((void *)default_pem_root_certs);
   }
 
@@ -108,7 +108,7 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createSsl,
   const Variant& pem_key_cert_pair__private_key /*= null*/,
   const Variant& pem_key_cert_pair__cert_chain /*=null*/
   ) {
-  const char *pem_root_certs_ = NULL;
+  const char *pem_root_certs_ = nullptr;
 
   if (pem_root_certs.isString()) {
     pem_root_certs_ = pem_root_certs.toString().c_str();
@@ -120,7 +120,7 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createSsl,
   String unhashedKey = String("");
 
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
-  pem_key_cert_pair.private_key = pem_key_cert_pair.cert_chain = NULL;
+  pem_key_cert_pair.private_key = pem_key_cert_pair.cert_chain = nullptr;
 
   if (pem_key_cert_pair__private_key.isString()) {
     pem_key_cert_pair.private_key = pem_key_cert_pair__private_key.toString().c_str();
@@ -141,7 +141,7 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createSsl,
 
   channelCredentialsData->init(grpc_ssl_credentials_create(
     pem_root_certs_,
-    pem_key_cert_pair.private_key == NULL ? NULL : &pem_key_cert_pair, NULL
+    pem_key_cert_pair.private_key == nullptr ? nullptr : &pem_key_cert_pair, nullptr
   ));
 
   return newChannelCredentialsObj;

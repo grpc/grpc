@@ -16,25 +16,33 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+    #include "config.h"
+#endif
+
 #include "completion_queue.h"
 
 #include "hphp/runtime/ext/extension.h"
 
 namespace HPHP {
 
-IMPLEMENT_THREAD_LOCAL(CompletionQueue, CompletionQueue::tl_obj);
-
-CompletionQueue::CompletionQueue() {
-  completion_queue = grpc_completion_queue_create_for_pluck(NULL);
+CompletionQueue::CompletionQueue(void)
+{
+    m_pCompletionQueue = grpc_completion_queue_create_for_pluck(nullptr);
 }
 
-CompletionQueue::~CompletionQueue() {
-  grpc_completion_queue_shutdown(completion_queue);
-  grpc_completion_queue_destroy(completion_queue);
+CompletionQueue::~CompletionQueue(void)
+{
+    grpc_completion_queue_shutdown(m_pCompletionQueue);
+    grpc_completion_queue_destroy(m_pCompletionQueue);
 }
 
-grpc_completion_queue *CompletionQueue::getQueue() {
-  return completion_queue;
+CompletionQueue& CompletionQueue::getQueue(void)
+{
+    // ToDo :: Look at making this thread local for efficiency
+    static CompletionQueue s_CompletionQueue;
+
+    return s_CompletionQueue;
 }
 
 }

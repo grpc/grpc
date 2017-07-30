@@ -25,15 +25,24 @@
 
 namespace HPHP {
 
-struct CompletionQueue {
-  CompletionQueue();
-  ~CompletionQueue();
-  grpc_completion_queue *getQueue();
+// This is the singleton completion queue class
+class CompletionQueue
+{
+ public:
+    CompletionQueue(void);
+    ~CompletionQueue(void);
+    CompletionQueue(const CompletionQueue&) = delete;
+    CompletionQueue(CompletionQueue&&) = delete;
+    CompletionQueue& operator=(const CompletionQueue&) = delete;
+    CompletionQueue& operator=(CompletionQueue&&) = delete;
 
-  /* The global completion queue for all operations */
-  grpc_completion_queue *completion_queue;
+    grpc_completion_queue* const queue(void) { return m_pCompletionQueue; };
 
-  static DECLARE_THREAD_LOCAL(CompletionQueue, tl_obj);
+    static CompletionQueue& getQueue(void);
+
+private:
+    // The global completion queue for all operations
+    grpc_completion_queue* m_pCompletionQueue;
 };
 
 }

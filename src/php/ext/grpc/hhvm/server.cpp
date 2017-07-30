@@ -60,10 +60,10 @@ void ServerData::init(grpc_server* server) {
 
 void ServerData::sweep() {
   if (wrapped) {
-    grpc_server_shutdown_and_notify(wrapped, CompletionQueue::tl_obj.get()->getQueue(), NULL);
+    grpc_server_shutdown_and_notify(wrapped, CompletionQueue::getQueue().queue(), nullptr);
     grpc_server_cancel_all_calls(wrapped);
-    grpc_completion_queue_pluck(CompletionQueue::tl_obj.get()->getQueue(), NULL,
-                                gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+    grpc_completion_queue_pluck(CompletionQueue::getQueue().queue(), nullptr,
+                                gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
     grpc_server_destroy(wrapped);
     wrapped = nullptr;
   }
@@ -77,18 +77,18 @@ void HHVM_METHOD(Server, __construct,
   const Variant& args_array_or_null /* = null */) {
   auto serverData = Native::data<ServerData>(this_);
   if (args_array_or_null.isNull()) {
-    serverData->init(grpc_server_create(NULL, NULL));
+    serverData->init(grpc_server_create(nullptr, nullptr));
   } else {
     grpc_channel_args args;
     if (hhvm_grpc_read_args_array(args_array_or_null.toArray(), &args) == -1) {
       req::free(args.args);
       return;
     }
-    serverData->init(grpc_server_create(&args, NULL));
+    serverData->init(grpc_server_create(&args, nullptr));
     req::free(args.args);
   }
 
-  grpc_server_register_completion_queue(serverData->getWrapped(), CompletionQueue::tl_obj.get()->getQueue(), NULL);
+  grpc_server_register_completion_queue(serverData->getWrapped(), CompletionQueue::getQueue().queue(), nullptr);
 }
 
 Object HHVM_METHOD(Server, requestCall) {
@@ -110,16 +110,17 @@ Object HHVM_METHOD(Server, requestCall) {
 
   grpc_call_details_init(&details);
   error_code = grpc_server_request_call(serverData->getWrapped(), &call, &details, &metadata.array(),
-                                 CompletionQueue::tl_obj.get()->getQueue(), CompletionQueue::tl_obj.get()->getQueue(), NULL);
+                                        CompletionQueue::getQueue().queue(),
+                                        CompletionQueue::getQueue().queue(), nullptr);
 
   if (error_code != GRPC_CALL_OK) {
     throw_invalid_argument("request_call failed: %d", error_code);
     goto cleanup;
   }
 
-  event = grpc_completion_queue_pluck(CompletionQueue::tl_obj.get()->getQueue(), NULL,
+  event = grpc_completion_queue_pluck(CompletionQueue::getQueue().queue(), nullptr,
                                         gpr_inf_future(GPR_CLOCK_REALTIME),
-                                        NULL);
+                                        nullptr);
 
   if (!event.success) {
     throw_invalid_argument("Failed to request a call for some reason");

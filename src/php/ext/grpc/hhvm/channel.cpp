@@ -137,7 +137,7 @@ void HHVM_METHOD(Channel, __construct,
   auto credentialsKey = String("credentials");
   auto forceNewKey = String("force_new");
 
-  ChannelCredentialsData* channelCredentialsData = NULL;
+  ChannelCredentialsData* channelCredentialsData = nullptr;
 
   if (argsArrayCopy.exists(credentialsKey, true)) {
     Variant value = argsArrayCopy[credentialsKey];
@@ -167,7 +167,7 @@ void HHVM_METHOD(Channel, __construct,
   String serializedHash = StringUtil::SHA1(serializedArgsArray, false);
   String hashKey = target + serializedHash;
 
-  if (channelCredentialsData != NULL) {
+  if (channelCredentialsData != nullptr) {
     hashKey += channelCredentialsData->getHashKey();
   }
 
@@ -187,10 +187,10 @@ void HHVM_METHOD(Channel, __construct,
     }
 
     grpc_channel *channel;
-    if (channelCredentialsData == NULL) {
-      channel = grpc_insecure_channel_create(target.c_str(), &args, NULL);
+    if (channelCredentialsData == nullptr) {
+      channel = grpc_insecure_channel_create(target.c_str(), &args, nullptr);
     } else {
-      channel = grpc_secure_channel_create(channelCredentialsData->getWrapped(), target.c_str(), &args, NULL);
+      channel = grpc_secure_channel_create(channelCredentialsData->getWrapped(), target.c_str(), &args, nullptr);
     }
 
     channelData->init(channel);
@@ -256,11 +256,12 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
 
   grpc_channel_watch_connectivity_state(channelData->getWrapped(),
                                           (grpc_connectivity_state)last_state,
-                                          timevalDataDeadline->getWrapped(), CompletionQueue::tl_obj.get()->getQueue(),
-                                          NULL);
+                                          timevalDataDeadline->getWrapped(),
+                                          CompletionQueue::getQueue().queue(),
+                                          nullptr);
 
-  grpc_event event = grpc_completion_queue_pluck(CompletionQueue::tl_obj.get()->getQueue(), NULL,
-                                  gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  grpc_event event = grpc_completion_queue_pluck(CompletionQueue::getQueue().queue(), nullptr,
+                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
   return (bool)event.success;
 }
@@ -295,7 +296,7 @@ int hhvm_grpc_read_args_array(const Array& args_array, grpc_channel_args *args) 
     args->args[i].key = (char *)key.toString().c_str();
 
     Variant v = iter.second();
-    
+
     if (v.isInteger()) {
       args->args[i].value.integer = v.toInt32();
       args->args[i].type = GRPC_ARG_INTEGER;

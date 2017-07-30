@@ -88,7 +88,7 @@ Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
   grpc_call_credentials *call_credentials =
         grpc_composite_call_credentials_create(callCredentialsData1->getWrapped(),
                                                callCredentialsData2->getWrapped(),
-                                               NULL);
+                                               nullptr);
 
   auto newCallCredentialsObj = Object{CallCredentialsData::getClass()};
   auto newCallCredentialsData = Native::data<CallCredentialsData>(newCallCredentialsObj);
@@ -122,7 +122,7 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 
   auto newCallCredentialsObj = Object{CallCredentialsData::getClass()};
   auto newCallCredentialsData = Native::data<CallCredentialsData>(newCallCredentialsObj);
-  newCallCredentialsData->init(grpc_metadata_credentials_create_from_plugin(plugin, NULL));
+  newCallCredentialsData->init(grpc_metadata_credentials_create_from_plugin(plugin, nullptr));
 
   return newCallCredentialsObj;
 }
@@ -153,7 +153,7 @@ void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
   }
 
   /* Pass control back to core */
-  cb(user_data, metadata.data(), metadata.size(), code, NULL);
+  cb(user_data, metadata.data(), metadata.size(), code, nullptr);
 }
 
 void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,

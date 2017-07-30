@@ -71,7 +71,7 @@ void HHVM_METHOD(Call, __construct,
                  const Object& deadline_obj,
                  const Variant& host_override /* = null */)
 {
-    std::cout << "Method Call __construct" << std::endl;
+    //std::cout << "Method Call __construct" << std::endl;
     CallData* const pCallData{ Native::data<CallData>(this_) };
     ChannelData* const pChannelData{ Native::data<ChannelData>(channel_obj) };
 
@@ -89,7 +89,7 @@ void HHVM_METHOD(Call, __construct,
     const Slice method_slice{ !method.empty() ? method.c_str() : "" };
     const Slice host_slice{  !host_override.isNull() ? host_override.toString().c_str() : "" };
     pCallData->init(grpc_channel_create_call(pChannelData->getWrapped(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                                             CompletionQueue::tl_obj.get()->getQueue(),
+                                             CompletionQueue::getQueue().queue(),
                                              method_slice.slice(),
                                              !host_override.isNull() ? &host_slice.slice() : nullptr,
                                              pDeadlineTimevalData->getWrapped(), nullptr));
@@ -323,20 +323,22 @@ Object HHVM_METHOD(Call, startBatch,
         ops[op_num].reserved = nullptr;
     }
 
-    grpc_call_error errorCode;
+    std::cout << "Sending Call" << std::endl;
     static std::mutex s_WriteStartBatchMutex, s_ReadStartBatchMutex;
     {
         // TODO : Update for read and write locks for efficiency
-        std::lock_guard<std::mutex> lock{ s_WriteStartBatchMutex };
-        errorCode = grpc_call_start_batch(pCallData->getWrapped(), ops.data(), op_num, pCallData->getWrapped(), NULL);
-    }
+        std::unique_lock<std::mutex> lock{ s_WriteStartBatchMutex };
+        grpc_call_error errorCode{ grpc_call_start_batch(pCallData->getWrapped(), ops.data(),
+                                                         op_num, pCallData->getWrapped(), nullptr) };
 
-    if (errorCode != GRPC_CALL_OK)
-    {
-        std::stringstream oSS;
-        oSS << "start_batch was called incorrectly: " << errorCode << std::endl;
-        SystemLib::throwInvalidArgumentExceptionObject("oSS.str()");
-        return resultObj;
+        if (errorCode != GRPC_CALL_OK)
+        {
+            lock.unlock();
+            std::stringstream oSS;
+            oSS << "start_batch was called incorrectly: " << errorCode << std::endl;
+            SystemLib::throwInvalidArgumentExceptionObject("oSS.str()");
+            return resultObj;
+        }
     }
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
@@ -345,13 +347,14 @@ Object HHVM_METHOD(Call, startBatch,
     // in many cases and that violates the thread safety within a request in HHVM and causes segfaults
     // at any reasonable concurrency.
     // TODO: See if this is necessary and if so use condition variable
-    if (   sending_initial_metadata == true)
+    if (sending_initial_metadata)
     {
     }
 
-    grpc_event event{ grpc_completion_queue_pluck(CompletionQueue::tl_obj.get()->getQueue(),
+    grpc_event event{ grpc_completion_queue_pluck(CompletionQueue::getQueue().queue(),
                                                   pCallData->getWrapped(),
                                                   gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) };
+    std::cout << "Reciving Call: " << event.success << std::endl;
     // An error occured if success = 0
     if (event.success == 0)
     {
@@ -427,7 +430,7 @@ String HHVM_METHOD(Call, getPeer)
 void HHVM_METHOD(Call, cancel)
 {
     CallData* const pCallData{ Native::data<CallData>(this_) };
-    grpc_call_cancel(pCallData->getWrapped(), NULL);
+    grpc_call_cancel(pCallData->getWrapped(), nullptr);
 }
 
 int64_t HHVM_METHOD(Call, setCredentials,

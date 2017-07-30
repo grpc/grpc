@@ -37,7 +37,7 @@ struct DefaultPemRootCerts {
   char * getCerts();
   void setCerts(const String& pem_roots);
 
-  char * default_pem_root_certs{NULL};
+  char * default_pem_root_certs{nullptr};
 
   static DECLARE_THREAD_LOCAL(DefaultPemRootCerts, tl_obj);
 };
