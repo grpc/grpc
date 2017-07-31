@@ -227,6 +227,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/is_epollexclusive_available.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/load_file.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/lockfree_event.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/nameser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/network_status_tracker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/polling_entity.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset.h" role="src" />

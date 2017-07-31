@@ -72,6 +72,7 @@ typedef struct sb_list_entry {
 typedef struct {
   grpc_byte_stream base;
   sb_list_entry *le;
+  grpc_error *shutdown_error;
 } inproc_slice_byte_stream;
 
 typedef struct {
@@ -201,24 +202,39 @@ static grpc_error *inproc_slice_byte_stream_pull(grpc_exec_ctx *exec_ctx,
                                                  grpc_byte_stream *bs,
                                                  grpc_slice *slice) {
   inproc_slice_byte_stream *stream = (inproc_slice_byte_stream *)bs;
+  if (stream->shutdown_error != GRPC_ERROR_NONE) {
+    return GRPC_ERROR_REF(stream->shutdown_error);
+  }
   *slice = grpc_slice_buffer_take_first(&stream->le->sb);
   return GRPC_ERROR_NONE;
+}
+
+static void inproc_slice_byte_stream_shutdown(grpc_exec_ctx *exec_ctx,
+                                              grpc_byte_stream *bs,
+                                              grpc_error *error) {
+  inproc_slice_byte_stream *stream = (inproc_slice_byte_stream *)bs;
+  GRPC_ERROR_UNREF(stream->shutdown_error);
+  stream->shutdown_error = error;
 }
 
 static void inproc_slice_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
                                              grpc_byte_stream *bs) {
   inproc_slice_byte_stream *stream = (inproc_slice_byte_stream *)bs;
   sb_list_entry_destroy(exec_ctx, stream->le);
+  GRPC_ERROR_UNREF(stream->shutdown_error);
 }
+
+static const grpc_byte_stream_vtable inproc_slice_byte_stream_vtable = {
+    inproc_slice_byte_stream_next, inproc_slice_byte_stream_pull,
+    inproc_slice_byte_stream_shutdown, inproc_slice_byte_stream_destroy};
 
 void inproc_slice_byte_stream_init(inproc_slice_byte_stream *s,
                                    sb_list_entry *le) {
   s->base.length = (uint32_t)le->sb.length;
   s->base.flags = 0;
-  s->base.next = inproc_slice_byte_stream_next;
-  s->base.pull = inproc_slice_byte_stream_pull;
-  s->base.destroy = inproc_slice_byte_stream_destroy;
+  s->base.vtable = &inproc_slice_byte_stream_vtable;
   s->le = le;
+  s->shutdown_error = GRPC_ERROR_NONE;
 }
 
 static void ref_transport(inproc_transport *t) {
@@ -956,11 +972,18 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
         GPR_ASSERT(grpc_byte_stream_next(exec_ctx,
                                          op->payload->send_message.send_message,
                                          SIZE_MAX, &unused));
-        grpc_byte_stream_pull(exec_ctx, op->payload->send_message.send_message,
-                              &message_slice);
+        error = grpc_byte_stream_pull(
+            exec_ctx, op->payload->send_message.send_message, &message_slice);
+        if (error != GRPC_ERROR_NONE) {
+          cancel_stream_locked(exec_ctx, s, GRPC_ERROR_REF(error));
+          break;
+        }
+        GPR_ASSERT(error == GRPC_ERROR_NONE);
         remaining -= GRPC_SLICE_LENGTH(message_slice);
         grpc_slice_buffer_add(dest, message_slice);
       } while (remaining != 0);
+      grpc_byte_stream_destroy(exec_ctx,
+                               op->payload->send_message.send_message);
     }
     if (error == GRPC_ERROR_NONE && op->send_trailing_metadata) {
       grpc_metadata_batch *dest = (other == NULL) ? &s->write_buffer_trailing_md
