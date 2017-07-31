@@ -79,6 +79,7 @@ grpc_combiner *grpc_combiner_create(void) {
   lock->time_to_execute_final_list = false;
   lock->scheduler.vtable = &scheduler;
   lock->finally_scheduler.vtable = &finally_scheduler;
+  lock->initiating_exec_ctx_or_null = 0;
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
   gpr_mpscq_init(&lock->queue);
   grpc_closure_list_init(&lock->final_list);
