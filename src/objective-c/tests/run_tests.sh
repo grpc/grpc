@@ -79,14 +79,18 @@ xcodebuild \
     HOST_PORT_LOCALSSL=localhost:5051 \
     HOST_PORT_LOCAL=localhost:5050 \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
-    test | xcpretty
+    test \
+    | egrep "$XCODEBUILD_FILTER" \
+    | egrep -v "(GPBDictionary|GPBArray)" -
 
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme CoreCronetEnd2EndTests \
     -destination name="iPhone 6" \
-    test | xcpretty
+    test \
+    | egrep "$XCODEBUILD_FILTER" \
+    | egrep -v "(GPBDictionary|GPBArray)" -
 
 # Temporarily disabled for (possible) flakiness on Jenkins.
 # Fix or reenable after confirmation/disconfirmation that it is the source of
@@ -105,4 +109,6 @@ xcodebuild \
     -scheme InteropTestsRemoteWithCronet \
     -destination name="iPhone 6" \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
-    test | xcpretty
+    test \
+    | egrep "$XCODEBUILD_FILTER" \
+    | egrep -v "(GPBDictionary|GPBArray)" -

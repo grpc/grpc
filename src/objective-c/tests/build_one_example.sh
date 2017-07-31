@@ -42,4 +42,6 @@ xcodebuild \
     build \
     -workspace *.xcworkspace \
     -scheme $SCHEME \
-    -destination name="iPhone 6" | xcpretty
+    -destination name="iPhone 6" \
+    | egrep "$XCODEBUILD_FILTER" \
+    | egrep -v "(GPBDictionary|GPBArray)" -
