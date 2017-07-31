@@ -188,6 +188,91 @@ describe('call', function() {
       }, TypeError);
     });
   });
+  describe('startBatch with message', function() {
+    it('should fail with non-buffer arguments', function() {
+      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      assert.throws(function() {
+        var batch = {};
+        batch[grpc.opType.SEND_MESSAGE] = null;
+        call.startBatch(batch, function(){});
+      }, TypeError);
+      assert.throws(function() {
+        var batch = {};
+        batch[grpc.opType.SEND_MESSAGE] = 5;
+        call.startBatch(batch, function(){});
+      }, TypeError);
+      assert.throws(function() {
+        var batch = {};
+        batch[grpc.opType.SEND_MESSAGE] = 'value';
+        call.startBatch(batch, function(){});
+      }, TypeError);
+    });
+  });
+  describe('startBatch with status', function() {
+    it('should fail without a code', function() {
+      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      assert.throws(function() {
+        var batch = {};
+        batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
+          details: 'details string',
+          metadata: {}
+        };
+        call.startBatch(batch, function(){});
+      }, TypeError);
+    });
+    it('should fail without details', function() {
+      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      assert.throws(function() {
+        var batch = {};
+        batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
+          code: 0,
+          metadata: {}
+        };
+        call.startBatch(batch, function(){});
+      }, TypeError);
+    });
+    it('should fail without metadata', function() {
+      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      assert.throws(function() {
+        var batch = {};
+        batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
+          code: 0,
+          details: 'details string'
+        };
+        call.startBatch(batch, function(){});
+      }, TypeError);
+    });
+    it('should fail with incorrectly typed arguments', function() {
+      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      assert.throws(function() {
+        var batch = {};
+        batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
+          code: 'code string',
+          details: 'details string',
+          metadata: {}
+        };
+        call.startBatch(batch, function(){});
+      }, TypeError);
+      assert.throws(function() {
+        var batch = {};
+        batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
+          code: 0,
+          details: 5,
+          metadata: {}
+        };
+        call.startBatch(batch, function(){});
+      }, TypeError);
+      assert.throws(function() {
+        var batch = {};
+        batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
+          code: 0,
+          details: 'details string',
+          metadata: 'abc'
+        };
+        call.startBatch(batch, function(){});
+      }, TypeError);
+    });
+  });
   describe('cancel', function() {
     it('should succeed', function() {
       var call = new grpc.Call(channel, 'method', getDeadline(1));
