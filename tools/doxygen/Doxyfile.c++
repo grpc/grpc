@@ -871,6 +871,12 @@ include/grpc++/support/string_ref.h \
 include/grpc++/support/stub_options.h \
 include/grpc++/support/sync_stream.h \
 include/grpc++/support/time.h \
+include/grpc/byte_buffer.h \
+include/grpc/byte_buffer_reader.h \
+include/grpc/compression.h \
+include/grpc/grpc.h \
+include/grpc/grpc_posix.h \
+include/grpc/grpc_security_constants.h \
 include/grpc/impl/codegen/atm.h \
 include/grpc/impl/codegen/atm_gcc_atomic.h \
 include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -889,7 +895,38 @@ include/grpc/impl/codegen/status.h \
 include/grpc/impl/codegen/sync.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
-include/grpc/impl/codegen/sync_windows.h
+include/grpc/impl/codegen/sync_windows.h \
+include/grpc/load_reporting.h \
+include/grpc/slice.h \
+include/grpc/slice_buffer.h \
+include/grpc/status.h \
+include/grpc/support/alloc.h \
+include/grpc/support/atm.h \
+include/grpc/support/atm_gcc_atomic.h \
+include/grpc/support/atm_gcc_sync.h \
+include/grpc/support/atm_windows.h \
+include/grpc/support/avl.h \
+include/grpc/support/cmdline.h \
+include/grpc/support/cpu.h \
+include/grpc/support/histogram.h \
+include/grpc/support/host_port.h \
+include/grpc/support/log.h \
+include/grpc/support/log_windows.h \
+include/grpc/support/port_platform.h \
+include/grpc/support/string_util.h \
+include/grpc/support/subprocess.h \
+include/grpc/support/sync.h \
+include/grpc/support/sync_generic.h \
+include/grpc/support/sync_posix.h \
+include/grpc/support/sync_windows.h \
+include/grpc/support/thd.h \
+include/grpc/support/time.h \
+include/grpc/support/tls.h \
+include/grpc/support/tls_gcc.h \
+include/grpc/support/tls_msvc.h \
+include/grpc/support/tls_pthread.h \
+include/grpc/support/useful.h \
+include/grpc/support/workaround_list.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
