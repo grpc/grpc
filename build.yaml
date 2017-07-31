@@ -739,8 +739,11 @@ filegroups:
   - test/core/util/slice_splitter.c
   - test/core/util/trickle_endpoint.c
   deps:
-  - grpc
   - gpr_test_util
+  uses:
+  - grpc_base
+  - grpc_client_channel
+  - grpc_transport_chttp2
 - name: grpc_trace
   src:
   - src/core/lib/debug/trace.c
@@ -1202,7 +1205,6 @@ libs:
   - grpc
   filegroups:
   - grpc_test_util_base
-  - grpc_base
   vs_project_guid: '{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}'
 - name: grpc_test_util_unsecure
   build: private
@@ -1399,6 +1401,32 @@ libs:
   - grpc++_codegen_base_src
   - grpc++_codegen_proto
   - grpc++_config_proto
+- name: grpc++_test_util_unsecure
+  build: private
+  language: c++
+  headers:
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/util/byte_buffer_proto_helper.h
+  - test/cpp/util/string_ref_helper.h
+  - test/cpp/util/subprocess.h
+  src:
+  - src/proto/grpc/health/v1/health.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/util/byte_buffer_proto_helper.cc
+  - test/cpp/util/string_ref_helper.cc
+  - test/cpp/util/subprocess.cc
+  deps:
+  - grpc++_unsecure
+  - grpc_test_util_unsecure
+  - grpc_unsecure
+  filegroups:
+  - grpc++_codegen_base
+  - grpc++_codegen_base_src
+  - grpc++_codegen_proto
+  - grpc++_config_proto
 - name: grpc++_unsecure
   build: all
   language: c++
@@ -1428,9 +1456,9 @@ libs:
   - test/cpp/microbenchmarks/helpers.cc
   deps:
   - benchmark
-  - grpc++
-  - grpc_test_util
-  - grpc
+  - grpc++_unsecure
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   defaults: benchmark
 - name: grpc_cli_libs
   build: private
@@ -3310,10 +3338,10 @@ targets:
   src:
   - test/cpp/common/alarm_cpp_test.cc
   deps:
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr_test_util
   - gpr
 - name: async_end2end_test
@@ -3350,10 +3378,10 @@ targets:
   deps:
   - grpc_benchmark
   - benchmark
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr_test_util
   - gpr
   args:
@@ -3371,10 +3399,10 @@ targets:
   deps:
   - grpc_benchmark
   - benchmark
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr_test_util
   - gpr
   args:
@@ -3392,10 +3420,10 @@ targets:
   deps:
   - grpc_benchmark
   - benchmark
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr_test_util
   - gpr
   args:
@@ -3413,10 +3441,10 @@ targets:
   deps:
   - grpc_benchmark
   - benchmark
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr_test_util
   - gpr
   args:
@@ -3434,10 +3462,10 @@ targets:
   deps:
   - grpc_benchmark
   - benchmark
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr_test_util
   - gpr
   args:
@@ -3455,10 +3483,10 @@ targets:
   deps:
   - grpc_benchmark
   - benchmark
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr_test_util
   - gpr
   args:
@@ -3476,10 +3504,10 @@ targets:
   deps:
   - grpc_benchmark
   - benchmark
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr_test_util
   - gpr
   args:
@@ -3497,10 +3525,10 @@ targets:
   deps:
   - grpc_benchmark
   - benchmark
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr_test_util
   - gpr
   args:
@@ -3518,10 +3546,10 @@ targets:
   deps:
   - grpc_benchmark
   - benchmark
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr_test_util
   - gpr
   args:
@@ -3543,10 +3571,10 @@ targets:
   deps:
   - grpc_benchmark
   - benchmark
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr_test_util
   - gpr
   args:
@@ -3568,10 +3596,10 @@ targets:
   deps:
   - grpc_benchmark
   - benchmark
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr_test_util
   - gpr
   args:
@@ -3593,10 +3621,10 @@ targets:
   deps:
   - grpc_benchmark
   - benchmark
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr_test_util
   - gpr
   args:
@@ -3618,10 +3646,10 @@ targets:
   deps:
   - grpc_benchmark
   - benchmark
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr_test_util
   - gpr
   args:
@@ -3639,10 +3667,10 @@ targets:
   deps:
   - grpc_benchmark
   - benchmark
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr_test_util
   - gpr
   args:
@@ -4385,11 +4413,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - test/cpp/server/server_builder_test.cc
   deps:
-  - grpc++_test_util
-  - grpc_test_util
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
   - gpr_test_util
-  - grpc++
-  - grpc
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr
 - name: server_context_test_spouse_test
   gtest: true
@@ -4445,11 +4473,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - test/cpp/server/server_request_call_test.cc
   deps:
-  - grpc++_test_util
-  - grpc_test_util
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
   - gpr_test_util
-  - grpc++
-  - grpc
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr
 - name: shutdown_test
   gtest: true
@@ -4525,8 +4553,8 @@ targets:
   src:
   - test/cpp/thread_manager/thread_manager_test.cc
   deps:
-  - grpc++
-  - grpc
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr
   - grpc++_test_config
 - name: thread_stress_test
@@ -4537,10 +4565,10 @@ targets:
   src:
   - test/cpp/end2end/thread_stress_test.cc
   deps:
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr_test_util
   - gpr
   timeout_seconds: 1200
