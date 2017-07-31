@@ -37,7 +37,7 @@ rm -f Podfile.lock
 pod install
 
 set -o pipefail
-XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail)'
+XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail|\bpassed\b)'
 xcodebuild \
     build \
     -workspace *.xcworkspace \

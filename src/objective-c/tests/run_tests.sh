@@ -70,7 +70,7 @@ trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 # element of the pipe fails.
 # TODO(jcanizales): Use xctool instead? Issue #2540.
 set -o pipefail
-XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail)'
+XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail|\bpassed\b)'
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
