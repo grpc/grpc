@@ -172,8 +172,8 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
   grpc_slice_buffer_init(&tmp);
   uint32_t send_flags =
       calld->send_message_batch->payload->send_message.send_message->flags;
-  bool did_compress = grpc_msg_compress(
-      exec_ctx, calld->compression_algorithm, &calld->slices, &tmp);
+  bool did_compress = grpc_msg_compress(exec_ctx, calld->compression_algorithm,
+                                        &calld->slices, &tmp);
   if (did_compress) {
     if (GRPC_TRACER_ON(grpc_compression_trace)) {
       char *algo_name;
