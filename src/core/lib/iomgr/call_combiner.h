@@ -65,7 +65,7 @@ void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
                               grpc_call_combiner* call_combiner,
                               grpc_closure* closure, grpc_error* error,
                               const char* file, int line, const char* reason);
-/// Yeilds the call combiner to the next closure in the queue, if any.
+/// Yields the call combiner to the next closure in the queue, if any.
 void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
                              grpc_call_combiner* call_combiner,
                              const char* file, int line, const char* reason);
@@ -81,7 +81,7 @@ void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
                               grpc_call_combiner* call_combiner,
                               grpc_closure* closure, grpc_error* error,
                               const char* reason);
-/// Yeilds the call combiner to the next closure in the queue, if any.
+/// Yields the call combiner to the next closure in the queue, if any.
 void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
                              grpc_call_combiner* call_combiner,
                              const char* reason);
