@@ -4105,20 +4105,6 @@
   {
     "deps": [
       "boringssl", 
-      "boringssl_asn1_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_asn1_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
       "boringssl_base64_test_lib", 
       "boringssl_test_util"
     ], 
@@ -4126,20 +4112,6 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_base64_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_bio_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_bio_test", 
     "src": [], 
     "third_party": true, 
     "type": "target"
@@ -4217,13 +4189,13 @@
   {
     "deps": [
       "boringssl", 
-      "boringssl_constant_time_test_lib", 
+      "boringssl_crypto_test_lib", 
       "boringssl_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "boringssl_constant_time_test", 
+    "name": "boringssl_crypto_test", 
     "src": [], 
     "third_party": true, 
     "type": "target"
@@ -4252,20 +4224,6 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_spake25519_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util", 
-      "boringssl_x25519_test_lib"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_x25519_test", 
     "src": [], 
     "third_party": true, 
     "type": "target"
@@ -4364,20 +4322,6 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_ecdsa_verify_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_evp_extra_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_evp_extra_test", 
     "src": [], 
     "third_party": true, 
     "type": "target"
@@ -6584,33 +6528,7 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "boringssl_asn1_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
     "name": "boringssl_base64_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_bio_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
@@ -6688,7 +6606,7 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "boringssl_constant_time_test_lib", 
+    "name": "boringssl_crypto_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
@@ -6715,19 +6633,6 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_spake25519_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_x25519_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
@@ -6819,19 +6724,6 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_ecdsa_verify_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_evp_extra_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
