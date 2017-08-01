@@ -61,6 +61,7 @@ void ChannelData::sweep(void)
 {
     if (m_pChannel)
     {
+        grpc_channel_destroy(m_pChannel);
         m_pChannel = nullptr;
     }
 }
