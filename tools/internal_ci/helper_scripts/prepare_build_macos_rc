@@ -27,6 +27,11 @@ ulimit -n 10000
 # show current limits
 ulimit -a
 
+# Add GCP credentials for BQ access
+# pip does not install google-api-python-client properly, so use easy_install
+sudo easy_install --upgrade google-api-python-client
+export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
+gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
 
 # required to build protobuf
 brew install gflags

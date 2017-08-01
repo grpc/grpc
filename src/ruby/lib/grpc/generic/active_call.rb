@@ -480,7 +480,20 @@ module GRPC
     def bidi_streamer(requests, metadata: {}, &blk)
       raise_error_if_already_executed
       # Metadata might have already been sent if this is an operation view
-      merge_metadata_and_send_if_not_already_sent(metadata)
+      begin
+        merge_metadata_and_send_if_not_already_sent(metadata)
+      rescue GRPC::Core::CallError => e
+        batch_result = @call.run_batch(RECV_STATUS_ON_CLIENT => nil)
+        set_input_stream_done
+        set_output_stream_done
+        attach_status_results_and_complete_call(batch_result)
+        raise e
+      rescue => e
+        set_input_stream_done
+        set_output_stream_done
+        raise e
+      end
+
       bd = BidiCall.new(@call,
                         @marshal,
                         @unmarshal,
