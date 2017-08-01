@@ -2507,10 +2507,10 @@
     "deps": [
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util"
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -2565,11 +2565,11 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
       "grpc_benchmark", 
-      "grpc_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -2586,11 +2586,11 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
       "grpc_benchmark", 
-      "grpc_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -2607,11 +2607,11 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
       "grpc_benchmark", 
-      "grpc_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -2628,11 +2628,11 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
       "grpc_benchmark", 
-      "grpc_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -2649,11 +2649,11 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
       "grpc_benchmark", 
-      "grpc_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -2670,11 +2670,11 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
       "grpc_benchmark", 
-      "grpc_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -2691,11 +2691,11 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
       "grpc_benchmark", 
-      "grpc_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -2712,11 +2712,11 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
       "grpc_benchmark", 
-      "grpc_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -2733,11 +2733,11 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
       "grpc_benchmark", 
-      "grpc_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -2754,11 +2754,11 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
       "grpc_benchmark", 
-      "grpc_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -2775,11 +2775,11 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
       "grpc_benchmark", 
-      "grpc_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -2796,11 +2796,11 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
       "grpc_benchmark", 
-      "grpc_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -2817,11 +2817,11 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
       "grpc_benchmark", 
-      "grpc_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -2838,11 +2838,11 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
       "grpc_benchmark", 
-      "grpc_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -3888,10 +3888,10 @@
     "deps": [
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util"
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [
       "src/proto/grpc/testing/echo.grpc.pb.h", 
@@ -3971,10 +3971,10 @@
     "deps": [
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util"
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [
       "src/proto/grpc/testing/echo.grpc.pb.h", 
@@ -4098,9 +4098,9 @@
   {
     "deps": [
       "gpr", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_config"
+      "grpc++_test_config", 
+      "grpc++_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -4116,10 +4116,10 @@
     "deps": [
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util"
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -5876,7 +5876,6 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
-      "grpc_base", 
       "grpc_test_util_base"
     ], 
     "headers": [
@@ -5902,7 +5901,6 @@
     "deps": [
       "gpr", 
       "gpr_test_util", 
-      "grpc", 
       "grpc_test_util_base", 
       "grpc_unsecure"
     ], 
@@ -6177,6 +6175,50 @@
   }, 
   {
     "deps": [
+      "grpc++_codegen_base", 
+      "grpc++_codegen_base_src", 
+      "grpc++_codegen_proto", 
+      "grpc++_config_proto", 
+      "grpc++_unsecure", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [
+      "src/proto/grpc/health/v1/health.grpc.pb.h", 
+      "src/proto/grpc/health/v1/health.pb.h", 
+      "src/proto/grpc/health/v1/health_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h", 
+      "src/proto/grpc/testing/duplicate/echo_duplicate.pb.h", 
+      "src/proto/grpc/testing/duplicate/echo_duplicate_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/echo.grpc.pb.h", 
+      "src/proto/grpc/testing/echo.pb.h", 
+      "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_messages.pb.h", 
+      "src/proto/grpc/testing/echo_messages_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
+      "test/cpp/end2end/test_service_impl.h", 
+      "test/cpp/util/byte_buffer_proto_helper.h", 
+      "test/cpp/util/string_ref_helper.h", 
+      "test/cpp/util/subprocess.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc++_test_util_unsecure", 
+    "src": [
+      "test/cpp/end2end/test_service_impl.cc", 
+      "test/cpp/end2end/test_service_impl.h", 
+      "test/cpp/util/byte_buffer_proto_helper.cc", 
+      "test/cpp/util/byte_buffer_proto_helper.h", 
+      "test/cpp/util/string_ref_helper.cc", 
+      "test/cpp/util/string_ref_helper.h", 
+      "test/cpp/util/subprocess.cc", 
+      "test/cpp/util/subprocess.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
       "gpr", 
       "grpc++_base_unsecure", 
       "grpc++_codegen_base", 
@@ -6198,9 +6240,9 @@
   {
     "deps": [
       "benchmark", 
-      "grpc", 
-      "grpc++", 
-      "grpc_test_util"
+      "grpc++_unsecure", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [
       "test/cpp/microbenchmarks/fullstack_context_mutators.h", 
@@ -8635,8 +8677,11 @@
   }, 
   {
     "deps": [
+      "gpr", 
       "gpr_test_util", 
-      "grpc"
+      "grpc_base", 
+      "grpc_client_channel", 
+      "grpc_transport_chttp2"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h", 
