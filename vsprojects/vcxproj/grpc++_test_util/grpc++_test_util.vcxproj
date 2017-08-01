@@ -198,8 +198,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\proto_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\thrift_serializer.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\thrift_utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\end2end\test_service_impl.h" />
@@ -263,6 +261,9 @@
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_test_util\grpc_test_util.vcxproj">
       <Project>{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc\grpc.vcxproj">
+      <Project>{29D16885-7228-4C31-81ED-5F9187C7F2A9}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

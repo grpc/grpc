@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -39,6 +24,8 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "rb_byte_buffer.h"
 #include "rb_call_credentials.h"
@@ -383,7 +370,7 @@ static VALUE grpc_rb_call_set_credentials(VALUE self, VALUE credentials) {
    to fill grpc_metadata_array.
 
    it's capacity should have been computed via a prior call to
-   grpc_rb_md_ary_fill_hash_cb
+   grpc_rb_md_ary_capacity_hash_cb
 */
 static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
   grpc_metadata_array *md_ary = NULL;
@@ -391,7 +378,7 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
   long i;
   grpc_slice key_slice;
   grpc_slice value_slice;
-  char *tmp_str;
+  char *tmp_str = NULL;
 
   if (TYPE(key) == T_SYMBOL) {
     key_slice = grpc_slice_from_static_string(rb_id2name(SYM2ID(key)));
@@ -401,6 +388,7 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
   } else {
     rb_raise(rb_eTypeError,
              "grpc_rb_md_ary_fill_hash_cb: bad type for key parameter");
+    return ST_STOP;
   }
 
   if (!grpc_header_key_is_legal(key_slice)) {
@@ -428,6 +416,7 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
                  tmp_str);
         return ST_STOP;
       }
+      GPR_ASSERT(md_ary->count < md_ary->capacity);
       md_ary->metadata[md_ary->count].key = key_slice;
       md_ary->metadata[md_ary->count].value = value_slice;
       md_ary->count += 1;
@@ -443,6 +432,7 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
                tmp_str);
       return ST_STOP;
     }
+    GPR_ASSERT(md_ary->count < md_ary->capacity);
     md_ary->metadata[md_ary->count].key = key_slice;
     md_ary->metadata[md_ary->count].value = value_slice;
     md_ary->count += 1;
@@ -450,7 +440,6 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
     rb_raise(rb_eArgError, "Header values must be of type string or array");
     return ST_STOP;
   }
-
   return ST_CONTINUE;
 }
 
@@ -473,6 +462,7 @@ static int grpc_rb_md_ary_capacity_hash_cb(VALUE key, VALUE val,
   } else {
     md_ary->capacity += 1;
   }
+
   return ST_CONTINUE;
 }
 
@@ -495,7 +485,7 @@ void grpc_rb_md_ary_convert(VALUE md_ary_hash, grpc_metadata_array *md_ary) {
   md_ary_obj =
       TypedData_Wrap_Struct(grpc_rb_cMdAry, &grpc_rb_md_ary_data_type, md_ary);
   rb_hash_foreach(md_ary_hash, grpc_rb_md_ary_capacity_hash_cb, md_ary_obj);
-  md_ary->metadata = gpr_malloc(md_ary->capacity * sizeof(grpc_metadata));
+  md_ary->metadata = gpr_zalloc(md_ary->capacity * sizeof(grpc_metadata));
   rb_hash_foreach(md_ary_hash, grpc_rb_md_ary_fill_hash_cb, md_ary_obj);
 }
 
@@ -626,13 +616,25 @@ static void grpc_run_batch_stack_init(run_batch_stack *st,
   st->write_flag = write_flag;
 }
 
+void grpc_rb_metadata_array_destroy_including_entries(
+    grpc_metadata_array *array) {
+  size_t i;
+  if (array->metadata) {
+    for (i = 0; i < array->count; i++) {
+      grpc_slice_unref(array->metadata[i].key);
+      grpc_slice_unref(array->metadata[i].value);
+    }
+  }
+  grpc_metadata_array_destroy(array);
+}
+
 /* grpc_run_batch_stack_cleanup ensures the run_batch_stack is properly
  * cleaned up */
 static void grpc_run_batch_stack_cleanup(run_batch_stack *st) {
   size_t i = 0;
 
-  grpc_metadata_array_destroy(&st->send_metadata);
-  grpc_metadata_array_destroy(&st->send_trailing_metadata);
+  grpc_rb_metadata_array_destroy_including_entries(&st->send_metadata);
+  grpc_rb_metadata_array_destroy_including_entries(&st->send_trailing_metadata);
   grpc_metadata_array_destroy(&st->recv_metadata);
   grpc_metadata_array_destroy(&st->recv_trailing_metadata);
 
@@ -673,8 +675,6 @@ static void grpc_run_batch_stack_fill_ops(run_batch_stack *st, VALUE ops_hash) {
     st->ops[st->op_num].flags = 0;
     switch (NUM2INT(this_op)) {
       case GRPC_OP_SEND_INITIAL_METADATA:
-        /* N.B. later there is no need to explicitly delete the metadata keys
-         * and values, they are references to data in ruby objects. */
         grpc_rb_md_ary_convert(this_value, &st->send_metadata);
         st->ops[st->op_num].data.send_initial_metadata.count =
             st->send_metadata.count;
@@ -690,8 +690,6 @@ static void grpc_run_batch_stack_fill_ops(run_batch_stack *st, VALUE ops_hash) {
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
-        /* N.B. later there is no need to explicitly delete the metadata keys
-         * and values, they are references to data in ruby objects. */
         grpc_rb_op_update_status_from_server(
             &st->ops[st->op_num], &st->send_trailing_metadata,
             &st->send_status_details, this_value);

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -223,38 +208,45 @@ class TransportStreamOpBatch {
 /// Represents channel data.
 class ChannelData {
  public:
+  ChannelData() {}
   virtual ~ChannelData() {}
 
-  /// Initializes the call data.
-  virtual grpc_error *Init(grpc_exec_ctx *exec_ctx,
+  // TODO(roth): Come up with a more C++-like API for the channel element.
+
+  /// Initializes the channel data.
+  virtual grpc_error *Init(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
                            grpc_channel_element_args *args) {
     return GRPC_ERROR_NONE;
   }
 
-  // TODO(roth): Find a way to avoid passing elem into these methods.
+  // Called before destruction.
+  virtual void Destroy(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem) {}
 
   virtual void StartTransportOp(grpc_exec_ctx *exec_ctx,
                                 grpc_channel_element *elem, TransportOp *op);
 
   virtual void GetInfo(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
                        const grpc_channel_info *channel_info);
-
- protected:
-  ChannelData() {}
 };
 
 /// Represents call data.
 class CallData {
  public:
+  CallData() {}
   virtual ~CallData() {}
 
+  // TODO(roth): Come up with a more C++-like API for the call element.
+
   /// Initializes the call data.
-  virtual grpc_error *Init(grpc_exec_ctx *exec_ctx, ChannelData *channel_data,
+  virtual grpc_error *Init(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                            const grpc_call_element_args *args) {
     return GRPC_ERROR_NONE;
   }
 
-  // TODO(roth): Find a way to avoid passing elem into these methods.
+  // Called before destruction.
+  virtual void Destroy(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                       const grpc_call_final_info *final_info,
+                       grpc_closure *then_call_closure) {}
 
   /// Starts a new stream operation.
   virtual void StartTransportStreamOpBatch(grpc_exec_ctx *exec_ctx,
@@ -268,9 +260,6 @@ class CallData {
 
   /// Gets the peer name.
   virtual char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
-
- protected:
-  CallData() {}
 };
 
 namespace internal {
@@ -286,19 +275,24 @@ class ChannelFilter final {
   static grpc_error *InitChannelElement(grpc_exec_ctx *exec_ctx,
                                         grpc_channel_element *elem,
                                         grpc_channel_element_args *args) {
+    // Construct the object in the already-allocated memory.
     ChannelDataType *channel_data = new (elem->channel_data) ChannelDataType();
-    return channel_data->Init(exec_ctx, args);
+    return channel_data->Init(exec_ctx, elem, args);
   }
 
   static void DestroyChannelElement(grpc_exec_ctx *exec_ctx,
                                     grpc_channel_element *elem) {
-    reinterpret_cast<ChannelDataType *>(elem->channel_data)->~ChannelDataType();
+    ChannelDataType *channel_data =
+        reinterpret_cast<ChannelDataType *>(elem->channel_data);
+    channel_data->Destroy(exec_ctx, elem);
+    channel_data->~ChannelDataType();
   }
 
   static void StartTransportOp(grpc_exec_ctx *exec_ctx,
                                grpc_channel_element *elem,
                                grpc_transport_op *op) {
-    ChannelDataType *channel_data = (ChannelDataType *)elem->channel_data;
+    ChannelDataType *channel_data =
+        reinterpret_cast<ChannelDataType *>(elem->channel_data);
     TransportOp op_wrapper(op);
     channel_data->StartTransportOp(exec_ctx, elem, &op_wrapper);
   }
@@ -306,7 +300,8 @@ class ChannelFilter final {
   static void GetChannelInfo(grpc_exec_ctx *exec_ctx,
                              grpc_channel_element *elem,
                              const grpc_channel_info *channel_info) {
-    ChannelDataType *channel_data = (ChannelDataType *)elem->channel_data;
+    ChannelDataType *channel_data =
+        reinterpret_cast<ChannelDataType *>(elem->channel_data);
     channel_data->GetInfo(exec_ctx, elem, channel_info);
   }
 
@@ -315,24 +310,24 @@ class ChannelFilter final {
   static grpc_error *InitCallElement(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      const grpc_call_element_args *args) {
-    ChannelDataType *channel_data = (ChannelDataType *)elem->channel_data;
     // Construct the object in the already-allocated memory.
     CallDataType *call_data = new (elem->call_data) CallDataType();
-    return call_data->Init(exec_ctx, channel_data, args);
+    return call_data->Init(exec_ctx, elem, args);
   }
 
   static void DestroyCallElement(grpc_exec_ctx *exec_ctx,
                                  grpc_call_element *elem,
                                  const grpc_call_final_info *final_info,
                                  grpc_closure *then_call_closure) {
-    GPR_ASSERT(then_call_closure == NULL);
-    reinterpret_cast<CallDataType *>(elem->call_data)->~CallDataType();
+    CallDataType *call_data = reinterpret_cast<CallDataType *>(elem->call_data);
+    call_data->Destroy(exec_ctx, elem, final_info, then_call_closure);
+    call_data->~CallDataType();
   }
 
   static void StartTransportStreamOpBatch(grpc_exec_ctx *exec_ctx,
                                           grpc_call_element *elem,
                                           grpc_transport_stream_op_batch *op) {
-    CallDataType *call_data = (CallDataType *)elem->call_data;
+    CallDataType *call_data = reinterpret_cast<CallDataType *>(elem->call_data);
     TransportStreamOpBatch op_wrapper(op);
     call_data->StartTransportStreamOpBatch(exec_ctx, elem, &op_wrapper);
   }
@@ -340,12 +335,12 @@ class ChannelFilter final {
   static void SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      grpc_polling_entity *pollent) {
-    CallDataType *call_data = (CallDataType *)elem->call_data;
+    CallDataType *call_data = reinterpret_cast<CallDataType *>(elem->call_data);
     call_data->SetPollsetOrPollsetSet(exec_ctx, elem, pollent);
   }
 
   static char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
-    CallDataType *call_data = (CallDataType *)elem->call_data;
+    CallDataType *call_data = reinterpret_cast<CallDataType *>(elem->call_data);
     return call_data->GetPeer(exec_ctx, elem);
   }
 };

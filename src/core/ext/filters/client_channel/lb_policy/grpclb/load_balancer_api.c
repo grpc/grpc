@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -37,55 +22,105 @@
 
 #include <grpc/support/alloc.h>
 
+/* invoked once for every Server in ServerList */
+static bool count_serverlist(pb_istream_t *stream, const pb_field_t *field,
+                             void **arg) {
+  grpc_grpclb_serverlist *sl = *arg;
+  grpc_grpclb_server server;
+  if (!pb_decode(stream, grpc_lb_v1_Server_fields, &server)) {
+    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(stream));
+    return false;
+  }
+  ++sl->num_servers;
+  return true;
+}
+
 typedef struct decode_serverlist_arg {
-  /* The first pass counts the number of servers in the server list. The second
-   * one allocates and decodes. */
-  bool first_pass;
   /* The decoding callback is invoked once per server in serverlist. Remember
    * which index of the serverlist are we currently decoding */
   size_t decoding_idx;
-  /* Populated after the first pass. Number of server in the input serverlist */
-  size_t num_servers;
   /* The decoded serverlist */
-  grpc_grpclb_server **servers;
+  grpc_grpclb_serverlist *serverlist;
 } decode_serverlist_arg;
 
 /* invoked once for every Server in ServerList */
 static bool decode_serverlist(pb_istream_t *stream, const pb_field_t *field,
                               void **arg) {
   decode_serverlist_arg *dec_arg = *arg;
-  if (dec_arg->first_pass) { /* count how many server do we have */
-    grpc_grpclb_server server;
-    if (!pb_decode(stream, grpc_lb_v1_Server_fields, &server)) {
-      gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(stream));
-      return false;
-    }
-    dec_arg->num_servers++;
-  } else { /* second pass. Actually decode. */
-    grpc_grpclb_server *server = gpr_zalloc(sizeof(grpc_grpclb_server));
-    GPR_ASSERT(dec_arg->num_servers > 0);
-    if (dec_arg->decoding_idx == 0) { /* first iteration of second pass */
-      dec_arg->servers =
-          gpr_malloc(sizeof(grpc_grpclb_server *) * dec_arg->num_servers);
-    }
-    if (!pb_decode(stream, grpc_lb_v1_Server_fields, server)) {
-      gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(stream));
-      return false;
-    }
-    dec_arg->servers[dec_arg->decoding_idx++] = server;
+  GPR_ASSERT(dec_arg->serverlist->num_servers >= dec_arg->decoding_idx);
+  grpc_grpclb_server *server = gpr_zalloc(sizeof(grpc_grpclb_server));
+  if (!pb_decode(stream, grpc_lb_v1_Server_fields, server)) {
+    gpr_free(server);
+    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(stream));
+    return false;
   }
-
+  dec_arg->serverlist->servers[dec_arg->decoding_idx++] = server;
   return true;
 }
 
 grpc_grpclb_request *grpc_grpclb_request_create(const char *lb_service_name) {
   grpc_grpclb_request *req = gpr_malloc(sizeof(grpc_grpclb_request));
-
-  req->has_client_stats = 0; /* TODO(dgq): add support for stats once defined */
-  req->has_initial_request = 1;
-  req->initial_request.has_name = 1;
+  req->has_client_stats = false;
+  req->has_initial_request = true;
+  req->initial_request.has_name = true;
   strncpy(req->initial_request.name, lb_service_name,
           GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH);
+  return req;
+}
+
+static void populate_timestamp(gpr_timespec timestamp,
+                               struct _grpc_lb_v1_Timestamp *timestamp_pb) {
+  timestamp_pb->has_seconds = true;
+  timestamp_pb->seconds = timestamp.tv_sec;
+  timestamp_pb->has_nanos = true;
+  timestamp_pb->nanos = timestamp.tv_nsec;
+}
+
+static bool encode_string(pb_ostream_t *stream, const pb_field_t *field,
+                          void *const *arg) {
+  char *str = *arg;
+  if (!pb_encode_tag_for_field(stream, field)) return false;
+  return pb_encode_string(stream, (uint8_t *)str, strlen(str));
+}
+
+static bool encode_drops(pb_ostream_t *stream, const pb_field_t *field,
+                         void *const *arg) {
+  grpc_grpclb_dropped_call_counts *drop_entries = *arg;
+  if (drop_entries == NULL) return true;
+  for (size_t i = 0; i < drop_entries->num_entries; ++i) {
+    if (!pb_encode_tag_for_field(stream, field)) return false;
+    grpc_lb_v1_ClientStatsPerToken drop_message;
+    drop_message.load_balance_token.funcs.encode = encode_string;
+    drop_message.load_balance_token.arg = drop_entries->token_counts[i].token;
+    drop_message.has_num_calls = true;
+    drop_message.num_calls = drop_entries->token_counts[i].count;
+    if (!pb_encode_submessage(stream, grpc_lb_v1_ClientStatsPerToken_fields,
+                              &drop_message)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+grpc_grpclb_request *grpc_grpclb_load_report_request_create_locked(
+    grpc_grpclb_client_stats *client_stats) {
+  grpc_grpclb_request *req = gpr_zalloc(sizeof(grpc_grpclb_request));
+  req->has_client_stats = true;
+  req->client_stats.has_timestamp = true;
+  populate_timestamp(gpr_now(GPR_CLOCK_REALTIME), &req->client_stats.timestamp);
+  req->client_stats.has_num_calls_started = true;
+  req->client_stats.has_num_calls_finished = true;
+  req->client_stats.has_num_calls_finished_with_client_failed_to_send = true;
+  req->client_stats.has_num_calls_finished_with_client_failed_to_send = true;
+  req->client_stats.has_num_calls_finished_known_received = true;
+  req->client_stats.calls_finished_with_drop.funcs.encode = encode_drops;
+  grpc_grpclb_client_stats_get_locked(
+      client_stats, &req->client_stats.num_calls_started,
+      &req->client_stats.num_calls_finished,
+      &req->client_stats.num_calls_finished_with_client_failed_to_send,
+      &req->client_stats.num_calls_finished_known_received,
+      (grpc_grpclb_dropped_call_counts **)&req->client_stats
+          .calls_finished_with_drop.arg);
   return req;
 }
 
@@ -107,6 +142,11 @@ grpc_slice grpc_grpclb_request_encode(const grpc_grpclb_request *request) {
 }
 
 void grpc_grpclb_request_destroy(grpc_grpclb_request *request) {
+  if (request->has_client_stats) {
+    grpc_grpclb_dropped_call_counts *drop_entries =
+        request->client_stats.calls_finished_with_drop.arg;
+    grpc_grpclb_dropped_call_counts_destroy(drop_entries);
+  }
   gpr_free(request);
 }
 
@@ -122,6 +162,9 @@ grpc_grpclb_initial_response *grpc_grpclb_initial_response_parse(
     gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
     return NULL;
   }
+
+  if (!res.has_initial_response) return NULL;
+
   grpc_grpclb_initial_response *initial_res =
       gpr_malloc(sizeof(grpc_grpclb_initial_response));
   memcpy(initial_res, &res.initial_response,
@@ -132,36 +175,38 @@ grpc_grpclb_initial_response *grpc_grpclb_initial_response_parse(
 
 grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
     grpc_slice encoded_grpc_grpclb_response) {
-  bool status;
-  decode_serverlist_arg arg;
   pb_istream_t stream =
       pb_istream_from_buffer(GRPC_SLICE_START_PTR(encoded_grpc_grpclb_response),
                              GRPC_SLICE_LENGTH(encoded_grpc_grpclb_response));
   pb_istream_t stream_at_start = stream;
+  grpc_grpclb_serverlist *sl = gpr_zalloc(sizeof(grpc_grpclb_serverlist));
   grpc_grpclb_response res;
   memset(&res, 0, sizeof(grpc_grpclb_response));
-  memset(&arg, 0, sizeof(decode_serverlist_arg));
-
-  res.server_list.servers.funcs.decode = decode_serverlist;
-  res.server_list.servers.arg = &arg;
-  arg.first_pass = true;
-  status = pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, &res);
+  // First pass: count number of servers.
+  res.server_list.servers.funcs.decode = count_serverlist;
+  res.server_list.servers.arg = sl;
+  bool status = pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, &res);
   if (!status) {
+    gpr_free(sl);
     gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
     return NULL;
   }
-
-  arg.first_pass = false;
-  status =
-      pb_decode(&stream_at_start, grpc_lb_v1_LoadBalanceResponse_fields, &res);
-  if (!status) {
-    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
-    return NULL;
+  // Second pass: populate servers.
+  if (sl->num_servers > 0) {
+    sl->servers = gpr_zalloc(sizeof(grpc_grpclb_server *) * sl->num_servers);
+    decode_serverlist_arg decode_arg;
+    memset(&decode_arg, 0, sizeof(decode_arg));
+    decode_arg.serverlist = sl;
+    res.server_list.servers.funcs.decode = decode_serverlist;
+    res.server_list.servers.arg = &decode_arg;
+    status = pb_decode(&stream_at_start, grpc_lb_v1_LoadBalanceResponse_fields,
+                       &res);
+    if (!status) {
+      grpc_grpclb_destroy_serverlist(sl);
+      gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
+      return NULL;
+    }
   }
-
-  grpc_grpclb_serverlist *sl = gpr_zalloc(sizeof(grpc_grpclb_serverlist));
-  sl->num_servers = arg.num_servers;
-  sl->servers = arg.servers;
   if (res.server_list.has_expiration_interval) {
     sl->expiration_interval = res.server_list.expiration_interval;
   }
@@ -195,7 +240,7 @@ grpc_grpclb_serverlist *grpc_grpclb_serverlist_copy(
 
 bool grpc_grpclb_serverlist_equals(const grpc_grpclb_serverlist *lhs,
                                    const grpc_grpclb_serverlist *rhs) {
-  if ((lhs == NULL) || (rhs == NULL)) {
+  if (lhs == NULL || rhs == NULL) {
     return false;
   }
   if (lhs->num_servers != rhs->num_servers) {
@@ -241,6 +286,15 @@ int grpc_grpclb_duration_compare(const grpc_grpclb_duration *lhs,
   }
 
   return 0;
+}
+
+gpr_timespec grpc_grpclb_duration_to_timespec(
+    grpc_grpclb_duration *duration_pb) {
+  gpr_timespec duration;
+  duration.tv_sec = duration_pb->has_seconds ? duration_pb->seconds : 0;
+  duration.tv_nsec = duration_pb->has_nanos ? duration_pb->nanos : 0;
+  duration.clock_type = GPR_TIMESPAN;
+  return duration;
 }
 
 void grpc_grpclb_initial_response_destroy(

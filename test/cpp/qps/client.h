@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -46,6 +31,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/payloads.pb.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 
@@ -53,6 +39,7 @@
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/create_test_channel.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 namespace grpc {
 namespace testing {
@@ -102,9 +89,7 @@ class ClientRequestCreator<ByteBuffer> {
     if (payload_config.has_bytebuf_params()) {
       std::unique_ptr<char[]> buf(
           new char[payload_config.bytebuf_params().req_size()]);
-      grpc_slice s = grpc_slice_from_copied_buffer(
-          buf.get(), payload_config.bytebuf_params().req_size());
-      Slice slice(s, Slice::STEAL_REF);
+      Slice slice(buf.get(), payload_config.bytebuf_params().req_size());
       *req = ByteBuffer(&slice, 1);
     } else {
       GPR_ASSERT(false);  // not appropriate for this specialization
@@ -150,7 +135,8 @@ class Client {
   Client()
       : timer_(new UsageTimer),
         interarrival_timer_(),
-        started_requests_(false) {
+        started_requests_(false),
+        last_reset_poll_count_(0) {
     gpr_event_init(&start_requests_);
   }
   virtual ~Client() {}
@@ -162,6 +148,8 @@ class Client {
 
     MaybeStartRequests();
 
+    int cur_poll_count = GetPollCount();
+    int poll_count = cur_poll_count - last_reset_poll_count_;
     if (reset) {
       std::vector<Histogram> to_merge(threads_.size());
       std::vector<StatusHistogram> to_merge_status(threads_.size());
@@ -176,6 +164,7 @@ class Client {
         MergeStatusHistogram(to_merge_status[i], &statuses);
       }
       timer_result = timer->Mark();
+      last_reset_poll_count_ = cur_poll_count;
     } else {
       // merge snapshots of each thread histogram
       for (size_t i = 0; i < threads_.size(); i++) {
@@ -195,6 +184,7 @@ class Client {
     stats.set_time_elapsed(timer_result.wall);
     stats.set_time_system(timer_result.system);
     stats.set_time_user(timer_result.user);
+    stats.set_cq_poll_count(poll_count);
     return stats;
   }
 
@@ -207,6 +197,11 @@ class Client {
     while (threads_remaining_ != 0) {
       threads_complete_.wait(g);
     }
+  }
+
+  virtual int GetPollCount() {
+    // For sync client.
+    return 0;
   }
 
  protected:
@@ -351,6 +346,8 @@ class Client {
   gpr_event start_requests_;
   bool started_requests_;
 
+  int last_reset_poll_count_;
+
   void MaybeStartRequests() {
     if (!started_requests_) {
       started_requests_ = true;
@@ -409,9 +406,18 @@ class ClientImpl : public Client {
       ChannelArguments args;
       args.SetInt("shard_to_ensure_no_subchannel_merges", shard);
       set_channel_args(config, &args);
+
+      grpc::string type;
+      if (config.has_security_params() &&
+          config.security_params().cred_type().empty()) {
+        type = kTlsCredentialsType;
+      } else {
+        type = config.security_params().cred_type();
+      }
+
       channel_ = CreateTestChannel(
-          target, config.security_params().server_host_override(),
-          config.has_security_params(), !config.security_params().use_test_ca(),
+          target, type, config.security_params().server_host_override(),
+          !config.security_params().use_test_ca(),
           std::shared_ptr<CallCredentials>(), args);
       gpr_log(GPR_INFO, "Connecting to %s", target.c_str());
       GPR_ASSERT(channel_->WaitForConnected(
@@ -443,11 +449,8 @@ class ClientImpl : public Client {
       create_stub_;
 };
 
-std::unique_ptr<Client> CreateSynchronousUnaryClient(const ClientConfig& args);
-std::unique_ptr<Client> CreateSynchronousStreamingClient(
-    const ClientConfig& args);
-std::unique_ptr<Client> CreateAsyncUnaryClient(const ClientConfig& args);
-std::unique_ptr<Client> CreateAsyncStreamingClient(const ClientConfig& args);
+std::unique_ptr<Client> CreateSynchronousClient(const ClientConfig& args);
+std::unique_ptr<Client> CreateAsyncClient(const ClientConfig& args);
 std::unique_ptr<Client> CreateGenericAsyncStreamingClient(
     const ClientConfig& args);
 

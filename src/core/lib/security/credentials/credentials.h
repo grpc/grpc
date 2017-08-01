@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -153,48 +138,39 @@ grpc_channel_credentials *grpc_channel_credentials_from_arg(
 grpc_channel_credentials *grpc_channel_credentials_find_in_args(
     const grpc_channel_args *args);
 
-/* --- grpc_credentials_md. --- */
+/* --- grpc_credentials_mdelem_array. --- */
 
 typedef struct {
-  grpc_slice key;
-  grpc_slice value;
-} grpc_credentials_md;
+  grpc_mdelem *md;
+  size_t size;
+} grpc_credentials_mdelem_array;
 
-typedef struct {
-  grpc_credentials_md *entries;
-  size_t num_entries;
-  size_t allocated;
-  gpr_refcount refcount;
-} grpc_credentials_md_store;
+/// Takes a new ref to \a md.
+void grpc_credentials_mdelem_array_add(grpc_credentials_mdelem_array *list,
+                                       grpc_mdelem md);
 
-grpc_credentials_md_store *grpc_credentials_md_store_create(
-    size_t initial_capacity);
+/// Appends all elements from \a src to \a dst, taking a new ref to each one.
+void grpc_credentials_mdelem_array_append(grpc_credentials_mdelem_array *dst,
+                                          grpc_credentials_mdelem_array *src);
 
-/* Will ref key and value. */
-void grpc_credentials_md_store_add(grpc_credentials_md_store *store,
-                                   grpc_slice key, grpc_slice value);
-void grpc_credentials_md_store_add_cstrings(grpc_credentials_md_store *store,
-                                            const char *key, const char *value);
-grpc_credentials_md_store *grpc_credentials_md_store_ref(
-    grpc_credentials_md_store *store);
-void grpc_credentials_md_store_unref(grpc_exec_ctx *exec_ctx,
-                                     grpc_credentials_md_store *store);
+void grpc_credentials_mdelem_array_destroy(grpc_exec_ctx *exec_ctx,
+                                           grpc_credentials_mdelem_array *list);
 
 /* --- grpc_call_credentials. --- */
 
-/* error_details must be NULL if status is GRPC_CREDENTIALS_OK. */
-typedef void (*grpc_credentials_metadata_cb)(
-    grpc_exec_ctx *exec_ctx, void *user_data, grpc_credentials_md *md_elems,
-    size_t num_md, grpc_credentials_status status, const char *error_details);
-
 typedef struct {
   void (*destruct)(grpc_exec_ctx *exec_ctx, grpc_call_credentials *c);
-  void (*get_request_metadata)(grpc_exec_ctx *exec_ctx,
+  bool (*get_request_metadata)(grpc_exec_ctx *exec_ctx,
                                grpc_call_credentials *c,
                                grpc_polling_entity *pollent,
                                grpc_auth_metadata_context context,
-                               grpc_credentials_metadata_cb cb,
-                               void *user_data);
+                               grpc_credentials_mdelem_array *md_array,
+                               grpc_closure *on_request_metadata,
+                               grpc_error **error);
+  void (*cancel_get_request_metadata)(grpc_exec_ctx *exec_ctx,
+                                      grpc_call_credentials *c,
+                                      grpc_credentials_mdelem_array *md_array,
+                                      grpc_error *error);
 } grpc_call_credentials_vtable;
 
 struct grpc_call_credentials {
@@ -206,15 +182,29 @@ struct grpc_call_credentials {
 grpc_call_credentials *grpc_call_credentials_ref(grpc_call_credentials *creds);
 void grpc_call_credentials_unref(grpc_exec_ctx *exec_ctx,
                                  grpc_call_credentials *creds);
-void grpc_call_credentials_get_request_metadata(
+
+/// Returns true if completed synchronously, in which case \a error will
+/// be set to indicate the result.  Otherwise, \a on_request_metadata will
+/// be invoked asynchronously when complete.  \a md_array will be populated
+/// with the resulting metadata once complete.
+bool grpc_call_credentials_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
     grpc_polling_entity *pollent, grpc_auth_metadata_context context,
-    grpc_credentials_metadata_cb cb, void *user_data);
+    grpc_credentials_mdelem_array *md_array, grpc_closure *on_request_metadata,
+    grpc_error **error);
+
+/// Cancels a pending asynchronous operation started by
+/// grpc_call_credentials_get_request_metadata() with the corresponding
+/// value of \a md_array.
+void grpc_call_credentials_cancel_get_request_metadata(
+    grpc_exec_ctx *exec_ctx, grpc_call_credentials *c,
+    grpc_credentials_mdelem_array *md_array, grpc_error *error);
 
 /* Metadata-only credentials with the specified key and value where
    asynchronicity can be simulated for testing. */
 grpc_call_credentials *grpc_md_only_test_credentials_create(
-    const char *md_key, const char *md_value, int is_async);
+    grpc_exec_ctx *exec_ctx, const char *md_key, const char *md_value,
+    bool is_async);
 
 /* --- grpc_server_credentials. --- */
 
@@ -253,14 +243,11 @@ grpc_server_credentials *grpc_find_server_credentials_in_args(
 
 typedef struct {
   grpc_call_credentials *creds;
-  grpc_credentials_metadata_cb cb;
   grpc_http_response response;
-  void *user_data;
 } grpc_credentials_metadata_request;
 
 grpc_credentials_metadata_request *grpc_credentials_metadata_request_create(
-    grpc_call_credentials *creds, grpc_credentials_metadata_cb cb,
-    void *user_data);
+    grpc_call_credentials *creds);
 
 void grpc_credentials_metadata_request_destroy(
     grpc_exec_ctx *exec_ctx, grpc_credentials_metadata_request *r);

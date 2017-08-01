@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
- * All rights reserved.
+ * Copyright 2015-2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -47,88 +32,98 @@
 typedef struct {
   grpc_composite_call_credentials *composite_creds;
   size_t creds_index;
-  grpc_credentials_md_store *md_elems;
-  grpc_auth_metadata_context auth_md_context;
-  void *user_data;
   grpc_polling_entity *pollent;
-  grpc_credentials_metadata_cb cb;
+  grpc_auth_metadata_context auth_md_context;
+  grpc_credentials_mdelem_array *md_array;
+  grpc_closure *on_request_metadata;
+  grpc_closure internal_on_request_metadata;
 } grpc_composite_call_credentials_metadata_context;
 
 static void composite_call_destruct(grpc_exec_ctx *exec_ctx,
                                     grpc_call_credentials *creds) {
   grpc_composite_call_credentials *c = (grpc_composite_call_credentials *)creds;
-  size_t i;
-  for (i = 0; i < c->inner.num_creds; i++) {
+  for (size_t i = 0; i < c->inner.num_creds; i++) {
     grpc_call_credentials_unref(exec_ctx, c->inner.creds_array[i]);
   }
   gpr_free(c->inner.creds_array);
 }
 
-static void composite_call_md_context_destroy(
-    grpc_exec_ctx *exec_ctx,
-    grpc_composite_call_credentials_metadata_context *ctx) {
-  grpc_credentials_md_store_unref(exec_ctx, ctx->md_elems);
+static void composite_call_metadata_cb(grpc_exec_ctx *exec_ctx, void *arg,
+                                       grpc_error *error) {
+  grpc_composite_call_credentials_metadata_context *ctx =
+      (grpc_composite_call_credentials_metadata_context *)arg;
+  if (error == GRPC_ERROR_NONE) {
+    /* See if we need to get some more metadata. */
+    if (ctx->creds_index < ctx->composite_creds->inner.num_creds) {
+      grpc_call_credentials *inner_creds =
+          ctx->composite_creds->inner.creds_array[ctx->creds_index++];
+      if (grpc_call_credentials_get_request_metadata(
+              exec_ctx, inner_creds, ctx->pollent, ctx->auth_md_context,
+              ctx->md_array, &ctx->internal_on_request_metadata, &error)) {
+        // Synchronous response, so call ourselves recursively.
+        composite_call_metadata_cb(exec_ctx, arg, error);
+        GRPC_ERROR_UNREF(error);
+      }
+      return;
+    }
+    // We're done!
+  }
+  GRPC_CLOSURE_SCHED(exec_ctx, ctx->on_request_metadata, GRPC_ERROR_REF(error));
   gpr_free(ctx);
 }
 
-static void composite_call_metadata_cb(grpc_exec_ctx *exec_ctx, void *user_data,
-                                       grpc_credentials_md *md_elems,
-                                       size_t num_md,
-                                       grpc_credentials_status status,
-                                       const char *error_details) {
-  grpc_composite_call_credentials_metadata_context *ctx =
-      (grpc_composite_call_credentials_metadata_context *)user_data;
-  if (status != GRPC_CREDENTIALS_OK) {
-    ctx->cb(exec_ctx, ctx->user_data, NULL, 0, status, error_details);
-    return;
-  }
-
-  /* Copy the metadata in the context. */
-  if (num_md > 0) {
-    size_t i;
-    for (i = 0; i < num_md; i++) {
-      grpc_credentials_md_store_add(ctx->md_elems, md_elems[i].key,
-                                    md_elems[i].value);
-    }
-  }
-
-  /* See if we need to get some more metadata. */
-  if (ctx->creds_index < ctx->composite_creds->inner.num_creds) {
-    grpc_call_credentials *inner_creds =
-        ctx->composite_creds->inner.creds_array[ctx->creds_index++];
-    grpc_call_credentials_get_request_metadata(
-        exec_ctx, inner_creds, ctx->pollent, ctx->auth_md_context,
-        composite_call_metadata_cb, ctx);
-    return;
-  }
-
-  /* We're done!. */
-  ctx->cb(exec_ctx, ctx->user_data, ctx->md_elems->entries,
-          ctx->md_elems->num_entries, GRPC_CREDENTIALS_OK, NULL);
-  composite_call_md_context_destroy(exec_ctx, ctx);
-}
-
-static void composite_call_get_request_metadata(
+static bool composite_call_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
     grpc_polling_entity *pollent, grpc_auth_metadata_context auth_md_context,
-    grpc_credentials_metadata_cb cb, void *user_data) {
+    grpc_credentials_mdelem_array *md_array, grpc_closure *on_request_metadata,
+    grpc_error **error) {
   grpc_composite_call_credentials *c = (grpc_composite_call_credentials *)creds;
   grpc_composite_call_credentials_metadata_context *ctx;
-
   ctx = gpr_zalloc(sizeof(grpc_composite_call_credentials_metadata_context));
-  ctx->auth_md_context = auth_md_context;
-  ctx->user_data = user_data;
-  ctx->cb = cb;
   ctx->composite_creds = c;
   ctx->pollent = pollent;
-  ctx->md_elems = grpc_credentials_md_store_create(c->inner.num_creds);
-  grpc_call_credentials_get_request_metadata(
-      exec_ctx, c->inner.creds_array[ctx->creds_index++], ctx->pollent,
-      auth_md_context, composite_call_metadata_cb, ctx);
+  ctx->auth_md_context = auth_md_context;
+  ctx->md_array = md_array;
+  ctx->on_request_metadata = on_request_metadata;
+  GRPC_CLOSURE_INIT(&ctx->internal_on_request_metadata,
+                    composite_call_metadata_cb, ctx, grpc_schedule_on_exec_ctx);
+  while (ctx->creds_index < ctx->composite_creds->inner.num_creds) {
+    grpc_call_credentials *inner_creds =
+        ctx->composite_creds->inner.creds_array[ctx->creds_index++];
+    if (grpc_call_credentials_get_request_metadata(
+            exec_ctx, inner_creds, ctx->pollent, ctx->auth_md_context,
+            ctx->md_array, &ctx->internal_on_request_metadata, error)) {
+      if (*error != GRPC_ERROR_NONE) break;
+    } else {
+      break;
+    }
+  }
+  // If we got through all creds synchronously or we got a synchronous
+  // error on one of them, return synchronously.
+  if (ctx->creds_index == ctx->composite_creds->inner.num_creds ||
+      *error != GRPC_ERROR_NONE) {
+    gpr_free(ctx);
+    return true;
+  }
+  // At least one inner cred is returning asynchronously, so we'll
+  // return asynchronously as well.
+  return false;
+}
+
+static void composite_call_cancel_get_request_metadata(
+    grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
+    grpc_credentials_mdelem_array *md_array, grpc_error *error) {
+  grpc_composite_call_credentials *c = (grpc_composite_call_credentials *)creds;
+  for (size_t i = 0; i < c->inner.num_creds; ++i) {
+    grpc_call_credentials_cancel_get_request_metadata(
+        exec_ctx, c->inner.creds_array[i], md_array, GRPC_ERROR_REF(error));
+  }
+  GRPC_ERROR_UNREF(error);
 }
 
 static grpc_call_credentials_vtable composite_call_credentials_vtable = {
-    composite_call_destruct, composite_call_get_request_metadata};
+    composite_call_destruct, composite_call_get_request_metadata,
+    composite_call_cancel_get_request_metadata};
 
 static grpc_call_credentials_array get_creds_array(
     grpc_call_credentials **creds_addr) {

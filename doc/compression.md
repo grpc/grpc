@@ -1,4 +1,4 @@
-## **gRPC Compression**
+## gRPC Compression
 
 The keywords "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this document are to be
@@ -112,7 +112,7 @@ unsupported condition as well as the supported ones. The returned
 1. An ill-constructed message with its [Compressed-Flag
 bit](PROTOCOL-HTTP2.md#compressed-flag)
 set but lacking a
-"[grpc-encoding](PROTOCOL-HTTP2.md#message-encoding)"
+[grpc-encoding](PROTOCOL-HTTP2.md#message-encoding)
 entry different from _identity_ in its metadata MUST fail with `INTERNAL`
 status, its associated description indicating the invalid Compressed-Flag
 condition.

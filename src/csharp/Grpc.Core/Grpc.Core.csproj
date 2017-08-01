@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="Version.csproj.include" />
   <Import Project="Common.csproj.include" />
@@ -15,31 +15,34 @@
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
     <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.5' ">1.6.0</NetStandardImplicitPackageVersion>
+    <IncludeSymbols>true</IncludeSymbols>
+    <IncludeSource>true</IncludeSource>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="..\..\..\etc\roots.pem" />
-    <Content Include="..\nativelibs\macosx_x64\libgrpc_csharp_ext.dylib">
+    <Content Include="..\nativelibs\csharp_ext_macos_x64\libgrpc_csharp_ext.dylib">
       <PackagePath>runtimes/osx/native/libgrpc_csharp_ext.x64.dylib</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="..\nativelibs\macosx_x86\libgrpc_csharp_ext.dylib">
+    <Content Include="..\nativelibs\csharp_ext_macos_x86\libgrpc_csharp_ext.dylib">
       <PackagePath>runtimes/osx/native/libgrpc_csharp_ext.x86.dylib</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="..\nativelibs\linux_x64\libgrpc_csharp_ext.so">
+    <Content Include="..\nativelibs\csharp_ext_linux_x64\libgrpc_csharp_ext.so">
       <PackagePath>runtimes/linux/native/libgrpc_csharp_ext.x64.so</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="..\nativelibs\linux_x86\libgrpc_csharp_ext.so">
+    <Content Include="..\nativelibs\csharp_ext_linux_x86\libgrpc_csharp_ext.so">
       <PackagePath>runtimes/linux/native/libgrpc_csharp_ext.x86.so</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="..\nativelibs\windows_x64\grpc_csharp_ext.dll">
+    <Content Include="..\nativelibs\csharp_ext_windows_x64\grpc_csharp_ext.dll">
       <PackagePath>runtimes/win/native/grpc_csharp_ext.x64.dll</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="..\nativelibs\windows_x86\grpc_csharp_ext.dll">
+    <Content Include="..\nativelibs\csharp_ext_windows_x86\grpc_csharp_ext.dll">
       <PackagePath>runtimes/win/native/grpc_csharp_ext.x86.dll</PackagePath>
       <Pack>true</Pack>
     </Content>
@@ -61,6 +64,7 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.5' ">
     <PackageReference Include="System.Runtime.Loader" Version="4.0.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.0.0" />
+    <PackageReference Include="System.Threading.ThreadPool" Version="4.0.0" />
   </ItemGroup>
 
   <Import Project="NativeDeps.csproj.include" />

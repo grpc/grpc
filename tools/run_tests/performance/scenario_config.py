@@ -1,31 +1,16 @@
-# Copyright 2016, Google Inc.
-# All rights reserved.
+# Copyright 2016 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 # performance scenario configuration for various languages
 
@@ -53,6 +38,7 @@ HISTOGRAM_PARAMS = {
 # actual target will be slightly higher)
 OUTSTANDING_REQUESTS={
     'async': 6400,
+    'async-limited': 800,
     'sync': 1000
 }
 
@@ -96,6 +82,18 @@ def _payload_type(use_generic_payload, req_size, resp_size):
         r['simple_params'] = sizes
     return r
 
+def _add_channel_arg(config, key, value):
+  if 'channel_args' in config:
+    channel_args = config['channel_args']
+  else:
+    channel_args = []
+    config['channel_args'] = channel_args
+  arg = {'name': key}
+  if isinstance(value, int):
+    arg['int_value'] = value
+  else:
+    arg['str_value'] = value
+  channel_args.append(arg)
 
 def _ping_pong_scenario(name, rpc_type,
                         client_type, server_type,
@@ -107,13 +105,17 @@ def _ping_pong_scenario(name, rpc_type,
                         client_language=None,
                         server_language=None,
                         async_server_threads=0,
+                        server_threads_per_cq=0,
+                        client_threads_per_cq=0,
                         warmup_seconds=WARMUP_SECONDS,
                         categories=DEFAULT_CATEGORIES,
                         channels=None,
                         outstanding=None,
+                        num_clients=None,
                         resource_quota_size=None,
                         messages_per_stream=None,
-                        excluded_poll_engines=[]):
+                        excluded_poll_engines=[],
+                        minimal_stack=False):
   """Creates a basic ping pong scenario."""
   scenario = {
     'name': name,
@@ -125,16 +127,20 @@ def _ping_pong_scenario(name, rpc_type,
       'outstanding_rpcs_per_channel': 1,
       'client_channels': 1,
       'async_client_threads': 1,
+      'threads_per_cq': client_threads_per_cq,
       'rpc_type': rpc_type,
       'load_params': {
         'closed_loop': {}
       },
       'histogram_params': HISTOGRAM_PARAMS,
+      'channel_args': [],
     },
     'server_config': {
       'server_type': server_type,
       'security_params': _get_secargs(secure),
       'async_server_threads': async_server_threads,
+      'threads_per_cq': server_threads_per_cq,
+      'channel_args': [],
     },
     'warmup_seconds': warmup_seconds,
     'benchmark_seconds': BENCHMARK_SECONDS
@@ -148,6 +154,8 @@ def _ping_pong_scenario(name, rpc_type,
 
   scenario['client_config']['payload_config'] = _payload_type(use_generic_payload, req_size, resp_size)
 
+  optimization_target = 'blend'
+
   if unconstrained_client:
     outstanding_calls = outstanding if outstanding is not None else OUTSTANDING_REQUESTS[unconstrained_client]
     # clamp buffer usage to something reasonable (16 gig for now)
@@ -157,14 +165,27 @@ def _ping_pong_scenario(name, rpc_type,
     wide = channels if channels is not None else WIDE
     deep = int(math.ceil(1.0 * outstanding_calls / wide))
 
-    scenario['num_clients'] = 0  # use as many client as available.
+    scenario['num_clients'] = num_clients if num_clients is not None else 0  # use as many clients as available.
     scenario['client_config']['outstanding_rpcs_per_channel'] = deep
     scenario['client_config']['client_channels'] = wide
     scenario['client_config']['async_client_threads'] = 0
+    optimization_target = 'throughput'
   else:
     scenario['client_config']['outstanding_rpcs_per_channel'] = 1
     scenario['client_config']['client_channels'] = 1
     scenario['client_config']['async_client_threads'] = 1
+    optimization_target = 'latency'
+
+  optimization_channel_arg = {
+    'name': 'grpc.optimization_target',
+    'str_value': optimization_target
+  }
+  scenario['client_config']['channel_args'].append(optimization_channel_arg)
+  scenario['server_config']['channel_args'].append(optimization_channel_arg)
+
+  if minimal_stack:
+    _add_channel_arg(scenario['client_config'], 'grpc.minimal_stack', 1)
+    _add_channel_arg(scenario['server_config'], 'grpc.minimal_stack', 1)
 
   if messages_per_stream:
     scenario['client_config']['messages_per_stream'] = messages_per_stream
@@ -195,6 +216,24 @@ class CXXLanguage:
 
   def scenarios(self):
     # TODO(ctiller): add 70% load latency test
+    yield _ping_pong_scenario(
+      'cpp_protobuf_async_unary_1channel_100rpcs_1MB', rpc_type='UNARY',
+      client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+      req_size=1024*1024, resp_size=1024*1024,
+      unconstrained_client='async', outstanding=100, channels=1,
+      num_clients=1,
+      secure=False,
+      categories=[SMOKETEST] + [SCALABLE])
+
+    yield _ping_pong_scenario(
+      'cpp_protobuf_async_streaming_from_client_1channel_1MB', rpc_type='STREAMING_FROM_CLIENT',
+      client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+      req_size=1024*1024, resp_size=1024*1024,
+      unconstrained_client='async', outstanding=1, channels=1,
+      num_clients=1,
+      secure=False,
+      categories=[SMOKETEST] + [SCALABLE])
+
     for secure in [True, False]:
       secstr = 'secure' if secure else 'insecure'
       smoketest_categories = ([SMOKETEST] if secure else []) + [SCALABLE]
@@ -215,6 +254,7 @@ class CXXLanguage:
           server_type='ASYNC_GENERIC_SERVER',
           unconstrained_client='async', use_generic_payload=True,
           secure=secure,
+          minimal_stack=not secure,
           categories=smoketest_categories+[SCALABLE])
 
       for mps in geometric_progression(1, 20, 10):
@@ -225,6 +265,7 @@ class CXXLanguage:
             server_type='ASYNC_GENERIC_SERVER',
             unconstrained_client='async', use_generic_payload=True,
             secure=secure, messages_per_stream=mps,
+            minimal_stack=not secure,
             categories=smoketest_categories+[SCALABLE])
 
       for mps in geometric_progression(1, 200, math.sqrt(10)):
@@ -235,6 +276,7 @@ class CXXLanguage:
             server_type='ASYNC_GENERIC_SERVER',
             unconstrained_client='async', use_generic_payload=True,
             secure=secure, messages_per_stream=mps,
+            minimal_stack=not secure,
             categories=[SWEEP])
 
       yield _ping_pong_scenario(
@@ -246,6 +288,7 @@ class CXXLanguage:
           server_type='ASYNC_GENERIC_SERVER',
           unconstrained_client='async', use_generic_payload=True,
           secure=secure,
+          minimal_stack=not secure,
           categories=smoketest_categories+[SCALABLE],
           channels=1, outstanding=100)
 
@@ -258,6 +301,68 @@ class CXXLanguage:
           server_type='ASYNC_GENERIC_SERVER',
           unconstrained_client='async', use_generic_payload=True,
           secure=secure,
+          minimal_stack=not secure,
+          categories=smoketest_categories+[SCALABLE])
+
+      # TODO(https://github.com/grpc/grpc/issues/11500) Re-enable this test
+      #yield _ping_pong_scenario(
+      #    'cpp_generic_async_streaming_qps_unconstrained_1cq_%s' % secstr,
+      #    rpc_type='STREAMING',
+      #    client_type='ASYNC_CLIENT',
+      #    server_type='ASYNC_GENERIC_SERVER',
+      #    unconstrained_client='async-limited', use_generic_payload=True,
+      #    secure=secure,
+      #    client_threads_per_cq=1000000, server_threads_per_cq=1000000,
+      #    categories=smoketest_categories+[SCALABLE])
+
+      yield _ping_pong_scenario(
+          'cpp_generic_async_streaming_qps_unconstrained_2waysharedcq_%s' % secstr,
+          rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_GENERIC_SERVER',
+          unconstrained_client='async', use_generic_payload=True,
+          secure=secure,
+          client_threads_per_cq=2, server_threads_per_cq=2,
+          categories=smoketest_categories+[SCALABLE])
+
+      #yield _ping_pong_scenario(
+      #    'cpp_protobuf_async_streaming_qps_unconstrained_1cq_%s' % secstr,
+      #    rpc_type='STREAMING',
+      #    client_type='ASYNC_CLIENT',
+      #    server_type='ASYNC_SERVER',
+      #    unconstrained_client='async-limited',
+      #    secure=secure,
+      #    client_threads_per_cq=1000000, server_threads_per_cq=1000000,
+      #    categories=smoketest_categories+[SCALABLE])
+
+      yield _ping_pong_scenario(
+          'cpp_protobuf_async_streaming_qps_unconstrained_2waysharedcq_%s' % secstr,
+          rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_SERVER',
+          unconstrained_client='async',
+          secure=secure,
+          client_threads_per_cq=2, server_threads_per_cq=2,
+          categories=smoketest_categories+[SCALABLE])
+
+      #yield _ping_pong_scenario(
+      #    'cpp_protobuf_async_unary_qps_unconstrained_1cq_%s' % secstr,
+      #    rpc_type='UNARY',
+      #    client_type='ASYNC_CLIENT',
+      #    server_type='ASYNC_SERVER',
+      #    unconstrained_client='async-limited',
+      #    secure=secure,
+      #    client_threads_per_cq=1000000, server_threads_per_cq=1000000,
+      #    categories=smoketest_categories+[SCALABLE])
+
+      yield _ping_pong_scenario(
+          'cpp_protobuf_async_unary_qps_unconstrained_2waysharedcq_%s' % secstr,
+          rpc_type='UNARY',
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_SERVER',
+          unconstrained_client='async',
+          secure=secure,
+          client_threads_per_cq=2, server_threads_per_cq=2,
           categories=smoketest_categories+[SCALABLE])
 
       yield _ping_pong_scenario(
@@ -265,8 +370,9 @@ class CXXLanguage:
           rpc_type='STREAMING',
           client_type='ASYNC_CLIENT',
           server_type='ASYNC_GENERIC_SERVER',
-          unconstrained_client='async', use_generic_payload=True,
+          unconstrained_client='async-limited', use_generic_payload=True,
           async_server_threads=1,
+          minimal_stack=not secure,
           secure=secure)
 
       yield _ping_pong_scenario(
@@ -277,6 +383,7 @@ class CXXLanguage:
           server_type='SYNC_SERVER',
           unconstrained_client='async',
           secure=secure,
+          minimal_stack=not secure,
           categories=smoketest_categories + [SCALABLE],
           excluded_poll_engines = ['poll-cv'])
 
@@ -291,6 +398,7 @@ class CXXLanguage:
           req_size=128,
           resp_size=8*1024*1024,
           secure=secure,
+          minimal_stack=not secure,
           categories=smoketest_categories + [SCALABLE])
 
       yield _ping_pong_scenario(
@@ -300,6 +408,7 @@ class CXXLanguage:
           server_type='SYNC_SERVER',
           unconstrained_client='async',
           secure=secure,
+          minimal_stack=not secure,
           categories=smoketest_categories+[SCALABLE],
           excluded_poll_engines = ['poll-cv'])
 
@@ -308,9 +417,10 @@ class CXXLanguage:
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         req_size=1024*1024, resp_size=1024*1024,
         secure=secure,
+        minimal_stack=not secure,
         categories=smoketest_categories + [SCALABLE])
 
-      for rpc_type in ['unary', 'streaming']:
+      for rpc_type in ['unary', 'streaming', 'streaming_from_client', 'streaming_from_server']:
         for synchronicity in ['sync', 'async']:
           yield _ping_pong_scenario(
               'cpp_protobuf_%s_%s_ping_pong_%s' % (synchronicity, rpc_type, secstr),
@@ -318,6 +428,7 @@ class CXXLanguage:
               client_type='%s_CLIENT' % synchronicity.upper(),
               server_type='%s_SERVER' % synchronicity.upper(),
               async_server_threads=1,
+              minimal_stack=not secure,
               secure=secure)
 
           for size in geometric_progression(1, 1024*1024*1024+1, 8):
@@ -330,6 +441,7 @@ class CXXLanguage:
                   server_type='%s_SERVER' % synchronicity.upper(),
                   unconstrained_client=synchronicity,
                   secure=secure,
+                  minimal_stack=not secure,
                   categories=[SWEEP])
 
           yield _ping_pong_scenario(
@@ -339,6 +451,7 @@ class CXXLanguage:
               server_type='%s_SERVER' % synchronicity.upper(),
               unconstrained_client=synchronicity,
               secure=secure,
+              minimal_stack=not secure,
               categories=smoketest_categories+[SCALABLE])
 
           # TODO(vjpai): Re-enable this test. It has a lot of timeouts
@@ -363,6 +476,7 @@ class CXXLanguage:
                   server_type='%s_SERVER' % synchronicity.upper(),
                   unconstrained_client=synchronicity,
                   secure=secure, messages_per_stream=mps,
+                  minimal_stack=not secure,
                   categories=smoketest_categories+[SCALABLE])
 
             for mps in geometric_progression(1, 200, math.sqrt(10)):
@@ -373,6 +487,7 @@ class CXXLanguage:
                   server_type='%s_SERVER' % synchronicity.upper(),
                   unconstrained_client=synchronicity,
                   secure=secure, messages_per_stream=mps,
+                  minimal_stack=not secure,
                   categories=[SWEEP])
 
           for channels in geometric_progression(1, 20000, math.sqrt(10)):
@@ -385,6 +500,7 @@ class CXXLanguage:
                     client_type='%s_CLIENT' % synchronicity.upper(),
                     server_type='%s_SERVER' % synchronicity.upper(),
                     unconstrained_client=synchronicity, secure=secure,
+                    minimal_stack=not secure,
                     categories=[SWEEP], channels=channels, outstanding=outstanding)
 
   def __str__(self):
@@ -407,6 +523,21 @@ class CSharpLanguage:
         'csharp_generic_async_streaming_ping_pong', rpc_type='STREAMING',
         client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
         use_generic_payload=True,
+        categories=[SMOKETEST, SCALABLE])
+
+    yield _ping_pong_scenario(
+        'csharp_generic_async_streaming_ping_pong_insecure_1MB', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+        req_size=1024*1024, resp_size=1024*1024,
+        use_generic_payload=True,
+        secure=False,
+        categories=[SMOKETEST, SCALABLE])
+
+    yield _ping_pong_scenario(
+        'csharp_generic_async_streaming_qps_unconstrained_insecure', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+        unconstrained_client='async', use_generic_payload=True,
+        secure=False,
         categories=[SMOKETEST, SCALABLE])
 
     yield _ping_pong_scenario(
@@ -469,7 +600,6 @@ class CSharpLanguage:
         req_size=1024*1024, resp_size=1024*1024,
         categories=[SMOKETEST, SCALABLE])
 
-
   def __str__(self):
     return 'csharp'
 
@@ -489,15 +619,14 @@ class NodeLanguage:
 
   def scenarios(self):
     # TODO(jtattermusch): make this scenario work
-    #yield _ping_pong_scenario(
-    #    'node_generic_async_streaming_ping_pong', rpc_type='STREAMING',
-    #    client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
-    #    use_generic_payload=True)
+    yield _ping_pong_scenario(
+        'node_generic_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+        use_generic_payload=True)
 
-    # TODO(jtattermusch): make this scenario work
-    #yield _ping_pong_scenario(
-    #    'node_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
-    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
+    yield _ping_pong_scenario(
+        'node_protobuf_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
 
     yield _ping_pong_scenario(
         'node_protobuf_unary_ping_pong', rpc_type='UNARY',
@@ -530,29 +659,26 @@ class NodeLanguage:
             secure=secure,
             categories=[SCALABLE])
 
-    # TODO(murgatroid99): fix bugs with this scenario and re-enable it
-    # yield _ping_pong_scenario(
-    #     'node_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
-    #     client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-    #     unconstrained_client='async',
-    #     categories=[SCALABLE, SMOKETEST])
+    yield _ping_pong_scenario(
+        'node_protobuf_unary_qps_unconstrained', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        unconstrained_client='async',
+        categories=[SCALABLE, SMOKETEST])
 
-    # TODO(jtattermusch): make this scenario work
-    #yield _ping_pong_scenario(
-    #    'node_protobuf_async_streaming_qps_unconstrained', rpc_type='STREAMING',
-    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-    #    unconstrained_client='async')
+    yield _ping_pong_scenario(
+        'node_protobuf_streaming_qps_unconstrained', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        unconstrained_client='async')
 
     yield _ping_pong_scenario(
         'node_to_cpp_protobuf_async_unary_ping_pong', rpc_type='UNARY',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         server_language='c++', async_server_threads=1)
 
-    # TODO(jtattermusch): make this scenario work
-    #yield _ping_pong_scenario(
-    #    'node_to_cpp_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
-    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-    #    server_language='c++', async_server_threads=1)
+    yield _ping_pong_scenario(
+        'node_to_cpp_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        server_language='c++', async_server_threads=1)
 
   def __str__(self):
     return 'node'
@@ -738,7 +864,7 @@ class JavaLanguage:
       yield _ping_pong_scenario(
           'java_generic_async_streaming_qps_one_server_core_%s' % secstr, rpc_type='STREAMING',
           client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
-          unconstrained_client='async', use_generic_payload=True,
+          unconstrained_client='async-limited', use_generic_payload=True,
           async_server_threads=1,
           secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
 

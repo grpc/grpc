@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -57,18 +42,20 @@ typedef struct grpc_transport grpc_transport;
    for a stream. */
 typedef struct grpc_stream grpc_stream;
 
-//#define GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
+extern grpc_tracer_flag grpc_trace_stream_refcount;
+#endif
 
 typedef struct grpc_stream_refcount {
   gpr_refcount refs;
   grpc_closure destroy;
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
   const char *object_type;
 #endif
   grpc_slice_refcount slice_refcount;
 } grpc_stream_refcount;
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void *cb_arg,
                           const char *object_type);
@@ -127,10 +114,6 @@ typedef struct grpc_transport_stream_op_batch {
   /** Values for the stream op (fields set are determined by flags above) */
   grpc_transport_stream_op_batch_payload *payload;
 
-  /** Is the completion of this op covered by a poller (if false: the op should
-      complete independently of some pollset being polled) */
-  bool covered_by_poller : 1;
-
   /** Send initial metadata to the peer, from the provided metadata batch. */
   bool send_initial_metadata : 1;
 
@@ -176,6 +159,11 @@ struct grpc_transport_stream_op_batch_payload {
   } send_trailing_metadata;
 
   struct {
+    // The transport (or a filter that decides to return a failure before
+    // the op gets down to the transport) is responsible for calling
+    // grpc_byte_stream_destroy() on this.
+    // The batch's on_complete will not be called until after the byte
+    // stream is destroyed.
     grpc_byte_stream *send_message;
   } send_message;
 
@@ -184,9 +172,17 @@ struct grpc_transport_stream_op_batch_payload {
     uint32_t *recv_flags;
     /** Should be enqueued when initial metadata is ready to be processed. */
     grpc_closure *recv_initial_metadata_ready;
+    // If not NULL, will be set to true if trailing metadata is
+    // immediately available.  This may be a signal that we received a
+    // Trailers-Only response.
+    bool *trailing_metadata_available;
   } recv_initial_metadata;
 
   struct {
+    // Will be set by the transport to point to the byte stream
+    // containing a received message.
+    // The caller is responsible for calling grpc_byte_stream_destroy()
+    // on this byte stream.
     grpc_byte_stream **recv_message;
     /** Should be enqueued when one message is ready to be processed. */
     grpc_closure *recv_message_ready;
@@ -211,6 +207,8 @@ struct grpc_transport_stream_op_batch_payload {
         grpc_chttp2_grpc_status_to_http2_error. Send a RST_STREAM with this
         error. */
   struct {
+    // Error contract: the transport that gets this op must cause cancel_error
+    //                 to be unref'ed after processing it
     grpc_error *cancel_error;
   } cancel_stream;
 
@@ -225,9 +223,13 @@ typedef struct grpc_transport_op {
   /** connectivity monitoring - set connectivity_state to NULL to unsubscribe */
   grpc_closure *on_connectivity_state_change;
   grpc_connectivity_state *connectivity_state;
-  /** should the transport be disconnected */
+  /** should the transport be disconnected
+   * Error contract: the transport that gets this op must cause
+   *                 disconnect_with_error to be unref'ed after processing it */
   grpc_error *disconnect_with_error;
-  /** what should the goaway contain? */
+  /** what should the goaway contain?
+   * Error contract: the transport that gets this op must cause
+   *                 goaway_error to be unref'ed after processing it */
   grpc_error *goaway_error;
   /** set the callback for accepting new streams;
       this is a permanent callback, unlike the other one-shot closures.
