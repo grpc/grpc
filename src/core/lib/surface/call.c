@@ -644,6 +644,8 @@ static void cancel_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
 
 static grpc_error *error_from_status(grpc_status_code status,
                                      const char *description) {
+  // copying 'description' is needed to ensure the grpc_call_cancel_with_status
+  // guarantee that can be short-lived.
   return grpc_error_set_int(
       grpc_error_set_str(GRPC_ERROR_CREATE_FROM_COPIED_STRING(description),
                          GRPC_ERROR_STR_GRPC_MESSAGE,
@@ -823,7 +825,7 @@ uint32_t grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call *call) {
   return encodings_accepted_by_peer;
 }
 
-static grpc_linked_mdelem *linked_from_md(grpc_metadata *md) {
+static grpc_linked_mdelem *linked_from_md(const grpc_metadata *md) {
   return (grpc_linked_mdelem *)&md->internal_data;
 }
 
@@ -847,7 +849,7 @@ static int prepare_application_metadata(
   for (i = 0; i < total_count; i++) {
     const grpc_metadata *md =
         get_md_elem(metadata, additional_metadata, i, count);
-    grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
+    grpc_linked_mdelem *l = linked_from_md(md);
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
     if (!GRPC_LOG_IF_ERROR("validate_metadata",
                            grpc_validate_header_key_is_legal(md->key))) {
@@ -864,7 +866,7 @@ static int prepare_application_metadata(
     for (int j = 0; j < i; j++) {
       const grpc_metadata *md =
           get_md_elem(metadata, additional_metadata, j, count);
-      grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
+      grpc_linked_mdelem *l = linked_from_md(md);
       GRPC_MDELEM_UNREF(exec_ctx, l->md);
     }
     return 0;
@@ -882,9 +884,12 @@ static int prepare_application_metadata(
   }
   for (i = 0; i < total_count; i++) {
     grpc_metadata *md = get_md_elem(metadata, additional_metadata, i, count);
-    GRPC_LOG_IF_ERROR(
-        "prepare_application_metadata",
-        grpc_metadata_batch_link_tail(exec_ctx, batch, linked_from_md(md)));
+    grpc_linked_mdelem *l = linked_from_md(md);
+    grpc_error *error = grpc_metadata_batch_link_tail(exec_ctx, batch, l);
+    if (error != GRPC_ERROR_NONE) {
+      GRPC_MDELEM_UNREF(exec_ctx, l->md);
+    }
+    GRPC_LOG_IF_ERROR("prepare_application_metadata", error);
   }
   call->send_extra_metadata_count = 0;
 
