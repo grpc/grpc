@@ -1132,6 +1132,7 @@ src/core/lib/iomgr/load_file.c \
 src/core/lib/iomgr/load_file.h \
 src/core/lib/iomgr/lockfree_event.c \
 src/core/lib/iomgr/lockfree_event.h \
+src/core/lib/iomgr/nameser.h \
 src/core/lib/iomgr/network_status_tracker.c \
 src/core/lib/iomgr/network_status_tracker.h \
 src/core/lib/iomgr/polling_entity.c \
@@ -1416,13 +1417,9 @@ src/core/tsi/transport_security.h \
 src/core/tsi/transport_security_adapter.c \
 src/core/tsi/transport_security_adapter.h \
 src/core/tsi/transport_security_interface.h \
-third_party/nanopb/pb.h \
 third_party/nanopb/pb_common.c \
-third_party/nanopb/pb_common.h \
 third_party/nanopb/pb_decode.c \
-third_party/nanopb/pb_decode.h \
-third_party/nanopb/pb_encode.c \
-third_party/nanopb/pb_encode.h
+third_party/nanopb/pb_encode.c
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
