@@ -33,6 +33,7 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-source tools/internal_ci/helper_scripts/prepare_build_interop_rc
+source tools/internal_ci/helper_scripts/prepare_build_macos_interop_rc
+source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
 tools/run_tests/run_interop_tests.py -l objc -s all --use_docker -t -j 1
