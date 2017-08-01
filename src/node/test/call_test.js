@@ -189,18 +189,24 @@ describe('call', function() {
     });
   });
   describe('startBatch with message', function() {
-    it('should fail with non-buffer arguments', function() {
+    it('should fail with null argument', function() {
       var call = new grpc.Call(channel, 'method', getDeadline(1));
       assert.throws(function() {
         var batch = {};
         batch[grpc.opType.SEND_MESSAGE] = null;
         call.startBatch(batch, function(){});
       }, TypeError);
+    });
+    it('should fail with numeric argument', function() {
+      var call = new grpc.Call(channel, 'method', getDeadline(1));
       assert.throws(function() {
         var batch = {};
         batch[grpc.opType.SEND_MESSAGE] = 5;
         call.startBatch(batch, function(){});
       }, TypeError);
+    });
+    it('should fail with string argument', function() {
+      var call = new grpc.Call(channel, 'method', getDeadline(1));
       assert.throws(function() {
         var batch = {};
         batch[grpc.opType.SEND_MESSAGE] = 'value';
@@ -242,7 +248,7 @@ describe('call', function() {
         call.startBatch(batch, function(){});
       }, TypeError);
     });
-    it('should fail with incorrectly typed arguments', function() {
+    it('should fail with incorrectly typed code argument', function() {
       var call = new grpc.Call(channel, 'method', getDeadline(1));
       assert.throws(function() {
         var batch = {};
@@ -253,6 +259,9 @@ describe('call', function() {
         };
         call.startBatch(batch, function(){});
       }, TypeError);
+    });
+    it('should fail with incorrectly typed details argument', function() {
+      var call = new grpc.Call(channel, 'method', getDeadline(1));
       assert.throws(function() {
         var batch = {};
         batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
@@ -262,6 +271,9 @@ describe('call', function() {
         };
         call.startBatch(batch, function(){});
       }, TypeError);
+    });
+    it('should fail with incorrectly typed metadata argument', function() {
+      var call = new grpc.Call(channel, 'method', getDeadline(1));
       assert.throws(function() {
         var batch = {};
         batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
