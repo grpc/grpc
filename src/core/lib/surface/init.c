@@ -34,6 +34,7 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resource_quota.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -174,6 +175,7 @@ void grpc_shutdown(void) {
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
     grpc_executor_shutdown(&exec_ctx);
+    grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
     for (i = g_number_of_plugins; i >= 0; i--) {
       if (g_all_of_the_plugins[i].destroy != NULL) {
         g_all_of_the_plugins[i].destroy();
