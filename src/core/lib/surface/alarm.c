@@ -19,6 +19,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/completion_queue.h"
 
@@ -109,7 +110,7 @@ grpc_alarm *grpc_alarm_create(grpc_completion_queue *cq, gpr_timespec deadline,
   alarm->cq = cq;
   alarm->tag = tag;
 
-  grpc_cq_begin_op(cq, tag);
+  GPR_ASSERT(grpc_cq_begin_op(cq, tag));
   GRPC_CLOSURE_INIT(&alarm->on_alarm, alarm_cb, alarm,
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(&exec_ctx, &alarm->alarm,

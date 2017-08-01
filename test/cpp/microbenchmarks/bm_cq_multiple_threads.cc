@@ -78,7 +78,7 @@ static grpc_error* pollset_work(grpc_exec_ctx* exec_ctx, grpc_pollset* ps,
   }
 
   gpr_mu_unlock(&ps->mu);
-  grpc_cq_begin_op(g_cq, g_tag);
+  GPR_ASSERT(grpc_cq_begin_op(g_cq, g_tag));
   grpc_cq_end_op(exec_ctx, g_cq, g_tag, GRPC_ERROR_NONE, cq_done_cb, NULL,
                  (grpc_cq_completion*)gpr_malloc(sizeof(grpc_cq_completion)));
   grpc_exec_ctx_flush(exec_ctx);

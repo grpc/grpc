@@ -38,25 +38,7 @@ struct grpc_subchannel_key {
   grpc_subchannel_args args;
 };
 
-GPR_TLS_DECL(subchannel_index_exec_ctx);
-
 static bool g_force_creation = false;
-
-static void enter_ctx(grpc_exec_ctx *exec_ctx) {
-  GPR_ASSERT(gpr_tls_get(&subchannel_index_exec_ctx) == 0);
-  gpr_tls_set(&subchannel_index_exec_ctx, (intptr_t)exec_ctx);
-}
-
-static void leave_ctx(grpc_exec_ctx *exec_ctx) {
-  GPR_ASSERT(gpr_tls_get(&subchannel_index_exec_ctx) == (intptr_t)exec_ctx);
-  gpr_tls_set(&subchannel_index_exec_ctx, 0);
-}
-
-static grpc_exec_ctx *current_ctx() {
-  grpc_exec_ctx *c = (grpc_exec_ctx *)gpr_tls_get(&subchannel_index_exec_ctx);
-  GPR_ASSERT(c != NULL);
-  return c;
-}
 
 static grpc_subchannel_key *create_key(
     const grpc_subchannel_args *args,
@@ -104,21 +86,25 @@ void grpc_subchannel_key_destroy(grpc_exec_ctx *exec_ctx,
   gpr_free(k);
 }
 
-static void sck_avl_destroy(void *p) {
-  grpc_subchannel_key_destroy(current_ctx(), p);
+static void sck_avl_destroy(void *p, void *user_data) {
+  grpc_exec_ctx *exec_ctx = (grpc_exec_ctx *)user_data;
+  grpc_subchannel_key_destroy(exec_ctx, p);
 }
 
-static void *sck_avl_copy(void *p) { return subchannel_key_copy(p); }
+static void *sck_avl_copy(void *p, void *unused) {
+  return subchannel_key_copy(p);
+}
 
-static long sck_avl_compare(void *a, void *b) {
+static long sck_avl_compare(void *a, void *b, void *unused) {
   return grpc_subchannel_key_compare(a, b);
 }
 
-static void scv_avl_destroy(void *p) {
-  GRPC_SUBCHANNEL_WEAK_UNREF(current_ctx(), p, "subchannel_index");
+static void scv_avl_destroy(void *p, void *user_data) {
+  grpc_exec_ctx *exec_ctx = (grpc_exec_ctx *)user_data;
+  GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, p, "subchannel_index");
 }
 
-static void *scv_avl_copy(void *p) {
+static void *scv_avl_copy(void *p, void *unused) {
   GRPC_SUBCHANNEL_WEAK_REF(p, "subchannel_index");
   return p;
 }
@@ -133,38 +119,33 @@ static const gpr_avl_vtable subchannel_avl_vtable = {
 void grpc_subchannel_index_init(void) {
   g_subchannel_index = gpr_avl_create(&subchannel_avl_vtable);
   gpr_mu_init(&g_mu);
-  gpr_tls_init(&subchannel_index_exec_ctx);
 }
 
 void grpc_subchannel_index_shutdown(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_mu_destroy(&g_mu);
-  gpr_avl_unref(g_subchannel_index);
-  gpr_tls_destroy(&subchannel_index_exec_ctx);
+  gpr_avl_unref(g_subchannel_index, &exec_ctx);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 grpc_subchannel *grpc_subchannel_index_find(grpc_exec_ctx *exec_ctx,
                                             grpc_subchannel_key *key) {
-  enter_ctx(exec_ctx);
-
   // Lock, and take a reference to the subchannel index.
   // We don't need to do the search under a lock as avl's are immutable.
   gpr_mu_lock(&g_mu);
-  gpr_avl index = gpr_avl_ref(g_subchannel_index);
+  gpr_avl index = gpr_avl_ref(g_subchannel_index, exec_ctx);
   gpr_mu_unlock(&g_mu);
 
-  grpc_subchannel *c =
-      GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(gpr_avl_get(index, key), "index_find");
-  gpr_avl_unref(index);
+  grpc_subchannel *c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(
+      gpr_avl_get(index, key, exec_ctx), "index_find");
+  gpr_avl_unref(index, exec_ctx);
 
-  leave_ctx(exec_ctx);
   return c;
 }
 
 grpc_subchannel *grpc_subchannel_index_register(grpc_exec_ctx *exec_ctx,
                                                 grpc_subchannel_key *key,
                                                 grpc_subchannel *constructed) {
-  enter_ctx(exec_ctx);
-
   grpc_subchannel *c = NULL;
   bool need_to_unref_constructed;
 
@@ -174,11 +155,11 @@ grpc_subchannel *grpc_subchannel_index_register(grpc_exec_ctx *exec_ctx,
     // Compare and swap loop:
     // - take a reference to the current index
     gpr_mu_lock(&g_mu);
-    gpr_avl index = gpr_avl_ref(g_subchannel_index);
+    gpr_avl index = gpr_avl_ref(g_subchannel_index, exec_ctx);
     gpr_mu_unlock(&g_mu);
 
     // - Check to see if a subchannel already exists
-    c = gpr_avl_get(index, key);
+    c = gpr_avl_get(index, key, exec_ctx);
     if (c != NULL) {
       c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "index_register");
     }
@@ -187,9 +168,9 @@ grpc_subchannel *grpc_subchannel_index_register(grpc_exec_ctx *exec_ctx,
       need_to_unref_constructed = true;
     } else {
       // no -> update the avl and compare/swap
-      gpr_avl updated =
-          gpr_avl_add(gpr_avl_ref(index), subchannel_key_copy(key),
-                      GRPC_SUBCHANNEL_WEAK_REF(constructed, "index_register"));
+      gpr_avl updated = gpr_avl_add(
+          gpr_avl_ref(index, exec_ctx), subchannel_key_copy(key),
+          GRPC_SUBCHANNEL_WEAK_REF(constructed, "index_register"), exec_ctx);
 
       // it may happen (but it's expected to be unlikely)
       // that some other thread has changed the index:
@@ -201,12 +182,10 @@ grpc_subchannel *grpc_subchannel_index_register(grpc_exec_ctx *exec_ctx,
       }
       gpr_mu_unlock(&g_mu);
 
-      gpr_avl_unref(updated);
+      gpr_avl_unref(updated, exec_ctx);
     }
-    gpr_avl_unref(index);
+    gpr_avl_unref(index, exec_ctx);
   }
-
-  leave_ctx(exec_ctx);
 
   if (need_to_unref_constructed) {
     GRPC_SUBCHANNEL_UNREF(exec_ctx, constructed, "index_register");
@@ -218,27 +197,26 @@ grpc_subchannel *grpc_subchannel_index_register(grpc_exec_ctx *exec_ctx,
 void grpc_subchannel_index_unregister(grpc_exec_ctx *exec_ctx,
                                       grpc_subchannel_key *key,
                                       grpc_subchannel *constructed) {
-  enter_ctx(exec_ctx);
-
   bool done = false;
   while (!done) {
     // Compare and swap loop:
     // - take a reference to the current index
     gpr_mu_lock(&g_mu);
-    gpr_avl index = gpr_avl_ref(g_subchannel_index);
+    gpr_avl index = gpr_avl_ref(g_subchannel_index, exec_ctx);
     gpr_mu_unlock(&g_mu);
 
     // Check to see if this key still refers to the previously
     // registered subchannel
-    grpc_subchannel *c = gpr_avl_get(index, key);
+    grpc_subchannel *c = gpr_avl_get(index, key, exec_ctx);
     if (c != constructed) {
-      gpr_avl_unref(index);
+      gpr_avl_unref(index, exec_ctx);
       break;
     }
 
     // compare and swap the update (some other thread may have
     // mutated the index behind us)
-    gpr_avl updated = gpr_avl_remove(gpr_avl_ref(index), key);
+    gpr_avl updated =
+        gpr_avl_remove(gpr_avl_ref(index, exec_ctx), key, exec_ctx);
 
     gpr_mu_lock(&g_mu);
     if (index.root == g_subchannel_index.root) {
@@ -247,11 +225,9 @@ void grpc_subchannel_index_unregister(grpc_exec_ctx *exec_ctx,
     }
     gpr_mu_unlock(&g_mu);
 
-    gpr_avl_unref(updated);
-    gpr_avl_unref(index);
+    gpr_avl_unref(updated, exec_ctx);
+    gpr_avl_unref(index, exec_ctx);
   }
-
-  leave_ctx(exec_ctx);
 }
 
 void grpc_subchannel_index_test_only_set_force_creation(bool force_creation) {

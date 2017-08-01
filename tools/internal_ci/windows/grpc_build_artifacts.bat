@@ -12,7 +12,7 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
-@rem Move python installation from _32bit to _32bits where they are expected python artifact builder
+@rem Move python installation from _32bit to _32bits where they are expected by python artifact builder
 @rem TODO(jtattermusch): get rid of this hack
 rename C:\Python27_32bit Python27_32bits
 rename C:\Python34_32bit Python34_32bits
@@ -21,15 +21,10 @@ rename C:\Python36_32bit Python36_32bits
 
 pacman -S --noconfirm mingw64/mingw-w64-x86_64-gcc mingw32/mingw-w64-i686-gcc
 
-@rem make sure msys binaries are preferred over cygwin binaries
-@rem set path to python 2.7
-set PATH=C:\tools\msys64\usr\bin;C:\Python27;%PATH%
-
-
 @rem enter repo root
 cd /d %~dp0\..\..\..
 
-git submodule update --init
+call tools/internal_ci/helper_scripts/prepare_build_windows.bat
 
 python tools/run_tests/task_runner.py -f artifact windows || goto :error
 goto :EOF

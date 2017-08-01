@@ -12,18 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_reflection/grpc_version.py.template`!!!
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_run_tests_matrix.sh"
-timeout_mins: 240
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.xml"
-  }
-}
-
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "-f basictests linux --inner_jobs 16 -j 1 --internal_ci --bq_result_table aggregate_results"
-}
+VERSION = '1.5.0.dev0'

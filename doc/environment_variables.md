@@ -5,8 +5,7 @@ gRPC C core based implementations (those contained in this repository) expose
 some configuration as environment variables that can be set.
 
 * http_proxy
-  The URI of the proxy to use for HTTP CONNECT support.  Does not currently
-  support username or password information in the URI.
+  The URI of the proxy to use for HTTP CONNECT support.
 
 * GRPC_ABORT_ON_LEAKS
   A debugging aid to cause a call to abort() when gRPC objects are leaked past
@@ -102,6 +101,9 @@ some configuration as environment variables that can be set.
   - DEBUG - log all gRPC messages
   - INFO - log INFO and ERROR message
   - ERROR - log only errors
+
+* GRPC_TRACE_FUZZER
+  if set, the fuzzers will output trace (it is usually supressed).
 
 * GRPC_DNS_RESOLVER
   Declares which DNS resolver to use. The default is ares if gRPC is built with
