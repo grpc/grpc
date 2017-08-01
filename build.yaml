@@ -712,6 +712,7 @@ filegroups:
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
+  - test/core/tsi/transport_security_test_lib.h
   - test/core/util/debugger_macros.h
   - test/core/util/grpc_profiler.h
   - test/core/util/memory_counters.h
@@ -728,6 +729,7 @@ filegroups:
   - test/core/end2end/fixtures/http_proxy_fixture.c
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
+  - test/core/tsi/transport_security_test_lib.c
   - test/core/util/debugger_macros.c
   - test/core/util/grpc_profiler.c
   - test/core/util/memory_counters.c
@@ -740,10 +742,12 @@ filegroups:
   - test/core/util/trickle_endpoint.c
   deps:
   - gpr_test_util
+  - gpr
   uses:
   - grpc_base
   - grpc_client_channel
   - grpc_transport_chttp2
+  - tsi
 - name: grpc_trace
   src:
   - src/core/lib/debug/trace.c

@@ -3536,6 +3536,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/end2end/fixtures/http_proxy_fixture.c \
     test/core/end2end/fixtures/proxy.c \
     test/core/iomgr/endpoint_tests.c \
+    test/core/tsi/transport_security_test_lib.c \
     test/core/util/debugger_macros.c \
     test/core/util/grpc_profiler.c \
     test/core/util/memory_counters.c \
@@ -3720,6 +3721,11 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/filters/http/http_filters_plugin.c \
     src/core/ext/filters/http/message_compress/message_compress_filter.c \
     src/core/ext/filters/http/server/http_server_filter.c \
+    src/core/tsi/fake_transport_security.c \
+    src/core/tsi/gts_transport_security.c \
+    src/core/tsi/ssl_transport_security.c \
+    src/core/tsi/transport_security.c \
+    src/core/tsi/transport_security_adapter.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
@@ -3782,6 +3788,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/end2end/fixtures/http_proxy_fixture.c \
     test/core/end2end/fixtures/proxy.c \
     test/core/iomgr/endpoint_tests.c \
+    test/core/tsi/transport_security_test_lib.c \
     test/core/util/debugger_macros.c \
     test/core/util/grpc_profiler.c \
     test/core/util/memory_counters.c \
@@ -3966,6 +3973,11 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/filters/http/http_filters_plugin.c \
     src/core/ext/filters/http/message_compress/message_compress_filter.c \
     src/core/ext/filters/http/server/http_server_filter.c \
+    src/core/tsi/fake_transport_security.c \
+    src/core/tsi/gts_transport_security.c \
+    src/core/tsi/ssl_transport_security.c \
+    src/core/tsi/transport_security.c \
+    src/core/tsi/transport_security_adapter.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer_reader.h \
@@ -19698,11 +19710,6 @@ src/core/lib/security/util/json_util.c: $(OPENSSL_DEP)
 src/core/lib/surface/init_secure.c: $(OPENSSL_DEP)
 src/core/plugin_registry/grpc_cronet_plugin_registry.c: $(OPENSSL_DEP)
 src/core/plugin_registry/grpc_plugin_registry.c: $(OPENSSL_DEP)
-src/core/tsi/fake_transport_security.c: $(OPENSSL_DEP)
-src/core/tsi/gts_transport_security.c: $(OPENSSL_DEP)
-src/core/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
-src/core/tsi/transport_security.c: $(OPENSSL_DEP)
-src/core/tsi/transport_security_adapter.c: $(OPENSSL_DEP)
 src/cpp/client/cronet_credentials.cc: $(OPENSSL_DEP)
 src/cpp/client/secure_credentials.cc: $(OPENSSL_DEP)
 src/cpp/common/auth_property_iterator.cc: $(OPENSSL_DEP)

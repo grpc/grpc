@@ -16,6 +16,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.c">
       <Filter>test\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\tsi\transport_security_test_lib.c">
+      <Filter>test\core\tsi</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\debugger_macros.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
@@ -568,6 +571,21 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\server\http_server_filter.c">
       <Filter>src\core\ext\filters\http\server</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\gts_transport_security.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security_adapter.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h">
@@ -643,6 +661,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.h">
       <Filter>test\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\tsi\transport_security_test_lib.h">
+      <Filter>test\core\tsi</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\debugger_macros.h">
       <Filter>test\core\util</Filter>
@@ -800,6 +821,27 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\server\http_server_filter.h">
       <Filter>src\core\ext\filters\http\server</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\gts_transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_types.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_adapter.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_interface.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
@@ -893,6 +935,9 @@
     <Filter Include="src\core\lib\transport">
       <UniqueIdentifier>{2c0ca4a1-38df-329d-eeba-5c5b61dc81a5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\tsi">
+      <UniqueIdentifier>{981639c9-3383-1dc7-1651-11c8fe3d7479}</UniqueIdentifier>
+    </Filter>
     <Filter Include="test">
       <UniqueIdentifier>{037c7645-1698-cf2d-4163-525240323101}</UniqueIdentifier>
     </Filter>
@@ -907,6 +952,9 @@
     </Filter>
     <Filter Include="test\core\iomgr">
       <UniqueIdentifier>{53745d42-f5b1-2381-6b64-146f1234e513}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\tsi">
+      <UniqueIdentifier>{cec45414-1ac5-19a8-0bc8-0c08aa9cce92}</UniqueIdentifier>
     </Filter>
     <Filter Include="test\core\util">
       <UniqueIdentifier>{31b30beb-baf0-3979-2a54-560a16814cf9}</UniqueIdentifier>

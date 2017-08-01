@@ -1594,6 +1594,7 @@ add_library(grpc_test_util
   test/core/end2end/fixtures/http_proxy_fixture.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
+  test/core/tsi/transport_security_test_lib.c
   test/core/util/debugger_macros.c
   test/core/util/grpc_profiler.c
   test/core/util/memory_counters.c
@@ -1778,6 +1779,11 @@ add_library(grpc_test_util
   src/core/ext/filters/http/http_filters_plugin.c
   src/core/ext/filters/http/message_compress/message_compress_filter.c
   src/core/ext/filters/http/server/http_server_filter.c
+  src/core/tsi/fake_transport_security.c
+  src/core/tsi/gts_transport_security.c
+  src/core/tsi/ssl_transport_security.c
+  src/core/tsi/transport_security.c
+  src/core/tsi/transport_security_adapter.c
 )
 
 if(WIN32 AND MSVC)
@@ -1851,6 +1857,7 @@ add_library(grpc_test_util_unsecure
   test/core/end2end/fixtures/http_proxy_fixture.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
+  test/core/tsi/transport_security_test_lib.c
   test/core/util/debugger_macros.c
   test/core/util/grpc_profiler.c
   test/core/util/memory_counters.c
@@ -2035,6 +2042,11 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/http/http_filters_plugin.c
   src/core/ext/filters/http/message_compress/message_compress_filter.c
   src/core/ext/filters/http/server/http_server_filter.c
+  src/core/tsi/fake_transport_security.c
+  src/core/tsi/gts_transport_security.c
+  src/core/tsi/ssl_transport_security.c
+  src/core/tsi/transport_security.c
+  src/core/tsi/transport_security_adapter.c
 )
 
 if(WIN32 AND MSVC)
