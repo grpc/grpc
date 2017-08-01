@@ -328,8 +328,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                 grpc_chttp2_encode_data(s->id, s->compressed_data_buffer,
                                         send_bytes, is_last_frame,
                                         &s->stats.outgoing, &t->outbuf);
-                grpc_chttp2_flowctl_sent_data(&t->flow_control, &s->flow_control,
-                                        send_bytes);
+                grpc_chttp2_flowctl_sent_data(&t->flow_control,
+                                              &s->flow_control, send_bytes);
                 max_outgoing -= send_bytes;
                 if (s->compressed_data_buffer->length == 0) {
                   s->sending_bytes += s->uncompressed_data_size;
@@ -359,7 +359,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                                     send_bytes, is_last_frame,
                                     &s->stats.outgoing, &t->outbuf);
             grpc_chttp2_flowctl_sent_data(&t->flow_control, &s->flow_control,
-                                        send_bytes);
+                                          send_bytes);
             s->sending_bytes += send_bytes;
           }
           t->ping_state.pings_before_data_required =

@@ -1470,7 +1470,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
       if (!s->read_closed) {
         already_received = s->frame_storage.length;
         grpc_chttp2_flowctl_incoming_bs_update(
-            &t->flow_control, &s->flow_control, GRPC_HEADER_SIZE_IN_BYTES, already_received);
+            &t->flow_control, &s->flow_control, GRPC_HEADER_SIZE_IN_BYTES,
+            already_received);
         grpc_chttp2_act_on_flowctl_action(
             exec_ctx,
             grpc_chttp2_flowctl_get_action(&t->flow_control, &s->flow_control),
