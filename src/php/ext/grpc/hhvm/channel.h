@@ -19,16 +19,17 @@
 #ifndef NET_GRPC_HHVM_GRPC_CHANNEL_H_
 #define NET_GRPC_HHVM_GRPC_CHANNEL_H_
 
+#include <map>
+#include <string>
+
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
 
 #include "hphp/runtime/ext/extension.h"
 
 #include <grpc/grpc.h>
 
-#include <map>
-#include <string>
 
 namespace HPHP {
 
@@ -46,8 +47,7 @@ public:
 
     // interface functions
     void init(grpc_channel* channel) { m_pChannel = channel; }
-    void sweep(void);
-    grpc_channel* const getWrapped(void) { return m_pChannel; }
+    grpc_channel* const channel(void) { return m_pChannel; }
     void setHashKey(const String& hashKey) { m_HashKey = hashKey; }
     const String& getHashKey(void) const { return m_HashKey; }
 
@@ -55,7 +55,10 @@ public:
     static const StaticString& className(void) { return s_ClassName; }
 
  private:
-     // member variables
+    // helper functions
+    void destroy(void);
+
+    // member variables
     grpc_channel* m_pChannel;
     String m_HashKey;
     static Class* s_Class;
@@ -123,8 +126,6 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
                  const Object& deadline);
 
 void HHVM_METHOD(Channel, close);
-
-int hhvm_grpc_read_args_array(const Array& args_array, grpc_channel_args *args);
 
 }
 

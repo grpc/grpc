@@ -84,34 +84,5 @@ private:
     grpc_slice m_Slice;
 };
 
-// This class is an RAII wrapper around a metadata array
-class MetadataArray
-{
-public:
-    // constructors/descructors
-    MetadataArray(const bool ownPHP = true);
-    ~MetadataArray(void);
-
-    // interface functions
-    bool init(const HPHP::Array& phpArray);
-    grpc_metadata* const data(void) { return m_Array.metadata; }
-    const grpc_metadata* const data(void) const { return m_Array.metadata; }
-    size_t size(void) const { return m_Array.count; }
-    const grpc_metadata_array& array(void) const { return m_Array; } //
-    grpc_metadata_array& array(void) { return m_Array; } // several methods need non const &
-    bool init(const HPHP::Array& phpArray, const bool ownPHP = true);
-    HPHP::Variant phpData(void) const;
-
-private:
-    // helper functions
-    void destroyPHP(void);
-    void freePHP(void);
-    void resizeMetadata(const size_t capacity);
-
-    // member variables
-    bool m_OwnPHP;
-    grpc_metadata_array m_Array;
-    std::vector<std::pair<Slice, Slice>> m_PHPData; // the key, value PHP Data
-};
 
 #endif // NET_GRPC_HHVM_GRPC_UTILITY_H_

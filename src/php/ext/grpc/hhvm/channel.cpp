@@ -49,15 +49,19 @@ GlobalChannelsCache s_global_channels_cache;
 Mutex s_global_channels_cache_mutex;
 */
 
+/*****************************************************************************/
+/*                               ChannelData                                 */
+/*****************************************************************************/
+
 Class* ChannelData::s_Class{ nullptr };
 const StaticString ChannelData::s_ClassName{ "Grpc\\Channel" };
 
 ChannelData::~ChannelData(void)
 {
-    sweep();
+    destroy();
 }
 
-void ChannelData::sweep(void)
+void ChannelData::destroy(void)
 {
     if (m_pChannel)
     {
@@ -65,6 +69,10 @@ void ChannelData::sweep(void)
         m_pChannel = nullptr;
     }
 }
+
+/*****************************************************************************/
+/*                               ChannelArgs                                 */
+/*****************************************************************************/
 
 ChannelArgs::ChannelArgs(void)
 {
@@ -182,6 +190,10 @@ void ChannelsCache::deleteChannel(const String& key) {
 }
 */
 
+/*****************************************************************************/
+/*                               HHVM Methods                                */
+/*****************************************************************************/
+
 /**
  * Construct an instance of the Channel class.
  *
@@ -291,7 +303,7 @@ void HHVM_METHOD(Channel, __construct,
 
     if (!pChannel)
     {
-        SystemLib::throwRuntimeExceptionObject("failed to create channel");
+        SystemLib::throwBadMethodCallExceptionObject("failed to create channel");
         return;
     }
     pChannelData->init(pChannel);
@@ -307,12 +319,15 @@ String HHVM_METHOD(Channel, getTarget)
 {
     HHVM_TRACE_SCOPE("Channel getTarget") // Degug Trace
 
-  auto channelData = Native::data<ChannelData>(this_);
-  if (channelData->getWrapped() == nullptr) {
-    SystemLib::throwInvalidArgumentExceptionObject("Channel already closed.");
-  }
+    ChannelData* const pChannelData{ Native::data<ChannelData>(this_) };
 
-  return String(grpc_channel_get_target(channelData->getWrapped()), CopyString);
+    if (!pChannelData->channel())
+    {
+        SystemLib::throwBadMethodCallExceptionObject("Channel already closed.");
+        return String{};
+    }
+
+    return String{ grpc_channel_get_target(pChannelData->channel()), CopyString };
 }
 
 /**
@@ -321,22 +336,20 @@ String HHVM_METHOD(Channel, getTarget)
  * @return long The grpc connectivity state
  */
 int64_t HHVM_METHOD(Channel, getConnectivityState,
-  bool try_to_connect /* = false */) {
-  auto channelData = Native::data<ChannelData>(this_);
-  if (channelData->getWrapped() == nullptr) {
-    SystemLib::throwInvalidArgumentExceptionObject("Channel already closed.");
-  }
+                    bool try_to_connect /* = false */)
+{
+    ChannelData* const pChannelData{ Native::data<ChannelData>(this_) };
 
-  int state = grpc_channel_check_connectivity_state(channelData->getWrapped(),
-                                                      (int)try_to_connect);
+    if (!pChannelData->channel())
+    {
+        SystemLib::throwBadMethodCallExceptionObject("Channel already closed.");
+        return GRPC_CHANNEL_SHUTDOWN;
+    }
 
-  // this can happen if another shared Channel object close the underlying
-  // channel
-  if (state == GRPC_CHANNEL_SHUTDOWN) {
-    channelData->init(nullptr);
-  }
+    grpc_connectivity_state state{ grpc_channel_check_connectivity_state(pChannelData->channel(),
+                                                                         try_to_connect ? 1 : 0) };
 
-  return (int64_t) state;
+    return static_cast<int64_t>(state);
 }
 
 /**
@@ -352,23 +365,26 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
 {
     HHVM_TRACE_SCOPE("Channel watchConnectivityState") // Degug Trace
 
-  auto channelData = Native::data<ChannelData>(this_);
-  if (channelData->getWrapped() == nullptr) {
-    SystemLib::throwInvalidArgumentExceptionObject("Channel already closed.");
-  }
+    ChannelData* const pChannelData{ Native::data<ChannelData>(this_) };
 
-  auto timevalDataDeadline = Native::data<TimevalData>(deadline);
+    if (!pChannelData->channel())
+    {
+        SystemLib::throwBadMethodCallExceptionObject("Channel already closed.");
+        return GRPC_CHANNEL_SHUTDOWN;
+    }
 
-  grpc_channel_watch_connectivity_state(channelData->getWrapped(),
-                                          (grpc_connectivity_state)last_state,
-                                          timevalDataDeadline->getWrapped(),
+    TimevalData* const pTimevalDataDeadline{ Native::data<TimevalData>(deadline) };
+
+    grpc_channel_watch_connectivity_state(pChannelData->channel(),
+                                          static_cast<grpc_connectivity_state>(last_state),
+                                          pTimevalDataDeadline->getWrapped(),
                                           CompletionQueue::getQueue().queue(),
                                           nullptr);
 
-  grpc_event event = grpc_completion_queue_pluck(CompletionQueue::getQueue().queue(), nullptr,
-                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+    grpc_event event{ grpc_completion_queue_pluck(CompletionQueue::getQueue().queue(), nullptr,
+                      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) };
 
-  return (bool)event.success;
+    return (event.success != 0);
 }
 
 /**
@@ -379,52 +395,18 @@ void HHVM_METHOD(Channel, close)
 {
     HHVM_TRACE_SCOPE("Channel close") // Degug Trace
 
- auto channelData = Native::data<ChannelData>(this_);
- if (channelData->getWrapped() == nullptr) {
-   SystemLib::throwInvalidArgumentExceptionObject("Channel already closed.");
- }
+    ChannelData* const pChannelData{ Native::data<ChannelData>(this_) };
 
- //ChannelsCache::tl_obj.get()->deleteChannel(channelData->getHashKey());
-
- delete channelData;
-}
-
-
-int hhvm_grpc_read_args_array(const Array& args_array, grpc_channel_args *args) {
-  args->num_args = args_array.size();
-
-  #if HHVM_VERSION_MAJOR >= 3 && HHVM_VERSION_MINOR >= 19
-    args->args = (grpc_arg *) req::calloc_untyped(args->num_args, sizeof(grpc_arg));
-  #else
-    args->args = (grpc_arg *) req::calloc(args->num_args, sizeof(grpc_arg));
-  #endif
-
-  int i = 0;
-  for (ArrayIter iter(args_array); iter; ++iter) {
-    Variant key = iter.first();
-    if (!key.isString()) {
-      throw_invalid_argument("args keys must be strings");
-      return -1;
-    }
-    args->args[i].key = (char *)key.toString().c_str();
-
-    Variant v = iter.second();
-
-    if (v.isInteger()) {
-      args->args[i].value.integer = v.toInt32();
-      args->args[i].type = GRPC_ARG_INTEGER;
-    } else if (v.isString()) {
-      args->args[i].value.string = (char *)v.toString().c_str();
-      args->args[i].type = GRPC_ARG_STRING;
-    } else {
-      throw_invalid_argument("args values must be int or string");
-      return -1;
+    if (!pChannelData->channel())
+    {
+        SystemLib::throwBadMethodCallExceptionObject("Channel already closed.");
+        return;
     }
 
-    i++;
-  }
+     //ChannelsCache::tl_obj.get()->deleteChannel(channelData->getHashKey());
 
-  return 0;
+     // destruct the channel
+     pChannelData->~ChannelData();
 }
 
 } // namespace HPHP

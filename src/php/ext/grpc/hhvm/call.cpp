@@ -30,25 +30,29 @@
 #include "channel.h"
 #include "completion_queue.h"
 #include "timeval.h"
-#include "utility.h"
 
-#include "hphp/runtime/vm/native-data.h"
 #include "hphp/runtime/base/array-iterator.h"
+#include "hphp/runtime/base/memory-manager.h"
+#include "hphp/runtime/vm/native-data.h"
 
 #include "grpc/grpc_security.h"
 #include "grpc/support/alloc.h"
 
 namespace HPHP {
 
+/*****************************************************************************/
+/*                                  CallData                                 */
+/*****************************************************************************/
+
 Class* CallData::s_Class{ nullptr };
 const StaticString CallData::s_ClassName{ "Grpc\\Call" };
 
 CallData::~CallData(void)
 {
-    sweep();
+    destroy();
 }
 
-void CallData::sweep(void)
+void CallData::destroy(void)
 {
     if (m_pCall)
     {
@@ -65,6 +69,158 @@ void CallData::sweep(void)
     }
 }
 
+/*****************************************************************************/
+/*                               MetadataArray                               */
+/*****************************************************************************/
+
+MetadataArray::MetadataArray(const bool ownPHP) : m_OwnPHP{ ownPHP },
+    m_PHPData{}
+{
+    grpc_metadata_array_init(&m_Array);
+}
+
+MetadataArray::~MetadataArray(void)
+{
+    m_OwnPHP ? destroyPHP() : freePHP();
+    grpc_metadata_array_destroy(&m_Array);
+}
+
+// Populates a grpc_metadata_array with the data in a PHP array object.
+// Returns true on success and false on failure
+bool MetadataArray::init(const HPHP::Array& phpArray, const bool ownPHP)
+{
+    // destroy/free any PHP data
+    m_OwnPHP ? destroyPHP() : freePHP();
+    m_OwnPHP = ownPHP;
+
+    // precheck validity of data
+    size_t count{ 0 };
+    for (HPHP::ArrayIter iter{ phpArray }; iter; ++iter)
+    {
+        HPHP::Variant key{ iter.first() };
+        if (key.isNull() || !key.isString() ||
+            !grpc_header_key_is_legal(grpc_slice_from_static_string(key.toString().c_str())))
+        {
+            return false;
+        }
+
+        HPHP::Variant value{ iter.second() };
+        if (value.isNull() || !value.isArray())
+        {
+            return false;
+        }
+
+        HPHP::Array innerArray{ value.toArray() };
+        for (HPHP::ArrayIter iter2(innerArray); iter2; ++iter2, ++count)
+        {
+            HPHP::Variant value2{ iter2.second() };
+            if (value2.isNull() || !value2.isString())
+            {
+                return false;
+            }
+        }
+    }
+    if (count > m_Array.capacity) resizeMetadata(count);
+
+    // create metadata array
+    size_t elem{ 0 };
+    for (HPHP::ArrayIter iter(phpArray); iter; ++iter)
+    {
+        HPHP::Variant key{ iter.first() };
+        HPHP::Variant value{ iter.second() };
+        HPHP::Array innerArray{ value.toArray() };
+        for (HPHP::ArrayIter iter2(innerArray); iter2; ++iter2, ++elem)
+        {
+            HPHP::Variant value2{ iter2.second() };
+
+            Slice keySlice{ key.toString().c_str() };
+            Slice valueSlice{ value2.toString().c_str() };
+            m_PHPData.emplace_back(keySlice, valueSlice);
+
+            m_Array.metadata[elem].key = m_PHPData.back().first.slice();
+            m_Array.metadata[elem].value = m_PHPData.back().second.slice();
+
+            std::cout << m_PHPData.back().first.data() << ' ' << m_PHPData.back().second.data() << std::endl;
+        }
+        std::cout << GRPC_SLICE_START_PTR(m_Array.metadata[elem-1].key) << ' '
+                  << GRPC_SLICE_START_PTR(m_Array.metadata[elem-1].value) << std::endl;
+    }
+    m_Array.count = count;
+    std::cout << "Count: " << count << std::endl;
+    return true;
+}
+
+// Creates and returns a PHP array object with the data in a
+// grpc_metadata_array. Returns NULL on failure
+HPHP::Variant MetadataArray::phpData(void) const
+{
+    HPHP::Array phpArray{ HPHP::Array::Create() };
+    for(size_t elem{ 0 }; elem < m_Array.count; ++elem)
+    {
+        const grpc_metadata& element(m_Array.metadata[elem]);
+
+        HPHP::String key{ reinterpret_cast<const char* const>(GRPC_SLICE_START_PTR(element.key)),
+                          GRPC_SLICE_LENGTH(element.key), HPHP::CopyString };
+        HPHP::String value{ reinterpret_cast<const char* const>(GRPC_SLICE_START_PTR(element.value)),
+                            GRPC_SLICE_LENGTH(element.value), HPHP::CopyString };
+
+        if (!phpArray.exists(key, true))
+        {
+            phpArray.set(key, HPHP::Array::Create(), true);
+        }
+
+        HPHP::Variant current{ phpArray[key] };
+        if (current.isNull() || !current.isArray())
+        {
+            HPHP::SystemLib::throwInvalidArgumentExceptionObject("Metadata hash somehow contains wrong types.");
+            return HPHP::Variant{};
+        }
+        HPHP::Array currentArray{ current.toArray() };
+        currentArray.append(HPHP::Variant{ value });
+    }
+
+    return HPHP::Variant(phpArray);
+}
+
+void MetadataArray::destroyPHP(void)
+{
+    // destroy PHP data
+    m_PHPData.clear();
+    m_Array.count = 0;
+}
+
+void MetadataArray::freePHP(void)
+{
+    // free the PHP data by increasinf ref counts
+    for(std::pair<Slice, Slice>& phpData : m_PHPData)
+    {
+        phpData.first.increaseRef();
+        phpData.second.increaseRef();
+    }
+
+    destroyPHP();
+}
+
+void MetadataArray::resizeMetadata(const size_t capacity)
+{
+    if (capacity > m_Array.capacity)
+    {
+        // allocate new memory
+        grpc_metadata* const pMetadataNew{ reinterpret_cast<grpc_metadata*>(gpr_malloc(capacity * sizeof(grpc_metadata))) };
+
+        // move existing items
+        for(size_t elem{ 0 }; elem < m_Array.count; ++elem)
+        {
+            pMetadataNew[elem] = m_Array.metadata[elem];
+        }
+
+        // destroy old memory
+        gpr_free(m_Array.metadata);
+        m_Array.metadata = pMetadataNew;
+        m_Array.capacity = capacity;
+    }
+}
+
 void HHVM_METHOD(Call, __construct,
                  const Object& channel_obj,
                  const String& method,
@@ -76,8 +232,8 @@ void HHVM_METHOD(Call, __construct,
     CallData* const pCallData{ Native::data<CallData>(this_) };
     ChannelData* const pChannelData{ Native::data<ChannelData>(channel_obj) };
 
-    if (pChannelData->getWrapped() == nullptr) {
-        SystemLib::throwInvalidArgumentExceptionObject("Call cannot be constructed from a closed Channel");
+    if (pChannelData->channel() == nullptr) {
+        SystemLib::throwBadMethodCallExceptionObject("Call cannot be constructed from a closed Channel");
         return;
     }
 
@@ -89,7 +245,7 @@ void HHVM_METHOD(Call, __construct,
 
     const Slice method_slice{ !method.empty() ? method.c_str() : "" };
     const Slice host_slice{  !host_override.isNull() ? host_override.toString().c_str() : "" };
-    pCallData->init(grpc_channel_create_call(pChannelData->getWrapped(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+    pCallData->init(grpc_channel_create_call(pChannelData->channel(), nullptr, GRPC_PROPAGATE_DEFAULTS,
                                              CompletionQueue::getQueue().queue(),
                                              method_slice.slice(),
                                              !host_override.isNull() ? &host_slice.slice() : nullptr,
@@ -273,6 +429,7 @@ Object HHVM_METHOD(Call, startBatch,
             if (!statusArr.exists(String{ "code" }, true))
             {
                 SystemLib::throwInvalidArgumentExceptionObject("Integer status code is required");
+                return resultObj;
             }
 
             Variant innerCode{ statusArr[String{ "code" }] };
@@ -329,19 +486,19 @@ Object HHVM_METHOD(Call, startBatch,
     {
         // TODO : Update for read and write locks for efficiency
         std::unique_lock<std::mutex> lock{ s_WriteStartBatchMutex };
-        grpc_call_error errorCode{ grpc_call_start_batch(pCallData->getWrapped(), ops.data(),
-                                                         op_num, pCallData->getWrapped(), nullptr) };
+        grpc_call_error errorCode{ grpc_call_start_batch(pCallData->call(), ops.data(),
+                                                         op_num, pCallData->call(), nullptr) };
 
         if (errorCode != GRPC_CALL_OK)
         {
             lock.unlock();
             std::stringstream oSS;
             oSS << "start_batch was called incorrectly: " << errorCode << std::endl;
-            SystemLib::throwInvalidArgumentExceptionObject("oSS.str()");
+            SystemLib::throwBadMethodCallExceptionObject("oSS.str()");
             return resultObj;
         }
     }
-    std::cout << "Sending Call" << pCallData->getWrapped() << std::endl;
+    std::cout << "Sending Call" << pCallData->call() << std::endl;
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
     // has it's own thread and you cannot run application code on a single request in more than
@@ -354,21 +511,15 @@ Object HHVM_METHOD(Call, startBatch,
     }
 
     grpc_event event{ grpc_completion_queue_pluck(CompletionQueue::getQueue().queue(),
-                                                  pCallData->getWrapped(),
+                                                  pCallData->call(),
                                                   gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) };
     std::cout << "Reciving Call: " << event.type << std::endl;
-    if (event.type != GRPC_OP_COMPLETE)
-    {
-        // we timed out or ar shutting down so just return
-        return resultObj;
-    }
-
-    // An error occured if success = 0
-    if (event.success != 0 )
+    if (event.success == 0 || event.type != GRPC_OP_COMPLETE )
     {
         std::stringstream oSS;
-        oSS << "There was a problem with the request. Event success code: " << event.success << std::endl;
-        SystemLib::throwRuntimeExceptionObject(oSS.str());
+        oSS << "There was a problem with the request. Event success code: " << event.success
+            << " Type: " << event.type << std::endl;
+        SystemLib::throwBadMethodCallExceptionObject(oSS.str());
         return resultObj;
     }
 
@@ -429,12 +580,16 @@ Object HHVM_METHOD(Call, startBatch,
     return resultObj;
 }
 
+/*****************************************************************************/
+/*                              HHVM Call Methods                            */
+/*****************************************************************************/
+
 String HHVM_METHOD(Call, getPeer)
 {
     HHVM_TRACE_SCOPE("Call getPeer") // Degug Trace
 
     CallData* const pCallData{ Native::data<CallData>(this_) };
-    return String{ grpc_call_get_peer(pCallData->getWrapped()), CopyString };
+    return String{ grpc_call_get_peer(pCallData->call()), CopyString };
 }
 
 void HHVM_METHOD(Call, cancel)
@@ -442,7 +597,7 @@ void HHVM_METHOD(Call, cancel)
     HHVM_TRACE_SCOPE("Call cancel") // Degug Trace
 
     CallData* const pCallData{ Native::data<CallData>(this_) };
-    grpc_call_cancel(pCallData->getWrapped(), nullptr);
+    grpc_call_cancel(pCallData->call(), nullptr);
 }
 
 int64_t HHVM_METHOD(Call, setCredentials,
@@ -453,7 +608,7 @@ int64_t HHVM_METHOD(Call, setCredentials,
     CallData* const pCallData{ Native::data<CallData>(this_) };
     CallCredentialsData* const pCallCredentialsData{ Native::data<CallCredentialsData>(creds_obj) };
 
-    grpc_call_error error{ grpc_call_set_credentials(pCallData->getWrapped(),
+    grpc_call_error error{ grpc_call_set_credentials(pCallData->call(),
                                                      pCallCredentialsData->getWrapped()) };
 
     return static_cast<int64_t>(error);

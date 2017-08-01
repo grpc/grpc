@@ -25,9 +25,12 @@
     #include "config.h"
 #endif
 
+#include "utility.h"
+
 #include "hphp/runtime/ext/extension.h"
 
 #include "grpc/grpc.h"
+#include "grpc/support/alloc.h"
 
 namespace HPHP {
 
@@ -49,9 +52,8 @@ public:
     CallData& operator&(CallData&& otherCallData) = delete;
 
     // interface functions
-    void sweep(void);
     void init(grpc_call* call) { m_pCall = call; }
-    grpc_call* const getWrapped(void) { return m_pCall; }
+    grpc_call* const call(void) { return m_pCall; }
     bool getOwned(void) const { return m_Owned; }
     void setChannelData(ChannelData* channelData) { m_ChannelData = channelData; }
     void setOwned(const bool owned) { m_Owned = owned; }
@@ -62,6 +64,10 @@ public:
     static const StaticString& className(void) { return s_ClassName; }
 
 private:
+    // helper functions
+    void destroy(void);
+
+
     // member variables
     grpc_call* m_pCall;
     bool m_Owned;
@@ -70,6 +76,37 @@ private:
     static Class* s_Class;
     static const StaticString s_ClassName;
 };
+
+// This class is an RAII wrapper around a call metadata array
+class MetadataArray
+{
+public:
+    // constructors/descructors
+    MetadataArray(const bool ownPHP = true);
+    ~MetadataArray(void);
+
+    // interface functions
+    bool init(const HPHP::Array& phpArray);
+    grpc_metadata* const data(void) { return m_Array.metadata; }
+    const grpc_metadata* const data(void) const { return m_Array.metadata; }
+    size_t size(void) const { return m_Array.count; }
+    const grpc_metadata_array& array(void) const { return m_Array; } //
+    grpc_metadata_array& array(void) { return m_Array; } // several methods need non const &
+    bool init(const HPHP::Array& phpArray, const bool ownPHP = true);
+    HPHP::Variant phpData(void) const;
+
+private:
+    // helper functions
+    void destroyPHP(void);
+    void freePHP(void);
+    void resizeMetadata(const size_t capacity);
+
+    // member variables
+    bool m_OwnPHP;
+    grpc_metadata_array m_Array;
+    std::vector<std::pair<Slice, Slice>> m_PHPData; // the key, value PHP Data
+};
+
 
 void HHVM_METHOD(Call, __construct,
                  const Object& channel_obj,
