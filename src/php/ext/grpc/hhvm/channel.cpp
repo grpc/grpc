@@ -85,7 +85,11 @@ bool ChannelArgs::init(const Array& argsArray)
     size_t elements{ static_cast<size_t>(argsArray.size()) };
     if (elements > 0 )
     {
-        m_ChannelArgs.args = (grpc_arg *) req::calloc_untyped(argsArray.size(), sizeof(grpc_arg));
+        #if HHVM_VERSION_ID >= 31900
+          m_ChannelArgs.args = (grpc_arg *) req::calloc_untyped(argsArray.size(), sizeof(grpc_arg));
+        #else
+          m_ChannelArgs.args = (grpc_arg *) req::calloc(argsArray.size(), sizeof(grpc_arg));
+        #endif
 
         size_t count{ 0 };
         for (ArrayIter iter(argsArray); iter; ++iter, ++count)
@@ -388,7 +392,12 @@ void HHVM_METHOD(Channel, close)
 
 int hhvm_grpc_read_args_array(const Array& args_array, grpc_channel_args *args) {
   args->num_args = args_array.size();
-  args->args = (grpc_arg *) req::calloc_untyped(args->num_args, sizeof(grpc_arg));
+
+  #if HHVM_VERSION_ID >= 31900
+    args->args = (grpc_arg *) req::calloc_untyped(args->num_args, sizeof(grpc_arg));
+  #else
+    args->args = (grpc_arg *) req::calloc(args->num_args, sizeof(grpc_arg));
+  #endif
 
   int i = 0;
   for (ArrayIter iter(args_array); iter; ++iter) {
