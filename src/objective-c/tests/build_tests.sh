@@ -16,7 +16,7 @@
 # Don't run this script standalone. Instead, run from the repository root:
 # ./tools/run_tests/run_tests.py -l objc
 
-set -e
+set -ex
 
 # CocoaPods requires the terminal to be using UTF-8 encoding.
 export LANG=en_US.UTF-8
@@ -36,5 +36,7 @@ rm -f Podfile.lock
 rm -f RemoteTestClient/*.{h,m}
 
 echo "TIME:  $(date)"
-pod install
-
+# Without repo-update, nanopb is not found correctly.
+# https://github.com/grpc/grpc/issues/11987
+# https://github.com/fastlane/fastlane/issues/4624
+pod install --repo-update
