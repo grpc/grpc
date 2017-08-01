@@ -164,6 +164,18 @@ static void send_message_on_complete(grpc_exec_ctx *exec_ctx, void *arg,
                    GRPC_ERROR_REF(error));
 }
 
+static void send_message_batch_continue(grpc_exec_ctx *exec_ctx,
+                                        grpc_call_element *elem) {
+  call_data *calld = (call_data *)elem->call_data;
+  // Note: The call to grpc_call_next_op() results in yielding the
+  // call combiner, so we need to clear calld->send_message_batch
+  // before we do that.
+  grpc_transport_stream_op_batch *send_message_batch =
+      calld->send_message_batch;
+  calld->send_message_batch = NULL;
+  grpc_call_next_op(exec_ctx, elem, send_message_batch);
+}
+
 static void finish_send_message(grpc_exec_ctx *exec_ctx,
                                 grpc_call_element *elem) {
   call_data *calld = (call_data *)elem->call_data;
@@ -211,8 +223,7 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
   calld->original_send_message_on_complete =
       calld->send_message_batch->on_complete;
   calld->send_message_batch->on_complete = &calld->send_message_on_complete;
-  grpc_call_next_op(exec_ctx, elem, calld->send_message_batch);
-  calld->send_message_batch = NULL;
+  send_message_batch_continue(exec_ctx, elem);
 }
 
 static void fail_send_message_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
@@ -298,8 +309,7 @@ static void start_send_message_batch(grpc_exec_ctx *exec_ctx, void *arg,
           elem,
           calld->send_message_batch->payload->send_message.send_message->flags,
           calld->send_initial_metadata_state == HAS_COMPRESSION_ALGORITHM)) {
-    grpc_call_next_op(exec_ctx, elem, calld->send_message_batch);
-    calld->send_message_batch = NULL;
+    send_message_batch_continue(exec_ctx, elem);
   } else {
     continue_reading_send_message(exec_ctx, elem);
   }
