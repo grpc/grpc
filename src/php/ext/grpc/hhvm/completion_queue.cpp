@@ -39,9 +39,9 @@ CompletionQueue::~CompletionQueue(void)
 
 CompletionQueue& CompletionQueue::getQueue(void)
 {
-    // ToDo :: Look at making this thread local for efficiency
-    static CompletionQueue s_CompletionQueue;
-
+    // Completion queue per thread
+    thread_local CompletionQueue s_CompletionQueue;
+    std::cout << "Completion Queue " << s_CompletionQueue.queue() << std::endl;
     return s_CompletionQueue;
 }
 

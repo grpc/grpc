@@ -16,11 +16,9 @@
  *
  */
 
-#include "channel_credentials.h"
-#include "call_credentials.h"
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
 
 #include "hphp/runtime/ext/extension.h"
@@ -32,6 +30,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+
+#include "channel_credentials.h"
+#include "call_credentials.h"
+#include "utility.h"
 
 namespace HPHP {
 
@@ -90,11 +92,17 @@ String ChannelCredentialsData::getHashKey() {
 }
 
 void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,
-  const String& pem_roots) {
+                        const String& pem_roots)
+{
+    HHVM_TRACE_SCOPE("ChannelCredentials setDefaultRootsPem") // Degug Trace
+
   DefaultPemRootCerts::tl_obj.get()->setCerts(pem_roots);
 }
 
-Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault) {
+Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault)
+{
+    HHVM_TRACE_SCOPE("ChannelCredentials createDefault") // Degug Trace
+
   auto newChannelCredentialsObj = Object{ChannelCredentialsData::getClass()};
   auto channelCredentialsData = Native::data<ChannelCredentialsData>(newChannelCredentialsObj);
   grpc_channel_credentials *channel_credentials = grpc_google_default_credentials_create();
@@ -104,10 +112,13 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault) {
 }
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createSsl,
-  const Variant& pem_root_certs /*=null*/,
-  const Variant& pem_key_cert_pair__private_key /*= null*/,
-  const Variant& pem_key_cert_pair__cert_chain /*=null*/
-  ) {
+                          const Variant& pem_root_certs /*=null*/,
+                          const Variant& pem_key_cert_pair__private_key /*= null*/,
+                          const Variant& pem_key_cert_pair__cert_chain /*=null*/
+                          )
+{
+    HHVM_TRACE_SCOPE("ChannelCredentials createSsl") // Degug Trace
+
   const char *pem_root_certs_ = nullptr;
 
   if (pem_root_certs.isString()) {
@@ -148,8 +159,11 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createSsl,
 }
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createComposite,
-  const Object& cred1_obj,
-  const Object& cred2_obj) {
+                          const Object& cred1_obj,
+                          const Object& cred2_obj)
+{
+    HHVM_TRACE_SCOPE("ChannelCredentials createComposite") // Degug Trace
+
   auto channelCredentialsData = Native::data<ChannelCredentialsData>(cred1_obj);
   auto callCredentialsData = Native::data<CallCredentialsData>(cred2_obj);
 
@@ -167,11 +181,15 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createComposite,
   return newChannelCredentialsObj;
 }
 
-Variant HHVM_STATIC_METHOD(ChannelCredentials, createInsecure) {
+Variant HHVM_STATIC_METHOD(ChannelCredentials, createInsecure)
+{
+    HHVM_TRACE_SCOPE("ChannelCredentials createInsecure") // Degug Trace
+
   return Variant();
 }
 
-void grpc_hhvm_init_channel_credentials() {
+void grpc_hhvm_init_channel_credentials()
+{
   grpc_set_ssl_roots_override_callback(get_ssl_roots_override);
 }
 

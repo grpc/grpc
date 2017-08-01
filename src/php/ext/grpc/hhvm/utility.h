@@ -20,12 +20,41 @@
 #define NET_GRPC_HHVM_GRPC_UTILITY_H_
 
 #include <cstdint>
+#include <iostream>
+#include <iomanip>
 #include <vector>
 
 #include "hphp/runtime/ext/extension.h"
 
 #include "grpc/grpc.h"
 #include "grpc/slice.h"
+
+class TraceScope
+{
+public:
+    TraceScope(const std::string& message, const std::string& function, const std::string& file) :
+        m_Message{ message}, m_Function{ function }, m_File{ file }
+    {
+        std::cout << __TIME__ << " - " << m_Message << " - Entry " << m_Function << ' '
+                  << m_File << std::endl;
+    }
+    ~TraceScope(void)
+    {
+        std::cout << __TIME__ << " - " << m_Message << " Exit " << m_Function << ' '
+                  << m_File << std::endl;
+    }
+    std::string m_Message;
+    std::string m_Function;
+    std::string m_File;
+};
+
+#define HHVM_TRACE_DEBUG
+
+#ifdef HHVM_TRACE_DEBUG
+    #define HHVM_TRACE_SCOPE(x) TraceScope traceScope{ x, __func__, __FILE__ };
+#else
+    #define HHVM_TRACE_SCOPE(x)
+#endif // HHVM_TRACE_DEBUG
 
 // This class is an RAII wrapper around a slice
 class Slice

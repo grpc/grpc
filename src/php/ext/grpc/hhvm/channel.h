@@ -32,32 +32,68 @@
 
 namespace HPHP {
 
+class ChannelData
+{
+public:
+    // constructors/destructors
+    ChannelData(void) : m_pChannel{ nullptr } {}
+    ChannelData(grpc_channel* const channel) : m_pChannel{ channel } {}
+    ~ChannelData(void);
+    ChannelData(const ChannelData& otherChannelData) = delete;
+    ChannelData(ChannelData&& otherChannelData) = delete;
+    ChannelData& operator=(const ChannelData& rhsChannelData) = delete;
+    ChannelData& operator=(ChannelData&& rhsChannelData) = delete;
+
+    // interface functions
+    void init(grpc_channel* channel) { m_pChannel = channel; }
+    void sweep(void);
+    grpc_channel* const getWrapped(void) { return m_pChannel; }
+    void setHashKey(const String& hashKey) { m_HashKey = hashKey; }
+    const String& getHashKey(void) const { return m_HashKey; }
+
+    static Class* const getClass(void) { return s_Class; }
+    static const StaticString& className(void) { return s_ClassName; }
+
+ private:
+     // member variables
+    grpc_channel* m_pChannel;
+    String m_HashKey;
+    static Class* s_Class;
+    static const StaticString s_ClassName;
+};
+
+
+class ChannelArgs
+{
+public:
+    // constructors/destructors
+    ChannelArgs(void);
+    ~ChannelArgs(void);
+    ChannelArgs(const ChannelData& otherChannelArgs) = delete;
+    ChannelArgs(ChannelData&& otherChannelArgs) = delete;
+    ChannelArgs& operator=(const ChannelData& rhsChannelArgs) = delete;
+    ChannelArgs& operator=(ChannelData&& rhsChannelArgs) = delete;
+
+    // interface functions
+    bool init(const Array& argsArray);
+    const grpc_channel_args& args(void) const { return m_ChannelArgs; }
+
+private:
+    // helper functions
+    void destroyArgs(void);
+
+    // member variables
+    grpc_channel_args m_ChannelArgs;
+};
+
+/*
+
 struct GlobalChannelsCache {
   std::forward_list<grpc_channel *> globalChannelMap;
 };
 
 extern GlobalChannelsCache s_global_channels_cache;
 extern Mutex s_global_channels_cache_mutex;
-
-class ChannelData {
-  private:
-    grpc_channel* wrapped{nullptr};
-    String key;
-  public:
-    static Class* s_class;
-    static const StaticString s_className;
-
-    static Class* getClass();
-
-    ChannelData();
-    ~ChannelData();
-
-    void init(grpc_channel* channel);
-    void sweep();
-    grpc_channel* getWrapped();
-    void setHashKey(const String& hashKey);
-    String getHashKey();
-};
 
 struct ChannelsCache {
   ChannelsCache();
@@ -70,19 +106,21 @@ struct ChannelsCache {
 
   static DECLARE_THREAD_LOCAL(ChannelsCache, tl_obj);
 };
+*/
+
 
 void HHVM_METHOD(Channel, __construct,
-  const String& target,
-  const Array& args_array);
+                 const String& target,
+                 const Array& args_array);
 
 String HHVM_METHOD(Channel, getTarget);
 
 int64_t HHVM_METHOD(Channel, getConnectivityState,
-  bool try_to_connect /* = false */);
+                    bool try_to_connect /* = false */);
 
 bool HHVM_METHOD(Channel, watchConnectivityState,
-  int64_t last_state,
-  const Object& deadline);
+                 int64_t last_state,
+                 const Object& deadline);
 
 void HHVM_METHOD(Channel, close);
 

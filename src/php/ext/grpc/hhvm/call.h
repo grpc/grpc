@@ -38,9 +38,9 @@ class CallData
 {
 public:
     // constructors/destructors
-    CallData(void) : m_Wrapped{ nullptr }, m_Owned{ false },
+    CallData(void) : m_pCall{ nullptr }, m_Owned{ false },
         m_ChannelData{ nullptr }, m_Timeout{ 0 } {}
-    CallData(grpc_call* const call) : m_Wrapped{ call },
+    CallData(grpc_call* const call) : m_pCall{ call },
         m_Owned{ false }, m_ChannelData{ nullptr }, m_Timeout{ 0 } {}
     ~CallData(void);
     CallData(const CallData& otherCallData) = delete;
@@ -50,8 +50,8 @@ public:
 
     // interface functions
     void sweep(void);
-    void init(grpc_call* call) { m_Wrapped = call; }
-    grpc_call* const getWrapped(void) { return m_Wrapped; }
+    void init(grpc_call* call) { m_pCall = call; }
+    grpc_call* const getWrapped(void) { return m_pCall; }
     bool getOwned(void) const { return m_Owned; }
     void setChannelData(ChannelData* channelData) { m_ChannelData = channelData; }
     void setOwned(const bool owned) { m_Owned = owned; }
@@ -63,7 +63,7 @@ public:
 
 private:
     // member variables
-    grpc_call* m_Wrapped;
+    grpc_call* m_pCall;
     bool m_Owned;
     ChannelData* m_ChannelData;
     int32_t m_Timeout;

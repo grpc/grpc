@@ -22,6 +22,7 @@
 
 #include <string.h>
 
+#include "hphp/runtime/base/array-iterator.h"
 #include "hphp/runtime/base/memory-manager.h"
 
 #include "grpc/byte_buffer_reader.h"
@@ -123,7 +124,7 @@ bool MetadataArray::init(const HPHP::Array& phpArray, const bool ownPHP)
 
     // precheck validity of data
     size_t count{ 0 };
-    for (HPHP::ArrayIter iter(phpArray); iter; ++iter)
+    for (HPHP::ArrayIter iter{ phpArray }; iter; ++iter)
     {
         HPHP::Variant key{ iter.first() };
         if (key.isNull() || !key.isString() ||
@@ -163,16 +164,18 @@ bool MetadataArray::init(const HPHP::Array& phpArray, const bool ownPHP)
 
             Slice keySlice{ key.toString().c_str() };
             Slice valueSlice{ value2.toString().c_str() };
-
-            m_Array.metadata[elem].key = keySlice.slice();
-            m_Array.metadata[elem].value = valueSlice.slice();
-
             m_PHPData.emplace_back(keySlice, valueSlice);
+
+            m_Array.metadata[elem].key = m_PHPData.back().first.slice();
+            m_Array.metadata[elem].value = m_PHPData.back().second.slice();
+
             std::cout << m_PHPData.back().first.data() << ' ' << m_PHPData.back().second.data() << std::endl;
         }
+        std::cout << GRPC_SLICE_START_PTR(m_Array.metadata[elem-1].key) << ' '
+                  << GRPC_SLICE_START_PTR(m_Array.metadata[elem-1].value) << std::endl;
     }
     m_Array.count = count;
-
+    std::cout << "Count: " << count << std::endl;
     return true;
 }
 

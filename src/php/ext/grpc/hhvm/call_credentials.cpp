@@ -80,8 +80,11 @@ int PluginGetMetadataFd::getFd() { return fd; }
  * @return CallCredentials The new composite credentials object
  */
 Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
-  const Object& cred1_obj,
-  const Object& cred2_obj) {
+                          const Object& cred1_obj,
+                          const Object& cred2_obj)
+{
+    HHVM_TRACE_SCOPE("CallCredentials createComposite") // Degug Trace
+
   auto callCredentialsData1 = Native::data<CallCredentialsData>(cred1_obj);
   auto callCredentialsData2 = Native::data<CallCredentialsData>(cred2_obj);
 
@@ -103,7 +106,9 @@ Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
  * @return CallCredentials The new call credentials object
  */
 Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
-  const Variant& callback) {
+                          const Variant& callback)
+{
+    HHVM_TRACE_SCOPE("CallCredentials createFromPlugin") // Degug Trace
 
   std::cout << "CallCredentials" << std::endl;
   if (!is_callable(callback)) {
@@ -131,7 +136,10 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 // This work done in this function MUST be done on the same thread as the HHVM request
 void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
                              grpc_credentials_plugin_metadata_cb cb,
-                             void *user_data) {
+                             void *user_data)
+{
+    HHVM_TRACE_SCOPE("CallCredentials plugin_do_get_metadata") // Degug Trace
+
   Object returnObj = SystemLib::AllocStdClassObject();
   returnObj.o_set("service_url", String(context.service_url, CopyString));
   returnObj.o_set("method_name", String(context.method_name, CopyString));
@@ -159,8 +167,10 @@ void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
 
 void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
                          grpc_credentials_plugin_metadata_cb cb,
-                         void *user_data) {
-  std::cout << "CallCredentials get metadata" << std::endl;
+                         void *user_data)
+{
+    HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata") // Degug Trace
+
   plugin_state *state = (plugin_state *)ptr;
   PluginGetMetadataFd *fd_obj = state->fd_obj;
 
@@ -174,7 +184,10 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
 }
 
 
-void plugin_destroy_state(void *ptr) {
+void plugin_destroy_state(void *ptr)
+{
+    HHVM_TRACE_SCOPE("CallCredentials plugin_destroy_state") // Degug Trace
+
   plugin_state *state = (plugin_state *)ptr;
   gpr_free(state);
 }

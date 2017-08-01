@@ -21,19 +21,9 @@
 #include <mutex>
 #include <sstream>
 
-#include <sys/eventfd.h>
-#include <sys/poll.h>
-
 #ifdef HAVE_CONFIG_H
     #include "config.h"
 #endif
-
-#include "common.h"
-
-#include "hphp/runtime/vm/native-data.h"
-
-#include "grpc/grpc_security.h"
-#include "grpc/support/alloc.h"
 
 #include "call.h"
 #include "call_credentials.h"
@@ -42,22 +32,32 @@
 #include "timeval.h"
 #include "utility.h"
 
+#include "hphp/runtime/vm/native-data.h"
+#include "hphp/runtime/base/array-iterator.h"
+
+#include "grpc/grpc_security.h"
+#include "grpc/support/alloc.h"
+
 namespace HPHP {
 
-Class* CallData::s_Class = nullptr;
+Class* CallData::s_Class{ nullptr };
 const StaticString CallData::s_ClassName{ "Grpc\\Call" };
 
-CallData::~CallData() { sweep(); }
+CallData::~CallData(void)
+{
+    sweep();
+}
 
-void CallData::sweep(void) {
-    if (m_Wrapped)
+void CallData::sweep(void)
+{
+    if (m_pCall)
     {
         if (m_Owned)
         {
-            grpc_call_unref(m_Wrapped);
+            grpc_call_unref(m_pCall);
             m_Owned = false;
         }
-        m_Wrapped = nullptr;
+        m_pCall = nullptr;
     }
     if (m_ChannelData)
     {
@@ -71,7 +71,8 @@ void HHVM_METHOD(Call, __construct,
                  const Object& deadline_obj,
                  const Variant& host_override /* = null */)
 {
-    //std::cout << "Method Call __construct" << std::endl;
+    HHVM_TRACE_SCOPE("Call construct") // Degug Trace
+
     CallData* const pCallData{ Native::data<CallData>(this_) };
     ChannelData* const pChannelData{ Native::data<ChannelData>(channel_obj) };
 
@@ -181,6 +182,7 @@ Object HHVM_METHOD(Call, startBatch,
         }
 
         int32_t index{ key.toInt32() };
+        std::cout << "Op: " << op_num << " Index: " << index << std::endl;
         switch(index)
         {
         case GRPC_OP_SEND_INITIAL_METADATA:
@@ -339,7 +341,7 @@ Object HHVM_METHOD(Call, startBatch,
             return resultObj;
         }
     }
-    std::cout << "Sending Call" << std::endl;
+    std::cout << "Sending Call" << pCallData->getWrapped() << std::endl;
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
     // has it's own thread and you cannot run application code on a single request in more than
@@ -355,18 +357,18 @@ Object HHVM_METHOD(Call, startBatch,
                                                   pCallData->getWrapped(),
                                                   gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) };
     std::cout << "Reciving Call: " << event.type << std::endl;
+    if (event.type != GRPC_OP_COMPLETE)
+    {
+        // we timed out or ar shutting down so just return
+        return resultObj;
+    }
+
     // An error occured if success = 0
     if (event.success != 0 )
     {
         std::stringstream oSS;
         oSS << "There was a problem with the request. Event success code: " << event.success << std::endl;
         SystemLib::throwRuntimeExceptionObject(oSS.str());
-        return resultObj;
-    }
-
-    if (event.type != GRPC_OP_COMPLETE)
-    {
-        // we timed out or ar shutting down so just return
         return resultObj;
     }
 
@@ -429,12 +431,16 @@ Object HHVM_METHOD(Call, startBatch,
 
 String HHVM_METHOD(Call, getPeer)
 {
+    HHVM_TRACE_SCOPE("Call getPeer") // Degug Trace
+
     CallData* const pCallData{ Native::data<CallData>(this_) };
     return String{ grpc_call_get_peer(pCallData->getWrapped()), CopyString };
 }
 
 void HHVM_METHOD(Call, cancel)
 {
+    HHVM_TRACE_SCOPE("Call cancel") // Degug Trace
+
     CallData* const pCallData{ Native::data<CallData>(this_) };
     grpc_call_cancel(pCallData->getWrapped(), nullptr);
 }
@@ -442,11 +448,14 @@ void HHVM_METHOD(Call, cancel)
 int64_t HHVM_METHOD(Call, setCredentials,
                     const Object& creds_obj)
 {
+    HHVM_TRACE_SCOPE("Call setCredentials") // Degug Trace
+
     CallData* const pCallData{ Native::data<CallData>(this_) };
     CallCredentialsData* const pCallCredentialsData{ Native::data<CallCredentialsData>(creds_obj) };
 
     grpc_call_error error{ grpc_call_set_credentials(pCallData->getWrapped(),
                                                      pCallCredentialsData->getWrapped()) };
+
     return static_cast<int64_t>(error);
 }
 

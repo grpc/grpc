@@ -16,10 +16,8 @@
  *
  */
 
-#include "server_credentials.h"
-
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
 
 #include "hphp/runtime/ext/extension.h"
@@ -29,6 +27,9 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+
+#include "server_credentials.h"
+#include "utility.h"
 
 namespace HPHP {
 
@@ -58,7 +59,10 @@ grpc_server_credentials* ServerCredentialsData::getWrapped() {
 Object HHVM_STATIC_METHOD(ServerCredentials, createSsl,
   const String& pem_root_certs,
   const String& pem_private_key,
-  const String& pem_cert_chain) {
+  const String& pem_cert_chain)
+{
+    HHVM_TRACE_SCOPE("ServerCredentials createSsl") // Degug Trace
+
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
 
   pem_key_cert_pair.private_key = pem_private_key.c_str();

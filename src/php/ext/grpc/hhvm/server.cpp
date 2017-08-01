@@ -74,7 +74,10 @@ grpc_server* ServerData::getWrapped() {
 }
 
 void HHVM_METHOD(Server, __construct,
-  const Variant& args_array_or_null /* = null */) {
+                 const Variant& args_array_or_null /* = null */)
+{
+    HHVM_TRACE_SCOPE("Server construct") // Degug Trace
+
   auto serverData = Native::data<ServerData>(this_);
   if (args_array_or_null.isNull()) {
     serverData->init(grpc_server_create(nullptr, nullptr));
@@ -91,7 +94,10 @@ void HHVM_METHOD(Server, __construct,
   grpc_server_register_completion_queue(serverData->getWrapped(), CompletionQueue::getQueue().queue(), nullptr);
 }
 
-Object HHVM_METHOD(Server, requestCall) {
+Object HHVM_METHOD(Server, requestCall)
+{
+    HHVM_TRACE_SCOPE("Server requestCall") // Degug Trace
+
   char *method_text;
   char *host_text;
   Object callObj;
@@ -107,6 +113,7 @@ Object HHVM_METHOD(Server, requestCall) {
   Object resultObj = SystemLib::AllocStdClassObject();;
 
   auto serverData = Native::data<ServerData>(this_);
+
 
   grpc_call_details_init(&details);
   error_code = grpc_server_request_call(serverData->getWrapped(), &call, &details, &metadata.array(),
@@ -148,27 +155,40 @@ Object HHVM_METHOD(Server, requestCall) {
   resultObj.o_set("absolute_deadline", timevalObj);
   resultObj.o_set("metadata", metadata.phpData());
 
+
+
 cleanup:
     grpc_call_details_destroy(&details);
     return resultObj;
 }
 
 bool HHVM_METHOD(Server, addHttp2Port,
-  const String& addr) {
+                 const String& addr)
+{
+    HHVM_TRACE_SCOPE("Server addHttp2Port") // Degug Trace
+
+
   auto serverData = Native::data<ServerData>(this_);
   return (bool)grpc_server_add_insecure_http2_port(serverData->getWrapped(), addr.c_str());
 }
 
 bool HHVM_METHOD(Server, addSecureHttp2Port,
-  const String& addr,
-  const Object& server_credentials) {
+                 const String& addr,
+                 const Object& server_credentials)
+{
+    HHVM_TRACE_SCOPE("Server addSecureHttp2Port") // Degug Trace
+
   auto serverData = Native::data<ServerData>(this_);
   auto serverCredentialsData = Native::data<ServerCredentialsData>(server_credentials);
+
   return (bool)grpc_server_add_secure_http2_port(serverData->getWrapped(), addr.c_str(), serverCredentialsData->getWrapped());
 }
 
-void HHVM_METHOD(Server, start) {
-  auto serverData = Native::data<ServerData>(this_);
+void HHVM_METHOD(Server, start)
+{
+    HHVM_TRACE_SCOPE("Server start") // Degug Trace
+
+auto serverData = Native::data<ServerData>(this_);
   grpc_server_start(serverData->getWrapped());
 }
 

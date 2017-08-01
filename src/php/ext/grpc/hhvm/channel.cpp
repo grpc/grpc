@@ -16,25 +16,23 @@
  *
  */
 
-#include "channel.h"
-
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
-
-#include "common.h"
 
 #include <stdbool.h>
 #include <map>
 #include <string>
 
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-
+#include "channel.h"
 #include "completion_queue.h"
 #include "channel_credentials.h"
 #include "server.h"
 #include "timeval.h"
+#include "utility.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 
 #include "hphp/runtime/ext/extension.h"
 #include "hphp/runtime/base/req-containers.h"
@@ -46,35 +44,106 @@
 
 namespace HPHP {
 
+/*
 GlobalChannelsCache s_global_channels_cache;
 Mutex s_global_channels_cache_mutex;
+*/
 
-Class* ChannelData::s_class = nullptr;
-const StaticString ChannelData::s_className("Grpc\\Channel");
+Class* ChannelData::s_Class{ nullptr };
+const StaticString ChannelData::s_ClassName{ "Grpc\\Channel" };
 
-IMPLEMENT_GET_CLASS(ChannelData);
-
-ChannelData::ChannelData() {}
-ChannelData::~ChannelData() { sweep(); }
-
-void ChannelData::init(grpc_channel* channel) {
-  wrapped = channel;
+ChannelData::~ChannelData(void)
+{
+    sweep();
 }
 
-void ChannelData::sweep() {}
-
-grpc_channel* ChannelData::getWrapped() {
-  return wrapped;
+void ChannelData::sweep(void)
+{
+    if (m_pChannel)
+    {
+        m_pChannel = nullptr;
+    }
 }
 
-void ChannelData::setHashKey(const String& hashKey) {
-  key = hashKey;
+ChannelArgs::ChannelArgs(void)
+{
+    m_ChannelArgs.args = nullptr;
+    m_ChannelArgs.num_args = 0;
 }
 
-String ChannelData::getHashKey() {
-  return key;
+ChannelArgs::~ChannelArgs(void)
+{
+    destroyArgs();
 }
 
+bool ChannelArgs::init(const Array& argsArray)
+{
+    // destroy existing
+    destroyArgs();
+
+    size_t elements{ static_cast<size_t>(argsArray.size()) };
+    if (elements > 0 )
+    {
+        m_ChannelArgs.args = (grpc_arg *) req::calloc_untyped(argsArray.size(), sizeof(grpc_arg));
+
+        size_t count{ 0 };
+        for (ArrayIter iter(argsArray); iter; ++iter, ++count)
+        {
+            Variant key{ iter.first() };
+            if (key.isNull() || !key.isString())
+            {
+                destroyArgs();
+                return false;
+            }
+            m_ChannelArgs.args[count].key = const_cast<char*>(key.getStringData()->data());
+
+            Variant value{ iter.second() };
+            if (!value.isNull())
+            {
+                if (value.isInteger())
+                {
+                    m_ChannelArgs.args[count].value.integer = value.toInt32();
+                    m_ChannelArgs.args[count].type = GRPC_ARG_INTEGER;
+                }
+                else if (value.isString())
+                {
+                    m_ChannelArgs.args[count].value.string = const_cast<char*>(value.getStringData()->data());
+                    m_ChannelArgs.args[count].type = GRPC_ARG_STRING;
+                    std::cout << count << ' ' << m_ChannelArgs.args[count].key << ' '
+                              << m_ChannelArgs.args[count].value.string << std::endl;
+                }
+                else
+                {
+                    destroyArgs();
+                    return false;
+                }
+            }
+            else
+            {
+                destroyArgs();
+                return false;
+            }
+
+        }
+
+        m_ChannelArgs.num_args = count;
+        return true;
+    }
+    return true;
+}
+
+void ChannelArgs::destroyArgs(void)
+{
+    if (m_ChannelArgs.args)
+    {
+        req::free(m_ChannelArgs.args);
+        m_ChannelArgs.args = nullptr;
+    }
+    m_ChannelArgs.num_args=0;
+}
+
+
+/*
 IMPLEMENT_THREAD_LOCAL(ChannelsCache, ChannelsCache::tl_obj);
 
 ChannelsCache::ChannelsCache() {}
@@ -106,6 +175,7 @@ void ChannelsCache::deleteChannel(const String& key) {
     channelMap.erase(key.toCppString());
   }
 }
+*/
 
 /**
  * Construct an instance of the Channel class.
@@ -128,83 +198,110 @@ void ChannelsCache::deleteChannel(const String& key) {
  * @param array $args_array The arguments to pass to the Channel
  */
 void HHVM_METHOD(Channel, __construct,
-  const String& target,
-  const Array& args_array) {
-  bool force_new = false;
-  auto argsArrayCopy = args_array.copy();
+                 const String& target,
+                 const Array& args_array)
+{
+    HHVM_TRACE_SCOPE("Channel Construct") // Degug Trace
 
-  auto channelData = Native::data<ChannelData>(this_);
-  auto credentialsKey = String("credentials");
-  auto forceNewKey = String("force_new");
+    ChannelData* const pChannelData{ Native::data<ChannelData>(this_) };
 
-  ChannelCredentialsData* channelCredentialsData = nullptr;
+    ChannelCredentialsData* pChannelCredentialsData{ nullptr };
+    String credentialsKey{ "credentials" };
+    Array argsArrayCopy{ args_array.copy() };
+    if (argsArrayCopy.exists(credentialsKey, true))
+    {
+        Variant value{ argsArrayCopy[credentialsKey] };
+        if(!value.isNull() && value.isObject())
+        {
+            ObjectData* objData{ value.getObjectData() };
+            if (!objData->instanceof(String("Grpc\\ChannelCredentials")))
+            {
+                SystemLib::throwInvalidArgumentExceptionObject("credentials must be a Grpc\\ChannelCredentials object");
+                return;
+            }
+            Object obj{ value.toObject() };
+            pChannelCredentialsData = Native::data<ChannelCredentialsData>(obj);
+        }
 
-  if (argsArrayCopy.exists(credentialsKey, true)) {
-    Variant value = argsArrayCopy[credentialsKey];
-    if (value.isObject() && !value.isNull()) {
-      Object obj = value.toObject();
-      ObjectData* objData = value.getObjectData();
-      if (!objData->instanceof(String("Grpc\\ChannelCredentials"))) {
-        throw_invalid_argument("credentials must be a Grpc\\ChannelCredentials object");
+        argsArrayCopy.remove(credentialsKey, true);
+    }
+
+    bool force_new{ false };
+    String forceNewKey{ "force_new" };
+    if (argsArrayCopy.exists(forceNewKey, true))
+    {
+        Variant value{ argsArrayCopy[forceNewKey] };
+        if (!value.isNull() && value.isBoolean())
+        {
+            force_new = value.toBoolean();
+        }
+
+        argsArrayCopy.remove(forceNewKey, true);
+    }
+
+    /*
+    String serializedArgsArray = HHVM_FN(serialize)(argsArrayCopy);
+    String serializedHash = StringUtil::SHA1(serializedArgsArray, false);
+    String hashKey = target + serializedHash;
+
+    if (channelCredentialsData != nullptr)
+    {
+        hashKey += channelCredentialsData->getHashKey();
+    }
+
+    pChannelData->setHashKey(hashKey);
+
+    if (force_new)
+    {
+        ChannelsCache::tl_obj.get()->deleteChannel(hashKey);
+    }
+
+    if (ChannelsCache::tl_obj.get()->hasChannel(hashKey))
+    {
+        pChannelData->init(ChannelsCache::tl_obj.get()->getChannel(hashKey));
+    }
+    else {
+    */
+
+    ChannelArgs channelArgs{};
+    if (!channelArgs.init(argsArrayCopy))
+    {
+        SystemLib::throwInvalidArgumentExceptionObject("invalid channel arguments");
         return;
-      }
-      channelCredentialsData = Native::data<ChannelCredentialsData>(obj);
     }
 
-    argsArrayCopy.remove(credentialsKey, true);
-  }
-
-  if (argsArrayCopy.exists(forceNewKey, true)) {
-    Variant value = argsArrayCopy[forceNewKey];
-    if (value.isBoolean() && !value.isNull()) {
-      force_new = value.toBoolean();
+    grpc_channel* pChannel{ nullptr };
+    std::cout << "Target " << target.c_str() << std::endl;
+    if (!pChannelCredentialsData)
+    {
+        // no credentials create insecure channel
+        pChannel = grpc_insecure_channel_create(target.c_str(), &channelArgs.args(), nullptr);
+    }
+    else
+    {
+        // create secure chhanel
+        pChannel = grpc_secure_channel_create(pChannelCredentialsData->getWrapped(), target.c_str(),
+                                              &channelArgs.args(), nullptr);
     }
 
-    argsArrayCopy.remove(forceNewKey, true);
-  }
-
-  String serializedArgsArray = HHVM_FN(serialize)(argsArrayCopy);
-  String serializedHash = StringUtil::SHA1(serializedArgsArray, false);
-  String hashKey = target + serializedHash;
-
-  if (channelCredentialsData != nullptr) {
-    hashKey += channelCredentialsData->getHashKey();
-  }
-
-  channelData->setHashKey(hashKey);
-
-  if (force_new) {
-    ChannelsCache::tl_obj.get()->deleteChannel(hashKey);
-  }
-
-  if (ChannelsCache::tl_obj.get()->hasChannel(hashKey)) {
-    channelData->init(ChannelsCache::tl_obj.get()->getChannel(hashKey));
-  } else {
-    grpc_channel_args args;
-    if (hhvm_grpc_read_args_array(argsArrayCopy, &args) == -1) {
-      req::free(args.args);
-      return;
+    if (!pChannel)
+    {
+        SystemLib::throwRuntimeExceptionObject("failed to create channel");
+        return;
     }
+    pChannelData->init(pChannel);
 
-    grpc_channel *channel;
-    if (channelCredentialsData == nullptr) {
-      channel = grpc_insecure_channel_create(target.c_str(), &args, nullptr);
-    } else {
-      channel = grpc_secure_channel_create(channelCredentialsData->getWrapped(), target.c_str(), &args, nullptr);
-    }
-
-    channelData->init(channel);
-    ChannelsCache::tl_obj.get()->addChannel(hashKey, channel);
-
-    req::free(args.args);
-  }
+    //ChannelsCache::tl_obj.get()->addChannel(hashKey, channel);
 }
 
 /**
  * Get the endpoint this call/stream is connected to
  * @return string The URI of the endpoint
  */
-String HHVM_METHOD(Channel, getTarget) {
+String HHVM_METHOD(Channel, getTarget)
+{
+    HHVM_TRACE_SCOPE("Channel getTarget") // Degug Trace
+
   auto channelData = Native::data<ChannelData>(this_);
   if (channelData->getWrapped() == nullptr) {
     SystemLib::throwInvalidArgumentExceptionObject("Channel already closed.");
@@ -245,8 +342,11 @@ int64_t HHVM_METHOD(Channel, getConnectivityState,
  *              before deadline
  */
 bool HHVM_METHOD(Channel, watchConnectivityState,
-  int64_t last_state,
-  const Object& deadline) {
+                 int64_t last_state,
+                 const Object& deadline)
+{
+    HHVM_TRACE_SCOPE("Channel watchConnectivityState") // Degug Trace
+
   auto channelData = Native::data<ChannelData>(this_);
   if (channelData->getWrapped() == nullptr) {
     SystemLib::throwInvalidArgumentExceptionObject("Channel already closed.");
@@ -270,13 +370,16 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
  * Close the channel
  * @return void
  */
-void HHVM_METHOD(Channel, close) {
+void HHVM_METHOD(Channel, close)
+{
+    HHVM_TRACE_SCOPE("Channel close") // Degug Trace
+
  auto channelData = Native::data<ChannelData>(this_);
  if (channelData->getWrapped() == nullptr) {
    SystemLib::throwInvalidArgumentExceptionObject("Channel already closed.");
  }
 
- ChannelsCache::tl_obj.get()->deleteChannel(channelData->getHashKey());
+ //ChannelsCache::tl_obj.get()->deleteChannel(channelData->getHashKey());
 
  delete channelData;
 }
@@ -284,7 +387,7 @@ void HHVM_METHOD(Channel, close) {
 
 int hhvm_grpc_read_args_array(const Array& args_array, grpc_channel_args *args) {
   args->num_args = args_array.size();
-  args->args = (grpc_arg *) req::calloc(args->num_args, sizeof(grpc_arg));
+  args->args = (grpc_arg *) req::calloc_untyped(args->num_args, sizeof(grpc_arg));
 
   int i = 0;
   for (ArrayIter iter(args_array); iter; ++iter) {
