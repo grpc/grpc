@@ -1553,11 +1553,11 @@ typedef struct external_connectivity_watcher {
 } external_connectivity_watcher;
 
 static external_connectivity_watcher *lookup_external_connectivity_watcher(
-    channel_data *chand, grpc_closure *on_complete) {
+    channel_data *chand, grpc_closure *closure) {
   gpr_mu_lock(&chand->external_connectivity_watcher_list_mu);
   external_connectivity_watcher *w =
       chand->external_connectivity_watcher_list_head;
-  while (w != NULL && w->on_complete != on_complete) {
+  while (w != NULL && w->on_complete != closure) {
     w = w->next;
   }
   gpr_mu_unlock(&chand->external_connectivity_watcher_list_mu);
