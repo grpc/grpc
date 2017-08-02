@@ -956,6 +956,7 @@ typedef struct {
   bool recv_initial_metadata;
   bool recv_message;
   bool recv_trailing_metadata;
+  bool recv_initial_metadata_ready_pending;
   // subchannel_batch_data.batch.payload points to this.
   grpc_transport_stream_op_batch_payload batch_payload;
   bool retry_dispatched;
@@ -1086,11 +1087,6 @@ static grpc_byte_stream_cache *get_send_message_cache(call_data *calld,
 // If retries are configured, checks to see if this exceeds the retry
 // buffer limit.  If it doesn't exceed the limit, adds the batch to
 // calld->pending_batches and caches data for send ops (if any).
-//
-// FIXME: this is called in two places, in cc_start_transport_stream_op_batch()
-// and in process_waiting_batch().  the second one is needed because the
-// service config may not yet have been available when we first got the
-// batch from the surface.  but need to make sure we don't do it twice!
 static void retry_checks_for_new_batch(grpc_exec_ctx *exec_ctx,
                                        grpc_call_element *elem,
                                        grpc_transport_stream_op_batch *batch) {
@@ -1105,9 +1101,6 @@ gpr_log(GPR_INFO, "retries configured and not committed");
     // Save context.  Should be the same for all batches on a call.
     calld->context = batch->payload->context;
     // Check if the batch takes us over the retry buffer limit.
-// FIXME: need to synchronize access to calld->bytes_buffered_for_retry,
-// since we could have one thread sending down send_initial_metadata and
-// another thread sending down send_message
     if (batch->send_initial_metadata) {
       calld->bytes_buffered_for_retry += grpc_metadata_batch_size(
           batch->payload->send_initial_metadata.send_initial_metadata);
@@ -1119,7 +1112,7 @@ gpr_log(GPR_INFO, "retries configured and not committed");
     if (calld->bytes_buffered_for_retry > chand->per_rpc_retry_buffer_size) {
 gpr_log(GPR_INFO, "size exceeded, committing for retries");
       retry_committed(exec_ctx, calld);
-    } else if (!batch->cancel_stream) {
+    } else if (!batch->cancel_stream) {  // FIXME: better way to handle cancel_stream?
       const size_t idx = get_batch_index(batch);
 gpr_log(GPR_INFO, "STORING batch in pending_batches[%zu]", idx);
       GPR_ASSERT(calld->pending_batches[idx] == NULL);
@@ -1248,8 +1241,9 @@ static void waiting_for_pick_batches_resume(grpc_exec_ctx *exec_ctx,
                              "waiting_for_pick_batches_resume");
   }
   GPR_ASSERT(calld->initial_metadata_batch != NULL);
-  grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call,
-                                  calld->initial_metadata_batch);
+  retry_checks_for_new_batch(exec_ctx, elem, calld->initial_metadata_batch);
+  start_subchannel_batch(exec_ctx, elem, calld->subchannel_call,
+                         calld->initial_metadata_batch);
 }
 
 static void maybe_clear_pending_batch(call_data *calld, size_t batch_index) {
@@ -1398,27 +1392,11 @@ gpr_log(GPR_INFO, "RETRYING");
   return false;
 }
 
-// Intercepts recv_initial_metadata_ready callback for retries.
-// Commits the call and returns the initial metadata up the stack.
-static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
-                                        grpc_error *error) {
-gpr_log(GPR_INFO, "==> recv_initial_metadata_ready()");
-  subchannel_batch_data *batch_data = arg;
-  call_data *calld = batch_data->elem->call_data;
-  // If we got an error, attempt to retry the call.
-  if (error != GRPC_ERROR_NONE) {
-    grpc_status_code status;
-    grpc_error_get_status(error, calld->deadline, &status, NULL, NULL);
-    if (maybe_retry(exec_ctx, batch_data, status)) return;
-  } else {
-    // If we got a Trailers-Only response), do nothing.  We'll probably
-    // wind up retrying when recv_trailing_metadata comes back.
-// FIXME: do we need to do anything from below before we do this?
-    if (batch_data->trailing_metadata_available) return;
-    // No error, so commit the call.
-gpr_log(GPR_INFO, "recv_initial_metadata_ready() commit");
-    retry_committed(exec_ctx, calld);
-  }
+static void invoke_recv_trailing_metadata_callback(grpc_exec_ctx *exec_ctx,
+                                                   void *arg,
+                                                   grpc_error *error) {
+  subchannel_batch_data *batch_data = (subchannel_batch_data *)arg;
+  call_data *calld = (call_data *)batch_data->elem->call_data;
   // Find pending batch.
   size_t batch_index = 0;
   for (; batch_index < GPR_ARRAY_SIZE(calld->pending_batches); ++batch_index) {
@@ -1446,6 +1424,41 @@ gpr_log(GPR_INFO, "CLEARING pending_batches[%zu]->recv_initial_metadata_ready", 
   maybe_clear_pending_batch(calld, batch_index);
   GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, batch_data->subchannel_call,
                              "client_channel_recv_initial_metadata_ready");
+}
+
+// Intercepts recv_initial_metadata_ready callback for retries.
+// Commits the call and returns the initial metadata up the stack.
+static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
+                                        grpc_error *error) {
+gpr_log(GPR_INFO, "==> recv_initial_metadata_ready(): error=%s", grpc_error_string(error));
+  subchannel_batch_data *batch_data = arg;
+  call_data *calld = batch_data->elem->call_data;
+  // If we got an error, attempt to retry the call.
+  if (error != GRPC_ERROR_NONE) {
+    grpc_status_code status;
+    grpc_error_get_status(error, calld->deadline, &status, NULL, NULL);
+    if (maybe_retry(exec_ctx, batch_data, status)) return;
+  } else {
+    // If we got a Trailers-Only response), do nothing.  We'll probably
+    // wind up retrying when recv_trailing_metadata comes back.
+// FIXME: do we need to do anything from below before we do this?
+gpr_log(GPR_INFO, "trailing_metadata_available=%d", batch_data->trailing_metadata_available);
+    if (batch_data->trailing_metadata_available) {
+      subchannel_call_retry_state *retry_state =
+          grpc_connected_subchannel_call_get_parent_data(
+              batch_data->subchannel_call);
+      retry_state->recv_initial_metadata_ready_pending = true;
+      GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
+                              "recv_initial_metadata_ready trailers-only");
+      return;
+    }
+    // No error, so commit the call.
+gpr_log(GPR_INFO, "recv_initial_metadata_ready() commit");
+    retry_committed(exec_ctx, calld);
+  }
+  // Manually invoking a callback function; it does not take ownership of error.
+  invoke_recv_trailing_metadata_callback(exec_ctx, batch_data, error);
+  GRPC_ERROR_UNREF(error);
 }
 
 // Intercepts recv_message_ready callback for retries.
@@ -1578,6 +1591,17 @@ gpr_log(GPR_INFO, "call_finished=%d, status=%d", call_finished, status);
   // Cases 1, 2, and 3 are handled by maybe_retry().
   if (call_finished) {
     if (maybe_retry(exec_ctx, batch_data, status)) return;
+    // If we are not retrying and there is a pending
+    // recv_initial_metadata_ready callback, invoke it.
+    if (retry_state->recv_initial_metadata_ready_pending) {
+      GRPC_CLOSURE_INIT(&batch_data->recv_initial_metadata_ready,
+                        invoke_recv_trailing_metadata_callback, batch_data,
+                        grpc_schedule_on_exec_ctx);
+      GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
+                               &batch_data->recv_initial_metadata_ready,
+                               GRPC_ERROR_NONE,
+                               "resuming recv_initial_metadata_ready");
+    }
   }
   // Case 4: call is not yet complete.
   else {
@@ -1603,8 +1627,6 @@ gpr_log(GPR_INFO, "CLEARING pending_batches[%zu]->on_complete", idx);
 }
 
 // batch will be NULL if this is a retry.
-// FIXME: need to make sure that this function is thread-safe w.r.t. new
-// ops coming down and recording data in retry_checks_for_new_batch().
 static void start_subchannel_batch(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem,
                                    grpc_subchannel_call *subchannel_call,
@@ -2170,7 +2192,6 @@ static void cc_start_transport_stream_op_batch(
     grpc_deadline_state_client_start_transport_stream_op_batch(exec_ctx, elem,
                                                                batch);
   }
-  retry_checks_for_new_batch(exec_ctx, elem, batch);
   // Check if we've already gotten a subchannel call.
   GPR_TIMER_BEGIN("cc_start_transport_stream_op_batch", 0);
   if (calld->error != GRPC_ERROR_NONE) {
