@@ -661,6 +661,7 @@ static void done_termination(grpc_exec_ctx *exec_ctx, void *arg,
 static void cancel_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
                               status_source source, grpc_error *error) {
   GRPC_CALL_INTERNAL_REF(c, "termination");
+  grpc_call_combiner_cancel(exec_ctx, &c->call_combiner, GRPC_ERROR_REF(error));
   set_status_from_error(exec_ctx, c, source, GRPC_ERROR_REF(error));
   cancel_state *state = (cancel_state *)gpr_malloc(sizeof(*state));
   state->call = c;
