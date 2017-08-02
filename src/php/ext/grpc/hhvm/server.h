@@ -42,7 +42,7 @@ public:
 
     // interface functions
     void init(grpc_server* const pServer) { m_pServer = pServer; }
-    grpc_server* const getWrapped(void) { return m_pServer; }
+    grpc_server* const server(void) { return m_pServer; }
 
     static Class* const getClass(void) { return s_Class; }
     static const StaticString& className(void) { return s_ClassName; }

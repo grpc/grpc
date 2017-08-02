@@ -40,7 +40,7 @@ public:
     }
     ~TraceScope(void)
     {
-        std::cout << __TIME__ << " - " << m_Message << " Exit " << m_Function << ' '
+        std::cout << __TIME__ << " - " << m_Message << " - Exit  " << m_Function << ' '
                   << m_File << std::endl;
     }
     std::string m_Message;

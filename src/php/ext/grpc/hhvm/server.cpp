@@ -53,7 +53,8 @@ ServerData::~ServerData(void)
 
 void ServerData::destroy(void)
 {
-    if (m_pServer) {
+    if (m_pServer)
+    {
         grpc_server_shutdown_and_notify(m_pServer,
                                         CompletionQueue::getQueue().queue(),
                                         nullptr);
@@ -105,7 +106,7 @@ void HHVM_METHOD(Server, __construct,
     }
     pServerData->init(pServer);
 
-    grpc_server_register_completion_queue(pServerData->getWrapped(),
+    grpc_server_register_completion_queue(pServerData->server(),
                                           CompletionQueue::getQueue().queue(), nullptr);
 }
 
@@ -113,67 +114,81 @@ Object HHVM_METHOD(Server, requestCall)
 {
     HHVM_TRACE_SCOPE("Server requestCall") // Degug Trace
 
-    char *method_text;
-    char *host_text;
-    Object callObj;
-    CallData *callData;
-    Object timevalObj;
-    TimevalData *timevalData;
+    Object resultObj{ SystemLib::AllocStdClassObject() };
 
-    grpc_call_error error_code;
-    grpc_call *call;
-    grpc_call_details details;
-    MetadataArray metadata;
-    grpc_event event;
-    Object resultObj = SystemLib::AllocStdClassObject();;
+    ServerData* const pServerData{ Native::data<ServerData>(this_) };
 
-    auto serverData = Native::data<ServerData>(this_);
+    typedef struct CallDetails
+    {
+        CallDetails(void) : metadata{ true }, method_text{ nullptr }, host_text{ nullptr }
+        {
+            grpc_call_details_init(&details);
+        }
+        ~CallDetails(void)
+        {
+            if (method_text)
+            {
+                gpr_free(method_text);
+                method_text = nullptr;
+            }
+            if (host_text)
+            {
+                gpr_free(host_text);
+                host_text = nullptr;
+            }
+            grpc_call_details_destroy(&details);
+        }
+        MetadataArray metadata;     // owned by caller
+        grpc_call_details details;  // ownerd by caller
+        char* method_text;          // owned by caller
+        char* host_text;            // owned by caller
+    } CallDetails;
 
+    CallDetails callDetails{};
+    grpc_call *pCall;
+    grpc_call_error errorCode{ grpc_server_request_call(pServerData->server(), &pCall, &callDetails.details,
+                                                        &callDetails.metadata.array(),
+                                                        CompletionQueue::getQueue().queue(),
+                                                        CompletionQueue::getQueue().queue(), nullptr) };
 
-    grpc_call_details_init(&details);
-    error_code = grpc_server_request_call(serverData->getWrapped(), &call, &details, &metadata.array(),
-                                        CompletionQueue::getQueue().queue(),
-                                        CompletionQueue::getQueue().queue(), nullptr);
-
-    if (error_code != GRPC_CALL_OK) {
-        //SystemLib::throwInvalidArgumentExceptionObject("request_call failed: %d", error_code);
-     goto cleanup;
+    if (errorCode != GRPC_CALL_OK)
+    {
+        std::stringstream oSS;
+        oSS << "request_call failed: " << errorCode << std::endl;
+        SystemLib::throwBadMethodCallExceptionObject("oSS.str()");
+        return resultObj;
     }
 
-    event = grpc_completion_queue_pluck(CompletionQueue::getQueue().queue(), nullptr,
-                                        gpr_inf_future(GPR_CLOCK_REALTIME),
-                                        nullptr);
+    grpc_event event{ grpc_completion_queue_pluck(CompletionQueue::getQueue().queue(), nullptr,
+                                                  gpr_inf_future(GPR_CLOCK_REALTIME),
+                                                  nullptr) };
 
-    if (!event.success) {
-    SystemLib::throwInvalidArgumentExceptionObject("Failed to request a call for some reason");
-    goto cleanup;
+    if (event.success == 0 || event.type != GRPC_OP_COMPLETE )
+    {
+        std::stringstream oSS;
+        oSS << "There was a problem with the request. Event success code: " << event.success
+            << " Type: " << event.type << std::endl;
+        SystemLib::throwBadMethodCallExceptionObject(oSS.str());
+        return resultObj;
     }
 
-    method_text = grpc_slice_to_c_string(details.method);
-    host_text = grpc_slice_to_c_string(details.host);
+    callDetails.method_text = grpc_slice_to_c_string(callDetails.details.method);
+    callDetails.host_text = grpc_slice_to_c_string(callDetails.details.host);
+    resultObj.o_set("method_text", String{ callDetails.method_text, CopyString });
+    resultObj.o_set("host_text", String{ callDetails.host_text, CopyString });
 
-    resultObj.o_set("method_text", String(method_text, CopyString));
-    resultObj.o_set("host_text", String(host_text, CopyString));
+    Object callObj{ CallData::getClass() };
+    CallData* const pCallData{ Native::data<CallData>(callObj) };
+    pCallData->init(pCall);
 
-    gpr_free(method_text);
-    gpr_free(host_text);
-
-    callObj = Object{CallData::getClass()};
-    callData = Native::data<CallData>(callObj);
-    callData->init(call);
-
-    timevalObj = Object{TimevalData::getClass()};
-    timevalData = Native::data<TimevalData>(timevalObj);
-    timevalData->init(details.deadline);
+    Object timevalObj{ TimevalData::getClass() };
+    TimevalData* const pTimevalData{ Native::data<TimevalData>(timevalObj) };
+    pTimevalData->init(callDetails.details.deadline);
 
     resultObj.o_set("call", callObj);
     resultObj.o_set("absolute_deadline", timevalObj);
-    resultObj.o_set("metadata", metadata.phpData());
+    resultObj.o_set("metadata", callDetails.metadata.phpData());
 
-
-
-    cleanup:
-    grpc_call_details_destroy(&details);
     return resultObj;
 }
 
@@ -182,9 +197,9 @@ bool HHVM_METHOD(Server, addHttp2Port,
 {
     HHVM_TRACE_SCOPE("Server addHttp2Port") // Degug Trace
 
+    ServerData* const pServerData{ Native::data<ServerData>(this_) };
 
-  auto serverData = Native::data<ServerData>(this_);
-  return (bool)grpc_server_add_insecure_http2_port(serverData->getWrapped(), addr.c_str());
+    return (grpc_server_add_insecure_http2_port(pServerData->server(), addr.c_str()) != 0);
 }
 
 bool HHVM_METHOD(Server, addSecureHttp2Port,
@@ -193,18 +208,19 @@ bool HHVM_METHOD(Server, addSecureHttp2Port,
 {
     HHVM_TRACE_SCOPE("Server addSecureHttp2Port") // Degug Trace
 
-  auto serverData = Native::data<ServerData>(this_);
-  auto serverCredentialsData = Native::data<ServerCredentialsData>(server_credentials);
+    ServerData* const pServerData{ Native::data<ServerData>(this_) };
+    ServerCredentialsData* const pServerCredentialsData{ Native::data<ServerCredentialsData>(server_credentials) };
 
-  return (bool)grpc_server_add_secure_http2_port(serverData->getWrapped(), addr.c_str(), serverCredentialsData->getWrapped());
+    return (grpc_server_add_secure_http2_port(pServerData->server(),
+                                              addr.c_str(), pServerCredentialsData->getWrapped()) != 0);
 }
 
 void HHVM_METHOD(Server, start)
 {
     HHVM_TRACE_SCOPE("Server start") // Degug Trace
 
-auto serverData = Native::data<ServerData>(this_);
-  grpc_server_start(serverData->getWrapped());
+    ServerData* const pServerData{ Native::data<ServerData>(this_) };
+    grpc_server_start(pServerData->server());
 }
 
 } // namespace HPHP
