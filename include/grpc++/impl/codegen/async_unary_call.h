@@ -123,18 +123,10 @@ class ClientAsyncResponseReader final
   void ReadInitialMetadata(void* tag) {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
-    Ops* o = &ops_;
-
-    // TODO(vjpai): Remove the collection_ specialization as soon
-    // as the public constructor is deleted
-    if (collection_) {
-      o = collection_.get();
-      collection_->meta_buf.SetCollection(collection_);
-    }
-
-    o->meta_buf.set_output_tag(tag);
-    o->meta_buf.RecvInitialMetadata(context_);
-    call_.PerformOps(&o->meta_buf);
+    collection_->meta_buf.SetCollection(collection_);
+    collection_->meta_buf.set_output_tag(tag);
+    collection_->meta_buf.RecvInitialMetadata(context_);
+    call_.PerformOps(&collection_->meta_buf);
   }
 
   /// See \a ClientAysncResponseReaderInterface::Finish for semantics.
@@ -143,23 +135,15 @@ class ClientAsyncResponseReader final
   ///   - the \a ClientContext associated with this call is updated with
   ///     possible initial and trailing metadata sent from the server.
   void Finish(R* msg, Status* status, void* tag) {
-    Ops* o = &ops_;
-
-    // TODO(vjpai): Remove the collection_ specialization as soon
-    // as the public constructor is deleted
-    if (collection_) {
-      o = collection_.get();
-      collection_->finish_buf.SetCollection(collection_);
-    }
-
-    o->finish_buf.set_output_tag(tag);
+    collection_->finish_buf.SetCollection(collection_);
+    collection_->finish_buf.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
-      o->finish_buf.RecvInitialMetadata(context_);
+      collection_->finish_buf.RecvInitialMetadata(context_);
     }
-    o->finish_buf.RecvMessage(msg);
-    o->finish_buf.AllowNoMessage();
-    o->finish_buf.ClientRecvStatus(context_, status);
-    call_.PerformOps(&o->finish_buf);
+    collection_->finish_buf.RecvMessage(msg);
+    collection_->finish_buf.AllowNoMessage();
+    collection_->finish_buf.ClientRecvStatus(context_, status);
+    call_.PerformOps(&collection_->finish_buf);
   }
 
  private:
@@ -168,21 +152,20 @@ class ClientAsyncResponseReader final
 
   template <class W>
   ClientAsyncResponseReader(Call call, ClientContext* context, const W& request)
-      : context_(context), call_(call) {
-    ops_.init_buf.SendInitialMetadata(context->send_initial_metadata_,
-                                      context->initial_metadata_flags());
+      : context_(context), call_(call), collection_(std::make_shared<Ops>()) {
+    collection_->init_buf.SetCollection(collection_);
+    collection_->init_buf.SendInitialMetadata(
+        context->send_initial_metadata_, context->initial_metadata_flags());
     // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(ops_.init_buf.SendMessage(request).ok());
-    ops_.init_buf.ClientSendClose();
-    call_.PerformOps(&ops_.init_buf);
+    GPR_CODEGEN_ASSERT(collection_->init_buf.SendMessage(request).ok());
+    collection_->init_buf.ClientSendClose();
+    call_.PerformOps(&collection_->init_buf);
   }
 
   // disable operator new
   static void* operator new(std::size_t size);
   static void* operator new(std::size_t size, void* p) { return p; }
 
-  // TODO(vjpai): Remove the reference to CallOpSetCollectionInterface
-  // as soon as the related workaround (public constructor) is deleted
   struct Ops : public CallOpSetCollectionInterface {
     SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
                     CallOpClientSendClose>
@@ -191,10 +174,8 @@ class ClientAsyncResponseReader final
     CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>,
               CallOpClientRecvStatus>
         finish_buf;
-  } ops_;
+  };
 
-  // TODO(vjpai): Remove the collection_ as soon as the related workaround
-  // (public constructor) is deleted
   std::shared_ptr<Ops> collection_;
 };
 
