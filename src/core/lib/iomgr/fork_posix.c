@@ -43,6 +43,8 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/fork.h"
@@ -55,6 +57,10 @@ int grpc_prefork() {
             "environment variable GRPC_ENABLE_FORK_SUPPORT=1");
     return 0;
   }
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_timer_manager_set_threading(false);
+  grpc_executor_set_threading(&exec_ctx, false);
+  grpc_exec_ctx_finish(&exec_ctx);
   if (!gpr_await_threads(
           gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                        gpr_time_from_seconds(3, GPR_TIMESPAN)))) {
@@ -65,10 +71,18 @@ int grpc_prefork() {
 }
 
 void grpc_postfork_parent() {
-  // Reserving API space for future use
+  grpc_timer_manager_set_threading(true);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_executor_set_threading(&exec_ctx, true);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 void grpc_postfork_child() {
+  grpc_timer_manager_set_threading(true);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_executor_set_threading(&exec_ctx, true);
+  grpc_exec_ctx_finish(&exec_ctx);
+
   grpc_wakeup_fds_postfork();
   grpc_fork_engine();
 }

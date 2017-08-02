@@ -1783,8 +1783,7 @@ static void polling_island_reset(polling_island *pi) {
   }
 
   grpc_error *error = GRPC_ERROR_NONE;
-  polling_island_add_wakeup_fd_locked(pi, &global_wakeup_fd, &error);
-  polling_island_add_wakeup_fd_locked(pi, &pi->workqueue_wakeup_fd, &error);
+  polling_island_add_wakeup_fd_locked(pi, &polling_island_wakeup_fd, &error);
 }
 
 static void fd_postfork(grpc_fd *fd) {

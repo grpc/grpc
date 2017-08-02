@@ -38,6 +38,8 @@ void grpc_fork_support_init(void);
 
 int grpc_fork_support_enabled(void);
 
+// Test only:  Must be called before grpc_init(), and overrides
+// environment variables/compile flags
 void grpc_enable_fork_support(int enable);
 
 #endif /* GRPC_CORE_LIB_SUPPORT_FORK_H */

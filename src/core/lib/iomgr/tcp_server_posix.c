@@ -560,7 +560,7 @@ void grpc_tcp_server_shutdown_listeners(grpc_exec_ctx *exec_ctx,
   }
   gpr_mu_unlock(&s->mu);
 
-  GRPC_LOG_IF_ERROR("Server Shutdown", grpc_kick_poller());
+  grpc_kick_poller();
 }
 
 #endif

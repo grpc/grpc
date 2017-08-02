@@ -736,8 +736,8 @@ static void test_fork_after_connect_cascade() {
 }
 
 int main(int argc, char** argv) {
-  grpc_init();
   grpc_enable_fork_support(1);
+  grpc_init();
   test_prefork_server_single_handler();
   test_prefork_server_multi_handlers();
   test_prefork_server_so_reuseport();
