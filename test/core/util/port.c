@@ -79,7 +79,7 @@ static void chose_port(int port) {
   chosen_ports[num_chosen_ports - 1] = port;
 }
 
-int grpc_pick_unused_port(void) {
+static int grpc_pick_unused_port_impl(void) {
   int port = grpc_pick_port_using_server();
   if (port != 0) {
     chose_port(port);
@@ -88,7 +88,7 @@ int grpc_pick_unused_port(void) {
   return port;
 }
 
-int grpc_pick_unused_port_or_die(void) {
+static int grpc_pick_unused_port_or_die_impl(void) {
   int port = grpc_pick_unused_port();
   if (port == 0) {
     fprintf(stderr,
@@ -101,6 +101,12 @@ int grpc_pick_unused_port_or_die(void) {
   return port;
 }
 
-void grpc_recycle_unused_port(int port) { GPR_ASSERT(free_chosen_port(port)); }
+static void grpc_recycle_unused_port_impl(int port) {
+  GPR_ASSERT(free_chosen_port(port));
+}
+
+int (*grpc_pick_unused_port)(void) = grpc_pick_unused_port_impl;
+int (*grpc_pick_unused_port_or_die)(void) = grpc_pick_unused_port_or_die_impl;
+void (*grpc_recycle_unused_port)(int port) = grpc_recycle_unused_port_impl;
 
 #endif /* GRPC_TEST_PICK_PORT */
