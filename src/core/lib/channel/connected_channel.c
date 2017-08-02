@@ -115,7 +115,7 @@ static void con_start_transport_stream_op_batch(
     // cancellation isn't in the fast path, so we just allocate a new
     // closure for each one.
     callback_state *state = (callback_state *)gpr_malloc(sizeof(*state));
-    intercept_callback(calld, state, true, "cancel_stream",
+    intercept_callback(calld, state, true, "on_complete (cancel_stream)",
                        &batch->on_complete);
   } else {
     callback_state *state = get_state_for_batch(calld, batch);

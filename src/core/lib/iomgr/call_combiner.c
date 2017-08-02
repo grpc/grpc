@@ -67,7 +67,8 @@ void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
   size_t prev_size =
       (size_t)gpr_atm_full_fetch_add(&call_combiner->size, (gpr_atm)1);
   if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
-    gpr_log(GPR_DEBUG, "  size: %zu -> %zu", prev_size, prev_size + 1);
+    gpr_log(GPR_DEBUG, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
+            prev_size + 1);
   }
   if (prev_size == 0) {
     if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
@@ -96,7 +97,8 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
   size_t prev_size =
       (size_t)gpr_atm_full_fetch_add(&call_combiner->size, (gpr_atm)-1);
   if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
-    gpr_log(GPR_DEBUG, "  size: %zu -> %zu", prev_size, prev_size - 1);
+    gpr_log(GPR_DEBUG, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
+            prev_size - 1);
   }
   GPR_ASSERT(prev_size >= 1);
   if (prev_size > (gpr_atm)1) {
