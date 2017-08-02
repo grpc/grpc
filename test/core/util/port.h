@@ -23,18 +23,27 @@
 extern "C" {
 #endif
 
+typedef struct grpc_pick_port_functions {
+  int (*pick_unused_port_fn)(void);
+  int (*pick_unused_port_or_die_fn)(void);
+  void (*recycle_unused_port_fn)(int port);
+} grpc_pick_port_functions;
+
 /* pick a port number that is currently unused by either tcp or udp. return
    0 on failure. */
-extern int (*grpc_pick_unused_port)(void);
+int grpc_pick_unused_port(void);
 /* pick a port number that is currently unused by either tcp or udp. abort
    on failure. */
-extern int (*grpc_pick_unused_port_or_die)(void);
+int grpc_pick_unused_port_or_die(void);
 
 /* Return a port which was previously returned by grpc_pick_unused_port().
  * Implementations of grpc_pick_unused_port() backed by a portserver may limit
  * the total number of ports available; this lets a binary return its allocated
  * ports back to the server if it is going to allocate a large number. */
-extern void (*grpc_recycle_unused_port)(int port);
+void grpc_recycle_unused_port(int port);
+
+/** Request the family of pick_port functions in \a functions be used. */
+void grpc_set_pick_port_functions(grpc_pick_port_functions functions);
 
 #ifdef __cplusplus
 }

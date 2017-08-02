@@ -105,8 +105,27 @@ static void grpc_recycle_unused_port_impl(int port) {
   GPR_ASSERT(free_chosen_port(port));
 }
 
-int (*grpc_pick_unused_port)(void) = grpc_pick_unused_port_impl;
-int (*grpc_pick_unused_port_or_die)(void) = grpc_pick_unused_port_or_die_impl;
-void (*grpc_recycle_unused_port)(int port) = grpc_recycle_unused_port_impl;
+static grpc_pick_port_functions g_pick_port_functions = {
+    grpc_pick_unused_port_impl, grpc_pick_unused_port_or_die_impl,
+    grpc_recycle_unused_port_impl};
+
+int grpc_pick_unused_port(void) {
+  return g_pick_port_functions.pick_unused_port_fn();
+}
+
+int grpc_pick_unused_port_or_die(void) {
+  return g_pick_port_functions.pick_unused_port_or_die_fn();
+}
+
+void grpc_recycle_unused_port(int port) {
+  g_pick_port_functions.recycle_unused_port_fn(port);
+}
+
+void grpc_set_pick_port_functions(grpc_pick_port_functions functions) {
+  GPR_ASSERT(functions.pick_unused_port_fn != NULL);
+  GPR_ASSERT(functions.pick_unused_port_or_die_fn != NULL);
+  GPR_ASSERT(functions.recycle_unused_port_fn != NULL);
+  g_pick_port_functions = functions;
+}
 
 #endif /* GRPC_TEST_PICK_PORT */
