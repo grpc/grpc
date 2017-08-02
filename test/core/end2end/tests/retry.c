@@ -230,7 +230,6 @@ static void test_retry(grpc_end2end_test_config config) {
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
 
-#if 0
   error =
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(103));
@@ -270,8 +269,6 @@ static void test_retry(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
-#endif
-
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 

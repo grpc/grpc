@@ -1422,8 +1422,6 @@ gpr_log(GPR_INFO, "CLEARING pending_batches[%zu]->recv_initial_metadata_ready", 
   original_batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
       NULL;
   maybe_clear_pending_batch(calld, batch_index);
-  GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, batch_data->subchannel_call,
-                             "client_channel_recv_initial_metadata_ready");
 }
 
 // Intercepts recv_initial_metadata_ready callback for retries.
@@ -1456,6 +1454,8 @@ gpr_log(GPR_INFO, "trailing_metadata_available=%d", batch_data->trailing_metadat
 gpr_log(GPR_INFO, "recv_initial_metadata_ready() commit");
     retry_committed(exec_ctx, calld);
   }
+  GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, batch_data->subchannel_call,
+                             "client_channel_recv_initial_metadata_ready");
   // Manually invoking a callback function; it does not take ownership of error.
   invoke_recv_trailing_metadata_callback(exec_ctx, batch_data, error);
   GRPC_ERROR_UNREF(error);
