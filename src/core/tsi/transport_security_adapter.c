@@ -50,7 +50,7 @@ static tsi_result adapter_result_create_frame_protector(
 }
 
 static tsi_result adapter_result_get_unused_bytes(
-    const tsi_handshaker_result *self, unsigned char **bytes,
+    const tsi_handshaker_result *self, const unsigned char **bytes,
     size_t *byte_size) {
   tsi_adapter_handshaker_result *impl = (tsi_adapter_handshaker_result *)self;
   *bytes = impl->unused_bytes;

@@ -41,7 +41,7 @@ tsi_result tsi_handshaker_result_create_zero_copy_grpc_protector(
      may be produced in this protect function.
    - This method returns TSI_OK in case of success or a specific error code in
      case of failure.  */
-tsi_result tsi_zero_copy_groc_protector_protect(
+tsi_result tsi_zero_copy_grpc_protector_protect(
     tsi_zero_copy_grpc_protector *self, grpc_slice_buffer *unprotected_slices,
     grpc_slice_buffer *protected_slices);
 

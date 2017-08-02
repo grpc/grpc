@@ -149,9 +149,7 @@ tsi_result tsi_handshaker_process_bytes_from_peer(tsi_handshaker *self,
 tsi_result tsi_handshaker_get_result(tsi_handshaker *self) {
   if (self == NULL || self->vtable == NULL) return TSI_INVALID_ARGUMENT;
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
-  if (self->vtable->get_result == NULL) {
-    return TSI_UNIMPLEMENTED;
-  }
+  if (self->vtable->get_result == NULL) return TSI_UNIMPLEMENTED;
   return self->vtable->get_result(self);
 }
 
@@ -228,7 +226,7 @@ tsi_result tsi_handshaker_result_create_frame_protector(
 }
 
 tsi_result tsi_handshaker_result_get_unused_bytes(
-    const tsi_handshaker_result *self, unsigned char **bytes,
+    const tsi_handshaker_result *self, const unsigned char **bytes,
     size_t *bytes_size) {
   if (self == NULL || self->vtable == NULL || bytes == NULL ||
       bytes_size == NULL) {

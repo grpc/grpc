@@ -230,7 +230,7 @@ tsi_result tsi_handshaker_result_create_frame_protector(
    Ownership of the bytes is retained by the handshaker result. As a
    consequence, the caller must not free the bytes.  */
 tsi_result tsi_handshaker_result_get_unused_bytes(
-    const tsi_handshaker_result *self, unsigned char **bytes,
+    const tsi_handshaker_result *self, const unsigned char **bytes,
     size_t *byte_size);
 
 /* This method releases the tsi_handshaker_handshaker object. After this method

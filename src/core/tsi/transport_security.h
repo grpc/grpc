@@ -94,7 +94,8 @@ typedef struct {
                                        size_t *max_output_protected_frame_size,
                                        tsi_frame_protector **protector);
   tsi_result (*get_unused_bytes)(const tsi_handshaker_result *self,
-                                 unsigned char **bytes, size_t *bytes_size);
+                                 const unsigned char **bytes,
+                                 size_t *bytes_size);
   void (*destroy)(tsi_handshaker_result *self);
 } tsi_handshaker_result_vtable;
 

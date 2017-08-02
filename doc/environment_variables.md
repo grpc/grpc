@@ -102,6 +102,9 @@ some configuration as environment variables that can be set.
   - INFO - log INFO and ERROR message
   - ERROR - log only errors
 
+* GRPC_TRACE_FUZZER
+  if set, the fuzzers will output trace (it is usually supressed).
+
 * GRPC_DNS_RESOLVER
   Declares which DNS resolver to use. The default is ares if gRPC is built with
   c-ares support. Otherwise, the value of this environment variable is ignored.

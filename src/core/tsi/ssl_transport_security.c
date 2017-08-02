@@ -47,7 +47,7 @@
 #include <openssl/x509v3.h>
 
 #include "src/core/tsi/ssl_types.h"
-#include "src/core/tsi/transport_security_grpc.h"
+#include "src/core/tsi/transport_security.h"
 
 /* --- Constants. ---*/
 
