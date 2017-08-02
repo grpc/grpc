@@ -35,6 +35,8 @@ rm -rf Tests.xcworkspace
 rm -f Podfile.lock
 rm -f RemoteTestClient/*.{h,m}
 
+# Update repo due to Kokoro issue #11987 (https://github.com/grpc/grpc/issues/11987)
+pod repo update
 echo "TIME:  $(date)"
 pod install
 
