@@ -180,7 +180,7 @@ class ChannelCredentials {
    * @return null
    */
   <<__Native>>
-  public static function createInsecure(): ?mixed;
+  public static function createInsecure(): mixed;
 
 }
 
@@ -216,7 +216,7 @@ class Server {
    * @return bool True on success, false on failure
    */
   <<__Native>>
-  public function addSecureHttp2Port(string $addr, serverCredentials $serverCredentials): bool;
+  public function addSecureHttp2Port(string $addr, ServerCredentials $serverCredentials): bool;
 
   /**
    * Start a server - tells all listeners to start listening
