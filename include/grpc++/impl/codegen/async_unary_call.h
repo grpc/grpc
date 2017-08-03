@@ -307,11 +307,6 @@ class default_delete<grpc::ClientAsyncResponseReader<R>> {
  public:
   void operator()(void* p) {}
 };
-template <class R>
-class default_delete<grpc::ClientAsyncResponseReaderInterface<R>> {
- public:
-  void operator()(void* p) {}
-};
 }
 
 #endif  // GRPCXX_IMPL_CODEGEN_ASYNC_UNARY_CALL_H
