@@ -177,6 +177,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\fork.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
@@ -194,6 +195,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\backoff.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\block_annotate.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\env.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\fork.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\memory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\mpscq.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.h" />
@@ -235,6 +237,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\env_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\env_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\fork.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\histogram.c">
     </ClCompile>

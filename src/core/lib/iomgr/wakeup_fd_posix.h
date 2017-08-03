@@ -74,6 +74,8 @@ typedef struct grpc_wakeup_fd_vtable {
 struct grpc_wakeup_fd {
   int read_fd;
   int write_fd;
+  grpc_wakeup_fd* next;
+  grpc_wakeup_fd* prev;
 };
 
 extern int grpc_allow_specialized_wakeup_fd;
@@ -86,6 +88,9 @@ grpc_error* grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd* fd_info)
     GRPC_MUST_USE_RESULT;
 grpc_error* grpc_wakeup_fd_wakeup(grpc_wakeup_fd* fd_info) GRPC_MUST_USE_RESULT;
 void grpc_wakeup_fd_destroy(grpc_wakeup_fd* fd_info);
+
+// Resets and triggers all the wakeup fds
+void grpc_wakeup_fds_postfork();
 
 /* Defined in some specialized implementation's .c file, or by
  * wakeup_fd_nospecial.c if no such implementation exists. */

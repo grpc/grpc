@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2017 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,9 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H
-#define GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H
+#ifndef GRPC_FORK_H
+#define GRPC_FORK_H
 
-#include <grpc/support/time.h>
+#include <grpc/impl/codegen/fork.h>
 
-/* Internal interfaces between modules within the gpr support library.  */
-void gpr_thd_init();
-
-/* Wait for all outstanding threads to finish, up to deadline */
-int gpr_await_threads(gpr_timespec deadline);
-
-#endif /* GRPC_CORE_LIB_SUPPORT_THD_INTERNAL_H */
+#endif /* GRPC_FORK_H */

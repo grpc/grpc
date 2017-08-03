@@ -159,6 +159,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\fork.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
@@ -316,6 +317,10 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\exec_ctx.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\executor.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\fork_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\fork_windows.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iocp_windows.c">
     </ClCompile>

@@ -26,7 +26,6 @@
 
 /* one listening port */
 typedef struct grpc_tcp_listener {
-  int fd;
   grpc_fd *emfd;
   grpc_tcp_server *server;
   grpc_resolved_address addr;

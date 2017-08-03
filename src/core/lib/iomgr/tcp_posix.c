@@ -64,7 +64,6 @@ grpc_tracer_flag grpc_tcp_trace = GRPC_TRACER_INITIALIZER(false, "tcp");
 typedef struct {
   grpc_endpoint base;
   grpc_fd *em_fd;
-  int fd;
   bool finished_edge;
   msg_iovlen_type iov_size; /* Number of slices to allocate per read attempt */
   double target_length;
@@ -136,10 +135,10 @@ static size_t get_target_read_size(grpc_tcp *tcp) {
 }
 
 static grpc_error *tcp_annotate_error(grpc_error *src_error, grpc_tcp *tcp) {
-  return grpc_error_set_str(
-      grpc_error_set_int(src_error, GRPC_ERROR_INT_FD, tcp->fd),
-      GRPC_ERROR_STR_TARGET_ADDRESS,
-      grpc_slice_from_copied_string(tcp->peer_string));
+  return grpc_error_set_str(grpc_error_set_int(src_error, GRPC_ERROR_INT_FD,
+                                               grpc_fd_wrapped_fd(tcp->em_fd)),
+                            GRPC_ERROR_STR_TARGET_ADDRESS,
+                            grpc_slice_from_copied_string(tcp->peer_string));
 }
 
 static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
@@ -258,7 +257,7 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
 
   GPR_TIMER_BEGIN("recvmsg", 0);
   do {
-    read_bytes = recvmsg(tcp->fd, &msg, 0);
+    read_bytes = recvmsg(grpc_fd_wrapped_fd(tcp->em_fd), &msg, 0);
   } while (read_bytes < 0 && errno == EINTR);
   GPR_TIMER_END("recvmsg", read_bytes >= 0);
 
@@ -403,7 +402,8 @@ static bool tcp_flush(grpc_tcp *tcp, grpc_error **error) {
     GPR_TIMER_BEGIN("sendmsg", 1);
     do {
       /* TODO(klempner): Cork if this is a partial write */
-      sent_length = sendmsg(tcp->fd, &msg, SENDMSG_FLAGS);
+      sent_length =
+          sendmsg(grpc_fd_wrapped_fd(tcp->em_fd), &msg, SENDMSG_FLAGS);
     } while (sent_length < 0 && errno == EINTR);
     GPR_TIMER_END("sendmsg", 0);
 
@@ -547,7 +547,7 @@ static char *tcp_get_peer(grpc_endpoint *ep) {
 
 static int tcp_get_fd(grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
-  return tcp->fd;
+  return grpc_fd_wrapped_fd(tcp->em_fd);
 }
 
 static grpc_resource_user *tcp_get_resource_user(grpc_endpoint *ep) {
@@ -607,7 +607,6 @@ grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_fd *em_fd,
   grpc_tcp *tcp = (grpc_tcp *)gpr_malloc(sizeof(grpc_tcp));
   tcp->base.vtable = &vtable;
   tcp->peer_string = gpr_strdup(peer_string);
-  tcp->fd = grpc_fd_wrapped_fd(em_fd);
   tcp->read_cb = NULL;
   tcp->write_cb = NULL;
   tcp->release_fd_cb = NULL;

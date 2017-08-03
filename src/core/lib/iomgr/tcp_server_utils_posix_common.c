@@ -42,6 +42,10 @@
 static gpr_once s_init_max_accept_queue_size;
 static int s_max_accept_queue_size;
 
+static int listener_socket_postfork_handler(grpc_fd *fd, void *arg);
+static int listener_socket_postfork_handler_so_reuseport(grpc_fd *fd,
+                                                         void *arg);
+
 /* get max listen queue size on linux */
 static void init_max_accept_queue_size(void) {
   int n = SOMAXCONN;
@@ -102,7 +106,6 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, int fd,
     }
     s->tail = sp;
     sp->server = s;
-    sp->fd = fd;
     sp->emfd = grpc_fd_create(fd, name);
     memcpy(&sp->addr, addr, sizeof(grpc_resolved_address));
     sp->port = port;
@@ -111,6 +114,14 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, int fd,
     sp->is_sibling = 0;
     sp->sibling = NULL;
     GPR_ASSERT(sp->emfd);
+    if (s->so_reuseport) {
+      grpc_fd_register_postfork_handler(
+          sp->emfd, listener_socket_postfork_handler_so_reuseport, NULL);
+    } else {
+      grpc_fd_register_postfork_handler(sp->emfd,
+                                        listener_socket_postfork_handler, NULL);
+    }
+    grpc_fd_disable_shutdown(sp->emfd);
     gpr_mu_unlock(&s->mu);
     gpr_free(addr_str);
     gpr_free(name);
@@ -201,6 +212,53 @@ error:
                          GRPC_ERROR_INT_FD, fd);
   GRPC_ERROR_UNREF(err);
   return ret;
+}
+
+static int listener_socket_postfork_handler(grpc_fd *fd, void *arg) {
+  return grpc_fd_wrapped_fd(fd);
+}
+
+static int listener_socket_postfork_handler_so_reuseport(grpc_fd *fd,
+                                                         void *arg) {
+  int old_fd = grpc_fd_wrapped_fd(fd);
+  int new_fd = -1;
+
+  grpc_error *err = GRPC_ERROR_NONE;
+  grpc_resolved_address addr;
+  addr.len = GRPC_MAX_SOCKADDR_SIZE;
+  if (getsockname(old_fd, (struct sockaddr *)addr.addr,
+                  (socklen_t *)&addr.len) < 0) {
+    err = GRPC_OS_ERROR(errno, "getsockname");
+    goto error;
+  }
+  int port;
+  grpc_dualstack_mode dsmode;
+  err = grpc_create_dualstack_socket(&addr, SOCK_STREAM, 0, &dsmode, &new_fd);
+  if (err != GRPC_ERROR_NONE) {
+    goto error;
+  }
+
+  err = grpc_tcp_server_prepare_socket(new_fd, &addr, true, &port);
+  if (err != GRPC_ERROR_NONE) {
+    goto error;
+  }
+  close(old_fd);
+  return new_fd;
+
+error:
+  // This is not fatal, we just can't use the SO_REUSEPORT optimization
+  GPR_ASSERT(err != GRPC_ERROR_NONE);
+  if (new_fd >= 0) {
+    close(new_fd);
+  }
+  grpc_error *ret =
+      grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                             "Unable to reset socket", &err, 1),
+                         GRPC_ERROR_INT_FD, old_fd);
+  gpr_log(GPR_ERROR, "%s", grpc_error_string(ret));
+  GRPC_ERROR_UNREF(err);
+  GRPC_ERROR_UNREF(ret);
+  return old_fd;
 }
 
 #endif /* GRPC_POSIX_SOCKET */

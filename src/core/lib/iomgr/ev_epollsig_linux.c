@@ -46,6 +46,7 @@
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/block_annotate.h"
+#include "src/core/lib/support/fork.h"
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
 
@@ -123,10 +124,13 @@ struct grpc_fd {
      valid */
   bool orphaned;
 
+  bool disable_shutdown;
+
   gpr_atm read_closure;
   gpr_atm write_closure;
 
   struct grpc_fd *freelist_next;
+
   grpc_closure *on_done_closure;
 
   /* The pollset that last noticed that the fd is readable. The actual type
@@ -134,6 +138,12 @@ struct grpc_fd {
   gpr_atm read_notifier_pollset;
 
   grpc_iomgr_object iomgr_object;
+
+  /* Only used when GRPC_ENABLE_FORK_SUPPORT=1 */
+  fd_postfork_handler postfork_handler;
+  void *postfork_handler_arg;
+  struct grpc_fd *global_next;
+  struct grpc_fd *global_prev;
 };
 
 /* Reference counting for fds */
@@ -200,6 +210,10 @@ typedef struct polling_island {
   size_t fd_cnt;
   size_t fd_capacity;
   grpc_fd **fds;
+
+  /* Only used with FORK_SUPPORT_ENABLED=1 */
+  struct polling_island *next;
+  struct polling_island *prev;
 } polling_island;
 
 /*******************************************************************************
@@ -232,6 +246,12 @@ struct grpc_pollset {
 struct grpc_pollset_set {
   poll_obj po;
 };
+
+/* Forking forward declarations */
+static void global_fork_fd_list_add(grpc_fd *fd);
+static void global_fork_fd_list_remove(grpc_fd *fd);
+static void global_fork_pi_list_add(polling_island *pi);
+static void global_fork_pi_list_remove(polling_island *pi);
 
 /*******************************************************************************
  * Common helpers
@@ -349,6 +369,10 @@ static void polling_island_add_fds_locked(polling_island *pi, grpc_fd **fds,
 
     if (err < 0) {
       if (errno != EEXIST) {
+        gpr_log(
+            GPR_ERROR,
+            "epoll_ctl (epoll_fd: %d) add fd: %d failed with error: %d (%s)",
+            pi->epoll_fd, fds[i]->fd, errno, strerror(errno));
         gpr_asprintf(
             &err_msg,
             "epoll_ctl (epoll_fd: %d) add fd: %d failed with error: %d (%s)",
@@ -466,6 +490,8 @@ static polling_island *polling_island_create(grpc_exec_ctx *exec_ctx,
   *error = GRPC_ERROR_NONE;
 
   pi = gpr_malloc(sizeof(*pi));
+  global_fork_pi_list_add(pi);
+
   gpr_mu_init(&pi->mu);
   pi->fd_cnt = 0;
   pi->fd_capacity = 0;
@@ -492,11 +518,14 @@ done:
     polling_island_delete(exec_ctx, pi);
     pi = NULL;
   }
+
   return pi;
 }
 
 static void polling_island_delete(grpc_exec_ctx *exec_ctx, polling_island *pi) {
   GPR_ASSERT(pi->fd_cnt == 0);
+
+  global_fork_pi_list_remove(pi);
 
   if (pi->epoll_fd >= 0) {
     close(pi->epoll_fd);
@@ -753,6 +782,8 @@ static void unref_by(grpc_fd *fd, int n) {
 #endif
   gpr_atm old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
+    global_fork_fd_list_remove(fd);
+
     /* Add the fd to the freelist */
     gpr_mu_lock(&fd_freelist_mu);
     fd->freelist_next = fd_freelist;
@@ -825,14 +856,19 @@ static grpc_fd *fd_create(int fd, const char *name) {
   gpr_atm_rel_store(&new_fd->refst, (gpr_atm)1);
   new_fd->fd = fd;
   new_fd->orphaned = false;
+  new_fd->disable_shutdown = false;
   grpc_lfev_init(&new_fd->read_closure);
   grpc_lfev_init(&new_fd->write_closure);
   gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm)NULL);
 
   new_fd->freelist_next = NULL;
   new_fd->on_done_closure = NULL;
+  new_fd->postfork_handler = NULL;
+  new_fd->postfork_handler_arg = NULL;
 
   gpr_mu_unlock(&new_fd->po.mu);
+
+  global_fork_fd_list_add(new_fd);
 
   char *fd_name;
   gpr_asprintf(&fd_name, "%s fd=%d", name, fd);
@@ -843,12 +879,9 @@ static grpc_fd *fd_create(int fd, const char *name) {
 
 static int fd_wrapped_fd(grpc_fd *fd) {
   int ret_fd = -1;
-  gpr_mu_lock(&fd->po.mu);
   if (!fd->orphaned) {
     ret_fd = fd->fd;
   }
-  gpr_mu_unlock(&fd->po.mu);
-
   return ret_fd;
 }
 
@@ -860,6 +893,7 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 
   gpr_mu_lock(&fd->po.mu);
   fd->on_done_closure = on_done;
+  fd->orphaned = true;
 
   /* Remove the active status but keep referenced. We want this grpc_fd struct
      to be alive (and not added to freelist) until the end of this function */
@@ -924,11 +958,15 @@ static bool fd_is_shutdown(grpc_fd *fd) {
 static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
   if (grpc_lfev_set_shutdown(exec_ctx, &fd->read_closure,
                              GRPC_ERROR_REF(why))) {
-    shutdown(fd->fd, SHUT_RDWR);
+    if (!fd->disable_shutdown) {
+      shutdown(fd->fd, SHUT_RDWR);
+    }
     grpc_lfev_set_shutdown(exec_ctx, &fd->write_closure, GRPC_ERROR_REF(why));
   }
   GRPC_ERROR_UNREF(why);
 }
+
+static void fd_disable_shutdown(grpc_fd *fd) { fd->disable_shutdown = true; }
 
 static void fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                               grpc_closure *closure) {
@@ -1657,6 +1695,128 @@ bool grpc_are_polling_islands_equal(void *p, void *q) {
 }
 
 /*******************************************************************************
+ * Engine Postfork Handlers
+ */
+
+/* Only used with FORK_SUPPORT_ENABLED=1 */
+static gpr_mu g_fd_mu;
+static grpc_fd *g_root_fd = NULL;
+
+static gpr_mu g_island_mu;
+static struct polling_island *g_root_island = NULL;
+
+static void global_fork_fd_list_add(grpc_fd *fd) {
+  if (grpc_fork_support_enabled()) {
+    gpr_mu_lock(&g_fd_mu);
+    fd->global_prev = NULL;
+    fd->global_next = g_root_fd;
+    if (g_root_fd) {
+      g_root_fd->global_prev = fd;
+    }
+    g_root_fd = fd;
+    gpr_mu_unlock(&g_fd_mu);
+  }
+}
+
+static void global_fork_fd_list_remove(grpc_fd *fd) {
+  if (grpc_fork_support_enabled()) {
+    gpr_mu_lock(&g_fd_mu);
+    if (fd->global_prev) {
+      fd->global_prev->global_next = fd->global_next;
+    }
+    if (fd->global_next) {
+      fd->global_next->global_prev = fd->global_prev;
+    }
+    if (g_root_fd == fd) {
+      g_root_fd = g_root_fd->global_next;
+    }
+    gpr_mu_unlock(&g_fd_mu);
+  }
+}
+
+static void global_fork_pi_list_add(polling_island *pi) {
+  if (grpc_fork_support_enabled()) {
+    gpr_mu_lock(&g_island_mu);
+    pi->prev = NULL;
+    pi->next = g_root_island;
+    if (g_root_island) {
+      g_root_island->prev = pi;
+    }
+    g_root_island = pi;
+    gpr_mu_unlock(&g_island_mu);
+  }
+}
+
+static void global_fork_pi_list_remove(polling_island *pi) {
+  if (grpc_fork_support_enabled()) {
+    gpr_mu_lock(&g_island_mu);
+    if (pi->prev) {
+      pi->prev->next = pi->next;
+    }
+    if (pi->next) {
+      pi->next->prev = pi->prev;
+    }
+    if (g_root_island == pi) {
+      g_root_island = g_root_island->next;
+    }
+    gpr_mu_unlock(&g_island_mu);
+  }
+}
+
+static void fd_register_postfork_handler(grpc_fd *fd,
+                                         fd_postfork_handler handler,
+                                         void *arg) {
+  fd->postfork_handler = handler;
+  fd->postfork_handler_arg = arg;
+}
+
+static void polling_island_reset(polling_island *pi) {
+  close(pi->epoll_fd);
+  pi->epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+
+  struct epoll_event ev;
+  for (size_t i = 0; i < pi->fd_cnt; i++) {
+    ev.events = (uint32_t)(EPOLLIN | EPOLLOUT | EPOLLET);
+    ev.data.ptr = pi->fds[i];
+    GPR_ASSERT(epoll_ctl(pi->epoll_fd, EPOLL_CTL_ADD, pi->fds[i]->fd, &ev) ==
+               0);
+  }
+
+  grpc_error *error = GRPC_ERROR_NONE;
+  polling_island_add_wakeup_fd_locked(pi, &polling_island_wakeup_fd, &error);
+}
+
+static void fd_postfork(grpc_fd *fd) {
+  if (!fd->orphaned) {
+    if (fd->postfork_handler) {
+      fd->fd = fd->postfork_handler(fd, fd->postfork_handler_arg);
+    } else {
+      close(fd->fd);
+      fd->fd = socket(AF_INET, SOCK_STREAM, 0);
+      shutdown(fd->fd, SHUT_RDWR);
+    }
+  }
+}
+
+static void fork_engine() {
+  gpr_mu_lock(&g_fd_mu);
+  grpc_fd *fd = g_root_fd;
+  while (fd != NULL) {
+    fd_postfork(fd);
+    fd = fd->global_next;
+  }
+  gpr_mu_unlock(&g_fd_mu);
+
+  gpr_mu_lock(&g_island_mu);
+  polling_island *pi = g_root_island;
+  while (pi != NULL) {
+    polling_island_reset(pi);
+    pi = pi->next;
+  }
+  gpr_mu_unlock(&g_island_mu);
+}
+
+/*******************************************************************************
  * Event engine binding
  */
 
@@ -1674,9 +1834,11 @@ static const grpc_event_engine_vtable vtable = {
     .fd_orphan = fd_orphan,
     .fd_shutdown = fd_shutdown,
     .fd_is_shutdown = fd_is_shutdown,
+    .fd_disable_shutdown = fd_disable_shutdown,
     .fd_notify_on_read = fd_notify_on_read,
     .fd_notify_on_write = fd_notify_on_write,
     .fd_get_read_notifier_pollset = fd_get_read_notifier_pollset,
+    .fd_register_postfork_handler = fd_register_postfork_handler,
 
     .pollset_init = pollset_init,
     .pollset_shutdown = pollset_shutdown,
@@ -1695,6 +1857,7 @@ static const grpc_event_engine_vtable vtable = {
     .pollset_set_del_fd = pollset_set_del_fd,
 
     .shutdown_engine = shutdown_engine,
+    .fork_engine = fork_engine,
 };
 
 /* It is possible that GLIBC has epoll but the underlying kernel doesn't.
@@ -1738,6 +1901,8 @@ const grpc_event_engine_vtable *grpc_init_epollsig_linux(
   }
 
   fd_global_init();
+  gpr_mu_init(&g_island_mu);
+  gpr_mu_init(&g_fd_mu);
 
   if (!GRPC_LOG_IF_ERROR("pollset_global_init", pollset_global_init())) {
     return NULL;

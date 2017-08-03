@@ -31,6 +31,7 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/stack_lockfree.h"
 #include "src/core/lib/support/string.h"

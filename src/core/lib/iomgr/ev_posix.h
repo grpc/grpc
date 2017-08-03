@@ -31,6 +31,8 @@ extern grpc_tracer_flag grpc_polling_trace; /* Disabled by default */
 
 typedef struct grpc_fd grpc_fd;
 
+typedef int (*fd_postfork_handler)(grpc_fd *fd, void *arg);
+
 typedef struct grpc_event_engine_vtable {
   size_t pollset_size;
 
@@ -44,8 +46,11 @@ typedef struct grpc_event_engine_vtable {
   void (*fd_notify_on_write)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure *closure);
   bool (*fd_is_shutdown)(grpc_fd *fd);
+  void (*fd_disable_shutdown)(grpc_fd *fd);
   grpc_pollset *(*fd_get_read_notifier_pollset)(grpc_exec_ctx *exec_ctx,
                                                 grpc_fd *fd);
+  void (*fd_register_postfork_handler)(grpc_fd *fd, fd_postfork_handler handler,
+                                       void *arg);
 
   void (*pollset_init)(grpc_pollset *pollset, gpr_mu **mu);
   void (*pollset_shutdown)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
@@ -80,6 +85,10 @@ typedef struct grpc_event_engine_vtable {
                              grpc_pollset_set *pollset_set, grpc_fd *fd);
 
   void (*shutdown_engine)(void);
+
+  void (*fork_engine)(void);
+
+  void (*fd_regsiter_postfork_handler)(fd_postfork_handler);
 } grpc_event_engine_vtable;
 
 void grpc_event_engine_init(void);
@@ -111,6 +120,21 @@ bool grpc_fd_is_shutdown(grpc_fd *fd);
 
 /* Cause any current and future callbacks to fail. */
 void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why);
+
+/* Disable any actual shutdown() calls on on an fd.
+ * This is needed when we fork() a process, and we only want a single
+ * process to be able to shutdown a listen()ing fd.
+ */
+void grpc_fd_disable_shutdown(grpc_fd *fd);
+
+/* Call after a fork() in the child process */
+void grpc_fork_engine();
+
+/* Allows setting a custom behavior on a file descriptor postfork
+ * Default is to replace the fd with one that is already shutdown
+ */
+void grpc_fd_register_postfork_handler(grpc_fd *fd, fd_postfork_handler handler,
+                                       void *arg);
 
 /* Register read interest, causing read_cb to be called once when fd becomes
    readable, on deadline specified by deadline, or on shutdown triggered by

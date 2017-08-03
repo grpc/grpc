@@ -20,6 +20,7 @@
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/census.h>
 #include <grpc/compression.h>
+#include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
@@ -28,6 +29,7 @@
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/exec_ctx_fwd.h>
+#include <grpc/impl/codegen/fork.h>
 #include <grpc/impl/codegen/gpr_slice.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>

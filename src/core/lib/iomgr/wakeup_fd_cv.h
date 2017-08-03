@@ -37,8 +37,9 @@
 
 #include "src/core/lib/iomgr/ev_posix.h"
 
-#define FD_TO_IDX(fd) (-(fd)-1)
-#define IDX_TO_FD(idx) (-(idx)-1)
+// Offset by 2, fd=-1 signifies an invalid fd
+#define FD_TO_IDX(fd) (-(fd)-2)
+#define IDX_TO_FD(idx) (-(idx)-2)
 
 typedef struct cv_node {
   gpr_cv* cv;

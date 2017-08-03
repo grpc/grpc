@@ -51,6 +51,7 @@
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/support/string.h"
 
@@ -156,7 +157,6 @@ static void destroyed_port(grpc_exec_ctx *exec_ctx, void *server,
 static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   /* delete ALL the things */
   gpr_mu_lock(&s->mu);
-
   GPR_ASSERT(s->shutdown);
 
   if (s->head) {
@@ -180,7 +180,6 @@ static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
 
   GPR_ASSERT(!s->shutdown);
   s->shutdown = true;
-
   /* shutdown all fd's */
   if (s->active_ports) {
     grpc_tcp_listener *sp;
@@ -188,6 +187,7 @@ static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
       grpc_fd_shutdown(exec_ctx, sp->emfd, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                                "Server destroyed"));
     }
+
     gpr_mu_unlock(&s->mu);
   } else {
     gpr_mu_unlock(&s->mu);
@@ -202,7 +202,6 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
   if (err != GRPC_ERROR_NONE) {
     goto error;
   }
-
   grpc_pollset *read_notifier_pollset =
       sp->server->pollsets[(size_t)gpr_atm_no_barrier_fetch_add(
                                &sp->server->next_pollset_to_assign, 1) %
@@ -216,7 +215,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
     addr.len = sizeof(struct sockaddr_storage);
     /* Note: If we ever decide to return this address to the user, remember to
        strip off the ::ffff:0.0.0.0/96 prefix first. */
-    int fd = grpc_accept4(sp->fd, &addr, 1, 1);
+    int fd = grpc_accept4(grpc_fd_wrapped_fd(sp->emfd), &addr, 1, 1);
     if (fd < 0) {
       switch (errno) {
         case EINTR:
@@ -374,7 +373,6 @@ static grpc_error *clone_port(grpc_tcp_listener *listener, unsigned count) {
     sp->sibling = listener->sibling;
     listener->sibling = sp;
     sp->server = listener->server;
-    sp->fd = fd;
     sp->emfd = grpc_fd_create(fd, name);
     memcpy(&sp->addr, &listener->addr, sizeof(grpc_resolved_address));
     sp->port = port;
@@ -412,7 +410,8 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s,
   if (requested_port == 0) {
     for (sp = s->head; sp; sp = sp->next) {
       sockname_temp.len = sizeof(struct sockaddr_storage);
-      if (0 == getsockname(sp->fd, (struct sockaddr *)&sockname_temp.addr,
+      if (0 == getsockname(grpc_fd_wrapped_fd(sp->emfd),
+                           (struct sockaddr *)&sockname_temp.addr,
                            (socklen_t *)&sockname_temp.len)) {
         int used_port = grpc_sockaddr_get_port(&sockname_temp);
         if (used_port > 0) {
@@ -436,6 +435,7 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s,
       GRPC_ERROR_NONE) {
     *out_port = sp->port;
   }
+
   return err;
 }
 
@@ -474,7 +474,7 @@ int grpc_tcp_server_port_fd(grpc_tcp_server *s, unsigned port_index,
   for (; sp; sp = sp->sibling, --fd_index) {
     if (fd_index == 0) {
       gpr_mu_unlock(&s->mu);
-      return sp->fd;
+      return grpc_fd_wrapped_fd(sp->emfd);
     }
   }
   gpr_mu_unlock(&s->mu);
@@ -559,6 +559,8 @@ void grpc_tcp_server_shutdown_listeners(grpc_exec_ctx *exec_ctx,
     }
   }
   gpr_mu_unlock(&s->mu);
+
+  grpc_kick_poller();
 }
 
 #endif
