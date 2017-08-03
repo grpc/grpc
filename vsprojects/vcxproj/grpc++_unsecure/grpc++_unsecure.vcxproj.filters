@@ -668,6 +668,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\executor.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\gethostname.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iocp_windows.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
