@@ -793,8 +793,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       g_now = gpr_time_add(g_now, gpr_time_from_seconds(1, GPR_TIMESPAN));
     }
 
-    grpc_timer_manager_tick();
-
     switch (next_byte(&inp)) {
       // terminate on bad bytes
       default:
@@ -1201,6 +1199,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         }
         break;
       }
+      grpc_timer_manager_tick();
     }
   }
 
