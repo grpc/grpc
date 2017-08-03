@@ -8810,6 +8810,7 @@
       "src/core/ext/transport/chttp2/transport/chttp2_plugin.c", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.c", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.h", 
+      "src/core/ext/transport/chttp2/transport/flow_control.c", 
       "src/core/ext/transport/chttp2/transport/frame.h", 
       "src/core/ext/transport/chttp2/transport/frame_data.c", 
       "src/core/ext/transport/chttp2/transport/frame_data.h", 

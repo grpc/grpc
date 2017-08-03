@@ -753,6 +753,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\chttp2_transport.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\flow_control.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_data.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_goaway.c">
