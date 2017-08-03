@@ -1,47 +1,35 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
-#include "src/core/lib/channel/channel_args.h"
-#include <grpc/grpc.h>
-#include "src/core/lib/support/string.h"
+#include <grpc/support/port_platform.h>
+
+#include <limits.h>
+#include <string.h>
 
 #include <grpc/compression.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include <string.h>
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/support/string.h"
 
 static grpc_arg copy_arg(const grpc_arg *src) {
   grpc_arg dst;
@@ -126,9 +114,23 @@ grpc_channel_args *grpc_channel_args_copy(const grpc_channel_args *src) {
   return grpc_channel_args_copy_and_add(src, NULL, 0);
 }
 
-grpc_channel_args *grpc_channel_args_merge(const grpc_channel_args *a,
+grpc_channel_args *grpc_channel_args_union(const grpc_channel_args *a,
                                            const grpc_channel_args *b) {
-  return grpc_channel_args_copy_and_add(a, b->args, b->num_args);
+  const size_t max_out = (a->num_args + b->num_args);
+  grpc_arg *uniques = gpr_malloc(sizeof(*uniques) * max_out);
+  for (size_t i = 0; i < a->num_args; ++i) uniques[i] = a->args[i];
+
+  size_t uniques_idx = a->num_args;
+  for (size_t i = 0; i < b->num_args; ++i) {
+    const char *b_key = b->args[i].key;
+    if (grpc_channel_args_find(a, b_key) == NULL) {  // not found
+      uniques[uniques_idx++] = b->args[i];
+    }
+  }
+  grpc_channel_args *result =
+      grpc_channel_args_copy_and_add(NULL, uniques, uniques_idx);
+  gpr_free(uniques);
+  return result;
 }
 
 static int cmp_arg(const grpc_arg *a, const grpc_arg *b) {
@@ -184,7 +186,7 @@ grpc_channel_args *grpc_channel_args_normalize(const grpc_channel_args *a) {
   return b;
 }
 
-void grpc_channel_args_destroy(grpc_channel_args *a) {
+void grpc_channel_args_destroy(grpc_exec_ctx *exec_ctx, grpc_channel_args *a) {
   size_t i;
   if (!a) return;
   for (i = 0; i < a->num_args; i++) {
@@ -195,7 +197,8 @@ void grpc_channel_args_destroy(grpc_channel_args *a) {
       case GRPC_ARG_INTEGER:
         break;
       case GRPC_ARG_POINTER:
-        a->args[i].value.pointer.vtable->destroy(a->args[i].value.pointer.p);
+        a->args[i].value.pointer.vtable->destroy(exec_ctx,
+                                                 a->args[i].value.pointer.p);
         break;
     }
     gpr_free(a->args[i].key);
@@ -249,7 +252,8 @@ static int find_compression_algorithm_states_bitset(const grpc_channel_args *a,
 }
 
 grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
-    grpc_channel_args **a, grpc_compression_algorithm algorithm, int state) {
+    grpc_exec_ctx *exec_ctx, grpc_channel_args **a,
+    grpc_compression_algorithm algorithm, int state) {
   int *states_arg = NULL;
   grpc_channel_args *result = *a;
   const int states_arg_found =
@@ -282,7 +286,7 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
       GPR_BITCLEAR((unsigned *)&tmp.value.integer, algorithm);
     }
     result = grpc_channel_args_copy_and_add(*a, &tmp, 1);
-    grpc_channel_args_destroy(*a);
+    grpc_channel_args_destroy(exec_ctx, *a);
     *a = result;
   }
   return result;
@@ -327,7 +331,9 @@ const grpc_arg *grpc_channel_args_find(const grpc_channel_args *args,
   return NULL;
 }
 
-int grpc_channel_arg_get_integer(grpc_arg *arg, grpc_integer_options options) {
+int grpc_channel_arg_get_integer(const grpc_arg *arg,
+                                 const grpc_integer_options options) {
+  if (arg == NULL) return options.default_value;
   if (arg->type != GRPC_ARG_INTEGER) {
     gpr_log(GPR_ERROR, "%s ignored: it must be an integer", arg->key);
     return options.default_value;
@@ -343,4 +349,53 @@ int grpc_channel_arg_get_integer(grpc_arg *arg, grpc_integer_options options) {
     return options.default_value;
   }
   return arg->value.integer;
+}
+
+bool grpc_channel_arg_get_bool(const grpc_arg *arg, bool default_value) {
+  if (arg == NULL) return default_value;
+  if (arg->type != GRPC_ARG_INTEGER) {
+    gpr_log(GPR_ERROR, "%s ignored: it must be an integer", arg->key);
+    return default_value;
+  }
+  switch (arg->value.integer) {
+    case 0:
+      return false;
+    case 1:
+      return true;
+    default:
+      gpr_log(GPR_ERROR, "%s treated as bool but set to %d (assuming true)",
+              arg->key, arg->value.integer);
+      return true;
+  }
+}
+
+bool grpc_channel_args_want_minimal_stack(const grpc_channel_args *args) {
+  return grpc_channel_arg_get_bool(
+      grpc_channel_args_find(args, GRPC_ARG_MINIMAL_STACK), false);
+}
+
+grpc_arg grpc_channel_arg_string_create(char *name, char *value) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_STRING;
+  arg.key = name;
+  arg.value.string = value;
+  return arg;
+}
+
+grpc_arg grpc_channel_arg_integer_create(char *name, int value) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_INTEGER;
+  arg.key = name;
+  arg.value.integer = value;
+  return arg;
+}
+
+grpc_arg grpc_channel_arg_pointer_create(
+    char *name, void *value, const grpc_arg_pointer_vtable *vtable) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_POINTER;
+  arg.key = name;
+  arg.value.pointer.p = value;
+  arg.value.pointer.vtable = vtable;
+  return arg;
 }

@@ -1,34 +1,19 @@
 <?php
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -48,14 +33,14 @@ class BaseStub
     private $update_metadata;
 
     /**
-     * @param $hostname string
-     * @param $opts array
+     * @param string  $hostname
+     * @param array   $opts
      *  - 'update_metadata': (optional) a callback function which takes in a
      * metadata array, and returns an updated metadata array
      *  - 'grpc.primary_user_agent': (optional) a user-agent string
-     * @param $channel Channel An already created Channel object
+     * @param Channel $channel An already created Channel object (optional)
      */
-    public function __construct($hostname, $opts, $channel = null)
+    public function __construct($hostname, $opts, Channel $channel = null)
     {
         $ssl_roots = file_get_contents(
             dirname(__FILE__).'/../../../../etc/roots.pem');
@@ -87,7 +72,7 @@ class BaseStub
                                  'ChannelCredentials::create methods');
         }
         if ($channel) {
-            if (!is_a($channel, 'Channel')) {
+            if (!is_a($channel, 'Grpc\Channel')) {
                 throw new \Exception('The channel argument is not a'.
                                      'Channel object');
             }
@@ -98,7 +83,7 @@ class BaseStub
     }
 
     /**
-     * @return string The URI of the endpoint.
+     * @return string The URI of the endpoint
      */
     public function getTarget()
     {
@@ -106,7 +91,7 @@ class BaseStub
     }
 
     /**
-     * @param $try_to_connect bool
+     * @param bool $try_to_connect (optional)
      *
      * @return int The grpc connectivity state
      */
@@ -145,6 +130,20 @@ class BaseStub
         return $this->_checkConnectivityState($new_state);
     }
 
+    /**
+     * Close the communication channel associated with this stub.
+     */
+    public function close()
+    {
+        $this->channel->close();
+    }
+
+    /**
+     * @param $new_state Connect state
+     *
+     * @return bool true if state is CHANNEL_READY
+     * @throw Exception if state is CHANNEL_FATAL_FAILURE
+     */
     private function _checkConnectivityState($new_state)
     {
         if ($new_state == \Grpc\CHANNEL_READY) {
@@ -158,15 +157,11 @@ class BaseStub
     }
 
     /**
-     * Close the communication channel associated with this stub.
-     */
-    public function close()
-    {
-        $this->channel->close();
-    }
-
-    /**
      * constructs the auth uri for the jwt.
+     *
+     * @param string $method The method string
+     *
+     * @return string The URL string
      */
     private function _get_jwt_aud_uri($method)
     {
@@ -191,7 +186,7 @@ class BaseStub
      *
      * @param array $metadata The metadata map
      *
-     * @return $metadata Validated and key-normalized metadata map
+     * @return array $metadata Validated and key-normalized metadata map
      * @throw InvalidArgumentException if key contains invalid characters
      */
     private function _validate_and_normalize_metadata($metadata)
@@ -220,14 +215,16 @@ class BaseStub
      * @param mixed    $argument    The argument to the method
      * @param callable $deserialize A function that deserializes the response
      * @param array    $metadata    A metadata map to send to the server
+     *                              (optional)
+     * @param array    $options     An array of options (optional)
      *
      * @return SimpleSurfaceActiveCall The active call object
      */
-    public function _simpleRequest($method,
+    protected function _simpleRequest($method,
                                    $argument,
                                    $deserialize,
-                                   $metadata = [],
-                                   $options = [])
+                                   array $metadata = [],
+                                   array $options = [])
     {
         $call = new UnaryCall($this->channel,
                               $method,
@@ -251,17 +248,17 @@ class BaseStub
      * output.
      *
      * @param string   $method      The name of the method to call
-     * @param array    $arguments   An array or Traversable of arguments to stream to the
-     *                              server
      * @param callable $deserialize A function that deserializes the response
      * @param array    $metadata    A metadata map to send to the server
+     *                              (optional)
+     * @param array    $options     An array of options (optional)
      *
      * @return ClientStreamingSurfaceActiveCall The active call object
      */
-    public function _clientStreamRequest($method,
-                                         callable $deserialize,
-                                         $metadata = [],
-                                         $options = [])
+    protected function _clientStreamRequest($method,
+                                         $deserialize,
+                                         array $metadata = [],
+                                         array $options = [])
     {
         $call = new ClientStreamingCall($this->channel,
                                         $method,
@@ -281,21 +278,23 @@ class BaseStub
     }
 
     /**
-     * Call a remote method that takes a single argument and returns a stream of
-     * responses.
+     * Call a remote method that takes a single argument and returns a stream
+     * of responses.
      *
      * @param string   $method      The name of the method to call
      * @param mixed    $argument    The argument to the method
      * @param callable $deserialize A function that deserializes the responses
      * @param array    $metadata    A metadata map to send to the server
+     *                              (optional)
+     * @param array    $options     An array of options (optional)
      *
      * @return ServerStreamingSurfaceActiveCall The active call object
      */
-    public function _serverStreamRequest($method,
+    protected function _serverStreamRequest($method,
                                          $argument,
-                                         callable $deserialize,
-                                         $metadata = [],
-                                         $options = [])
+                                         $deserialize,
+                                         array $metadata = [],
+                                         array $options = [])
     {
         $call = new ServerStreamingCall($this->channel,
                                         $method,
@@ -320,13 +319,15 @@ class BaseStub
      * @param string   $method      The name of the method to call
      * @param callable $deserialize A function that deserializes the responses
      * @param array    $metadata    A metadata map to send to the server
+     *                              (optional)
+     * @param array    $options     An array of options (optional)
      *
      * @return BidiStreamingSurfaceActiveCall The active call object
      */
-    public function _bidiRequest($method,
-                                 callable $deserialize,
-                                 $metadata = [],
-                                 $options = [])
+    protected function _bidiRequest($method,
+                                 $deserialize,
+                                 array $metadata = [],
+                                 array $options = [])
     {
         $call = new BidiStreamingCall($this->channel,
                                       $method,

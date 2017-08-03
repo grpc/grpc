@@ -53,6 +53,9 @@ EXPORTS
     grpc_shutdown
     grpc_version_string
     grpc_g_stands_for
+    grpc_completion_queue_factory_lookup
+    grpc_completion_queue_create_for_next
+    grpc_completion_queue_create_for_pluck
     grpc_completion_queue_create
     grpc_completion_queue_next
     grpc_completion_queue_pluck
@@ -62,11 +65,13 @@ EXPORTS
     grpc_alarm_cancel
     grpc_alarm_destroy
     grpc_channel_check_connectivity_state
+    grpc_channel_num_external_connectivity_watchers
     grpc_channel_watch_connectivity_state
     grpc_channel_create_call
     grpc_channel_ping
     grpc_channel_register_call
     grpc_channel_create_registered_call
+    grpc_call_arena_alloc
     grpc_call_start_batch
     grpc_call_get_peer
     grpc_census_call_set_context
@@ -78,13 +83,13 @@ EXPORTS
     grpc_channel_destroy
     grpc_call_cancel
     grpc_call_cancel_with_status
-    grpc_call_destroy
+    grpc_call_ref
+    grpc_call_unref
     grpc_server_request_call
     grpc_server_register_method
     grpc_server_request_registered_call
     grpc_server_create
     grpc_server_register_completion_queue
-    grpc_server_register_non_listening_completion_queue
     grpc_server_add_insecure_http2_port
     grpc_server_start
     grpc_server_shutdown_and_notify
@@ -137,21 +142,37 @@ EXPORTS
     grpc_server_credentials_set_auth_metadata_processor
     grpc_slice_ref
     grpc_slice_unref
+    grpc_slice_copy
     grpc_slice_new
     grpc_slice_new_with_user_data
     grpc_slice_new_with_len
     grpc_slice_malloc
+    grpc_slice_malloc_large
+    grpc_slice_intern
     grpc_slice_from_copied_string
     grpc_slice_from_copied_buffer
     grpc_slice_from_static_string
+    grpc_slice_from_static_buffer
     grpc_slice_sub
     grpc_slice_sub_no_ref
     grpc_slice_split_tail
+    grpc_slice_split_tail_maybe_ref
     grpc_slice_split_head
-    gpr_empty_slice
+    grpc_empty_slice
+    grpc_slice_default_hash_impl
+    grpc_slice_default_eq_impl
+    grpc_slice_eq
     grpc_slice_cmp
     grpc_slice_str_cmp
+    grpc_slice_buf_cmp
+    grpc_slice_buf_start_eq
+    grpc_slice_rchr
+    grpc_slice_chr
+    grpc_slice_slice
+    grpc_slice_hash
     grpc_slice_is_equivalent
+    grpc_slice_dup
+    grpc_slice_to_c_string
     grpc_slice_buffer_init
     grpc_slice_buffer_destroy
     grpc_slice_buffer_add
@@ -164,8 +185,12 @@ EXPORTS
     grpc_slice_buffer_move_into
     grpc_slice_buffer_trim_end
     grpc_slice_buffer_move_first
+    grpc_slice_buffer_move_first_no_ref
+    grpc_slice_buffer_move_first_into_buffer
     grpc_slice_buffer_take_first
+    grpc_slice_buffer_undo_take_first
     gpr_malloc
+    gpr_zalloc
     gpr_free
     gpr_realloc
     gpr_malloc_aligned
@@ -208,6 +233,7 @@ EXPORTS
     gpr_histogram_merge_contents
     gpr_join_host_port
     gpr_split_host_port
+    gpr_log_severity_string
     gpr_log
     gpr_log_message
     gpr_set_log_verbosity
@@ -241,6 +267,7 @@ EXPORTS
     gpr_ref_non_zero
     gpr_refn
     gpr_unref
+    gpr_ref_is_unique
     gpr_stats_init
     gpr_stats_inc
     gpr_stats_read

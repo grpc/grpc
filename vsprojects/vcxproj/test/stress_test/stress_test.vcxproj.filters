@@ -13,9 +13,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\test.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\interop\client_helper.cc">
-      <Filter>test\cpp\interop</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\interop\interop_client.cc">
       <Filter>test\cpp\interop</Filter>
     </ClCompile>
@@ -38,6 +35,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\interop\stress_interop_client.h">
       <Filter>test\cpp\interop</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\create_test_channel.h">
+      <Filter>test\cpp\util</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\metrics_server.h">
       <Filter>test\cpp\util</Filter>

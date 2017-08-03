@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -46,6 +31,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -102,7 +88,7 @@ struct grpc_tcp_server {
   /* shutdown callback */
   grpc_closure *shutdown_complete;
 
-  grpc_resource_quota *resource_quota;
+  grpc_channel_args *channel_args;
 };
 
 /* Public function. Allocates the proper data structures to hold a
@@ -112,21 +98,7 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
                                    const grpc_channel_args *args,
                                    grpc_tcp_server **server) {
   grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
-  s->resource_quota = grpc_resource_quota_create(NULL);
-  for (size_t i = 0; i < (args == NULL ? 0 : args->num_args); i++) {
-    if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
-      if (args->args[i].type == GRPC_ARG_POINTER) {
-        grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
-        s->resource_quota =
-            grpc_resource_quota_internal_ref(args->args[i].value.pointer.p);
-      } else {
-        grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
-        gpr_free(s);
-        return GRPC_ERROR_CREATE(GRPC_ARG_RESOURCE_QUOTA
-                                 " must be a pointer to a buffer pool");
-      }
-    }
-  }
+  s->channel_args = grpc_channel_args_copy(args);
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
   s->active_ports = 0;
@@ -155,18 +127,19 @@ static void destroy_server(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_winsocket_destroy(sp->socket);
     gpr_free(sp);
   }
-  grpc_resource_quota_internal_unref(exec_ctx, s->resource_quota);
+  grpc_channel_args_destroy(exec_ctx, s->channel_args);
   gpr_free(s);
 }
 
 static void finish_shutdown_locked(grpc_exec_ctx *exec_ctx,
                                    grpc_tcp_server *s) {
   if (s->shutdown_complete != NULL) {
-    grpc_exec_ctx_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE, NULL);
+    GRPC_CLOSURE_SCHED(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
-  grpc_exec_ctx_sched(exec_ctx, grpc_closure_create(destroy_server, s),
-                      GRPC_ERROR_NONE, NULL);
+  GRPC_CLOSURE_SCHED(exec_ctx, GRPC_CLOSURE_CREATE(destroy_server, s,
+                                                   grpc_schedule_on_exec_ctx),
+                     GRPC_ERROR_NONE);
 }
 
 grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s) {
@@ -183,7 +156,6 @@ void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server *s,
 }
 
 static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
-  int immediately_done = 0;
   grpc_tcp_listener *sp;
   gpr_mu_lock(&s->mu);
 
@@ -204,7 +176,7 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (gpr_unref(&s->refs)) {
     grpc_tcp_server_shutdown_listeners(exec_ctx, s);
     gpr_mu_lock(&s->mu);
-    grpc_exec_ctx_enqueue_list(exec_ctx, &s->shutdown_starting, NULL);
+    GRPC_CLOSURE_LIST_SCHED(exec_ctx, &s->shutdown_starting);
     gpr_mu_unlock(&s->mu);
     tcp_server_destroy(exec_ctx, s);
   }
@@ -239,7 +211,7 @@ static grpc_error *prepare_socket(SOCKET sock,
     error = GRPC_WSA_ERROR(WSAGetLastError(), "getsockname");
     goto failure;
   }
-  sockname_temp.len = sockname_temp_len;
+  sockname_temp.len = (size_t)sockname_temp_len;
 
   *port = grpc_sockaddr_get_port(&sockname_temp);
   return GRPC_ERROR_NONE;
@@ -247,10 +219,11 @@ static grpc_error *prepare_socket(SOCKET sock,
 failure:
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   char *tgtaddr = grpc_sockaddr_to_uri(addr);
-  grpc_error *final_error = grpc_error_set_int(
-      grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING(
+  grpc_error_set_int(
+      grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Failed to prepare server socket", &error, 1),
-                         GRPC_ERROR_STR_TARGET_ADDRESS, tgtaddr),
+                         GRPC_ERROR_STR_TARGET_ADDRESS,
+                         grpc_slice_from_copied_string(tgtaddr)),
       GRPC_ERROR_INT_FD, (intptr_t)sock);
   gpr_free(tgtaddr);
   GRPC_ERROR_UNREF(error);
@@ -260,7 +233,6 @@ failure:
 
 static void decrement_active_ports_and_notify_locked(grpc_exec_ctx *exec_ctx,
                                                      grpc_tcp_listener *sp) {
-  int notify = 0;
   sp->shutting_down = 0;
   GPR_ASSERT(sp->server->active_ports > 0);
   if (0 == --sp->server->active_ports) {
@@ -323,7 +295,6 @@ failure:
 /* Event manager callback when reads are ready. */
 static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_tcp_listener *sp = arg;
-  grpc_tcp_server_acceptor acceptor = {sp->server, sp->port_index, 0};
   SOCKET sock = sp->new_socket;
   grpc_winsocket_callback_info *info = &sp->socket->read_info;
   grpc_endpoint *ep = NULL;
@@ -345,7 +316,7 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   if (error != GRPC_ERROR_NONE) {
     const char *msg = grpc_error_string(error);
     gpr_log(GPR_INFO, "Skipping on_accept due to error: %s", msg);
-    grpc_error_free_string(msg);
+
     gpr_mu_unlock(&sp->server->mu);
     return;
   }
@@ -375,7 +346,7 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       int peer_name_len = (int)peer_name.len;
       err =
           getpeername(sock, (struct sockaddr *)peer_name.addr, &peer_name_len);
-      peer_name.len = peer_name_len;
+      peer_name.len = (size_t)peer_name_len;
       if (!err) {
         peer_name_string = grpc_sockaddr_to_uri(&peer_name);
       } else {
@@ -384,8 +355,8 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
         gpr_free(utf8_message);
       }
       gpr_asprintf(&fd_name, "tcp_server:%s", peer_name_string);
-      ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name),
-                           sp->server->resource_quota, peer_name_string);
+      ep = grpc_tcp_create(exec_ctx, grpc_winsocket_create(sock, fd_name),
+                           sp->server->channel_args, peer_name_string);
       gpr_free(fd_name);
       gpr_free(peer_name_string);
     } else {
@@ -396,8 +367,13 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   /* The only time we should call our callback, is where we successfully
      managed to accept a connection, and created an endpoint. */
   if (ep) {
+    // Create acceptor.
+    grpc_tcp_server_acceptor *acceptor = gpr_malloc(sizeof(*acceptor));
+    acceptor->from_server = sp->server;
+    acceptor->port_index = sp->port_index;
+    acceptor->fd_index = 0;
     sp->server->on_accept_cb(exec_ctx, sp->server->on_accept_cb_arg, ep, NULL,
-                             &acceptor);
+                             acceptor);
   }
   /* As we were notified from the IOCP of one and exactly one accept,
      the former socked we created has now either been destroy or assigned
@@ -461,7 +437,7 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
   sp->new_socket = INVALID_SOCKET;
   sp->port = port;
   sp->port_index = port_index;
-  grpc_closure_init(&sp->on_accept, on_accept, sp);
+  GRPC_CLOSURE_INIT(&sp->on_accept, on_accept, sp, grpc_schedule_on_exec_ctx);
   GPR_ASSERT(sp->socket);
   gpr_mu_unlock(&s->mu);
   *listener = sp;
@@ -493,7 +469,7 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s,
       if (0 == getsockname(sp->socket->socket,
                            (struct sockaddr *)sockname_temp.addr,
                            &sockname_temp_len)) {
-        sockname_temp.len = sockname_temp_len;
+        sockname_temp.len = (size_t)sockname_temp_len;
         *port = grpc_sockaddr_get_port(&sockname_temp);
         if (*port > 0) {
           allocated_addr = gpr_malloc(sizeof(grpc_resolved_address));
@@ -530,7 +506,7 @@ done:
   gpr_free(allocated_addr);
 
   if (error != GRPC_ERROR_NONE) {
-    grpc_error *error_out = GRPC_ERROR_CREATE_REFERENCING(
+    grpc_error *error_out = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "Failed to add port to server", &error, 1);
     GRPC_ERROR_UNREF(error);
     error = error_out;

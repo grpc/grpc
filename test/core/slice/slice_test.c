@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -35,8 +20,12 @@
 
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/static_metadata.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x);
@@ -61,8 +50,10 @@ static void test_slice_malloc_returns_something_sensible(void) {
     GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == length);
     /* If the slice has a refcount, it must be destroyable. */
     if (slice.refcount) {
-      GPR_ASSERT(slice.refcount->ref != NULL);
-      GPR_ASSERT(slice.refcount->unref != NULL);
+      GPR_ASSERT(slice.refcount->vtable != NULL);
+      GPR_ASSERT(slice.refcount->vtable->ref != NULL);
+      GPR_ASSERT(slice.refcount->vtable->unref != NULL);
+      GPR_ASSERT(slice.refcount->vtable->hash != NULL);
     }
     /* We must be able to write to every byte of the data */
     for (i = 0; i < length; i++) {
@@ -249,6 +240,55 @@ static void test_slice_from_copied_string_works(void) {
   grpc_slice_unref(slice);
 }
 
+static void test_slice_interning(void) {
+  LOG_TEST_NAME("test_slice_interning");
+
+  grpc_init();
+  grpc_slice src1 = grpc_slice_from_copied_string("hello123456789123456789");
+  grpc_slice src2 = grpc_slice_from_copied_string("hello123456789123456789");
+  GPR_ASSERT(GRPC_SLICE_START_PTR(src1) != GRPC_SLICE_START_PTR(src2));
+  grpc_slice interned1 = grpc_slice_intern(src1);
+  grpc_slice interned2 = grpc_slice_intern(src2);
+  GPR_ASSERT(GRPC_SLICE_START_PTR(interned1) ==
+             GRPC_SLICE_START_PTR(interned2));
+  GPR_ASSERT(GRPC_SLICE_START_PTR(interned1) != GRPC_SLICE_START_PTR(src1));
+  GPR_ASSERT(GRPC_SLICE_START_PTR(interned2) != GRPC_SLICE_START_PTR(src2));
+  grpc_slice_unref(src1);
+  grpc_slice_unref(src2);
+  grpc_slice_unref(interned1);
+  grpc_slice_unref(interned2);
+  grpc_shutdown();
+}
+
+static void test_static_slice_interning(void) {
+  LOG_TEST_NAME("test_static_slice_interning");
+
+  // grpc_init/grpc_shutdown deliberately omitted: they should not be necessary
+  // to intern a static slice
+
+  for (size_t i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
+    GPR_ASSERT(grpc_slice_is_equivalent(
+        grpc_static_slice_table[i],
+        grpc_slice_intern(grpc_static_slice_table[i])));
+  }
+}
+
+static void test_static_slice_copy_interning(void) {
+  LOG_TEST_NAME("test_static_slice_copy_interning");
+
+  grpc_init();
+
+  for (size_t i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
+    grpc_slice copy = grpc_slice_dup(grpc_static_slice_table[i]);
+    GPR_ASSERT(grpc_static_slice_table[i].refcount != copy.refcount);
+    GPR_ASSERT(grpc_static_slice_table[i].refcount ==
+               grpc_slice_intern(copy).refcount);
+    grpc_slice_unref(copy);
+  }
+
+  grpc_shutdown();
+}
+
 int main(int argc, char **argv) {
   unsigned length;
   grpc_test_init(argc, argv);
@@ -262,5 +302,8 @@ int main(int argc, char **argv) {
     test_slice_split_tail_works(length);
   }
   test_slice_from_copied_string_works();
+  test_slice_interning();
+  test_static_slice_interning();
+  test_static_slice_copy_interning();
   return 0;
 }

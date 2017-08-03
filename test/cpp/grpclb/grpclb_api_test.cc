@@ -1,40 +1,25 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #include <grpc++/impl/codegen/config.h>
 #include <gtest/gtest.h>
 
-#include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/proto/grpc/lb/v1/load_balancer.pb.h"  // C++ version
@@ -63,7 +48,7 @@ grpc::string PackedStringToIp(const grpc_grpclb_ip_address& pb_ip) {
   } else {
     abort();
   }
-  GPR_ASSERT(inet_ntop(af, pb_ip.bytes, ip_str, 46) != NULL);
+  GPR_ASSERT(inet_ntop(af, (void*)pb_ip.bytes, ip_str, 46) != NULL);
   return ip_str;
 }
 
@@ -106,11 +91,13 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
   auto* server = serverlist->add_servers();
   server->set_ip_address(Ip4ToPackedString("127.0.0.1"));
   server->set_port(12345);
-  server->set_drop_request(true);
+  server->set_load_balance_token("rate_limting");
+  server->set_drop(true);
   server = response.mutable_server_list()->add_servers();
   server->set_ip_address(Ip4ToPackedString("10.0.0.1"));
   server->set_port(54321);
-  server->set_drop_request(false);
+  server->set_load_balance_token("load_balancing");
+  server->set_drop(true);
   auto* expiration_interval = serverlist->mutable_expiration_interval();
   expiration_interval->set_seconds(888);
   expiration_interval->set_nanos(999);
@@ -125,12 +112,14 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
   EXPECT_EQ(PackedStringToIp(c_serverlist->servers[0]->ip_address),
             "127.0.0.1");
   EXPECT_EQ(c_serverlist->servers[0]->port, 12345);
-  EXPECT_TRUE(c_serverlist->servers[0]->drop_request);
+  EXPECT_STREQ(c_serverlist->servers[0]->load_balance_token, "rate_limting");
+  EXPECT_TRUE(c_serverlist->servers[0]->drop);
   EXPECT_TRUE(c_serverlist->servers[1]->has_ip_address);
 
   EXPECT_EQ(PackedStringToIp(c_serverlist->servers[1]->ip_address), "10.0.0.1");
   EXPECT_EQ(c_serverlist->servers[1]->port, 54321);
-  EXPECT_FALSE(c_serverlist->servers[1]->drop_request);
+  EXPECT_STREQ(c_serverlist->servers[1]->load_balance_token, "load_balancing");
+  EXPECT_TRUE(c_serverlist->servers[1]->drop);
 
   EXPECT_TRUE(c_serverlist->expiration_interval.has_seconds);
   EXPECT_EQ(c_serverlist->expiration_interval.seconds, 888);

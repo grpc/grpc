@@ -1,46 +1,32 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #include <ruby/ruby.h>
 
+#include "rb_byte_buffer.h"
 #include "rb_compression_options.h"
 #include "rb_grpc_imports.generated.h"
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/alloc.h>
 #include <string.h>
 
 #include "rb_grpc.h"
@@ -99,8 +85,11 @@ static rb_data_type_t grpc_rb_compression_options_data_type = {
    Allocate the wrapped grpc compression options and
    initialize it here too. */
 static VALUE grpc_rb_compression_options_alloc(VALUE cls) {
-  grpc_rb_compression_options *wrapper =
-      gpr_malloc(sizeof(grpc_rb_compression_options));
+  grpc_rb_compression_options *wrapper = NULL;
+
+  grpc_ruby_once_init();
+
+  wrapper = gpr_malloc(sizeof(grpc_rb_compression_options));
   wrapper->wrapped = NULL;
   wrapper->wrapped = gpr_malloc(sizeof(grpc_compression_options));
   grpc_compression_options_init(wrapper->wrapped);
@@ -168,9 +157,9 @@ void grpc_rb_compression_options_set_default_level(
  * Raises an error if the name of the algorithm passed in is invalid. */
 void grpc_rb_compression_options_algorithm_name_to_value_internal(
     grpc_compression_algorithm *algorithm_value, VALUE algorithm_name) {
-  char *name_str = NULL;
-  long name_len = 0;
+  grpc_slice name_slice;
   VALUE algorithm_name_as_string = Qnil;
+  char *tmp_str = NULL;
 
   Check_Type(algorithm_name, T_SYMBOL);
 
@@ -178,16 +167,19 @@ void grpc_rb_compression_options_algorithm_name_to_value_internal(
    * correct C string out of it. */
   algorithm_name_as_string = rb_funcall(algorithm_name, rb_intern("to_s"), 0);
 
-  name_str = RSTRING_PTR(algorithm_name_as_string);
-  name_len = RSTRING_LEN(algorithm_name_as_string);
+  name_slice =
+      grpc_slice_from_copied_buffer(RSTRING_PTR(algorithm_name_as_string),
+                                    RSTRING_LEN(algorithm_name_as_string));
 
   /* Raise an error if the name isn't recognized as a compression algorithm by
    * the algorithm parse function
    * in GRPC core. */
-  if (!grpc_compression_algorithm_parse(name_str, name_len, algorithm_value)) {
-    rb_raise(rb_eNameError, "Invalid compression algorithm name: %s",
-             StringValueCStr(algorithm_name_as_string));
+  if (!grpc_compression_algorithm_parse(name_slice, algorithm_value)) {
+    tmp_str = grpc_slice_to_c_string(name_slice);
+    rb_raise(rb_eNameError, "Invalid compression algorithm name: %s", tmp_str);
   }
+
+  grpc_slice_unref(name_slice);
 }
 
 /* Indicates whether a given algorithm is enabled on this instance, given the

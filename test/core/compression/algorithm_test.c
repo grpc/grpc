@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -40,6 +25,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "test/core/util/test_config.h"
 
@@ -51,29 +37,33 @@ static void test_algorithm_mesh(void) {
   for (i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
     char *name;
     grpc_compression_algorithm parsed;
-    grpc_mdstr *mdstr;
-    grpc_mdelem *mdelem;
+    grpc_slice mdstr;
+    grpc_mdelem mdelem;
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     GPR_ASSERT(
         grpc_compression_algorithm_name((grpc_compression_algorithm)i, &name));
-    GPR_ASSERT(grpc_compression_algorithm_parse(name, strlen(name), &parsed));
+    GPR_ASSERT(grpc_compression_algorithm_parse(
+        grpc_slice_from_static_string(name), &parsed));
     GPR_ASSERT((int)parsed == i);
-    mdstr = grpc_mdstr_from_string(name);
-    GPR_ASSERT(mdstr == grpc_compression_algorithm_mdstr(parsed));
-    GPR_ASSERT(parsed == grpc_compression_algorithm_from_mdstr(mdstr));
+    mdstr = grpc_slice_from_copied_string(name);
+    GPR_ASSERT(grpc_slice_eq(mdstr, grpc_compression_algorithm_slice(parsed)));
+    GPR_ASSERT(parsed == grpc_compression_algorithm_from_slice(mdstr));
     mdelem = grpc_compression_encoding_mdelem(parsed);
-    GPR_ASSERT(mdelem->value == mdstr);
-    GPR_ASSERT(mdelem->key == GRPC_MDSTR_GRPC_ENCODING);
-    GRPC_MDSTR_UNREF(mdstr);
-    GRPC_MDELEM_UNREF(mdelem);
+    GPR_ASSERT(grpc_slice_eq(GRPC_MDVALUE(mdelem), mdstr));
+    GPR_ASSERT(grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_GRPC_ENCODING));
+    grpc_slice_unref_internal(&exec_ctx, mdstr);
+    GRPC_MDELEM_UNREF(&exec_ctx, mdelem);
+    grpc_exec_ctx_finish(&exec_ctx);
   }
 
   /* test failure */
-  GPR_ASSERT(NULL ==
-             grpc_compression_encoding_mdelem(GRPC_COMPRESS_ALGORITHMS_COUNT));
+  GPR_ASSERT(GRPC_MDISNULL(
+      grpc_compression_encoding_mdelem(GRPC_COMPRESS_ALGORITHMS_COUNT)));
 }
 
 static void test_algorithm_failure(void) {
-  grpc_mdstr *mdstr;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_slice mdstr;
 
   gpr_log(GPR_DEBUG, "test_algorithm_failure");
 
@@ -81,14 +71,17 @@ static void test_algorithm_failure(void) {
                                              NULL) == 0);
   GPR_ASSERT(grpc_compression_algorithm_name(GRPC_COMPRESS_ALGORITHMS_COUNT + 1,
                                              NULL) == 0);
-  mdstr = grpc_mdstr_from_string("this-is-an-invalid-algorithm");
-  GPR_ASSERT(grpc_compression_algorithm_from_mdstr(mdstr) ==
+  mdstr = grpc_slice_from_static_string("this-is-an-invalid-algorithm");
+  GPR_ASSERT(grpc_compression_algorithm_from_slice(mdstr) ==
              GRPC_COMPRESS_ALGORITHMS_COUNT);
-  GPR_ASSERT(grpc_compression_algorithm_mdstr(GRPC_COMPRESS_ALGORITHMS_COUNT) ==
-             NULL);
-  GPR_ASSERT(grpc_compression_algorithm_mdstr(GRPC_COMPRESS_ALGORITHMS_COUNT +
-                                              1) == NULL);
-  GRPC_MDSTR_UNREF(mdstr);
+  GPR_ASSERT(grpc_slice_eq(
+      grpc_compression_algorithm_slice(GRPC_COMPRESS_ALGORITHMS_COUNT),
+      grpc_empty_slice()));
+  GPR_ASSERT(grpc_slice_eq(
+      grpc_compression_algorithm_slice(GRPC_COMPRESS_ALGORITHMS_COUNT + 1),
+      grpc_empty_slice()));
+  grpc_slice_unref_internal(&exec_ctx, mdstr);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int main(int argc, char **argv) {

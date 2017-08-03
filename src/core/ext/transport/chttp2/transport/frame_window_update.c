@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -41,7 +26,7 @@
 grpc_slice grpc_chttp2_window_update_create(
     uint32_t id, uint32_t window_update, grpc_transport_one_way_stats *stats) {
   static const size_t frame_size = 13;
-  grpc_slice slice = grpc_slice_malloc(frame_size);
+  grpc_slice slice = GRPC_SLICE_MALLOC(frame_size);
   stats->header_bytes += frame_size;
   uint8_t *p = GRPC_SLICE_START_PTR(slice);
 
@@ -70,7 +55,7 @@ grpc_error *grpc_chttp2_window_update_parser_begin_frame(
     char *msg;
     gpr_asprintf(&msg, "invalid window update: length=%d, flags=%02x", length,
                  flags);
-    grpc_error *err = GRPC_ERROR_CREATE(msg);
+    grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return err;
   }
@@ -102,7 +87,7 @@ grpc_error *grpc_chttp2_window_update_parser_parse(
     if (received_update == 0 || (received_update & 0x80000000u)) {
       char *msg;
       gpr_asprintf(&msg, "invalid window update bytes: %d", p->amount);
-      grpc_error *err = GRPC_ERROR_CREATE(msg);
+      grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
       gpr_free(msg);
       return err;
     }
@@ -110,23 +95,21 @@ grpc_error *grpc_chttp2_window_update_parser_parse(
 
     if (t->incoming_stream_id != 0) {
       if (s != NULL) {
-        bool was_zero = s->outgoing_window <= 0;
-        GRPC_CHTTP2_FLOW_CREDIT_STREAM("parse", t, s, outgoing_window,
-                                       received_update);
-        bool is_zero = s->outgoing_window <= 0;
-        if (was_zero && !is_zero) {
-          grpc_chttp2_become_writable(exec_ctx, t, s, false,
-                                      "stream.read_flow_control");
+        grpc_chttp2_flowctl_recv_stream_update(
+            &t->flow_control, &s->flow_control, received_update);
+        if (grpc_chttp2_list_remove_stalled_by_stream(t, s)) {
+          grpc_chttp2_become_writable(
+              exec_ctx, t, s, GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
+              "stream.read_flow_control");
         }
       }
     } else {
-      bool was_zero = t->outgoing_window <= 0;
-      GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("parse", t, outgoing_window,
-                                        received_update);
-      bool is_zero = t->outgoing_window <= 0;
+      bool was_zero = t->flow_control.remote_window <= 0;
+      grpc_chttp2_flowctl_recv_transport_update(&t->flow_control,
+                                                received_update);
+      bool is_zero = t->flow_control.remote_window <= 0;
       if (was_zero && !is_zero) {
-        grpc_chttp2_initiate_write(exec_ctx, t, false,
-                                   "new_global_flow_control");
+        grpc_chttp2_initiate_write(exec_ctx, t, "new_global_flow_control");
       }
     }
   }

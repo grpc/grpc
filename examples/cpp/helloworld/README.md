@@ -12,7 +12,7 @@ following command:
 
 
 ```sh
-$ git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc
+$ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
 ```
 
 Change your current directory to examples/cpp/helloworld

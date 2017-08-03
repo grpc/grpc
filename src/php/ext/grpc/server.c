@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -49,6 +34,8 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
 
 #include "completion_queue.h"
 #include "server.h"
@@ -114,8 +101,6 @@ PHP_METHOD(Server, __construct) {
 
 /**
  * Request a call on a server. Creates a single GRPC_SERVER_RPC_NEW event.
- * @param long $tag_new The tag to associate with the new request
- * @param long $tag_cancel The tag to use if the call is cancelled
  * @return void
  */
 PHP_METHOD(Server, requestCall) {
@@ -149,8 +134,12 @@ PHP_METHOD(Server, requestCall) {
                          1 TSRMLS_CC);
     goto cleanup;
   }
-  php_grpc_add_property_string(result, "method", details.method, true);
-  php_grpc_add_property_string(result, "host", details.host, true);
+  char *method_text = grpc_slice_to_c_string(details.method);
+  char *host_text = grpc_slice_to_c_string(details.host);
+  php_grpc_add_property_string(result, "method", method_text, true);
+  php_grpc_add_property_string(result, "host", host_text, true);
+  gpr_free(method_text);
+  gpr_free(host_text);
 #if PHP_MAJOR_VERSION < 7
   add_property_zval(result, "call", grpc_php_wrap_call(call, true TSRMLS_CC));
   add_property_zval(result, "absolute_deadline",
@@ -233,12 +222,36 @@ PHP_METHOD(Server, start) {
   grpc_server_start(server->wrapped);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_construct, 0, 0, 0)
+  ZEND_ARG_INFO(0, args)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_requestCall, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_addHttp2Port, 0, 0, 1)
+  ZEND_ARG_INFO(0, addr)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_addSecureHttp2Port, 0, 0, 2)
+  ZEND_ARG_INFO(0, addr)
+  ZEND_ARG_INFO(0, server_creds)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_start, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry server_methods[] = {
-  PHP_ME(Server, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-  PHP_ME(Server, requestCall, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Server, addHttp2Port, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Server, addSecureHttp2Port, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Server, start, NULL, ZEND_ACC_PUBLIC)
+  PHP_ME(Server, __construct, arginfo_construct,
+         ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
+  PHP_ME(Server, requestCall, arginfo_requestCall,
+         ZEND_ACC_PUBLIC)
+  PHP_ME(Server, addHttp2Port, arginfo_addHttp2Port,
+         ZEND_ACC_PUBLIC)
+  PHP_ME(Server, addSecureHttp2Port, arginfo_addSecureHttp2Port,
+         ZEND_ACC_PUBLIC)
+  PHP_ME(Server, start, arginfo_start,
+         ZEND_ACC_PUBLIC)
   PHP_FE_END
 };
 

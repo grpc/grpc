@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
- * All rights reserved.
+ * Copyright 2015-2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -83,7 +68,8 @@ ServerBuilder::~ServerBuilder() {
 
 std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue(
     bool is_frequently_polled) {
-  ServerCompletionQueue* cq = new ServerCompletionQueue(is_frequently_polled);
+  ServerCompletionQueue* cq = new ServerCompletionQueue(
+      is_frequently_polled ? GRPC_CQ_DEFAULT_POLLING : GRPC_CQ_NON_LISTENING);
   cqs_.push_back(cq);
   return std::unique_ptr<ServerCompletionQueue>(cq);
 }
@@ -171,14 +157,25 @@ ServerBuilder& ServerBuilder::SetResourceQuota(
 }
 
 ServerBuilder& ServerBuilder::AddListeningPort(
-    const grpc::string& addr, std::shared_ptr<ServerCredentials> creds,
+    const grpc::string& addr_uri, std::shared_ptr<ServerCredentials> creds,
     int* selected_port) {
+  const grpc::string uri_scheme = "dns:";
+  grpc::string addr = addr_uri;
+  if (addr_uri.compare(0, uri_scheme.size(), uri_scheme) == 0) {
+    size_t pos = uri_scheme.size();
+    while (addr_uri[pos] == '/') ++pos;  // Skip slashes.
+    addr = addr_uri.substr(pos);
+  }
   Port port = {addr, creds, selected_port};
   ports_.push_back(port);
   return *this;
 }
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
+  for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
+    (*plugin)->UpdateServerBuilder(this);
+  }
+
   ChannelArguments args;
   for (auto option = options_.begin(); option != options_.end(); ++option) {
     (*option)->UpdateArguments(&args);
@@ -242,18 +239,23 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       sync_server_cqs(std::make_shared<
                       std::vector<std::unique_ptr<ServerCompletionQueue>>>());
 
+  int num_frequently_polled_cqs = 0;
+  for (auto it = cqs_.begin(); it != cqs_.end(); ++it) {
+    if ((*it)->IsFrequentlyPolled()) {
+      num_frequently_polled_cqs++;
+    }
+  }
+
+  const bool is_hybrid_server =
+      has_sync_methods && num_frequently_polled_cqs > 0;
+
   if (has_sync_methods) {
-    // This is a Sync server
-    gpr_log(GPR_INFO,
-            "Synchronous server. Num CQs: %d, Min pollers: %d, Max Pollers: "
-            "%d, CQ timeout (msec): %d",
-            sync_server_settings_.num_cqs, sync_server_settings_.min_pollers,
-            sync_server_settings_.max_pollers,
-            sync_server_settings_.cq_timeout_msec);
+    grpc_cq_polling_type polling_type =
+        is_hybrid_server ? GRPC_CQ_NON_POLLING : GRPC_CQ_DEFAULT_POLLING;
 
     // Create completion queues to listen to incoming rpc requests
     for (int i = 0; i < sync_server_settings_.num_cqs; i++) {
-      sync_server_cqs->emplace_back(new ServerCompletionQueue());
+      sync_server_cqs->emplace_back(new ServerCompletionQueue(polling_type));
     }
   }
 
@@ -262,6 +264,16 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       sync_server_settings_.min_pollers, sync_server_settings_.max_pollers,
       sync_server_settings_.cq_timeout_msec));
 
+  if (has_sync_methods) {
+    // This is a Sync server
+    gpr_log(GPR_INFO,
+            "Synchronous server. Num CQs: %d, Min pollers: %d, Max Pollers: "
+            "%d, CQ timeout (msec): %d",
+            sync_server_settings_.num_cqs, sync_server_settings_.min_pollers,
+            sync_server_settings_.max_pollers,
+            sync_server_settings_.cq_timeout_msec);
+  }
+
   ServerInitializer* initializer = server->initializer();
 
   // Register all the completion queues with the server. i.e
@@ -269,12 +281,10 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   //     server
   //  2. cqs_: Completion queues added via AddCompletionQueue() call
 
-  // All sync cqs (if any) are frequently polled by ThreadManager
-  int num_frequently_polled_cqs = sync_server_cqs->size();
-
   for (auto it = sync_server_cqs->begin(); it != sync_server_cqs->end(); ++it) {
     grpc_server_register_completion_queue(server->server_, (*it)->cq(),
                                           nullptr);
+    num_frequently_polled_cqs++;
   }
 
   // cqs_ contains the completion queue added by calling the ServerBuilder's
@@ -283,14 +293,8 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   // listening to incoming channels. Such completion queues must be registered
   // as non-listening queues
   for (auto it = cqs_.begin(); it != cqs_.end(); ++it) {
-    if ((*it)->IsFrequentlyPolled()) {
-      grpc_server_register_completion_queue(server->server_, (*it)->cq(),
-                                            nullptr);
-      num_frequently_polled_cqs++;
-    } else {
-      grpc_server_register_non_listening_completion_queue(server->server_,
-                                                          (*it)->cq(), nullptr);
-    }
+    grpc_server_register_completion_queue(server->server_, (*it)->cq(),
+                                          nullptr);
   }
 
   if (num_frequently_polled_cqs == 0) {
@@ -323,18 +327,21 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     }
   }
 
+  bool added_port = false;
   for (auto port = ports_.begin(); port != ports_.end(); port++) {
     int r = server->AddListeningPort(port->addr, port->creds.get());
-    if (!r) return nullptr;
+    if (!r) {
+      if (added_port) server->Shutdown();
+      return nullptr;
+    }
+    added_port = true;
     if (port->selected_port != nullptr) {
       *port->selected_port = r;
     }
   }
 
   auto cqs_data = cqs_.empty() ? nullptr : &cqs_[0];
-  if (!server->Start(cqs_data, cqs_.size())) {
-    return nullptr;
-  }
+  server->Start(cqs_data, cqs_.size());
 
   for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
     (*plugin)->Finish(initializer);
@@ -347,6 +354,16 @@ void ServerBuilder::InternalAddPluginFactory(
     std::unique_ptr<ServerBuilderPlugin> (*CreatePlugin)()) {
   gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
   (*g_plugin_factory_list).push_back(CreatePlugin);
+}
+
+ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
+  switch (id) {
+    case GRPC_WORKAROUND_ID_CRONET_COMPRESSION:
+      return AddChannelArgument(GRPC_ARG_WORKAROUND_CRONET_COMPRESSION, 1);
+    default:
+      gpr_log(GPR_ERROR, "Workaround %u does not exist or is obsolete.", id);
+      return *this;
+  }
 }
 
 }  // namespace grpc

@@ -37,13 +37,18 @@ GRPC_LOCAL_SRC = '../../..'
   end
 end
 
-target 'CoreCronetEnd2EndTests' do
-  pod 'BoringSSL', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
-  pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
-  pod 'gRPC-Core', :path => GRPC_LOCAL_SRC
-  pod 'gRPC-Core/Cronet-Interface', :path => GRPC_LOCAL_SRC
-  pod 'gRPC-Core/Cronet-Implementation', :path => GRPC_LOCAL_SRC
-  pod 'gRPC-Core/Tests', :path => GRPC_LOCAL_SRC
+%w(
+  CoreCronetEnd2EndTests
+  CronetUnitTests
+).each do |target_name|
+  target target_name do
+    pod 'BoringSSL', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
+    pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
+    pod 'gRPC-Core', :path => GRPC_LOCAL_SRC
+    pod 'gRPC-Core/Cronet-Interface', :path => GRPC_LOCAL_SRC
+    pod 'gRPC-Core/Cronet-Implementation', :path => GRPC_LOCAL_SRC
+    pod 'gRPC-Core/Tests', :path => GRPC_LOCAL_SRC
+  end
 end
 
 # gRPC-Core.podspec needs to be modified to be successfully used for local development. A Podfile's
@@ -92,15 +97,20 @@ post_install do |installer|
         # GPR_UNREACHABLE_CODE causes "Control may reach end of non-void
         # function" warning
         config.build_settings['GCC_WARN_ABOUT_RETURN_TYPE'] = 'NO'
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_CRONET_WITH_PACKET_COALESCING=1'
       end
     end
 
     # Activate Cronet for the dedicated build configuration 'Cronet', which will be used solely by
     # the test target 'InteropTestsRemoteWithCronet'
+    # Activate GRPCCall+InternalTests functions for the dedicated build configuration 'Test', which will
+    # be used by all test targets using it.
     if target.name == 'gRPC'
       target.build_configurations.each do |config|
         if config.name == 'Cronet'
-          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_COMPILE_WITH_CRONET=1'
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_COMPILE_WITH_CRONET=1 GRPC_TEST_OBJC=1'
+        elsif config.name == 'Test'
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_TEST_OBJC=1'
         end
       end
     end

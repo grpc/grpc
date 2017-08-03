@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -53,7 +38,7 @@ char *gpr_strdup(const char *src) {
   }
 
   len = strlen(src) + 1;
-  dst = gpr_malloc(len);
+  dst = (char *)gpr_malloc(len);
 
   memcpy(dst, src, len);
 
@@ -74,13 +59,13 @@ static dump_out dump_out_create(void) {
 static void dump_out_append(dump_out *out, char c) {
   if (out->length == out->capacity) {
     out->capacity = GPR_MAX(8, 2 * out->capacity);
-    out->data = gpr_realloc(out->data, out->capacity);
+    out->data = (char *)gpr_realloc(out->data, out->capacity);
   }
   out->data[out->length++] = c;
 }
 
 static void hexdump(dump_out *out, const char *buf, size_t len) {
-  static const char hex[16] = "0123456789abcdef";
+  static const char *hex = "0123456789abcdef";
 
   const uint8_t *const beg = (const uint8_t *)buf;
   const uint8_t *const end = beg + len;
@@ -124,16 +109,16 @@ char *gpr_dump(const char *buf, size_t len, uint32_t flags) {
 
 int gpr_parse_bytes_to_uint32(const char *buf, size_t len, uint32_t *result) {
   uint32_t out = 0;
-  uint32_t new;
+  uint32_t new_val;
   size_t i;
 
   if (len == 0) return 0; /* must have some bytes */
 
   for (i = 0; i < len; i++) {
     if (buf[i] < '0' || buf[i] > '9') return 0; /* bad char */
-    new = 10 * out + (uint32_t)(buf[i] - '0');
-    if (new < out) return 0; /* overflow */
-    out = new;
+    new_val = 10 * out + (uint32_t)(buf[i] - '0');
+    if (new_val < out) return 0; /* overflow */
+    out = new_val;
   }
 
   *result = out;
@@ -201,7 +186,7 @@ int gpr_parse_nonnegative_int(const char *value) {
 char *gpr_leftpad(const char *str, char flag, size_t length) {
   const size_t str_length = strlen(str);
   const size_t out_length = str_length > length ? str_length : length;
-  char *out = gpr_malloc(out_length + 1);
+  char *out = (char *)gpr_malloc(out_length + 1);
   memset(out, flag, out_length - str_length);
   memcpy(out + out_length - str_length, str, str_length);
   out[out_length] = 0;
@@ -225,7 +210,7 @@ char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
   if (nstrs > 0) {
     out_length += sep_len * (nstrs - 1); /* separators */
   }
-  out = gpr_malloc(out_length);
+  out = (char *)gpr_malloc(out_length);
   out_length = 0;
   for (i = 0; i < nstrs; i++) {
     const size_t slen = strlen(strs[i]);
@@ -256,7 +241,7 @@ void gpr_strvec_destroy(gpr_strvec *sv) {
 void gpr_strvec_add(gpr_strvec *sv, char *str) {
   if (sv->count == sv->capacity) {
     sv->capacity = GPR_MAX(sv->capacity + 8, sv->capacity * 2);
-    sv->strs = gpr_realloc(sv->strs, sizeof(char *) * sv->capacity);
+    sv->strs = (char **)gpr_realloc(sv->strs, sizeof(char *) * sv->capacity);
   }
   sv->strs[sv->count++] = str;
 }
@@ -274,4 +259,42 @@ int gpr_stricmp(const char *a, const char *b) {
     ++b;
   } while (ca == cb && ca && cb);
   return ca - cb;
+}
+
+static void add_string_to_split(const char *beg, const char *end, char ***strs,
+                                size_t *nstrs, size_t *capstrs) {
+  char *out = (char *)gpr_malloc((size_t)(end - beg) + 1);
+  memcpy(out, beg, (size_t)(end - beg));
+  out[end - beg] = 0;
+  if (*nstrs == *capstrs) {
+    *capstrs = GPR_MAX(8, 2 * *capstrs);
+    *strs = (char **)gpr_realloc(*strs, sizeof(*strs) * *capstrs);
+  }
+  (*strs)[*nstrs] = out;
+  ++*nstrs;
+}
+
+void gpr_string_split(const char *input, const char *sep, char ***strs,
+                      size_t *nstrs) {
+  char *next;
+  *strs = NULL;
+  *nstrs = 0;
+  size_t capstrs = 0;
+  while ((next = strstr(input, sep))) {
+    add_string_to_split(input, next, strs, nstrs, &capstrs);
+    input = next + strlen(sep);
+  }
+  add_string_to_split(input, input + strlen(input), strs, nstrs, &capstrs);
+}
+
+void *gpr_memrchr(const void *s, int c, size_t n) {
+  if (s == NULL) return NULL;
+  char *b = (char *)s;
+  size_t i;
+  for (i = 0; i < n; i++) {
+    if (b[n - i - 1] == c) {
+      return &b[n - i - 1];
+    }
+  }
+  return NULL;
 }

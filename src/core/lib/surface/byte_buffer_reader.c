@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -42,6 +27,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/compression/message_compress.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 static int is_compressed(grpc_byte_buffer *buffer) {
   switch (buffer->type) {
@@ -56,13 +42,15 @@ static int is_compressed(grpc_byte_buffer *buffer) {
 
 int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
                                  grpc_byte_buffer *buffer) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_slice_buffer decompressed_slices_buffer;
   reader->buffer_in = buffer;
   switch (reader->buffer_in->type) {
     case GRPC_BB_RAW:
       grpc_slice_buffer_init(&decompressed_slices_buffer);
       if (is_compressed(reader->buffer_in)) {
-        if (grpc_msg_decompress(reader->buffer_in->data.raw.compression,
+        if (grpc_msg_decompress(&exec_ctx,
+                                reader->buffer_in->data.raw.compression,
                                 &reader->buffer_in->data.raw.slice_buffer,
                                 &decompressed_slices_buffer) == 0) {
           gpr_log(GPR_ERROR,
@@ -76,13 +64,15 @@ int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
               grpc_raw_byte_buffer_create(decompressed_slices_buffer.slices,
                                           decompressed_slices_buffer.count);
         }
-        grpc_slice_buffer_destroy(&decompressed_slices_buffer);
+        grpc_slice_buffer_destroy_internal(&exec_ctx,
+                                           &decompressed_slices_buffer);
       } else { /* not compressed, use the input buffer as output */
         reader->buffer_out = reader->buffer_in;
       }
       reader->current.index = 0;
       break;
   }
+  grpc_exec_ctx_finish(&exec_ctx);
   return 1;
 }
 
@@ -104,7 +94,8 @@ int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
       grpc_slice_buffer *slice_buffer;
       slice_buffer = &reader->buffer_out->data.raw.slice_buffer;
       if (reader->current.index < slice_buffer->count) {
-        *slice = grpc_slice_ref(slice_buffer->slices[reader->current.index]);
+        *slice = grpc_slice_ref_internal(
+            slice_buffer->slices[reader->current.index]);
         reader->current.index += 1;
         return 1;
       }
@@ -118,15 +109,17 @@ grpc_slice grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader *reader) {
   grpc_slice in_slice;
   size_t bytes_read = 0;
   const size_t input_size = grpc_byte_buffer_length(reader->buffer_out);
-  grpc_slice out_slice = grpc_slice_malloc(input_size);
+  grpc_slice out_slice = GRPC_SLICE_MALLOC(input_size);
   uint8_t *const outbuf = GRPC_SLICE_START_PTR(out_slice); /* just an alias */
 
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   while (grpc_byte_buffer_reader_next(reader, &in_slice) != 0) {
     const size_t slice_length = GRPC_SLICE_LENGTH(in_slice);
     memcpy(&(outbuf[bytes_read]), GRPC_SLICE_START_PTR(in_slice), slice_length);
     bytes_read += slice_length;
-    grpc_slice_unref(in_slice);
+    grpc_slice_unref_internal(&exec_ctx, in_slice);
     GPR_ASSERT(bytes_read <= input_size);
   }
+  grpc_exec_ctx_finish(&exec_ctx);
   return out_slice;
 }

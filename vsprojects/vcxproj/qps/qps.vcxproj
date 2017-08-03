@@ -147,18 +147,17 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\benchmark_config.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\client.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\driver.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\histogram.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\interarrival.h" />
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\limit_cores.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\parse_json.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\qps_worker.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\report.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\server.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\stats.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\usage_timer.h" />
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\benchmark_config.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.pb.cc">
@@ -201,13 +200,13 @@
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\services.grpc.pb.h">
     </ClInclude>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\benchmark_config.cc">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\client_async.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\client_sync.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\driver.cc">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\limit_cores.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\parse_json.cc">
     </ClCompile>
@@ -221,8 +220,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\usage_timer.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\benchmark_config.cc">
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_test_util\grpc_test_util.vcxproj">
@@ -233,6 +230,9 @@
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++\grpc++.vcxproj">
       <Project>{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc\grpc.vcxproj">
+      <Project>{29D16885-7228-4C31-81ED-5F9187C7F2A9}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

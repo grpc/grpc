@@ -1,33 +1,18 @@
 #!/usr/bin/env ruby
 
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 # interop_server is a Testing app that runs a gRPC interop testing server.
 #
@@ -129,6 +114,27 @@ def nulls(l)
   [].pack('x' * l).force_encoding('ascii-8bit')
 end
 
+def maybe_echo_metadata(_call)
+  
+  # these are consistent for all interop tests
+  initial_metadata_key = "x-grpc-test-echo-initial"
+  trailing_metadata_key = "x-grpc-test-echo-trailing-bin"
+
+  if _call.metadata.has_key?(initial_metadata_key)
+    _call.metadata_to_send[initial_metadata_key] = _call.metadata[initial_metadata_key]
+  end
+  if _call.metadata.has_key?(trailing_metadata_key)
+    _call.output_metadata[trailing_metadata_key] = _call.metadata[trailing_metadata_key]
+  end
+end
+
+def maybe_echo_status_and_message(req)
+  unless req.response_status.nil?
+    fail GRPC::BadStatus.new_status_exception(
+        req.response_status.code, req.response_status.message)
+  end
+end
+
 # A FullDuplexEnumerator passes requests to a block and yields generated responses
 class FullDuplexEnumerator
   include Grpc::Testing
@@ -143,6 +149,7 @@ class FullDuplexEnumerator
     begin
       cls = StreamingOutputCallResponse
       @requests.each do |req|
+        maybe_echo_status_and_message(req)
         req.response_parameters.each do |params|
           resp_size = params.size
           GRPC.logger.info("read a req, response size is #{resp_size}")
@@ -170,6 +177,8 @@ class TestTarget < Grpc::Testing::TestService::Service
   end
 
   def unary_call(simple_req, _call)
+    maybe_echo_metadata(_call)
+    maybe_echo_status_and_message(simple_req)
     req_size = simple_req.response_size
     SimpleResponse.new(payload: Payload.new(type: :COMPRESSABLE,
                                             body: nulls(req_size)))
@@ -189,7 +198,8 @@ class TestTarget < Grpc::Testing::TestService::Service
     end
   end
 
-  def full_duplex_call(reqs)
+  def full_duplex_call(reqs, _call)
+    maybe_echo_metadata(_call)
     # reqs is a lazy Enumerator of the requests sent by the client.
     FullDuplexEnumerator.new(reqs).each_item
   end

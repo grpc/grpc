@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -45,8 +30,8 @@
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 
-double g_fixture_slowdown_factor = 1.0;
-double g_poller_slowdown_factor = 1.0;
+int64_t g_fixture_slowdown_factor = 1;
+int64_t g_poller_slowdown_factor = 1;
 
 #if GPR_GETPID_IN_UNISTD_H
 #include <unistd.h>
@@ -215,6 +200,16 @@ static void install_crash_handler() {
 #include <stdio.h>
 #include <string.h>
 
+#define SIGNAL_NAMES_LENGTH 32
+
+static const char *const signal_names[] = {
+    NULL,      "SIGHUP",  "SIGINT",    "SIGQUIT", "SIGILL",    "SIGTRAP",
+    "SIGABRT", "SIGBUS",  "SIGFPE",    "SIGKILL", "SIGUSR1",   "SIGSEGV",
+    "SIGUSR2", "SIGPIPE", "SIGALRM",   "SIGTERM", "SIGSTKFLT", "SIGCHLD",
+    "SIGCONT", "SIGSTOP", "SIGTSTP",   "SIGTTIN", "SIGTTOU",   "SIGURG",
+    "SIGXCPU", "SIGXFSZ", "SIGVTALRM", "SIGPROF", "SIGWINCH",  "SIGIO",
+    "SIGPWR",  "SIGSYS"};
+
 static char g_alt_stack[GPR_MAX(MINSIGSTKSZ, 65536)];
 
 #define MAX_FRAMES 32
@@ -240,7 +235,11 @@ static void crash_handler(int signum, siginfo_t *info, void *data) {
   int addrlen;
 
   output_string("\n\n\n*******************************\nCaught signal ");
-  output_num(signum);
+  if (signum > 0 && signum < SIGNAL_NAMES_LENGTH) {
+    output_string(signal_names[signum]);
+  } else {
+    output_num(signum);
+  }
   output_string("\n");
 
   addrlen = backtrace(addrlist, GPR_ARRAY_SIZE(addrlist));
@@ -278,19 +277,119 @@ static void install_crash_handler() {
 static void install_crash_handler() {}
 #endif
 
+bool BuiltUnderValgrind() {
+#ifdef RUNNING_ON_VALGRIND
+  return true;
+#else
+  return false;
+#endif
+}
+
+bool BuiltUnderTsan() {
+#if defined(__has_feature)
+#if __has_feature(thread_sanitizer)
+  return true;
+#else
+  return false;
+#endif
+#else
+#ifdef THREAD_SANITIZER
+  return true;
+#else
+  return false;
+#endif
+#endif
+}
+
+bool BuiltUnderAsan() {
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+  return true;
+#else
+  return false;
+#endif
+#else
+#ifdef ADDRESS_SANITIZER
+  return true;
+#else
+  return false;
+#endif
+#endif
+}
+
+bool BuiltUnderMsan() {
+#if defined(__has_feature)
+#if __has_feature(memory_sanitizer)
+  return true;
+#else
+  return false;
+#endif
+#else
+#ifdef MEMORY_SANITIZER
+  return true;
+#else
+  return false;
+#endif
+#endif
+}
+
+bool BuiltUnderUbsan() {
+#ifdef GRPC_UBSAN
+  return true;
+#else
+  return false;
+#endif
+}
+
+int64_t grpc_test_sanitizer_slowdown_factor() {
+  int64_t sanitizer_multiplier = 1;
+  if (BuiltUnderValgrind()) {
+    sanitizer_multiplier = 20;
+  } else if (BuiltUnderTsan()) {
+    sanitizer_multiplier = 5;
+  } else if (BuiltUnderAsan()) {
+    sanitizer_multiplier = 3;
+  } else if (BuiltUnderMsan()) {
+    sanitizer_multiplier = 4;
+  } else if (BuiltUnderUbsan()) {
+    sanitizer_multiplier = 5;
+  }
+  return sanitizer_multiplier;
+}
+
+int64_t grpc_test_slowdown_factor() {
+  return grpc_test_sanitizer_slowdown_factor() * g_fixture_slowdown_factor *
+         g_poller_slowdown_factor;
+}
+
+gpr_timespec grpc_timeout_seconds_to_deadline(int64_t time_s) {
+  return gpr_time_add(
+      gpr_now(GPR_CLOCK_MONOTONIC),
+      gpr_time_from_millis(grpc_test_slowdown_factor() * (int64_t)1e3 * time_s,
+                           GPR_TIMESPAN));
+}
+
+gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
+  return gpr_time_add(
+      gpr_now(GPR_CLOCK_MONOTONIC),
+      gpr_time_from_micros(grpc_test_slowdown_factor() * (int64_t)1e3 * time_ms,
+                           GPR_TIMESPAN));
+}
+
 void grpc_test_init(int argc, char **argv) {
   install_crash_handler();
   { /* poll-cv poll strategy runs much more slowly than anything else */
     char *s = gpr_getenv("GRPC_POLL_STRATEGY");
     if (s != NULL && 0 == strcmp(s, "poll-cv")) {
-      g_poller_slowdown_factor = 5.0;
+      g_poller_slowdown_factor = 5;
     }
     gpr_free(s);
   }
-  gpr_log(GPR_DEBUG, "test slowdown: machine=%f build=%f poll=%f total=%f",
-          (double)GRPC_TEST_SLOWDOWN_MACHINE_FACTOR,
-          (double)GRPC_TEST_SLOWDOWN_BUILD_FACTOR, g_poller_slowdown_factor,
-          (double)GRPC_TEST_SLOWDOWN_FACTOR);
+  gpr_log(GPR_DEBUG,
+          "test slowdown factor: sanitizer=%" PRId64 ", fixture=%" PRId64
+          ", poller=%" PRId64 ", total=%" PRId64,
+          grpc_test_sanitizer_slowdown_factor(), g_fixture_slowdown_factor,
+          g_poller_slowdown_factor, grpc_test_slowdown_factor());
   /* seed rng with pid, so we don't end up with the same random numbers as a
      concurrently running test binary */
   srand(seed());

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -57,8 +42,7 @@ static grpc_metadata_array initial_metadata_recv;
 static grpc_metadata_array trailing_metadata_recv;
 static grpc_byte_buffer *response_payload_recv = NULL;
 static grpc_status_code status;
-static char *details = NULL;
-static size_t details_capacity = 0;
+static grpc_slice details;
 static grpc_op *op;
 
 static void init_ping_pong_request(void) {
@@ -72,34 +56,35 @@ static void init_ping_pong_request(void) {
   op->data.send_initial_metadata.count = 0;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = the_buffer;
+  op->data.send_message.send_message = the_buffer;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &response_payload_recv;
+  op->data.recv_message.recv_message = &response_payload_recv;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op++;
 }
 
 static void step_ping_pong_request(void) {
   GPR_TIMER_BEGIN("ping_pong", 1);
-  call = grpc_channel_create_call(channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
-                                  "/Reflector/reflectUnary", "localhost",
-                                  gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  grpc_slice host = grpc_slice_from_static_string("localhost");
+  call = grpc_channel_create_call(
+      channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+      grpc_slice_from_static_string("/Reflector/reflectUnary"), &host,
+      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
                                                    (size_t)(op - ops),
                                                    (void *)1, NULL));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-  grpc_call_destroy(call);
+  grpc_call_unref(call);
   grpc_byte_buffer_destroy(response_payload_recv);
   call = NULL;
   GPR_TIMER_END("ping_pong", 1);
@@ -109,13 +94,16 @@ static void init_ping_pong_stream(void) {
   grpc_metadata_array_init(&initial_metadata_recv);
 
   grpc_call_error error;
-  call = grpc_channel_create_call(channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
-                                  "/Reflector/reflectStream", "localhost",
-                                  gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  grpc_slice host = grpc_slice_from_static_string("localhost");
+  call = grpc_channel_create_call(
+      channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+      grpc_slice_from_static_string("/Reflector/reflectStream"), &host,
+      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   stream_init_ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
   stream_init_ops[0].data.send_initial_metadata.count = 0;
   stream_init_ops[1].op = GRPC_OP_RECV_INITIAL_METADATA;
-  stream_init_ops[1].data.recv_initial_metadata = &initial_metadata_recv;
+  stream_init_ops[1].data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   error = grpc_call_start_batch(call, stream_init_ops, 2, (void *)1, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
@@ -123,9 +111,9 @@ static void init_ping_pong_stream(void) {
   grpc_metadata_array_init(&initial_metadata_recv);
 
   stream_step_ops[0].op = GRPC_OP_SEND_MESSAGE;
-  stream_step_ops[0].data.send_message = the_buffer;
+  stream_step_ops[0].data.send_message.send_message = the_buffer;
   stream_step_ops[1].op = GRPC_OP_RECV_MESSAGE;
-  stream_step_ops[1].data.recv_message = &response_payload_recv;
+  stream_step_ops[1].data.recv_message.recv_message = &response_payload_recv;
 }
 
 static void step_ping_pong_stream(void) {
@@ -205,15 +193,15 @@ int main(int argc, char **argv) {
   }
 
   channel = grpc_insecure_channel_create(target, NULL, NULL);
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_next(NULL);
   the_buffer = grpc_raw_byte_buffer_create(&slice, (size_t)payload_size);
   histogram = gpr_histogram_create(0.01, 60e9);
 
   sc.init();
 
-  gpr_timespec end_warmup = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(warmup_seconds);
+  gpr_timespec end_warmup = grpc_timeout_seconds_to_deadline(warmup_seconds);
   gpr_timespec end_profiling =
-      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(warmup_seconds + benchmark_seconds);
+      grpc_timeout_seconds_to_deadline(warmup_seconds + benchmark_seconds);
 
   while (gpr_time_cmp(gpr_now(end_warmup.clock_type), end_warmup) < 0) {
     sc.do_one_step();
@@ -230,7 +218,7 @@ int main(int argc, char **argv) {
   grpc_profiler_stop();
 
   if (call) {
-    grpc_call_destroy(call);
+    grpc_call_unref(call);
   }
 
   grpc_channel_destroy(channel);

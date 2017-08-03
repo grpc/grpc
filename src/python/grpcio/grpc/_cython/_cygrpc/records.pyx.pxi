@@ -1,33 +1,38 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 from libc.stdint cimport intptr_t
+
+
+cdef bytes _slice_bytes(grpc_slice slice):
+  cdef void *start = grpc_slice_start_ptr(slice)
+  cdef size_t length = grpc_slice_length(slice)
+  return (<const char *>start)[:length]
+
+cdef grpc_slice _copy_slice(grpc_slice slice) nogil:
+  cdef void *start = grpc_slice_start_ptr(slice)
+  cdef size_t length = grpc_slice_length(slice)
+  return grpc_slice_from_copied_buffer(<const char *>start, length)
+
+cdef grpc_slice _slice_from_bytes(bytes value) nogil:
+  cdef const char *value_ptr
+  cdef size_t length
+  with gil:
+    value_ptr = <const char *>value
+    length = len(value)
+  return grpc_slice_from_copied_buffer(value_ptr, length)
+
 
 class ConnectivityState:
   idle = GRPC_CHANNEL_IDLE
@@ -174,6 +179,25 @@ cdef class Timespec:
   def infinite_past():
     return Timespec(float("-inf"))
 
+  def __richcmp__(Timespec self not None, Timespec other not None, int op):
+    cdef gpr_timespec self_c_time = self.c_time
+    cdef gpr_timespec other_c_time = other.c_time
+    cdef int result = gpr_time_cmp(self_c_time, other_c_time)
+    if op == 0:  # <
+      return result < 0
+    elif op == 2:  # ==
+      return result == 0
+    elif op == 4:  # >
+      return result > 0
+    elif op == 1:  # <=
+      return result <= 0
+    elif op == 3:  # !=
+      return result != 0
+    elif op == 5:  # >=
+      return result >= 0
+    else:
+      raise ValueError('__richcmp__ `op` contract violated')
+
 
 cdef class CallDetails:
 
@@ -189,17 +213,11 @@ cdef class CallDetails:
 
   @property
   def method(self):
-    if self.c_details.method != NULL:
-      return <bytes>self.c_details.method
-    else:
-      return None
+    return _slice_bytes(self.c_details.method)
 
   @property
   def host(self):
-    if self.c_details.host != NULL:
-      return <bytes>self.c_details.host
-    else:
-      return None
+    return _slice_bytes(self.c_details.host)
 
   @property
   def deadline(self):
@@ -310,7 +328,7 @@ cdef void* copy_ptr(void* ptr):
   return ptr
 
 
-cdef void destroy_ptr(void* ptr):
+cdef void destroy_ptr(grpc_exec_ctx* ctx, void* ptr):
   pass
 
 
@@ -383,19 +401,20 @@ cdef class ChannelArgs:
 cdef class Metadatum:
 
   def __cinit__(self, bytes key, bytes value):
-    self._key = key
-    self._value = value
-    self.c_metadata.key = self._key
-    self.c_metadata.value = self._value
-    self.c_metadata.value_length = len(self._value)
+    self.c_metadata.key = _slice_from_bytes(key)
+    self.c_metadata.value = _slice_from_bytes(value)
+
+  cdef void _copy_metadatum(self, grpc_metadata *destination) nogil:
+    destination[0].key = _copy_slice(self.c_metadata.key)
+    destination[0].value = _copy_slice(self.c_metadata.value)
 
   @property
   def key(self):
-    return <bytes>self.c_metadata.key
+    return _slice_bytes(self.c_metadata.key)
 
   @property
   def value(self):
-    return <bytes>self.c_metadata.value[:self.c_metadata.value_length]
+    return _slice_bytes(self.c_metadata.value)
 
   def __len__(self):
     return 2
@@ -411,6 +430,9 @@ cdef class Metadatum:
   def __iter__(self):
     return iter((self.key, self.value))
 
+  def __dealloc__(self):
+    grpc_slice_unref(self.c_metadata.key)
+    grpc_slice_unref(self.c_metadata.value)
 
 cdef class _MetadataIterator:
 
@@ -435,42 +457,57 @@ cdef class _MetadataIterator:
 
 cdef class Metadata:
 
-  def __cinit__(self, metadata):
-    grpc_init()
-    self.metadata = list(metadata)
+  def __cinit__(self, metadata_iterable):
+    with nogil:
+      grpc_init()
+      grpc_metadata_array_init(&self.c_metadata_array)
+    metadata = list(metadata_iterable)
     for metadatum in metadata:
       if not isinstance(metadatum, Metadatum):
         raise TypeError("expected list of Metadatum")
-    with nogil:
-      grpc_metadata_array_init(&self.c_metadata_array)
-    self.c_metadata_array.count = len(self.metadata)
-    self.c_metadata_array.capacity = len(self.metadata)
+    self.c_metadata_array.count = len(metadata)
+    self.c_metadata_array.capacity = len(metadata)
     with nogil:
       self.c_metadata_array.metadata = <grpc_metadata *>gpr_malloc(
           self.c_metadata_array.count*sizeof(grpc_metadata)
       )
     for i in range(self.c_metadata_array.count):
-      self.c_metadata_array.metadata[i] = (
-          (<Metadatum>self.metadata[i]).c_metadata)
+      (<Metadatum>metadata[i])._copy_metadatum(&self.c_metadata_array.metadata[i])
 
   def __dealloc__(self):
-    # this frees the allocated memory for the grpc_metadata_array (although
-    # it'd be nice if that were documented somewhere...)
-    # TODO(atash): document this in the C core
-    grpc_metadata_array_destroy(&self.c_metadata_array)
-    grpc_shutdown()
+    with nogil:
+      # this frees the allocated memory for the grpc_metadata_array (although
+      # it'd be nice if that were documented somewhere...)
+      # TODO(atash): document this in the C core
+      grpc_metadata_array_destroy(&self.c_metadata_array)
+      grpc_shutdown()
 
   def __len__(self):
     return self.c_metadata_array.count
 
   def __getitem__(self, size_t i):
-    return Metadatum(
-        key=<bytes>self.c_metadata_array.metadata[i].key,
-        value=<bytes>self.c_metadata_array.metadata[i].value[
-            :self.c_metadata_array.metadata[i].value_length])
+    if i >= self.c_metadata_array.count:
+      raise IndexError
+    key = _slice_bytes(self.c_metadata_array.metadata[i].key)
+    value = _slice_bytes(self.c_metadata_array.metadata[i].value)
+    return Metadatum(key=key, value=value)
 
   def __iter__(self):
     return _MetadataIterator(self)
+
+  cdef void _claim_slice_ownership(self):
+    cdef grpc_metadata_array new_c_metadata_array
+    grpc_metadata_array_init(&new_c_metadata_array)
+    new_c_metadata_array.metadata = <grpc_metadata *>gpr_malloc(
+        self.c_metadata_array.count*sizeof(grpc_metadata))
+    new_c_metadata_array.count = self.c_metadata_array.count
+    for i in range(self.c_metadata_array.count):
+      new_c_metadata_array.metadata[i].key = _copy_slice(
+          self.c_metadata_array.metadata[i].key)
+      new_c_metadata_array.metadata[i].value = _copy_slice(
+          self.c_metadata_array.metadata[i].value)
+    grpc_metadata_array_destroy(&self.c_metadata_array)
+    self.c_metadata_array = new_c_metadata_array
 
 
 cdef class Operation:
@@ -478,8 +515,7 @@ cdef class Operation:
   def __cinit__(self):
     grpc_init()
     self.references = []
-    self._received_status_details = NULL
-    self._received_status_details_capacity = 0
+    self._status_details = grpc_empty_slice()
     self.is_valid = False
 
   @property
@@ -536,19 +572,13 @@ cdef class Operation:
   def received_status_details(self):
     if self.c_op.type != GRPC_OP_RECV_STATUS_ON_CLIENT:
       raise TypeError("self must be an operation receiving status details")
-    if self._received_status_details:
-      return self._received_status_details
-    else:
-      return None
+    return _slice_bytes(self._status_details)
 
   @property
   def received_status_details_or_none(self):
     if self.c_op.type != GRPC_OP_RECV_STATUS_ON_CLIENT:
       return None
-    if self._received_status_details:
-      return self._received_status_details
-    else:
-      return None
+    return _slice_bytes(self._status_details)
 
   @property
   def received_cancelled(self):
@@ -564,11 +594,7 @@ cdef class Operation:
     return False if self._received_cancelled == 0 else True
 
   def __dealloc__(self):
-    # We *almost* don't need to do anything; most of the objects are handled by
-    # Python. The remaining one(s) are primitive fields filled in by GRPC core.
-    # This means that we need to clean up after receive_status_on_client.
-    if self.c_op.type == GRPC_OP_RECV_STATUS_ON_CLIENT:
-      gpr_free(self._received_status_details)
+    grpc_slice_unref(self._status_details)
     grpc_shutdown()
 
 def operation_send_initial_metadata(Metadata metadata, int flags):
@@ -587,7 +613,7 @@ def operation_send_message(data, int flags):
   op.c_op.type = GRPC_OP_SEND_MESSAGE
   op.c_op.flags = flags
   byte_buffer = ByteBuffer(data)
-  op.c_op.data.send_message = byte_buffer.c_byte_buffer
+  op.c_op.data.send_message.send_message = byte_buffer.c_byte_buffer
   op.references.append(byte_buffer)
   op.is_valid = True
   return op
@@ -609,9 +635,10 @@ def operation_send_status_from_server(
   op.c_op.data.send_status_from_server.trailing_metadata = (
       metadata.c_metadata_array.metadata)
   op.c_op.data.send_status_from_server.status = code
-  op.c_op.data.send_status_from_server.status_details = details
+  grpc_slice_unref(op._status_details)
+  op._status_details = _slice_from_bytes(details)
+  op.c_op.data.send_status_from_server.status_details = &op._status_details
   op.references.append(metadata)
-  op.references.append(details)
   op.is_valid = True
   return op
 
@@ -620,7 +647,7 @@ def operation_receive_initial_metadata(int flags):
   op.c_op.type = GRPC_OP_RECV_INITIAL_METADATA
   op.c_op.flags = flags
   op._received_metadata = Metadata([])
-  op.c_op.data.receive_initial_metadata = (
+  op.c_op.data.receive_initial_metadata.receive_initial_metadata = (
       &op._received_metadata.c_metadata_array)
   op.is_valid = True
   return op
@@ -633,7 +660,8 @@ def operation_receive_message(int flags):
   # n.b. the c_op.data.receive_message field needs to be deleted by us,
   # anyway, so we just let that be handled by the ByteBuffer() we allocated
   # the line before.
-  op.c_op.data.receive_message = &op._received_message.c_byte_buffer
+  op.c_op.data.receive_message.receive_message = (
+      &op._received_message.c_byte_buffer)
   op.is_valid = True
   return op
 
@@ -647,9 +675,7 @@ def operation_receive_status_on_client(int flags):
   op.c_op.data.receive_status_on_client.status = (
       &op._received_status_code)
   op.c_op.data.receive_status_on_client.status_details = (
-      &op._received_status_details)
-  op.c_op.data.receive_status_on_client.status_details_capacity = (
-      &op._received_status_details_capacity)
+      &op._status_details)
   op.is_valid = True
   return op
 

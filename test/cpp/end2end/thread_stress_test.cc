@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -43,13 +28,14 @@
 #include <grpc/grpc.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
 
 #include "src/core/lib/surface/api_trace.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+#include <gtest/gtest.h>
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -165,16 +151,6 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   std::mutex mu_;
 };
 
-class TestServiceImplDupPkg
-    : public ::grpc::testing::duplicate::EchoTestService::Service {
- public:
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
-    response->set_message("no package");
-    return Status::OK;
-  }
-};
-
 template <class Service>
 class CommonStressTest {
  public:
@@ -182,63 +158,92 @@ class CommonStressTest {
   virtual ~CommonStressTest() {}
   virtual void SetUp() = 0;
   virtual void TearDown() = 0;
-  void ResetStub() {
-    std::shared_ptr<Channel> channel =
-        CreateChannel(server_address_.str(), InsecureChannelCredentials());
-    stub_ = grpc::testing::EchoTestService::NewStub(channel);
-  }
+  virtual void ResetStub() = 0;
   grpc::testing::EchoTestService::Stub* GetStub() { return stub_.get(); }
 
  protected:
-  void SetUpStart(ServerBuilder* builder, Service* service) {
-    int port = grpc_pick_unused_port_or_die();
-    server_address_ << "localhost:" << port;
-    // Setup server
-    builder->AddListeningPort(server_address_.str(),
-                              InsecureServerCredentials());
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
+  std::unique_ptr<Server> server_;
+
+  virtual void SetUpStart(ServerBuilder* builder, Service* service) = 0;
+  void SetUpStartCommon(ServerBuilder* builder, Service* service) {
     builder->RegisterService(service);
     builder->SetMaxMessageSize(
         kMaxMessageSize_);  // For testing max message size.
-    builder->RegisterService(&dup_pkg_service_);
   }
   void SetUpEnd(ServerBuilder* builder) { server_ = builder->BuildAndStart(); }
   void TearDownStart() { server_->Shutdown(); }
   void TearDownEnd() {}
 
  private:
-  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
-  std::unique_ptr<Server> server_;
-  std::ostringstream server_address_;
   const int kMaxMessageSize_;
-  TestServiceImplDupPkg dup_pkg_service_;
 };
 
-class CommonStressTestSyncServer : public CommonStressTest<TestServiceImpl> {
+template <class Service>
+class CommonStressTestInsecure : public CommonStressTest<Service> {
+ public:
+  void ResetStub() override {
+    std::shared_ptr<Channel> channel =
+        CreateChannel(server_address_.str(), InsecureChannelCredentials());
+    this->stub_ = grpc::testing::EchoTestService::NewStub(channel);
+  }
+
+ protected:
+  void SetUpStart(ServerBuilder* builder, Service* service) override {
+    int port = grpc_pick_unused_port_or_die();
+    this->server_address_ << "localhost:" << port;
+    // Setup server
+    builder->AddListeningPort(server_address_.str(),
+                              InsecureServerCredentials());
+    this->SetUpStartCommon(builder, service);
+  }
+
+ private:
+  std::ostringstream server_address_;
+};
+
+template <class Service>
+class CommonStressTestInproc : public CommonStressTest<Service> {
+ public:
+  void ResetStub() override {
+    ChannelArguments args;
+    std::shared_ptr<Channel> channel = this->server_->InProcessChannel(args);
+    this->stub_ = grpc::testing::EchoTestService::NewStub(channel);
+  }
+
+ protected:
+  void SetUpStart(ServerBuilder* builder, Service* service) override {
+    this->SetUpStartCommon(builder, service);
+  }
+};
+
+template <class BaseClass>
+class CommonStressTestSyncServer : public BaseClass {
  public:
   void SetUp() override {
     ServerBuilder builder;
-    SetUpStart(&builder, &service_);
-    SetUpEnd(&builder);
+    this->SetUpStart(&builder, &service_);
+    this->SetUpEnd(&builder);
   }
   void TearDown() override {
-    TearDownStart();
-    TearDownEnd();
+    this->TearDownStart();
+    this->TearDownEnd();
   }
 
  private:
   TestServiceImpl service_;
 };
 
-class CommonStressTestAsyncServer
-    : public CommonStressTest<grpc::testing::EchoTestService::AsyncService> {
+template <class BaseClass>
+class CommonStressTestAsyncServer : public BaseClass {
  public:
   CommonStressTestAsyncServer() : contexts_(kNumAsyncServerThreads * 100) {}
   void SetUp() override {
     shutting_down_ = false;
     ServerBuilder builder;
-    SetUpStart(&builder, &service_);
+    this->SetUpStart(&builder, &service_);
     cq_ = builder.AddCompletionQueue();
-    SetUpEnd(&builder);
+    this->SetUpEnd(&builder);
     for (int i = 0; i < kNumAsyncServerThreads * 100; i++) {
       RefreshContext(i);
     }
@@ -250,7 +255,7 @@ class CommonStressTestAsyncServer
   void TearDown() override {
     {
       std::unique_lock<std::mutex> l(mu_);
-      TearDownStart();
+      this->TearDownStart();
       shutting_down_ = true;
       cq_->Shutdown();
     }
@@ -263,7 +268,7 @@ class CommonStressTestAsyncServer
     bool ignored_ok;
     while (cq_->Next(&ignored_tag, &ignored_ok))
       ;
-    TearDownEnd();
+    this->TearDownEnd();
   }
 
  private:
@@ -346,8 +351,13 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs) {
   }
 }
 
-typedef ::testing::Types<CommonStressTestSyncServer,
-                         CommonStressTestAsyncServer>
+typedef ::testing::Types<
+    CommonStressTestSyncServer<CommonStressTestInsecure<TestServiceImpl>>,
+    CommonStressTestSyncServer<CommonStressTestInproc<TestServiceImpl>>,
+    CommonStressTestAsyncServer<
+        CommonStressTestInsecure<grpc::testing::EchoTestService::AsyncService>>,
+    CommonStressTestAsyncServer<
+        CommonStressTestInproc<grpc::testing::EchoTestService::AsyncService>>>
     CommonTypes;
 TYPED_TEST_CASE(End2endTest, CommonTypes);
 TYPED_TEST(End2endTest, ThreadStress) {

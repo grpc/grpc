@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -45,16 +30,16 @@
 
 typedef struct { va_list args; } test_checker;
 
-static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem *md) {
+static void onhdr(grpc_exec_ctx *exec_ctx, void *ud, grpc_mdelem md) {
   const char *ekey, *evalue;
   test_checker *chk = ud;
   ekey = va_arg(chk->args, char *);
   GPR_ASSERT(ekey);
   evalue = va_arg(chk->args, char *);
   GPR_ASSERT(evalue);
-  GPR_ASSERT(grpc_slice_str_cmp(md->key->slice, ekey) == 0);
-  GPR_ASSERT(grpc_slice_str_cmp(md->value->slice, evalue) == 0);
-  GRPC_MDELEM_UNREF(md);
+  GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDKEY(md), ekey) == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(md), evalue) == 0);
+  GRPC_MDELEM_UNREF(exec_ctx, md);
 }
 
 static void test_vector(grpc_chttp2_hpack_parser *parser,
@@ -76,9 +61,8 @@ static void test_vector(grpc_chttp2_hpack_parser *parser,
 
   for (i = 0; i < nslices; i++) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    GPR_ASSERT(grpc_chttp2_hpack_parser_parse(
-                   &exec_ctx, parser, GRPC_SLICE_START_PTR(slices[i]),
-                   GRPC_SLICE_END_PTR(slices[i])) == GRPC_ERROR_NONE);
+    GPR_ASSERT(grpc_chttp2_hpack_parser_parse(&exec_ctx, parser, slices[i]) ==
+               GRPC_ERROR_NONE);
     grpc_exec_ctx_finish(&exec_ctx);
   }
 
@@ -94,8 +78,9 @@ static void test_vector(grpc_chttp2_hpack_parser *parser,
 
 static void test_vectors(grpc_slice_split_mode mode) {
   grpc_chttp2_hpack_parser parser;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  grpc_chttp2_hpack_parser_init(&parser);
+  grpc_chttp2_hpack_parser_init(&exec_ctx, &parser);
   /* D.2.1 */
   test_vector(&parser, mode,
               "400a 6375 7374 6f6d 2d6b 6579 0d63 7573"
@@ -111,9 +96,9 @@ static void test_vectors(grpc_slice_split_mode mode) {
               "password", "secret", NULL);
   /* D.2.4 */
   test_vector(&parser, mode, "82", ":method", "GET", NULL);
-  grpc_chttp2_hpack_parser_destroy(&parser);
+  grpc_chttp2_hpack_parser_destroy(&exec_ctx, &parser);
 
-  grpc_chttp2_hpack_parser_init(&parser);
+  grpc_chttp2_hpack_parser_init(&exec_ctx, &parser);
   /* D.3.1 */
   test_vector(&parser, mode,
               "8286 8441 0f77 7777 2e65 7861 6d70 6c65"
@@ -131,9 +116,9 @@ static void test_vectors(grpc_slice_split_mode mode) {
               ":method", "GET", ":scheme", "https", ":path", "/index.html",
               ":authority", "www.example.com", "custom-key", "custom-value",
               NULL);
-  grpc_chttp2_hpack_parser_destroy(&parser);
+  grpc_chttp2_hpack_parser_destroy(&exec_ctx, &parser);
 
-  grpc_chttp2_hpack_parser_init(&parser);
+  grpc_chttp2_hpack_parser_init(&exec_ctx, &parser);
   /* D.4.1 */
   test_vector(&parser, mode,
               "8286 8441 8cf1 e3c2 e5f2 3a6b a0ab 90f4"
@@ -151,11 +136,11 @@ static void test_vectors(grpc_slice_split_mode mode) {
               ":method", "GET", ":scheme", "https", ":path", "/index.html",
               ":authority", "www.example.com", "custom-key", "custom-value",
               NULL);
-  grpc_chttp2_hpack_parser_destroy(&parser);
+  grpc_chttp2_hpack_parser_destroy(&exec_ctx, &parser);
 
-  grpc_chttp2_hpack_parser_init(&parser);
-  grpc_chttp2_hptbl_set_max_bytes(&parser.table, 256);
-  grpc_chttp2_hptbl_set_current_table_size(&parser.table, 256);
+  grpc_chttp2_hpack_parser_init(&exec_ctx, &parser);
+  grpc_chttp2_hptbl_set_max_bytes(&exec_ctx, &parser.table, 256);
+  grpc_chttp2_hptbl_set_current_table_size(&exec_ctx, &parser.table, 256);
   /* D.5.1 */
   test_vector(&parser, mode,
               "4803 3330 3258 0770 7269 7661 7465 611d"
@@ -185,11 +170,11 @@ static void test_vectors(grpc_slice_split_mode mode) {
               "https://www.example.com", "content-encoding", "gzip",
               "set-cookie",
               "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1", NULL);
-  grpc_chttp2_hpack_parser_destroy(&parser);
+  grpc_chttp2_hpack_parser_destroy(&exec_ctx, &parser);
 
-  grpc_chttp2_hpack_parser_init(&parser);
-  grpc_chttp2_hptbl_set_max_bytes(&parser.table, 256);
-  grpc_chttp2_hptbl_set_current_table_size(&parser.table, 256);
+  grpc_chttp2_hpack_parser_init(&exec_ctx, &parser);
+  grpc_chttp2_hptbl_set_max_bytes(&exec_ctx, &parser.table, 256);
+  grpc_chttp2_hptbl_set_current_table_size(&exec_ctx, &parser.table, 256);
   /* D.6.1 */
   test_vector(&parser, mode,
               "4882 6402 5885 aec3 771a 4b61 96d0 7abe"
@@ -216,7 +201,9 @@ static void test_vectors(grpc_slice_split_mode mode) {
               "https://www.example.com", "content-encoding", "gzip",
               "set-cookie",
               "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1", NULL);
-  grpc_chttp2_hpack_parser_destroy(&parser);
+  grpc_chttp2_hpack_parser_destroy(&exec_ctx, &parser);
+
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int main(int argc, char **argv) {

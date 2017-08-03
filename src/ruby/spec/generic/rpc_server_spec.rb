@@ -1,31 +1,16 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 require 'grpc'
 
@@ -125,6 +110,73 @@ class SlowService
 end
 
 SlowStub = SlowService.rpc_stub_class
+
+# A test service that allows a synchronized RPC cancellation
+class SynchronizedCancellationService
+  include GRPC::GenericService
+  rpc :an_rpc, EchoMsg, EchoMsg
+  attr_reader :received_md, :delay
+
+  # notify_request_received and wait_until_rpc_cancelled are
+  # callbacks to synchronously allow the client to proceed with
+  # cancellation (after the unary request has been received),
+  # and to synchronously wait until the client has cancelled the
+  # current RPC.
+  def initialize(notify_request_received, wait_until_rpc_cancelled)
+    @notify_request_received = notify_request_received
+    @wait_until_rpc_cancelled = wait_until_rpc_cancelled
+  end
+
+  def an_rpc(req, _call)
+    GRPC.logger.info('starting a synchronusly cancelled rpc')
+    @notify_request_received.call(req)
+    @wait_until_rpc_cancelled.call
+    req  # send back the req as the response
+  end
+end
+
+SynchronizedCancellationStub = SynchronizedCancellationService.rpc_stub_class
+
+# a test service that hangs onto call objects
+# and uses them after the server-side call has been
+# finished
+class CheckCallAfterFinishedService
+  include GRPC::GenericService
+  rpc :an_rpc, EchoMsg, EchoMsg
+  rpc :a_client_streaming_rpc, stream(EchoMsg), EchoMsg
+  rpc :a_server_streaming_rpc, EchoMsg, stream(EchoMsg)
+  rpc :a_bidi_rpc, stream(EchoMsg), stream(EchoMsg)
+  attr_reader :server_side_call
+
+  def an_rpc(req, call)
+    fail 'shouldnt reuse service' unless @server_side_call.nil?
+    @server_side_call = call
+    req
+  end
+
+  def a_client_streaming_rpc(call)
+    fail 'shouldnt reuse service' unless @server_side_call.nil?
+    @server_side_call = call
+    # iterate through requests so call can complete
+    call.each_remote_read.each { |r| p r }
+    EchoMsg.new
+  end
+
+  def a_server_streaming_rpc(_, call)
+    fail 'shouldnt reuse service' unless @server_side_call.nil?
+    @server_side_call = call
+    [EchoMsg.new, EchoMsg.new]
+  end
+
+  def a_bidi_rpc(requests, call)
+    fail 'shouldnt reuse service' unless @server_side_call.nil?
+    @server_side_call = call
+    requests.each { |r| p r }
+    [EchoMsg.new, EchoMsg.new]
+  end
+end
+
+CheckCallAfterFinishedServiceStub = CheckCallAfterFinishedService.rpc_stub_class
 
 describe GRPC::RpcServer do
   RpcServer = GRPC::RpcServer
@@ -358,20 +410,64 @@ describe GRPC::RpcServer do
       end
 
       it 'should handle cancellation correctly', server: true do
-        service = SlowService.new
+        request_received = false
+        request_received_mu = Mutex.new
+        request_received_cv = ConditionVariable.new
+        notify_request_received = proc do |req|
+          request_received_mu.synchronize do
+            fail 'req is nil' if req.nil?
+            expect(req.is_a?(EchoMsg)).to be true
+            fail 'test bug - already set' if request_received
+            request_received = true
+            request_received_cv.signal
+          end
+        end
+
+        rpc_cancelled = false
+        rpc_cancelled_mu = Mutex.new
+        rpc_cancelled_cv = ConditionVariable.new
+        wait_until_rpc_cancelled = proc do
+          rpc_cancelled_mu.synchronize do
+            loop do
+              break if rpc_cancelled
+              rpc_cancelled_cv.wait(rpc_cancelled_mu)
+            end
+          end
+        end
+
+        service = SynchronizedCancellationService.new(notify_request_received,
+                                                      wait_until_rpc_cancelled)
         @srv.handle(service)
-        t = Thread.new { @srv.run }
+        srv_thd = Thread.new { @srv.run }
         @srv.wait_till_running
         req = EchoMsg.new
-        stub = SlowStub.new(@host, :this_channel_is_insecure, **client_opts)
-        op = stub.an_rpc(req, metadata: { k1: 'v1', k2: 'v2' }, return_op: true)
-        Thread.new do  # cancel the call
-          sleep 0.1
-          op.cancel
+        stub = SynchronizedCancellationStub.new(@host,
+                                                :this_channel_is_insecure,
+                                                **client_opts)
+        op = stub.an_rpc(req, return_op: true)
+
+        client_thd = Thread.new do
+          expect { op.execute }.to raise_error GRPC::Cancelled
         end
-        expect { op.execute }.to raise_error GRPC::Cancelled
+
+        request_received_mu.synchronize do
+          loop do
+            break if request_received
+            request_received_cv.wait(request_received_mu)
+          end
+        end
+
+        op.cancel
+
+        rpc_cancelled_mu.synchronize do
+          fail 'test bug - already set' if rpc_cancelled
+          rpc_cancelled = true
+          rpc_cancelled_cv.signal
+        end
+
+        client_thd.join
         @srv.stop
-        t.join
+        srv_thd.join
       end
 
       it 'should handle multiple parallel requests', server: true do
@@ -408,21 +504,21 @@ describe GRPC::RpcServer do
         req = EchoMsg.new
         n = 20 # arbitrary, use as many to ensure the server pool is exceeded
         threads = []
-        bad_status_code = nil
+        one_failed_as_unavailable = false
         n.times do
           threads << Thread.new do
             stub = SlowStub.new(alt_host, :this_channel_is_insecure)
             begin
               stub.an_rpc(req)
-            rescue GRPC::BadStatus => e
-              bad_status_code = e.code
+            rescue GRPC::ResourceExhausted
+              one_failed_as_unavailable = true
             end
           end
         end
         threads.each(&:join)
         alt_srv.stop
         t.join
-        expect(bad_status_code).to be(StatusCodes::RESOURCE_EXHAUSTED)
+        expect(one_failed_as_unavailable).to be(true)
       end
     end
 
@@ -518,6 +614,110 @@ describe GRPC::RpcServer do
         expect(op.trailing_metadata).to eq(wanted_trailers)
         @srv.stop
         t.join
+      end
+    end
+
+    context 'when call objects are used after calls have completed' do
+      before(:each) do
+        server_opts = {
+          poll_period: 1
+        }
+        @srv = RpcServer.new(**server_opts)
+        alt_port = @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
+        @alt_host = "0.0.0.0:#{alt_port}"
+
+        @service = CheckCallAfterFinishedService.new
+        @srv.handle(@service)
+        @srv_thd  = Thread.new { @srv.run }
+        @srv.wait_till_running
+      end
+
+      # check that the server-side call is still in a usable state even
+      # after it has finished
+      def check_single_req_view_of_finished_call(call)
+        common_check_of_finished_server_call(call)
+
+        expect(call.peer).to be_a(String)
+        expect(call.peer_cert).to be(nil)
+      end
+
+      def check_multi_req_view_of_finished_call(call)
+        common_check_of_finished_server_call(call)
+
+        expect do
+          call.each_remote_read.each { |r| p r }
+        end.to raise_error(GRPC::Core::CallError)
+      end
+
+      def common_check_of_finished_server_call(call)
+        expect do
+          call.merge_metadata_to_send({})
+        end.to raise_error(RuntimeError)
+
+        expect do
+          call.send_initial_metadata
+        end.to_not raise_error
+
+        expect(call.cancelled?).to be(false)
+        expect(call.metadata).to be_a(Hash)
+        expect(call.metadata['user-agent']).to be_a(String)
+
+        expect(call.metadata_sent).to be(true)
+        expect(call.output_metadata).to eq({})
+        expect(call.metadata_to_send).to eq({})
+        expect(call.deadline.is_a?(Time)).to be(true)
+      end
+
+      it 'should not crash when call used after an unary call is finished' do
+        req = EchoMsg.new
+        stub = CheckCallAfterFinishedServiceStub.new(@alt_host,
+                                                     :this_channel_is_insecure)
+        resp = stub.an_rpc(req)
+        expect(resp).to be_a(EchoMsg)
+        @srv.stop
+        @srv_thd.join
+
+        check_single_req_view_of_finished_call(@service.server_side_call)
+      end
+
+      it 'should not crash when call used after client streaming finished' do
+        requests = [EchoMsg.new, EchoMsg.new]
+        stub = CheckCallAfterFinishedServiceStub.new(@alt_host,
+                                                     :this_channel_is_insecure)
+        resp = stub.a_client_streaming_rpc(requests)
+        expect(resp).to be_a(EchoMsg)
+        @srv.stop
+        @srv_thd.join
+
+        check_multi_req_view_of_finished_call(@service.server_side_call)
+      end
+
+      it 'should not crash when call used after server streaming finished' do
+        req = EchoMsg.new
+        stub = CheckCallAfterFinishedServiceStub.new(@alt_host,
+                                                     :this_channel_is_insecure)
+        responses = stub.a_server_streaming_rpc(req)
+        responses.each do |r|
+          expect(r).to be_a(EchoMsg)
+        end
+        @srv.stop
+        @srv_thd.join
+
+        check_single_req_view_of_finished_call(@service.server_side_call)
+      end
+
+      it 'should not crash when call used after a bidi call is finished' do
+        requests = [EchoMsg.new, EchoMsg.new]
+        stub = CheckCallAfterFinishedServiceStub.new(@alt_host,
+                                                     :this_channel_is_insecure)
+        responses = stub.a_bidi_rpc(requests)
+        responses.each do |r|
+          expect(r).to be_a(EchoMsg)
+        end
+        @srv.stop
+        @srv_thd.join
+
+        check_multi_req_view_of_finished_call(@service.server_side_call)
       end
     end
   end

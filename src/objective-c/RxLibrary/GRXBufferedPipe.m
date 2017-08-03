@@ -1,43 +1,30 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #import "GRXBufferedPipe.h"
 
+@interface GRXBufferedPipe ()
+@property(atomic) id<GRXWriteable> writeable;
+@end
+
 @implementation GRXBufferedPipe {
-  id<GRXWriteable> _writeable;
-  NSMutableArray *_queue;
-  BOOL _inputIsFinished;
   NSError *_errorOrNil;
+  dispatch_queue_t _writeQueue;
 }
 
 @synthesize state = _state;
@@ -48,99 +35,87 @@
 
 - (instancetype)init {
   if (self = [super init]) {
-    _queue = [NSMutableArray array];
     _state = GRXWriterStateNotStarted;
+    _writeQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
+    dispatch_suspend(_writeQueue);
   }
   return self;
 }
 
-- (id)popValue {
-  id value = _queue[0];
-  [_queue removeObjectAtIndex:0];
-  return value;
-}
-
-- (void)writeBufferUntilPausedOrStopped {
-  while (_state == GRXWriterStateStarted && _queue.count > 0) {
-    [_writeable writeValue:[self popValue]];
-  }
-  if (_inputIsFinished && _queue.count == 0) {
-    // Our writer finished normally while we were paused or not-started-yet.
-    [self finishWithError:_errorOrNil];
-  }
-}
-
 #pragma mark GRXWriteable implementation
 
-// Returns whether events can be simply propagated to the other end of the pipe.
-- (BOOL)shouldFastForward {
-  return _state == GRXWriterStateStarted && _queue.count == 0;
-}
-
 - (void)writeValue:(id)value {
-  if (self.shouldFastForward) {
-    // Skip the queue.
-    [_writeable writeValue:value];
-  } else {
+  if ([value respondsToSelector:@selector(copy)]) {
     // Even if we're paused and with enqueued values, we can't excert back-pressure to our writer.
     // So just buffer the new value.
     // We need a copy, so that it doesn't mutate before it's written at the other end of the pipe.
-    if ([value respondsToSelector:@selector(copy)]) {
-      value = [value copy];
-    }
-    [_queue addObject:value];
+    value = [value copy];
   }
+  __weak GRXBufferedPipe *weakSelf = self;
+  dispatch_async(_writeQueue, ^(void) {
+    [weakSelf.writeable writeValue:value];
+  });
 }
 
 - (void)writesFinishedWithError:(NSError *)errorOrNil {
-  _inputIsFinished = YES;
-  _errorOrNil = errorOrNil;
-  if (errorOrNil || self.shouldFastForward) {
-    // No need to write pending values.
-    [self finishWithError:_errorOrNil];
-  }
+  __weak GRXBufferedPipe *weakSelf = self;
+  dispatch_async(_writeQueue, ^{
+    [weakSelf finishWithError:errorOrNil];
+  });
 }
 
 #pragma mark GRXWriter implementation
 
 - (void)setState:(GRXWriterState)newState {
-  // Manual transitions are only allowed from the started or paused states.
-  if (_state == GRXWriterStateNotStarted || _state == GRXWriterStateFinished) {
-    return;
-  }
+  @synchronized (self) {
+    // Manual transitions are only allowed from the started or paused states.
+    if (_state == GRXWriterStateNotStarted || _state == GRXWriterStateFinished) {
+      return;
+    }
 
-  switch (newState) {
-    case GRXWriterStateFinished:
-      _state = newState;
-      _queue = nil;
-      // Per GRXWriter's contract, setting the state to Finished manually means one doesn't wish the
-      // writeable to be messaged anymore.
-      _writeable = nil;
-      return;
-    case GRXWriterStatePaused:
-      _state = newState;
-      return;
-    case GRXWriterStateStarted:
-      if (_state == GRXWriterStatePaused) {
+    switch (newState) {
+      case GRXWriterStateFinished:
+        self.writeable = nil;
+        if (_state == GRXWriterStatePaused) {
+          dispatch_resume(_writeQueue);
+        }
         _state = newState;
-        [self writeBufferUntilPausedOrStopped];
-      }
-      return;
-    case GRXWriterStateNotStarted:
-      return;
+        return;
+      case GRXWriterStatePaused:
+        if (_state == GRXWriterStateStarted) {
+          _state = newState;
+          dispatch_suspend(_writeQueue);
+        }
+        return;
+      case GRXWriterStateStarted:
+        if (_state == GRXWriterStatePaused) {
+          _state = newState;
+          dispatch_resume(_writeQueue);
+        }
+        return;
+      case GRXWriterStateNotStarted:
+        return;
+    }
   }
 }
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
+  self.writeable = writeable;
   _state = GRXWriterStateStarted;
-  _writeable = writeable;
-  [self writeBufferUntilPausedOrStopped];
+  dispatch_resume(_writeQueue);
 }
 
 - (void)finishWithError:(NSError *)errorOrNil {
-  id<GRXWriteable> writeable = _writeable;
+  [self.writeable writesFinishedWithError:errorOrNil];
   self.state = GRXWriterStateFinished;
-  [writeable writesFinishedWithError:errorOrNil];
+}
+
+- (void)dealloc {
+  GRXWriterState state = self.state;
+  if (state == GRXWriterStateNotStarted ||
+      state == GRXWriterStatePaused) {
+    dispatch_resume(_writeQueue);
+  }
 }
 
 @end

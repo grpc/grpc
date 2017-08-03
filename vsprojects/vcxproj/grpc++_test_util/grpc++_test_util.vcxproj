@@ -160,6 +160,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\core_codegen_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\create_auth_context.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\grpc_library.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\metadata_map.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\method_handler_impl.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\rpc_method.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\rpc_service_method.h" />
@@ -168,9 +169,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\server_context.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\server_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\service_type.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_code_enum.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\status_helper.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\string_ref.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\stub_options.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_stream.h" />
@@ -178,24 +179,24 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\exec_ctx_fwd.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\proto_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\thrift_serializer.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\thrift_utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\end2end\test_service_impl.h" />
@@ -206,6 +207,14 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\test_credentials_provider.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\health\v1\health.pb.cc">
+    </ClCompile>
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\health\v1\health.pb.h">
+    </ClInclude>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\health\v1\health.grpc.pb.cc">
+    </ClCompile>
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\health\v1\health.grpc.pb.h">
+    </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\echo_messages.pb.cc">
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\echo_messages.pb.h">
@@ -251,6 +260,9 @@
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_test_util\grpc_test_util.vcxproj">
       <Project>{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc\grpc.vcxproj">
+      <Project>{29D16885-7228-4C31-81ED-5F9187C7F2A9}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

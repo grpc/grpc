@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -42,7 +27,6 @@
 #include <vector>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -70,13 +54,14 @@ class MetadataBatch {
   /// Adds metadata and returns the newly allocated storage.
   /// The caller takes ownership of the result, which must exist for the
   /// lifetime of the gRPC call.
-  grpc_linked_mdelem *AddMetadata(const string &key, const string &value);
+  grpc_linked_mdelem *AddMetadata(grpc_exec_ctx *exec_ctx, const string &key,
+                                  const string &value);
 
   class const_iterator : public std::iterator<std::bidirectional_iterator_tag,
                                               const grpc_mdelem> {
    public:
-    const grpc_mdelem &operator*() const { return *elem_->md; }
-    const grpc_mdelem *operator->() const { return elem_->md; }
+    const grpc_mdelem &operator*() const { return elem_->md; }
+    const grpc_mdelem operator->() const { return elem_->md; }
 
     const_iterator &operator++() {
       elem_ = elem_->next;
@@ -132,7 +117,7 @@ class TransportOp {
   grpc_error *disconnect_with_error() const {
     return op_->disconnect_with_error;
   }
-  bool send_goaway() const { return op_->send_goaway; }
+  bool send_goaway() const { return op_->goaway_error != GRPC_ERROR_NONE; }
 
   // TODO(roth): Add methods for additional fields as needed.
 
@@ -140,73 +125,80 @@ class TransportOp {
   grpc_transport_op *op_;  // Not owned.
 };
 
-/// A C++ wrapper for the \c grpc_transport_stream_op struct.
-class TransportStreamOp {
+/// A C++ wrapper for the \c grpc_transport_stream_op_batch struct.
+class TransportStreamOpBatch {
  public:
   /// Borrows a pointer to \a op, but does NOT take ownership.
   /// The caller must ensure that \a op continues to exist for as
-  /// long as the TransportStreamOp object does.
-  explicit TransportStreamOp(grpc_transport_stream_op *op)
+  /// long as the TransportStreamOpBatch object does.
+  explicit TransportStreamOpBatch(grpc_transport_stream_op_batch *op)
       : op_(op),
-        send_initial_metadata_(op->send_initial_metadata),
-        send_trailing_metadata_(op->send_trailing_metadata),
-        recv_initial_metadata_(op->recv_initial_metadata),
-        recv_trailing_metadata_(op->recv_trailing_metadata) {}
+        send_initial_metadata_(
+            op->send_initial_metadata
+                ? op->payload->send_initial_metadata.send_initial_metadata
+                : nullptr),
+        send_trailing_metadata_(
+            op->send_trailing_metadata
+                ? op->payload->send_trailing_metadata.send_trailing_metadata
+                : nullptr),
+        recv_initial_metadata_(
+            op->recv_initial_metadata
+                ? op->payload->recv_initial_metadata.recv_initial_metadata
+                : nullptr),
+        recv_trailing_metadata_(
+            op->recv_trailing_metadata
+                ? op->payload->recv_trailing_metadata.recv_trailing_metadata
+                : nullptr) {}
 
-  grpc_transport_stream_op *op() const { return op_; }
+  grpc_transport_stream_op_batch *op() const { return op_; }
 
   grpc_closure *on_complete() const { return op_->on_complete; }
   void set_on_complete(grpc_closure *closure) { op_->on_complete = closure; }
 
   MetadataBatch *send_initial_metadata() {
-    return op_->send_initial_metadata == nullptr ? nullptr
-                                                 : &send_initial_metadata_;
+    return op_->send_initial_metadata ? &send_initial_metadata_ : nullptr;
   }
   MetadataBatch *send_trailing_metadata() {
-    return op_->send_trailing_metadata == nullptr ? nullptr
-                                                  : &send_trailing_metadata_;
+    return op_->send_trailing_metadata ? &send_trailing_metadata_ : nullptr;
   }
   MetadataBatch *recv_initial_metadata() {
-    return op_->recv_initial_metadata == nullptr ? nullptr
-                                                 : &recv_initial_metadata_;
+    return op_->recv_initial_metadata ? &recv_initial_metadata_ : nullptr;
   }
   MetadataBatch *recv_trailing_metadata() {
-    return op_->recv_trailing_metadata == nullptr ? nullptr
-                                                  : &recv_trailing_metadata_;
+    return op_->recv_trailing_metadata ? &recv_trailing_metadata_ : nullptr;
   }
 
   uint32_t *send_initial_metadata_flags() const {
-    return &op_->send_initial_metadata_flags;
+    return op_->send_initial_metadata
+               ? &op_->payload->send_initial_metadata
+                      .send_initial_metadata_flags
+               : nullptr;
   }
 
   grpc_closure *recv_initial_metadata_ready() const {
-    return op_->recv_initial_metadata_ready;
+    return op_->recv_initial_metadata
+               ? op_->payload->recv_initial_metadata.recv_initial_metadata_ready
+               : nullptr;
   }
   void set_recv_initial_metadata_ready(grpc_closure *closure) {
-    op_->recv_initial_metadata_ready = closure;
+    op_->payload->recv_initial_metadata.recv_initial_metadata_ready = closure;
   }
 
-  grpc_byte_stream *send_message() const { return op_->send_message; }
+  grpc_byte_stream *send_message() const {
+    return op_->send_message ? op_->payload->send_message.send_message
+                             : nullptr;
+  }
   void set_send_message(grpc_byte_stream *send_message) {
-    op_->send_message = send_message;
-  }
-
-  /// To be called only on clients and servers, respectively.
-  grpc_client_security_context *client_security_context() const {
-    return (grpc_client_security_context *)op_->context[GRPC_CONTEXT_SECURITY]
-        .value;
-  }
-  grpc_server_security_context *server_security_context() const {
-    return (grpc_server_security_context *)op_->context[GRPC_CONTEXT_SECURITY]
-        .value;
+    op_->send_message = true;
+    op_->payload->send_message.send_message = send_message;
   }
 
   census_context *get_census_context() const {
-    return (census_context *)op_->context[GRPC_CONTEXT_TRACING].value;
+    return (census_context *)op_->payload->context[GRPC_CONTEXT_TRACING].value;
   }
 
  private:
-  grpc_transport_stream_op *op_;  // Not owned.
+  grpc_transport_stream_op_batch *op_;  // Not owned.
   MetadataBatch send_initial_metadata_;
   MetadataBatch send_trailing_metadata_;
   MetadataBatch recv_initial_metadata_;
@@ -216,43 +208,50 @@ class TransportStreamOp {
 /// Represents channel data.
 class ChannelData {
  public:
-  virtual ~ChannelData() {
-    if (peer_) gpr_free((void *)peer_);
+  ChannelData() {}
+  virtual ~ChannelData() {}
+
+  // TODO(roth): Come up with a more C++-like API for the channel element.
+
+  /// Initializes the channel data.
+  virtual grpc_error *Init(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
+                           grpc_channel_element_args *args) {
+    return GRPC_ERROR_NONE;
   }
 
-  /// Caller does NOT take ownership of result.
-  const char *peer() const { return peer_; }
-
-  // TODO(roth): Find a way to avoid passing elem into these methods.
+  // Called before destruction.
+  virtual void Destroy(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem) {}
 
   virtual void StartTransportOp(grpc_exec_ctx *exec_ctx,
                                 grpc_channel_element *elem, TransportOp *op);
 
   virtual void GetInfo(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
                        const grpc_channel_info *channel_info);
-
- protected:
-  /// Takes ownership of \a peer.
-  ChannelData(const grpc_channel_args &args, const char *peer) : peer_(peer) {}
-
- private:
-  const char *peer_;
 };
 
 /// Represents call data.
 class CallData {
  public:
+  CallData() {}
   virtual ~CallData() {}
 
-  /// Initializes the call data.
-  virtual grpc_error *Init() { return GRPC_ERROR_NONE; }
+  // TODO(roth): Come up with a more C++-like API for the call element.
 
-  // TODO(roth): Find a way to avoid passing elem into these methods.
+  /// Initializes the call data.
+  virtual grpc_error *Init(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                           const grpc_call_element_args *args) {
+    return GRPC_ERROR_NONE;
+  }
+
+  // Called before destruction.
+  virtual void Destroy(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                       const grpc_call_final_info *final_info,
+                       grpc_closure *then_call_closure) {}
 
   /// Starts a new stream operation.
-  virtual void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
-                                      grpc_call_element *elem,
-                                      TransportStreamOp *op);
+  virtual void StartTransportStreamOpBatch(grpc_exec_ctx *exec_ctx,
+                                           grpc_call_element *elem,
+                                           TransportStreamOpBatch *op);
 
   /// Sets a pollset or pollset set.
   virtual void SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
@@ -261,9 +260,6 @@ class CallData {
 
   /// Gets the peer name.
   virtual char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
-
- protected:
-  explicit CallData(const ChannelData &) {}
 };
 
 namespace internal {
@@ -276,26 +272,27 @@ class ChannelFilter final {
  public:
   static const size_t channel_data_size = sizeof(ChannelDataType);
 
-  static void InitChannelElement(grpc_exec_ctx *exec_ctx,
-                                 grpc_channel_element *elem,
-                                 grpc_channel_element_args *args) {
-    const char *peer =
-        args->optional_transport
-            ? grpc_transport_get_peer(exec_ctx, args->optional_transport)
-            : nullptr;
+  static grpc_error *InitChannelElement(grpc_exec_ctx *exec_ctx,
+                                        grpc_channel_element *elem,
+                                        grpc_channel_element_args *args) {
     // Construct the object in the already-allocated memory.
-    new (elem->channel_data) ChannelDataType(*args->channel_args, peer);
+    ChannelDataType *channel_data = new (elem->channel_data) ChannelDataType();
+    return channel_data->Init(exec_ctx, elem, args);
   }
 
   static void DestroyChannelElement(grpc_exec_ctx *exec_ctx,
                                     grpc_channel_element *elem) {
-    reinterpret_cast<ChannelDataType *>(elem->channel_data)->~ChannelDataType();
+    ChannelDataType *channel_data =
+        reinterpret_cast<ChannelDataType *>(elem->channel_data);
+    channel_data->Destroy(exec_ctx, elem);
+    channel_data->~ChannelDataType();
   }
 
   static void StartTransportOp(grpc_exec_ctx *exec_ctx,
                                grpc_channel_element *elem,
                                grpc_transport_op *op) {
-    ChannelDataType *channel_data = (ChannelDataType *)elem->channel_data;
+    ChannelDataType *channel_data =
+        reinterpret_cast<ChannelDataType *>(elem->channel_data);
     TransportOp op_wrapper(op);
     channel_data->StartTransportOp(exec_ctx, elem, &op_wrapper);
   }
@@ -303,7 +300,8 @@ class ChannelFilter final {
   static void GetChannelInfo(grpc_exec_ctx *exec_ctx,
                              grpc_channel_element *elem,
                              const grpc_channel_info *channel_info) {
-    ChannelDataType *channel_data = (ChannelDataType *)elem->channel_data;
+    ChannelDataType *channel_data =
+        reinterpret_cast<ChannelDataType *>(elem->channel_data);
     channel_data->GetInfo(exec_ctx, elem, channel_info);
   }
 
@@ -311,38 +309,38 @@ class ChannelFilter final {
 
   static grpc_error *InitCallElement(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
-                                     grpc_call_element_args *args) {
-    const ChannelDataType &channel_data =
-        *(ChannelDataType *)elem->channel_data;
+                                     const grpc_call_element_args *args) {
     // Construct the object in the already-allocated memory.
-    CallDataType *call_data = new (elem->call_data) CallDataType(channel_data);
-    return call_data->Init();
+    CallDataType *call_data = new (elem->call_data) CallDataType();
+    return call_data->Init(exec_ctx, elem, args);
   }
 
   static void DestroyCallElement(grpc_exec_ctx *exec_ctx,
                                  grpc_call_element *elem,
                                  const grpc_call_final_info *final_info,
-                                 void *and_free_memory) {
-    reinterpret_cast<CallDataType *>(elem->call_data)->~CallDataType();
+                                 grpc_closure *then_call_closure) {
+    CallDataType *call_data = reinterpret_cast<CallDataType *>(elem->call_data);
+    call_data->Destroy(exec_ctx, elem, final_info, then_call_closure);
+    call_data->~CallDataType();
   }
 
-  static void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
-                                     grpc_call_element *elem,
-                                     grpc_transport_stream_op *op) {
-    CallDataType *call_data = (CallDataType *)elem->call_data;
-    TransportStreamOp op_wrapper(op);
-    call_data->StartTransportStreamOp(exec_ctx, elem, &op_wrapper);
+  static void StartTransportStreamOpBatch(grpc_exec_ctx *exec_ctx,
+                                          grpc_call_element *elem,
+                                          grpc_transport_stream_op_batch *op) {
+    CallDataType *call_data = reinterpret_cast<CallDataType *>(elem->call_data);
+    TransportStreamOpBatch op_wrapper(op);
+    call_data->StartTransportStreamOpBatch(exec_ctx, elem, &op_wrapper);
   }
 
   static void SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      grpc_polling_entity *pollent) {
-    CallDataType *call_data = (CallDataType *)elem->call_data;
+    CallDataType *call_data = reinterpret_cast<CallDataType *>(elem->call_data);
     call_data->SetPollsetOrPollsetSet(exec_ctx, elem, pollent);
   }
 
   static char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
-    CallDataType *call_data = (CallDataType *)elem->call_data;
+    CallDataType *call_data = reinterpret_cast<CallDataType *>(elem->call_data);
     return call_data->GetPeer(exec_ctx, elem);
   }
 };
@@ -383,7 +381,7 @@ void RegisterChannelFilter(
       stack_type,
       priority,
       include_filter,
-      {FilterType::StartTransportStreamOp, FilterType::StartTransportOp,
+      {FilterType::StartTransportStreamOpBatch, FilterType::StartTransportOp,
        FilterType::call_data_size, FilterType::InitCallElement,
        FilterType::SetPollsetOrPollsetSet, FilterType::DestroyCallElement,
        FilterType::channel_data_size, FilterType::InitChannelElement,

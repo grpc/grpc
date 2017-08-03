@@ -1,31 +1,16 @@
-# Copyright 2016, Google Inc.
-# All rights reserved.
+# Copyright 2016 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 from distutils import cygwinccompiler
 from distutils import extension
@@ -52,6 +37,18 @@ sys.path.insert(0, os.path.abspath('.'))
 import protoc_lib_deps
 import grpc_version
 
+CLASSIFIERS = [
+    'Development Status :: 5 - Production/Stable',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 2',
+    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.4',
+    'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.6',
+    'License :: OSI Approved :: Apache Software License',
+],
+
 PY3 = sys.version_info.major == 3
 
 # Environment variable to determine whether or not the Cython extension should
@@ -77,9 +74,9 @@ if EXTRA_ENV_COMPILE_ARGS is None:
       # envvars) without adding yet more GRPC-specific envvars.
       # See https://sourceforge.net/p/mingw-w64/bugs/363/
       if '32' in platform.architecture()[0]:
-        EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime32 -D_timeb=__timeb32 -D_ftime_s=_ftime32_s'
+        EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime32 -D_timeb=__timeb32 -D_ftime_s=_ftime32_s -D_hypot=hypot'
       else:
-        EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime64 -D_timeb=__timeb64'
+        EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime64 -D_timeb=__timeb64 -D_hypot=hypot'
     else:
       # We need to statically link the C++ Runtime, only the C runtime is
       # available dynamically
@@ -108,7 +105,7 @@ PROTO_FILES = [
 CC_INCLUDE = os.path.normpath(protoc_lib_deps.CC_INCLUDE)
 PROTO_INCLUDE = os.path.normpath(protoc_lib_deps.PROTO_INCLUDE)
 
-GRPC_PYTHON_TOOLS_PACKAGE = 'grpc.tools'
+GRPC_PYTHON_TOOLS_PACKAGE = 'grpc_tools'
 GRPC_PYTHON_PROTO_RESOURCES_NAME = '_proto'
 
 DEFINE_MACROS = ()
@@ -154,16 +151,33 @@ def package_data():
 
 def extension_modules():
   if BUILD_WITH_CYTHON:
-    plugin_sources = [os.path.join('grpc', 'tools', '_protoc_compiler.pyx')]
+    plugin_sources = [os.path.join('grpc_tools', '_protoc_compiler.pyx')]
   else:
-    plugin_sources = [os.path.join('grpc', 'tools', '_protoc_compiler.cpp')]
+    plugin_sources = [os.path.join('grpc_tools', '_protoc_compiler.cpp')]
+
   plugin_sources += [
-    os.path.join('grpc', 'tools', 'main.cc'),
-    os.path.join('grpc_root', 'src', 'compiler', 'python_generator.cc')] + [
-    os.path.join(CC_INCLUDE, cc_file)
-    for cc_file in CC_FILES]
+    os.path.join('grpc_tools', 'main.cc'),
+    os.path.join('grpc_root', 'src', 'compiler', 'python_generator.cc')]
+
+  #HACK: Substitute the embed.cc, which is a JS to C++
+  #      preprocessor with the generated code.
+  #      The generated code should not be material
+  #      to the parts of protoc we use (it affects
+  #      the JavaScript code generator, supposedly),
+  #      but we need to be cautious about it.
+  cc_files_clone = list(CC_FILES)
+  embed_cc_file = os.path.normpath('google/protobuf/compiler/js/embed.cc')
+  well_known_types_file = os.path.normpath(
+      'google/protobuf/compiler/js/well_known_types_embed.cc')
+  if embed_cc_file in cc_files_clone:
+    cc_files_clone.remove(embed_cc_file)
+  if well_known_types_file in cc_files_clone:
+    cc_files_clone.remove(well_known_types_file)
+    plugin_sources += [os.path.join('grpc_tools', 'protobuf_generated_well_known_types_embed.cc')]
+  plugin_sources += [os.path.join(CC_INCLUDE, cc_file) for cc_file in cc_files_clone]
+
   plugin_ext = extension.Extension(
-      name='grpc.tools._protoc_compiler',
+      name='grpc_tools._protoc_compiler',
       sources=plugin_sources,
       include_dirs=[
           '.',
@@ -184,14 +198,18 @@ def extension_modules():
     return extensions
 
 setuptools.setup(
-  name='grpcio_tools',
+  name='grpcio-tools',
   version=grpc_version.VERSION,
-  license='3-clause BSD',
+  description='Protobuf code generator for gRPC',
+  author='The gRPC Authors',
+  author_email='grpc-io@googlegroups.com',
+  url='https://grpc.io',
+  license='Apache License 2.0',
+  classifiers=CLASSIFIERS,
   ext_modules=extension_modules(),
   packages=setuptools.find_packages('.'),
-  namespace_packages=['grpc'],
   install_requires=[
-    'protobuf>=3.0.0',
+    'protobuf>=3.3.0',
     'grpcio>={version}'.format(version=grpc_version.VERSION),
   ],
   package_data=package_data(),

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\transport\status_conversion_test.c">
+      <Filter>test\core\transport</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{4702a9eb-d239-c799-0712-b7af210665bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{2f2eed07-7d0f-4b4a-67c0-96e860bb6b16}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\transport">
+      <UniqueIdentifier>{269c6750-9126-9b6a-4196-b7cbe492ee9f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

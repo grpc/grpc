@@ -136,8 +136,6 @@ class AsyncBidiGreeterServer {
         std::cerr << "Server stream closed. Quitting" << std::endl;
         break;
       }
-      // stream_->Finish(grpc::Status::OK,
-      // reinterpret_cast<void*>(Type::FINISH));
 
       if (ok) {
         std::cout << std::endl

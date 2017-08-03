@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *is % allowed in string
  */
 
@@ -45,9 +30,9 @@
 
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
-#include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/interop/stress_interop_client.h"
+#include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
 
@@ -67,9 +52,7 @@ DEFINE_int32(test_duration_secs, -1,
              " forcefully terminated.");
 
 DEFINE_string(server_addresses, "localhost:8080",
-              "The list of server"
-              "addresses. This option is ignored if either\n"
-              "server_port or server_host is specified. The format is: \n"
+              "The list of server addresses. The format is: \n"
               " \"<name_1>:<port_1>,<name_2>:<port_1>...<name_N>:<port_N>\"\n"
               " Note: <name> can be servername or IP address.");
 
@@ -79,34 +62,6 @@ DEFINE_int32(num_stubs_per_channel, 1,
              "Number of stubs per each channels to server. This number also "
              "indicates the max number of parallel RPC calls on each channel "
              "at any given time.");
-
-DEFINE_string(test_case, "",
-              "Configure different test cases. Valid options are:\n\n"
-              "all : all test cases;\n"
-              "cancel_after_begin : cancel stream after starting it;\n"
-              "cancel_after_first_response: cancel on first response;\n"
-              "client_compressed_streaming : compressed request streaming with "
-              "client_compressed_unary : single compressed request;\n"
-              "client_streaming : request streaming with single response;\n"
-              "compute_engine_creds: large_unary with compute engine auth;\n"
-              "custom_metadata: server will echo custom metadata;\n"
-              "empty_stream : bi-di stream with no request/response;\n"
-              "empty_unary : empty (zero bytes) request and response;\n"
-              "half_duplex : half-duplex streaming;\n"
-              "jwt_token_creds: large_unary with JWT token auth;\n"
-              "large_unary : single request and (large) response;\n"
-              "oauth2_auth_token: raw oauth2 access token auth;\n"
-              "per_rpc_creds: raw oauth2 access token on a single rpc;\n"
-              "ping_pong : full-duplex streaming;\n"
-              "response streaming;\n"
-              "server_compressed_streaming : single request with compressed "
-              "server_compressed_unary : single compressed response;\n"
-              "server_streaming : single request with response streaming;\n"
-              "slow_consumer : single request with response streaming with "
-              "slow client consumer;\n"
-              "status_code_and_message: verify status code & message;\n"
-              "timeout_on_sleeping_server: deadline exceeds on stream;\n"
-              "unimplemented_method: client calls an unimplemented_method;\n");
 
 // TODO(sreek): Add more test cases here in future
 DEFINE_string(test_cases, "",
@@ -148,12 +103,8 @@ DEFINE_bool(do_not_abort_on_transient_failures, true,
 // TODO(sreek): Consolidate overlapping options
 DEFINE_bool(use_tls, false, "Whether to use tls.");
 DEFINE_bool(use_test_ca, false, "False to use SSL roots for google");
-DEFINE_int32(server_port, 0, "Server port.");
-DEFINE_string(server_host, "127.0.0.1", "Server host to connect to");
 DEFINE_string(server_host_override, "foo.test.google.fr",
               "Override the server host which is sent in HTTP header");
-DEFINE_string(service_account_key_file, "",
-              "Path to service account json key file.");
 
 using grpc::testing::kTestCaseList;
 using grpc::testing::MetricsService;
@@ -240,8 +191,6 @@ bool ParseTestCasesString(const grpc::string& test_cases,
 void LogParameterInfo(const std::vector<grpc::string>& addresses,
                       const std::vector<std::pair<TestCaseType, int>>& tests) {
   gpr_log(GPR_INFO, "server_addresses: %s", FLAGS_server_addresses.c_str());
-  gpr_log(GPR_INFO, "server_host: %s", FLAGS_server_host.c_str());
-  gpr_log(GPR_INFO, "server_port: %d", FLAGS_server_port);
   gpr_log(GPR_INFO, "test_cases : %s", FLAGS_test_cases.c_str());
   gpr_log(GPR_INFO, "sleep_duration_ms: %d", FLAGS_sleep_duration_ms);
   gpr_log(GPR_INFO, "test_duration_secs: %d", FLAGS_test_duration_secs);
@@ -285,24 +234,11 @@ int main(int argc, char** argv) {
 
   // Parse the server addresses
   std::vector<grpc::string> server_addresses;
-  if (FLAGS_server_port != 0) {
-    // We are using interop_client style cmdline options.
-    const int host_port_buf_size = 1024;
-    char host_port[host_port_buf_size];
-    snprintf(host_port, host_port_buf_size, "%s:%d", FLAGS_server_host.c_str(),
-             FLAGS_server_port);
-    std::string host_port_str(host_port);
-    ParseCommaDelimitedString(host_port_str, server_addresses);
-  } else {
-    ParseCommaDelimitedString(FLAGS_server_addresses, server_addresses);
-  }
+  ParseCommaDelimitedString(FLAGS_server_addresses, server_addresses);
 
   // Parse test cases and weights
   if (FLAGS_test_cases.length() == 0) {
-    // We are using interop_client style test_case option
-    FLAGS_test_cases = FLAGS_test_case + ":100";
-  } else if (FLAGS_test_case != "") {
-    gpr_log(GPR_ERROR, "specify --test_case or --test_cases but not both.");
+    gpr_log(GPR_ERROR, "No test cases supplied");
     return 1;
   }
 
@@ -340,12 +276,8 @@ int main(int argc, char** argv) {
          channel_idx++) {
       gpr_log(GPR_INFO, "Starting test with %s channel_idx=%d..", it->c_str(),
               channel_idx);
-      std::shared_ptr<grpc::Channel> channel;
-      if (FLAGS_use_tls) {
-        channel = grpc::testing::CreateChannelForTestCase(FLAGS_test_case);
-      } else {
-        channel = grpc::CreateChannel(*it, grpc::InsecureChannelCredentials());
-      }
+      std::shared_ptr<grpc::Channel> channel = grpc::CreateTestChannel(
+          *it, FLAGS_server_host_override, FLAGS_use_tls, !FLAGS_use_test_ca);
 
       // Create stub(s) for each channel
       for (int stub_idx = 0; stub_idx < FLAGS_num_stubs_per_channel;
@@ -371,9 +303,9 @@ int main(int argc, char** argv) {
   }
 
   // Start metrics server before waiting for the stress test threads
+  std::unique_ptr<grpc::Server> metrics_server;
   if (FLAGS_metrics_port > 0) {
-    std::unique_ptr<grpc::Server> metrics_server =
-        metrics_service.StartServer(FLAGS_metrics_port);
+    metrics_server = metrics_service.StartServer(FLAGS_metrics_port);
   }
 
   // Wait for the stress test threads to complete

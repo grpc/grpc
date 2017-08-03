@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -45,6 +30,7 @@
 // actually appended to this in a single string, since the string would
 // be longer than the C99 string literal limit.  Instead, we dynamically
 // construct it by adding the large headers one at a time.
+
 #define PFX_TOO_MUCH_METADATA_FROM_CLIENT_PREFIX_STR                       \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"     /* settings frame */              \
   "\x00\x00\x00\x04\x00\x00\x00\x00\x00" /* headers: generated from        \
@@ -78,15 +64,15 @@
 
 // The number of headers we're adding and the total size of the client
 // payload.
-#define NUM_HEADERS 95
+#define NUM_HEADERS 46
 #define PFX_TOO_MUCH_METADATA_FROM_CLIENT_PAYLOAD_SIZE          \
   ((sizeof(PFX_TOO_MUCH_METADATA_FROM_CLIENT_PREFIX_STR) - 1) + \
    (NUM_HEADERS * PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_SIZE) + 1)
 
 #define PFX_TOO_MUCH_METADATA_FROM_SERVER_STR                                              \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" /* settings frame: sets                               \
-                                        MAX_HEADER_LIST_SIZE to 16K */                     \
-  "\x00\x00\x06\x04\x00\x00\x00\x00\x00\x00\x06\x00\x00\x40\x00" /* headers:               \
+                                        MAX_HEADER_LIST_SIZE to 8K */                      \
+  "\x00\x00\x06\x04\x00\x00\x00\x00\x00\x00\x06\x00\x00\x20\x00" /* headers:               \
                                                                     generated              \
                                                                     from                   \
                                                                     simple_request.headers \
@@ -126,12 +112,12 @@ static void server_verifier(grpc_server *server, grpc_completion_queue *cq,
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(0 == strcmp(call_details.host, "localhost"));
-  GPR_ASSERT(0 == strcmp(call_details.method, "/foo/bar"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
-  grpc_call_destroy(s);
+  grpc_call_unref(s);
   cq_verifier_destroy(cqv);
 }
 
@@ -153,16 +139,14 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(0 == strcmp(call_details.host, "localhost"));
-  GPR_ASSERT(0 == strcmp(call_details.method, "/foo/bar"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
 
-  const size_t metadata_value_size = 16 * 1024;
+  const size_t metadata_value_size = 8 * 1024;
   grpc_metadata meta;
-  meta.key = "key";
-  meta.value = gpr_malloc(metadata_value_size + 1);
-  memset((char *)meta.value, 'a', metadata_value_size);
-  ((char *)meta.value)[metadata_value_size] = 0;
-  meta.value_length = metadata_value_size;
+  meta.key = grpc_slice_from_static_string("key");
+  meta.value = grpc_slice_malloc(metadata_value_size);
+  memset(GRPC_SLICE_START_PTR(meta.value), 'a', metadata_value_size);
 
   grpc_op op;
   memset(&op, 0, sizeof(op));
@@ -176,53 +160,59 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   CQ_EXPECT_COMPLETION(cqv, tag(102), 0);  // Operation fails.
   cq_verify(cqv);
 
-  gpr_free((char *)meta.value);
+  grpc_slice_unref(meta.value);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
-  grpc_call_destroy(s);
+  grpc_call_unref(s);
   cq_verifier_destroy(cqv);
 }
 
-static void client_validator(grpc_slice_buffer *incoming) {
+static bool client_validator(grpc_slice_buffer *incoming) {
+  for (size_t i = 0; i < incoming->count; ++i) {
+    const char *s = (const char *)GRPC_SLICE_START_PTR(incoming->slices[i]);
+    char *hex = gpr_dump(s, GRPC_SLICE_LENGTH(incoming->slices[i]),
+                         GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    gpr_log(GPR_INFO, "RESPONSE SLICE %" PRIdPTR ": %s", i, hex);
+    gpr_free(hex);
+  }
+
   // Get last frame from incoming slice buffer.
   grpc_slice_buffer last_frame_buffer;
   grpc_slice_buffer_init(&last_frame_buffer);
   grpc_slice_buffer_trim_end(incoming, 13, &last_frame_buffer);
   GPR_ASSERT(last_frame_buffer.count == 1);
   grpc_slice last_frame = last_frame_buffer.slices[0];
-  // Construct expected frame.
-  grpc_slice expected = grpc_slice_malloc(13);
-  uint8_t *p = GRPC_SLICE_START_PTR(expected);
-  // Length.
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 4;
-  // Frame type (RST_STREAM).
-  *p++ = 3;
-  // Flags.
-  *p++ = 0;
-  // Stream ID.
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 1;
-  // Payload (error code).
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 11;
-  // Compare actual and expected.
-  GPR_ASSERT(grpc_slice_cmp(last_frame, expected) == 0);
+
+  const uint8_t *p = GRPC_SLICE_START_PTR(last_frame);
+  bool success =
+      // Length == 4
+      *p++ != 0 || *p++ != 0 || *p++ != 4 ||
+      // Frame type (RST_STREAM)
+      *p++ != 3 ||
+      // Flags
+      *p++ != 0 ||
+      // Stream ID.
+      *p++ != 0 || *p++ != 0 || *p++ != 0 || *p++ != 1 ||
+      // Payload (error code)
+      *p++ == 0 || *p++ == 0 || *p++ == 0 || *p == 0 || *p == 11;
+
+  if (!success) {
+    gpr_log(GPR_INFO, "client expected RST_STREAM frame, not found");
+  }
+
   grpc_slice_buffer_destroy(&last_frame_buffer);
+  return success;
 }
 
 int main(int argc, char **argv) {
+  int i;
+
   grpc_test_init(argc, argv);
 
   // Test sending more metadata than the server will accept.
   gpr_strvec headers;
   gpr_strvec_init(&headers);
-  for (int i = 0; i < NUM_HEADERS; ++i) {
+  for (i = 0; i < NUM_HEADERS; ++i) {
     char *str;
     gpr_asprintf(&str, "%s%02d%s",
                  PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR, i,

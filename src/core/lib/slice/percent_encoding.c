@@ -1,39 +1,26 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #include "src/core/lib/slice/percent_encoding.h"
 
 #include <grpc/support/log.h>
+
+#include "src/core/lib/slice/slice_internal.h"
 
 const uint8_t grpc_url_percent_encoding_unreserved_bytes[256 / 8] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0xff, 0x03, 0xfe, 0xff, 0xff,
@@ -66,10 +53,10 @@ grpc_slice grpc_percent_encode_slice(grpc_slice slice,
   }
   // no unreserved bytes: return the string unmodified
   if (!any_reserved_bytes) {
-    return grpc_slice_ref(slice);
+    return grpc_slice_ref_internal(slice);
   }
   // second pass: actually encode
-  grpc_slice out = grpc_slice_malloc(output_length);
+  grpc_slice out = GRPC_SLICE_MALLOC(output_length);
   uint8_t *q = GRPC_SLICE_START_PTR(out);
   for (p = slice_start; p < slice_end; p++) {
     if (is_unreserved_character(*p, unreserved_bytes)) {
@@ -119,11 +106,11 @@ bool grpc_strict_percent_decode_slice(grpc_slice slice_in,
     }
   }
   if (!any_percent_encoded_stuff) {
-    *slice_out = grpc_slice_ref(slice_in);
+    *slice_out = grpc_slice_ref_internal(slice_in);
     return true;
   }
   p = GRPC_SLICE_START_PTR(slice_in);
-  *slice_out = grpc_slice_malloc(out_length);
+  *slice_out = GRPC_SLICE_MALLOC(out_length);
   uint8_t *q = GRPC_SLICE_START_PTR(*slice_out);
   while (p != in_end) {
     if (*p == '%') {
@@ -158,10 +145,10 @@ grpc_slice grpc_permissive_percent_decode_slice(grpc_slice slice_in) {
     }
   }
   if (!any_percent_encoded_stuff) {
-    return grpc_slice_ref(slice_in);
+    return grpc_slice_ref_internal(slice_in);
   }
   p = GRPC_SLICE_START_PTR(slice_in);
-  grpc_slice out = grpc_slice_malloc(out_length);
+  grpc_slice out = GRPC_SLICE_MALLOC(out_length);
   uint8_t *q = GRPC_SLICE_START_PTR(out);
   while (p != in_end) {
     if (*p == '%') {

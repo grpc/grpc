@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -129,10 +114,12 @@ static void session_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg, /*session */
                                 bool success) {
   session *se = arg;
   server *sv = se->sv;
-  grpc_fd_orphan(exec_ctx, se->em_fd, NULL, NULL, "a");
+  grpc_fd_orphan(exec_ctx, se->em_fd, NULL, NULL, false /* already_closed */,
+                 "a");
   gpr_free(se);
   /* Start to shutdown listen fd. */
-  grpc_fd_shutdown(exec_ctx, sv->em_fd);
+  grpc_fd_shutdown(exec_ctx, sv->em_fd,
+                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("session_shutdown_cb"));
 }
 
 /* Called when data become readable in a session. */
@@ -185,7 +172,8 @@ static void listen_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg /*server */,
                                int success) {
   server *sv = arg;
 
-  grpc_fd_orphan(exec_ctx, sv->em_fd, NULL, NULL, "b");
+  grpc_fd_orphan(exec_ctx, sv->em_fd, NULL, NULL, false /* already_closed */,
+                 "b");
 
   gpr_mu_lock(g_mu);
   sv->done = 1;
@@ -219,8 +207,8 @@ static void listen_cb(grpc_exec_ctx *exec_ctx, void *arg, /*=sv_arg*/
   se->sv = sv;
   se->em_fd = grpc_fd_create(fd, "listener");
   grpc_pollset_add_fd(exec_ctx, g_pollset, se->em_fd);
-  se->session_read_closure.cb = session_read_cb;
-  se->session_read_closure.cb_arg = se;
+  GRPC_CLOSURE_INIT(&se->session_read_closure, session_read_cb, se,
+                    grpc_schedule_on_exec_ctx);
   grpc_fd_notify_on_read(exec_ctx, se->em_fd, &se->session_read_closure);
 
   grpc_fd_notify_on_read(exec_ctx, listen_em_fd, &sv->listen_closure);
@@ -249,8 +237,8 @@ static int server_start(grpc_exec_ctx *exec_ctx, server *sv) {
   sv->em_fd = grpc_fd_create(fd, "server");
   grpc_pollset_add_fd(exec_ctx, g_pollset, sv->em_fd);
   /* Register to be interested in reading from listen_fd. */
-  sv->listen_closure.cb = listen_cb;
-  sv->listen_closure.cb_arg = sv;
+  GRPC_CLOSURE_INIT(&sv->listen_closure, listen_cb, sv,
+                    grpc_schedule_on_exec_ctx);
   grpc_fd_notify_on_read(exec_ctx, sv->em_fd, &sv->listen_closure);
 
   return port;
@@ -305,7 +293,8 @@ static void client_init(client *cl) {
 static void client_session_shutdown_cb(grpc_exec_ctx *exec_ctx,
                                        void *arg /*client */, int success) {
   client *cl = arg;
-  grpc_fd_orphan(exec_ctx, cl->em_fd, NULL, NULL, "c");
+  grpc_fd_orphan(exec_ctx, cl->em_fd, NULL, NULL, false /* already_closed */,
+                 "c");
   cl->done = 1;
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
@@ -333,8 +322,8 @@ static void client_session_write(grpc_exec_ctx *exec_ctx, void *arg, /*client */
   if (errno == EAGAIN) {
     gpr_mu_lock(g_mu);
     if (cl->client_write_cnt < CLIENT_TOTAL_WRITE_CNT) {
-      cl->write_closure.cb = client_session_write;
-      cl->write_closure.cb_arg = cl;
+      GRPC_CLOSURE_INIT(&cl->write_closure, client_session_write, cl,
+                        grpc_schedule_on_exec_ctx);
       grpc_fd_notify_on_write(exec_ctx, cl->em_fd, &cl->write_closure);
       cl->client_write_cnt++;
     } else {
@@ -459,10 +448,10 @@ static void test_grpc_fd_change(void) {
   grpc_closure second_closure;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  first_closure.cb = first_read_callback;
-  first_closure.cb_arg = &a;
-  second_closure.cb = second_read_callback;
-  second_closure.cb_arg = &b;
+  GRPC_CLOSURE_INIT(&first_closure, first_read_callback, &a,
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&second_closure, second_read_callback, &b,
+                    grpc_schedule_on_exec_ctx);
 
   init_change_data(&a);
   init_change_data(&b);
@@ -525,7 +514,7 @@ static void test_grpc_fd_change(void) {
   GPR_ASSERT(b.cb_that_ran == second_read_callback);
   gpr_mu_unlock(g_mu);
 
-  grpc_fd_orphan(&exec_ctx, em_fd, NULL, NULL, "d");
+  grpc_fd_orphan(&exec_ctx, em_fd, NULL, NULL, false /* already_closed */, "d");
   grpc_exec_ctx_finish(&exec_ctx);
   destroy_change_data(&a);
   destroy_change_data(&b);
@@ -534,23 +523,26 @@ static void test_grpc_fd_change(void) {
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
                             grpc_error *error) {
-  grpc_pollset_destroy(p);
+  grpc_pollset_destroy(exec_ctx, p);
 }
 
 int main(int argc, char **argv) {
   grpc_closure destroyed;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
-  grpc_iomgr_init();
-  g_pollset = gpr_malloc(grpc_pollset_size());
+  grpc_iomgr_init(&exec_ctx);
+  grpc_iomgr_start(&exec_ctx);
+  g_pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(g_pollset, &g_mu);
   test_grpc_fd();
   test_grpc_fd_change();
-  grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
+  GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
+                    grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_flush(&exec_ctx);
   gpr_free(g_pollset);
-  grpc_iomgr_shutdown();
+  grpc_iomgr_shutdown(&exec_ctx);
+  grpc_exec_ctx_finish(&exec_ctx);
   return 0;
 }
 
