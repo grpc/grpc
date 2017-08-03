@@ -283,7 +283,11 @@ void HHVM_METHOD(Channel, close) {
 
 int hhvm_grpc_read_args_array(const Array& args_array, grpc_channel_args *args) {
   args->num_args = args_array.size();
+  #if HHVM_VERSION_MAJOR >= 3 && HHVM_VERSION_MINOR >= 19
+  args->args = (grpc_arg *) req::calloc_untyped(args->num_args, sizeof(grpc_arg));
+  #else
   args->args = (grpc_arg *) req::calloc(args->num_args, sizeof(grpc_arg));
+  #endif
 
   int i = 0;
   for (ArrayIter iter(args_array); iter; ++iter) {

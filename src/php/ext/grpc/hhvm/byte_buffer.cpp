@@ -49,7 +49,11 @@ void byte_buffer_to_string(grpc_byte_buffer *buffer, char **out_string,
 
   grpc_slice slice = grpc_byte_buffer_reader_readall(&reader);
   size_t length = GRPC_SLICE_LENGTH(slice);
+  #if HHVM_VERSION_MAJOR >= 3 && HHVM_VERSION_MINOR >= 19
+  char *string = (char *)HPHP::req::calloc_untyped(length + 1, sizeof(char));
+  #else
   char *string = (char *)HPHP::req::calloc(length + 1, sizeof(char));
+  #endif
   memcpy(string, GRPC_SLICE_START_PTR(slice), length);
   grpc_slice_unref(slice);
 
