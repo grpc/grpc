@@ -52,4 +52,6 @@ void grpc_fork_support_init() {
 
 int grpc_fork_support_enabled() { return fork_support_enabled; }
 
-void grpc_enable_fork_support(int enable) { override_fork_support_enabled = enable; }
+void grpc_enable_fork_support(int enable) {
+  override_fork_support_enabled = enable;
+}
