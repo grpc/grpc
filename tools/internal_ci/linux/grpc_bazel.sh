@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,20 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/macos/grpc_run_tests_matrix.sh"
-gfile_resources: "/bigstore/grpc-testing-secrets/gcp_credentials/GrpcTesting-d0eeee2db331.json"
-timeout_mins: 240
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.xml"
-    regex: "github/grpc/reports/**"
-  }
-}
+# change to grpc repo root
+cd $(dirname $0)/../../..
 
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "-f basictests macos --internal_ci -j 2 --inner_jobs 4"
-}
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+
+export DOCKERFILE_DIR=tools/dockerfile/test/bazel
+export DOCKER_RUN_SCRIPT=$BAZEL_SCRIPT
+exec tools/run_tests/dockerize/build_and_run_docker.sh

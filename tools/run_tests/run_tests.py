@@ -144,7 +144,7 @@ class Config(object):
                           cpu_cost=cpu_cost,
                           timeout_seconds=(self.timeout_multiplier * timeout_seconds if timeout_seconds else None),
                           flake_retries=5 if flaky or args.allow_flakes else 0,
-                          timeout_retries=3 if args.allow_flakes else 0)
+                          timeout_retries=3 if flaky or args.allow_flakes else 0)
 
 
 def get_c_tests(travis, test_lang) :
