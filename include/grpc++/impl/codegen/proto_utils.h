@@ -168,14 +168,87 @@ class GrpcBufferReader final
   Status status_;
 };
 
+namespace proto_util {
+template <class T, class Y = void>
+class HasByteSize {
+ public:
+  static constexpr bool value = false;
+};
+template <class T>
+class HasByteSize<
+    T, typename std::enable_if<std::is_same<
+           int, decltype(static_cast<T*>(nullptr)->ByteSize())>::value>::type> {
+ public:
+  static constexpr bool value = true;
+};
+
+template <class T, class Y = void>
+class HasSerializeWithCached {
+ public:
+  static constexpr bool value = false;
+};
+
+template <class T>
+class HasSerializeWithCached<
+    T,
+    typename std::enable_if<std::is_same<
+        ::grpc::protobuf::uint8*,
+        decltype(static_cast<T*>(nullptr)->SerializeWithCachedSizesToArray(
+            static_cast<::grpc::protobuf::uint8*>(nullptr)))>::value>::type> {
+ public:
+  static constexpr bool value = true;
+};
+
+template <class T, class Y = void>
+class HasSerializeToZero {
+ public:
+  static constexpr bool value = false;
+};
+
+template <class T>
+class HasSerializeToZero<
+    T, typename std::enable_if<std::is_same<
+           bool, decltype(static_cast<T*>(nullptr)->SerializeToZeroCopyStream(
+                     static_cast<internal::GrpcBufferWriter*>(
+                         nullptr)))>::value>::type> {
+ public:
+  static constexpr bool value = true;
+};
+
+template <class T, class Y = void>
+class HasParseFromCoded {
+ public:
+  static constexpr bool value = false;
+};
+
+template <class T>
+class HasParseFromCoded<
+    T, typename std::enable_if<std::is_same<
+           bool, decltype(static_cast<T*>(nullptr)->ParseFromCodedStream(
+                     static_cast<::grpc::protobuf::io::CodedInputStream*>(
+                         nullptr)))>::value>::type> {
+ public:
+  static constexpr bool value = true;
+};
+
+template <class T>
+class QuacksLikeAProto {
+ public:
+  static constexpr bool value =
+      HasByteSize<T>::value && HasSerializeWithCached<T>::value &&
+      HasSerializeToZero<T>::value && HasParseFromCoded<T>::value && true;
+};
+}  // namespace proto_util
+
 }  // namespace internal
 
 template <class T>
-class SerializationTraits<T, typename std::enable_if<std::is_base_of<
-                                 grpc::protobuf::Message, T>::value>::type> {
+class SerializationTraits<
+    T, typename std::enable_if<
+           internal::proto_util::QuacksLikeAProto<T>::value>::type> {
  public:
-  static Status Serialize(const grpc::protobuf::Message& msg,
-                          grpc_byte_buffer** bp, bool* own_buffer) {
+  static Status Serialize(const T& msg, grpc_byte_buffer** bp,
+                          bool* own_buffer) {
     *own_buffer = true;
     int byte_size = msg.ByteSize();
     if (byte_size <= internal::kGrpcBufferWriterMaxBufferLength) {
@@ -195,8 +268,7 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
     }
   }
 
-  static Status Deserialize(grpc_byte_buffer* buffer,
-                            grpc::protobuf::Message* msg) {
+  static Status Deserialize(grpc_byte_buffer* buffer, T* msg) {
     if (buffer == nullptr) {
       return Status(StatusCode::INTERNAL, "No payload");
     }
