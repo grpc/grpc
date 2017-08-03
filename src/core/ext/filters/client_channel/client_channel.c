@@ -926,6 +926,8 @@ typedef struct {
   // Its payload field points to subchannel_call_retry_state.batch_payload.
   grpc_transport_stream_op_batch batch;
   // For send_initial_metadata.
+  grpc_linked_mdelem *send_initial_metadata_storage;
+  grpc_metadata_batch send_initial_metadata;
 // FIXME: how do we propagate this back up, given that we may return
 // send_initial_metadata on_complete and then later decide to retry?
   gpr_atm peer_string;
@@ -1180,7 +1182,15 @@ gpr_log(GPR_INFO, "RETRIES CONFIGURED");
   }
 }
 
-static void maybe_clear_pending_batch(pending_batch *pending) {
+static void batch_data_destroy(grpc_exec_ctx *exec_ctx,
+                               subchannel_batch_data *batch_data) {
+  if (batch_data->send_initial_metadata_storage != NULL) {
+    grpc_metadata_batch_destroy(exec_ctx, &batch_data->send_initial_metadata);
+    gpr_free(batch_data->send_initial_metadata_storage);
+  }
+}
+
+static bool maybe_clear_pending_batch(pending_batch *pending) {
   grpc_transport_stream_op_batch *batch = pending->batch;
   if (batch->on_complete == NULL &&
       (!batch->recv_initial_metadata ||
@@ -1189,7 +1199,9 @@ static void maybe_clear_pending_batch(pending_batch *pending) {
        batch->payload->recv_message.recv_message_ready == NULL)) {
 gpr_log(GPR_INFO, "CLEARING pending_batch");
     pending->batch = NULL;
+    return true;
   }
+  return false;
 }
 
 // Cleans up retry state.  Called either when the RPC is committed
@@ -1351,7 +1363,6 @@ gpr_log(GPR_INFO, "max_retry_attempts=%d", retry_policy->max_retry_attempts);
         calld->num_retry_attempts < retry_policy->max_retry_attempts) {
 gpr_log(GPR_INFO, "RETRYING");
       // Reset subchannel call.
-// FIXME
       if (calld->subchannel_call != NULL) {
         GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, calld->subchannel_call,
                                    "client_channel_call_retry");
@@ -1361,17 +1372,6 @@ gpr_log(GPR_INFO, "RETRYING");
         GRPC_ERROR_UNREF(calld->error);
         calld->error = GRPC_ERROR_NONE;
       }
-#if 0
-      call_or_error coe = get_call_or_error(calld);
-      if (coe.subchannel_call != NULL) {
-        GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, coe.subchannel_call,
-                                   "client_channel_call_retry");
-        set_call_or_error(calld, (call_or_error){
-            .error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "call failed; retrying")});
-      }
-#endif
-
       // Compute backoff delay.
       gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
       gpr_timespec next_attempt_time;
@@ -1432,7 +1432,9 @@ gpr_log(GPR_INFO, "found recv_initial_metadata batch at index %" PRIdPTR, i);
 gpr_log(GPR_INFO, "CLEARING pending_batch->recv_initial_metadata_ready");
   original_batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
       NULL;
-  maybe_clear_pending_batch(pending);
+  if (maybe_clear_pending_batch(pending)) {
+    batch_data_destroy(exec_ctx, batch_data);
+  }
 }
 
 // Intercepts recv_initial_metadata_ready callback for retries.
@@ -1509,11 +1511,13 @@ gpr_log(GPR_INFO, "found recv_message batch at index %" PRIdPTR, i);
       exec_ctx,
       original_batch->payload->recv_message.recv_message_ready,
       GRPC_ERROR_REF(error));
-gpr_log(GPR_INFO, "CLEARING pending_batch->recv_message_ready");
-  original_batch->payload->recv_message.recv_message_ready = NULL;
-  maybe_clear_pending_batch(pending);
   GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, batch_data->subchannel_call,
                              "client_channel_recv_message_ready");
+gpr_log(GPR_INFO, "CLEARING pending_batch->recv_message_ready");
+  original_batch->payload->recv_message.recv_message_ready = NULL;
+  if (maybe_clear_pending_batch(pending)) {
+    batch_data_destroy(exec_ctx, batch_data);
+  }
 }
 
 // Returns the entry in calld->pending_batches of the batch matching
@@ -1623,19 +1627,33 @@ gpr_log(GPR_INFO, "starting next batch for pending send_message ops");
       start_retriable_subchannel_batch(exec_ctx, elem);
     }
   }
+  GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, batch_data->subchannel_call,
+                             "client_channel_on_complete");
   // Call succeeded or is not retryable.  Return back up the stack if needed.
+// FIXME: could match more than one batch!  need to invoke on_complete
+// for *all* matching batches
+// Note: we may not match *any* batches here, if we have just replayed
+// send batches that had already been returned to the surface and have
+// not yet received any new batches from the surface
   pending_batch *pending = get_matching_pending_batch(
       calld, &batch_data->batch, !have_pending_send_message_ops);
   if (pending != NULL) {
+    // Copy the trailing metadata to return it to the surface.
+    if (batch_data->batch.recv_trailing_metadata) {
+      grpc_metadata_batch_move(
+          &batch_data->recv_trailing_metadata,
+          pending->batch->payload->recv_trailing_metadata
+              .recv_trailing_metadata);
+    }
 gpr_log(GPR_INFO, "calling original on_complete");
     GRPC_CLOSURE_RUN(exec_ctx, pending->batch->on_complete,
                      GRPC_ERROR_REF(error));
 gpr_log(GPR_INFO, "CLEARING pending_batch->on_complete");
     pending->batch->on_complete = NULL;
-    maybe_clear_pending_batch(pending);
+    if (maybe_clear_pending_batch(pending)) {
+      batch_data_destroy(exec_ctx, batch_data);
+    }
   }
-  GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, batch_data->subchannel_call,
-                             "client_channel_on_complete");
 }
 
 static void start_retriable_subchannel_batch(grpc_exec_ctx *exec_ctx,
@@ -1680,10 +1698,15 @@ static void start_retriable_subchannel_batch(grpc_exec_ctx *exec_ctx,
   // send_initial_metadata.
   if (send_initial_metadata_idx != INT_MAX &&
       !retry_state->send_initial_metadata) {
+    grpc_error *error = grpc_metadata_batch_copy(
+        exec_ctx, &calld->send_initial_metadata,
+        &batch_data->send_initial_metadata,
+        &batch_data->send_initial_metadata_storage);
+    GPR_ASSERT(error == GRPC_ERROR_NONE);  // FIXME?
     retry_state->send_initial_metadata = true;
     batch_data->batch.send_initial_metadata = true;
     batch_data->batch.payload->send_initial_metadata.send_initial_metadata =
-        &calld->send_initial_metadata;
+        &batch_data->send_initial_metadata;
     batch_data->batch.payload->send_initial_metadata
         .send_initial_metadata_flags =
             calld->send_initial_metadata_flags;
