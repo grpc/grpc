@@ -85,6 +85,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\parser.c">
       <Filter>src\core\lib\http</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\call_combiner.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>

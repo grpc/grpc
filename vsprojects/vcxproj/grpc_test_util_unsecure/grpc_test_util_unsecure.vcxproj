@@ -283,6 +283,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\parser.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\call_combiner.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\combiner.c">
