@@ -16,8 +16,10 @@
  *
  */
 
+ #include <sys/eventfd.h>
+
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
 
 #include "call_credentials.h"
@@ -34,7 +36,6 @@
 #include "hphp/runtime/base/array-init.h"
 #include "hphp/util/process.h"
 
-#include <sys/eventfd.h>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>

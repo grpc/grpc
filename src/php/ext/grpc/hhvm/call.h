@@ -48,8 +48,8 @@ public:
     ~CallData(void);
     CallData(const CallData& otherCallData) = delete;
     CallData(CallData&& otherCallData) = delete;
-    CallData& operator=(const CallData& otherCallData) = delete;
-    CallData& operator&(CallData&& otherCallData) = delete;
+    CallData& operator=(const CallData& rhsCallData) = delete;
+    CallData& operator&(CallData&& rhsCallData) = delete;
 
     // interface functions
     void init(grpc_call* call) { m_pCall = call; }
@@ -60,7 +60,7 @@ public:
     void setTimeout(const int32_t timeout) { m_Timeout = timeout; }
     int32_t getTimeout(void) const { return m_Timeout; }
 
-    static Class* const getClass(void) { return s_Class; }
+    static Class* const getClass(void);
     static const StaticString& className(void) { return s_ClassName; }
 
 private:
@@ -86,14 +86,14 @@ public:
     ~MetadataArray(void);
 
     // interface functions
-    bool init(const HPHP::Array& phpArray);
+    bool init(const Array& phpArray);
     grpc_metadata* const data(void) { return m_Array.metadata; }
     const grpc_metadata* const data(void) const { return m_Array.metadata; }
     size_t size(void) const { return m_Array.count; }
     const grpc_metadata_array& array(void) const { return m_Array; } //
     grpc_metadata_array& array(void) { return m_Array; } // several methods need non const &
-    bool init(const HPHP::Array& phpArray, const bool ownPHP = true);
-    HPHP::Variant phpData(void) const;
+    bool init(const Array& phpArray, const bool ownPHP = true);
+    Variant phpData(void) const;
 
 private:
     // helper functions

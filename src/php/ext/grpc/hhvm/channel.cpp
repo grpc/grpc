@@ -16,13 +16,12 @@
  *
  */
 
+#include <map>
+#include <string>
+
 #ifdef HAVE_CONFIG_H
     #include "config.h"
 #endif
-
-#include <stdbool.h>
-#include <map>
-#include <string>
 
 #include "channel.h"
 #include "completion_queue.h"
@@ -31,16 +30,16 @@
 #include "timeval.h"
 #include "utility.h"
 
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
+#include "grpc/grpc.h"
+#include "grpc/grpc_security.h"
 
 #include "hphp/runtime/ext/extension.h"
-#include "hphp/runtime/base/req-containers.h"
+//#include "hphp/runtime/base/req-containers.h"
+//#include "hphp/runtime/base/builtin-functions.h"
+//#include "hphp/runtime/ext/std/ext_std_variable.h"
+//#include "hphp/runtime/base/variable-unserializer.h"
+//#include "hphp/runtime/base/string-util.h"
 #include "hphp/runtime/vm/native-data.h"
-#include "hphp/runtime/base/builtin-functions.h"
-#include "hphp/runtime/ext/std/ext_std_variable.h"
-#include "hphp/runtime/base/variable-unserializer.h"
-#include "hphp/runtime/base/string-util.h"
 
 namespace HPHP {
 
@@ -59,6 +58,16 @@ const StaticString ChannelData::s_ClassName{ "Grpc\\Channel" };
 ChannelData::~ChannelData(void)
 {
     destroy();
+}
+
+Class* const ChannelData::getClass(void)
+{
+    if (!s_Class)
+    {
+        s_Class = Unit::lookupClass(s_ClassName.get());
+        assert(s_Class);
+    }
+    return s_Class;
 }
 
 void ChannelData::destroy(void)
@@ -191,7 +200,7 @@ void ChannelsCache::deleteChannel(const String& key) {
 */
 
 /*****************************************************************************/
-/*                               HHVM Methods                                */
+/*                           HHVM Channel Methods                            */
 /*****************************************************************************/
 
 /**
@@ -377,7 +386,7 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
 
     grpc_channel_watch_connectivity_state(pChannelData->channel(),
                                           static_cast<grpc_connectivity_state>(last_state),
-                                          pTimevalDataDeadline->getWrapped(),
+                                          pTimevalDataDeadline->time(),
                                           CompletionQueue::getQueue().queue(),
                                           nullptr);
 
@@ -405,8 +414,9 @@ void HHVM_METHOD(Channel, close)
 
      //ChannelsCache::tl_obj.get()->deleteChannel(channelData->getHashKey());
 
-     // destruct the channel
-     pChannelData->~ChannelData();
+    // destruct the channel
+    grpc_channel_destroy(pChannelData->channel());
+    pChannelData->init(nullptr);
 }
 
 } // namespace HPHP

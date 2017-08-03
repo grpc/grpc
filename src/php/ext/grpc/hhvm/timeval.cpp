@@ -52,7 +52,8 @@ void TimevalData::sweep() {
   // TODO: cleanup
 }
 
-gpr_timespec TimevalData::getWrapped() {
+const gpr_timespec& TimevalData::time(void) const
+{
   return wrapped;
 }
 
@@ -76,7 +77,7 @@ Object HHVM_METHOD(Timeval, add,
   auto newTimevalObj = Object{TimevalData::getClass()};
   auto newTimeval = Native::data<TimevalData>(newTimevalObj);
 
-  newTimeval->init(gpr_time_add(timeval->getWrapped(), otherTimeval->getWrapped()));
+  newTimeval->init(gpr_time_add(timeval->time(), otherTimeval->time()));
 
   return newTimevalObj;
 }
@@ -91,7 +92,7 @@ Object HHVM_METHOD(Timeval, subtract,
   auto newTimevalObj = Object{TimevalData::getClass()};
   auto newTimeval = Native::data<TimevalData>(newTimevalObj);
 
-  newTimeval->init(gpr_time_sub(timeval->getWrapped(), otherTimeval->getWrapped()));
+  newTimeval->init(gpr_time_sub(timeval->time(), otherTimeval->time()));
 
   return newTimevalObj;
 }
@@ -105,7 +106,7 @@ int64_t HHVM_STATIC_METHOD(Timeval, compare,
   auto aTimeval = Native::data<TimevalData>(a_obj);
   auto bTimeval = Native::data<TimevalData>(b_obj);
 
-  long result = gpr_time_cmp(aTimeval->getWrapped(), bTimeval->getWrapped());
+  long result = gpr_time_cmp(aTimeval->time(), bTimeval->time());
 
   return (uint64_t)result;
 }
@@ -121,7 +122,7 @@ bool HHVM_STATIC_METHOD(Timeval, similar,
   auto bTimeval = Native::data<TimevalData>(b_obj);
   auto thresholdTimeval = Native::data<TimevalData>(thresh_obj);
 
-  int result = gpr_time_similar(aTimeval->getWrapped(), bTimeval->getWrapped(), thresholdTimeval->getWrapped());
+  int result = gpr_time_similar(aTimeval->time(), bTimeval->time(), thresholdTimeval->time());
 
   return (bool)result;
 }
@@ -175,7 +176,7 @@ void HHVM_METHOD(Timeval, sleepUntil)
     HHVM_TRACE_SCOPE("Timeval sleepUntil") // Degug Trace
 
   auto timeval = Native::data<TimevalData>(this_);
-  gpr_sleep_until(timeval->getWrapped());
+  gpr_sleep_until(timeval->time());
 }
 
 } // namespace HPHP

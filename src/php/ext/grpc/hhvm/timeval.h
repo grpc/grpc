@@ -47,7 +47,7 @@ class TimevalData {
 
     void init(gpr_timespec time);
     void sweep();
-    gpr_timespec getWrapped();
+    const gpr_timespec& time(void) const;
 };
 
 void HHVM_METHOD(Timeval, __construct,

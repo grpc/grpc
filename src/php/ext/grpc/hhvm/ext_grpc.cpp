@@ -16,8 +16,9 @@
  *
  */
 
-#include "hphp/runtime/ext/extension.h"
-#include "hphp/runtime/vm/native-data.h"
+ #ifdef HAVE_CONFIG_H
+    #include "config.h"
+#endif
 
 #include "call.h"
 #include "channel.h"
@@ -29,9 +30,8 @@
 #include "completion_queue.h"
 #include "version.h"
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "hphp/runtime/ext/extension.h"
+#include "hphp/runtime/vm/native-data.h"
 
 using namespace HPHP;
 

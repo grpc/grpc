@@ -52,6 +52,16 @@ CallData::~CallData(void)
     destroy();
 }
 
+Class* const CallData::getClass(void)
+{
+    if (!s_Class)
+    {
+        s_Class = Unit::lookupClass(s_ClassName.get());
+        assert(s_Class);
+    }
+    return s_Class;
+}
+
 void CallData::destroy(void)
 {
     if (m_pCall)
@@ -87,7 +97,7 @@ MetadataArray::~MetadataArray(void)
 
 // Populates a grpc_metadata_array with the data in a PHP array object.
 // Returns true on success and false on failure
-bool MetadataArray::init(const HPHP::Array& phpArray, const bool ownPHP)
+bool MetadataArray::init(const Array& phpArray, const bool ownPHP)
 {
     // destroy/free any PHP data
     m_OwnPHP ? destroyPHP() : freePHP();
@@ -95,25 +105,25 @@ bool MetadataArray::init(const HPHP::Array& phpArray, const bool ownPHP)
 
     // precheck validity of data
     size_t count{ 0 };
-    for (HPHP::ArrayIter iter{ phpArray }; iter; ++iter)
+    for (ArrayIter iter{ phpArray }; iter; ++iter)
     {
-        HPHP::Variant key{ iter.first() };
+        Variant key{ iter.first() };
         if (key.isNull() || !key.isString() ||
             !grpc_header_key_is_legal(grpc_slice_from_static_string(key.toString().c_str())))
         {
             return false;
         }
 
-        HPHP::Variant value{ iter.second() };
+        Variant value{ iter.second() };
         if (value.isNull() || !value.isArray())
         {
             return false;
         }
 
-        HPHP::Array innerArray{ value.toArray() };
-        for (HPHP::ArrayIter iter2(innerArray); iter2; ++iter2, ++count)
+        Array innerArray{ value.toArray() };
+        for (ArrayIter iter2(innerArray); iter2; ++iter2, ++count)
         {
-            HPHP::Variant value2{ iter2.second() };
+            Variant value2{ iter2.second() };
             if (value2.isNull() || !value2.isString())
             {
                 return false;
@@ -124,14 +134,14 @@ bool MetadataArray::init(const HPHP::Array& phpArray, const bool ownPHP)
 
     // create metadata array
     size_t elem{ 0 };
-    for (HPHP::ArrayIter iter(phpArray); iter; ++iter)
+    for (ArrayIter iter(phpArray); iter; ++iter)
     {
-        HPHP::Variant key{ iter.first() };
-        HPHP::Variant value{ iter.second() };
-        HPHP::Array innerArray{ value.toArray() };
-        for (HPHP::ArrayIter iter2(innerArray); iter2; ++iter2, ++elem)
+        Variant key{ iter.first() };
+        Variant value{ iter.second() };
+        Array innerArray{ value.toArray() };
+        for (ArrayIter iter2(innerArray); iter2; ++iter2, ++elem)
         {
-            HPHP::Variant value2{ iter2.second() };
+            Variant value2{ iter2.second() };
 
             Slice keySlice{ key.toString().c_str() };
             Slice valueSlice{ value2.toString().c_str() };
@@ -152,34 +162,34 @@ bool MetadataArray::init(const HPHP::Array& phpArray, const bool ownPHP)
 
 // Creates and returns a PHP array object with the data in a
 // grpc_metadata_array. Returns NULL on failure
-HPHP::Variant MetadataArray::phpData(void) const
+Variant MetadataArray::phpData(void) const
 {
-    HPHP::Array phpArray{ HPHP::Array::Create() };
+    Array phpArray{ Array::Create() };
     for(size_t elem{ 0 }; elem < m_Array.count; ++elem)
     {
         const grpc_metadata& element(m_Array.metadata[elem]);
 
-        HPHP::String key{ reinterpret_cast<const char* const>(GRPC_SLICE_START_PTR(element.key)),
-                          GRPC_SLICE_LENGTH(element.key), HPHP::CopyString };
-        HPHP::String value{ reinterpret_cast<const char* const>(GRPC_SLICE_START_PTR(element.value)),
-                            GRPC_SLICE_LENGTH(element.value), HPHP::CopyString };
+        String key{ reinterpret_cast<const char* const>(GRPC_SLICE_START_PTR(element.key)),
+                          GRPC_SLICE_LENGTH(element.key), CopyString };
+        String value{ reinterpret_cast<const char* const>(GRPC_SLICE_START_PTR(element.value)),
+                            GRPC_SLICE_LENGTH(element.value), CopyString };
 
         if (!phpArray.exists(key, true))
         {
-            phpArray.set(key, HPHP::Array::Create(), true);
+            phpArray.set(key, Array::Create(), true);
         }
 
-        HPHP::Variant current{ phpArray[key] };
+        Variant current{ phpArray[key] };
         if (current.isNull() || !current.isArray())
         {
-            HPHP::SystemLib::throwInvalidArgumentExceptionObject("Metadata hash somehow contains wrong types.");
-            return HPHP::Variant{};
+            SystemLib::throwInvalidArgumentExceptionObject("Metadata hash somehow contains wrong types.");
+            return Variant{};
         }
-        HPHP::Array currentArray{ current.toArray() };
-        currentArray.append(HPHP::Variant{ value });
+        Array currentArray{ current.toArray() };
+        currentArray.append(Variant{ value });
     }
 
-    return HPHP::Variant(phpArray);
+    return Variant(phpArray);
 }
 
 void MetadataArray::destroyPHP(void)
@@ -221,6 +231,10 @@ void MetadataArray::resizeMetadata(const size_t capacity)
     }
 }
 
+/*****************************************************************************/
+/*                              HHVM Call Methods                            */
+/*****************************************************************************/
+
 void HHVM_METHOD(Call, __construct,
                  const Object& channel_obj,
                  const String& method,
@@ -240,7 +254,7 @@ void HHVM_METHOD(Call, __construct,
     pCallData->setChannelData(pChannelData);
 
     TimevalData* const pDeadlineTimevalData{ Native::data<TimevalData>(deadline_obj) };
-    pCallData->setTimeout(gpr_time_to_millis(gpr_convert_clock_type(pDeadlineTimevalData->getWrapped(),
+    pCallData->setTimeout(gpr_time_to_millis(gpr_convert_clock_type(pDeadlineTimevalData->time(),
                                              GPR_TIMESPAN)));
 
     const Slice method_slice{ !method.empty() ? method.c_str() : "" };
@@ -249,7 +263,7 @@ void HHVM_METHOD(Call, __construct,
                                              CompletionQueue::getQueue().queue(),
                                              method_slice.slice(),
                                              !host_override.isNull() ? &host_slice.slice() : nullptr,
-                                             pDeadlineTimevalData->getWrapped(), nullptr));
+                                             pDeadlineTimevalData->time(), nullptr));
 
     pCallData->setOwned(true);
 
@@ -259,6 +273,8 @@ void HHVM_METHOD(Call, __construct,
 Object HHVM_METHOD(Call, startBatch,
                    const Array& actions) // array<int, mixed>
 {
+    HHVM_TRACE_SCOPE("Call startBatch") // Degug Trace
+
     Object resultObj{ SystemLib::AllocStdClassObject() };
 
     const size_t maxActions{ 8 };
@@ -579,10 +595,6 @@ Object HHVM_METHOD(Call, startBatch,
 
     return resultObj;
 }
-
-/*****************************************************************************/
-/*                              HHVM Call Methods                            */
-/*****************************************************************************/
 
 String HHVM_METHOD(Call, getPeer)
 {

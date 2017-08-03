@@ -33,6 +33,7 @@ CompletionQueue::CompletionQueue(void)
 
 CompletionQueue::~CompletionQueue(void)
 {
+    // queue must be destroyed after server
     grpc_completion_queue_shutdown(m_pCompletionQueue);
     grpc_completion_queue_destroy(m_pCompletionQueue);
 }

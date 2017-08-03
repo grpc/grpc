@@ -22,6 +22,7 @@
 #endif
 
 #include "server.h"
+
 #include "call.h"
 #include "channel.h"
 #include "completion_queue.h"
@@ -29,13 +30,11 @@
 #include "timeval.h"
 #include "utility.h"
 
-#include <grpc/grpc_security.h>
-
-#include "hphp/runtime/vm/native-data.h"
+#include "grpc/grpc_security.h"
 
 #include "hphp/runtime/base/req-containers.h"
+#include "hphp/runtime/vm/native-data.h"
 
-//#include "hphp/runtime/base/builtin-functions.h"
 
 namespace HPHP {
 
@@ -49,6 +48,16 @@ const StaticString ServerData::s_ClassName{ "Grpc\\Server" };
 ServerData::~ServerData(void)
 {
     destroy();
+}
+
+Class* const ServerData::getClass(void)
+{
+    if (!s_Class)
+    {
+        s_Class = Unit::lookupClass(s_ClassName.get());
+        assert(s_Class);
+    }
+    return s_Class;
 }
 
 void ServerData::destroy(void)
@@ -87,6 +96,7 @@ void HHVM_METHOD(Server, __construct,
         ChannelArgs channelArgs{};
         if (!channelArgs.init(args_array_or_null.toArray()))
         {
+            std::cout << "Fail1" << std::endl;
             SystemLib::throwInvalidArgumentExceptionObject("invalid channel arguments");
             return;
         }
@@ -95,12 +105,15 @@ void HHVM_METHOD(Server, __construct,
     }
     else
     {
+                std::cout << "Fail2" << std::endl;
         SystemLib::throwInvalidArgumentExceptionObject("channel arguments must be array");
         return;
     }
 
+    std::cout << "Server: " << pServer << std::endl;
     if (!pServer)
     {
+                std::cout << "Fail3" << std::endl;
         SystemLib::throwBadMethodCallExceptionObject("failed to create server");
         return;
     }

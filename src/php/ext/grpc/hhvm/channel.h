@@ -51,7 +51,7 @@ public:
     void setHashKey(const String& hashKey) { m_HashKey = hashKey; }
     const String& getHashKey(void) const { return m_HashKey; }
 
-    static Class* const getClass(void) { return s_Class; }
+    static Class* const getClass(void);
     static const StaticString& className(void) { return s_ClassName; }
 
  private:
