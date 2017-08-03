@@ -978,6 +978,9 @@ add_library(grpc
   src/core/lib/iomgr/ev_windows.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
+  src/core/lib/iomgr/gethostname_fallback.c
+  src/core/lib/iomgr/gethostname_host_name_max.c
+  src/core/lib/iomgr/gethostname_sysconf.c
   src/core/lib/iomgr/iocp_windows.c
   src/core/lib/iomgr/iomgr.c
   src/core/lib/iomgr/iomgr_posix.c
@@ -1322,6 +1325,9 @@ add_library(grpc_cronet
   src/core/lib/iomgr/ev_windows.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
+  src/core/lib/iomgr/gethostname_fallback.c
+  src/core/lib/iomgr/gethostname_host_name_max.c
+  src/core/lib/iomgr/gethostname_sysconf.c
   src/core/lib/iomgr/iocp_windows.c
   src/core/lib/iomgr/iomgr.c
   src/core/lib/iomgr/iomgr_posix.c
@@ -1634,6 +1640,9 @@ add_library(grpc_test_util
   src/core/lib/iomgr/ev_windows.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
+  src/core/lib/iomgr/gethostname_fallback.c
+  src/core/lib/iomgr/gethostname_host_name_max.c
+  src/core/lib/iomgr/gethostname_sysconf.c
   src/core/lib/iomgr/iocp_windows.c
   src/core/lib/iomgr/iomgr.c
   src/core/lib/iomgr/iomgr_posix.c
@@ -1891,6 +1900,9 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/ev_windows.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
+  src/core/lib/iomgr/gethostname_fallback.c
+  src/core/lib/iomgr/gethostname_host_name_max.c
+  src/core/lib/iomgr/gethostname_sysconf.c
   src/core/lib/iomgr/iocp_windows.c
   src/core/lib/iomgr/iomgr.c
   src/core/lib/iomgr/iomgr_posix.c
@@ -2134,6 +2146,9 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/ev_windows.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
+  src/core/lib/iomgr/gethostname_fallback.c
+  src/core/lib/iomgr/gethostname_host_name_max.c
+  src/core/lib/iomgr/gethostname_sysconf.c
   src/core/lib/iomgr/iocp_windows.c
   src/core/lib/iomgr/iomgr.c
   src/core/lib/iomgr/iomgr_posix.c
@@ -2827,6 +2842,9 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/ev_windows.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
+  src/core/lib/iomgr/gethostname_fallback.c
+  src/core/lib/iomgr/gethostname_host_name_max.c
+  src/core/lib/iomgr/gethostname_sysconf.c
   src/core/lib/iomgr/iocp_windows.c
   src/core/lib/iomgr/iomgr.c
   src/core/lib/iomgr/iomgr_posix.c
