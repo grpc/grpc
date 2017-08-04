@@ -387,11 +387,12 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
     grpc_channel_watch_connectivity_state(pChannelData->channel(),
                                           static_cast<grpc_connectivity_state>(last_state),
                                           pTimevalDataDeadline->time(),
-                                          CompletionQueue::getQueue().queue(),
+                                          CompletionQueue::getClientQueue().queue(),
                                           nullptr);
 
-    grpc_event event{ grpc_completion_queue_pluck(CompletionQueue::getQueue().queue(), nullptr,
-                      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) };
+    grpc_event event{ grpc_completion_queue_pluck(CompletionQueue::getClientQueue().queue(),
+                                                  nullptr,
+                                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) };
 
     return (event.success != 0);
 }

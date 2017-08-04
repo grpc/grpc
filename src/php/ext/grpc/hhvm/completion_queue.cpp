@@ -16,6 +16,8 @@
  *
  */
 
+#include <memory>
+
 #ifdef HAVE_CONFIG_H
     #include "config.h"
 #endif
@@ -38,12 +40,18 @@ CompletionQueue::~CompletionQueue(void)
     grpc_completion_queue_destroy(m_pCompletionQueue);
 }
 
-CompletionQueue& CompletionQueue::getQueue(void)
+CompletionQueue& CompletionQueue::getClientQueue(void)
 {
-    // Completion queue per thread
-    static CompletionQueue s_CompletionQueue;
-    std::cout << "Completion Queue " << s_CompletionQueue.queue() << std::endl;
+    // Each client gets a completion queue for the thread it is runnin in
+    thread_local CompletionQueue s_CompletionQueue;
     return s_CompletionQueue;
 }
+
+std::unique_ptr<CompletionQueue> CompletionQueue::getServerQueue(void)
+{
+    // Each client gets a completion queue for the thread it is runnin in
+    return std::unique_ptr<CompletionQueue>{ new CompletionQueue{} };
+}
+
 
 }

@@ -16,6 +16,8 @@
  *
  */
 
+#include <memory>
+
 #ifndef GRPC_HHVM_GRPC_COMPLETION_QUEUE_H_
 #define GRPC_HHVM_GRPC_COMPLETION_QUEUE_H_
 
@@ -29,7 +31,6 @@ namespace HPHP {
 class CompletionQueue
 {
  public:
-    CompletionQueue(void);
     ~CompletionQueue(void);
     CompletionQueue(const CompletionQueue&) = delete;
     CompletionQueue(CompletionQueue&&) = delete;
@@ -38,9 +39,12 @@ class CompletionQueue
 
     grpc_completion_queue* const queue(void) { return m_pCompletionQueue; };
 
-    static CompletionQueue& getQueue(void);
+    static CompletionQueue& getClientQueue(void);
+    static std::unique_ptr<CompletionQueue> getServerQueue(void);
 
 private:
+    CompletionQueue(void);
+
     // The global completion queue for all operations
     grpc_completion_queue* m_pCompletionQueue;
 };

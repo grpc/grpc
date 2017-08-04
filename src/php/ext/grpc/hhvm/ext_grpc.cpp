@@ -134,7 +134,7 @@ public:
         HHVM_STATIC_MALIAS(Grpc\\Timeval, infPast, Timeval, infPast);
         HHVM_MALIAS(Grpc\\Timeval, sleepUntil, Timeval, sleepUntil);
 
-        Native::registerNativeDataInfo<TimevalData>(TimevalData::s_className.get());
+        Native::registerNativeDataInfo<TimevalData>(TimevalData::className().get());
 
         Native::registerNativeDataInfo<ServerCredentialsData>(ServerCredentialsData::s_className.get());
         Native::registerNativeDataInfo<ServerData>(ServerData::className().get());

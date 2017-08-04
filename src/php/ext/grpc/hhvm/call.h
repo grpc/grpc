@@ -67,7 +67,6 @@ private:
     // helper functions
     void destroy(void);
 
-
     // member variables
     grpc_call* m_pCall;
     bool m_Owned;

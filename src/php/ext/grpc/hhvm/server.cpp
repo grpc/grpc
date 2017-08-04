@@ -50,6 +50,15 @@ ServerData::~ServerData(void)
     destroy();
 }
 
+void ServerData::init(grpc_server* const pServer)
+{
+    m_pServer = pServer;
+
+    // create completion queue for server
+    m_pComletionQueue = CompletionQueue::getServerQueue();
+}
+
+
 Class* const ServerData::getClass(void)
 {
     if (!s_Class)
@@ -65,10 +74,9 @@ void ServerData::destroy(void)
     if (m_pServer)
     {
         grpc_server_shutdown_and_notify(m_pServer,
-                                        CompletionQueue::getQueue().queue(),
-                                        nullptr);
+                                        m_pComletionQueue->queue(), nullptr);
         grpc_server_cancel_all_calls(m_pServer);
-        grpc_completion_queue_pluck(CompletionQueue::getQueue().queue(), nullptr,
+        grpc_completion_queue_pluck(m_pComletionQueue->queue(), nullptr,
                                     gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
         grpc_server_destroy(m_pServer);
         m_pServer = nullptr;
@@ -120,7 +128,7 @@ void HHVM_METHOD(Server, __construct,
     pServerData->init(pServer);
 
     grpc_server_register_completion_queue(pServerData->server(),
-                                          CompletionQueue::getQueue().queue(), nullptr);
+                                          pServerData->queue()->queue(), nullptr);
 }
 
 Object HHVM_METHOD(Server, requestCall)
@@ -161,8 +169,8 @@ Object HHVM_METHOD(Server, requestCall)
     grpc_call *pCall;
     grpc_call_error errorCode{ grpc_server_request_call(pServerData->server(), &pCall, &callDetails.details,
                                                         &callDetails.metadata.array(),
-                                                        CompletionQueue::getQueue().queue(),
-                                                        CompletionQueue::getQueue().queue(), nullptr) };
+                                                        pServerData->queue()->queue(),
+                                                        pServerData->queue()->queue(), nullptr) };
 
     if (errorCode != GRPC_CALL_OK)
     {
@@ -172,7 +180,7 @@ Object HHVM_METHOD(Server, requestCall)
         return resultObj;
     }
 
-    grpc_event event{ grpc_completion_queue_pluck(CompletionQueue::getQueue().queue(), nullptr,
+    grpc_event event{ grpc_completion_queue_pluck(pServerData->queue()->queue(), nullptr,
                                                   gpr_inf_future(GPR_CLOCK_REALTIME),
                                                   nullptr) };
 

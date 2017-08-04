@@ -20,50 +20,60 @@
     #include "config.h"
 #endif
 
-#include "hphp/runtime/ext/extension.h"
-#include "hphp/runtime/base/req-containers.h"
-#include "hphp/runtime/vm/native-data.h"
-#include "hphp/runtime/base/builtin-functions.h"
-
-#include <stdbool.h>
-#include <stdlib.h>
-
-#include <grpc/grpc.h>
-#include <grpc/support/time.h>
-
 #include "timeval.h"
+
 #include "utility.h"
+
+#include "hphp/runtime/ext/extension.h"
+#include "hphp/runtime/vm/native-data.h"
+
+#include "grpc/grpc.h"
 
 namespace HPHP {
 
-Class* TimevalData::s_class = nullptr;
-const StaticString TimevalData::s_className("Grpc\\Timeval");
+/*****************************************************************************/
+/*                               TimevalData                                 */
+/*****************************************************************************/
 
-IMPLEMENT_GET_CLASS(TimevalData);
+Class* TimevalData::s_Class{ nullptr };
+const StaticString TimevalData::s_ClassName( "Grpc\\Timeval" );
 
-TimevalData::TimevalData() { }
-TimevalData::~TimevalData() { sweep(); }
-
-void TimevalData::init(gpr_timespec time) {
-  memcpy(&wrapped, &time, sizeof(gpr_timespec));
+TimevalData::~TimevalData(void)
+{
+    destroy();
 }
 
-void TimevalData::sweep() {
+void TimevalData::init(const gpr_timespec& timeValue)
+{
+    m_TimeValue = timeValue;
+}
+
+Class* const TimevalData::getClass(void)
+{
+    if (!s_Class)
+    {
+        s_Class = Unit::lookupClass(s_ClassName.get());
+        assert(s_Class);
+    }
+    return s_Class;
+}
+
+void TimevalData::destroy(void)
+{
   // TODO: cleanup
 }
 
-const gpr_timespec& TimevalData::time(void) const
-{
-  return wrapped;
-}
+/*****************************************************************************/
+/*                              HHVM Methods                                 */
+/*****************************************************************************/
 
 void HHVM_METHOD(Timeval, __construct,
                  int64_t microseconds)
 {
     HHVM_TRACE_SCOPE("Timeval construct") // Degug Trace
 
-  auto timeval = Native::data<TimevalData>(this_);
-  timeval->init(gpr_time_from_micros(microseconds, GPR_TIMESPAN));
+    TimevalData* const pTimeval{ Native::data<TimevalData>(this_) };
+    pTimeval->init(gpr_time_from_micros(microseconds, GPR_TIMESPAN));
 }
 
 Object HHVM_METHOD(Timeval, add,
@@ -71,15 +81,14 @@ Object HHVM_METHOD(Timeval, add,
 {
     HHVM_TRACE_SCOPE("Timeval add") // Degug Trace
 
-  auto timeval = Native::data<TimevalData>(this_);
-  auto otherTimeval = Native::data<TimevalData>(other_obj);
+    TimevalData* const pTimeval{ Native::data<TimevalData>(this_) };
+    TimevalData* const pOtherTimeval{ Native::data<TimevalData>(other_obj) };
 
-  auto newTimevalObj = Object{TimevalData::getClass()};
-  auto newTimeval = Native::data<TimevalData>(newTimevalObj);
+    Object newTimevalObj{ TimevalData::getClass() };
+    TimevalData* const pNewTimeval{ Native::data<TimevalData>(newTimevalObj) };
+    pNewTimeval->init(gpr_time_add(pTimeval->time(), pOtherTimeval->time()));
 
-  newTimeval->init(gpr_time_add(timeval->time(), otherTimeval->time()));
-
-  return newTimevalObj;
+    return newTimevalObj;
 }
 
 Object HHVM_METHOD(Timeval, subtract,
@@ -87,14 +96,14 @@ Object HHVM_METHOD(Timeval, subtract,
 {
     HHVM_TRACE_SCOPE("Timeval subtract") // Degug Trace
 
-  auto timeval = Native::data<TimevalData>(this_);
-  auto otherTimeval = Native::data<TimevalData>(other_obj);
-  auto newTimevalObj = Object{TimevalData::getClass()};
-  auto newTimeval = Native::data<TimevalData>(newTimevalObj);
+    TimevalData* const pTimeval{ Native::data<TimevalData>(this_) };
+    TimevalData* const pOtherTimeval{ Native::data<TimevalData>(other_obj) };
 
-  newTimeval->init(gpr_time_sub(timeval->time(), otherTimeval->time()));
+    Object newTimevalObj{ TimevalData::getClass() };
+    TimevalData* const pNewTimeval{ Native::data<TimevalData>(newTimevalObj) };
+    pNewTimeval->init(gpr_time_sub(pTimeval->time(), pOtherTimeval->time()));
 
-  return newTimevalObj;
+    return newTimevalObj;
 }
 
 int64_t HHVM_STATIC_METHOD(Timeval, compare,
@@ -103,12 +112,12 @@ int64_t HHVM_STATIC_METHOD(Timeval, compare,
 {
     HHVM_TRACE_SCOPE("Timeval compare") // Degug Trace
 
-  auto aTimeval = Native::data<TimevalData>(a_obj);
-  auto bTimeval = Native::data<TimevalData>(b_obj);
+    TimevalData* const pATimeval{ Native::data<TimevalData>(a_obj) };
+    TimevalData* const pBTimeval{ Native::data<TimevalData>(b_obj) };
 
-  long result = gpr_time_cmp(aTimeval->time(), bTimeval->time());
+    int result{ gpr_time_cmp(pATimeval->time(), pBTimeval->time()) };
 
-  return (uint64_t)result;
+    return static_cast<int64_t>(result);
 }
 
 bool HHVM_STATIC_METHOD(Timeval, similar,
@@ -118,65 +127,66 @@ bool HHVM_STATIC_METHOD(Timeval, similar,
 {
     HHVM_TRACE_SCOPE("Timeval similar") // Degug Trace
 
-  auto aTimeval = Native::data<TimevalData>(a_obj);
-  auto bTimeval = Native::data<TimevalData>(b_obj);
-  auto thresholdTimeval = Native::data<TimevalData>(thresh_obj);
+    TimevalData* const pATimeval{ Native::data<TimevalData>(a_obj) };
+    TimevalData* const pBTimeval{ Native::data<TimevalData>(b_obj) };
+    TimevalData* const pThresholdTimeval{ Native::data<TimevalData>(thresh_obj) };
 
-  int result = gpr_time_similar(aTimeval->time(), bTimeval->time(), thresholdTimeval->time());
+    int result{ gpr_time_similar(pATimeval->time(), pBTimeval->time(),
+                                 pThresholdTimeval->time()) };
 
-  return (bool)result;
+    return (result != 0);
 }
 
 Object HHVM_STATIC_METHOD(Timeval, now)
 {
     HHVM_TRACE_SCOPE("Timeval now") // Degug Trace
 
-  auto newTimevalObj = Object{TimevalData::getClass()};
-  auto newTimeval = Native::data<TimevalData>(newTimevalObj);
-  newTimeval->init(gpr_now(GPR_CLOCK_REALTIME));
+    Object newTimevalObj{ TimevalData::getClass() };
+    TimevalData* const pNewTimeval{ Native::data<TimevalData>(newTimevalObj) };
+    pNewTimeval->init(gpr_now(GPR_CLOCK_REALTIME));
 
-  return newTimevalObj;
+    return newTimevalObj;
 }
 
 Object HHVM_STATIC_METHOD(Timeval, zero)
 {
     HHVM_TRACE_SCOPE("Timeval zero") // Degug Trace
 
-  auto newTimevalObj = Object{TimevalData::getClass()};
-  auto newTimeval = Native::data<TimevalData>(newTimevalObj);
-  newTimeval->init(gpr_time_0(GPR_CLOCK_REALTIME));
+    Object newTimevalObj{ TimevalData::getClass() };
+    TimevalData* const pNewTimeval{ Native::data<TimevalData>(newTimevalObj) };
+    pNewTimeval->init(gpr_time_0(GPR_CLOCK_REALTIME));
 
-  return newTimevalObj;
+    return newTimevalObj;
 }
 
 Object HHVM_STATIC_METHOD(Timeval, infFuture)
 {
     HHVM_TRACE_SCOPE("Timeval infFuture") // Degug Trace
 
-  auto newTimevalObj = Object{TimevalData::getClass()};
-  auto newTimeval = Native::data<TimevalData>(newTimevalObj);
-  newTimeval->init(gpr_inf_future(GPR_CLOCK_REALTIME));
+    Object newTimevalObj{ TimevalData::getClass() };
+    TimevalData* const pNewTimeval{ Native::data<TimevalData>(newTimevalObj) };
+    pNewTimeval->init(gpr_inf_future(GPR_CLOCK_REALTIME));
 
-  return newTimevalObj;
+    return newTimevalObj;
 }
 
 Object HHVM_STATIC_METHOD(Timeval, infPast)
 {
     HHVM_TRACE_SCOPE("Timeval infPast") // Degug Trace
 
-  auto newTimevalObj = Object{TimevalData::getClass()};
-  auto newTimeval = Native::data<TimevalData>(newTimevalObj);
-  newTimeval->init(gpr_inf_past(GPR_CLOCK_REALTIME));
+    Object newTimevalObj{ TimevalData::getClass() };
+    TimevalData* const pNewTimeval{ Native::data<TimevalData>(newTimevalObj) };
+    pNewTimeval->init(gpr_inf_past(GPR_CLOCK_REALTIME));
 
-  return newTimevalObj;
+    return newTimevalObj;
 }
 
 void HHVM_METHOD(Timeval, sleepUntil)
 {
     HHVM_TRACE_SCOPE("Timeval sleepUntil") // Degug Trace
 
-  auto timeval = Native::data<TimevalData>(this_);
-  gpr_sleep_until(timeval->time());
+    TimevalData* const pTimeval{ Native::data<TimevalData>(this_) };
+    gpr_sleep_until(pTimeval->time());
 }
 
 } // namespace HPHP

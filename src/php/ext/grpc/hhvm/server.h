@@ -23,6 +23,8 @@
     #include "config.h"
 #endif
 
+#include "completion_queue.h"
+
 #include "hphp/runtime/ext/extension.h"
 
 #include <grpc/grpc.h>
@@ -41,8 +43,9 @@ public:
     ServerData& operator=(ServerData&& rhsServerData) = delete;
 
     // interface functions
-    void init(grpc_server* const pServer) { m_pServer = pServer; }
+    void init(grpc_server* const pServer);
     grpc_server* const server(void) { return m_pServer; }
+    CompletionQueue* const queue(void) { return m_pComletionQueue.get(); };
 
     static Class* const getClass(void);
     static const StaticString& className(void) { return s_ClassName; }
@@ -53,6 +56,7 @@ private:
 
     // member variables
     grpc_server* m_pServer;
+    std::unique_ptr<CompletionQueue> m_pComletionQueue;
     static Class* s_Class;
     static const StaticString s_ClassName;
 };

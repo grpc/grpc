@@ -260,7 +260,7 @@ void HHVM_METHOD(Call, __construct,
     const Slice method_slice{ !method.empty() ? method.c_str() : "" };
     const Slice host_slice{  !host_override.isNull() ? host_override.toString().c_str() : "" };
     pCallData->init(grpc_channel_create_call(pChannelData->channel(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                                             CompletionQueue::getQueue().queue(),
+                                             CompletionQueue::getClientQueue().queue(),
                                              method_slice.slice(),
                                              !host_override.isNull() ? &host_slice.slice() : nullptr,
                                              pDeadlineTimevalData->time(), nullptr));
@@ -526,7 +526,7 @@ Object HHVM_METHOD(Call, startBatch,
     {
     }
 
-    grpc_event event{ grpc_completion_queue_pluck(CompletionQueue::getQueue().queue(),
+    grpc_event event{ grpc_completion_queue_pluck(CompletionQueue::getClientQueue().queue(),
                                                   pCallData->call(),
                                                   gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) };
     std::cout << "Reciving Call: " << event.type << std::endl;
