@@ -144,6 +144,8 @@ PHP_METHOD(ChannelCredentials, createSsl) {
 
   pem_key_cert_pair.private_key = pem_key_cert_pair.cert_chain = NULL;
 
+  grpc_set_ssl_roots_override_callback(get_ssl_roots_override);
+
   /* "|s!s!s!" == 3 optional nullable strings */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!s!s!",
                             &pem_root_certs, &root_certs_length,
@@ -171,6 +173,8 @@ PHP_METHOD(ChannelCredentials, createSsl) {
 PHP_METHOD(ChannelCredentials, createComposite) {
   zval *cred1_obj;
   zval *cred2_obj;
+
+  grpc_set_ssl_roots_override_callback(get_ssl_roots_override);
 
   /* "OO" == 2 Objects */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "OO", &cred1_obj,
@@ -238,7 +242,6 @@ void grpc_init_channel_credentials(TSRMLS_D) {
   zend_class_entry ce;
   INIT_CLASS_ENTRY(ce, "Grpc\\ChannelCredentials",
                    channel_credentials_methods);
-  grpc_set_ssl_roots_override_callback(get_ssl_roots_override);
   ce.create_object = create_wrapped_grpc_channel_credentials;
   grpc_ce_channel_credentials = zend_register_internal_class(&ce TSRMLS_CC);
   PHP_GRPC_INIT_HANDLER(wrapped_grpc_channel_credentials,
