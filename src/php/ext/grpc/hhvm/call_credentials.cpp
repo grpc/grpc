@@ -111,7 +111,6 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 {
     HHVM_TRACE_SCOPE("CallCredentials createFromPlugin") // Degug Trace
 
-  std::cout << "CallCredentials" << std::endl;
   if (!is_callable(callback)) {
     throw_invalid_argument("Callback argument is not a valid callback");
   }

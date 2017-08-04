@@ -104,7 +104,6 @@ void HHVM_METHOD(Server, __construct,
         ChannelArgs channelArgs{};
         if (!channelArgs.init(args_array_or_null.toArray()))
         {
-            std::cout << "Fail1" << std::endl;
             SystemLib::throwInvalidArgumentExceptionObject("invalid channel arguments");
             return;
         }
@@ -113,15 +112,12 @@ void HHVM_METHOD(Server, __construct,
     }
     else
     {
-                std::cout << "Fail2" << std::endl;
         SystemLib::throwInvalidArgumentExceptionObject("channel arguments must be array");
         return;
     }
 
-    std::cout << "Server: " << pServer << std::endl;
     if (!pServer)
     {
-                std::cout << "Fail3" << std::endl;
         SystemLib::throwBadMethodCallExceptionObject("failed to create server");
         return;
     }

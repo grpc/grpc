@@ -131,8 +131,6 @@ bool ChannelArgs::init(const Array& argsArray)
                 {
                     m_ChannelArgs.args[count].value.string = const_cast<char*>(value.getStringData()->data());
                     m_ChannelArgs.args[count].type = GRPC_ARG_STRING;
-                    std::cout << count << ' ' << m_ChannelArgs.args[count].key << ' '
-                              << m_ChannelArgs.args[count].value.string << std::endl;
                 }
                 else
                 {
@@ -297,7 +295,6 @@ void HHVM_METHOD(Channel, __construct,
     }
 
     grpc_channel* pChannel{ nullptr };
-    std::cout << "Target " << target.c_str() << std::endl;
     if (!pChannelCredentialsData)
     {
         // no credentials create insecure channel

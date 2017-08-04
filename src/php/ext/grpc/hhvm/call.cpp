@@ -149,14 +149,9 @@ bool MetadataArray::init(const Array& phpArray, const bool ownPHP)
 
             m_Array.metadata[elem].key = m_PHPData.back().first.slice();
             m_Array.metadata[elem].value = m_PHPData.back().second.slice();
-
-            std::cout << m_PHPData.back().first.data() << ' ' << m_PHPData.back().second.data() << std::endl;
         }
-        std::cout << GRPC_SLICE_START_PTR(m_Array.metadata[elem-1].key) << ' '
-                  << GRPC_SLICE_START_PTR(m_Array.metadata[elem-1].value) << std::endl;
     }
     m_Array.count = count;
-    std::cout << "Count: " << count << std::endl;
     return true;
 }
 
@@ -354,7 +349,6 @@ Object HHVM_METHOD(Call, startBatch,
         }
 
         int32_t index{ key.toInt32() };
-        std::cout << "Op: " << op_num << " Index: " << index << std::endl;
         switch(index)
         {
         case GRPC_OP_SEND_INITIAL_METADATA:
@@ -514,7 +508,6 @@ Object HHVM_METHOD(Call, startBatch,
             return resultObj;
         }
     }
-    std::cout << "Sending Call" << pCallData->call() << std::endl;
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
     // has it's own thread and you cannot run application code on a single request in more than
@@ -529,7 +522,6 @@ Object HHVM_METHOD(Call, startBatch,
     grpc_event event{ grpc_completion_queue_pluck(CompletionQueue::getClientQueue().queue(),
                                                   pCallData->call(),
                                                   gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) };
-    std::cout << "Reciving Call: " << event.type << std::endl;
     if (event.success == 0 || event.type != GRPC_OP_COMPLETE )
     {
         std::stringstream oSS;
