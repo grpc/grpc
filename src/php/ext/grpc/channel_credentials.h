@@ -53,6 +53,8 @@ extern zend_class_entry *grpc_ce_channel_credentials;
  * with a PHP object */
 PHP_GRPC_WRAP_OBJECT_START(wrapped_grpc_channel_credentials) 
   grpc_channel_credentials *wrapped;
+  char *hashstr;
+  zend_bool has_call_creds;
 PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_channel_credentials)
 
 #if PHP_MAJOR_VERSION < 7

@@ -58,8 +58,7 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase
 
     public function tearDown()
     {
-        unset($this->channel);
-        unset($this->server);
+        $this->channel->close();
     }
 
     public function testSimpleRequestBody()
