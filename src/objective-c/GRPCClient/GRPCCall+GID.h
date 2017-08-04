@@ -25,5 +25,13 @@
  * Extend GIDSignIn class to comply GRPCAuthorizationProtocol
  */
 @interface GIDSignIn (GRPC) <GRPCAuthorizationProtocol>
+/**
+ * Implements GRPCAuthorizationProtocol
+ */
 - (void)getTokenWithHandler:(void (^)(NSString *token))hander;
+
+/**
+ * Must be called when GIDSignInDelegate's signIn:didSignInForUser:withError: callback is called.   
+ */
+- (void)completeRPCHandlers;
 @end

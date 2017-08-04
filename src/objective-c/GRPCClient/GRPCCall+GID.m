@@ -18,11 +18,39 @@
 
 #import "GRPCCall+GID.h"
 
+static NSMutableArray *completionHandlers = nil;
+
 @implementation GIDSignIn (GRPC)
 
 - (void)getTokenWithHandler:(void (^)(NSString *token))handler {
   NSString *token = self.currentUser.authentication.accessToken;
-  handler(token);
+  if (token == nil) {
+    BOOL signIn = NO;
+    @synchronized (self) {
+      if (!completionHandlers) {
+        completionHandlers = [NSMutableArray array];
+      }
+      [completionHandlers addObject:handler];
+      if (1 == [completionHandlers count]) {
+        signIn = YES;
+      }
+    }
+    if (signIn) {
+      [self signIn];
+    }
+  } else {
+    handler(token);
+  }
+}
+
+- (void)completeRPCHandlers {
+  NSString *token = self.currentUser.authentication.accessToken;
+  @synchronized (self) {
+    for (void (^handler)(NSString*) in completionHandlers) {
+      handler(token);
+    }
+    [completionHandlers removeAllObjects];
+  }
 }
 
 @end

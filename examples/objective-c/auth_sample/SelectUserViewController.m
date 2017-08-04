@@ -20,6 +20,8 @@
 
 #import "MakeRPCViewController.h"
 
+#import <GRPCClient/GRPCCall+GID.h>
+
 @implementation SelectUserViewController
 
 - (void)viewDidLoad {
@@ -46,6 +48,7 @@ didSignInForUser:(GIDGoogleUser *)user
      withError:(NSError *)error {
   if (error) {
     // The user probably cancelled the sign-in flow.
+    [GIDSignIn.sharedInstance completeRPCHandlers];
     return;
   }
 
@@ -56,6 +59,8 @@ didSignInForUser:(GIDGoogleUser *)user
 
   self.signInButton.hidden = YES;
   self.signOutButton.hidden = NO;
+
+  [GIDSignIn.sharedInstance completeRPCHandlers];
 }
 
 - (IBAction)didTapSignOut {
