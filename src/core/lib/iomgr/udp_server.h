@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -47,18 +32,25 @@ typedef struct grpc_udp_server grpc_udp_server;
 
 /* Called when data is available to read from the socket. */
 typedef void (*grpc_udp_server_read_cb)(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
-                                        struct grpc_server *server);
+                                        void *user_data);
+
+/* Called when the socket is writeable. */
+typedef void (*grpc_udp_server_write_cb)(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
+                                         void *user_data);
 
 /* Called when the grpc_fd is about to be orphaned (and the FD closed). */
-typedef void (*grpc_udp_server_orphan_cb)(grpc_fd *emfd);
+typedef void (*grpc_udp_server_orphan_cb)(grpc_exec_ctx *exec_ctx,
+                                          grpc_fd *emfd,
+                                          grpc_closure *shutdown_fd_callback,
+                                          void *user_data);
 
 /* Create a server, initially not bound to any ports */
-grpc_udp_server *grpc_udp_server_create(void);
+grpc_udp_server *grpc_udp_server_create(const grpc_channel_args *args);
 
-/* Start listening to bound ports */
+/* Start listening to bound ports. user_data is passed to callbacks. */
 void grpc_udp_server_start(grpc_exec_ctx *exec_ctx, grpc_udp_server *udp_server,
                            grpc_pollset **pollsets, size_t pollset_count,
-                           struct grpc_server *server);
+                           void *user_data);
 
 int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned port_index);
 
@@ -75,6 +67,7 @@ int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned port_index);
 int grpc_udp_server_add_port(grpc_udp_server *s,
                              const grpc_resolved_address *addr,
                              grpc_udp_server_read_cb read_cb,
+                             grpc_udp_server_write_cb write_cb,
                              grpc_udp_server_orphan_cb orphan_cb);
 
 void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *server,

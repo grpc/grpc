@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -62,7 +47,8 @@ void test_transport_op(grpc_channel *channel) {
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  grpc_closure_init(&transport_op_cb, verify_connectivity, &state);
+  GRPC_CLOSURE_INIT(&transport_op_cb, verify_connectivity, &state,
+                    grpc_schedule_on_exec_ctx);
 
   op = grpc_make_transport_op(NULL);
   op->on_connectivity_state_change = &transport_op_cb;
@@ -71,7 +57,8 @@ void test_transport_op(grpc_channel *channel) {
   elem->filter->start_transport_op(&exec_ctx, elem, op);
   grpc_exec_ctx_finish(&exec_ctx);
 
-  grpc_closure_init(&transport_op_cb, do_nothing, NULL);
+  GRPC_CLOSURE_INIT(&transport_op_cb, do_nothing, NULL,
+                    grpc_schedule_on_exec_ctx);
   op = grpc_make_transport_op(&transport_op_cb);
   elem->filter->start_transport_op(&exec_ctx, elem, op);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -88,8 +75,7 @@ int main(int argc, char **argv) {
   grpc_metadata_array trailing_metadata_recv;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
   char *peer;
 
   grpc_test_init(argc, argv);
@@ -107,11 +93,12 @@ int main(int argc, char **argv) {
   GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN ==
              grpc_channel_check_connectivity_state(chan, 0));
 
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_next(NULL);
 
+  grpc_slice host = grpc_slice_from_static_string("anywhere");
   call = grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
-                                  "/Foo", "anywhere",
-                                  GRPC_TIMEOUT_SECONDS_TO_DEADLINE(100), NULL);
+                                  grpc_slice_from_static_string("/Foo"), &host,
+                                  grpc_timeout_seconds_to_deadline(100), NULL);
   GPR_ASSERT(call);
   cqv = cq_verifier_create(cq);
 
@@ -123,7 +110,7 @@ int main(int argc, char **argv) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -140,7 +127,6 @@ int main(int argc, char **argv) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -155,14 +141,14 @@ int main(int argc, char **argv) {
   GPR_ASSERT(strcmp(peer, "lampoon:national") == 0);
   gpr_free(peer);
 
-  grpc_call_destroy(call);
+  grpc_call_unref(call);
   grpc_channel_destroy(chan);
   cq_verifier_destroy(cqv);
   grpc_completion_queue_destroy(cq);
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
-  gpr_free(details);
+  grpc_slice_unref(details);
 
   grpc_shutdown();
 

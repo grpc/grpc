@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -47,14 +32,14 @@
 /* These routines are here to facilitate debugging - they produce string
    representations of various transport data structures */
 
-static void put_metadata(gpr_strvec *b, grpc_mdelem *md) {
+static void put_metadata(gpr_strvec *b, grpc_mdelem md) {
   gpr_strvec_add(b, gpr_strdup("key="));
   gpr_strvec_add(
-      b, grpc_dump_slice(md->key->slice, GPR_DUMP_HEX | GPR_DUMP_ASCII));
+      b, grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_HEX | GPR_DUMP_ASCII));
 
   gpr_strvec_add(b, gpr_strdup(" value="));
   gpr_strvec_add(
-      b, grpc_dump_slice(md->value->slice, GPR_DUMP_HEX | GPR_DUMP_ASCII));
+      b, grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII));
 }
 
 static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {
@@ -71,65 +56,59 @@ static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {
   }
 }
 
-char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
+char *grpc_transport_stream_op_batch_string(
+    grpc_transport_stream_op_batch *op) {
   char *tmp;
   char *out;
 
   gpr_strvec b;
   gpr_strvec_init(&b);
 
-  gpr_strvec_add(
-      &b, gpr_strdup(op->covered_by_poller ? "[COVERED]" : "[UNCOVERED]"));
-
-  if (op->send_initial_metadata != NULL) {
+  if (op->send_initial_metadata) {
     gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_strvec_add(&b, gpr_strdup("SEND_INITIAL_METADATA{"));
-    put_metadata_list(&b, *op->send_initial_metadata);
+    put_metadata_list(
+        &b, *op->payload->send_initial_metadata.send_initial_metadata);
     gpr_strvec_add(&b, gpr_strdup("}"));
   }
 
-  if (op->send_message != NULL) {
+  if (op->send_message) {
     gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_asprintf(&tmp, "SEND_MESSAGE:flags=0x%08x:len=%d",
-                 op->send_message->flags, op->send_message->length);
+                 op->payload->send_message.send_message->flags,
+                 op->payload->send_message.send_message->length);
     gpr_strvec_add(&b, tmp);
   }
 
-  if (op->send_trailing_metadata != NULL) {
+  if (op->send_trailing_metadata) {
     gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_strvec_add(&b, gpr_strdup("SEND_TRAILING_METADATA{"));
-    put_metadata_list(&b, *op->send_trailing_metadata);
+    put_metadata_list(
+        &b, *op->payload->send_trailing_metadata.send_trailing_metadata);
     gpr_strvec_add(&b, gpr_strdup("}"));
   }
 
-  if (op->recv_initial_metadata != NULL) {
+  if (op->recv_initial_metadata) {
     gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_strvec_add(&b, gpr_strdup("RECV_INITIAL_METADATA"));
   }
 
-  if (op->recv_message != NULL) {
+  if (op->recv_message) {
     gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_strvec_add(&b, gpr_strdup("RECV_MESSAGE"));
   }
 
-  if (op->recv_trailing_metadata != NULL) {
+  if (op->recv_trailing_metadata) {
     gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_strvec_add(&b, gpr_strdup("RECV_TRAILING_METADATA"));
   }
 
-  if (op->cancel_error != GRPC_ERROR_NONE) {
+  if (op->cancel_stream) {
     gpr_strvec_add(&b, gpr_strdup(" "));
-    const char *msg = grpc_error_string(op->cancel_error);
+    const char *msg =
+        grpc_error_string(op->payload->cancel_stream.cancel_error);
     gpr_asprintf(&tmp, "CANCEL:%s", msg);
-    grpc_error_free_string(msg);
-    gpr_strvec_add(&b, tmp);
-  }
 
-  if (op->close_error != GRPC_ERROR_NONE) {
-    gpr_strvec_add(&b, gpr_strdup(" "));
-    const char *msg = grpc_error_string(op->close_error);
-    gpr_asprintf(&tmp, "CLOSE:%s", msg);
-    grpc_error_free_string(msg);
     gpr_strvec_add(&b, tmp);
   }
 
@@ -168,18 +147,14 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
     const char *err = grpc_error_string(op->disconnect_with_error);
     gpr_asprintf(&tmp, "DISCONNECT:%s", err);
     gpr_strvec_add(&b, tmp);
-    grpc_error_free_string(err);
   }
 
-  if (op->send_goaway) {
+  if (op->goaway_error) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = false;
-    char *msg = op->goaway_message == NULL
-                    ? "null"
-                    : grpc_dump_slice(*op->goaway_message,
-                                      GPR_DUMP_ASCII | GPR_DUMP_HEX);
-    gpr_asprintf(&tmp, "SEND_GOAWAY:status=%d:msg=%s", op->goaway_status, msg);
-    if (op->goaway_message != NULL) gpr_free(msg);
+    const char *msg = grpc_error_string(op->goaway_error);
+    gpr_asprintf(&tmp, "SEND_GOAWAY:%s", msg);
+
     gpr_strvec_add(&b, tmp);
   }
 
@@ -216,8 +191,9 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
 }
 
 void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
-                      grpc_call_element *elem, grpc_transport_stream_op *op) {
-  char *str = grpc_transport_stream_op_string(op);
+                      grpc_call_element *elem,
+                      grpc_transport_stream_op_batch *op) {
+  char *str = grpc_transport_stream_op_batch_string(op);
   gpr_log(file, line, severity, "OP[%s:%p]: %s", elem->filter->name, elem, str);
   gpr_free(str);
 }

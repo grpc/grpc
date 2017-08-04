@@ -1,31 +1,16 @@
-// Copyright 2016, Google Inc.
-// All rights reserved.
+// Copyright 2016 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 syntax = "proto3";
 
@@ -42,6 +27,20 @@ message Duration {
   // of one second or more, a non-zero value for the `nanos` field must be
   // of the same sign as the `seconds` field. Must be from -999,999,999
   // to +999,999,999 inclusive.
+  int32 nanos = 2;
+}
+
+message Timestamp {
+
+  // Represents seconds of UTC time since Unix epoch
+  // 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
+  // 9999-12-31T23:59:59Z inclusive.
+  int64 seconds = 1;
+
+  // Non-negative fractions of a second at nanosecond resolution. Negative
+  // second values with fractions must still have non-negative nanos values
+  // that count forward in time. Must be from 0 to 999,999,999
+  // inclusive.
   int32 nanos = 2;
 }
 
@@ -63,22 +62,43 @@ message LoadBalanceRequest {
 }
 
 message InitialLoadBalanceRequest {
-  // Name of load balanced service (IE, service.grpc.gslb.google.com). Its
+  // Name of load balanced service (IE, balancer.service.com)
   // length should be less than 256 bytes.
   string name = 1;
 }
 
+// Contains the number of calls finished for a particular load balance token.
+message ClientStatsPerToken {
+  // See Server.load_balance_token.
+  string load_balance_token = 1;
+
+  // The total number of RPCs that finished associated with the token.
+  int64 num_calls = 2;
+}
+
 // Contains client level statistics that are useful to load balancing. Each
-// count should be reset to zero after reporting the stats.
+// count except the timestamp should be reset to zero after reporting the stats.
 message ClientStats {
-  // The total number of requests sent by the client since the last report.
-  int64 total_requests = 1;
+  // The timestamp of generating the report.
+  Timestamp timestamp = 1;
 
-  // The number of client rpc errors since the last report.
-  int64 client_rpc_errors = 2;
+  // The total number of RPCs that started.
+  int64 num_calls_started = 2;
 
-  // The number of dropped requests since the last report.
-  int64 dropped_requests = 3;
+  // The total number of RPCs that finished.
+  int64 num_calls_finished = 3;
+
+  // The total number of RPCs that failed to reach a server except dropped RPCs.
+  int64 num_calls_finished_with_client_failed_to_send = 6;
+
+  // The total number of RPCs that finished and are known to have been received
+  // by a server.
+  int64 num_calls_finished_known_received = 7;
+
+  // The list of dropped calls.
+  repeated ClientStatsPerToken calls_finished_with_drop = 8;
+
+  reserved 4, 5;
 }
 
 message LoadBalanceResponse {
@@ -120,6 +140,8 @@ message ServerList {
   Duration expiration_interval = 3;
 }
 
+// Contains server information. When the drop field is not true, use the other
+// fields.
 message Server {
   // A resolved address for the server, serialized in network-byte-order. It may
   // either be an IPv4 or IPv6 address.
@@ -131,12 +153,16 @@ message Server {
   // An opaque but printable token given to the frontend for each pick. All
   // frontend requests for that pick must include the token in its initial
   // metadata. The token is used by the backend to verify the request and to
-  // allow the backend to report load to the gRPC LB system.
+  // allow the backend to report load to the gRPC LB system. The token is also
+  // used in client stats for reporting dropped calls.
   //
   // Its length is variable but less than 50 bytes.
   string load_balance_token = 3;
 
-  // Indicates whether this particular request should be dropped by the client
-  // when this server is chosen from the list.
-  bool drop_request = 4;
+  // Indicates whether this particular request should be dropped by the client.
+  // If the request is dropped, there will be a corresponding entry in
+  // ClientStats.calls_finished_with_drop.
+  bool drop = 4;
+
+  reserved 5;
 }

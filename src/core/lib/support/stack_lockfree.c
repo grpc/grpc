@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -72,28 +57,20 @@ typedef union lockfree_node {
 struct gpr_stack_lockfree {
   lockfree_node *entries;
   lockfree_node head; /* An atomic entry describing curr head */
-
-#ifndef NDEBUG
-  /* Bitmap of pushed entries to check for double-push or pop */
-  gpr_atm pushed[(INVALID_ENTRY_INDEX + 1) / (8 * sizeof(gpr_atm))];
-#endif
 };
 
 gpr_stack_lockfree *gpr_stack_lockfree_create(size_t entries) {
   gpr_stack_lockfree *stack;
-  stack = gpr_malloc(sizeof(*stack));
+  stack = (gpr_stack_lockfree *)gpr_malloc(sizeof(*stack));
   /* Since we only allocate 16 bits to represent an entry number,
    * make sure that we are within the desired range */
   /* Reserve the highest entry number as a dummy */
   GPR_ASSERT(entries < INVALID_ENTRY_INDEX);
-  stack->entries = gpr_malloc_aligned(entries * sizeof(stack->entries[0]),
-                                      ENTRY_ALIGNMENT_BITS);
+  stack->entries = (lockfree_node *)gpr_malloc_aligned(
+      entries * sizeof(stack->entries[0]), ENTRY_ALIGNMENT_BITS);
   /* Clear out all entries */
   memset(stack->entries, 0, entries * sizeof(stack->entries[0]));
   memset(&stack->head, 0, sizeof(stack->head));
-#ifndef NDEBUG
-  memset(&stack->pushed, 0, sizeof(stack->pushed));
-#endif
 
   GPR_ASSERT(sizeof(stack->entries->atm) == sizeof(stack->entries->contents));
 
@@ -130,19 +107,6 @@ int gpr_stack_lockfree_push(gpr_stack_lockfree *stack, int entry) {
   newhead.contents.aba_ctr = ++curent.contents.aba_ctr;
   gpr_atm_no_barrier_store(&stack->entries[entry].atm, curent.atm);
 
-#ifndef NDEBUG
-  /* Check for double push */
-  {
-    int pushed_index = entry / (int)(8 * sizeof(gpr_atm));
-    int pushed_bit = entry % (int)(8 * sizeof(gpr_atm));
-    gpr_atm old_val;
-
-    old_val = gpr_atm_no_barrier_fetch_add(&stack->pushed[pushed_index],
-                                           ((gpr_atm)1 << pushed_bit));
-    GPR_ASSERT((old_val & (((gpr_atm)1) << pushed_bit)) == 0);
-  }
-#endif
-
   do {
     /* Atomically get the existing head value for use */
     head.atm = gpr_atm_no_barrier_load(&(stack->head.atm));
@@ -168,18 +132,6 @@ int gpr_stack_lockfree_pop(gpr_stack_lockfree *stack) {
         gpr_atm_no_barrier_load(&(stack->entries[head.contents.index].atm));
 
   } while (!gpr_atm_no_barrier_cas(&(stack->head.atm), head.atm, newhead.atm));
-#ifndef NDEBUG
-  /* Check for valid pop */
-  {
-    int pushed_index = head.contents.index / (8 * sizeof(gpr_atm));
-    int pushed_bit = head.contents.index % (8 * sizeof(gpr_atm));
-    gpr_atm old_val;
-
-    old_val = gpr_atm_no_barrier_fetch_add(&stack->pushed[pushed_index],
-                                           -((gpr_atm)1 << pushed_bit));
-    GPR_ASSERT((old_val & (((gpr_atm)1) << pushed_bit)) != 0);
-  }
-#endif
 
   return head.contents.index;
 }

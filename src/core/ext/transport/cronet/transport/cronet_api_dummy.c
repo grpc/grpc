@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -38,48 +23,58 @@ library, so we can build it in all environments */
 
 #include <grpc/support/log.h>
 
-#include "third_party/objective_c/Cronet/cronet_c_for_grpc.h"
+#include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
 
 #ifdef GRPC_COMPILE_WITH_CRONET
 /* link with the real CRONET library in the build system */
 #else
 /* Dummy implementation of cronet API just to test for build-ability */
-cronet_bidirectional_stream* cronet_bidirectional_stream_create(
-    cronet_engine* engine, void* annotation,
-    cronet_bidirectional_stream_callback* callback) {
+bidirectional_stream* bidirectional_stream_create(
+    stream_engine* engine, void* annotation,
+    bidirectional_stream_callback* callback) {
   GPR_ASSERT(0);
   return NULL;
 }
 
-int cronet_bidirectional_stream_destroy(cronet_bidirectional_stream* stream) {
+int bidirectional_stream_destroy(bidirectional_stream* stream) {
   GPR_ASSERT(0);
   return 0;
 }
 
-int cronet_bidirectional_stream_start(
-    cronet_bidirectional_stream* stream, const char* url, int priority,
-    const char* method, const cronet_bidirectional_stream_header_array* headers,
-    bool end_of_stream) {
+int bidirectional_stream_start(bidirectional_stream* stream, const char* url,
+                               int priority, const char* method,
+                               const bidirectional_stream_header_array* headers,
+                               bool end_of_stream) {
   GPR_ASSERT(0);
   return 0;
 }
 
-int cronet_bidirectional_stream_read(cronet_bidirectional_stream* stream,
-                                     char* buffer, int capacity) {
+int bidirectional_stream_read(bidirectional_stream* stream, char* buffer,
+                              int capacity) {
   GPR_ASSERT(0);
   return 0;
 }
 
-int cronet_bidirectional_stream_write(cronet_bidirectional_stream* stream,
-                                      const char* buffer, int count,
-                                      bool end_of_stream) {
+int bidirectional_stream_write(bidirectional_stream* stream, const char* buffer,
+                               int count, bool end_of_stream) {
   GPR_ASSERT(0);
   return 0;
 }
 
-int cronet_bidirectional_stream_cancel(cronet_bidirectional_stream* stream) {
+void bidirectional_stream_cancel(bidirectional_stream* stream) {
   GPR_ASSERT(0);
-  return 0;
 }
+
+void bidirectional_stream_disable_auto_flush(bidirectional_stream* stream,
+                                             bool disable_auto_flush) {
+  GPR_ASSERT(0);
+}
+
+void bidirectional_stream_delay_request_headers_until_flush(
+    bidirectional_stream* stream, bool delay_headers_until_flush) {
+  GPR_ASSERT(0);
+}
+
+void bidirectional_stream_flush(bidirectional_stream* stream) { GPR_ASSERT(0); }
 
 #endif /* GRPC_COMPILE_WITH_CRONET */

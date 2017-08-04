@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -49,9 +34,9 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#define SSL_CERT_PATH "src/core/lib/tsi/test_creds/server1.pem"
-#define SSL_KEY_PATH "src/core/lib/tsi/test_creds/server1.key"
-#define SSL_CA_PATH "src/core/lib/tsi/test_creds/ca.pem"
+#define SSL_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"
+#define SSL_CA_PATH "src/core/tsi/test_creds/ca.pem"
 
 // Handshake completed signal to server thread.
 static gpr_event client_handshake_complete;
@@ -104,7 +89,7 @@ static void server_thread(void *arg) {
   GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
   free(addr);
 
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
 
   grpc_server_register_completion_queue(server, cq, NULL);
   grpc_server_start(server);
@@ -113,7 +98,7 @@ static void server_thread(void *arg) {
   // sleeping between polls.
   int retries = 10;
   while (!gpr_event_get(&client_handshake_complete) && retries-- > 0) {
-    const gpr_timespec cq_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);
+    const gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(1);
     grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, NULL);
     GPR_ASSERT(ev.type == GRPC_QUEUE_TIMEOUT);
   }
@@ -122,7 +107,7 @@ static void server_thread(void *arg) {
   grpc_server_shutdown_and_notify(server, cq, NULL);
   grpc_completion_queue_shutdown(cq);
 
-  const gpr_timespec cq_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
+  const gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(5);
   grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, NULL);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
 
@@ -174,7 +159,7 @@ static bool server_ssl_test(const char *alpn_list[], unsigned int alpn_list_len,
   }
 
   // Set the cipher list to match the one expressed in
-  // src/core/lib/tsi/ssl_transport_security.c.
+  // src/core/tsi/ssl_transport_security.c.
   const char *cipher_list =
       "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-"
       "SHA384:ECDHE-RSA-AES256-GCM-SHA384";

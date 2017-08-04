@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -68,7 +53,15 @@ static void test_connectivity(grpc_end2end_test_config config) {
   gpr_thd_options thdopt = gpr_thd_options_default();
   gpr_thd_id thdid;
 
-  config.init_client(&f, NULL);
+  grpc_channel_args client_args;
+  grpc_arg arg_array[1];
+  arg_array[0].type = GRPC_ARG_INTEGER;
+  arg_array[0].key = "grpc.testing.fixed_reconnect_backoff_ms";
+  arg_array[0].value.integer = 1000;
+  client_args.args = arg_array;
+  client_args.num_args = 1;
+
+  config.init_client(&f, &client_args);
 
   ce.channel = f.client;
   ce.cq = f.cq;
@@ -81,7 +74,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
   /* channels should start life in IDLE, and stay there */
   GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 0) ==
              GRPC_CHANNEL_IDLE);
-  gpr_sleep_until(GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100));
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 0) ==
              GRPC_CHANNEL_IDLE);
 
@@ -98,7 +91,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
              GRPC_CHANNEL_IDLE);
   /* start watching for a change */
   grpc_channel_watch_connectivity_state(f.client, GRPC_CHANNEL_IDLE,
-                                        GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3),
+                                        grpc_timeout_seconds_to_deadline(3),
                                         f.cq, tag(2));
 
   /* and now the watch should trigger */
@@ -110,7 +103,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
 
   /* quickly followed by a transition to TRANSIENT_FAILURE */
   grpc_channel_watch_connectivity_state(f.client, GRPC_CHANNEL_CONNECTING,
-                                        GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3),
+                                        grpc_timeout_seconds_to_deadline(3),
                                         f.cq, tag(3));
   CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
   cq_verify(cqv);
@@ -129,7 +122,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
      READY is reached */
   while (state != GRPC_CHANNEL_READY) {
     grpc_channel_watch_connectivity_state(
-        f.client, state, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), f.cq, tag(4));
+        f.client, state, grpc_timeout_seconds_to_deadline(3), f.cq, tag(4));
     CQ_EXPECT_COMPLETION(cqv, tag(4), 1);
     cq_verify(cqv);
     state = grpc_channel_check_connectivity_state(f.client, 0);
@@ -143,7 +136,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
   gpr_log(GPR_DEBUG, "*** SHUTTING DOWN SERVER ***");
 
   grpc_channel_watch_connectivity_state(f.client, GRPC_CHANNEL_READY,
-                                        GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3),
+                                        grpc_timeout_seconds_to_deadline(3),
                                         f.cq, tag(5));
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
@@ -163,6 +156,9 @@ static void test_connectivity(grpc_end2end_test_config config) {
   grpc_channel_destroy(f.client);
   grpc_completion_queue_shutdown(f.cq);
   grpc_completion_queue_destroy(f.cq);
+
+  /* shutdown_cq is not used in this test */
+  grpc_completion_queue_destroy(f.shutdown_cq);
   config.tear_down_data(&f);
 
   cq_verifier_destroy(cqv);

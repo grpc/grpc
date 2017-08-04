@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -66,7 +51,7 @@ grpc_slice grpc_chttp2_base64_encode(grpc_slice input) {
   size_t input_triplets = input_length / 3;
   size_t tail_case = input_length % 3;
   size_t output_length = input_triplets * 4 + tail_xtra[tail_case];
-  grpc_slice output = grpc_slice_malloc(output_length);
+  grpc_slice output = GRPC_SLICE_MALLOC(output_length);
   uint8_t *in = GRPC_SLICE_START_PTR(input);
   char *out = (char *)GRPC_SLICE_START_PTR(output);
   size_t i;
@@ -119,7 +104,7 @@ grpc_slice grpc_chttp2_huffman_compress(grpc_slice input) {
     nbits += grpc_chttp2_huffsyms[*in].length;
   }
 
-  output = grpc_slice_malloc(nbits / 8 + (nbits % 8 != 0));
+  output = GRPC_SLICE_MALLOC(nbits / 8 + (nbits % 8 != 0));
   out = GRPC_SLICE_START_PTR(output);
   for (in = GRPC_SLICE_START_PTR(input); in != GRPC_SLICE_END_PTR(input);
        ++in) {
@@ -177,15 +162,14 @@ static void enc_add1(huff_out *out, uint8_t a) {
   enc_flush_some(out);
 }
 
-grpc_slice grpc_chttp2_base64_encode_and_huffman_compress_impl(
-    grpc_slice input) {
+grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(grpc_slice input) {
   size_t input_length = GRPC_SLICE_LENGTH(input);
   size_t input_triplets = input_length / 3;
   size_t tail_case = input_length % 3;
   size_t output_syms = input_triplets * 4 + tail_xtra[tail_case];
   size_t max_output_bits = 11 * output_syms;
   size_t max_output_length = max_output_bits / 8 + (max_output_bits % 8 != 0);
-  grpc_slice output = grpc_slice_malloc(max_output_length);
+  grpc_slice output = GRPC_SLICE_MALLOC(max_output_length);
   uint8_t *in = GRPC_SLICE_START_PTR(input);
   uint8_t *start_out = GRPC_SLICE_START_PTR(output);
   huff_out out;

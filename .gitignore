@@ -8,6 +8,8 @@ objs
 # Python items
 cython_debug/
 python_build/
+yapf_virtual_environment/
+python_pylint_venv/
 .coverage*
 .eggs
 htmlcov/
@@ -31,7 +33,7 @@ coverage
 # python compiled objects
 *.pyc
 
-#eclipse project files
+# eclipse project files
 .cproject
 .project
 .settings
@@ -96,10 +98,33 @@ DerivedData
 Pods/
 
 # Artifacts directory
-artifacts/
+/artifacts/
 
 # Git generated files for conflicting
 *.orig
 
 # IDE specific folder for JetBrains IDEs
 .idea/
+
+# Blaze files
+bazel-bin
+bazel-genfiles
+bazel-grpc
+bazel-out
+bazel-testlogs
+
+# Debug output
+gdb.txt
+
+# ctags file
+tags
+
+# perf data
+perf.data
+perf.data.old
+
+# bm_diff
+bm_diff_new/
+bm_diff_old/
+bm_*.json
+

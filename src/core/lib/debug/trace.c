@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -35,24 +20,29 @@
 
 #include <string.h>
 
-#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "src/core/lib/support/env.h"
 
+int grpc_tracer_set_enabled(const char *name, int enabled);
+
 typedef struct tracer {
-  const char *name;
-  int *flag;
+  grpc_tracer_flag *flag;
   struct tracer *next;
 } tracer;
 static tracer *tracers;
 
-void grpc_register_tracer(const char *name, int *flag) {
+#ifdef GRPC_THREADSAFE_TRACER
+#define TRACER_SET(flag, on) gpr_atm_no_barrier_store(&(flag).value, (on))
+#else
+#define TRACER_SET(flag, on) (flag).value = (on)
+#endif
+
+void grpc_register_tracer(grpc_tracer_flag *flag) {
   tracer *t = gpr_malloc(sizeof(*t));
-  t->name = name;
   t->flag = flag;
   t->next = tracers;
-  *flag = 0;
+  TRACER_SET(*flag, false);
   tracers = t;
 }
 
@@ -101,6 +91,14 @@ static void parse(const char *s) {
   gpr_free(strings);
 }
 
+static void list_tracers() {
+  gpr_log(GPR_DEBUG, "available tracers:");
+  tracer *t;
+  for (t = tracers; t; t = t->next) {
+    gpr_log(GPR_DEBUG, "\t%s", t->flag->name);
+  }
+}
+
 void grpc_tracer_init(const char *env_var) {
   char *e = gpr_getenv(env_var);
   if (e != NULL) {
@@ -121,13 +119,21 @@ int grpc_tracer_set_enabled(const char *name, int enabled) {
   tracer *t;
   if (0 == strcmp(name, "all")) {
     for (t = tracers; t; t = t->next) {
-      *t->flag = enabled;
+      TRACER_SET(*t->flag, enabled);
+    }
+  } else if (0 == strcmp(name, "list_tracers")) {
+    list_tracers();
+  } else if (0 == strcmp(name, "refcount")) {
+    for (t = tracers; t; t = t->next) {
+      if (strstr(t->flag->name, "refcount") != NULL) {
+        TRACER_SET(*t->flag, enabled);
+      }
     }
   } else {
     int found = 0;
     for (t = tracers; t; t = t->next) {
-      if (0 == strcmp(name, t->name)) {
-        *t->flag = enabled;
+      if (0 == strcmp(name, t->flag->name)) {
+        TRACER_SET(*t->flag, enabled);
         found = 1;
       }
     }

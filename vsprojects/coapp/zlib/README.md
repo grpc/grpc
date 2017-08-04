@@ -10,7 +10,7 @@ Multiple versions of VS installed to be able to build all the targets:
 * Visual Studio 2013
 * Visual Studio 2010 (you might need SP1 to prevent LNK1123 error)
 
-CoApp toolkit: http://downloads.coapp.org/files/CoApp.Tools.Powershell.msi
+CoApp toolkit: http://coapp.org/files/CoApp.Tools.Powershell.msi
 
 More details on installation: http://coapp.org/tutorials/installation.html
 
@@ -33,4 +33,4 @@ This will create three NuGet packages:
 * the symbols package (debug symbols)
 
 Later, you can push the package to NuGet.org repo.
-Attention: before pusing the resulting nuget package to public nuget repo, you have to be 100% sure it works correctly - there’s no way how to delete or update an already existing package.
+Attention: before pusing the resulting nuget package to public nuget repo, you have to be 100% sure it works correctly - thereâ€™s no way how to delete or update an already existing package.

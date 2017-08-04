@@ -1,33 +1,20 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 
-# Copyright 2016, Google Inc.
-# All rights reserved.
+# Copyright 2016 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from __future__ import print_function
 
 import sys
 import yaml
@@ -48,13 +35,13 @@ try:
     'git rev-parse --abbrev-ref HEAD',
     shell=True)
 except:
-  print 'WARNING: not a git repository'
+  print('WARNING: not a git repository')
   branch_name = None
 
 if branch_name is not None:
   m = re.match(r'^release-([0-9]+)_([0-9]+)$', branch_name)
   if m:
-    print 'RELEASE branch'
+    print('RELEASE branch')
     # version number should align with the branched version
     check_version = lambda version: (
       version.major == int(m.group(1)) and
@@ -78,7 +65,7 @@ settings = build_yaml['settings']
 top_version = Version(settings['version'])
 if not check_version(top_version):
   errors += 1
-  print warning % ('version', top_version)
+  print(warning % ('version', top_version))
 
 for tag, value in settings.iteritems():
   if re.match(r'^[a-z]+_version$', tag):
@@ -86,12 +73,14 @@ for tag, value in settings.iteritems():
     if tag != 'core_version':
       if value.major != top_version.major:
         errors += 1
-        print 'major version mismatch on %s: %d vs %d' % (tag, value.major, top_version.major)
+        print('major version mismatch on %s: %d vs %d' % (tag, value.major,
+                                                          top_version.major))
       if value.minor != top_version.minor:
         errors += 1
-        print 'minor version mismatch on %s: %d vs %d' % (tag, value.minor, top_version.minor)
+        print('minor version mismatch on %s: %d vs %d' % (tag, value.minor,
+                                                          top_version.minor))
     if not check_version(value):
       errors += 1
-      print warning % (tag, value)
+      print(warning % (tag, value))
 
 sys.exit(errors)

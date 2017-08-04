@@ -163,6 +163,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\interop\client_helper.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\interop\interop_client.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\interop\stress_interop_client.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\create_test_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\metrics_server.h" />
   </ItemGroup>
   <ItemGroup>
@@ -198,8 +199,6 @@
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\test.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\interop\client_helper.cc">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\interop\interop_client.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\interop\stress_interop_client.cc">

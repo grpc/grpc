@@ -1,0 +1,34 @@
+#!/bin/bash
+# Copyright 2017 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Source this rc script to prepare the environment for linux builds
+
+tools/internal_ci/helper_scripts/gen_report_index.sh
+
+# Need to increase open files limit for c tests
+ulimit -n 32768
+
+# Move docker's storage location to scratch disk so we don't run out of space.
+echo 'DOCKER_OPTS="${DOCKER_OPTS} --graph=/tmpfs/docker"' | sudo tee --append /etc/default/docker
+sudo service docker restart
+
+# Populate xdg-cache-home to workaround https://github.com/grpc/grpc/issues/11968
+sudo mkdir -p /tmp/xdg-cache-home
+PYTHONWARNINGS=ignore XDG_CACHE_HOME=/tmp/xdg-cache-home sudo -E pip install coverage==4.4 pylint==1.6.5
+
+# Download Docker images from DockerHub
+export DOCKERHUB_ORGANIZATION=grpctesting
+
+git submodule update --init

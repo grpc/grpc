@@ -1,32 +1,17 @@
 #!/bin/sh
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 set +e
 cd $(dirname $0)/../../..
@@ -39,10 +24,13 @@ protoc --proto_path=src/proto/math \
 
 # replace the Empty message with EmptyMessage
 # because Empty is a PHP reserved word
-sed -i 's/message Empty/message EmptyMessage/g' \
-    src/proto/grpc/testing/empty.proto
-sed -i 's/grpc\.testing\.Empty/grpc\.testing\.EmptyMessage/g' \
-    src/proto/grpc/testing/test.proto
+output_file=$(mktemp)
+sed 's/message Empty/message EmptyMessage/g' \
+  src/proto/grpc/testing/empty.proto > $output_file
+mv $output_file ./src/proto/grpc/testing/empty.proto
+sed 's/grpc\.testing\.Empty/grpc\.testing\.EmptyMessage/g' \
+  src/proto/grpc/testing/test.proto > $output_file
+mv $output_file ./src/proto/grpc/testing/test.proto
 
 protoc --proto_path=. \
        --php_out=src/php/tests/interop \
@@ -53,7 +41,10 @@ protoc --proto_path=. \
        src/proto/grpc/testing/test.proto
 
 # change it back
-sed -i 's/message EmptyMessage/message Empty/g' \
-    src/proto/grpc/testing/empty.proto
-sed -i 's/grpc\.testing\.EmptyMessage/grpc\.testing\.Empty/g' \
-    src/proto/grpc/testing/test.proto
+sed 's/message EmptyMessage/message Empty/g' \
+  src/proto/grpc/testing/empty.proto > $output_file
+mv $output_file ./src/proto/grpc/testing/empty.proto
+sed 's/grpc\.testing\.EmptyMessage/grpc\.testing\.Empty/g' \
+  src/proto/grpc/testing/test.proto > $output_file
+mv $output_file ./src/proto/grpc/testing/test.proto
+

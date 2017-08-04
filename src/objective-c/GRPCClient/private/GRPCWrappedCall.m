@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -43,6 +28,8 @@
 #import "NSDictionary+GRPC.h"
 #import "NSData+GRPC.h"
 #import "NSError+GRPC.h"
+
+#import "GRPCOpBatchLog.h"
 
 @implementation GRPCOperation {
 @protected
@@ -88,6 +75,10 @@
 }
 
 - (void)dealloc {
+  for (int i = 0; i < _op.data.send_initial_metadata.count; i++) {
+    grpc_slice_unref(_op.data.send_initial_metadata.metadata[i].key);
+    grpc_slice_unref(_op.data.send_initial_metadata.metadata[i].value);
+  }
   gpr_free(_op.data.send_initial_metadata.metadata);
 }
 
@@ -105,14 +96,14 @@
   }
   if (self = [super init]) {
     _op.op = GRPC_OP_SEND_MESSAGE;
-    _op.data.send_message = message.grpc_byteBuffer;
+    _op.data.send_message.send_message = message.grpc_byteBuffer;
     _handler = handler;
   }
   return self;
 }
 
 - (void)dealloc {
-  gpr_free(_op.data.send_message);
+  grpc_byte_buffer_destroy(_op.data.send_message.send_message);
 }
 
 @end
@@ -145,7 +136,7 @@
   if (self = [super init]) {
     _op.op = GRPC_OP_RECV_INITIAL_METADATA;
     grpc_metadata_array_init(&_headers);
-    _op.data.recv_initial_metadata = &_headers;
+    _op.data.recv_initial_metadata.recv_initial_metadata = &_headers;
     if (handler) {
       // Prevent reference cycle with _handler
       __weak typeof(self) weakSelf = self;
@@ -177,7 +168,7 @@
 - (instancetype)initWithHandler:(void (^)(grpc_byte_buffer *))handler {
   if (self = [super init]) {
     _op.op = GRPC_OP_RECV_MESSAGE;
-    _op.data.recv_message = &_receivedMessage;
+    _op.data.recv_message.recv_message = &_receivedMessage;
     if (handler) {
       // Prevent reference cycle with _handler
       __weak typeof(self) weakSelf = self;
@@ -194,7 +185,7 @@
 
 @implementation GRPCOpRecvStatus{
   grpc_status_code _statusCode;
-  char *_details;
+  grpc_slice _details;
   size_t _detailsCapacity;
   grpc_metadata_array _trailers;
 }
@@ -208,7 +199,6 @@
     _op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
     _op.data.recv_status_on_client.status = &_statusCode;
     _op.data.recv_status_on_client.status_details = &_details;
-    _op.data.recv_status_on_client.status_details_capacity = &_detailsCapacity;
     grpc_metadata_array_init(&_trailers);
     _op.data.recv_status_on_client.trailing_metadata = &_trailers;
     if (handler) {
@@ -216,11 +206,15 @@
       __weak typeof(self) weakSelf = self;
       _handler = ^{
         __strong typeof(self) strongSelf = weakSelf;
-        NSError *error = [NSError grpc_errorFromStatusCode:strongSelf->_statusCode
-                                                   details:strongSelf->_details];
-        NSDictionary *trailers = [NSDictionary
-                                  grpc_dictionaryFromMetadataArray:strongSelf->_trailers];
-        handler(error, trailers);
+        if (strongSelf) {
+          char *details = grpc_slice_to_c_string(strongSelf->_details);
+          NSError *error = [NSError grpc_errorFromStatusCode:strongSelf->_statusCode
+                                                     details:details];
+          NSDictionary *trailers = [NSDictionary
+                                    grpc_dictionaryFromMetadataArray:strongSelf->_trailers];
+          handler(error, trailers);
+          gpr_free(details);
+        }
       };
     }
   }
@@ -229,7 +223,7 @@
 
 - (void)dealloc {
   grpc_metadata_array_destroy(&_trailers);
-  gpr_free(_details);
+  grpc_slice_unref(_details);
 }
 
 @end
@@ -242,10 +236,11 @@
 }
 
 - (instancetype)init {
-  return [self initWithHost:nil path:nil];
+  return [self initWithHost:nil serverName:nil path:nil];
 }
 
 - (instancetype)initWithHost:(NSString *)host
+                  serverName:(NSString *)serverName
                         path:(NSString *)path {
   if (!path || !host) {
     [NSException raise:NSInvalidArgumentException
@@ -258,7 +253,7 @@
     // queue. Currently we use a singleton queue.
     _queue = [GRPCCompletionQueue completionQueue];
 
-    _call = [[GRPCHost hostWithAddress:host] unmanagedCallWithPath:path completionQueue:_queue];
+    _call = [[GRPCHost hostWithAddress:host] unmanagedCallWithPath:path serverName:serverName completionQueue:_queue];
     if (_call == NULL) {
       return nil;
     }
@@ -271,6 +266,12 @@
 }
 
 - (void)startBatchWithOperations:(NSArray *)operations errorHandler:(void (^)())errorHandler {
+  // Keep logs of op batches when we are running tests. Disabled when in production for improved
+  // performance.
+#ifdef GRPC_TEST_OBJC
+  [GRPCOpBatchLog addOpBatchToLog:operations];
+#endif
+
   size_t nops = operations.count;
   grpc_op *ops_array = gpr_malloc(nops * sizeof(grpc_op));
   size_t i = 0;
@@ -304,7 +305,7 @@
 }
 
 - (void)dealloc {
-  grpc_call_destroy(_call);
+  grpc_call_unref(_call);
 }
 
 @end

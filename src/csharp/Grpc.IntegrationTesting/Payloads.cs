@@ -335,8 +335,8 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  TODO (vpai): Fill this in once the details of complex, representative
-  ///               protos are decided
+  /// TODO (vpai): Fill this in once the details of complex, representative
+  ///              protos are decided
   /// </summary>
   public sealed partial class ComplexProtoParams : pb::IMessage<ComplexProtoParams> {
     private static readonly pb::MessageParser<ComplexProtoParams> _parser = new pb::MessageParser<ComplexProtoParams>(() => new ComplexProtoParams());

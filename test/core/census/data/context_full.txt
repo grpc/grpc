@@ -1,3 +1,4 @@
-trace_id { hi : 5; lo : 1 }
+trace_id_hi : 5
+trace_id_lo : 1
 span_id : 7
-is_sampled : true
+span_options : 1

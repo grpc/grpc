@@ -8,6 +8,8 @@
     "Grpc.Core.Internal.Tests.MetadataArraySafeHandleTest",
     "Grpc.Core.Internal.Tests.TimespecTest",
     "Grpc.Core.Tests.AppDomainUnloadTest",
+    "Grpc.Core.Tests.AuthContextTest",
+    "Grpc.Core.Tests.AuthPropertyTest",
     "Grpc.Core.Tests.CallCredentialsTest",
     "Grpc.Core.Tests.CallOptionsTest",
     "Grpc.Core.Tests.ChannelCredentialsTest",
@@ -20,7 +22,6 @@
     "Grpc.Core.Tests.HalfcloseTest",
     "Grpc.Core.Tests.MarshallingErrorsTest",
     "Grpc.Core.Tests.MetadataTest",
-    "Grpc.Core.Tests.NUnitVersionTest",
     "Grpc.Core.Tests.PerformanceTest",
     "Grpc.Core.Tests.PInvokeTest",
     "Grpc.Core.Tests.ResponseHeadersTest",
@@ -30,6 +31,7 @@
     "Grpc.Core.Tests.ShutdownHookPendingCallTest",
     "Grpc.Core.Tests.ShutdownHookServerTest",
     "Grpc.Core.Tests.ShutdownTest",
+    "Grpc.Core.Tests.ThreadingModelTest",
     "Grpc.Core.Tests.TimeoutsTest",
     "Grpc.Core.Tests.UserAgentStringTest"
   ],
@@ -41,6 +43,7 @@
     "Grpc.HealthCheck.Tests.HealthServiceImplTest"
   ],
   "Grpc.IntegrationTesting": [
+    "Grpc.IntegrationTesting.CustomErrorDetailsTest",
     "Grpc.IntegrationTesting.GeneratedClientTest",
     "Grpc.IntegrationTesting.GeneratedServiceBaseTest",
     "Grpc.IntegrationTesting.HistogramTest",

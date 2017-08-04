@@ -1,32 +1,16 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """A Future interface.
 
 Python doesn't have a Future interface in its standard library. In the absence
@@ -53,33 +37,33 @@ import six
 
 
 class TimeoutError(Exception):
-  """Indicates that a particular call timed out."""
+    """Indicates that a particular call timed out."""
 
 
 class CancelledError(Exception):
-  """Indicates that the computation underlying a Future was cancelled."""
+    """Indicates that the computation underlying a Future was cancelled."""
 
 
 class Future(six.with_metaclass(abc.ABCMeta)):
-  """A representation of a computation in another control flow.
+    """A representation of a computation in another control flow.
 
   Computations represented by a Future may be yet to be begun, may be ongoing,
   or may have already completed.
   """
 
-  # NOTE(nathaniel): This isn't the return type that I would want to have if it
-  # were up to me. Were this interface being written from scratch, the return
-  # type of this method would probably be a sum type like:
-  #
-  # NOT_COMMENCED
-  # COMMENCED_AND_NOT_COMPLETED
-  # PARTIAL_RESULT<Partial_Result_Type>
-  # COMPLETED<Result_Type>
-  # UNCANCELLABLE
-  # NOT_IMMEDIATELY_DETERMINABLE
-  @abc.abstractmethod
-  def cancel(self):
-    """Attempts to cancel the computation.
+    # NOTE(nathaniel): This isn't the return type that I would want to have if it
+    # were up to me. Were this interface being written from scratch, the return
+    # type of this method would probably be a sum type like:
+    #
+    # NOT_COMMENCED
+    # COMMENCED_AND_NOT_COMPLETED
+    # PARTIAL_RESULT<Partial_Result_Type>
+    # COMPLETED<Result_Type>
+    # UNCANCELLABLE
+    # NOT_IMMEDIATELY_DETERMINABLE
+    @abc.abstractmethod
+    def cancel(self):
+        """Attempts to cancel the computation.
 
     This method does not block.
 
@@ -92,25 +76,25 @@ class Future(six.with_metaclass(abc.ABCMeta)):
         remote system for which a determination of whether or not it commenced
         before being cancelled cannot be made without blocking.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  # NOTE(nathaniel): Here too this isn't the return type that I'd want this
-  # method to have if it were up to me. I think I'd go with another sum type
-  # like:
-  #
-  # NOT_CANCELLED (this object's cancel method hasn't been called)
-  # NOT_COMMENCED
-  # COMMENCED_AND_NOT_COMPLETED
-  # PARTIAL_RESULT<Partial_Result_Type>
-  # COMPLETED<Result_Type>
-  # UNCANCELLABLE
-  # NOT_IMMEDIATELY_DETERMINABLE
-  #
-  # Notice how giving the cancel method the right semantics obviates most
-  # reasons for this method to exist.
-  @abc.abstractmethod
-  def cancelled(self):
-    """Describes whether the computation was cancelled.
+    # NOTE(nathaniel): Here too this isn't the return type that I'd want this
+    # method to have if it were up to me. I think I'd go with another sum type
+    # like:
+    #
+    # NOT_CANCELLED (this object's cancel method hasn't been called)
+    # NOT_COMMENCED
+    # COMMENCED_AND_NOT_COMPLETED
+    # PARTIAL_RESULT<Partial_Result_Type>
+    # COMPLETED<Result_Type>
+    # UNCANCELLABLE
+    # NOT_IMMEDIATELY_DETERMINABLE
+    #
+    # Notice how giving the cancel method the right semantics obviates most
+    # reasons for this method to exist.
+    @abc.abstractmethod
+    def cancelled(self):
+        """Describes whether the computation was cancelled.
 
     This method does not block.
 
@@ -120,11 +104,11 @@ class Future(six.with_metaclass(abc.ABCMeta)):
         not limited to this object's cancel method not having been called and
         the computation's result having become immediately available.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def running(self):
-    """Describes whether the computation is taking place.
+    @abc.abstractmethod
+    def running(self):
+        """Describes whether the computation is taking place.
 
     This method does not block.
 
@@ -133,15 +117,15 @@ class Future(six.with_metaclass(abc.ABCMeta)):
         taking place now, or False if the computation took place in the past or
         was cancelled.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  # NOTE(nathaniel): These aren't quite the semantics I'd like here either. I
-  # would rather this only returned True in cases in which the underlying
-  # computation completed successfully. A computation's having been cancelled
-  # conflicts with considering that computation "done".
-  @abc.abstractmethod
-  def done(self):
-    """Describes whether the computation has taken place.
+    # NOTE(nathaniel): These aren't quite the semantics I'd like here either. I
+    # would rather this only returned True in cases in which the underlying
+    # computation completed successfully. A computation's having been cancelled
+    # conflicts with considering that computation "done".
+    @abc.abstractmethod
+    def done(self):
+        """Describes whether the computation has taken place.
 
     This method does not block.
 
@@ -150,11 +134,11 @@ class Future(six.with_metaclass(abc.ABCMeta)):
         unscheduled or interrupted. False if the computation may possibly be
         executing or scheduled to execute later.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def result(self, timeout=None):
-    """Accesses the outcome of the computation or raises its exception.
+    @abc.abstractmethod
+    def result(self, timeout=None):
+        """Accesses the outcome of the computation or raises its exception.
 
     This method may return immediately or may block.
 
@@ -173,11 +157,11 @@ class Future(six.with_metaclass(abc.ABCMeta)):
       Exception: If the computation raised an exception, this call will raise
         the same exception.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def exception(self, timeout=None):
-    """Return the exception raised by the computation.
+    @abc.abstractmethod
+    def exception(self, timeout=None):
+        """Return the exception raised by the computation.
 
     This method may return immediately or may block.
 
@@ -196,11 +180,11 @@ class Future(six.with_metaclass(abc.ABCMeta)):
         terminate within the allotted time.
       CancelledError: If the computation was cancelled.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def traceback(self, timeout=None):
-    """Access the traceback of the exception raised by the computation.
+    @abc.abstractmethod
+    def traceback(self, timeout=None):
+        """Access the traceback of the exception raised by the computation.
 
     This method may return immediately or may block.
 
@@ -219,11 +203,11 @@ class Future(six.with_metaclass(abc.ABCMeta)):
         terminate within the allotted time.
       CancelledError: If the computation was cancelled.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def add_done_callback(self, fn):
-    """Adds a function to be called at completion of the computation.
+    @abc.abstractmethod
+    def add_done_callback(self, fn):
+        """Adds a function to be called at completion of the computation.
 
     The callback will be passed this Future object describing the outcome of
     the computation.
@@ -234,4 +218,4 @@ class Future(six.with_metaclass(abc.ABCMeta)):
     Args:
       fn: A callable taking this Future object as its single parameter.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()

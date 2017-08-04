@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -41,57 +26,48 @@
 #include <grpc/support/log.h>
 
 void grpc_chttp2_incoming_metadata_buffer_init(
-    grpc_chttp2_incoming_metadata_buffer *buffer) {
-  buffer->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+    grpc_chttp2_incoming_metadata_buffer *buffer, gpr_arena *arena) {
+  buffer->arena = arena;
+  grpc_metadata_batch_init(&buffer->batch);
+  buffer->batch.deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
 }
 
 void grpc_chttp2_incoming_metadata_buffer_destroy(
-    grpc_chttp2_incoming_metadata_buffer *buffer) {
-  size_t i;
-  if (!buffer->published) {
-    for (i = 0; i < buffer->count; i++) {
-      GRPC_MDELEM_UNREF(buffer->elems[i].md);
-    }
-  }
-  gpr_free(buffer->elems);
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer) {
+  grpc_metadata_batch_destroy(exec_ctx, &buffer->batch);
 }
 
-void grpc_chttp2_incoming_metadata_buffer_add(
-    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_mdelem *elem) {
-  GPR_ASSERT(!buffer->published);
-  if (buffer->capacity == buffer->count) {
-    buffer->capacity = GPR_MAX(8, 2 * buffer->capacity);
-    buffer->elems =
-        gpr_realloc(buffer->elems, sizeof(*buffer->elems) * buffer->capacity);
-  }
-  buffer->elems[buffer->count++].md = elem;
+grpc_error *grpc_chttp2_incoming_metadata_buffer_add(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
+    grpc_mdelem elem) {
   buffer->size += GRPC_MDELEM_LENGTH(elem);
+  return grpc_metadata_batch_add_tail(
+      exec_ctx, &buffer->batch,
+      gpr_arena_alloc(buffer->arena, sizeof(grpc_linked_mdelem)), elem);
+}
+
+grpc_error *grpc_chttp2_incoming_metadata_buffer_replace_or_add(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
+    grpc_mdelem elem) {
+  for (grpc_linked_mdelem *l = buffer->batch.list.head; l != NULL;
+       l = l->next) {
+    if (grpc_slice_eq(GRPC_MDKEY(l->md), GRPC_MDKEY(elem))) {
+      GRPC_MDELEM_UNREF(exec_ctx, l->md);
+      l->md = elem;
+      return GRPC_ERROR_NONE;
+    }
+  }
+  return grpc_chttp2_incoming_metadata_buffer_add(exec_ctx, buffer, elem);
 }
 
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(
     grpc_chttp2_incoming_metadata_buffer *buffer, gpr_timespec deadline) {
-  GPR_ASSERT(!buffer->published);
-  buffer->deadline = deadline;
+  buffer->batch.deadline = deadline;
 }
 
 void grpc_chttp2_incoming_metadata_buffer_publish(
-    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_metadata_batch *batch) {
-  GPR_ASSERT(!buffer->published);
-  buffer->published = 1;
-  if (buffer->count > 0) {
-    size_t i;
-    for (i = 1; i < buffer->count; i++) {
-      buffer->elems[i].prev = &buffer->elems[i - 1];
-    }
-    for (i = 0; i < buffer->count - 1; i++) {
-      buffer->elems[i].next = &buffer->elems[i + 1];
-    }
-    buffer->elems[0].prev = NULL;
-    buffer->elems[buffer->count - 1].next = NULL;
-    batch->list.head = &buffer->elems[0];
-    batch->list.tail = &buffer->elems[buffer->count - 1];
-  } else {
-    batch->list.head = batch->list.tail = NULL;
-  }
-  batch->deadline = buffer->deadline;
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_metadata_buffer *buffer,
+    grpc_metadata_batch *batch) {
+  *batch = buffer->batch;
+  grpc_metadata_batch_init(&buffer->batch);
 }

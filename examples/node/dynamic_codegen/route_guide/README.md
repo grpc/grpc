@@ -1,5 +1,5 @@
-#gRPC Basics: Node.js sample code
+# gRPC Basics: Node.js sample code
 
 The files in this folder are the samples used in [gRPC Basics: Node.js][], a detailed tutorial for using gRPC in Node.js.
 
-[gRPC Basics: Node.js]:http://www.grpc.io/docs/tutorials/basic/node.html
+[gRPC Basics: Node.js]:https://grpc.io/docs/tutorials/basic/node.html

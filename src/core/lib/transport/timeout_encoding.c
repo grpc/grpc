@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -131,20 +116,21 @@ void grpc_http2_encode_timeout(gpr_timespec timeout, char *buffer) {
   }
 }
 
-static int is_all_whitespace(const char *p) {
-  while (*p == ' ') p++;
-  return *p == 0;
+static int is_all_whitespace(const char *p, const char *end) {
+  while (p != end && *p == ' ') p++;
+  return p == end;
 }
 
-int grpc_http2_decode_timeout(const char *buffer, gpr_timespec *timeout) {
+int grpc_http2_decode_timeout(grpc_slice text, gpr_timespec *timeout) {
   int32_t x = 0;
-  const uint8_t *p = (const uint8_t *)buffer;
+  const uint8_t *p = GRPC_SLICE_START_PTR(text);
+  const uint8_t *end = GRPC_SLICE_END_PTR(text);
   int have_digit = 0;
   /* skip whitespace */
-  for (; *p == ' '; p++)
+  for (; p != end && *p == ' '; p++)
     ;
   /* decode numeric part */
-  for (; *p >= '0' && *p <= '9'; p++) {
+  for (; p != end && *p >= '0' && *p <= '9'; p++) {
     int32_t digit = (int32_t)(*p - (uint8_t)'0');
     have_digit = 1;
     /* spec allows max. 8 digits, but we allow values up to 1,000,000,000 */
@@ -158,8 +144,9 @@ int grpc_http2_decode_timeout(const char *buffer, gpr_timespec *timeout) {
   }
   if (!have_digit) return 0;
   /* skip whitespace */
-  for (; *p == ' '; p++)
+  for (; p != end && *p == ' '; p++)
     ;
+  if (p == end) return 0;
   /* decode unit specifier */
   switch (*p) {
     case 'n':
@@ -184,5 +171,5 @@ int grpc_http2_decode_timeout(const char *buffer, gpr_timespec *timeout) {
       return 0;
   }
   p++;
-  return is_all_whitespace((const char *)p);
+  return is_all_whitespace((const char *)p, (const char *)end);
 }

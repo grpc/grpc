@@ -1,0 +1,30 @@
+%YAML 1.2
+--- |
+  <%!
+  import json
+
+  def gen_one_target(tgt):
+    out = {"name": tgt.name,
+           "language": tgt.language,
+           "platforms": tgt.platforms,
+           "ci_platforms": tgt.ci_platforms,
+           "gtest": tgt.gtest,
+           "exclude_configs": tgt.get("exclude_configs", []),
+           "exclude_iomgrs": tgt.get("exclude_iomgrs", []),
+           "args": tgt.get("args", []),
+           "flaky": tgt.flaky,
+           "cpu_cost": tgt.get("cpu_cost", 1.0)}
+    timeout_seconds = tgt.get("timeout_seconds", None)
+    if timeout_seconds:
+      out['timeout_seconds'] = timeout_seconds
+    excluded_poll_engines = tgt.get("excluded_poll_engines", None)
+    if excluded_poll_engines:
+      out['excluded_poll_engines'] = excluded_poll_engines
+    return out
+  %>
+
+  ${json.dumps([gen_one_target(tgt)
+                for tgt in targets
+                if tgt.get('run', True) and tgt.build == 'test'] +
+                tests,
+               sort_keys=True, indent=2)}

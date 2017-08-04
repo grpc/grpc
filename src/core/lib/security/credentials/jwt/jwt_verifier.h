@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -43,8 +28,7 @@
 /* --- Constants. --- */
 
 #define GRPC_OPENID_CONFIG_URL_SUFFIX "/.well-known/openid-configuration"
-#define GRPC_GOOGLE_SERVICE_ACCOUNTS_EMAIL_DOMAIN \
-  "developer.gserviceaccount.com"
+#define GRPC_GOOGLE_SERVICE_ACCOUNTS_EMAIL_DOMAIN "gserviceaccount.com"
 #define GRPC_GOOGLE_SERVICE_ACCOUNTS_KEY_URL_PREFIX \
   "www.googleapis.com/robot/v1/metadata/x509"
 
@@ -57,6 +41,7 @@ typedef enum {
   GRPC_JWT_VERIFIER_BAD_AUDIENCE,
   GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR,
   GRPC_JWT_VERIFIER_TIME_CONSTRAINT_FAILURE,
+  GRPC_JWT_VERIFIER_BAD_SUBJECT,
   GRPC_JWT_VERIFIER_GENERIC_ERROR
 } grpc_jwt_verifier_status;
 
@@ -66,7 +51,7 @@ const char *grpc_jwt_verifier_status_to_string(grpc_jwt_verifier_status status);
 
 typedef struct grpc_jwt_claims grpc_jwt_claims;
 
-void grpc_jwt_claims_destroy(grpc_jwt_claims *claims);
+void grpc_jwt_claims_destroy(grpc_exec_ctx *exec_ctx, grpc_jwt_claims *claims);
 
 /* Returns the whole JSON tree of the claims. */
 const grpc_json *grpc_jwt_claims_json(const grpc_jwt_claims *claims);
@@ -109,13 +94,15 @@ grpc_jwt_verifier *grpc_jwt_verifier_create(
     size_t num_mappings);
 
 /*The verifier must not be destroyed if there are still outstanding callbacks.*/
-void grpc_jwt_verifier_destroy(grpc_jwt_verifier *verifier);
+void grpc_jwt_verifier_destroy(grpc_exec_ctx *exec_ctx,
+                               grpc_jwt_verifier *verifier);
 
 /* User provided callback that will be called when the verification of the JWT
    is done (maybe in another thread).
    It is the responsibility of the callee to call grpc_jwt_claims_destroy on
    the claims. */
-typedef void (*grpc_jwt_verification_done_cb)(void *user_data,
+typedef void (*grpc_jwt_verification_done_cb)(grpc_exec_ctx *exec_ctx,
+                                              void *user_data,
                                               grpc_jwt_verifier_status status,
                                               grpc_jwt_claims *claims);
 
@@ -129,8 +116,10 @@ void grpc_jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
 
 /* --- TESTING ONLY exposed functions. --- */
 
-grpc_jwt_claims *grpc_jwt_claims_from_json(grpc_json *json, grpc_slice buffer);
+grpc_jwt_claims *grpc_jwt_claims_from_json(grpc_exec_ctx *exec_ctx,
+                                           grpc_json *json, grpc_slice buffer);
 grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims *claims,
                                                const char *audience);
+const char *grpc_jwt_issuer_email_domain(const char *issuer);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_VERIFIER_H */

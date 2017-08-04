@@ -16,6 +16,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\services.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\benchmark_config.cc">
+      <Filter>test\cpp\qps</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\client_async.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
@@ -23,9 +26,6 @@
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\driver.cc">
-      <Filter>test\cpp\qps</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\limit_cores.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\parse_json.cc">
@@ -46,11 +46,11 @@
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\usage_timer.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\benchmark_config.cc">
-      <Filter>test\cpp\util</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\benchmark_config.h">
+      <Filter>test\cpp\qps</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\client.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
@@ -61,9 +61,6 @@
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\interarrival.h">
-      <Filter>test\cpp\qps</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\limit_cores.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\parse_json.h">
@@ -83,9 +80,6 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\usage_timer.h">
       <Filter>test\cpp\qps</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\benchmark_config.h">
-      <Filter>test\cpp\util</Filter>
     </ClInclude>
   </ItemGroup>
 
@@ -110,9 +104,6 @@
     </Filter>
     <Filter Include="test\cpp\qps">
       <UniqueIdentifier>{b57fa0e4-f88d-fe46-8885-956fc582de3d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="test\cpp\util">
-      <UniqueIdentifier>{9042d134-6d5a-a907-799e-01768a475055}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\core\security\b64_test.c">
-      <Filter>test\core\security</Filter>
+    <ClCompile Include="$(SolutionDir)\..\test\core\slice\b64_test.c">
+      <Filter>test\core\slice</Filter>
     </ClCompile>
   </ItemGroup>
 
@@ -13,8 +13,8 @@
     <Filter Include="test\core">
       <UniqueIdentifier>{409b4a57-584c-1dc5-db72-1e8d4c462e9d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="test\core\security">
-      <UniqueIdentifier>{0cb2c3ef-ed46-78ae-140c-29f21dc6fdb1}</UniqueIdentifier>
+    <Filter Include="test\core\slice">
+      <UniqueIdentifier>{786c8515-5a25-ca02-9df6-3ba75e55423f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

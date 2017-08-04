@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -92,8 +77,10 @@ typedef struct {
 
 static void request_call(void) {
   grpc_metadata_array_init(&request_metadata_recv);
-  grpc_server_request_call(server, &call, &call_details, &request_metadata_recv,
-                           cq, cq, tag(FLING_SERVER_NEW_REQUEST));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_server_request_call(server, &call, &call_details,
+                                      &request_metadata_recv, cq, cq,
+                                      tag(FLING_SERVER_NEW_REQUEST)));
 }
 
 static void handle_unary_method(void) {
@@ -107,18 +94,18 @@ static void handle_unary_method(void) {
   op->data.send_initial_metadata.count = 0;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &terminal_buffer;
+  op->data.recv_message.recv_message = &terminal_buffer;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   if (payload_buffer == NULL) {
     gpr_log(GPR_INFO, "NULL payload buffer !!!");
   }
-  op->data.send_message = payload_buffer;
+  op->data.send_message.send_message = payload_buffer;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status_details = "";
+  op->data.send_status_from_server.status_details = NULL;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
@@ -144,7 +131,7 @@ static void start_read_op(int t) {
   grpc_call_error error;
   /* Starting read at server */
   read_op.op = GRPC_OP_RECV_MESSAGE;
-  read_op.data.recv_message = &payload_buffer;
+  read_op.data.recv_message.recv_message = &payload_buffer;
   error = grpc_call_start_batch(call, &read_op, 1, tag(t), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 }
@@ -157,7 +144,7 @@ static void start_write_op(void) {
   if (payload_buffer == NULL) {
     gpr_log(GPR_INFO, "NULL payload buffer !!!");
   }
-  write_op.data.send_message = payload_buffer;
+  write_op.data.send_message.send_message = payload_buffer;
   error = grpc_call_start_batch(call, &write_op, 1, tagarg, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 }
@@ -168,7 +155,7 @@ static void start_send_status(void) {
   status_op[0].op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   status_op[0].data.send_status_from_server.status = GRPC_STATUS_OK;
   status_op[0].data.send_status_from_server.trailing_metadata_count = 0;
-  status_op[0].data.send_status_from_server.status_details = "";
+  status_op[0].data.send_status_from_server.status_details = NULL;
   status_op[1].op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   status_op[1].data.recv_close_on_server.cancelled = &was_cancelled;
 
@@ -185,6 +172,7 @@ int main(int argc, char **argv) {
   call_state *s;
   char *addr_buf = NULL;
   gpr_cmdline *cl;
+  grpc_completion_queue *shutdown_cq;
   int shutdown_started = 0;
   int shutdown_finished = 0;
 
@@ -214,7 +202,7 @@ int main(int argc, char **argv) {
   }
   gpr_log(GPR_INFO, "creating server on: %s", addr);
 
-  cq = grpc_completion_queue_create(NULL);
+  cq = grpc_completion_queue_create_for_next(NULL);
   if (secure) {
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                     test_server1_cert};
@@ -242,10 +230,16 @@ int main(int argc, char **argv) {
   while (!shutdown_finished) {
     if (got_sigint && !shutdown_started) {
       gpr_log(GPR_INFO, "Shutting down due to SIGINT");
-      grpc_server_shutdown_and_notify(server, cq, tag(1000));
-      GPR_ASSERT(grpc_completion_queue_pluck(
-                     cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
-                     .type == GRPC_OP_COMPLETE);
+
+      shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
+      grpc_server_shutdown_and_notify(server, shutdown_cq, tag(1000));
+
+      GPR_ASSERT(
+          grpc_completion_queue_pluck(shutdown_cq, tag(1000),
+                                      grpc_timeout_seconds_to_deadline(5), NULL)
+              .type == GRPC_OP_COMPLETE);
+      grpc_completion_queue_destroy(shutdown_cq);
+
       grpc_completion_queue_shutdown(cq);
       shutdown_started = 1;
     }
@@ -259,8 +253,8 @@ int main(int argc, char **argv) {
         switch ((intptr_t)s) {
           case FLING_SERVER_NEW_REQUEST:
             if (call != NULL) {
-              if (0 ==
-                  strcmp(call_details.method, "/Reflector/reflectStream")) {
+              if (0 == grpc_slice_str_cmp(call_details.method,
+                                          "/Reflector/reflectStream")) {
                 /* Received streaming call. Send metadata here. */
                 start_read_op(FLING_SERVER_READ_FOR_STREAMING);
                 send_initial_metadata();
@@ -294,7 +288,7 @@ int main(int argc, char **argv) {
             break;
           case FLING_SERVER_SEND_STATUS_FOR_STREAMING:
             /* Send status and close completed at server */
-            grpc_call_destroy(call);
+            grpc_call_unref(call);
             if (!shutdown_started) request_call();
             break;
           case FLING_SERVER_READ_FOR_UNARY:
@@ -307,7 +301,7 @@ int main(int argc, char **argv) {
             /* Finished unary call. */
             grpc_byte_buffer_destroy(payload_buffer);
             payload_buffer = NULL;
-            grpc_call_destroy(call);
+            grpc_call_unref(call);
             if (!shutdown_started) request_call();
             break;
         }

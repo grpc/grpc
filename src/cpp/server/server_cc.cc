@@ -1,32 +1,17 @@
 /*
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -37,6 +22,7 @@
 
 #include <grpc++/completion_queue.h>
 #include <grpc++/generic/async_generic_service.h>
+#include <grpc++/impl/codegen/async_unary_call.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/grpc_library.h>
 #include <grpc++/impl/method_handler_impl.h>
@@ -50,7 +36,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/cpp/client/create_channel_internal.h"
+#include "src/cpp/server/health/default_health_check_service.h"
 #include "src/cpp/thread_manager/thread_manager.h"
 
 namespace grpc {
@@ -122,6 +111,14 @@ class ShutdownTag : public CompletionQueueTag {
   bool FinalizeResult(void** tag, bool* status) { return false; }
 };
 
+class DummyTag : public CompletionQueueTag {
+ public:
+  bool FinalizeResult(void** tag, bool* status) {
+    *status = true;
+    return true;
+  }
+};
+
 class Server::SyncRequest final : public CompletionQueueTag {
  public:
   SyncRequest(RpcServiceMethod* method, void* tag)
@@ -143,7 +140,7 @@ class Server::SyncRequest final : public CompletionQueueTag {
     grpc_metadata_array_destroy(&request_metadata_);
   }
 
-  void SetupRequest() { cq_ = grpc_completion_queue_create(nullptr); }
+  void SetupRequest() { cq_ = grpc_completion_queue_create_for_pluck(nullptr); }
 
   void TeardownRequest() {
     grpc_completion_queue_destroy(cq_);
@@ -154,19 +151,25 @@ class Server::SyncRequest final : public CompletionQueueTag {
     GPR_ASSERT(cq_ && !in_flight_);
     in_flight_ = true;
     if (tag_) {
-      GPR_ASSERT(GRPC_CALL_OK ==
-                 grpc_server_request_registered_call(
-                     server, tag_, &call_, &deadline_, &request_metadata_,
-                     has_request_payload_ ? &request_payload_ : nullptr, cq_,
-                     notify_cq, this));
+      if (GRPC_CALL_OK !=
+          grpc_server_request_registered_call(
+              server, tag_, &call_, &deadline_, &request_metadata_,
+              has_request_payload_ ? &request_payload_ : nullptr, cq_,
+              notify_cq, this)) {
+        TeardownRequest();
+        return;
+      }
     } else {
       if (!call_details_) {
         call_details_ = new grpc_call_details;
         grpc_call_details_init(call_details_);
       }
-      GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                     server, &call_, call_details_,
-                                     &request_metadata_, cq_, notify_cq, this));
+      if (grpc_server_request_call(server, &call_, call_details_,
+                                   &request_metadata_, cq_, notify_cq,
+                                   this) != GRPC_CALL_OK) {
+        TeardownRequest();
+        return;
+      }
     }
   }
 
@@ -186,9 +189,8 @@ class Server::SyncRequest final : public CompletionQueueTag {
    public:
     explicit CallData(Server* server, SyncRequest* mrd)
         : cq_(mrd->cq_),
-          call_(mrd->call_, server, &cq_, server->max_receive_message_size_),
-          ctx_(mrd->deadline_, mrd->request_metadata_.metadata,
-               mrd->request_metadata_.count),
+          call_(mrd->call_, server, &cq_, server->max_receive_message_size()),
+          ctx_(mrd->deadline_, &mrd->request_metadata_),
           has_request_payload_(mrd->has_request_payload_),
           request_payload_(mrd->request_payload_),
           method_(mrd->method_) {
@@ -208,14 +210,19 @@ class Server::SyncRequest final : public CompletionQueueTag {
     void Run(std::shared_ptr<GlobalCallbacks> global_callbacks) {
       ctx_.BeginCompletionOp(&call_);
       global_callbacks->PreSynchronousRequest(&ctx_);
-      method_->handler()->RunHandler(MethodHandler::HandlerParameter(
-          &call_, &ctx_, request_payload_, call_.max_receive_message_size()));
+      method_->handler()->RunHandler(
+          MethodHandler::HandlerParameter(&call_, &ctx_, request_payload_));
       global_callbacks->PostSynchronousRequest(&ctx_);
       request_payload_ = nullptr;
-      void* ignored_tag;
-      bool ignored_ok;
+
       cq_.Shutdown();
-      GPR_ASSERT(cq_.Next(&ignored_tag, &ignored_ok) == false);
+
+      CompletionQueueTag* op_tag = ctx_.GetCompletionOpTag();
+      cq_.TryPluck(op_tag, gpr_inf_future(GPR_CLOCK_REALTIME));
+
+      /* Ensure the cq_ is shutdown */
+      DummyTag ignored_tag;
+      GPR_ASSERT(cq_.Pluck(&ignored_tag) == false);
     }
 
    private:
@@ -285,12 +292,10 @@ class Server::SyncRequestThreadManager : public ThreadManager {
     if (ok) {
       // Calldata takes ownership of the completion queue inside sync_req
       SyncRequest::CallData cd(server_, sync_req);
-      {
-        // Prepare for the next request
-        if (!IsShutdown()) {
-          sync_req->SetupRequest();  // Create new completion queue for sync_req
-          sync_req->Request(server_->c_server(), server_cq_->cq());
-        }
+      // Prepare for the next request
+      if (!IsShutdown()) {
+        sync_req->SetupRequest();  // Create new completion queue for sync_req
+        sync_req->Request(server_->c_server(), server_cq_->cq());
       }
 
       GPR_TIMER_SCOPE("cd.Run()", 0);
@@ -314,14 +319,18 @@ class Server::SyncRequestThreadManager : public ThreadManager {
     }
   }
 
-  void ShutdownAndDrainCompletionQueue() {
+  void Shutdown() override {
+    ThreadManager::Shutdown();
     server_cq_->Shutdown();
+  }
 
+  void Wait() override {
+    ThreadManager::Wait();
     // Drain any pending items from the queue
     void* tag;
     bool ok;
     while (server_cq_->Next(&tag, &ok)) {
-      // Nothing to be done here
+      // Do nothing
     }
   }
 
@@ -342,6 +351,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
   int cq_timeout_msec_;
   std::vector<std::unique_ptr<SyncRequest>> sync_requests_;
   std::unique_ptr<RpcServiceMethod> unknown_method_;
+  std::unique_ptr<RpcServiceMethod> health_check_;
   std::shared_ptr<Server::GlobalCallbacks> global_callbacks_;
 };
 
@@ -358,7 +368,8 @@ Server::Server(
       shutdown_notified_(false),
       has_generic_service_(false),
       server_(nullptr),
-      server_initializer_(new ServerInitializer(this)) {
+      server_initializer_(new ServerInitializer(this)),
+      health_check_service_disabled_(false) {
   g_gli_initializer.summon();
   gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
   global_callbacks_ = g_callbacks;
@@ -374,6 +385,19 @@ Server::Server(
   grpc_channel_args channel_args;
   args->SetChannelArgs(&channel_args);
 
+  for (size_t i = 0; i < channel_args.num_args; i++) {
+    if (0 ==
+        strcmp(channel_args.args[i].key, kHealthCheckServiceInterfaceArg)) {
+      if (channel_args.args[i].value.pointer.p == nullptr) {
+        health_check_service_disabled_ = true;
+      } else {
+        health_check_service_.reset(static_cast<HealthCheckServiceInterface*>(
+            channel_args.args[i].value.pointer.p));
+      }
+      break;
+    }
+  }
+
   server_ = grpc_server_create(&channel_args, nullptr);
 }
 
@@ -386,7 +410,7 @@ Server::~Server() {
     } else if (!started_) {
       // Shutdown the completion queues
       for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-        (*it)->ShutdownAndDrainCompletionQueue();
+        (*it)->Shutdown();
       }
     }
   }
@@ -401,6 +425,13 @@ void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
 }
 
 grpc_server* Server::c_server() { return server_; }
+
+std::shared_ptr<Channel> Server::InProcessChannel(
+    const ChannelArguments& args) {
+  grpc_channel_args channel_args = args.c_channel_args();
+  return CreateChannelInternal(
+      "inproc", grpc_inproc_channel_create(server_, &channel_args, nullptr));
+}
 
 static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
     RpcServiceMethod* method) {
@@ -473,12 +504,30 @@ void Server::RegisterAsyncGenericService(AsyncGenericService* service) {
 int Server::AddListeningPort(const grpc::string& addr,
                              ServerCredentials* creds) {
   GPR_ASSERT(!started_);
-  return creds->AddPortToServer(addr, server_);
+  int port = creds->AddPortToServer(addr, server_);
+  global_callbacks_->AddPort(this, addr, creds, port);
+  return port;
 }
 
-bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
+void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   GPR_ASSERT(!started_);
+  global_callbacks_->PreServerStart(this);
   started_ = true;
+
+  // Only create default health check service when user did not provide an
+  // explicit one.
+  if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
+      DefaultHealthCheckServiceEnabled()) {
+    if (sync_server_cqs_->empty()) {
+      gpr_log(GPR_INFO,
+              "Default health check service disabled at async-only server.");
+    } else {
+      auto* default_hc_service = new DefaultHealthCheckService;
+      health_check_service_.reset(default_hc_service);
+      RegisterService(nullptr, default_hc_service->GetHealthCheckService());
+    }
+  }
+
   grpc_server_start(server_);
 
   if (!has_generic_service_) {
@@ -496,25 +545,17 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
     (*it)->Start();
   }
-
-  return true;
 }
 
 void Server::ShutdownInternal(gpr_timespec deadline) {
   std::unique_lock<std::mutex> lock(mu_);
-  if (started_ && !shutdown_) {
+  if (!shutdown_) {
     shutdown_ = true;
 
     /// The completion queue to use for server shutdown completion notification
     CompletionQueue shutdown_cq;
     ShutdownTag shutdown_tag;  // Dummy shutdown tag
     grpc_server_shutdown_and_notify(server_, shutdown_cq.cq(), &shutdown_tag);
-
-    // Shutdown all ThreadManagers. This will try to gracefully stop all the
-    // threads in the ThreadManagers (once they process any inflight requests)
-    for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-      (*it)->Shutdown();  // ThreadManager's Shutdown()
-    }
 
     shutdown_cq.Shutdown();
 
@@ -531,10 +572,15 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     // Else in case of SHUTDOWN or GOT_EVENT, it means that the server has
     // successfully shutdown
 
+    // Shutdown all ThreadManagers. This will try to gracefully stop all the
+    // threads in the ThreadManagers (once they process any inflight requests)
+    for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
+      (*it)->Shutdown();  // ThreadManager's Shutdown()
+    }
+
     // Wait for threads in all ThreadManagers to terminate
     for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
       (*it)->Wait();
-      (*it)->ShutdownAndDrainCompletionQueue();
     }
 
     // Drain the shutdown queue (if the previous call to AsyncNext() timed out
@@ -559,7 +605,7 @@ void Server::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
   static const size_t MAX_OPS = 8;
   size_t nops = 0;
   grpc_op cops[MAX_OPS];
-  ops->FillOps(cops, &nops);
+  ops->FillOps(call->call(), cops, &nops);
   auto result = grpc_call_start_batch(call->call(), cops, nops, ops, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == result);
 }
@@ -575,22 +621,18 @@ ServerInterface::BaseAsyncRequest::BaseAsyncRequest(
       tag_(tag),
       delete_on_finalize_(delete_on_finalize),
       call_(nullptr) {
-  memset(&initial_metadata_array_, 0, sizeof(initial_metadata_array_));
+  call_cq_->RegisterAvalanching();  // This op will trigger more ops
+}
+
+ServerInterface::BaseAsyncRequest::~BaseAsyncRequest() {
+  call_cq_->CompleteAvalanching();
 }
 
 bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
                                                        bool* status) {
   if (*status) {
-    for (size_t i = 0; i < initial_metadata_array_.count; i++) {
-      context_->client_metadata_.insert(
-          std::pair<grpc::string_ref, grpc::string_ref>(
-              initial_metadata_array_.metadata[i].key,
-              grpc::string_ref(
-                  initial_metadata_array_.metadata[i].value,
-                  initial_metadata_array_.metadata[i].value_length)));
-    }
+    context_->client_metadata_.FillMap();
   }
-  grpc_metadata_array_destroy(&initial_metadata_array_);
   context_->set_call(call_);
   context_->cq_ = call_cq_;
   Call call(call_, server_, call_cq_, server_->max_receive_message_size());
@@ -614,10 +656,11 @@ ServerInterface::RegisteredAsyncRequest::RegisteredAsyncRequest(
 void ServerInterface::RegisteredAsyncRequest::IssueRequest(
     void* registered_method, grpc_byte_buffer** payload,
     ServerCompletionQueue* notification_cq) {
-  grpc_server_request_registered_call(
-      server_->server(), registered_method, &call_, &context_->deadline_,
-      &initial_metadata_array_, payload, call_cq_->cq(), notification_cq->cq(),
-      this);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_registered_call(
+                                 server_->server(), registered_method, &call_,
+                                 &context_->deadline_,
+                                 context_->client_metadata_.arr(), payload,
+                                 call_cq_->cq(), notification_cq->cq(), this));
 }
 
 ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
@@ -629,9 +672,10 @@ ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
   grpc_call_details_init(&call_details_);
   GPR_ASSERT(notification_cq);
   GPR_ASSERT(call_cq);
-  grpc_server_request_call(server->server(), &call_, &call_details_,
-                           &initial_metadata_array_, call_cq->cq(),
-                           notification_cq->cq(), this);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                 server->server(), &call_, &call_details_,
+                                 context->client_metadata_.arr(), call_cq->cq(),
+                                 notification_cq->cq(), this));
 }
 
 bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
@@ -639,11 +683,13 @@ bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
   // TODO(yangg) remove the copy here.
   if (*status) {
     static_cast<GenericServerContext*>(context_)->method_ =
-        call_details_.method;
-    static_cast<GenericServerContext*>(context_)->host_ = call_details_.host;
+        StringFromCopiedSlice(call_details_.method);
+    static_cast<GenericServerContext*>(context_)->host_ =
+        StringFromCopiedSlice(call_details_.host);
+    context_->deadline_ = call_details_.deadline;
   }
-  gpr_free(call_details_.method);
-  gpr_free(call_details_.host);
+  grpc_slice_unref(call_details_.method);
+  grpc_slice_unref(call_details_.host);
   return BaseAsyncRequest::FinalizeResult(tag, status);
 }
 
