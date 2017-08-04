@@ -1,4 +1,21 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# Copyright 2015 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Detect new flakes introduced in the last 24h hours with respect to the
+previous six days"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -15,7 +32,7 @@ sys.path.append(gcp_utils_dir)
 import big_query_utils
 
 
-def get_flaky_tests(period, limit=None):
+def get_flaky_tests(days_lower_bound, days_upper_bound, limit=None):
   """ period is one of "WEEK", "DAY", etc.
   (see https://cloud.google.com/bigquery/docs/reference/standard-sql/functions-and-operators#date_add). """
 
@@ -34,7 +51,8 @@ FROM (
   FROM
     [grpc-testing:jenkins_test_results.aggregate_results]
   WHERE
-    timestamp >= DATE_ADD(CURRENT_DATE(), -1, "{period}")
+    timestamp >= DATE_ADD(CURRENT_DATE(), {days_lower_bound}, "DAY")
+    AND timestamp <= DATE_ADD(CURRENT_DATE(), {days_upper_bound}, "DAY")
     AND NOT REGEXP_MATCH(job_name, '.*portability.*'))
 GROUP BY
   filtered_test_name,
@@ -44,8 +62,8 @@ HAVING
   SUM(result != 'PASSED'
     AND result != 'SKIPPED') > 0
 ORDER BY
-  timestamp DESC
-""".format(period=period)
+  timestamp ASC
+""".format(days_lower_bound=days_lower_bound, days_upper_bound=days_upper_bound)
   if limit:
     query += '\n LIMIT {}'.format(limit)
   query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)
@@ -56,13 +74,13 @@ ORDER BY
 
 
 def get_new_flakes():
-  weekly = get_flaky_tests("WEEK")
-  last_24 = get_flaky_tests("DAY")
-  weekly_names = set(weekly.keys())
+  last_week_sans_yesterday = get_flaky_tests(-7, -1)
+  last_24 = get_flaky_tests(-1, +1)
+  last_week_sans_yesterday_names = set(last_week_sans_yesterday.keys())
   last_24_names = set(last_24.keys())
-  logging.debug('|weekly_names| =', len(weekly_names))
+  logging.debug('|last_week_sans_yesterday| =', len(last_week_sans_yesterday_names))
   logging.debug('|last_24_names| =', len(last_24_names))
-  new_flakes = last_24_names - weekly_names
+  new_flakes = last_24_names - last_week_sans_yesterday_names
   logging.debug('|new_flakes| = ', len(new_flakes))
   return {k: last_24[k] for k in new_flakes}
 
@@ -71,12 +89,12 @@ def main():
   import datetime
   new_flakes = get_new_flakes()
   if new_flakes:
-    print("New flakes found:")
+    print("Found {} new flakes:".format(len(new_flakes)))
     for k, v in new_flakes.items():
       ts = int(float(v[0]))
       url = v[1]
       human_ts = datetime.datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S UTC')
-      print("Test: {}, Timestamp: {}, URL: {}".format(k, human_ts, url))
+      print("Test: {}, Timestamp: {}, URL: {}\n".format(k, human_ts, url))
 
 
 if __name__ == '__main__':
