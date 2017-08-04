@@ -155,9 +155,12 @@ void grpc_call_combiner_cancel(grpc_exec_ctx* exec_ctx,
   while (true) {
     gpr_atm original_state = gpr_atm_acq_load(&call_combiner->cancel_state);
     grpc_error* original_error = decode_cancel_state_error(original_state);
-    if (original_error != GRPC_ERROR_NONE) break;
+    if (original_error != GRPC_ERROR_NONE) {
+      GRPC_ERROR_UNREF(error);
+      break;
+    }
     if (gpr_atm_full_cas(&call_combiner->cancel_state, original_state,
-                         (gpr_atm)encode_cancel_state_error(error))) {
+                         encode_cancel_state_error(error))) {
       if (original_state != 0) {
         grpc_closure* notify_on_cancel = (grpc_closure*)original_state;
         if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
