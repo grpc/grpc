@@ -277,6 +277,7 @@ EXPORTS
     gpr_thd_options_set_joinable
     gpr_thd_options_is_detached
     gpr_thd_options_is_joinable
+    gpr_thd_yield
     gpr_thd_currentid
     gpr_thd_join
     gpr_time_0

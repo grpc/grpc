@@ -300,6 +300,7 @@ gpr_thd_options_set_detached_type gpr_thd_options_set_detached_import;
 gpr_thd_options_set_joinable_type gpr_thd_options_set_joinable_import;
 gpr_thd_options_is_detached_type gpr_thd_options_is_detached_import;
 gpr_thd_options_is_joinable_type gpr_thd_options_is_joinable_import;
+gpr_thd_yield_type gpr_thd_yield_import;
 gpr_thd_currentid_type gpr_thd_currentid_import;
 gpr_thd_join_type gpr_thd_join_import;
 gpr_time_0_type gpr_time_0_import;
@@ -603,6 +604,7 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_thd_options_set_joinable_import = (gpr_thd_options_set_joinable_type) GetProcAddress(library, "gpr_thd_options_set_joinable");
   gpr_thd_options_is_detached_import = (gpr_thd_options_is_detached_type) GetProcAddress(library, "gpr_thd_options_is_detached");
   gpr_thd_options_is_joinable_import = (gpr_thd_options_is_joinable_type) GetProcAddress(library, "gpr_thd_options_is_joinable");
+  gpr_thd_yield_import = (gpr_thd_yield_type) GetProcAddress(library, "gpr_thd_yield");
   gpr_thd_currentid_import = (gpr_thd_currentid_type) GetProcAddress(library, "gpr_thd_currentid");
   gpr_thd_join_import = (gpr_thd_join_type) GetProcAddress(library, "gpr_thd_join");
   gpr_time_0_import = (gpr_time_0_type) GetProcAddress(library, "gpr_time_0");

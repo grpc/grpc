@@ -881,6 +881,9 @@ extern gpr_thd_options_is_detached_type gpr_thd_options_is_detached_import;
 typedef int(*gpr_thd_options_is_joinable_type)(const gpr_thd_options *options);
 extern gpr_thd_options_is_joinable_type gpr_thd_options_is_joinable_import;
 #define gpr_thd_options_is_joinable gpr_thd_options_is_joinable_import
+typedef int(*gpr_thd_yield_type)(void);
+extern gpr_thd_yield_type gpr_thd_yield_import;
+#define gpr_thd_yield gpr_thd_yield_import
 typedef gpr_thd_id(*gpr_thd_currentid_type)(void);
 extern gpr_thd_currentid_type gpr_thd_currentid_import;
 #define gpr_thd_currentid gpr_thd_currentid_import
