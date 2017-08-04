@@ -41,6 +41,7 @@
 namespace grpc {
 
 namespace {
+const int kWaitForStateChangeTimeoutMsec = 100;
 void WatchStateChange(void* arg);
 }  // namespace
 
@@ -59,8 +60,10 @@ class ChannelConnectivityWatcher {
         break;
       }
       channel_->WaitForStateChange(
-          state, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                              gpr_time_from_seconds(1, GPR_TIMESPAN)));
+          state,
+          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                       gpr_time_from_millis(kWaitForStateChangeTimeoutMsec,
+                                            GPR_TIMESPAN)));
       state = channel_->GetState(false);
     }
   }

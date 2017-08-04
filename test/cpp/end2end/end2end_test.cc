@@ -238,6 +238,18 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "127.0.0.1:" << port;
     // Setup server
+    BuildAndStartServer(processor);
+  }
+
+  void RestartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
+    if (is_server_started_) {
+      server_->Shutdown();
+      BuildAndStartServer(processor);
+    }
+  }
+
+  void BuildAndStartServer(
+      const std::shared_ptr<AuthMetadataProcessor>& processor) {
     ServerBuilder builder;
     ConfigureServerBuilder(&builder);
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
@@ -683,6 +695,16 @@ TEST_P(End2endTest, MultipleRpcs) {
   for (int i = 0; i < 10; ++i) {
     threads[i].join();
   }
+}
+
+TEST_P(End2endTest, ReconnectChannel) {
+  if (GetParam().inproc) {
+    return;
+  }
+  ResetStub();
+  SendRpc(stub_.get(), 1, false);
+  RestartServer(std::shared_ptr<AuthMetadataProcessor>());
+  SendRpc(stub_.get(), 1, false);
 }
 
 TEST_P(End2endTest, RequestStreamOneRequest) {
