@@ -156,6 +156,7 @@ class TimevalTest extends PHPUnit_Framework_TestCase
      */
     public function testConstructorInvalidParam()
     {
+        if (defined("HHVM_VERSION")) $this->markTestSkipped("Not applicable on HHVM");
         $delta = new Grpc\Timeval('abc');
     }
 
@@ -164,6 +165,7 @@ class TimevalTest extends PHPUnit_Framework_TestCase
      */
     public function testAddInvalidParam()
     {
+        if (defined("HHVM_VERSION")) $this->markTestSkipped("Not applicable on HHVM");
         $a = Grpc\Timeval::now();
         $a->add(1000);
     }
@@ -173,6 +175,7 @@ class TimevalTest extends PHPUnit_Framework_TestCase
      */
     public function testSubtractInvalidParam()
     {
+        if (defined("HHVM_VERSION")) $this->markTestSkipped("Not applicable on HHVM");
         $a = Grpc\Timeval::now();
         $a->subtract(1000);
     }
@@ -182,6 +185,7 @@ class TimevalTest extends PHPUnit_Framework_TestCase
      */
     public function testCompareInvalidParam()
     {
+        if (defined("HHVM_VERSION")) $this->markTestSkipped("Not applicable on HHVM");
         $a = Grpc\Timeval::compare(1000, 1100);
     }
 
@@ -190,6 +194,7 @@ class TimevalTest extends PHPUnit_Framework_TestCase
      */
     public function testSimilarInvalidParam()
     {
+        if (defined("HHVM_VERSION")) $this->markTestSkipped("Not applicable on HHVM");
         $a = Grpc\Timeval::similar(1000, 1100, 1200);
         $this->assertNull($delta);
     }
