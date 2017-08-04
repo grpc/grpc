@@ -67,6 +67,20 @@ class Slice final {
     return *this;
   }
 
+  /// Create a slice pointing at some data. Calls malloc to allocate a refcount
+  /// for the object, and arranges that destroy will be called with the
+  /// user data pointer passed in at destruction. Can be the same as buf or
+  /// different (e.g., if data is part of a larger structure that must be
+  /// destroyed when the data is no longer needed)
+  Slice(void* buf, size_t len, void (*destroy)(void*), void* user_data);
+
+  /// Specialization of above for common case where buf == user_data
+  Slice(void* buf, size_t len, void (*destroy)(void*))
+      : Slice(buf, len, destroy, buf) {}
+
+  /// Similar to the above but has a destroy that also takes slice length
+  Slice(void* buf, size_t len, void (*destroy)(void*, size_t));
+
   /// Byte size.
   size_t size() const { return GRPC_SLICE_LENGTH(slice_); }
 

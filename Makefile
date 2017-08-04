@@ -2925,6 +2925,9 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
+    src/core/lib/iomgr/gethostname_fallback.c \
+    src/core/lib/iomgr/gethostname_host_name_max.c \
+    src/core/lib/iomgr/gethostname_sysconf.c \
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
@@ -3268,6 +3271,9 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
+    src/core/lib/iomgr/gethostname_fallback.c \
+    src/core/lib/iomgr/gethostname_host_name_max.c \
+    src/core/lib/iomgr/gethostname_sysconf.c \
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
@@ -3578,6 +3584,9 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
+    src/core/lib/iomgr/gethostname_fallback.c \
+    src/core/lib/iomgr/gethostname_host_name_max.c \
+    src/core/lib/iomgr/gethostname_sysconf.c \
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
@@ -3824,6 +3833,9 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
+    src/core/lib/iomgr/gethostname_fallback.c \
+    src/core/lib/iomgr/gethostname_host_name_max.c \
+    src/core/lib/iomgr/gethostname_sysconf.c \
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
@@ -4043,6 +4055,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
+    src/core/lib/iomgr/gethostname_fallback.c \
+    src/core/lib/iomgr/gethostname_host_name_max.c \
+    src/core/lib/iomgr/gethostname_sysconf.c \
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
@@ -4719,6 +4734,9 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
+    src/core/lib/iomgr/gethostname_fallback.c \
+    src/core/lib/iomgr/gethostname_host_name_max.c \
+    src/core/lib/iomgr/gethostname_sysconf.c \
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \

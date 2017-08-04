@@ -74,4 +74,8 @@ ZEND_END_MODULE_GLOBALS(grpc)
 #define GRPC_G(v) (grpc_globals.v)
 #endif
 
+#define GRPC_STARTUP_FUNCTION(module)  ZEND_MINIT_FUNCTION(grpc_##module)
+#define GRPC_STARTUP(module)           \
+  ZEND_MODULE_STARTUP_N(grpc_##module)(INIT_FUNC_ARGS_PASSTHRU)
+
 #endif /* PHP_GRPC_H */
