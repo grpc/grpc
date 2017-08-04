@@ -103,6 +103,7 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
 }
 
 - (void)setObject:(id)obj forKey:(NSString *)key {
+  [self checkCallIsNotStarted];
   CheckIsNonNilASCII(@"Header name", key);
   key = key.lowercaseString;
   CheckKeyValuePairIsValid(key, obj);

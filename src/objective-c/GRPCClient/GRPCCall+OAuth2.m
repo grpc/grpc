@@ -16,8 +16,6 @@
  *
  */
 
-#import <objc/runtime.h>
-
 #import "GRPCCall+OAuth2.h"
 
 static NSString * const kAuthorizationHeader = @"authorization";
@@ -25,7 +23,6 @@ static NSString * const kBearerPrefix = @"Bearer ";
 static NSString * const kChallengeHeader = @"www-authenticate";
 
 @implementation GRPCCall (OAuth2)
-@dynamic tokenProvider;
 
 - (NSString *)oauth2AccessToken {
   NSString *headerValue = self.requestHeaders[kAuthorizationHeader];
@@ -46,14 +43,6 @@ static NSString * const kChallengeHeader = @"www-authenticate";
 
 - (NSString *)oauth2ChallengeHeader {
   return self.responseHeaders[kChallengeHeader];
-}
-
-- (void)setTokenProvider:(id<GRPCAuthorizationProtocol>)tokenProvider {
-  objc_setAssociatedObject(self, @selector(tokenProvider), tokenProvider, OBJC_ASSOCIATION_RETAIN);
-}
-
-- (id<GRPCAuthorizationProtocol>)tokenProvider {
-  return objc_getAssociatedObject(self, @selector(tokenProvider));
 }
 
 @end

@@ -18,13 +18,6 @@
 
 #import "GRPCCall.h"
 
-/**
- * The protocol of an OAuth2 token object from which GRPCCall can acquire a token.
- */
-@protocol GRPCAuthorizationProtocol
-- (void)getTokenWithHandler:(void (^)(NSString *token))hander;
-@end
-
 /** Helpers for setting and reading headers compatible with OAuth2. */
 @interface GRPCCall (OAuth2)
 
@@ -39,13 +32,5 @@
 
 /** Returns the value (if any) of the "www-authenticate" response header (the challenge header). */
 @property(atomic, readonly) NSString *oauth2ChallengeHeader;
-
-/**
- * The authorization token object to be used when starting the call. If the value is set to nil, no
- * oauth authentication will be used.
- *
- * If tokenProvider exists, it takes precedence over the token set by oauth2AccessToken.
- */
-@property(atomic, strong) id<GRPCAuthorizationProtocol> tokenProvider;
 
 @end
