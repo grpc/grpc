@@ -872,6 +872,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.h">
       <Filter>src\core\lib\slice</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\alarm_internal.h">
+      <Filter>src\core\lib\surface</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.h">
       <Filter>src\core\lib\surface</Filter>
     </ClInclude>

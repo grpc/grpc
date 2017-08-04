@@ -333,6 +333,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/slice/slice_hash_table.h )
   s.files += %w( src/core/lib/slice/slice_internal.h )
   s.files += %w( src/core/lib/slice/slice_string_helpers.h )
+  s.files += %w( src/core/lib/surface/alarm_internal.h )
   s.files += %w( src/core/lib/surface/api_trace.h )
   s.files += %w( src/core/lib/surface/call.h )
   s.files += %w( src/core/lib/surface/call_test_only.h )
