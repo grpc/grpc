@@ -250,14 +250,11 @@ uint32_t grpc_chttp2_flowctl_maybe_send_transport_update(
     grpc_chttp2_transport_flowctl* tfc) {
   PRETRACE(tfc, NULL);
   uint32_t target_announced_window = grpc_chttp2_target_announced_window(tfc);
-  uint32_t threshold_to_send_transport_window_update =
-      tfc->t->outbuf.count > 0 ? 3 * target_announced_window / 4
-                               : target_announced_window / 2;
-  if (tfc->announced_window <= threshold_to_send_transport_window_update &&
-      tfc->announced_window != target_announced_window) {
+  if (tfc->announced_window < target_announced_window) {
     uint32_t announce = (uint32_t)GPR_CLAMP(
         target_announced_window - tfc->announced_window, 0, UINT32_MAX);
     tfc->announced_window += announce;
+    tfc->local_window = tfc->announced_window;
     POSTTRACE(tfc, NULL, "t updt sent");
     return announce;
   }
@@ -333,6 +330,7 @@ void grpc_chttp2_flowctl_incoming_bs_update(grpc_chttp2_transport_flowctl* tfc,
     uint32_t add_max_recv_bytes =
         (uint32_t)(max_recv_bytes - sfc->local_window_delta);
     sfc->local_window_delta += add_max_recv_bytes;
+    tfc->local_window += add_max_recv_bytes;
   }
   POSTTRACE(tfc, sfc, "app st recv");
 }
