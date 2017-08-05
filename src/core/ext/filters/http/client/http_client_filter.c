@@ -31,6 +31,8 @@
 
 #define EXPECTED_CONTENT_TYPE "application/grpc"
 #define EXPECTED_CONTENT_TYPE_LENGTH sizeof(EXPECTED_CONTENT_TYPE) - 1
+#define GRPC_PAYLOAD_BIN_KEY "grpc-payload-bin="
+#define GRPC_PAYLOAD_BIN_KEY_LENGTH sizeof(GRPC_PAYLOAD_BIN_KEY) - 1
 
 /* default maximum size of payload eligable for GET request */
 static const size_t kMaxPayloadSizeForGet = 2048;
@@ -258,6 +260,7 @@ static grpc_error *update_path_for_get(grpc_exec_ctx *exec_ctx,
    * hold combined path+query */
   size_t estimated_len = GRPC_SLICE_LENGTH(path_slice);
   estimated_len++; /* for the '?' */
+  estimated_len += GRPC_PAYLOAD_BIN_KEY_LENGTH;
   estimated_len += grpc_base64_estimate_encoded_size(
       batch->payload->send_message.send_message->length, true /* url_safe */,
       false /* multi_line */);
@@ -268,6 +271,8 @@ static grpc_error *update_path_for_get(grpc_exec_ctx *exec_ctx,
   memcpy(write_ptr, original_path, GRPC_SLICE_LENGTH(path_slice));
   write_ptr += GRPC_SLICE_LENGTH(path_slice);
   *write_ptr++ = '?';
+  memcpy(write_ptr, GRPC_PAYLOAD_BIN_KEY, GRPC_PAYLOAD_BIN_KEY_LENGTH);
+  write_ptr += GRPC_PAYLOAD_BIN_KEY_LENGTH;
   char *payload_bytes =
       slice_buffer_to_string(&calld->send_message_cache.cache_buffer);
   grpc_base64_encode_core((char *)write_ptr, payload_bytes,

@@ -30,6 +30,8 @@
 
 #define EXPECTED_CONTENT_TYPE "application/grpc"
 #define EXPECTED_CONTENT_TYPE_LENGTH sizeof(EXPECTED_CONTENT_TYPE) - 1
+#define GRPC_PAYLOAD_BIN_KEY "grpc-payload-bin="
+#define GRPC_PAYLOAD_BIN_KEY_LENGTH sizeof(GRPC_PAYLOAD_BIN_KEY) - 1
 
 typedef struct call_data {
   grpc_linked_mdelem status;
@@ -212,23 +214,33 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
       grpc_slice query_slice =
           grpc_slice_sub(path_slice, offset + 1, path_length);
 
-      /* substitute path metadata with just the path (not query) */
-      grpc_mdelem mdelem_path_without_query = grpc_mdelem_from_slices(
-          exec_ctx, GRPC_MDSTR_PATH, grpc_slice_sub(path_slice, 0, offset));
+      if (grpc_slice_buf_start_eq(query_slice, GRPC_PAYLOAD_BIN_KEY,
+                                  GRPC_PAYLOAD_BIN_KEY_LENGTH)) {
+        size_t query_length = GRPC_SLICE_LENGTH(query_slice);
+        grpc_slice payload_slice = grpc_slice_sub(
+            query_slice, GRPC_PAYLOAD_BIN_KEY_LENGTH, query_length);
 
-      grpc_metadata_batch_substitute(exec_ctx, b, b->idx.named.path,
-                                     mdelem_path_without_query);
+        /* substitute path metadata with just the path (not query) */
+        grpc_mdelem mdelem_path_without_query = grpc_mdelem_from_slices(
+            exec_ctx, GRPC_MDSTR_PATH, grpc_slice_sub(path_slice, 0, offset));
 
-      /* decode payload from query and add to the slice buffer to be returned */
-      const int k_url_safe = 1;
-      grpc_slice_buffer_add(
-          &calld->read_slice_buffer,
-          grpc_base64_decode_with_len(
-              exec_ctx, (const char *)GRPC_SLICE_START_PTR(query_slice),
-              GRPC_SLICE_LENGTH(query_slice), k_url_safe));
-      grpc_slice_buffer_stream_init(&calld->read_stream,
-                                    &calld->read_slice_buffer, 0);
-      calld->seen_path_with_query = true;
+        grpc_metadata_batch_substitute(exec_ctx, b, b->idx.named.path,
+                                       mdelem_path_without_query);
+
+        /* decode payload from query and add to the returned slice buffer */
+        const int k_url_safe = 1;
+        grpc_slice_buffer_add(
+            &calld->read_slice_buffer,
+            grpc_base64_decode_with_len(
+                exec_ctx, (const char *)GRPC_SLICE_START_PTR(payload_slice),
+                GRPC_SLICE_LENGTH(payload_slice), k_url_safe));
+        grpc_slice_buffer_stream_init(&calld->read_stream,
+                                      &calld->read_slice_buffer, 0);
+        calld->seen_path_with_query = true;
+        grpc_slice_unref_internal(exec_ctx, payload_slice);
+      } else {
+        gpr_log(GPR_ERROR, "GET request without gRPC payload");
+      }
       grpc_slice_unref_internal(exec_ctx, query_slice);
     } else {
       gpr_log(GPR_ERROR, "GET request without QUERY");
