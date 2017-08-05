@@ -308,7 +308,7 @@ Object HHVM_METHOD(Call, startBatch,
     {
         std::stringstream oSS;
         oSS << "actions array must not be longer than " << maxActions << " operations" << std::endl;
-        SystemLib::throwInvalidArgumentExceptionObject("oSS.str()");
+        SystemLib::throwInvalidArgumentExceptionObject(oSS.str());
         return resultObj;
     }
 
@@ -534,7 +534,7 @@ Object HHVM_METHOD(Call, startBatch,
             lock.unlock();
             std::stringstream oSS;
             oSS << "start_batch was called incorrectly: " << errorCode << std::endl;
-            SystemLib::throwBadMethodCallExceptionObject("oSS.str()");
+            SystemLib::throwBadMethodCallExceptionObject(oSS.str());
             return resultObj;
         }
     }
@@ -549,9 +549,9 @@ Object HHVM_METHOD(Call, startBatch,
     {
     }
 
-    grpc_event event{ grpc_completion_queue_pluck(CompletionQueue::getClientQueue().queue(),
+    grpc_event event( grpc_completion_queue_pluck(CompletionQueue::getClientQueue().queue(),
                                                   pCallData->call(),
-                                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) };
+                                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) );
     if (event.success == 0 || event.type != GRPC_OP_COMPLETE )
     {
         std::stringstream oSS;

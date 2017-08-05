@@ -172,13 +172,13 @@ Object HHVM_METHOD(Server, requestCall)
     {
         std::stringstream oSS;
         oSS << "request_call failed: " << errorCode << std::endl;
-        SystemLib::throwBadMethodCallExceptionObject("oSS.str()");
+        SystemLib::throwBadMethodCallExceptionObject(oSS.str());
         return resultObj;
     }
 
-    grpc_event event{ grpc_completion_queue_pluck(pServerData->queue()->queue(), nullptr,
+    grpc_event event( grpc_completion_queue_pluck(pServerData->queue()->queue(), nullptr,
                                                   gpr_inf_future(GPR_CLOCK_REALTIME),
-                                                  nullptr) };
+                                                  nullptr) );
 
     if (event.success == 0 || event.type != GRPC_OP_COMPLETE )
     {

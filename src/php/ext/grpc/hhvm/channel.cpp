@@ -388,9 +388,9 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
                                           CompletionQueue::getClientQueue().queue(),
                                           nullptr);
 
-    grpc_event event{ grpc_completion_queue_pluck(CompletionQueue::getClientQueue().queue(),
+    grpc_event event( grpc_completion_queue_pluck(CompletionQueue::getClientQueue().queue(),
                                                   nullptr,
-                                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) };
+                                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) );
 
     return (event.success != 0);
 }
