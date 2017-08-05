@@ -104,11 +104,12 @@ bool ChannelArgs::init(const Array& argsArray)
     if (elements > 0 )
     {
         #if HHVM_VERSION_MAJOR >= 3 && HHVM_VERSION_MINOR >= 19
-          m_ChannelArgs.args = (grpc_arg *) req::calloc_untyped(argsArray.size(), sizeof(grpc_arg));
+            m_ChannelArgs.args = (grpc_arg *) req::calloc_untyped(argsArray.size(), sizeof(grpc_arg));
         #else
-          m_ChannelArgs.args = (grpc_arg *) req::calloc(argsArray.size(), sizeof(grpc_arg));
+            m_ChannelArgs.args = (grpc_arg *) req::calloc(argsArray.size(), sizeof(grpc_arg));
         #endif
 
+        std::cout << "Channel Args" << std::endl;
         size_t count{ 0 };
         for (ArrayIter iter(argsArray); iter; ++iter, ++count)
         {
@@ -119,6 +120,7 @@ bool ChannelArgs::init(const Array& argsArray)
                 return false;
             }
             m_ChannelArgs.args[count].key = const_cast<char*>(key.getStringData()->data());
+            std::cout << "Count: " << count << " - Key: " << m_ChannelArgs.args[count].key;
 
             Variant value{ iter.second() };
             if (!value.isNull())
@@ -127,11 +129,13 @@ bool ChannelArgs::init(const Array& argsArray)
                 {
                     m_ChannelArgs.args[count].value.integer = value.toInt32();
                     m_ChannelArgs.args[count].type = GRPC_ARG_INTEGER;
+                    std::cout << " Value: " << m_ChannelArgs.args[count].value.integer << std::endl;
                 }
                 else if (value.isString())
                 {
                     m_ChannelArgs.args[count].value.string = const_cast<char*>(value.getStringData()->data());
                     m_ChannelArgs.args[count].type = GRPC_ARG_STRING;
+                    std::cout << " Value: " << m_ChannelArgs.args[count].value.string << std::endl;
                 }
                 else
                 {
@@ -144,7 +148,6 @@ bool ChannelArgs::init(const Array& argsArray)
                 destroyArgs();
                 return false;
             }
-
         }
 
         m_ChannelArgs.num_args = count;
@@ -242,7 +245,6 @@ void HHVM_METHOD(Channel, __construct,
             if (!objData->instanceof(String("Grpc\\ChannelCredentials")))
             {
                 SystemLib::throwInvalidArgumentExceptionObject("credentials must be a Grpc\\ChannelCredentials object");
-                return;
             }
             Object obj{ value.toObject() };
             pChannelCredentialsData = Native::data<ChannelCredentialsData>(obj);
@@ -292,7 +294,6 @@ void HHVM_METHOD(Channel, __construct,
     if (!channelArgs.init(argsArrayCopy))
     {
         SystemLib::throwInvalidArgumentExceptionObject("invalid channel arguments");
-        return;
     }
 
     grpc_channel* pChannel{ nullptr };
@@ -311,7 +312,6 @@ void HHVM_METHOD(Channel, __construct,
     if (!pChannel)
     {
         SystemLib::throwBadMethodCallExceptionObject("failed to create channel");
-        return;
     }
     pChannelData->init(pChannel);
 
@@ -331,7 +331,6 @@ String HHVM_METHOD(Channel, getTarget)
     if (!pChannelData->channel())
     {
         SystemLib::throwBadMethodCallExceptionObject("Channel already closed.");
-        return String{};
     }
 
     return String{ grpc_channel_get_target(pChannelData->channel()), CopyString };
@@ -350,7 +349,6 @@ int64_t HHVM_METHOD(Channel, getConnectivityState,
     if (!pChannelData->channel())
     {
         SystemLib::throwBadMethodCallExceptionObject("Channel already closed.");
-        return GRPC_CHANNEL_SHUTDOWN;
     }
 
     grpc_connectivity_state state{ grpc_channel_check_connectivity_state(pChannelData->channel(),
@@ -377,7 +375,6 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
     if (!pChannelData->channel())
     {
         SystemLib::throwBadMethodCallExceptionObject("Channel already closed.");
-        return GRPC_CHANNEL_SHUTDOWN;
     }
 
     TimevalData* const pTimevalDataDeadline{ Native::data<TimevalData>(deadline) };
@@ -408,7 +405,6 @@ void HHVM_METHOD(Channel, close)
     if (!pChannelData->channel())
     {
         SystemLib::throwBadMethodCallExceptionObject("Channel already closed.");
-        return;
     }
 
      //ChannelsCache::tl_obj.get()->deleteChannel(channelData->getHashKey());

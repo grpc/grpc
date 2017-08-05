@@ -41,7 +41,7 @@ class CallData
 {
 public:
     // constructors/destructors
-    CallData(void) : m_pCall{ nullptr }, m_Owned{ false },
+    CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_Credentialed{ false },
         m_ChannelData{ nullptr }, m_Timeout{ 0 } {}
     CallData(grpc_call* const call) : m_pCall{ call },
         m_Owned{ false }, m_ChannelData{ nullptr }, m_Timeout{ 0 } {}
@@ -55,8 +55,10 @@ public:
     void init(grpc_call* call) { m_pCall = call; }
     grpc_call* const call(void) { return m_pCall; }
     bool getOwned(void) const { return m_Owned; }
+    void setOwned(const bool owned = true) { m_Owned = owned; }
     void setChannelData(ChannelData* channelData) { m_ChannelData = channelData; }
-    void setOwned(const bool owned) { m_Owned = owned; }
+    bool getCredentialed(void) const { return m_Credentialed; }
+    void setCredentialed(const bool credentialed = true) { m_Credentialed = credentialed; }
     void setTimeout(const int32_t timeout) { m_Timeout = timeout; }
     int32_t getTimeout(void) const { return m_Timeout; }
 
@@ -70,6 +72,7 @@ private:
     // member variables
     grpc_call* m_pCall;
     bool m_Owned;
+    bool m_Credentialed;
     ChannelData* m_ChannelData;
     int32_t m_Timeout;
     static Class* s_Class;

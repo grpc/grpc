@@ -16,7 +16,7 @@
  * limitations under the License.
  *
  */
-require_once realpath(dirname(__FILE__).'/../../vendor/autoload.php');
+//require_once realpath(dirname(__FILE__).'/../../vendor/autoload.php');
 
 // The following includes are needed when using protobuf 3.1.0
 // and will suppress warnings when using protobuf 3.2.0+

@@ -57,16 +57,17 @@ struct PluginGetMetadataFd {
   static DECLARE_THREAD_LOCAL(PluginGetMetadataFd, tl_obj);
 };
 
-typedef struct plugin_get_metadata_params {
-  void *ptr;
-  grpc_auth_metadata_context context;
-  grpc_credentials_plugin_metadata_cb cb;
-  void *user_data;
+typedef struct plugin_get_metadata_params
+{
+    void *ptr;
+    grpc_auth_metadata_context context;
+    grpc_credentials_plugin_metadata_cb cb;
+    void *user_data;
 } plugin_get_metadata_params;
 
 typedef struct plugin_state {
-  Variant callback;
-  PluginGetMetadataFd *fd_obj;
+    Variant callback;
+    PluginGetMetadataFd *fd_obj;
 } plugin_state;
 
 Object HHVM_STATIC_METHOD(CallCredentials, createComposite,

@@ -23,25 +23,15 @@
 #endif
 
 #include "call_credentials.h"
+#include "call.h"
 #include "channel_credentials.h"
 #include "common.h"
-#include "call.h"
 
-#include "hphp/runtime/ext/extension.h"
-#include "hphp/runtime/base/req-containers.h"
-#include "hphp/runtime/base/type-resource.h"
-#include "hphp/runtime/base/object-data.h"
-#include "hphp/runtime/vm/native-data.h"
-#include "hphp/runtime/base/builtin-functions.h"
 #include "hphp/runtime/base/array-init.h"
-#include "hphp/util/process.h"
+#include "hphp/runtime/base/builtin-functions.h"
+#include "hphp/runtime/vm/native-data.h"
 
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-
-#include "common.h"
+#include "grpc/support/alloc.h"
 
 namespace HPHP {
 
@@ -111,58 +101,62 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 {
     HHVM_TRACE_SCOPE("CallCredentials createFromPlugin") // Degug Trace
 
-  if (!is_callable(callback)) {
-    throw_invalid_argument("Callback argument is not a valid callback");
-  }
+    if (callback.isNull() || !is_callable(callback))
+    {
+        SystemLib::throwInvalidArgumentExceptionObject("Callback argument is not a valid callback");
+    }
 
-  plugin_state *state;
-  state = (plugin_state *)gpr_zalloc(sizeof(plugin_state));
-  state->callback = callback;
-  state->fd_obj = PluginGetMetadataFd::tl_obj.get();
+    plugin_state *pState{ reinterpret_cast<plugin_state*>(gpr_zalloc(sizeof(plugin_state))) };
+    pState->callback = callback;
+    pState->fd_obj = PluginGetMetadataFd::tl_obj.get();
 
-  grpc_metadata_credentials_plugin plugin;
-  plugin.get_metadata = plugin_get_metadata;
-  plugin.destroy = plugin_destroy_state;
-  plugin.state = (void *)state;
-  plugin.type = "";
+    grpc_metadata_credentials_plugin plugin;
+    plugin.get_metadata = plugin_get_metadata;
+    plugin.destroy = plugin_destroy_state;
+    plugin.state = reinterpret_cast<void *>(pState);
+    plugin.type = "";
 
-  auto newCallCredentialsObj = Object{CallCredentialsData::getClass()};
-  auto newCallCredentialsData = Native::data<CallCredentialsData>(newCallCredentialsObj);
-  newCallCredentialsData->init(grpc_metadata_credentials_create_from_plugin(plugin, nullptr));
+    Object newCallCredentialsObj{ CallCredentialsData::getClass() };
+    CallCredentialsData* const pNewCallCredentialsData{ Native::data<CallCredentialsData>(newCallCredentialsObj) };
+    grpc_call_credentials* pCallCredentials{ grpc_metadata_credentials_create_from_plugin(plugin, nullptr) };
 
-  return newCallCredentialsObj;
+    if (!pCallCredentials)
+    {
+        SystemLib::throwBadMethodCallExceptionObject("failed to create call credntials plugin");
+    }
+    pNewCallCredentialsData->init(pCallCredentials);
+
+    return newCallCredentialsObj;
 }
 
 // This work done in this function MUST be done on the same thread as the HHVM request
 void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
-                             grpc_credentials_plugin_metadata_cb cb,
-                             void *user_data)
+                            grpc_credentials_plugin_metadata_cb cb,
+                            void *user_data)
 {
     HHVM_TRACE_SCOPE("CallCredentials plugin_do_get_metadata") // Degug Trace
 
-  Object returnObj = SystemLib::AllocStdClassObject();
-  returnObj.o_set("service_url", String(context.service_url, CopyString));
-  returnObj.o_set("method_name", String(context.method_name, CopyString));
+    Object returnObj { SystemLib::AllocStdClassObject() };
+    returnObj.o_set("service_url", String(context.service_url, CopyString));
+    returnObj.o_set("method_name", String(context.method_name, CopyString));
 
-  plugin_state *state = (plugin_state *)ptr;
+    plugin_state* const pState{ reinterpret_cast<plugin_state *>(ptr) };
 
-  Variant retval = vm_call_user_func(state->callback, make_packed_array(returnObj));
-  if (!retval.isArray()) {
-    throw_invalid_argument("Callback return value expected an array.");
-    return;
-  }
+    Variant retval{ vm_call_user_func(pState->callback, make_packed_array(returnObj)) };
+    if (!retval.isArray())
+    {
+        SystemLib::throwInvalidArgumentExceptionObject("Callback return value expected an array.");
+    }
 
-  grpc_status_code code = GRPC_STATUS_OK;
+    grpc_status_code code{ GRPC_STATUS_OK };
+    MetadataArray metadata;
+    if (!metadata.init(retval.toArray(), true))
+    {
+        code = GRPC_STATUS_INVALID_ARGUMENT;
+    }
 
-  MetadataArray metadata;
-
-  if (!metadata.init(retval.toArray(), true))
-  {
-    code = GRPC_STATUS_INVALID_ARGUMENT;
-  }
-
-  /* Pass control back to core */
-  cb(user_data, metadata.data(), metadata.size(), code, nullptr);
+    /* Pass control back to core */
+    cb(user_data, metadata.data(), metadata.size(), code, nullptr);
 }
 
 void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
@@ -171,25 +165,24 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
 {
     HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata") // Degug Trace
 
-  plugin_state *state = (plugin_state *)ptr;
-  PluginGetMetadataFd *fd_obj = state->fd_obj;
+    plugin_state *pState{ reinterpret_cast<plugin_state *>(ptr) };
+    PluginGetMetadataFd *fd_obj = pState->fd_obj;
 
-  plugin_get_metadata_params *params = (plugin_get_metadata_params *)gpr_zalloc(sizeof(plugin_get_metadata_params));
-  params->ptr = ptr;
-  params->context = context;
-  params->cb = cb;
-  params->user_data = user_data;
+    plugin_get_metadata_params *pParams{ reinterpret_cast<plugin_get_metadata_params *>(gpr_zalloc(sizeof(plugin_get_metadata_params))) };
+    pParams->ptr = ptr;
+    pParams->context = context;
+    pParams->cb = cb;
+    pParams->user_data = user_data;
 
-  write(fd_obj->getFd(), &params, sizeof(plugin_get_metadata_params *));
+    write(fd_obj->getFd(), &pParams, sizeof(plugin_get_metadata_params *));
 }
-
 
 void plugin_destroy_state(void *ptr)
 {
     HHVM_TRACE_SCOPE("CallCredentials plugin_destroy_state") // Degug Trace
 
-  plugin_state *state = (plugin_state *)ptr;
-  gpr_free(state);
+    plugin_state* const pState{ reinterpret_cast<plugin_state *>(ptr) };
+    gpr_free(pState);
 }
 
 } // namespace HPHP
