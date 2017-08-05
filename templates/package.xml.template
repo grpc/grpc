@@ -12,7 +12,7 @@
     <email>grpc-packages@google.com</email>
     <active>yes</active>
    </lead>
-   <date>2017-05-22</date>
+   <date>2017-08-04</date>
    <time>16:06:07</time>
    <version>
     <release>${settings.php_version.php()}</release>
@@ -24,13 +24,8 @@
    </stability>
    <license>BSD</license>
    <notes>
-  - Fixed some memory leaks #9559, #10996
-  - Disabled cares dependency from gRPC C Core #10940
-  - De-coupled protobuf dependency #11112
-  - Fixed extension reported version #10842
-  - Added config.w32 for Windows support #8161
-  - Fixed PHP distrib test after cc files were added #11193
-  - Fixed protoc plugin comment escape bug #11025
+  - Fixed hang bug when fork() was used #11814
+  - Channel are now by default persistent #11878
    </notes>
    <contents>
     <dir baseinstalldir="/" name="/">
