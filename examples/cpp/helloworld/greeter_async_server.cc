@@ -16,8 +16,8 @@
  *
  */
 
-#include <memory>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <thread>
 
@@ -29,12 +29,12 @@
 using grpc::Server;
 using grpc::ServerAsyncResponseWriter;
 using grpc::ServerBuilder;
-using grpc::ServerContext;
 using grpc::ServerCompletionQueue;
+using grpc::ServerContext;
 using grpc::Status;
-using helloworld::HelloRequest;
-using helloworld::HelloReply;
 using helloworld::Greeter;
+using helloworld::HelloReply;
+using helloworld::HelloRequest;
 
 class ServerImpl final {
  public:
@@ -47,7 +47,6 @@ class ServerImpl final {
   // There is no shutdown handling in this code.
   void Run() {
     std::string server_address("0.0.0.0:50051");
-
     ServerBuilder builder;
     // Listen on the given address without any authentication mechanism.
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
@@ -60,7 +59,6 @@ class ServerImpl final {
     // Finally assemble the server.
     server_ = builder.BuildAndStart();
     std::cout << "Server listening on " << server_address << std::endl;
-
     // Proceed to the server's main loop.
     HandleRpcs();
   }
@@ -153,7 +151,6 @@ class ServerImpl final {
       static_cast<CallData*>(tag)->Proceed();
     }
   }
-
   std::unique_ptr<ServerCompletionQueue> cq_;
   Greeter::AsyncService service_;
   std::unique_ptr<Server> server_;
@@ -162,6 +159,5 @@ class ServerImpl final {
 int main(int argc, char** argv) {
   ServerImpl server;
   server.Run();
-
   return 0;
 }
