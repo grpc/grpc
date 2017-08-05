@@ -33,7 +33,7 @@
 
 #include "channel_credentials.h"
 #include "call_credentials.h"
-#include "utility.h"
+#include "common.h"
 
 namespace HPHP {
 

@@ -29,7 +29,7 @@
 #include <grpc/grpc_security.h>
 
 #include "server_credentials.h"
-#include "utility.h"
+#include "common.h"
 
 namespace HPHP {
 

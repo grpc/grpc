@@ -25,7 +25,7 @@
     #include "config.h"
 #endif
 
-#include "utility.h"
+#include "slice.h"
 
 #include "hphp/runtime/ext/extension.h"
 

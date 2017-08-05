@@ -23,6 +23,7 @@
 #endif
 
 #include "completion_queue.h"
+#include "common.h"
 
 #include "hphp/runtime/ext/extension.h"
 
@@ -43,7 +44,7 @@ CompletionQueue::~CompletionQueue(void)
 CompletionQueue& CompletionQueue::getClientQueue(void)
 {
     // Each client gets a completion queue for the thread it is runnin in
-    thread_local CompletionQueue s_CompletionQueue;
+    thread_local CompletionQueue s_CompletionQueue{};
     return s_CompletionQueue;
 }
 

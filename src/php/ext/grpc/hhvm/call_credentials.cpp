@@ -41,7 +41,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 
-#include "utility.h"
+#include "common.h"
 
 namespace HPHP {
 

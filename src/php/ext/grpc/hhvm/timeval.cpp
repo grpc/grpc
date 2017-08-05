@@ -22,7 +22,7 @@
 
 #include "timeval.h"
 
-#include "utility.h"
+#include "common.h"
 
 #include "hphp/runtime/ext/extension.h"
 #include "hphp/runtime/vm/native-data.h"

@@ -24,11 +24,12 @@
 #endif
 
 #include "channel.h"
+#include "common.h"
 #include "completion_queue.h"
 #include "channel_credentials.h"
 #include "server.h"
 #include "timeval.h"
-#include "utility.h"
+#include "slice.h"
 
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"

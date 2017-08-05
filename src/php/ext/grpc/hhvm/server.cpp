@@ -26,9 +26,9 @@
 #include "call.h"
 #include "channel.h"
 #include "completion_queue.h"
+#include "common.h"
 #include "server_credentials.h"
 #include "timeval.h"
-#include "utility.h"
 
 #include "grpc/grpc_security.h"
 

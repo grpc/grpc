@@ -28,6 +28,7 @@
 #include "call.h"
 #include "call_credentials.h"
 #include "channel.h"
+#include "common.h"
 #include "completion_queue.h"
 #include "timeval.h"
 
@@ -134,6 +135,7 @@ bool MetadataArray::init(const Array& phpArray, const bool ownPHP)
 
     // create metadata array
     size_t elem{ 0 };
+    m_PHPData.resize(count);
     for (ArrayIter iter(phpArray); iter; ++iter)
     {
         Variant key{ iter.first() };
@@ -145,10 +147,10 @@ bool MetadataArray::init(const Array& phpArray, const bool ownPHP)
 
             Slice keySlice{ key.toString().c_str() };
             Slice valueSlice{ value2.toString().c_str() };
-            m_PHPData.emplace_back(keySlice, valueSlice);
+            m_PHPData[elem] = std::move(std::make_pair(keySlice, valueSlice));
 
-            m_Array.metadata[elem].key = m_PHPData.back().first.slice();
-            m_Array.metadata[elem].value = m_PHPData.back().second.slice();
+            m_Array.metadata[elem].key = m_PHPData[elem].first.slice();
+            m_Array.metadata[elem].value = m_PHPData[elem].second.slice();
         }
     }
     m_Array.count = count;
@@ -241,25 +243,53 @@ void HHVM_METHOD(Call, __construct,
     CallData* const pCallData{ Native::data<CallData>(this_) };
     ChannelData* const pChannelData{ Native::data<ChannelData>(channel_obj) };
 
+#ifdef HHVM_TRACE_DEBUG_DETAILED
+    std::cout << "CallObjet " << pCallData << " ChannelObject" << pChannelData << std::endl;
+#endif
+
+
     if (pChannelData->channel() == nullptr) {
         SystemLib::throwBadMethodCallExceptionObject("Call cannot be constructed from a closed Channel");
         return;
     }
-
     pCallData->setChannelData(pChannelData);
 
     TimevalData* const pDeadlineTimevalData{ Native::data<TimevalData>(deadline_obj) };
     pCallData->setTimeout(gpr_time_to_millis(gpr_convert_clock_type(pDeadlineTimevalData->time(),
                                              GPR_TIMESPAN)));
 
-    const Slice method_slice{ !method.empty() ? method.c_str() : "" };
-    const Slice host_slice{  !host_override.isNull() ? host_override.toString().c_str() : "" };
-    pCallData->init(grpc_channel_create_call(pChannelData->channel(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                                             CompletionQueue::getClientQueue().queue(),
-                                             method_slice.slice(),
-                                             !host_override.isNull() ? &host_slice.slice() : nullptr,
-                                             pDeadlineTimevalData->time(), nullptr));
+    //const Slice method_slice{ !method.empty() ? method.c_str() : nullptr };
+   // const Slice host_slice{  (!host_override.isNull() && host_override.isString()) ?
+     //                         host_override.toString().c_str() : nullptr };
 
+#ifdef HHVM_TRACE_DEBUG_DETAILED
+   // std::cout << "Method " << method_slice.data() << " Host " << host_slice.data()
+   //           << std::endl;
+#endif
+
+    Slice method_slice{ !method.empty() ? method.c_str() : nullptr };
+    Slice host_slice{ !host_override.isNull() && host_override.isString() ?
+                       host_override.toString().c_str() : nullptr };
+
+    grpc_call* const pCall{ grpc_channel_create_call(pChannelData->channel(),
+                                                     nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                                     CompletionQueue::getClientQueue().queue(),
+                                                     method_slice.slice(),
+                                                     host_slice.empty() ? &host_slice.slice() : nullptr,
+                                                     pDeadlineTimevalData->time(), nullptr) };
+
+    if (!pCall)
+    {
+        SystemLib::throwBadMethodCallExceptionObject("failed to create call");
+        return;
+    }
+
+#ifdef HHVM_TRACE_DEBUG_DETAILED
+ //   std::cout << "Method " << method_slice.data() << " Host " << host_slice.data()
+   //           << " Call " << pCall << std::endl;
+#endif
+
+    pCallData->init(pCall);
     pCallData->setOwned(true);
 
     return;
