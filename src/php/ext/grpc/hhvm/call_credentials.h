@@ -19,6 +19,8 @@
 #ifndef NET_GRPC_HHVM_GRPC_CALL_CREDENTIALS_H_
 #define NET_GRPC_HHVM_GRPC_CALL_CREDENTIALS_H_
 
+#include <future>
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -30,9 +32,26 @@
 
 namespace HPHP {
 
+typedef struct plugin_get_metadata_params
+{
+    void *ptr;
+    grpc_auth_metadata_context context;
+    grpc_credentials_plugin_metadata_cb cb;
+    void *user_data;
+} plugin_get_metadata_params;
+
+typedef std::promise<plugin_get_metadata_params*> MetadataPromise;
+
+typedef struct plugin_state
+{
+    Variant callback;
+    MetadataPromise* pMetadataPromise;
+} plugin_state;
+
 class CallCredentialsData {
   private:
     grpc_call_credentials* wrapped{nullptr};
+    MetadataPromise* m_pMetadataPromise;
   public:
     static Class* s_class;
     static const StaticString s_className;
@@ -43,43 +62,22 @@ class CallCredentialsData {
     ~CallCredentialsData();
 
     void init(grpc_call_credentials* call_credentials);
+    void setPromise(MetadataPromise* const pMetadataPromise) { m_pMetadataPromise = pMetadataPromise; }
+    MetadataPromise* const getPromise(void) { return m_pMetadataPromise; }
     void sweep();
     grpc_call_credentials* getWrapped();
 };
 
-struct PluginGetMetadataFd {
-  PluginGetMetadataFd();
-  void setFd(int fd_);
-  int getFd();
-
-  int fd;
-
-  static DECLARE_THREAD_LOCAL(PluginGetMetadataFd, tl_obj);
-};
-
-typedef struct plugin_get_metadata_params
-{
-    void *ptr;
-    grpc_auth_metadata_context context;
-    grpc_credentials_plugin_metadata_cb cb;
-    void *user_data;
-} plugin_get_metadata_params;
-
-typedef struct plugin_state {
-    Variant callback;
-    PluginGetMetadataFd *fd_obj;
-} plugin_state;
-
 Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
-  const Object& cred1_obj,
-  const Object& cred2_obj);
+                          const Object& cred1_obj,
+                          const Object& cred2_obj);
 
 Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
-  const Variant& callback);
+                          const Variant& callback);
 
 void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
-                          grpc_credentials_plugin_metadata_cb cb,
-                         void *user_data);
+                            grpc_credentials_plugin_metadata_cb cb,
+                            void *user_data);
 void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
                          grpc_credentials_plugin_metadata_cb cb,
                          void *user_data);

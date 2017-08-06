@@ -40,7 +40,7 @@ const StaticString CallCredentialsData::s_className("Grpc\\CallCredentials");
 
 IMPLEMENT_GET_CLASS(CallCredentialsData);
 
-CallCredentialsData::CallCredentialsData() {}
+CallCredentialsData::CallCredentialsData() : m_pMetadataPromise{ nullptr } {}
 CallCredentialsData::~CallCredentialsData() { sweep(); }
 
 void CallCredentialsData::init(grpc_call_credentials* call_credentials) {
@@ -57,12 +57,6 @@ void CallCredentialsData::sweep() {
 grpc_call_credentials* CallCredentialsData::getWrapped() {
   return wrapped;
 }
-
-IMPLEMENT_THREAD_LOCAL(PluginGetMetadataFd, PluginGetMetadataFd::tl_obj);
-
-PluginGetMetadataFd::PluginGetMetadataFd() {}
-void PluginGetMetadataFd::setFd(int fd_) { fd = fd_; }
-int PluginGetMetadataFd::getFd() { return fd; }
 
 /**
  * Create composite credentials from two existing credentials.
@@ -106,9 +100,14 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
         SystemLib::throwInvalidArgumentExceptionObject("Callback argument is not a valid callback");
     }
 
+    Object newCallCredentialsObj{ CallCredentialsData::getClass() };
+    CallCredentialsData* const pNewCallCredentialsData{ Native::data<CallCredentialsData>(newCallCredentialsObj) };
+
     plugin_state *pState{ reinterpret_cast<plugin_state*>(gpr_zalloc(sizeof(plugin_state))) };
     pState->callback = callback;
-    pState->fd_obj = PluginGetMetadataFd::tl_obj.get();
+    pState->pMetadataPromise = pNewCallCredentialsData->getPromise();
+    //pNewCallCredentialsData->getPromise()->set_value(nullptr);
+    std::cout << pNewCallCredentialsData->getPromise() << std::endl;
 
     grpc_metadata_credentials_plugin plugin;
     plugin.get_metadata = plugin_get_metadata;
@@ -116,8 +115,6 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
     plugin.state = reinterpret_cast<void *>(pState);
     plugin.type = "";
 
-    Object newCallCredentialsObj{ CallCredentialsData::getClass() };
-    CallCredentialsData* const pNewCallCredentialsData{ Native::data<CallCredentialsData>(newCallCredentialsObj) };
     grpc_call_credentials* pCallCredentials{ grpc_metadata_credentials_create_from_plugin(plugin, nullptr) };
 
     if (!pCallCredentials)
@@ -166,7 +163,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
     HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata") // Degug Trace
 
     plugin_state *pState{ reinterpret_cast<plugin_state *>(ptr) };
-    PluginGetMetadataFd *fd_obj = pState->fd_obj;
+    MetadataPromise* const pMetadataPromise = pState->pMetadataPromise;
 
     plugin_get_metadata_params *pParams{ reinterpret_cast<plugin_get_metadata_params *>(gpr_zalloc(sizeof(plugin_get_metadata_params))) };
     pParams->ptr = ptr;
@@ -174,7 +171,10 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
     pParams->cb = cb;
     pParams->user_data = user_data;
 
-    write(fd_obj->getFd(), &pParams, sizeof(plugin_get_metadata_params *));
+    // return the meta data params in the promise
+    //pMetadataPromise->set_value(pParams
+
+    plugin_do_get_metadata(pParams->ptr, pParams->context, pParams->cb, pParams->user_data);
 }
 
 void plugin_destroy_state(void *ptr)

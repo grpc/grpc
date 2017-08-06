@@ -88,6 +88,7 @@ MetadataArray::MetadataArray(const bool ownPHP) : m_OwnPHP{ ownPHP },
     m_PHPData{}
 {
     grpc_metadata_array_init(&m_Array);
+    resizeMetadata(1);
 }
 
 MetadataArray::~MetadataArray(void)
@@ -103,6 +104,7 @@ bool MetadataArray::init(const Array& phpArray, const bool ownPHP)
     // destroy/free any PHP data
     m_OwnPHP ? destroyPHP() : freePHP();
     m_OwnPHP = ownPHP;
+    m_Array.count = 0;
 
     // precheck validity of data
     size_t count{ 0 };
@@ -243,11 +245,6 @@ void HHVM_METHOD(Call, __construct,
     CallData* const pCallData{ Native::data<CallData>(this_) };
     ChannelData* const pChannelData{ Native::data<ChannelData>(channel_obj) };
 
-#ifdef HHVM_TRACE_DEBUG_DETAILED
-    std::cout << "CallObjet " << pCallData << " ChannelObject" << pChannelData << std::endl;
-#endif
-
-
     if (pChannelData->channel() == nullptr) {
         SystemLib::throwBadMethodCallExceptionObject("Call cannot be constructed from a closed Channel");
         return;
@@ -257,15 +254,6 @@ void HHVM_METHOD(Call, __construct,
     TimevalData* const pDeadlineTimevalData{ Native::data<TimevalData>(deadline_obj) };
     pCallData->setTimeout(gpr_time_to_millis(gpr_convert_clock_type(pDeadlineTimevalData->time(),
                                              GPR_TIMESPAN)));
-
-    //const Slice method_slice{ !method.empty() ? method.c_str() : nullptr };
-   // const Slice host_slice{  (!host_override.isNull() && host_override.isString()) ?
-     //                         host_override.toString().c_str() : nullptr };
-
-#ifdef HHVM_TRACE_DEBUG_DETAILED
-   // std::cout << "Method " << method_slice.data() << " Host " << host_slice.data()
-   //           << std::endl;
-#endif
 
     Slice method_slice{ !method.empty() ? method.c_str() : nullptr };
     Slice host_slice{ !host_override.isNull() && host_override.isString() ?
@@ -283,11 +271,6 @@ void HHVM_METHOD(Call, __construct,
         SystemLib::throwBadMethodCallExceptionObject("failed to create call");
         return;
     }
-
-#ifdef HHVM_TRACE_DEBUG_DETAILED
- //   std::cout << "Method " << method_slice.data() << " Host " << host_slice.data()
-   //           << " Call " << pCall << std::endl;
-#endif
 
     pCallData->init(pCall);
     pCallData->setOwned(true);
@@ -379,6 +362,7 @@ Object HHVM_METHOD(Call, startBatch,
         }
 
         int32_t index{ key.toInt32() };
+        ops[op_num].flags = 0;
         switch(index)
         {
         case GRPC_OP_SEND_INITIAL_METADATA:
@@ -518,7 +502,6 @@ Object HHVM_METHOD(Call, startBatch,
         }
 
         ops[op_num].op = static_cast<grpc_op_type>(index);
-        ops[op_num].flags = 0;
         ops[op_num].reserved = nullptr;
     }
 
@@ -547,7 +530,11 @@ Object HHVM_METHOD(Call, startBatch,
     // TODO: See if this is necessary and if so use condition variable
     if (sending_initial_metadata)
     {
+  //      auto metadataFuture = pCallData->getPromise().get_future();
+  //      metadataFuture.wait();
     }
+
+    std::this_thread::sleep_for(std::chrono::seconds(2));
 
     grpc_event event( grpc_completion_queue_pluck(CompletionQueue::getClientQueue().queue(),
                                                   pCallData->call(),
@@ -560,6 +547,8 @@ Object HHVM_METHOD(Call, startBatch,
         SystemLib::throwBadMethodCallExceptionObject(oSS.str());
         return resultObj;
     }
+
+
 
     // process results of call
     for (size_t i{ 0 }; i < op_num; ++i)

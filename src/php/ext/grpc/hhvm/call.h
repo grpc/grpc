@@ -20,11 +20,13 @@
 #define NET_GRPC_HHVM_GRPC_CALL_H_
 
 #include <cstdint>
+#include <future>
 
 #ifdef HAVE_CONFIG_H
     #include "config.h"
 #endif
 
+#include "call_credentials.h"
 #include "slice.h"
 
 #include "hphp/runtime/ext/extension.h"
@@ -61,7 +63,7 @@ public:
     void setCredentialed(const bool credentialed = true) { m_Credentialed = credentialed; }
     void setTimeout(const int32_t timeout) { m_Timeout = timeout; }
     int32_t getTimeout(void) const { return m_Timeout; }
-
+    MetadataPromise& getPromise(void) { return m_MetadataPromise; }
     static Class* const getClass(void);
     static const StaticString& className(void) { return s_ClassName; }
 
@@ -75,6 +77,7 @@ private:
     bool m_Credentialed;
     ChannelData* m_ChannelData;
     int32_t m_Timeout;
+    MetadataPromise m_MetadataPromise;
     static Class* s_Class;
     static const StaticString s_ClassName;
 };
