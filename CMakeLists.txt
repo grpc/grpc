@@ -1132,7 +1132,6 @@ add_library(grpc
   src/core/tsi/fake_transport_security.c
   src/core/tsi/gts_transport_security.c
   src/core/tsi/ssl_transport_security.c
-  src/core/tsi/transport_security_grpc.c
   src/core/tsi/transport_security.c
   src/core/tsi/transport_security_adapter.c
   src/core/ext/transport/chttp2/server/chttp2_server.c
@@ -1504,7 +1503,6 @@ add_library(grpc_cronet
   src/core/tsi/fake_transport_security.c
   src/core/tsi/gts_transport_security.c
   src/core/tsi/ssl_transport_security.c
-  src/core/tsi/transport_security_grpc.c
   src/core/tsi/transport_security.c
   src/core/tsi/transport_security_adapter.c
   src/core/ext/transport/chttp2/client/chttp2_connector.c
