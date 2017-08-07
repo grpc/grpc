@@ -146,9 +146,9 @@ bool MetadataArray::init(const Array& phpArray, const bool ownPHP)
         for (ArrayIter iter2(innerArray); iter2; ++iter2, ++elem)
         {
             Variant value2{ iter2.second() };
-
+            String value2Str{ value2.toString() };
             Slice keySlice{ key.toString().c_str() };
-            Slice valueSlice{ value2.toString().c_str() };
+            Slice valueSlice{ value2Str.c_str(), static_cast<size_t>(value2Str.size()) };
             m_PHPData[elem] = std::move(std::make_pair(keySlice, valueSlice));
 
             m_Array.metadata[elem].key = m_PHPData[elem].first.slice();
@@ -168,10 +168,32 @@ Variant MetadataArray::phpData(void) const
     {
         const grpc_metadata& element(m_Array.metadata[elem]);
 
-        String key{ reinterpret_cast<const char* const>(GRPC_SLICE_START_PTR(element.key)),
-                          GRPC_SLICE_LENGTH(element.key), CopyString };
-        String value{ reinterpret_cast<const char* const>(GRPC_SLICE_START_PTR(element.value)),
-                            GRPC_SLICE_LENGTH(element.value), CopyString };
+        class CopySlice
+        {
+        public:
+            CopySlice(const gpr_slice& slice) : m_Length{ GRPC_SLICE_LENGTH(slice) },
+                m_pSlice{ reinterpret_cast<char*>(req::calloc(m_Length + 1, sizeof(char))) }
+            {
+                std::memcpy(m_pSlice, GRPC_SLICE_START_PTR(slice), m_Length);
+            }
+            ~CopySlice(void)
+            {
+                if (m_pSlice)
+                {
+                    req::free(m_pSlice);
+                    m_pSlice = nullptr;
+                }
+            }
+            const char* const slice(void) const { return m_pSlice; }
+            size_t length(void) const { return m_Length; }
+        private:
+            size_t m_Length;
+            char* m_pSlice;
+        };
+        CopySlice keySlice{ element.key };
+        CopySlice valueSlice{ element.value };
+        String key{ keySlice.slice(), keySlice.length(), CopyString };
+        String value{ valueSlice.slice(), valueSlice.length(), CopyString };
 
         if (!phpArray.exists(key, true))
         {
@@ -245,7 +267,8 @@ void HHVM_METHOD(Call, __construct,
     CallData* const pCallData{ Native::data<CallData>(this_) };
     ChannelData* const pChannelData{ Native::data<ChannelData>(channel_obj) };
 
-    if (pChannelData->channel() == nullptr) {
+    if (pChannelData->channel() == nullptr)
+    {
         SystemLib::throwBadMethodCallExceptionObject("Call cannot be constructed from a closed Channel");
         return;
     }
@@ -344,7 +367,7 @@ Object HHVM_METHOD(Call, startBatch,
     OpsManaged opsManaged{};
 
     // clear any existing ops data and recycle managed data
-    memset(ops.data(), 0, sizeof(grpc_op) * maxActions);
+    std::memset(ops.data(), 0, sizeof(grpc_op) * maxActions);
     //opsManaged.recycle();
 
     CallData* const pCallData{ Native::data<CallData>(this_) };
@@ -414,7 +437,8 @@ Object HHVM_METHOD(Call, startBatch,
                 }
                 // convert string to byte buffer and store message in managed data
                 String messageValueString{ messageValue.toString() };
-                const Slice send_message{ messageValueString.c_str(), static_cast<size_t>(messageValueString.size()) };
+                const Slice send_message{ messageValueString.c_str(),
+                                          static_cast<size_t>(messageValueString.size()) };
                 opsManaged.send_message = send_message.byteBuffer();
                 ops[op_num].data.send_message.send_message = opsManaged.send_message;
             }
@@ -534,7 +558,7 @@ Object HHVM_METHOD(Call, startBatch,
   //      metadataFuture.wait();
     }
 
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+    //std::this_thread::sleep_for(std::chrono::seconds(2));
 
     grpc_event event( grpc_completion_queue_pluck(CompletionQueue::getClientQueue().queue(),
                                                   pCallData->call(),

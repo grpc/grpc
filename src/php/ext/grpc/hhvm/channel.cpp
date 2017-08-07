@@ -119,7 +119,7 @@ bool ChannelArgs::init(const Array& argsArray)
                 destroyArgs();
                 return false;
             }
-            m_ChannelArgs.args[count].key = const_cast<char*>(key.getStringData()->data());
+            m_ChannelArgs.args[count].key = const_cast<char*>(key.toString().c_str());
             std::cout << "Count: " << count << " - Key: " << m_ChannelArgs.args[count].key;
 
             Variant value{ iter.second() };
@@ -133,7 +133,7 @@ bool ChannelArgs::init(const Array& argsArray)
                 }
                 else if (value.isString())
                 {
-                    m_ChannelArgs.args[count].value.string = const_cast<char*>(value.getStringData()->data());
+                    m_ChannelArgs.args[count].value.string = const_cast<char*>(value.toString().c_str());
                     m_ChannelArgs.args[count].type = GRPC_ARG_STRING;
                     std::cout << " Value: " << m_ChannelArgs.args[count].value.string << std::endl;
                 }
