@@ -66,11 +66,8 @@ static void adapter_result_destroy(tsi_handshaker_result *self) {
 }
 
 static const tsi_handshaker_result_vtable result_vtable = {
-    adapter_result_extract_peer,
-    NULL, /* create_zero_copy_grpc_protector */
-    adapter_result_create_frame_protector,
-    adapter_result_get_unused_bytes,
-    adapter_result_destroy,
+    adapter_result_extract_peer, adapter_result_create_frame_protector,
+    adapter_result_get_unused_bytes, adapter_result_destroy,
 };
 
 /* Ownership of wrapped tsi_handshaker is transferred to the result object.  */
