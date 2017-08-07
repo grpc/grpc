@@ -147,7 +147,7 @@ static void on_peer_checked(grpc_exec_ctx *exec_ctx, void *arg,
     goto done;
   }
   // Get unused bytes.
-  unsigned char *unused_bytes = NULL;
+  const unsigned char *unused_bytes = NULL;
   size_t unused_bytes_size = 0;
   result = tsi_handshaker_result_get_unused_bytes(
       h->handshaker_result, &unused_bytes, &unused_bytes_size);

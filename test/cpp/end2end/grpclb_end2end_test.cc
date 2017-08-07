@@ -215,7 +215,8 @@ class BalancerServiceImpl : public BalancerService {
     {
       std::unique_lock<std::mutex> lock(mu_);
       if (shutdown_) goto done;
-      serverlist_cond_.wait(lock);
+      serverlist_cond_.wait(lock, [this] { return serverlist_ready_; });
+      serverlist_ready_ = false;
     }
 
     if (client_load_reporting_interval_seconds_ > 0) {
@@ -242,6 +243,7 @@ class BalancerServiceImpl : public BalancerService {
             .drop_token_counts[drop_token_count.load_balance_token()] +=
             drop_token_count.num_calls();
       }
+      load_report_ready_ = true;
       load_report_cond_.notify_one();
     }
   done:
@@ -285,12 +287,14 @@ class BalancerServiceImpl : public BalancerService {
 
   const ClientStats& WaitForLoadReport() {
     std::unique_lock<std::mutex> lock(mu_);
-    load_report_cond_.wait(lock);
+    load_report_cond_.wait(lock, [this] { return load_report_ready_; });
+    load_report_ready_ = false;
     return client_stats_;
   }
 
   void NotifyDoneWithServerlists() {
     std::lock_guard<std::mutex> lock(mu_);
+    serverlist_ready_ = true;
     serverlist_cond_.notify_one();
   }
 
@@ -313,7 +317,9 @@ class BalancerServiceImpl : public BalancerService {
   std::vector<ResponseDelayPair> responses_and_delays_;
   std::mutex mu_;
   std::condition_variable load_report_cond_;
+  bool load_report_ready_ = false;
   std::condition_variable serverlist_cond_;
+  bool serverlist_ready_ = false;
   ClientStats client_stats_;
   bool shutdown_;
 };

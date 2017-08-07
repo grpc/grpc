@@ -240,7 +240,7 @@ tsi_result tsi_handshaker_result_create_frame_protector(
 }
 
 tsi_result tsi_handshaker_result_get_unused_bytes(
-    const tsi_handshaker_result *self, unsigned char **bytes,
+    const tsi_handshaker_result *self, const unsigned char **bytes,
     size_t *bytes_size) {
   if (self == NULL || bytes == NULL || bytes_size == NULL) {
     return TSI_INVALID_ARGUMENT;

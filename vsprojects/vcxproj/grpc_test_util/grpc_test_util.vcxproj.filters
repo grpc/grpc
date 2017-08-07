@@ -31,6 +31,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.c">
       <Filter>test\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\tsi\transport_security_test_lib.c">
+      <Filter>test\core\tsi</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\debugger_macros.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
@@ -149,6 +152,15 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\executor.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\gethostname_fallback.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\gethostname_host_name_max.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\gethostname_sysconf.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iocp_windows.c">
@@ -514,6 +526,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\chttp2_transport.c">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\flow_control.c">
+      <Filter>src\core\ext\transport\chttp2\transport</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_data.c">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClCompile>
@@ -580,6 +595,96 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\server\http_server_filter.c">
       <Filter>src\core\ext\filters\http\server</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\gts_transport_security.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security_grpc.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security_adapter.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\httpcli_security_connector.c">
+      <Filter>src\core\lib\http</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\context\security_context.c">
+      <Filter>src\core\lib\security\context</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\composite\composite_credentials.c">
+      <Filter>src\core\lib\security\credentials\composite</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\credentials.c">
+      <Filter>src\core\lib\security\credentials</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\credentials_metadata.c">
+      <Filter>src\core\lib\security\credentials</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\fake\fake_credentials.c">
+      <Filter>src\core\lib\security\credentials\fake</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\credentials_generic.c">
+      <Filter>src\core\lib\security\credentials\google_default</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\google_default_credentials.c">
+      <Filter>src\core\lib\security\credentials\google_default</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\iam\iam_credentials.c">
+      <Filter>src\core\lib\security\credentials\iam</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\jwt\json_token.c">
+      <Filter>src\core\lib\security\credentials\jwt</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\jwt\jwt_credentials.c">
+      <Filter>src\core\lib\security\credentials\jwt</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\jwt\jwt_verifier.c">
+      <Filter>src\core\lib\security\credentials\jwt</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\oauth2\oauth2_credentials.c">
+      <Filter>src\core\lib\security\credentials\oauth2</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\plugin\plugin_credentials.c">
+      <Filter>src\core\lib\security\credentials\plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\ssl\ssl_credentials.c">
+      <Filter>src\core\lib\security\credentials\ssl</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\client_auth_filter.c">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\lb_targets_info.c">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\secure_endpoint.c">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\security_connector.c">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\security_handshaker.c">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\server_auth_filter.c">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\tsi_error.c">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\util\json_util.c">
+      <Filter>src\core\lib\security\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init_secure.c">
+      <Filter>src\core\lib\surface</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h">
@@ -639,6 +744,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\data\ssl_test_data.h">
@@ -661,6 +769,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.h">
       <Filter>test\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\tsi\transport_security_test_lib.h">
+      <Filter>test\core\tsi</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\debugger_macros.h">
       <Filter>test\core\util</Filter>
@@ -818,6 +929,87 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\server\http_server_filter.h">
       <Filter>src\core\ext\filters\http\server</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\gts_transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_types.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_grpc.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_adapter.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_interface.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\context\security_context.h">
+      <Filter>src\core\lib\security\context</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\composite\composite_credentials.h">
+      <Filter>src\core\lib\security\credentials\composite</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\credentials.h">
+      <Filter>src\core\lib\security\credentials</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\fake\fake_credentials.h">
+      <Filter>src\core\lib\security\credentials\fake</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\google_default_credentials.h">
+      <Filter>src\core\lib\security\credentials\google_default</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\iam\iam_credentials.h">
+      <Filter>src\core\lib\security\credentials\iam</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\jwt\json_token.h">
+      <Filter>src\core\lib\security\credentials\jwt</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\jwt\jwt_credentials.h">
+      <Filter>src\core\lib\security\credentials\jwt</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\jwt\jwt_verifier.h">
+      <Filter>src\core\lib\security\credentials\jwt</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\oauth2\oauth2_credentials.h">
+      <Filter>src\core\lib\security\credentials\oauth2</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\plugin\plugin_credentials.h">
+      <Filter>src\core\lib\security\credentials\plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\ssl\ssl_credentials.h">
+      <Filter>src\core\lib\security\credentials\ssl</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\auth_filters.h">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\lb_targets_info.h">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\secure_endpoint.h">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\security_connector.h">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\security_handshaker.h">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\tsi_error.h">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\util\json_util.h">
+      <Filter>src\core\lib\security\util</Filter>
+    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
@@ -902,6 +1094,45 @@
     <Filter Include="src\core\lib\json">
       <UniqueIdentifier>{89bc8f83-e29a-ddab-8f6b-22df11cdc867}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\lib\security">
+      <UniqueIdentifier>{83d9c8a0-c579-769e-e2df-270c67b8c159}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\lib\security\context">
+      <UniqueIdentifier>{eb1c856a-fc9c-b68e-6962-2477ea8b574b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\lib\security\credentials">
+      <UniqueIdentifier>{ba296acd-dba6-d775-a78b-8e2ee409b803}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\lib\security\credentials\composite">
+      <UniqueIdentifier>{6180bfaa-2d0e-00ef-b01c-f9495593d82a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\lib\security\credentials\fake">
+      <UniqueIdentifier>{cae494e1-0765-419a-848c-07a695903ea5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\lib\security\credentials\google_default">
+      <UniqueIdentifier>{a2f2f9ce-5326-307b-333b-ab72b536788e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\lib\security\credentials\iam">
+      <UniqueIdentifier>{8e79277a-11d8-5285-eab6-1cd8ebcd5ccc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\lib\security\credentials\jwt">
+      <UniqueIdentifier>{64ed3bb3-aa1f-b6a8-574e-8e5520b04d69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\lib\security\credentials\oauth2">
+      <UniqueIdentifier>{4cf6ff50-deeb-cc32-df3e-6f6bef54a774}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\lib\security\credentials\plugin">
+      <UniqueIdentifier>{a946d93f-f6df-a4bd-711b-66cdb2bdc460}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\lib\security\credentials\ssl">
+      <UniqueIdentifier>{09db152c-07ee-fa61-e655-4cb4e508be2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\lib\security\transport">
+      <UniqueIdentifier>{a5af8111-59bd-3f18-af23-ed2004886147}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\lib\security\util">
+      <UniqueIdentifier>{d55417ff-35a3-ef69-80c4-e6a95673728b}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\lib\slice">
       <UniqueIdentifier>{4d172bbc-20c4-6e7d-872a-2d287b589aa0}</UniqueIdentifier>
     </Filter>
@@ -910,6 +1141,9 @@
     </Filter>
     <Filter Include="src\core\lib\transport">
       <UniqueIdentifier>{5249e884-ea07-6782-531d-ec622c54b9af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\tsi">
+      <UniqueIdentifier>{09aaa048-3f1f-c311-3bd5-9052e9cf6401}</UniqueIdentifier>
     </Filter>
     <Filter Include="test">
       <UniqueIdentifier>{a2783de3-4fcf-718d-a859-c2108350ff33}</UniqueIdentifier>
@@ -931,6 +1165,9 @@
     </Filter>
     <Filter Include="test\core\security">
       <UniqueIdentifier>{b0938b31-f9d5-21d7-de41-08107caafd80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\tsi">
+      <UniqueIdentifier>{672e1ca3-9245-c4a0-b99a-82f64a66f8ec}</UniqueIdentifier>
     </Filter>
     <Filter Include="test\core\util">
       <UniqueIdentifier>{6e9f8de1-258c-578f-aa3d-7da9320a3171}</UniqueIdentifier>

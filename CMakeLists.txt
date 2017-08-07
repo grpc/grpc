@@ -419,6 +419,9 @@ add_dependencies(buildtests_c ev_epollsig_linux_test)
 endif()
 add_dependencies(buildtests_c fake_resolver_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c fake_transport_security_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c fd_conservation_posix_test)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -527,6 +530,9 @@ add_dependencies(buildtests_c sockaddr_resolver_test)
 add_dependencies(buildtests_c sockaddr_utils_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c socket_utils_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c ssl_transport_security_test)
 endif()
 add_dependencies(buildtests_c status_conversion_test)
 add_dependencies(buildtests_c stream_compression_test)
@@ -978,6 +984,9 @@ add_library(grpc
   src/core/lib/iomgr/ev_windows.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
+  src/core/lib/iomgr/gethostname_fallback.c
+  src/core/lib/iomgr/gethostname_host_name_max.c
+  src/core/lib/iomgr/gethostname_sysconf.c
   src/core/lib/iomgr/iocp_windows.c
   src/core/lib/iomgr/iomgr.c
   src/core/lib/iomgr/iomgr_posix.c
@@ -1079,6 +1088,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/bin_encoder.c
   src/core/ext/transport/chttp2/transport/chttp2_plugin.c
   src/core/ext/transport/chttp2/transport/chttp2_transport.c
+  src/core/ext/transport/chttp2/transport/flow_control.c
   src/core/ext/transport/chttp2/transport/frame_data.c
   src/core/ext/transport/chttp2/transport/frame_goaway.c
   src/core/ext/transport/chttp2/transport/frame_ping.c
@@ -1321,6 +1331,9 @@ add_library(grpc_cronet
   src/core/lib/iomgr/ev_windows.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
+  src/core/lib/iomgr/gethostname_fallback.c
+  src/core/lib/iomgr/gethostname_host_name_max.c
+  src/core/lib/iomgr/gethostname_sysconf.c
   src/core/lib/iomgr/iocp_windows.c
   src/core/lib/iomgr/iomgr.c
   src/core/lib/iomgr/iomgr_posix.c
@@ -1425,6 +1438,7 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/transport/bin_encoder.c
   src/core/ext/transport/chttp2/transport/chttp2_plugin.c
   src/core/ext/transport/chttp2/transport/chttp2_transport.c
+  src/core/ext/transport/chttp2/transport/flow_control.c
   src/core/ext/transport/chttp2/transport/frame_data.c
   src/core/ext/transport/chttp2/transport/frame_goaway.c
   src/core/ext/transport/chttp2/transport/frame_ping.c
@@ -1592,6 +1606,7 @@ add_library(grpc_test_util
   test/core/end2end/fixtures/http_proxy_fixture.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
+  test/core/tsi/transport_security_test_lib.c
   test/core/util/debugger_macros.c
   test/core/util/grpc_profiler.c
   test/core/util/memory_counters.c
@@ -1632,6 +1647,9 @@ add_library(grpc_test_util
   src/core/lib/iomgr/ev_windows.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
+  src/core/lib/iomgr/gethostname_fallback.c
+  src/core/lib/iomgr/gethostname_host_name_max.c
+  src/core/lib/iomgr/gethostname_sysconf.c
   src/core/lib/iomgr/iocp_windows.c
   src/core/lib/iomgr/iomgr.c
   src/core/lib/iomgr/iomgr_posix.c
@@ -1753,6 +1771,7 @@ add_library(grpc_test_util
   src/core/ext/transport/chttp2/transport/bin_encoder.c
   src/core/ext/transport/chttp2/transport/chttp2_plugin.c
   src/core/ext/transport/chttp2/transport/chttp2_transport.c
+  src/core/ext/transport/chttp2/transport/flow_control.c
   src/core/ext/transport/chttp2/transport/frame_data.c
   src/core/ext/transport/chttp2/transport/frame_goaway.c
   src/core/ext/transport/chttp2/transport/frame_ping.c
@@ -1775,6 +1794,36 @@ add_library(grpc_test_util
   src/core/ext/filters/http/http_filters_plugin.c
   src/core/ext/filters/http/message_compress/message_compress_filter.c
   src/core/ext/filters/http/server/http_server_filter.c
+  src/core/tsi/fake_transport_security.c
+  src/core/tsi/gts_transport_security.c
+  src/core/tsi/ssl_transport_security.c
+  src/core/tsi/transport_security_grpc.c
+  src/core/tsi/transport_security.c
+  src/core/tsi/transport_security_adapter.c
+  src/core/lib/http/httpcli_security_connector.c
+  src/core/lib/security/context/security_context.c
+  src/core/lib/security/credentials/composite/composite_credentials.c
+  src/core/lib/security/credentials/credentials.c
+  src/core/lib/security/credentials/credentials_metadata.c
+  src/core/lib/security/credentials/fake/fake_credentials.c
+  src/core/lib/security/credentials/google_default/credentials_generic.c
+  src/core/lib/security/credentials/google_default/google_default_credentials.c
+  src/core/lib/security/credentials/iam/iam_credentials.c
+  src/core/lib/security/credentials/jwt/json_token.c
+  src/core/lib/security/credentials/jwt/jwt_credentials.c
+  src/core/lib/security/credentials/jwt/jwt_verifier.c
+  src/core/lib/security/credentials/oauth2/oauth2_credentials.c
+  src/core/lib/security/credentials/plugin/plugin_credentials.c
+  src/core/lib/security/credentials/ssl/ssl_credentials.c
+  src/core/lib/security/transport/client_auth_filter.c
+  src/core/lib/security/transport/lb_targets_info.c
+  src/core/lib/security/transport/secure_endpoint.c
+  src/core/lib/security/transport/security_connector.c
+  src/core/lib/security/transport/security_handshaker.c
+  src/core/lib/security/transport/server_auth_filter.c
+  src/core/lib/security/transport/tsi_error.c
+  src/core/lib/security/util/json_util.c
+  src/core/lib/surface/init_secure.c
 )
 
 if(WIN32 AND MSVC)
@@ -1831,6 +1880,7 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
+  include/grpc/grpc_security.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -1848,6 +1898,7 @@ add_library(grpc_test_util_unsecure
   test/core/end2end/fixtures/http_proxy_fixture.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
+  test/core/tsi/transport_security_test_lib.c
   test/core/util/debugger_macros.c
   test/core/util/grpc_profiler.c
   test/core/util/memory_counters.c
@@ -1888,6 +1939,9 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/ev_windows.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
+  src/core/lib/iomgr/gethostname_fallback.c
+  src/core/lib/iomgr/gethostname_host_name_max.c
+  src/core/lib/iomgr/gethostname_sysconf.c
   src/core/lib/iomgr/iocp_windows.c
   src/core/lib/iomgr/iomgr.c
   src/core/lib/iomgr/iomgr_posix.c
@@ -2009,6 +2063,7 @@ add_library(grpc_test_util_unsecure
   src/core/ext/transport/chttp2/transport/bin_encoder.c
   src/core/ext/transport/chttp2/transport/chttp2_plugin.c
   src/core/ext/transport/chttp2/transport/chttp2_transport.c
+  src/core/ext/transport/chttp2/transport/flow_control.c
   src/core/ext/transport/chttp2/transport/frame_data.c
   src/core/ext/transport/chttp2/transport/frame_goaway.c
   src/core/ext/transport/chttp2/transport/frame_ping.c
@@ -2031,6 +2086,36 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/http/http_filters_plugin.c
   src/core/ext/filters/http/message_compress/message_compress_filter.c
   src/core/ext/filters/http/server/http_server_filter.c
+  src/core/tsi/fake_transport_security.c
+  src/core/tsi/gts_transport_security.c
+  src/core/tsi/ssl_transport_security.c
+  src/core/tsi/transport_security_grpc.c
+  src/core/tsi/transport_security.c
+  src/core/tsi/transport_security_adapter.c
+  src/core/lib/http/httpcli_security_connector.c
+  src/core/lib/security/context/security_context.c
+  src/core/lib/security/credentials/composite/composite_credentials.c
+  src/core/lib/security/credentials/credentials.c
+  src/core/lib/security/credentials/credentials_metadata.c
+  src/core/lib/security/credentials/fake/fake_credentials.c
+  src/core/lib/security/credentials/google_default/credentials_generic.c
+  src/core/lib/security/credentials/google_default/google_default_credentials.c
+  src/core/lib/security/credentials/iam/iam_credentials.c
+  src/core/lib/security/credentials/jwt/json_token.c
+  src/core/lib/security/credentials/jwt/jwt_credentials.c
+  src/core/lib/security/credentials/jwt/jwt_verifier.c
+  src/core/lib/security/credentials/oauth2/oauth2_credentials.c
+  src/core/lib/security/credentials/plugin/plugin_credentials.c
+  src/core/lib/security/credentials/ssl/ssl_credentials.c
+  src/core/lib/security/transport/client_auth_filter.c
+  src/core/lib/security/transport/lb_targets_info.c
+  src/core/lib/security/transport/secure_endpoint.c
+  src/core/lib/security/transport/security_connector.c
+  src/core/lib/security/transport/security_handshaker.c
+  src/core/lib/security/transport/server_auth_filter.c
+  src/core/lib/security/transport/tsi_error.c
+  src/core/lib/security/util/json_util.c
+  src/core/lib/surface/init_secure.c
 )
 
 if(WIN32 AND MSVC)
@@ -2087,6 +2172,7 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
+  include/grpc/grpc_security.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -2130,6 +2216,9 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/ev_windows.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
+  src/core/lib/iomgr/gethostname_fallback.c
+  src/core/lib/iomgr/gethostname_host_name_max.c
+  src/core/lib/iomgr/gethostname_sysconf.c
   src/core/lib/iomgr/iocp_windows.c
   src/core/lib/iomgr/iomgr.c
   src/core/lib/iomgr/iomgr_posix.c
@@ -2232,6 +2321,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/bin_encoder.c
   src/core/ext/transport/chttp2/transport/chttp2_plugin.c
   src/core/ext/transport/chttp2/transport/chttp2_transport.c
+  src/core/ext/transport/chttp2/transport/flow_control.c
   src/core/ext/transport/chttp2/transport/frame_data.c
   src/core/ext/transport/chttp2/transport/frame_goaway.c
   src/core/ext/transport/chttp2/transport/frame_ping.c
@@ -2774,6 +2864,7 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/transport/bin_encoder.c
   src/core/ext/transport/chttp2/transport/chttp2_plugin.c
   src/core/ext/transport/chttp2/transport/chttp2_transport.c
+  src/core/ext/transport/chttp2/transport/flow_control.c
   src/core/ext/transport/chttp2/transport/frame_data.c
   src/core/ext/transport/chttp2/transport/frame_goaway.c
   src/core/ext/transport/chttp2/transport/frame_ping.c
@@ -2821,6 +2912,9 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/ev_windows.c
   src/core/lib/iomgr/exec_ctx.c
   src/core/lib/iomgr/executor.c
+  src/core/lib/iomgr/gethostname_fallback.c
+  src/core/lib/iomgr/gethostname_host_name_max.c
+  src/core/lib/iomgr/gethostname_sysconf.c
   src/core/lib/iomgr/iocp_windows.c
   src/core/lib/iomgr/iomgr.c
   src/core/lib/iomgr/iomgr_posix.c
@@ -5905,6 +5999,39 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
+add_executable(fake_transport_security_test
+  test/core/tsi/fake_transport_security_test.c
+)
+
+
+target_include_directories(fake_transport_security_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(fake_transport_security_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  gpr_test_util
+  grpc_test_util
+  gpr
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
 add_executable(fd_conservation_posix_test
   test/core/iomgr/fd_conservation_posix_test.c
 )
@@ -8644,6 +8771,39 @@ target_link_libraries(socket_utils_test
   grpc_test_util
   grpc
   gpr_test_util
+  gpr
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+add_executable(ssl_transport_security_test
+  test/core/tsi/ssl_transport_security_test.c
+)
+
+
+target_include_directories(ssl_transport_security_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(ssl_transport_security_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  gpr_test_util
+  grpc_test_util
   gpr
 )
 

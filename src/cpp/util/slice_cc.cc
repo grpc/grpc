@@ -17,6 +17,7 @@
  */
 
 #include <grpc++/support/slice.h>
+#include <grpc/slice.h>
 
 namespace grpc {
 
@@ -42,5 +43,11 @@ Slice::Slice(const void* buf, size_t len, StaticSlice)
                                            len)) {}
 
 Slice::Slice(const Slice& other) : slice_(grpc_slice_ref(other.slice_)) {}
+
+Slice::Slice(void* buf, size_t len, void (*destroy)(void*), void* user_data)
+    : slice_(grpc_slice_new_with_user_data(buf, len, destroy, user_data)) {}
+
+Slice::Slice(void* buf, size_t len, void (*destroy)(void*, size_t))
+    : slice_(grpc_slice_new_with_len(buf, len, destroy)) {}
 
 }  // namespace grpc

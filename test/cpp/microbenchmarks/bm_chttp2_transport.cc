@@ -391,8 +391,9 @@ static void BM_TransportStreamSend(benchmark::State &state) {
       MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
         if (!state.KeepRunning()) return;
         // force outgoing window to be yuge
-        s.chttp2_stream()->outgoing_window_delta = 1024 * 1024 * 1024;
-        f.chttp2_transport()->outgoing_window = 1024 * 1024 * 1024;
+        s.chttp2_stream()->flow_control.remote_window_delta =
+            1024 * 1024 * 1024;
+        f.chttp2_transport()->flow_control.remote_window = 1024 * 1024 * 1024;
         grpc_slice_buffer_stream_init(&send_stream, &send_buffer, 0);
         reset_op();
         op.on_complete = c.get();
@@ -517,21 +518,22 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
   std::unique_ptr<Closure> drain_continue;
   grpc_slice recv_slice;
 
-  std::unique_ptr<Closure> c =
-      MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
-        if (!state.KeepRunning()) return;
-        // force outgoing window to be yuge
-        s.chttp2_stream()->incoming_window_delta = 1024 * 1024 * 1024;
-        f.chttp2_transport()->incoming_window = 1024 * 1024 * 1024;
-        received = 0;
-        reset_op();
-        op.on_complete = do_nothing.get();
-        op.recv_message = true;
-        op.payload->recv_message.recv_message = &recv_stream;
-        op.payload->recv_message.recv_message_ready = drain_start.get();
-        s.Op(&op);
-        f.PushInput(grpc_slice_ref(incoming_data));
-      });
+  std::unique_ptr<Closure> c = MakeClosure([&](grpc_exec_ctx *exec_ctx,
+                                               grpc_error *error) {
+    if (!state.KeepRunning()) return;
+    // force outgoing window to be yuge
+    s.chttp2_stream()->flow_control.local_window_delta = 1024 * 1024 * 1024;
+    s.chttp2_stream()->flow_control.announced_window_delta = 1024 * 1024 * 1024;
+    f.chttp2_transport()->flow_control.announced_window = 1024 * 1024 * 1024;
+    received = 0;
+    reset_op();
+    op.on_complete = do_nothing.get();
+    op.recv_message = true;
+    op.payload->recv_message.recv_message = &recv_stream;
+    op.payload->recv_message.recv_message_ready = drain_start.get();
+    s.Op(&op);
+    f.PushInput(grpc_slice_ref(incoming_data));
+  });
 
   drain_start = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
     if (recv_stream == NULL) {
