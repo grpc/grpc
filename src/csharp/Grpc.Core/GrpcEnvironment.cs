@@ -43,13 +43,15 @@ namespace Grpc.Core
         static readonly HashSet<Channel> registeredChannels = new HashSet<Channel>();
         static readonly HashSet<Server> registeredServers = new HashSet<Server>();
 
+        static EventHandler shuttingDown;
+
         static ILogger logger = new NullLogger();
 
         readonly GrpcThreadPool threadPool;
         readonly DebugStats debugStats = new DebugStats();
         readonly AtomicCounter cqPickerCounter = new AtomicCounter();
 
-        bool isClosed;
+        bool isShutdown;
 
         /// <summary>
         /// Returns a reference-counted instance of initialized gRPC environment.
@@ -238,6 +240,21 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Occurs when <c>GrpcEnvironment</c> is about the start the shutdown logic.
+        /// </summary>
+        public static event EventHandler ShuttingDown
+        {
+            add
+            {
+                shuttingDown += value;
+            }
+            remove
+            {
+                shuttingDown -= value;
+            }
+        }
+
+        /// <summary>
         /// Creates gRPC environment.
         /// </summary>
         private GrpcEnvironment()
@@ -311,13 +328,16 @@ namespace Grpc.Core
         /// </summary>
         private async Task ShutdownAsync()
         {
-            if (isClosed)
+            if (isShutdown)
             {
-                throw new InvalidOperationException("Close has already been called");
+                throw new InvalidOperationException("ShutdownAsync has already been called");
             }
+
+            await Task.Run(() => shuttingDown.Invoke(this, null));
+
             await threadPool.StopAsync().ConfigureAwait(false);
             GrpcNativeShutdown();
-            isClosed = true;
+            isShutdown = true;
 
             debugStats.CheckOK();
         }
