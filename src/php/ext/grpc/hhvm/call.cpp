@@ -287,7 +287,7 @@ void HHVM_METHOD(Call, __construct,
                                                      nullptr, GRPC_PROPAGATE_DEFAULTS,
                                                      CompletionQueue::getClientQueue().queue(),
                                                      method_slice.slice(),
-                                                     host_slice.empty() ? &host_slice.slice() : nullptr,
+                                                     !host_slice.empty() ? &host_slice.slice() : nullptr,
                                                      pDeadlineTimevalData->time(), nullptr) };
 
     if (!pCall)
