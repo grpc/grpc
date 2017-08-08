@@ -74,7 +74,7 @@ namespace Grpc.Core.Internal
 
         private AuthProperty PtrToAuthProperty(IntPtr authPropertyPtr)
         {
-            var nativeAuthProperty = (NativeAuthProperty) Marshal.PtrToStructure(authPropertyPtr, typeof(NativeAuthProperty));
+            var nativeAuthProperty = Marshal.PtrToStructure<NativeAuthProperty>(authPropertyPtr);
             var name = Marshal.PtrToStringAnsi(nativeAuthProperty.Name);
             var valueBytes = new byte[(int) nativeAuthProperty.ValueLength];
             Marshal.Copy(nativeAuthProperty.Value, valueBytes, 0, (int)nativeAuthProperty.ValueLength);
