@@ -31,6 +31,7 @@
 #define TSI_FAKE_FRAME_HEADER_SIZE 4
 #define TSI_FAKE_FRAME_INITIAL_ALLOCATED_SIZE 64
 #define TSI_FAKE_DEFAULT_FRAME_SIZE 16384
+#define TSI_FAKE_MIN_FRAME_SIZE 1024
 #define TSI_FAKE_HANDSHAKER_OUTGOING_BUFFER_INITIAL_SIZE 256
 
 /* --- Structure definitions. ---*/
@@ -623,9 +624,13 @@ tsi_handshaker *tsi_create_fake_handshaker(int is_client) {
 tsi_frame_protector *tsi_create_fake_frame_protector(
     size_t *max_protected_frame_size) {
   tsi_fake_frame_protector *impl = gpr_zalloc(sizeof(*impl));
-  impl->max_frame_size = (max_protected_frame_size == NULL)
-                             ? TSI_FAKE_DEFAULT_FRAME_SIZE
-                             : *max_protected_frame_size;
+  size_t actual_frame_size = TSI_FAKE_DEFAULT_FRAME_SIZE;
+  if (max_protected_frame_size != NULL) {
+    actual_frame_size = (*max_protected_frame_size < TSI_FAKE_MIN_FRAME_SIZE)
+                            ? TSI_FAKE_MIN_FRAME_SIZE
+                            : *max_protected_frame_size;
+  }
+  impl->max_frame_size = actual_frame_size;
   impl->base.vtable = &frame_protector_vtable;
   return &impl->base;
 }
