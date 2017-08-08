@@ -530,7 +530,7 @@ static void fake_handshaker_destroy(tsi_handshaker *self) {
 
 static tsi_result fake_handshaker_next(
     tsi_handshaker *self, const unsigned char *received_bytes,
-    size_t received_bytes_size, unsigned char **bytes_to_send,
+    size_t received_bytes_size, const unsigned char **bytes_to_send,
     size_t *bytes_to_send_size, tsi_handshaker_result **handshaker_result,
     tsi_handshaker_on_next_done_cb cb, void *user_data) {
   /* Sanity check the arguments. */
