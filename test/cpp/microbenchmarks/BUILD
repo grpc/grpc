@@ -40,9 +40,9 @@ grpc_cc_library(
         "helpers.h",
     ],
     deps = [
-        "//:grpc++",
+        "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
     external_deps = [
         "benchmark",

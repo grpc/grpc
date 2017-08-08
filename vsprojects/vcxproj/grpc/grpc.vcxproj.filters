@@ -97,6 +97,15 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\executor.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\gethostname_fallback.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\gethostname_host_name_max.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\gethostname_sysconf.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iocp_windows.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
@@ -556,6 +565,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security_adapter.c">
       <Filter>src\core\tsi</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security_grpc.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.c">
       <Filter>src\core\ext\transport\chttp2\server</Filter>
     </ClCompile>
@@ -1010,6 +1022,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_adapter.h">
       <Filter>src\core\tsi</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_grpc.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_interface.h">
       <Filter>src\core\tsi</Filter>
     </ClInclude>
@@ -1167,6 +1182,9 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\executor.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\gethostname.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iocp_windows.h">
@@ -1336,6 +1354,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.h">
       <Filter>src\core\lib\slice</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\alarm_internal.h">
+      <Filter>src\core\lib\surface</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.h">
       <Filter>src\core\lib\surface</Filter>

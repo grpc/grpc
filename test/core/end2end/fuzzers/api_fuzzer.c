@@ -416,7 +416,8 @@ void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
 grpc_ares_request *my_dns_lookup_ares(
     grpc_exec_ctx *exec_ctx, const char *dns_server, const char *addr,
     const char *default_port, grpc_pollset_set *interested_parties,
-    grpc_closure *on_done, grpc_lb_addresses **lb_addrs, bool check_grpclb) {
+    grpc_closure *on_done, grpc_lb_addresses **lb_addrs, bool check_grpclb,
+    char **service_config_json) {
   addr_req *r = gpr_malloc(sizeof(*r));
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;

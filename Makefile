@@ -2926,6 +2926,9 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
+    src/core/lib/iomgr/gethostname_fallback.c \
+    src/core/lib/iomgr/gethostname_host_name_max.c \
+    src/core/lib/iomgr/gethostname_sysconf.c \
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
@@ -3079,6 +3082,7 @@ LIBGRPC_SRC = \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
     src/core/tsi/transport_security_adapter.c \
+    src/core/tsi/transport_security_grpc.c \
     src/core/ext/transport/chttp2/server/chttp2_server.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
     src/core/ext/filters/client_channel/channel_connectivity.c \
@@ -3269,6 +3273,9 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
+    src/core/lib/iomgr/gethostname_fallback.c \
+    src/core/lib/iomgr/gethostname_host_name_max.c \
+    src/core/lib/iomgr/gethostname_sysconf.c \
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
@@ -3446,6 +3453,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
     src/core/tsi/transport_security_adapter.c \
+    src/core/tsi/transport_security_grpc.c \
     src/core/ext/transport/chttp2/client/chttp2_connector.c \
     src/core/ext/filters/load_reporting/load_reporting.c \
     src/core/ext/filters/load_reporting/load_reporting_filter.c \
@@ -3579,6 +3587,9 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
+    src/core/lib/iomgr/gethostname_fallback.c \
+    src/core/lib/iomgr/gethostname_host_name_max.c \
+    src/core/lib/iomgr/gethostname_sysconf.c \
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
@@ -3826,6 +3837,9 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
+    src/core/lib/iomgr/gethostname_fallback.c \
+    src/core/lib/iomgr/gethostname_host_name_max.c \
+    src/core/lib/iomgr/gethostname_sysconf.c \
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
@@ -4046,6 +4060,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
+    src/core/lib/iomgr/gethostname_fallback.c \
+    src/core/lib/iomgr/gethostname_host_name_max.c \
+    src/core/lib/iomgr/gethostname_sysconf.c \
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
@@ -4723,6 +4740,9 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/ev_windows.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
+    src/core/lib/iomgr/gethostname_fallback.c \
+    src/core/lib/iomgr/gethostname_host_name_max.c \
+    src/core/lib/iomgr/gethostname_sysconf.c \
     src/core/lib/iomgr/iocp_windows.c \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
@@ -19709,6 +19729,7 @@ src/core/tsi/gts_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/transport_security_adapter.c: $(OPENSSL_DEP)
+src/core/tsi/transport_security_grpc.c: $(OPENSSL_DEP)
 src/cpp/client/cronet_credentials.cc: $(OPENSSL_DEP)
 src/cpp/client/secure_credentials.cc: $(OPENSSL_DEP)
 src/cpp/common/auth_property_iterator.cc: $(OPENSSL_DEP)

@@ -20,9 +20,9 @@ grpc_cc_test(
     name = "server_builder_test",
     srcs = ["server_builder_test.cc"],
     deps = [
-        "//:grpc++",
+        "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
     external_deps = [
         "gtest",
@@ -33,9 +33,9 @@ grpc_cc_test(
     name = "server_request_call_test",
     srcs = ["server_request_call_test.cc"],
     deps = [
-        "//:grpc++",
+        "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
     external_deps = [
         "gtest",
