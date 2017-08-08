@@ -32,6 +32,7 @@
 
 namespace HPHP {
 
+// this is the data passed back via promise from plugin_get_metadata
 typedef struct plugin_get_metadata_params
 {
     void *ptr;
@@ -42,17 +43,37 @@ typedef struct plugin_get_metadata_params
 
 typedef std::promise<plugin_get_metadata_params*> MetadataPromise;
 
+// this is a singleton class which creates a thread local promise pointer.  The promise is
+// actually held by the calls
+class PluginGetMetadataPromise
+{
+public:
+    void setPromise(MetadataPromise* const pMetadataPromise) { m_pMetadataPromise = pMetadataPromise; }
+    MetadataPromise* const getPromise(void) { return m_pMetadataPromise; }
+
+    static PluginGetMetadataPromise& GetPluginMetadataPromise(void)
+    {
+        thread_local PluginGetMetadataPromise s_PluginGetMetadataPromise;
+        return s_PluginGetMetadataPromise;
+    }
+
+private:
+    PluginGetMetadataPromise(void) :  m_pMetadataPromise{ nullptr } {}
+    MetadataPromise* m_pMetadataPromise;
+};
+
 typedef struct plugin_state
 {
     Variant callback;
     MetadataPromise* pMetadataPromise;
 } plugin_state;
 
-class CallCredentialsData {
-  private:
+class CallCredentialsData
+{
+private:
     grpc_call_credentials* wrapped{nullptr};
     MetadataPromise* m_pMetadataPromise;
-  public:
+public:
     static Class* s_class;
     static const StaticString s_className;
 

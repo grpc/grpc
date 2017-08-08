@@ -43,10 +43,9 @@ class CallData
 {
 public:
     // constructors/destructors
-    CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_Credentialed{ false },
-        m_ChannelData{ nullptr }, m_Timeout{ 0 } {}
-    CallData(grpc_call* const call) : m_pCall{ call },
-        m_Owned{ false }, m_ChannelData{ nullptr }, m_Timeout{ 0 } {}
+    CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_ChannelData{ nullptr }, m_Timeout{ 0 } {}
+    CallData(grpc_call* const call) : m_pCall{ call }, m_Owned{ false }, m_ChannelData{ nullptr },
+         m_Timeout{ 0 } {}
     ~CallData(void);
     CallData(const CallData& otherCallData) = delete;
     CallData(CallData&& otherCallData) = delete;
@@ -59,8 +58,6 @@ public:
     bool getOwned(void) const { return m_Owned; }
     void setOwned(const bool owned = true) { m_Owned = owned; }
     void setChannelData(ChannelData* channelData) { m_ChannelData = channelData; }
-    bool getCredentialed(void) const { return m_Credentialed; }
-    void setCredentialed(const bool credentialed = true) { m_Credentialed = credentialed; }
     void setTimeout(const int32_t timeout) { m_Timeout = timeout; }
     int32_t getTimeout(void) const { return m_Timeout; }
     MetadataPromise& getPromise(void) { return m_MetadataPromise; }
@@ -74,7 +71,6 @@ private:
     // member variables
     grpc_call* m_pCall;
     bool m_Owned;
-    bool m_Credentialed;
     ChannelData* m_ChannelData;
     int32_t m_Timeout;
     MetadataPromise m_MetadataPromise;

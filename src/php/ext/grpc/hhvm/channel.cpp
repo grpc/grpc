@@ -36,10 +36,10 @@
 
 #include "hphp/runtime/ext/extension.h"
 //#include "hphp/runtime/base/req-containers.h"
-//#include "hphp/runtime/base/builtin-functions.h"
+#include "hphp/runtime/base/builtin-functions.h"
 //#include "hphp/runtime/ext/std/ext_std_variable.h"
 //#include "hphp/runtime/base/variable-unserializer.h"
-//#include "hphp/runtime/base/string-util.h"
+#include "hphp/runtime/base/string-util.h"
 #include "hphp/runtime/vm/native-data.h"
 
 namespace HPHP {
@@ -266,17 +266,18 @@ void HHVM_METHOD(Channel, __construct,
         argsArrayCopy.remove(forceNewKey, true);
     }
 
-    /*
+        /*
     String serializedArgsArray = HHVM_FN(serialize)(argsArrayCopy);
     String serializedHash = StringUtil::SHA1(serializedArgsArray, false);
     String hashKey = target + serializedHash;
 
-    if (channelCredentialsData != nullptr)
+    if (pChannelCredentialsData != nullptr)
     {
-        hashKey += channelCredentialsData->getHashKey();
+        hashKey += pChannelCredentialsData->getHashKey();
     }
 
     pChannelData->setHashKey(hashKey);
+
 
     if (force_new)
     {

@@ -18,6 +18,7 @@
 
 #include <array>
 #include <cstdint>
+#include <future>
 #include <mutex>
 #include <sstream>
 
@@ -529,6 +530,13 @@ Object HHVM_METHOD(Call, startBatch,
         ops[op_num].reserved = nullptr;
     }
 
+    if (sending_initial_metadata)
+    {
+        // We do this above grpc_call_start_batch because it can also sometimes execute the callback
+        // from within itself and we need to have the promise setup by that point;
+        PluginGetMetadataPromise::GetPluginMetadataPromise().setPromise(&pCallData->getPromise());
+    }
+
     static std::mutex s_WriteStartBatchMutex, s_ReadStartBatchMutex;
     {
         // TODO : Update for read and write locks for efficiency
@@ -546,6 +554,20 @@ Object HHVM_METHOD(Call, startBatch,
         }
     }
 
+
+    //std::this_thread::sleep_for(std::chrono::seconds(2));
+
+    grpc_event event( grpc_completion_queue_pluck(CompletionQueue::getClientQueue().queue(),
+                                                  pCallData->call(),
+                                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) );
+    if ((event.success == 0) || (event.type != GRPC_OP_COMPLETE))
+    {
+        std::stringstream oSS;
+        oSS << "There was a problem with the request. Event success code: " << event.success
+            << " Type: " << event.type << std::endl;
+        SystemLib::throwBadMethodCallExceptionObject(oSS.str());
+    }
+
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
     // has it's own thread and you cannot run application code on a single request in more than
     // one thread. However gRPC calls call_credentials.cpp:plugin_get_metadata in a different thread
@@ -554,25 +576,20 @@ Object HHVM_METHOD(Call, startBatch,
     // TODO: See if this is necessary and if so use condition variable
     if (sending_initial_metadata)
     {
-  //      auto metadataFuture = pCallData->getPromise().get_future();
-  //      metadataFuture.wait();
+        auto getPluginMetadataFuture = pCallData->getPromise().get_future();
+        std::future_status status{ getPluginMetadataFuture.wait_for(std::chrono::milliseconds{ pCallData->getTimeout() }) };
+        if (status == std::future_status::timeout)
+        {
+            SystemLib::throwBadMethodCallExceptionObject("There was a problem with the request it timed out");
+        }
+        else
+        {
+            plugin_get_metadata_params* const pMetadataParams{ getPluginMetadataFuture.get() };
+            plugin_do_get_metadata(pMetadataParams->ptr, pMetadataParams->context, pMetadataParams->cb,
+                                    pMetadataParams->user_data);
+            if (pMetadataParams) gpr_free(pMetadataParams);
+        }
     }
-
-    //std::this_thread::sleep_for(std::chrono::seconds(2));
-
-    grpc_event event( grpc_completion_queue_pluck(CompletionQueue::getClientQueue().queue(),
-                                                  pCallData->call(),
-                                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) );
-    if (event.success == 0 || event.type != GRPC_OP_COMPLETE )
-    {
-        std::stringstream oSS;
-        oSS << "There was a problem with the request. Event success code: " << event.success
-            << " Type: " << event.type << std::endl;
-        SystemLib::throwBadMethodCallExceptionObject(oSS.str());
-        return resultObj;
-    }
-
-
 
     // process results of call
     for (size_t i{ 0 }; i < op_num; ++i)

@@ -105,9 +105,7 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 
     plugin_state *pState{ reinterpret_cast<plugin_state*>(gpr_zalloc(sizeof(plugin_state))) };
     pState->callback = callback;
-    pState->pMetadataPromise = pNewCallCredentialsData->getPromise();
-    //pNewCallCredentialsData->getPromise()->set_value(nullptr);
-    std::cout << pNewCallCredentialsData->getPromise() << std::endl;
+    pState->pMetadataPromise = PluginGetMetadataPromise::GetPluginMetadataPromise().getPromise();
 
     grpc_metadata_credentials_plugin plugin;
     plugin.get_metadata = plugin_get_metadata;
@@ -172,9 +170,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
     pParams->user_data = user_data;
 
     // return the meta data params in the promise
-    //pMetadataPromise->set_value(pParams
-
-    plugin_do_get_metadata(pParams->ptr, pParams->context, pParams->cb, pParams->user_data);
+    pMetadataPromise->set_value(pParams);
 }
 
 void plugin_destroy_state(void *ptr)
