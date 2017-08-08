@@ -37,7 +37,8 @@ CompletionQueue::CompletionQueue(void)
 CompletionQueue::~CompletionQueue(void)
 {
     // queue must be destroyed after server
-    grpc_completion_queue_destroy(m_pCompletionQueue);
+    // note: this is causing a segfault on shutdown for some reason
+    //grpc_completion_queue_destroy(m_pCompletionQueue);
 }
 
 CompletionQueue& CompletionQueue::getClientQueue(void)
