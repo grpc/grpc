@@ -92,9 +92,33 @@ namespace Grpc.Core.Tests
 
             var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
             Assert.AreEqual(StatusCode.Unauthenticated, ex.Status.StatusCode);
+            Assert.AreEqual(0, ex.Trailers.Count);
 
             var ex2 = Assert.ThrowsAsync<RpcException>(async () => await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc"));
             Assert.AreEqual(StatusCode.Unauthenticated, ex2.Status.StatusCode);
+            Assert.AreEqual(0, ex.Trailers.Count);
+        }
+
+        [Test]
+        public void UnaryCall_ServerHandlerThrowsRpcExceptionWithTrailers()
+        {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
+            {
+                var trailers = new Metadata { {"xyz", "xyz-value"} };
+                throw new RpcException(new Status(StatusCode.Unauthenticated, ""), trailers);
+            });
+
+            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
+            Assert.AreEqual(StatusCode.Unauthenticated, ex.Status.StatusCode);
+            Assert.AreEqual(1, ex.Trailers.Count);
+            Assert.AreEqual("xyz", ex.Trailers[0].Key);
+            Assert.AreEqual("xyz-value", ex.Trailers[0].Value);
+
+            var ex2 = Assert.ThrowsAsync<RpcException>(async () => await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc"));
+            Assert.AreEqual(StatusCode.Unauthenticated, ex2.Status.StatusCode);
+            Assert.AreEqual(1, ex2.Trailers.Count);
+            Assert.AreEqual("xyz", ex2.Trailers[0].Key);
+            Assert.AreEqual("xyz-value", ex2.Trailers[0].Value);
         }
 
         [Test]
@@ -108,9 +132,34 @@ namespace Grpc.Core.Tests
 
             var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
             Assert.AreEqual(StatusCode.Unauthenticated, ex.Status.StatusCode);
+            Assert.AreEqual(0, ex.Trailers.Count);
 
             var ex2 = Assert.ThrowsAsync<RpcException>(async () => await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc"));
             Assert.AreEqual(StatusCode.Unauthenticated, ex2.Status.StatusCode);
+            Assert.AreEqual(0, ex2.Trailers.Count);
+        }
+
+        [Test]
+        public void UnaryCall_ServerHandlerSetsStatusAndTrailers()
+        {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
+                context.Status = new Status(StatusCode.Unauthenticated, "");
+                context.ResponseTrailers.Add("xyz", "xyz-value");
+                return "";
+            });
+
+            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
+            Assert.AreEqual(StatusCode.Unauthenticated, ex.Status.StatusCode);
+            Assert.AreEqual(1, ex.Trailers.Count);
+            Assert.AreEqual("xyz", ex.Trailers[0].Key);
+            Assert.AreEqual("xyz-value", ex.Trailers[0].Value);
+
+            var ex2 = Assert.ThrowsAsync<RpcException>(async () => await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc"));
+            Assert.AreEqual(StatusCode.Unauthenticated, ex2.Status.StatusCode);
+            Assert.AreEqual(1, ex2.Trailers.Count);
+            Assert.AreEqual("xyz", ex2.Trailers[0].Key);
+            Assert.AreEqual("xyz-value", ex2.Trailers[0].Value);
         }
 
         [Test]
@@ -148,7 +197,7 @@ namespace Grpc.Core.Tests
             CollectionAssert.AreEqual(new string[] { "A", "B", "C" }, await call.ResponseStream.ToListAsync());
 
             Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
-            Assert.IsNotNull("xyz", call.GetTrailers()[0].Key);
+            Assert.AreEqual("xyz", call.GetTrailers()[0].Key);
         }
 
         [Test]
@@ -183,6 +232,27 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public async Task ServerStreamingCall_TrailersFromMultipleSourcesGetConcatenated()
+        {
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
+            {
+                context.ResponseTrailers.Add("xyz", "xyz-value");
+                throw new RpcException(new Status(StatusCode.InvalidArgument, ""), new Metadata { {"abc", "abc-value"} });
+            });
+
+            var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "");
+
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
+            Assert.AreEqual(StatusCode.InvalidArgument, ex.Status.StatusCode);
+            Assert.AreEqual(2, call.GetTrailers().Count);
+            Assert.AreEqual(2, ex.Trailers.Count);
+            Assert.AreEqual("xyz", ex.Trailers[0].Key);
+            Assert.AreEqual("xyz-value", ex.Trailers[0].Value);
+            Assert.AreEqual("abc", ex.Trailers[1].Key);
+            Assert.AreEqual("abc-value", ex.Trailers[1].Value);
+        }
+
+        [Test]
         public async Task DuplexStreamingCall()
         {
             helper.DuplexStreamingHandler = new DuplexStreamingServerMethod<string, string>(async (requestStream, responseStream, context) =>
@@ -199,7 +269,7 @@ namespace Grpc.Core.Tests
             CollectionAssert.AreEqual(new string[] { "A", "B", "C" }, await call.ResponseStream.ToListAsync());
 
             Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
-            Assert.IsNotNull("xyz-value", call.GetTrailers()[0].Value);
+            Assert.AreEqual("xyz-value", call.GetTrailers()[0].Value);
         }
 
         [Test]
