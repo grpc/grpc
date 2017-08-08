@@ -472,7 +472,7 @@ describe 'ClientStub' do
         host = "localhost:#{server_port}"
         stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
         expect do
-          get_responses(stub)
+          get_responses(stub).collect { |r| r }
         end.to raise_error(ArgumentError,
                            /Header values must be of type string or array/)
       end
@@ -641,11 +641,101 @@ describe 'ClientStub' do
         expect(e.collect { |r| r }).to eq(@sent_msgs)
         th.join
       end
+
+      # Prompted by grpc/github #10526
+      describe 'surfacing of errors when sending requests' do
+        def run_server_bidi_send_one_then_read_indefinitely
+          @server.start
+          recvd_rpc = @server.request_call
+          recvd_call = recvd_rpc.call
+          server_call = GRPC::ActiveCall.new(
+            recvd_call, noop, noop, INFINITE_FUTURE,
+            metadata_received: true, started: false)
+          server_call.send_initial_metadata
+          server_call.remote_send('server response')
+          loop do
+            m = server_call.remote_read
+            break if m.nil?
+          end
+          # can't fail since initial metadata already sent
+          server_call.send_status(@pass, 'OK', true)
+        end
+
+        def verify_error_from_write_thread(stub, requests_to_push,
+                                           request_queue, expected_description)
+          # TODO: an improvement might be to raise the original exception from
+          # bidi call write loops instead of only cancelling the call
+          failing_marshal_proc = proc do |req|
+            fail req if req.is_a?(StandardError)
+            req
+          end
+          begin
+            e = get_responses(stub, marshal_proc: failing_marshal_proc)
+            first_response = e.next
+            expect(first_response).to eq('server response')
+            requests_to_push.each { |req| request_queue.push(req) }
+            e.collect { |r| r }
+          rescue GRPC::Unknown => e
+            exception = e
+          end
+          expect(exception.message.include?(expected_description)).to be(true)
+        end
+
+        # Provides an Enumerable view of a Queue
+        class BidiErrorTestingEnumerateForeverQueue
+          def initialize(queue)
+            @queue = queue
+          end
+
+          def each
+            loop do
+              msg = @queue.pop
+              yield msg
+            end
+          end
+        end
+
+        def run_error_in_client_request_stream_test(requests_to_push,
+                                                    expected_error_message)
+          # start a server that waits on a read indefinitely - it should
+          # see a cancellation and be able to break out
+          th = Thread.new { run_server_bidi_send_one_then_read_indefinitely }
+          stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
+
+          request_queue = Queue.new
+          @sent_msgs = BidiErrorTestingEnumerateForeverQueue.new(request_queue)
+
+          verify_error_from_write_thread(stub,
+                                         requests_to_push,
+                                         request_queue,
+                                         expected_error_message)
+          # the write loop errror should cancel the call and end the
+          # server's request stream
+          th.join
+        end
+
+        it 'non-GRPC errors from the write loop surface when raised ' \
+          'at the start of a request stream' do
+          expected_error_message = 'expect error on first request'
+          requests_to_push = [StandardError.new(expected_error_message)]
+          run_error_in_client_request_stream_test(requests_to_push,
+                                                  expected_error_message)
+        end
+
+        it 'non-GRPC errors from the write loop surface when raised ' \
+          'during the middle of a request stream' do
+          expected_error_message = 'expect error on last request'
+          requests_to_push = %w( one two )
+          requests_to_push << StandardError.new(expected_error_message)
+          run_error_in_client_request_stream_test(requests_to_push,
+                                                  expected_error_message)
+        end
+      end
     end
 
     describe 'without a call operation' do
-      def get_responses(stub, deadline: nil)
-        e = stub.bidi_streamer(@method, @sent_msgs, noop, noop,
+      def get_responses(stub, deadline: nil, marshal_proc: noop)
+        e = stub.bidi_streamer(@method, @sent_msgs, marshal_proc, noop,
                                metadata: @metadata, deadline: deadline)
         expect(e).to be_a(Enumerator)
         e
@@ -658,8 +748,9 @@ describe 'ClientStub' do
       after(:each) do
         @op.wait # make sure wait doesn't hang
       end
-      def get_responses(stub, run_start_call_first: false, deadline: nil)
-        @op = stub.bidi_streamer(@method, @sent_msgs, noop, noop,
+      def get_responses(stub, run_start_call_first: false, deadline: nil,
+                        marshal_proc: noop)
+        @op = stub.bidi_streamer(@method, @sent_msgs, marshal_proc, noop,
                                  return_op: true,
                                  metadata: @metadata, deadline: deadline)
         expect(@op).to be_a(GRPC::ActiveCall::Operation)

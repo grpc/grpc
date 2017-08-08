@@ -226,6 +226,62 @@ shared_examples 'basic GRPC message delivery is OK' do
     svr_batch = server_call.run_batch(server_ops)
     expect(svr_batch.send_close).to be true
   end
+
+  def client_cancel_test(cancel_proc, expected_code,
+                         expected_details)
+    call = new_client_call
+    server_call = nil
+
+    server_thread = Thread.new do
+      server_call = server_allows_client_to_proceed
+    end
+
+    client_ops = {
+      CallOps::SEND_INITIAL_METADATA => {},
+      CallOps::RECV_INITIAL_METADATA => nil
+    }
+    batch_result = call.run_batch(client_ops)
+    expect(batch_result.send_metadata).to be true
+    expect(batch_result.metadata).to eq({})
+
+    cancel_proc.call(call)
+
+    server_thread.join
+    server_ops = {
+      CallOps::RECV_CLOSE_ON_SERVER => nil
+    }
+    svr_batch = server_call.run_batch(server_ops)
+    expect(svr_batch.send_close).to be true
+
+    client_ops = {
+      CallOps::RECV_STATUS_ON_CLIENT => {}
+    }
+    batch_result = call.run_batch(client_ops)
+
+    expect(batch_result.status.code).to be expected_code
+    expect(batch_result.status.details).to eq expected_details
+  end
+
+  it 'clients can cancel a call on the server' do
+    expected_code = StatusCodes::CANCELLED
+    expected_details = 'Cancelled'
+    cancel_proc = proc { |call| call.cancel }
+    client_cancel_test(cancel_proc, expected_code, expected_details)
+  end
+
+  it 'cancel_with_status unknown status' do
+    code = StatusCodes::UNKNOWN
+    details = 'test unknown reason'
+    cancel_proc = proc { |call| call.cancel_with_status(code, details) }
+    client_cancel_test(cancel_proc, code, details)
+  end
+
+  it 'cancel_with_status unknown status' do
+    code = StatusCodes::FAILED_PRECONDITION
+    details = 'test failed precondition reason'
+    cancel_proc = proc { |call| call.cancel_with_status(code, details) }
+    client_cancel_test(cancel_proc, code, details)
+  end
 end
 
 shared_examples 'GRPC metadata delivery works OK' do

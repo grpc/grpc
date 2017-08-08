@@ -178,6 +178,18 @@ end
 
 CheckCallAfterFinishedServiceStub = CheckCallAfterFinishedService.rpc_stub_class
 
+# A service with a bidi streaming method.
+class BidiService
+  include GRPC::GenericService
+  rpc :server_sends_bad_input, stream(EchoMsg), stream(EchoMsg)
+
+  def server_sends_bad_input(_, _)
+    'bad response. (not an enumerable, client sees an error)'
+  end
+end
+
+BidiStub = BidiService.rpc_stub_class
+
 describe GRPC::RpcServer do
   RpcServer = GRPC::RpcServer
   StatusCodes = GRPC::Core::StatusCodes
@@ -519,6 +531,29 @@ describe GRPC::RpcServer do
         alt_srv.stop
         t.join
         expect(one_failed_as_unavailable).to be(true)
+      end
+
+      it 'should send a status UNKNOWN with a relevant message when the' \
+        'servers response stream is not an enumerable' do
+        @srv.handle(BidiService)
+        t = Thread.new { @srv.run }
+        @srv.wait_till_running
+        stub = BidiStub.new(@host, :this_channel_is_insecure, **client_opts)
+        responses = stub.server_sends_bad_input([])
+        exception = nil
+        begin
+          responses.each { |r| r }
+        rescue GRPC::Unknown => e
+          exception = e
+        end
+        # Erroneous responses sent from the server handler should cause an
+        # exception on the client with relevant info.
+        expected_details = 'NoMethodError: undefined method `each\' for '\
+          '"bad response. (not an enumerable, client sees an error)"'
+
+        expect(exception.inspect.include?(expected_details)).to be true
+        @srv.stop
+        t.join
       end
     end
 

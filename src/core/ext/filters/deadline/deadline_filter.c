@@ -34,6 +34,8 @@
 // grpc_deadline_state
 //
 
+// The on_complete callback used when sending a cancel_error batch down the
+// filter stack.  Yields the call combiner when the batch returns.
 static void yield_call_combiner(grpc_exec_ctx* exec_ctx, void* arg,
                                 grpc_error* ignored) {
   grpc_deadline_state* deadline_state = arg;
@@ -42,6 +44,8 @@ static void yield_call_combiner(grpc_exec_ctx* exec_ctx, void* arg,
   GRPC_CALL_STACK_UNREF(exec_ctx, deadline_state->call_stack, "deadline_timer");
 }
 
+// This is called via the call combiner, so access to deadline_state is
+// synchronized.
 static void send_cancel_op_in_call_combiner(grpc_exec_ctx* exec_ctx, void* arg,
                                             grpc_error* error) {
   grpc_call_element* elem = arg;
@@ -78,6 +82,8 @@ static void timer_callback(grpc_exec_ctx* exec_ctx, void* arg,
 }
 
 // Starts the deadline timer.
+// This is called via the call combiner, so access to deadline_state is
+// synchronized.
 static void start_timer_if_needed(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
                                   gpr_timespec deadline) {
@@ -113,6 +119,8 @@ static void start_timer_if_needed(grpc_exec_ctx* exec_ctx,
 }
 
 // Cancels the deadline timer.
+// This is called via the call combiner, so access to deadline_state is
+// synchronized.
 static void cancel_timer_if_needed(grpc_exec_ctx* exec_ctx,
                                    grpc_deadline_state* deadline_state) {
   if (deadline_state->timer_state == GRPC_DEADLINE_STATE_PENDING) {

@@ -1062,6 +1062,7 @@ static size_t get_batch_index(grpc_transport_stream_op_batch *batch) {
   GPR_UNREACHABLE_CODE(return (size_t)-1);
 }
 
+// This is called via the call combiner, so access to calld is synchronized.
 static void pending_batches_add(grpc_call_element *elem,
                                 grpc_transport_stream_op_batch *batch) {
   call_data *calld = (call_data *)elem->call_data;
@@ -1073,6 +1074,7 @@ static void pending_batches_add(grpc_call_element *elem,
   pending->elem = elem;
 }
 
+// This is called via the call combiner, so access to calld is synchronized.
 static void fail_pending_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
                                                 void *arg, grpc_error *error) {
   pending_batch *pending = (pending_batch *)arg;
@@ -1086,6 +1088,7 @@ static void fail_pending_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
       exec_ctx, batch, GRPC_ERROR_REF(error), calld->call_combiner);
 }
 
+// This is called via the call combiner, so access to calld is synchronized.
 static void pending_batches_fail(grpc_exec_ctx *exec_ctx,
                                  grpc_call_element *elem, grpc_error *error) {
   call_data *calld = elem->call_data;
@@ -1125,8 +1128,10 @@ static void pending_batches_fail(grpc_exec_ctx *exec_ctx,
   GRPC_ERROR_UNREF(error);
 }
 
+// This is called via the call combiner, so access to calld is synchronized.
 static void resume_pending_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
-                                               void *arg, grpc_error *ignored) {
+                                                  void *arg,
+                                                  grpc_error *ignored) {
   pending_batch *pending = (pending_batch *)arg;
   grpc_call_element *elem = pending->elem;
   call_data *calld = (call_data *)elem->call_data;
@@ -1138,6 +1143,7 @@ static void resume_pending_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
   grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call, batch);
 }
 
+// This is called via the call combiner, so access to calld is synchronized.
 static void pending_batches_resume(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem) {
   channel_data *chand = elem->channel_data;

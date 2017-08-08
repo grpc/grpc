@@ -258,8 +258,12 @@ typedef struct {
 #define GRPC_ARG_RESOURCE_QUOTA "grpc.resource_quota"
 /** If non-zero, expand wildcard addresses to a list of local addresses. */
 #define GRPC_ARG_EXPAND_WILDCARD_ADDRS "grpc.expand_wildcard_addrs"
-/** Service config data in JSON form. Not intended for use outside of tests. */
+/** Service config data in JSON form.
+    This value will be ignored if the name resolver returns a service config. */
 #define GRPC_ARG_SERVICE_CONFIG "grpc.service_config"
+/** Disable looking up the service config via the name resolver. */
+#define GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION \
+  "grpc.service_config_disable_resolution"
 /** LB policy name. */
 #define GRPC_ARG_LB_POLICY_NAME "grpc.lb_policy_name"
 /** The grpc_socket_mutator instance that set the socket options. A pointer. */

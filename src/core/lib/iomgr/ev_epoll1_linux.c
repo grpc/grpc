@@ -237,28 +237,41 @@ static grpc_fd *fd_create(int fd, const char *name) {
 
 static int fd_wrapped_fd(grpc_fd *fd) { return fd->fd; }
 
-/* Might be called multiple times */
-static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
+/* if 'releasing_fd' is true, it means that we are going to detach the internal
+ * fd from grpc_fd structure (i.e which means we should not be calling
+ * shutdown() syscall on that fd) */
+static void fd_shutdown_internal(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
+                                 grpc_error *why, bool releasing_fd) {
   if (grpc_lfev_set_shutdown(exec_ctx, &fd->read_closure,
                              GRPC_ERROR_REF(why))) {
-    shutdown(fd->fd, SHUT_RDWR);
+    if (!releasing_fd) {
+      shutdown(fd->fd, SHUT_RDWR);
+    }
     grpc_lfev_set_shutdown(exec_ctx, &fd->write_closure, GRPC_ERROR_REF(why));
   }
   GRPC_ERROR_UNREF(why);
+}
+
+/* Might be called multiple times */
+static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
+  fd_shutdown_internal(exec_ctx, fd, why, false);
 }
 
 static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                       grpc_closure *on_done, int *release_fd,
                       bool already_closed, const char *reason) {
   grpc_error *error = GRPC_ERROR_NONE;
+  bool is_release_fd = (release_fd != NULL);
 
   if (!grpc_lfev_is_shutdown(&fd->read_closure)) {
-    fd_shutdown(exec_ctx, fd, GRPC_ERROR_CREATE_FROM_COPIED_STRING(reason));
+    fd_shutdown_internal(exec_ctx, fd,
+                         GRPC_ERROR_CREATE_FROM_COPIED_STRING(reason),
+                         is_release_fd);
   }
 
   /* If release_fd is not NULL, we should be relinquishing control of the file
      descriptor fd->fd (but we still own the grpc_fd structure). */
-  if (release_fd != NULL) {
+  if (is_release_fd) {
     *release_fd = fd->fd;
   } else if (!already_closed) {
     close(fd->fd);

@@ -38,6 +38,9 @@ disable=
 	# TODO(https://github.com/grpc/grpc/issues/261): This doesn't seem to
 	# work for now? Try with a later pylint?
 	locally-disabled,
+	# NOTE(nathaniel): What even is this? *Enabling* an inspection results
+	# in a warning? How does that encourage more analysis and coverage?
+	locally-enabled,
 	# NOTE(nathaniel): We don't write doc strings for most private code
 	# elements.
 	missing-docstring,
