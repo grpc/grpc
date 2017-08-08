@@ -173,7 +173,7 @@ void create_and_add_channel_to_persistent_list(
     grpc_channel_args args,
     wrapped_grpc_channel_credentials *creds,
     char *key,
-    php_grpc_int key_len) {
+    php_grpc_int key_len TSRMLS_DC) {
   php_grpc_zend_resource new_rsrc;
   channel_persistent_le_t *le;
   // this links each persistent list entry to a destructor
@@ -308,7 +308,7 @@ PHP_METHOD(Channel, __construct) {
   } else if (!(PHP_GRPC_PERSISTENT_LIST_FIND(&EG(persistent_list), key,
                                              key_len, rsrc))) {
     create_and_add_channel_to_persistent_list(
-        channel, target, args, creds, key, key_len);
+        channel, target, args, creds, key, key_len TSRMLS_CC);
   } else {
     // Found a previously stored channel in the persistent list
     channel_persistent_le_t *le = (channel_persistent_le_t *)rsrc->ptr;
@@ -318,7 +318,7 @@ PHP_METHOD(Channel, __construct) {
          strcmp(creds->hashstr, le->channel->creds_hashstr) != 0)) {
       // somehow hash collision
       create_and_add_channel_to_persistent_list(
-          channel, target, args, creds, key, key_len);
+          channel, target, args, creds, key, key_len TSRMLS_CC);
     } else {
       channel->wrapper = le->channel;
     }
@@ -511,6 +511,7 @@ GRPC_STARTUP_FUNCTION(channel) {
   INIT_CLASS_ENTRY(ce, "Grpc\\Channel", channel_methods);
   ce.create_object = create_wrapped_grpc_channel;
   grpc_ce_channel = zend_register_internal_class(&ce TSRMLS_CC);
+  gpr_mu_init(&global_persistent_list_mu);
   le_plink = zend_register_list_destructors_ex(
       NULL, php_grpc_channel_plink_dtor, "Persistent Channel", module_number);
   PHP_GRPC_INIT_HANDLER(wrapped_grpc_channel, channel_ce_handlers);
