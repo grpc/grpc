@@ -120,7 +120,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
   BenchmarkService::Stub* stub_;
   CompletionQueue* cq_;
   std::unique_ptr<Alarm> alarm_;
-  RequestType req_;
+  const RequestType& req_;
   ResponseType response_;
   enum State { INVALID, READY, RESP_DONE };
   State next_state_;
@@ -415,7 +415,7 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
   BenchmarkService::Stub* stub_;
   CompletionQueue* cq_;
   std::unique_ptr<Alarm> alarm_;
-  RequestType req_;
+  const RequestType& req_;
   ResponseType response_;
   enum State {
     INVALID,
@@ -554,7 +554,7 @@ class ClientRpcContextStreamingFromClientImpl : public ClientRpcContext {
   BenchmarkService::Stub* stub_;
   CompletionQueue* cq_;
   std::unique_ptr<Alarm> alarm_;
-  RequestType req_;
+  const RequestType& req_;
   ResponseType response_;
   enum State {
     INVALID,
@@ -672,7 +672,7 @@ class ClientRpcContextStreamingFromServerImpl : public ClientRpcContext {
   BenchmarkService::Stub* stub_;
   CompletionQueue* cq_;
   std::unique_ptr<Alarm> alarm_;
-  RequestType req_;
+  const RequestType& req_;
   ResponseType response_;
   enum State { INVALID, STREAM_IDLE, READ_DONE };
   State next_state_;

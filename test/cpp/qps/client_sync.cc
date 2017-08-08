@@ -140,7 +140,7 @@ class SynchronousStreamingClient : public SynchronousClient {
         if (*stream) {
           // forcibly cancel the streams, then finish
           context_[i].TryCancel();
-          (*stream)->Finish();
+          (*stream)->Finish().IgnoreError();
           // don't log any error message on !ok since this was canceled
         }
       });

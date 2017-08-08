@@ -275,7 +275,7 @@ class ClientContext {
   /// client’s identity, role, or whether it is authorized to make a particular
   /// call.
   ///
-  /// \see  http://www.grpc.io/docs/guides/auth.html
+  /// \see  https://grpc.io/docs/guides/auth.html
   void set_credentials(const std::shared_ptr<CallCredentials>& creds) {
     creds_ = creds;
   }

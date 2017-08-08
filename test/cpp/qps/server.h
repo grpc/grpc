@@ -32,6 +32,7 @@
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/cpp/qps/usage_timer.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 namespace grpc {
 namespace testing {
@@ -79,8 +80,11 @@ class Server {
       return false;
     }
     payload->set_type(type);
-    std::unique_ptr<char[]> body(new char[size]());
-    payload->set_body(body.get(), size);
+    // Don't waste time creating a new payload of identical size.
+    if (payload->body().length() != (size_t)size) {
+      std::unique_ptr<char[]> body(new char[size]());
+      payload->set_body(body.get(), size);
+    }
     return true;
   }
 
@@ -89,12 +93,14 @@ class Server {
   static std::shared_ptr<ServerCredentials> CreateServerCredentials(
       const ServerConfig& config) {
     if (config.has_security_params()) {
-      SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
-                                                          test_server1_cert};
-      SslServerCredentialsOptions ssl_opts;
-      ssl_opts.pem_root_certs = "";
-      ssl_opts.pem_key_cert_pairs.push_back(pkcp);
-      return SslServerCredentials(ssl_opts);
+      grpc::string type;
+      if (config.security_params().cred_type().empty()) {
+        type = kTlsCredentialsType;
+      } else {
+        type = config.security_params().cred_type();
+      }
+
+      return GetCredentialsProvider()->GetServerCredentials(type);
     } else {
       return InsecureServerCredentials();
     }

@@ -52,7 +52,7 @@
     version = '${settings.version}'
     s.version  = version
     s.summary  = 'Core cross-platform gRPC library, written in C'
-    s.homepage = 'http://www.grpc.io'
+    s.homepage = 'https://grpc.io'
     s.license  = 'Apache License, Version 2.0'
     s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
@@ -135,7 +135,7 @@
       ss.header_mappings_dir = '.'
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
-      ss.dependency 'BoringSSL', '~> 8.0'
+      ss.dependency 'BoringSSL', '~> 9.0'
       ss.dependency 'nanopb', '~> 0.3'
 
       # To save you from scrolling, this is the last part of the podspec.

@@ -25,7 +25,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-grpc_tracer_flag grpc_http1_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_http1_trace = GRPC_TRACER_INITIALIZER(false, "http1");
 
 static char *buf2str(void *buffer, size_t length) {
   char *out = gpr_malloc(length + 1);

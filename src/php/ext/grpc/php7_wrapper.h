@@ -113,6 +113,20 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
 }
 
 #define php_grpc_zend_hash_del zend_hash_del
+#define php_grpc_zend_resource zend_rsrc_list_entry
+
+#define PHP_GRPC_BVAL_IS_TRUE(zv) Z_LVAL_P(zv)
+#define PHP_GRPC_VAR_SERIALIZE(buf, zv, hash) \
+  php_var_serialize(buf, &zv, hash TSRMLS_CC)
+#define PHP_GRPC_SERIALIZED_BUF_STR(buf) buf.c
+#define PHP_GRPC_SERIALIZED_BUF_LEN(buf) buf.len
+#define PHP_GRPC_SHA1Update(cxt, str, len)     \
+  PHP_SHA1Update(cxt, (const unsigned char *)str, len)
+#define PHP_GRPC_PERSISTENT_LIST_FIND(plist, key, len, rsrc) \
+  zend_hash_find(plist, key, len+1, (void **)&rsrc) != FAILURE
+#define PHP_GRPC_PERSISTENT_LIST_UPDATE(plist, key, len, rsrc) \
+  zend_hash_update(plist, key, len+1, rsrc, sizeof(php_grpc_zend_resource), \
+                   NULL)
 
 #define PHP_GRPC_GET_CLASS_ENTRY(object) zend_get_class_entry(object TSRMLS_CC)
 
@@ -200,6 +214,20 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
 static inline int php_grpc_zend_hash_del(HashTable *ht, char *key, int len) {
   return zend_hash_str_del(ht, key, len - 1);
 }
+#define php_grpc_zend_resource zend_resource
+
+#define PHP_GRPC_BVAL_IS_TRUE(zv) Z_TYPE_P(zv) == IS_TRUE
+#define PHP_GRPC_VAR_SERIALIZE(buf, zv, hash)   \
+  php_var_serialize(buf, zv, hash)
+#define PHP_GRPC_SERIALIZED_BUF_STR(buf) ZSTR_VAL(buf.s)
+#define PHP_GRPC_SERIALIZED_BUF_LEN(buf) ZSTR_LEN(buf.s)
+#define PHP_GRPC_SHA1Update(cxt, str, len)      \
+  PHP_SHA1Update(cxt, (unsigned char *)str, len)
+#define PHP_GRPC_PERSISTENT_LIST_FIND(plist, key, len, rsrc) \
+  (rsrc = zend_hash_str_find_ptr(plist, key, len)) != NULL
+#define PHP_GRPC_PERSISTENT_LIST_UPDATE(plist, key, len, rsrc) \
+  zend_hash_str_update_mem(plist, key, len, rsrc, \
+                           sizeof(php_grpc_zend_resource))
 
 #define PHP_GRPC_GET_CLASS_ENTRY(object) Z_OBJ_P(object)->ce
 

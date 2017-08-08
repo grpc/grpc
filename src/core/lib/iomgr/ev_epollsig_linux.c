@@ -854,24 +854,12 @@ static int fd_wrapped_fd(grpc_fd *fd) {
 
 static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                       grpc_closure *on_done, int *release_fd,
-                      const char *reason) {
-  bool is_fd_closed = false;
+                      bool already_closed, const char *reason) {
   grpc_error *error = GRPC_ERROR_NONE;
   polling_island *unref_pi = NULL;
 
   gpr_mu_lock(&fd->po.mu);
   fd->on_done_closure = on_done;
-
-  /* If release_fd is not NULL, we should be relinquishing control of the file
-     descriptor fd->fd (but we still own the grpc_fd structure). */
-  if (release_fd != NULL) {
-    *release_fd = fd->fd;
-  } else {
-    close(fd->fd);
-    is_fd_closed = true;
-  }
-
-  fd->orphaned = true;
 
   /* Remove the active status but keep referenced. We want this grpc_fd struct
      to be alive (and not added to freelist) until the end of this function */
@@ -887,12 +875,22 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
        before doing this.) */
   if (fd->po.pi != NULL) {
     polling_island *pi_latest = polling_island_lock(fd->po.pi);
-    polling_island_remove_fd_locked(pi_latest, fd, is_fd_closed, &error);
+    polling_island_remove_fd_locked(pi_latest, fd, already_closed, &error);
     gpr_mu_unlock(&pi_latest->mu);
 
     unref_pi = fd->po.pi;
     fd->po.pi = NULL;
   }
+
+  /* If release_fd is not NULL, we should be relinquishing control of the file
+     descriptor fd->fd (but we still own the grpc_fd structure). */
+  if (release_fd != NULL) {
+    *release_fd = fd->fd;
+  } else {
+    close(fd->fd);
+  }
+
+  fd->orphaned = true;
 
   GRPC_CLOSURE_SCHED(exec_ctx, fd->on_done_closure, GRPC_ERROR_REF(error));
 
@@ -934,12 +932,12 @@ static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
 
 static void fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                               grpc_closure *closure) {
-  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure);
+  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure, "read");
 }
 
 static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_closure *closure) {
-  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure);
+  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure, "write");
 }
 
 /*******************************************************************************
@@ -1116,7 +1114,7 @@ static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
 
 static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_pollset *notifier) {
-  grpc_lfev_set_ready(exec_ctx, &fd->read_closure);
+  grpc_lfev_set_ready(exec_ctx, &fd->read_closure, "read");
 
   /* Note, it is possible that fd_become_readable might be called twice with
      different 'notifier's when an fd becomes readable and it is in two epoll
@@ -1128,7 +1126,7 @@ static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 }
 
 static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
-  grpc_lfev_set_ready(exec_ctx, &fd->write_closure);
+  grpc_lfev_set_ready(exec_ctx, &fd->write_closure, "write");
 }
 
 static void pollset_release_polling_island(grpc_exec_ctx *exec_ctx,

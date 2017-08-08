@@ -67,6 +67,14 @@
     'ldflags': [
         '-g',
     ],
+    'cflags_c': [
+      '-Werror',
+      '-std=c99'
+    ],
+    'cflags_cc': [
+      '-Werror',
+      '-std=c++11'
+    ],
     'include_dirs': [
       '.',
       'include'
@@ -164,6 +172,31 @@
           '<(node_root_dir)/deps/zlib',
           '<(node_root_dir)/deps/cares/include'
         ]
+      }],
+      ['OS == "mac"', {
+        'xcode_settings': {
+          'OTHER_CFLAGS': [
+              '-g',
+              '-Wall',
+              '-Wextra',
+              '-Werror',
+              '-Wno-long-long',
+              '-Wno-unused-parameter',
+              '-DOSATOMIC_USE_INLINED=1',
+          ],
+          'OTHER_CPLUSPLUSFLAGS': [
+              '-g',
+              '-Wall',
+              '-Wextra',
+              '-Werror',
+              '-Wno-long-long',
+              '-Wno-unused-parameter',
+              '-DOSATOMIC_USE_INLINED=1',
+            '-stdlib=libc++',
+            '-std=c++11',
+            '-Wno-error=deprecated-declarations'
+          ],
+        },
       }]
     ]
   },
@@ -171,12 +204,6 @@
     ['OS=="win" or runtime=="electron"', {
       'targets': [
         {
-          'cflags': [
-            '-std=c++11',
-            '-std=c99',
-            '-Wall',
-            '-Werror'
-          ],
           'target_name': 'boringssl',
           'product_prefix': 'lib',
           'type': 'static_library',
@@ -489,16 +516,12 @@
             'third_party/boringssl/ssl/tls_record.c',
           ],
           'conditions': [
-            ['OS=="mac"', {
+            ['OS == "mac"', {
               'xcode_settings': {
-                'MACOSX_DEPLOYMENT_TARGET': '10.9',
-                'OTHER_CPLUSPLUSFLAGS': [
-                  '-stdlib=libc++',
-                  '-std=c++11'
-                ],
+                'MACOSX_DEPLOYMENT_TARGET': '10.9'
               }
-            }],
-          ],
+            }]
+          ]
         },
       ],
     }],
@@ -536,11 +559,6 @@
       'targets': [
         # Only want to compile zlib under Windows
         {
-          'cflags': [
-            '-std=c99',
-            '-Wall',
-            '-Werror'
-          ],
           'target_name': 'z',
           'product_prefix': 'lib',
           'type': 'static_library',
@@ -569,11 +587,6 @@
   ],
   'targets': [
     {
-      'cflags': [
-        '-std=c99',
-        '-Wall',
-        '-Werror'
-      ],
       'target_name': 'gpr',
       'product_prefix': 'lib',
       'type': 'static_library',
@@ -604,6 +617,7 @@
         'src/core/lib/support/log_windows.c',
         'src/core/lib/support/mpscq.c',
         'src/core/lib/support/murmur_hash.c',
+        'src/core/lib/support/stack_lockfree.c',
         'src/core/lib/support/string.c',
         'src/core/lib/support/string_posix.c',
         'src/core/lib/support/string_util_windows.c',
@@ -626,7 +640,7 @@
         'src/core/lib/support/tmpfile_windows.c',
         'src/core/lib/support/wrap_memcpy.c',
       ],
-      "conditions": [
+      'conditions': [
         ['OS == "mac"', {
           'xcode_settings': {
             'MACOSX_DEPLOYMENT_TARGET': '10.9'
@@ -635,11 +649,6 @@
       ]
     },
     {
-      'cflags': [
-        '-std=c99',
-        '-Wall',
-        '-Werror'
-      ],
       'target_name': 'grpc',
       'product_prefix': 'lib',
       'type': 'static_library',
@@ -657,6 +666,7 @@
         'src/core/lib/channel/handshaker_registry.c',
         'src/core/lib/compression/compression.c',
         'src/core/lib/compression/message_compress.c',
+        'src/core/lib/compression/stream_compression.c',
         'src/core/lib/http/format_request.c',
         'src/core/lib/http/httpcli.c',
         'src/core/lib/http/parser.c',
@@ -677,6 +687,9 @@
         'src/core/lib/iomgr/ev_windows.c',
         'src/core/lib/iomgr/exec_ctx.c',
         'src/core/lib/iomgr/executor.c',
+        'src/core/lib/iomgr/gethostname_fallback.c',
+        'src/core/lib/iomgr/gethostname_host_name_max.c',
+        'src/core/lib/iomgr/gethostname_sysconf.c',
         'src/core/lib/iomgr/iocp_windows.c',
         'src/core/lib/iomgr/iomgr.c',
         'src/core/lib/iomgr/iomgr_posix.c',
@@ -778,6 +791,7 @@
         'src/core/ext/transport/chttp2/transport/bin_encoder.c',
         'src/core/ext/transport/chttp2/transport/chttp2_plugin.c',
         'src/core/ext/transport/chttp2/transport/chttp2_transport.c',
+        'src/core/ext/transport/chttp2/transport/flow_control.c',
         'src/core/ext/transport/chttp2/transport/frame_data.c',
         'src/core/ext/transport/chttp2/transport/frame_goaway.c',
         'src/core/ext/transport/chttp2/transport/frame_ping.c',
@@ -825,9 +839,11 @@
         'src/core/lib/security/util/json_util.c',
         'src/core/lib/surface/init_secure.c',
         'src/core/tsi/fake_transport_security.c',
+        'src/core/tsi/gts_transport_security.c',
         'src/core/tsi/ssl_transport_security.c',
         'src/core/tsi/transport_security.c',
         'src/core/tsi/transport_security_adapter.c',
+        'src/core/tsi/transport_security_grpc.c',
         'src/core/ext/transport/chttp2/server/chttp2_server.c',
         'src/core/ext/transport/chttp2/client/secure/secure_channel_create.c',
         'src/core/ext/filters/client_channel/channel_connectivity.c',
@@ -856,6 +872,8 @@
         'src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c',
         'src/core/ext/transport/chttp2/client/insecure/channel_create.c',
         'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c',
+        'src/core/ext/transport/inproc/inproc_plugin.c',
+        'src/core/ext/transport/inproc/inproc_transport.c',
         'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c',
         'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c',
         'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c',
@@ -897,7 +915,7 @@
         'src/core/ext/filters/workarounds/workaround_utils.c',
         'src/core/plugin_registry/grpc_plugin_registry.c',
       ],
-      "conditions": [
+      'conditions': [
         ['OS == "mac"', {
           'xcode_settings': {
             'MACOSX_DEPLOYMENT_TARGET': '10.9'
@@ -910,7 +928,6 @@
         "<!(node -e \"require('nan')\")"
       ],
       'cflags': [
-        '-std=c++11',
         '-pthread',
         '-zdefs',
         '-Wno-error=deprecated-declarations'
@@ -921,15 +938,6 @@
             "boringssl",
           ]
         }],
-        ['OS=="mac"', {
-          'xcode_settings': {
-            'MACOSX_DEPLOYMENT_TARGET': '10.9',
-            'OTHER_CFLAGS': [
-              '-stdlib=libc++',
-              '-std=c++11'
-            ]
-          }
-        }],
         ['OS=="win"', {
           'dependencies': [
             "z",
@@ -939,6 +947,11 @@
           'ldflags': [
             '-Wl,-wrap,memcpy'
           ]
+        }],
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
         }]
       ],
       "target_name": "grpc_node",

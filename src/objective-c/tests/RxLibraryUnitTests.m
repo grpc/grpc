@@ -23,6 +23,8 @@
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter.h>
 
+#define TEST_TIMEOUT 1
+
 // A mock of a GRXSingleValueHandler block that can be queried for how many times it was called and
 // what were the last values passed to it.
 //
@@ -140,26 +142,38 @@
 #pragma mark BufferedPipe
 
 - (void)testBufferedPipePropagatesValue {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Response received"];
   // Given:
   CapturingSingleValueHandler *handler = [CapturingSingleValueHandler handler];
-  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:handler.block];
+  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:^(id value, NSError *errorOrNil) {
+    handler.block(value, errorOrNil);
+    [expectation fulfill];
+  }];
+
   id anyValue = @7;
 
   // If:
   GRXBufferedPipe *pipe = [GRXBufferedPipe pipe];
   [pipe startWithWriteable:writeable];
   [pipe writeValue:anyValue];
+  [pipe writesFinishedWithError:nil];
 
   // Then:
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
   XCTAssertEqual(handler.timesCalled, 1);
   XCTAssertEqualObjects(handler.value, anyValue);
   XCTAssertEqualObjects(handler.errorOrNil, nil);
+
 }
 
 - (void)testBufferedPipePropagatesError {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Response received"];
   // Given:
   CapturingSingleValueHandler *handler = [CapturingSingleValueHandler handler];
-  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:handler.block];
+  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:^(id value, NSError *errorOrNil) {
+    handler.block(value, errorOrNil);
+    [expectation fulfill];
+  }];
   NSError *anyError = [NSError errorWithDomain:@"domain" code:7 userInfo:nil];
 
   // If:
@@ -168,15 +182,20 @@
   [pipe writesFinishedWithError:anyError];
 
   // Then:
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
   XCTAssertEqual(handler.timesCalled, 1);
   XCTAssertEqualObjects(handler.value, nil);
   XCTAssertEqualObjects(handler.errorOrNil, anyError);
 }
 
 - (void)testBufferedPipeFinishWriteWhilePaused {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Response received"];
   // Given:
   CapturingSingleValueHandler *handler = [CapturingSingleValueHandler handler];
-  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:handler.block];
+  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:^(id value, NSError *errorOrNil) {
+    handler.block(value, errorOrNil);
+    [expectation fulfill];
+  }];
   id anyValue = @7;
 
   // If:
@@ -188,9 +207,80 @@
   [pipe startWithWriteable:writeable];
 
   // Then:
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
   XCTAssertEqual(handler.timesCalled, 1);
   XCTAssertEqualObjects(handler.value, anyValue);
   XCTAssertEqualObjects(handler.errorOrNil, nil);
+}
+
+#define WRITE_ROUNDS (1000)
+- (void)testBufferedPipeResumeWhenDealloc {
+  id anyValue = @7;
+  id<GRXWriteable> writeable = [GRXWriteable  writeableWithSingleHandler:^(id value, NSError *errorOrNil) {
+  }];
+
+  // Release after alloc;
+  GRXBufferedPipe *pipe = [GRXBufferedPipe pipe];
+  pipe = nil;
+
+  // Release after write but before start
+  pipe = [GRXBufferedPipe pipe];
+  for (int i = 0; i < WRITE_ROUNDS; i++) {
+    [pipe writeValue:anyValue];
+  }
+  pipe = nil;
+
+  // Release after start but not write
+  pipe = [GRXBufferedPipe pipe];
+  [pipe startWithWriteable:writeable];
+  pipe = nil;
+
+  // Release after start and write
+  pipe = [GRXBufferedPipe pipe];
+  for (int i = 0; i < WRITE_ROUNDS; i++) {
+    [pipe writeValue:anyValue];
+  }
+  [pipe startWithWriteable:writeable];
+  pipe = nil;
+
+  // Release after start, write and pause
+  pipe = [GRXBufferedPipe pipe];
+  [pipe startWithWriteable:writeable];
+  for (int i = 0; i < WRITE_ROUNDS; i++) {
+    [pipe writeValue:anyValue];
+  }
+  pipe.state = GRXWriterStatePaused;
+  for (int i = 0; i < WRITE_ROUNDS; i++) {
+    [pipe writeValue:anyValue];
+  }
+  pipe = nil;
+
+  // Release after start, write, pause and finish
+  pipe = [GRXBufferedPipe pipe];
+  [pipe startWithWriteable:writeable];
+  for (int i = 0; i < WRITE_ROUNDS; i++) {
+    [pipe writeValue:anyValue];
+  }
+  pipe.state = GRXWriterStatePaused;
+  for (int i = 0; i < WRITE_ROUNDS; i++) {
+    [pipe writeValue:anyValue];
+  }
+  [pipe finishWithError:nil];
+  pipe = nil;
+
+  // Release after start, write, pause, finish and resume
+  pipe = [GRXBufferedPipe pipe];
+  [pipe startWithWriteable:writeable];
+  for (int i = 0; i < WRITE_ROUNDS; i++) {
+    [pipe writeValue:anyValue];
+  }
+  pipe.state = GRXWriterStatePaused;
+  for (int i = 0; i < WRITE_ROUNDS; i++) {
+    [pipe writeValue:anyValue];
+  }
+  [pipe finishWithError:nil];
+  pipe.state = GRXWriterStateStarted;
+  pipe = nil;
 }
 
 @end

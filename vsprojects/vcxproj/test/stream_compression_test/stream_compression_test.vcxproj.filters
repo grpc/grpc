@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\compression\stream_compression_test.c">
+      <Filter>test\core\compression</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{22ec1dc6-29e1-32ac-1494-43bb7f211422}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{62cac7ff-76a5-35ff-1e73-a8508e826ba3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\compression">
+      <UniqueIdentifier>{02c8e4fc-eeda-2f58-227f-ebef22a39562}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
