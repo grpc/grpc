@@ -267,6 +267,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->is_client = is_client;
   t->flow_control.remote_window = DEFAULT_WINDOW;
   t->flow_control.announced_window = DEFAULT_WINDOW;
+  t->flow_control.local_window = DEFAULT_WINDOW;
   t->flow_control.t = t;
   t->deframe_state = is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->is_first_frame = true;

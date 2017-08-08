@@ -238,6 +238,8 @@ typedef struct {
    * to send WINDOW_UPDATE frames. */
   int64_t announced_window;
 
+  int64_t local_window;
+
   // read only pointer back to transport for certain data
   const grpc_chttp2_transport *t;
 } grpc_chttp2_transport_flowctl;
