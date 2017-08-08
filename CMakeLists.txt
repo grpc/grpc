@@ -1608,7 +1608,6 @@ add_library(grpc_test_util
   test/core/end2end/fixtures/http_proxy_fixture.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
-  test/core/tsi/transport_security_test_lib.c
   test/core/util/debugger_macros.c
   test/core/util/grpc_profiler.c
   test/core/util/memory_counters.c
@@ -1801,6 +1800,7 @@ add_library(grpc_test_util
   src/core/tsi/ssl_transport_security.c
   src/core/tsi/transport_security.c
   src/core/tsi/transport_security_adapter.c
+  src/core/tsi/transport_security_grpc.c
   src/core/lib/http/httpcli_security_connector.c
   src/core/lib/security/context/security_context.c
   src/core/lib/security/credentials/composite/composite_credentials.c
@@ -1899,7 +1899,6 @@ add_library(grpc_test_util_unsecure
   test/core/end2end/fixtures/http_proxy_fixture.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
-  test/core/tsi/transport_security_test_lib.c
   test/core/util/debugger_macros.c
   test/core/util/grpc_profiler.c
   test/core/util/memory_counters.c
@@ -2092,6 +2091,7 @@ add_library(grpc_test_util_unsecure
   src/core/tsi/ssl_transport_security.c
   src/core/tsi/transport_security.c
   src/core/tsi/transport_security_adapter.c
+  src/core/tsi/transport_security_grpc.c
   src/core/lib/http/httpcli_security_connector.c
   src/core/lib/security/context/security_context.c
   src/core/lib/security/credentials/composite/composite_credentials.c
@@ -6021,7 +6021,7 @@ target_include_directories(fake_transport_security_test
 
 target_link_libraries(fake_transport_security_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
+  transport_security_test_lib
   grpc
   gpr_test_util
   gpr
@@ -8801,7 +8801,7 @@ target_include_directories(ssl_transport_security_test
 
 target_link_libraries(ssl_transport_security_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
+  transport_security_test_lib
   grpc
   gpr_test_util
   gpr

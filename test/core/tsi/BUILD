@@ -38,11 +38,11 @@ grpc_cc_test(
     srcs = ["fake_transport_security_test.c"],
     language = "C",
     deps = [
+        ":transport_security_test_lib",
         "//:grpc",
         "//:gpr",
         "//:tsi",
         "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -65,11 +65,11 @@ grpc_cc_test(
     ],
     language = "C",
     deps = [
+        ":transport_security_test_lib",
         "//:grpc",
         "//:gpr",
         "//:tsi",
         "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
     ],
 )
 

@@ -541,7 +541,7 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
-      "grpc_test_util", 
+      "transport_security_test_lib", 
       "tsi"
     ], 
     "headers": [], 
@@ -2186,7 +2186,7 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
-      "grpc_test_util", 
+      "transport_security_test_lib", 
       "tsi"
     ], 
     "headers": [], 
@@ -8734,7 +8734,6 @@
       "test/core/end2end/fixtures/http_proxy_fixture.h", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
-      "test/core/tsi/transport_security_test_lib.h", 
       "test/core/util/debugger_macros.h", 
       "test/core/util/grpc_profiler.h", 
       "test/core/util/memory_counters.h", 
@@ -8760,8 +8759,6 @@
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.c", 
       "test/core/iomgr/endpoint_tests.h", 
-      "test/core/tsi/transport_security_test_lib.c", 
-      "test/core/tsi/transport_security_test_lib.h", 
       "test/core/util/debugger_macros.c", 
       "test/core/util/debugger_macros.h", 
       "test/core/util/grpc_profiler.c", 
@@ -9129,6 +9126,26 @@
     "language": "c", 
     "name": "nanopb_headers", 
     "src": [], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc_secure", 
+      "tsi"
+    ], 
+    "headers": [
+      "test/core/tsi/transport_security_test_lib.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "transport_security_test_lib", 
+    "src": [
+      "test/core/tsi/transport_security_test_lib.c", 
+      "test/core/tsi/transport_security_test_lib.h"
+    ], 
     "third_party": false, 
     "type": "filegroup"
   }, 

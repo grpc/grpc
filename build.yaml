@@ -717,7 +717,6 @@ filegroups:
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
-  - test/core/tsi/transport_security_test_lib.h
   - test/core/util/debugger_macros.h
   - test/core/util/grpc_profiler.h
   - test/core/util/memory_counters.h
@@ -734,7 +733,6 @@ filegroups:
   - test/core/end2end/fixtures/http_proxy_fixture.c
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
-  - test/core/tsi/transport_security_test_lib.c
   - test/core/util/debugger_macros.c
   - test/core/util/grpc_profiler.c
   - test/core/util/memory_counters.c
@@ -924,6 +922,16 @@ filegroups:
   - third_party/nanopb/pb_common.h
   - third_party/nanopb/pb_decode.h
   - third_party/nanopb/pb_encode.h
+- name: transport_security_test_lib
+  headers:
+  - test/core/tsi/transport_security_test_lib.h
+  src:
+  - test/core/tsi/transport_security_test_lib.c
+  deps:
+  - grpc
+  uses:
+  - tsi
+  - grpc_secure
 - name: tsi
   headers:
   - src/core/tsi/fake_transport_security.h
@@ -2031,7 +2039,7 @@ targets:
   src:
   - test/core/tsi/fake_transport_security_test.c
   deps:
-  - grpc_test_util
+  - transport_security_test_lib
   - grpc
   - gpr_test_util
   - gpr
@@ -3118,7 +3126,7 @@ targets:
   src:
   - test/core/tsi/ssl_transport_security_test.c
   deps:
-  - grpc_test_util
+  - transport_security_test_lib
   - grpc
   - gpr_test_util
   - gpr

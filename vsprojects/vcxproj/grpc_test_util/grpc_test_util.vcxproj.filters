@@ -31,9 +31,6 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.c">
       <Filter>test\core\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\tsi\transport_security_test_lib.c">
-      <Filter>test\core\tsi</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\debugger_macros.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
@@ -610,6 +607,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security_adapter.c">
       <Filter>src\core\tsi</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security_grpc.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\httpcli_security_connector.c">
       <Filter>src\core\lib\http</Filter>
     </ClCompile>
@@ -766,9 +766,6 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.h">
       <Filter>test\core\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\test\core\tsi\transport_security_test_lib.h">
-      <Filter>test\core\tsi</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\debugger_macros.h">
       <Filter>test\core\util</Filter>
@@ -942,6 +939,9 @@
       <Filter>src\core\tsi</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_adapter.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_grpc.h">
       <Filter>src\core\tsi</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_interface.h">
@@ -1159,9 +1159,6 @@
     </Filter>
     <Filter Include="test\core\security">
       <UniqueIdentifier>{b0938b31-f9d5-21d7-de41-08107caafd80}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="test\core\tsi">
-      <UniqueIdentifier>{672e1ca3-9245-c4a0-b99a-82f64a66f8ec}</UniqueIdentifier>
     </Filter>
     <Filter Include="test\core\util">
       <UniqueIdentifier>{6e9f8de1-258c-578f-aa3d-7da9320a3171}</UniqueIdentifier>
