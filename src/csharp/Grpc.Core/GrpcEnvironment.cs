@@ -321,7 +321,7 @@ namespace Grpc.Core
                 throw new InvalidOperationException("ShutdownAsync has already been called");
             }
 
-            await Task.Run(() => ShuttingDown?.Invoke(this, null));
+            await Task.Run(() => ShuttingDown?.Invoke(this, null)).ConfigureAwait(false);
 
             await threadPool.StopAsync().ConfigureAwait(false);
             GrpcNativeShutdown();
