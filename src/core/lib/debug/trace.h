@@ -35,19 +35,20 @@ typedef struct {
 #else
   bool value;
 #endif
+  char *name;
 } grpc_tracer_flag;
 
 #ifdef GRPC_THREADSAFE_TRACER
 #define GRPC_TRACER_ON(flag) (gpr_atm_no_barrier_load(&(flag).value) != 0)
-#define GRPC_TRACER_INITIALIZER(on) \
-  { (gpr_atm)(on) }
+#define GRPC_TRACER_INITIALIZER(on, name) \
+  { (gpr_atm)(on), (name) }
 #else
 #define GRPC_TRACER_ON(flag) ((flag).value)
-#define GRPC_TRACER_INITIALIZER(on) \
-  { (on) }
+#define GRPC_TRACER_INITIALIZER(on, name) \
+  { (on), (name) }
 #endif
 
-void grpc_register_tracer(const char *name, grpc_tracer_flag *flag);
+void grpc_register_tracer(grpc_tracer_flag *flag);
 void grpc_tracer_init(const char *env_var_name);
 void grpc_tracer_shutdown(void);
 

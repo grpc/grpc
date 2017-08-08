@@ -33,12 +33,15 @@ namespace Grpc.Core.Internal
     internal class GrpcThreadPool
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<GrpcThreadPool>();
+        static readonly WaitCallback RunCompletionQueueEventCallbackSuccess = new WaitCallback((callback) => RunCompletionQueueEventCallback((OpCompletionDelegate) callback, true));
+        static readonly WaitCallback RunCompletionQueueEventCallbackFailure = new WaitCallback((callback) => RunCompletionQueueEventCallback((OpCompletionDelegate) callback, false));
 
         readonly GrpcEnvironment environment;
         readonly object myLock = new object();
         readonly List<Thread> threads = new List<Thread>();
         readonly int poolSize;
         readonly int completionQueueCount;
+        readonly bool inlineHandlers;
 
         readonly List<BasicProfiler> threadProfilers = new List<BasicProfiler>();  // profilers assigned to threadpool threads
 
@@ -52,11 +55,13 @@ namespace Grpc.Core.Internal
         /// <param name="environment">Environment.</param>
         /// <param name="poolSize">Pool size.</param>
         /// <param name="completionQueueCount">Completion queue count.</param>
-        public GrpcThreadPool(GrpcEnvironment environment, int poolSize, int completionQueueCount)
+        /// <param name="inlineHandlers">Handler inlining.</param>
+        public GrpcThreadPool(GrpcEnvironment environment, int poolSize, int completionQueueCount, bool inlineHandlers)
         {
             this.environment = environment;
             this.poolSize = poolSize;
             this.completionQueueCount = completionQueueCount;
+            this.inlineHandlers = inlineHandlers;
             GrpcPreconditions.CheckArgument(poolSize >= completionQueueCount,
                 "Thread pool size cannot be smaller than the number of completion queues used.");
         }
@@ -165,11 +170,19 @@ namespace Grpc.Core.Internal
                     try
                     {
                         var callback = cq.CompletionRegistry.Extract(tag);
-                        callback(success);
+                        // Use cached delegates to avoid unnecessary allocations
+                        if (!inlineHandlers)
+                        {
+                            ThreadPool.QueueUserWorkItem(success ? RunCompletionQueueEventCallbackSuccess : RunCompletionQueueEventCallbackFailure, callback);
+                        }
+                        else
+                        {
+                            RunCompletionQueueEventCallback(callback, success);
+                        }
                     }
                     catch (Exception e)
                     {
-                        Logger.Error(e, "Exception occured while invoking completion delegate");
+                        Logger.Error(e, "Exception occured while extracting event from completion registry.");
                     }
                 }
             }
@@ -185,6 +198,18 @@ namespace Grpc.Core.Internal
                 list.Add(CompletionQueueSafeHandle.CreateAsync(completionRegistry));
             }
             return list.AsReadOnly();
+        }
+
+        private static void RunCompletionQueueEventCallback(OpCompletionDelegate callback, bool success)
+        {
+            try
+            {
+                callback(success);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Exception occured while invoking completion delegate");
+            }
         }
     }
 }

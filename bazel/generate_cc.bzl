@@ -57,7 +57,7 @@ def generate_cc_impl(ctx):
 
   return struct(files=set(out_files))
 
-generate_cc = rule(
+_generate_cc = rule(
     attrs = {
         "srcs": attr.label_list(
             mandatory = True,
@@ -90,3 +90,9 @@ generate_cc = rule(
     output_to_genfiles = True,
     implementation = generate_cc_impl,
 )
+
+def generate_cc(well_known_protos, **kwargs):
+  if well_known_protos:
+    _generate_cc(well_known_protos="@com_google_protobuf//:well_known_protos", **kwargs)
+  else:
+    _generate_cc(**kwargs)

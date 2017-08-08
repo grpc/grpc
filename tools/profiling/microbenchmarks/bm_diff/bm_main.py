@@ -63,10 +63,10 @@ def _args():
     help='Name of baseline run to compare to. Ususally just called "old"')
   argp.add_argument(
     '-r',
-    '--repetitions',
-    type=int,
-    default=1,
-    help='Number of repetitions to pass to the benchmarks')
+    '--regex',
+    type=str,
+    default="",
+    help='Regex to filter benchmarks run')
   argp.add_argument(
     '-l',
     '--loops',
@@ -125,10 +125,10 @@ def main(args):
       subprocess.check_call(['git', 'checkout', where_am_i])
       subprocess.check_call(['git', 'submodule', 'update'])
 
-  bm_run.run('new', args.benchmarks, args.jobs, args.loops, args.repetitions, args.counters)
-  bm_run.run(old, args.benchmarks, args.jobs, args.loops, args.repetitions, args.counters)
+  bm_run.run('new', args.benchmarks, args.jobs, args.loops, args.regex, args.counters)
+  bm_run.run(old, args.benchmarks, args.jobs, args.loops, args.regex, args.counters)
 
-  diff, note = bm_diff.diff(args.benchmarks, args.loops, args.track, old,
+  diff, note = bm_diff.diff(args.benchmarks, args.loops, args.regex, args.track, old,
                 'new', args.counters)
   if diff:
     text = '[%s] Performance differences noted:\n%s' % (args.pr_comment_name, diff)

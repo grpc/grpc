@@ -411,15 +411,11 @@ static tsi_result do_ssl_read(SSL *ssl, unsigned char *unprotected_bytes,
   GPR_ASSERT(*unprotected_bytes_size <= INT_MAX);
   read_from_ssl =
       SSL_read(ssl, unprotected_bytes, (int)*unprotected_bytes_size);
-  if (read_from_ssl == 0) {
-    gpr_log(GPR_ERROR, "SSL_read returned 0 unexpectedly.");
-    return TSI_INTERNAL_ERROR;
-  }
-  if (read_from_ssl < 0) {
+  if (read_from_ssl <= 0) {
     read_from_ssl = SSL_get_error(ssl, read_from_ssl);
     switch (read_from_ssl) {
-      case SSL_ERROR_WANT_READ:
-        /* We need more data to finish the frame. */
+      case SSL_ERROR_ZERO_RETURN: /* Received a close_notify alert. */
+      case SSL_ERROR_WANT_READ:   /* We need more data to finish the frame. */
         *unprotected_bytes_size = 0;
         return TSI_OK;
       case SSL_ERROR_WANT_WRITE:

@@ -26,7 +26,9 @@
 #include <php.h>
 #include <php_ini.h>
 #include <ext/standard/info.h>
+#include <ext/standard/sha1.h>
 #include <ext/spl/spl_exceptions.h>
+#include "channel.h"
 #include "php_grpc.h"
 
 #include <zend_exceptions.h>
@@ -69,14 +71,17 @@ php_grpc_zend_object create_wrapped_grpc_channel_credentials(
                              channel_credentials_ce_handlers);
 }
 
-zval *grpc_php_wrap_channel_credentials(grpc_channel_credentials
-                                        *wrapped TSRMLS_DC) {
+zval *grpc_php_wrap_channel_credentials(grpc_channel_credentials *wrapped,
+                                        char *hashstr,
+                                        zend_bool has_call_creds TSRMLS_DC) {
   zval *credentials_object;
   PHP_GRPC_MAKE_STD_ZVAL(credentials_object);
   object_init_ex(credentials_object, grpc_ce_channel_credentials);
   wrapped_grpc_channel_credentials *credentials =
     Z_WRAPPED_GRPC_CHANNEL_CREDS_P(credentials_object);
   credentials->wrapped = wrapped;
+  credentials->hashstr = hashstr;
+  credentials->has_call_creds = has_call_creds;
   return credentials_object;
 }
 
@@ -106,7 +111,8 @@ PHP_METHOD(ChannelCredentials, setDefaultRootsPem) {
  */
 PHP_METHOD(ChannelCredentials, createDefault) {
   grpc_channel_credentials *creds = grpc_google_default_credentials_create();
-  zval *creds_object = grpc_php_wrap_channel_credentials(creds TSRMLS_CC);
+  zval *creds_object = grpc_php_wrap_channel_credentials(creds, NULL, false
+                                                         TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
@@ -140,10 +146,24 @@ PHP_METHOD(ChannelCredentials, createSsl) {
                          "createSsl expects 3 optional strings", 1 TSRMLS_CC);
     return;
   }
+
+  php_grpc_int hashkey_len = root_certs_length + cert_chain_length;
+  char hashkey[hashkey_len];
+  if (root_certs_length > 0) {
+    strcpy(hashkey, pem_root_certs);
+  }
+  if (cert_chain_length > 0) {
+    strcpy(hashkey, pem_key_cert_pair.cert_chain);
+  }
+
+  char *hashstr = malloc(41);
+  generate_sha1_str(hashstr, hashkey, hashkey_len);
+
   grpc_channel_credentials *creds = grpc_ssl_credentials_create(
       pem_root_certs,
       pem_key_cert_pair.private_key == NULL ? NULL : &pem_key_cert_pair, NULL);
-  zval *creds_object = grpc_php_wrap_channel_credentials(creds TSRMLS_CC);
+  zval *creds_object = grpc_php_wrap_channel_credentials(creds, hashstr, false
+                                                         TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
@@ -172,7 +192,9 @@ PHP_METHOD(ChannelCredentials, createComposite) {
   grpc_channel_credentials *creds =
       grpc_composite_channel_credentials_create(cred1->wrapped, cred2->wrapped,
                                                 NULL);
-  zval *creds_object = grpc_php_wrap_channel_credentials(creds TSRMLS_CC);
+  zval *creds_object =
+      grpc_php_wrap_channel_credentials(creds, cred1->hashstr, true
+                                        TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 

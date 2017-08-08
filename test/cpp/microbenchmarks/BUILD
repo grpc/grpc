@@ -16,6 +16,13 @@ licenses(["notice"])  # Apache v2
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library")
 
+package(
+    features = [
+        "-layering_check",
+        "-parse_headers",
+    ],
+)
+
 grpc_cc_test(
     name = "noop-benchmark",
     srcs = ["noop-benchmark.cc"],
@@ -33,9 +40,9 @@ grpc_cc_library(
         "helpers.h",
     ],
     deps = [
-        "//:grpc++",
+        "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
     external_deps = [
         "benchmark",

@@ -125,7 +125,6 @@ def find_test_cases(lang, release):
       # Only line start with 'docker run' are test cases.
       for line in f.readlines():
         if line.startswith('docker run'):
-          line = line.replace('docker run', 'gcloud docker -- run')
           m = re.search('--test_case=(.*)"', line)
           shortname = m.group(1) if m else 'unknown_test'
           spec = jobset.JobSpec(cmdline=line,
@@ -152,6 +151,8 @@ def run_tests_for_lang(lang, runtime, images):
   for image_tuple in images:
     release, image = image_tuple
     jobset.message('START', 'Testing %s' % image, do_newline=True)
+    # Download the docker image before running each test case.
+    subprocess.check_call(['gcloud', 'docker', '--', 'pull', image])
     _docker_images_cleanup.append(image)
     job_spec_list = find_test_cases(lang,release)
     num_failures, resultset = jobset.run(job_spec_list,
@@ -167,7 +168,7 @@ def run_tests_for_lang(lang, runtime, images):
         _xml_report_tree,
         resultset,
         'grpc_interop_matrix',
-        '%s__%s:%s'%(lang,runtime,release),
+        '%s__%s %s'%(lang,runtime,release),
         str(uuid.uuid4()))
 
 _docker_images_cleanup = []

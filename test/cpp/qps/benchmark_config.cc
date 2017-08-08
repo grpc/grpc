@@ -54,10 +54,6 @@ using namespace gflags;
 namespace grpc {
 namespace testing {
 
-void InitBenchmark(int* argc, char*** argv, bool remove_flags) {
-  ParseCommandLineFlags(argc, argv, remove_flags);
-}
-
 static std::shared_ptr<Reporter> InitBenchmarkReporters() {
   auto* composite_reporter = new CompositeReporter;
   if (FLAGS_enable_log_reporter) {

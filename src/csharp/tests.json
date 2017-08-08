@@ -31,6 +31,7 @@
     "Grpc.Core.Tests.ShutdownHookPendingCallTest",
     "Grpc.Core.Tests.ShutdownHookServerTest",
     "Grpc.Core.Tests.ShutdownTest",
+    "Grpc.Core.Tests.ThreadingModelTest",
     "Grpc.Core.Tests.TimeoutsTest",
     "Grpc.Core.Tests.UserAgentStringTest"
   ],

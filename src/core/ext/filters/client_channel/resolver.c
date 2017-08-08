@@ -20,7 +20,8 @@
 #include "src/core/lib/iomgr/combiner.h"
 
 #ifndef NDEBUG
-grpc_tracer_flag grpc_trace_resolver_refcount = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_trace_resolver_refcount =
+    GRPC_TRACER_INITIALIZER(false, "resolver_refcount");
 #endif
 
 void grpc_resolver_init(grpc_resolver *resolver,

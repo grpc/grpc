@@ -30,6 +30,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_uv.h"
 #include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/iomgr/tcp_uv.h"
@@ -37,7 +38,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
-grpc_tracer_flag grpc_tcp_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_tcp_trace = GRPC_TRACER_INITIALIZER(false, "tcp");
 
 typedef struct {
   grpc_endpoint base;
@@ -67,6 +68,8 @@ typedef struct {
 static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   grpc_slice_unref_internal(exec_ctx, tcp->read_slice);
   grpc_resource_user_unref(exec_ctx, tcp->resource_user);
+  gpr_free(tcp->handle);
+  gpr_free(tcp->peer_string);
   gpr_free(tcp);
 }
 
@@ -181,6 +184,7 @@ static void uv_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   grpc_tcp *tcp = (grpc_tcp *)ep;
   int status;
   grpc_error *error = GRPC_ERROR_NONE;
+  GRPC_UV_ASSERT_SAME_THREAD();
   GPR_ASSERT(tcp->read_cb == NULL);
   tcp->read_cb = cb;
   tcp->read_slices = read_slices;
@@ -234,6 +238,7 @@ static void uv_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   unsigned int i;
   grpc_slice *slice;
   uv_write_t *write_req;
+  GRPC_UV_ASSERT_SAME_THREAD();
 
   if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     size_t j;
@@ -305,6 +310,10 @@ static void uv_endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                                  grpc_error *why) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   if (!tcp->shutting_down) {
+    if (GRPC_TRACER_ON(grpc_tcp_trace)) {
+      const char *str = grpc_error_string(why);
+      gpr_log(GPR_DEBUG, "TCP %p shutdown why=%s", tcp->handle, str);
+    }
     tcp->shutting_down = true;
     uv_shutdown_t *req = &tcp->shutdown_req;
     uv_shutdown(req, (uv_stream_t *)tcp->handle, shutdown_callback);

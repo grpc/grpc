@@ -27,14 +27,23 @@
 namespace grpc {
 
 ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
-    : thd_mgr_(thd_mgr), thd_(&ThreadManager::WorkerThread::Run, this) {}
+    : thd_mgr_(thd_mgr) {
+  // Make thread creation exclusive with respect to its join happening in
+  // ~WorkerThread().
+  std::lock_guard<std::mutex> lock(wt_mu_);
+  thd_ = std::thread(&ThreadManager::WorkerThread::Run, this);
+}
 
 void ThreadManager::WorkerThread::Run() {
   thd_mgr_->MainWorkLoop();
   thd_mgr_->MarkAsCompleted(this);
 }
 
-ThreadManager::WorkerThread::~WorkerThread() { thd_.join(); }
+ThreadManager::WorkerThread::~WorkerThread() {
+  // Don't join until the thread is fully constructed.
+  std::lock_guard<std::mutex> lock(wt_mu_);
+  thd_.join();
+}
 
 ThreadManager::ThreadManager(int min_pollers, int max_pollers)
     : shutdown_(false),
@@ -45,7 +54,7 @@ ThreadManager::ThreadManager(int min_pollers, int max_pollers)
 
 ThreadManager::~ThreadManager() {
   {
-    std::unique_lock<std::mutex> lock(mu_);
+    std::lock_guard<std::mutex> lock(mu_);
     GPR_ASSERT(num_threads_ == 0);
   }
 
@@ -60,22 +69,22 @@ void ThreadManager::Wait() {
 }
 
 void ThreadManager::Shutdown() {
-  std::unique_lock<std::mutex> lock(mu_);
+  std::lock_guard<std::mutex> lock(mu_);
   shutdown_ = true;
 }
 
 bool ThreadManager::IsShutdown() {
-  std::unique_lock<std::mutex> lock(mu_);
+  std::lock_guard<std::mutex> lock(mu_);
   return shutdown_;
 }
 
 void ThreadManager::MarkAsCompleted(WorkerThread* thd) {
   {
-    std::unique_lock<std::mutex> list_lock(list_mu_);
+    std::lock_guard<std::mutex> list_lock(list_mu_);
     completed_threads_.push_back(thd);
   }
 
-  std::unique_lock<std::mutex> lock(mu_);
+  std::lock_guard<std::mutex> lock(mu_);
   num_threads_--;
   if (num_threads_ == 0) {
     shutdown_cv_.notify_one();

@@ -112,8 +112,8 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
   }
 
  private:
-  static Status ClientPull(ServerContext* context,
-                           ReaderInterface<SimpleRequest>* stream,
+  template <class R>
+  static Status ClientPull(ServerContext* context, R* stream,
                            SimpleResponse* response) {
     SimpleRequest request;
     while (stream->Read(&request)) {
@@ -126,8 +126,8 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
     }
     return Status::OK;
   }
-  static Status ServerPush(ServerContext* context,
-                           WriterInterface<SimpleResponse>* stream,
+  template <class W>
+  static Status ServerPush(ServerContext* context, W* stream,
                            const SimpleResponse& response,
                            std::function<bool()> done) {
     while ((done == nullptr) || !done()) {
