@@ -66,8 +66,11 @@ static void adapter_result_destroy(tsi_handshaker_result *self) {
 }
 
 static const tsi_handshaker_result_vtable result_vtable = {
-    adapter_result_extract_peer, adapter_result_create_frame_protector,
-    adapter_result_get_unused_bytes, adapter_result_destroy,
+    adapter_result_extract_peer,
+    NULL, /* create_zero_copy_grpc_protector */
+    adapter_result_create_frame_protector,
+    adapter_result_get_unused_bytes,
+    adapter_result_destroy,
 };
 
 /* Ownership of wrapped tsi_handshaker is transferred to the result object.  */
@@ -140,7 +143,7 @@ static void adapter_destroy(tsi_handshaker *self) {
 
 static tsi_result adapter_next(
     tsi_handshaker *self, const unsigned char *received_bytes,
-    size_t received_bytes_size, unsigned char **bytes_to_send,
+    size_t received_bytes_size, const unsigned char **bytes_to_send,
     size_t *bytes_to_send_size, tsi_handshaker_result **handshaker_result,
     tsi_handshaker_on_next_done_cb cb, void *user_data) {
   /* Input sanity check.  */

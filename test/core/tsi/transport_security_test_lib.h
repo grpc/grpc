@@ -16,12 +16,12 @@
  *
  */
 
-#ifndef GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_FIXTURE_H_
-#define GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_FIXTURE_H_
+#ifndef GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H_
+#define GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H_
 
 #include "src/core/tsi/transport_security_interface.h"
 
-#define TSI_TEST_TINY_HANDSHAKE_BUFFER_SIZE 1
+#define TSI_TEST_TINY_HANDSHAKE_BUFFER_SIZE 16
 #define TSI_TEST_SMALL_HANDSHAKE_BUFFER_SIZE 128
 #define TSI_TEST_SMALL_READ_BUFFER_ALLOCATED_SIZE 41
 #define TSI_TEST_SMALL_PROTECTED_BUFFER_SIZE 37
@@ -40,7 +40,9 @@
 
   This object wraps all information that will be used to test correctness of TSI
   handshakes and frame protect/unprotect operations with respect to TSI
-  implementations. */
+  implementations. The tests for specific TSI implementations should create
+  their
+  own custom "subclass" of this fixture. */
 typedef struct tsi_test_fixture tsi_test_fixture;
 
 /* ---  tsi_test_frame_protector_config object ---
@@ -130,8 +132,13 @@ void tsi_test_frame_protector_config_set_buffer_size(
 void tsi_test_frame_protector_config_destroy(
     tsi_test_frame_protector_config *config);
 
-/* This method destroys a tsi_test_fixture instance. */
-void tsi_test_destroy(tsi_test_fixture *fixture);
+/* This method initializes members of tsi_test_fixture instance. */
+void tsi_test_fixture_init(tsi_test_fixture *fixture);
+
+/* This method destroys a tsi_test_fixture instance. Notice that the
+   fixture intance must be dynamically allocated and will be freed by
+   this functoin. */
+void tsi_test_fixture_destroy(tsi_test_fixture *fixture);
 
 /* This method performs a full TSI handshake between a client and a server. */
 void tsi_test_do_handshake(tsi_test_fixture *fixture);
@@ -142,4 +149,4 @@ void tsi_test_do_handshake(tsi_test_fixture *fixture);
    the client and server switching its role. */
 void tsi_test_do_round_trip(tsi_test_fixture *fixture);
 
-#endif  // GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_FIXTURE_H_
+#endif  // GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H_

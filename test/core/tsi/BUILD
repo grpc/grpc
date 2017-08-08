@@ -42,7 +42,7 @@ grpc_cc_test(
         "//:gpr",
         "//:tsi",
         "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_tuil",
+        "//test/core/util:grpc_test_util",
     ],
 )
 

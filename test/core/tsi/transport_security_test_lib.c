@@ -292,9 +292,9 @@ static void do_handshaker_next_locked(handshaker_args *args) {
   }
   /* Peform handshaker next. */
   tsi_result result = tsi_handshaker_next(
-      handshaker, args->handshake_buffer, buf_size, &bytes_to_send,
-      &bytes_to_send_size, &handshaker_result, &on_handshake_next_done_wrapper,
-      args);
+      handshaker, args->handshake_buffer, buf_size,
+      (const unsigned char **)&bytes_to_send, &bytes_to_send_size,
+      &handshaker_result, &on_handshake_next_done_wrapper, args);
   if (result != TSI_ASYNC) {
     args->error = on_handshake_next_done_locked(
         result, args, bytes_to_send, bytes_to_send_size, handshaker_result);
@@ -483,8 +483,29 @@ void tsi_test_frame_protector_config_destroy(
   gpr_free(config);
 }
 
-void tsi_test_destroy(tsi_test_fixture *fixture) {
+void tsi_test_fixture_init(tsi_test_fixture *fixture) {
+  tsi_test_frame_protector_config *config =
+      tsi_test_frame_protector_config_create(true, true, true, true, true, true,
+                                             true, true);
+  fixture->config = config;
+  fixture->handshake_buffer_size = TSI_TEST_DEFAULT_BUFFER_SIZE;
+  fixture->client_channel = gpr_zalloc(TSI_TEST_DEFAULT_CHANNEL_SIZE);
+  fixture->server_channel = gpr_zalloc(TSI_TEST_DEFAULT_CHANNEL_SIZE);
+  fixture->bytes_written_to_client_channel = 0;
+  fixture->bytes_written_to_server_channel = 0;
+  fixture->bytes_read_from_client_channel = 0;
+  fixture->bytes_read_from_server_channel = 0;
+}
+
+void tsi_test_fixture_destroy(tsi_test_fixture *fixture) {
   GPR_ASSERT(fixture != NULL);
+  tsi_test_frame_protector_config_destroy(fixture->config);
+  tsi_handshaker_destroy(fixture->client_handshaker);
+  tsi_handshaker_destroy(fixture->server_handshaker);
+  tsi_handshaker_result_destroy(fixture->client_result);
+  tsi_handshaker_result_destroy(fixture->server_result);
+  gpr_free(fixture->client_channel);
+  gpr_free(fixture->server_channel);
   GPR_ASSERT(fixture->vtable != NULL);
   GPR_ASSERT(fixture->vtable->destruct != NULL);
   fixture->vtable->destruct(fixture);

@@ -197,8 +197,7 @@ void check_server0_peer(tsi_peer *peer) {
 }
 
 static bool check_subject_alt_name(tsi_peer *peer, const char *name) {
-  size_t i;
-  for (i = 0; i < peer->property_count; i++) {
+  for (size_t i = 0; i < peer->property_count; i++) {
     const tsi_peer_property *prop = &peer->properties[i];
     if (strcmp(prop->name, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) ==
         0) {
@@ -291,23 +290,13 @@ static void ssl_test_destruct(tsi_test_fixture *fixture) {
   if (ssl_fixture == NULL) {
     return;
   }
-  /* Destroy base. */
-  tsi_test_frame_protector_config_destroy(ssl_fixture->base.config);
-  tsi_handshaker_destroy(ssl_fixture->base.client_handshaker);
-  tsi_handshaker_destroy(ssl_fixture->base.server_handshaker);
-  tsi_handshaker_result_destroy(ssl_fixture->base.client_result);
-  tsi_handshaker_result_destroy(ssl_fixture->base.server_result);
-  gpr_free(ssl_fixture->base.client_channel);
-  gpr_free(ssl_fixture->base.server_channel);
-
-  /* Destory ssl_alpn_lib. */
+  /* Destroy ssl_alpn_lib. */
   ssl_alpn_lib *alpn_lib = ssl_fixture->alpn_lib;
-  size_t i;
-  for (i = 0; i < alpn_lib->num_server_alpn_protocols; i++) {
+  for (size_t i = 0; i < alpn_lib->num_server_alpn_protocols; i++) {
     gpr_free(alpn_lib->server_alpn_protocols[i]);
   }
   gpr_free(alpn_lib->server_alpn_protocols);
-  for (i = 0; i < alpn_lib->num_client_alpn_protocols; i++) {
+  for (size_t i = 0; i < alpn_lib->num_client_alpn_protocols; i++) {
     gpr_free(alpn_lib->client_alpn_protocols[i]);
   }
   gpr_free(alpn_lib->client_alpn_protocols);
@@ -315,12 +304,12 @@ static void ssl_test_destruct(tsi_test_fixture *fixture) {
 
   /* Destroy ssl_key_cert_lib. */
   ssl_key_cert_lib *key_cert_lib = ssl_fixture->key_cert_lib;
-  for (i = 0; i < key_cert_lib->server_num_key_cert_pairs; i++) {
+  for (size_t i = 0; i < key_cert_lib->server_num_key_cert_pairs; i++) {
     ssl_test_pem_key_cert_pair_destroy(
         key_cert_lib->server_pem_key_cert_pairs[i]);
   }
   gpr_free(key_cert_lib->server_pem_key_cert_pairs);
-  for (i = 0; i < key_cert_lib->bad_server_num_key_cert_pairs; i++) {
+  for (size_t i = 0; i < key_cert_lib->bad_server_num_key_cert_pairs; i++) {
     ssl_test_pem_key_cert_pair_destroy(
         key_cert_lib->bad_server_pem_key_cert_pairs[i]);
   }
@@ -342,9 +331,10 @@ static const struct tsi_test_fixture_vtable vtable = {
     ssl_test_setup_handshakers, ssl_test_check_handshake_results,
     ssl_test_destruct};
 
-static void malloc_and_copy(const char *src, char **dst) {
-  *dst = gpr_zalloc(strlen(src) + 1);
-  memcpy(*dst, src, strlen(src) + 1);
+static char *malloc_and_copy(const char *src) {
+  char *dst = gpr_zalloc(strlen(src) + 1);
+  memcpy(dst, src, strlen(src) + 1);
+  return dst;
 }
 
 static char *load_file(const char *dir_path, const char *file_name) {
@@ -362,13 +352,8 @@ static char *load_file(const char *dir_path, const char *file_name) {
 
 static tsi_test_fixture *ssl_tsi_test_fixture_create() {
   ssl_tsi_test_fixture *ssl_fixture = gpr_zalloc(sizeof(*ssl_fixture));
-
-  /* Create tsi_test_frame_protector_config. */
-  tsi_test_frame_protector_config *config =
-      tsi_test_frame_protector_config_create(true, true, true, true, true, true,
-                                             true, true);
-  ssl_fixture->base.config = config;
-
+  tsi_test_fixture_init(&ssl_fixture->base);
+  ssl_fixture->base.vtable = &vtable;
   /* Create ssl_key_cert_lib. */
   ssl_key_cert_lib *key_cert_lib = gpr_zalloc(sizeof(*key_cert_lib));
   key_cert_lib->use_bad_server_cert = false;
@@ -412,22 +397,15 @@ static tsi_test_fixture *ssl_tsi_test_fixture_create() {
       gpr_zalloc(sizeof(char *) * SSL_TSI_TEST_ALPN_NUM);
   alpn_lib->client_alpn_protocols =
       gpr_zalloc(sizeof(char *) * SSL_TSI_TEST_ALPN_NUM);
-  malloc_and_copy(SSL_TSI_TEST_ALPN1, &alpn_lib->server_alpn_protocols[0]);
-  malloc_and_copy(SSL_TSI_TEST_ALPN3, &alpn_lib->server_alpn_protocols[1]);
-  malloc_and_copy(SSL_TSI_TEST_ALPN2, &alpn_lib->client_alpn_protocols[0]);
-  malloc_and_copy(SSL_TSI_TEST_ALPN3, &alpn_lib->client_alpn_protocols[1]);
+  alpn_lib->server_alpn_protocols[0] = malloc_and_copy(SSL_TSI_TEST_ALPN1);
+  alpn_lib->server_alpn_protocols[1] = malloc_and_copy(SSL_TSI_TEST_ALPN3);
+  alpn_lib->client_alpn_protocols[0] = malloc_and_copy(SSL_TSI_TEST_ALPN2);
+  alpn_lib->client_alpn_protocols[1] = malloc_and_copy(SSL_TSI_TEST_ALPN3);
   alpn_lib->num_server_alpn_protocols = SSL_TSI_TEST_ALPN_NUM;
   alpn_lib->num_client_alpn_protocols = SSL_TSI_TEST_ALPN_NUM;
   alpn_lib->alpn_mode = NO_ALPN;
   ssl_fixture->alpn_lib = alpn_lib;
   ssl_fixture->base.vtable = &vtable;
-  ssl_fixture->base.handshake_buffer_size = TSI_TEST_DEFAULT_BUFFER_SIZE;
-  ssl_fixture->base.client_channel = gpr_zalloc(TSI_TEST_DEFAULT_CHANNEL_SIZE);
-  ssl_fixture->base.server_channel = gpr_zalloc(TSI_TEST_DEFAULT_CHANNEL_SIZE);
-  ssl_fixture->base.bytes_written_to_client_channel = 0;
-  ssl_fixture->base.bytes_written_to_server_channel = 0;
-  ssl_fixture->base.bytes_read_from_client_channel = 0;
-  ssl_fixture->base.bytes_read_from_server_channel = 0;
   ssl_fixture->server_name_indication = NULL;
   ssl_fixture->force_client_auth = false;
   return &ssl_fixture->base;
@@ -437,20 +415,20 @@ void ssl_tsi_test_do_handshake_tiny_handshake_buffer() {
   tsi_test_fixture *fixture = ssl_tsi_test_fixture_create();
   fixture->handshake_buffer_size = TSI_TEST_TINY_HANDSHAKE_BUFFER_SIZE;
   tsi_test_do_handshake(fixture);
-  tsi_test_destroy(fixture);
+  tsi_test_fixture_destroy(fixture);
 }
 
 void ssl_tsi_test_do_handshake_small_handshake_buffer() {
   tsi_test_fixture *fixture = ssl_tsi_test_fixture_create();
   fixture->handshake_buffer_size = TSI_TEST_SMALL_HANDSHAKE_BUFFER_SIZE;
   tsi_test_do_handshake(fixture);
-  tsi_test_destroy(fixture);
+  tsi_test_fixture_destroy(fixture);
 }
 
 void ssl_tsi_test_do_handshake() {
   tsi_test_fixture *fixture = ssl_tsi_test_fixture_create();
   tsi_test_do_handshake(fixture);
-  tsi_test_destroy(fixture);
+  tsi_test_fixture_destroy(fixture);
 }
 
 void ssl_tsi_test_do_handshake_with_client_authentication() {
@@ -458,7 +436,7 @@ void ssl_tsi_test_do_handshake_with_client_authentication() {
   ssl_tsi_test_fixture *ssl_fixture = (ssl_tsi_test_fixture *)fixture;
   ssl_fixture->force_client_auth = true;
   tsi_test_do_handshake(fixture);
-  tsi_test_destroy(fixture);
+  tsi_test_fixture_destroy(fixture);
 }
 
 void ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain() {
@@ -467,7 +445,7 @@ void ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain() {
   ssl_tsi_test_fixture *ssl_fixture = (ssl_tsi_test_fixture *)fixture;
   ssl_fixture->server_name_indication = "waterzooi.test.google.be";
   tsi_test_do_handshake(fixture);
-  tsi_test_destroy(fixture);
+  tsi_test_fixture_destroy(fixture);
 }
 
 void ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain() {
@@ -476,7 +454,7 @@ void ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain() {
   ssl_tsi_test_fixture *ssl_fixture = (ssl_tsi_test_fixture *)fixture;
   ssl_fixture->server_name_indication = "juju.test.google.fr";
   tsi_test_do_handshake(fixture);
-  tsi_test_destroy(fixture);
+  tsi_test_fixture_destroy(fixture);
 }
 
 void ssl_tsi_test_do_handshake_with_bad_server_cert() {
@@ -484,7 +462,7 @@ void ssl_tsi_test_do_handshake_with_bad_server_cert() {
   ssl_tsi_test_fixture *ssl_fixture = (ssl_tsi_test_fixture *)fixture;
   ssl_fixture->key_cert_lib->use_bad_server_cert = true;
   tsi_test_do_handshake(fixture);
-  tsi_test_destroy(fixture);
+  tsi_test_fixture_destroy(fixture);
 }
 
 void ssl_tsi_test_do_handshake_with_bad_client_cert() {
@@ -493,7 +471,7 @@ void ssl_tsi_test_do_handshake_with_bad_client_cert() {
   ssl_fixture->key_cert_lib->use_bad_client_cert = true;
   ssl_fixture->force_client_auth = true;
   tsi_test_do_handshake(fixture);
-  tsi_test_destroy(fixture);
+  tsi_test_fixture_destroy(fixture);
 }
 
 void ssl_tsi_test_do_handshake_alpn_client_no_server() {
@@ -501,7 +479,7 @@ void ssl_tsi_test_do_handshake_alpn_client_no_server() {
   ssl_tsi_test_fixture *ssl_fixture = (ssl_tsi_test_fixture *)fixture;
   ssl_fixture->alpn_lib->alpn_mode = ALPN_CLIENT_NO_SERVER;
   tsi_test_do_handshake(fixture);
-  tsi_test_destroy(fixture);
+  tsi_test_fixture_destroy(fixture);
 }
 
 void ssl_tsi_test_do_handshake_alpn_server_no_client() {
@@ -509,7 +487,7 @@ void ssl_tsi_test_do_handshake_alpn_server_no_client() {
   ssl_tsi_test_fixture *ssl_fixture = (ssl_tsi_test_fixture *)fixture;
   ssl_fixture->alpn_lib->alpn_mode = ALPN_SERVER_NO_CLIENT;
   tsi_test_do_handshake(fixture);
-  tsi_test_destroy(fixture);
+  tsi_test_fixture_destroy(fixture);
 }
 
 void ssl_tsi_test_do_handshake_alpn_client_server_mismatch() {
@@ -517,7 +495,7 @@ void ssl_tsi_test_do_handshake_alpn_client_server_mismatch() {
   ssl_tsi_test_fixture *ssl_fixture = (ssl_tsi_test_fixture *)fixture;
   ssl_fixture->alpn_lib->alpn_mode = ALPN_CLIENT_SERVER_MISMATCH;
   tsi_test_do_handshake(fixture);
-  tsi_test_destroy(fixture);
+  tsi_test_fixture_destroy(fixture);
 }
 
 void ssl_tsi_test_do_handshake_alpn_client_server_ok() {
@@ -525,17 +503,16 @@ void ssl_tsi_test_do_handshake_alpn_client_server_ok() {
   ssl_tsi_test_fixture *ssl_fixture = (ssl_tsi_test_fixture *)fixture;
   ssl_fixture->alpn_lib->alpn_mode = ALPN_CLIENT_SERVER_OK;
   tsi_test_do_handshake(fixture);
-  tsi_test_destroy(fixture);
+  tsi_test_fixture_destroy(fixture);
 }
 
 void ssl_tsi_test_do_round_trip_for_all_configs() {
   unsigned int *bit_array =
       gpr_zalloc(sizeof(unsigned int) * TSI_TEST_NUM_OF_ARGUMENTS);
-  unsigned int mask = 1U << (TSI_TEST_NUM_OF_ARGUMENTS - 1);
-  unsigned int val = 0, ind = 0;
-  for (val = 0; val < TSI_TEST_NUM_OF_COMBINATIONS; val++) {
+  const unsigned int mask = 1U << (TSI_TEST_NUM_OF_ARGUMENTS - 1);
+  for (unsigned int val = 0; val < TSI_TEST_NUM_OF_COMBINATIONS; val++) {
     unsigned int v = val;
-    for (ind = 0; ind < TSI_TEST_NUM_OF_ARGUMENTS; ind++) {
+    for (unsigned int ind = 0; ind < TSI_TEST_NUM_OF_ARGUMENTS; ind++) {
       bit_array[ind] = (v & mask) ? 1 : 0;
       v <<= 1;
     }
@@ -546,27 +523,26 @@ void ssl_tsi_test_do_round_trip_for_all_configs() {
         bit_array[0], bit_array[1], bit_array[2], bit_array[3], bit_array[4],
         bit_array[5], bit_array[6], bit_array[7]);
     tsi_test_do_round_trip(&ssl_fixture->base);
-    tsi_test_destroy(fixture);
+    tsi_test_fixture_destroy(fixture);
   }
   gpr_free(bit_array);
 }
 
 void ssl_tsi_test_do_round_trip_odd_buffer_size() {
-  size_t odd_sizes[] = {1025, 2051, 4103, 8207, 16409};
-  size_t size = sizeof(odd_sizes) / sizeof(size_t);
-  size_t ind1 = 0, ind2 = 0, ind3 = 0, ind4 = 0, ind5 = 0;
-  for (ind1 = 0; ind1 < size; ind1++) {
-    for (ind2 = 0; ind2 < size; ind2++) {
-      for (ind3 = 0; ind3 < size; ind3++) {
-        for (ind4 = 0; ind4 < size; ind4++) {
-          for (ind5 = 0; ind5 < size; ind5++) {
+  const size_t odd_sizes[] = {1025, 2051, 4103, 8207, 16409};
+  const size_t size = sizeof(odd_sizes) / sizeof(size_t);
+  for (size_t ind1 = 0; ind1 < size; ind1++) {
+    for (size_t ind2 = 0; ind2 < size; ind2++) {
+      for (size_t ind3 = 0; ind3 < size; ind3++) {
+        for (size_t ind4 = 0; ind4 < size; ind4++) {
+          for (size_t ind5 = 0; ind5 < size; ind5++) {
             tsi_test_fixture *fixture = ssl_tsi_test_fixture_create();
             ssl_tsi_test_fixture *ssl_fixture = (ssl_tsi_test_fixture *)fixture;
             tsi_test_frame_protector_config_set_buffer_size(
                 ssl_fixture->base.config, odd_sizes[ind1], odd_sizes[ind2],
                 odd_sizes[ind3], odd_sizes[ind4], odd_sizes[ind5]);
             tsi_test_do_round_trip(&ssl_fixture->base);
-            tsi_test_destroy(fixture);
+            tsi_test_fixture_destroy(fixture);
           }
         }
       }
