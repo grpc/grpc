@@ -60,7 +60,7 @@ static void fake_test_destruct(tsi_test_fixture *fixture) {
   tsi_handshaker_result_destroy(fixture->server_result);
   gpr_free(fixture->client_channel);
   gpr_free(fixture->server_channel);
-};
+}
 
 static const struct tsi_test_fixture_vtable vtable = {
     fake_test_setup_handshakers, fake_test_check_handshake_results,

@@ -3741,7 +3741,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/tsi/fake_transport_security.c \
     src/core/tsi/gts_transport_security.c \
     src/core/tsi/ssl_transport_security.c \
-    src/core/tsi/transport_security_grpc.c \
     src/core/tsi/transport_security.c \
     src/core/tsi/transport_security_adapter.c \
     src/core/lib/http/httpcli_security_connector.c \
@@ -4022,7 +4021,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/tsi/fake_transport_security.c \
     src/core/tsi/gts_transport_security.c \
     src/core/tsi/ssl_transport_security.c \
-    src/core/tsi/transport_security_grpc.c \
     src/core/tsi/transport_security.c \
     src/core/tsi/transport_security_adapter.c \
     src/core/lib/http/httpcli_security_connector.c \
@@ -9653,14 +9651,14 @@ else
 
 
 
-$(BINDIR)/$(CONFIG)/fake_transport_security_test: $(FAKE_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/fake_transport_security_test: $(FAKE_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(FAKE_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/fake_transport_security_test
+	$(Q) $(LD) $(LDFLAGS) $(FAKE_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/fake_transport_security_test
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/tsi/fake_transport_security_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/tsi/fake_transport_security_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_fake_transport_security_test: $(FAKE_TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
 
@@ -12853,14 +12851,14 @@ else
 
 
 
-$(BINDIR)/$(CONFIG)/ssl_transport_security_test: $(SSL_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/ssl_transport_security_test: $(SSL_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(SSL_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/ssl_transport_security_test
+	$(Q) $(LD) $(LDFLAGS) $(SSL_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/ssl_transport_security_test
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/tsi/ssl_transport_security_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/tsi/ssl_transport_security_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_ssl_transport_security_test: $(SSL_TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
 
@@ -19828,11 +19826,6 @@ src/core/ext/transport/cronet/transport/cronet_api_dummy.c: $(OPENSSL_DEP)
 src/core/ext/transport/cronet/transport/cronet_transport.c: $(OPENSSL_DEP)
 src/core/plugin_registry/grpc_cronet_plugin_registry.c: $(OPENSSL_DEP)
 src/core/plugin_registry/grpc_plugin_registry.c: $(OPENSSL_DEP)
-src/core/tsi/fake_transport_security.c: $(OPENSSL_DEP)
-src/core/tsi/gts_transport_security.c: $(OPENSSL_DEP)
-src/core/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
-src/core/tsi/transport_security.c: $(OPENSSL_DEP)
-src/core/tsi/transport_security_adapter.c: $(OPENSSL_DEP)
 src/cpp/client/cronet_credentials.cc: $(OPENSSL_DEP)
 src/cpp/client/secure_credentials.cc: $(OPENSSL_DEP)
 src/cpp/common/auth_property_iterator.cc: $(OPENSSL_DEP)

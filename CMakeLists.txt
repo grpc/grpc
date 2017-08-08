@@ -1797,7 +1797,6 @@ add_library(grpc_test_util
   src/core/tsi/fake_transport_security.c
   src/core/tsi/gts_transport_security.c
   src/core/tsi/ssl_transport_security.c
-  src/core/tsi/transport_security_grpc.c
   src/core/tsi/transport_security.c
   src/core/tsi/transport_security_adapter.c
   src/core/lib/http/httpcli_security_connector.c
@@ -2089,7 +2088,6 @@ add_library(grpc_test_util_unsecure
   src/core/tsi/fake_transport_security.c
   src/core/tsi/gts_transport_security.c
   src/core/tsi/ssl_transport_security.c
-  src/core/tsi/transport_security_grpc.c
   src/core/tsi/transport_security.c
   src/core/tsi/transport_security_adapter.c
   src/core/lib/http/httpcli_security_connector.c
@@ -6021,9 +6019,9 @@ target_include_directories(fake_transport_security_test
 
 target_link_libraries(fake_transport_security_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
   grpc
   gpr_test_util
-  grpc_test_util
   gpr
 )
 
@@ -8801,9 +8799,9 @@ target_include_directories(ssl_transport_security_test
 
 target_link_libraries(ssl_transport_security_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
   grpc
   gpr_test_util
-  grpc_test_util
   gpr
 )
 

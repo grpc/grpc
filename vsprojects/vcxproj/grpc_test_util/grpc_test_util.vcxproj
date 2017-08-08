@@ -233,7 +233,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\gts_transport_security.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_types.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_grpc.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_adapter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_interface.h" />
@@ -659,8 +658,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\gts_transport_security.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security_grpc.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security.c">
     </ClCompile>

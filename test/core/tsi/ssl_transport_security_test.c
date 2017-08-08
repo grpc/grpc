@@ -336,7 +336,7 @@ static void ssl_test_destruct(tsi_test_fixture *fixture) {
       ssl_fixture->server_handshaker_factory);
   tsi_ssl_client_handshaker_factory_destroy(
       ssl_fixture->client_handshaker_factory);
-};
+}
 
 static const struct tsi_test_fixture_vtable vtable = {
     ssl_test_setup_handshakers, ssl_test_check_handshake_results,
