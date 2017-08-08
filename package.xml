@@ -238,6 +238,7 @@
     <file baseinstalldir="/" name="src/core/tsi/ssl_types.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_adapter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel.h" role="src" />
@@ -596,6 +597,7 @@
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_adapter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/secure/secure_channel_create.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/channel_connectivity.c" role="src" />

@@ -843,6 +843,7 @@
         'src/core/tsi/ssl_transport_security.c',
         'src/core/tsi/transport_security.c',
         'src/core/tsi/transport_security_adapter.c',
+        'src/core/tsi/transport_security_grpc.c',
         'src/core/ext/transport/chttp2/server/chttp2_server.c',
         'src/core/ext/transport/chttp2/client/secure/secure_channel_create.c',
         'src/core/ext/filters/client_channel/channel_connectivity.c',
