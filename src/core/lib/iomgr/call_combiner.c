@@ -101,7 +101,7 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
             prev_size - 1);
   }
   GPR_ASSERT(prev_size >= 1);
-  if (prev_size > (gpr_atm)1) {
+  if (prev_size > 1) {
     while (true) {
       if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
         gpr_log(GPR_DEBUG, "  checking queue");
