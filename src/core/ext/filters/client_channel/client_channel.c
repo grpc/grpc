@@ -934,6 +934,9 @@ typedef struct {
   gpr_atm peer_string;
   // For send_message.
   grpc_caching_byte_stream send_message;
+  // For send_trailing_metadata.
+  grpc_linked_mdelem *send_trailing_metadata_storage;
+  grpc_metadata_batch send_trailing_metadata;
   // For intercepting recv_initial_metadata.
   grpc_metadata_batch recv_initial_metadata;
   grpc_closure recv_initial_metadata_ready;
@@ -1037,8 +1040,11 @@ typedef struct client_channel_call_data {
   grpc_byte_stream_cache initial_send_message;
   grpc_byte_stream_cache *send_messages;
   size_t num_send_message_ops;
+  // Copy of trailing metadata.
+  // Populated when we receive a send_trailing_metadata op.
   // Non-NULL if we've received a send_trailing_metadata op.
-  grpc_metadata_batch *send_trailing_metadata;
+  grpc_linked_mdelem *send_trailing_metadata_storage;
+  grpc_metadata_batch send_trailing_metadata;
 } call_data;
 
 grpc_subchannel_call *grpc_client_channel_get_subchannel_call(
@@ -1190,10 +1196,17 @@ gpr_log(GPR_INFO, "RETRIES CONFIGURED");
 
 static void batch_data_unref(grpc_exec_ctx *exec_ctx,
                              subchannel_batch_data *batch_data) {
+gpr_log(GPR_INFO, "==> batch_data_unref()");
   if (gpr_unref(&batch_data->refs)) {
+gpr_log(GPR_INFO, "  destroying batch_data");
     if (batch_data->send_initial_metadata_storage != NULL) {
       grpc_metadata_batch_destroy(exec_ctx, &batch_data->send_initial_metadata);
       gpr_free(batch_data->send_initial_metadata_storage);
+    }
+    if (batch_data->send_trailing_metadata_storage != NULL) {
+      grpc_metadata_batch_destroy(exec_ctx,
+                                  &batch_data->send_trailing_metadata);
+      gpr_free(batch_data->send_trailing_metadata_storage);
     }
     GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, batch_data->subchannel_call,
                                "batch_data_unref");
@@ -1228,6 +1241,10 @@ static void retry_committed(grpc_exec_ctx *exec_ctx, call_data *calld) {
   }
   for (int i = 0; i < (int)calld->num_send_message_ops - 2; ++i) {
     grpc_byte_stream_cache_destroy(exec_ctx, &calld->send_messages[i]);
+  }
+  if (calld->send_trailing_metadata_storage != NULL) {
+    grpc_metadata_batch_destroy(exec_ctx, &calld->send_trailing_metadata);
+    gpr_free(calld->send_trailing_metadata_storage);
   }
   gpr_free(calld->send_messages);
 }
@@ -1285,7 +1302,7 @@ gpr_log(GPR_INFO, "size exceeded, committing for retries");
     if (error != GRPC_ERROR_NONE) {
       // If we couldn't copy the metadata, we won't be able to retry,
       // but we can still proceed with the initial RPC.
-gpr_log(GPR_INFO, "grpc_metadata_batch_copy() failed, committing");
+gpr_log(GPR_INFO, "grpc_metadata_batch_copy() for initial metadata failed, committing");
       retry_committed(exec_ctx, calld);
       GRPC_ERROR_UNREF(error);
       return;
@@ -1308,10 +1325,20 @@ gpr_log(GPR_INFO, "grpc_metadata_batch_copy() failed, committing");
   }
   // Save metadata batch for send_trailing_metadata ops.
   if (batch->send_trailing_metadata) {
-// FIXME: need to make a copy, in case a filter beneath us modifies it
-// and then we retry?
-    calld->send_trailing_metadata =
-        batch->payload->send_trailing_metadata.send_trailing_metadata;
+    GPR_ASSERT(calld->send_trailing_metadata_storage == NULL);
+    grpc_error *error = grpc_metadata_batch_copy(
+        exec_ctx,
+        batch->payload->send_trailing_metadata.send_trailing_metadata,
+        &calld->send_trailing_metadata,
+        &calld->send_trailing_metadata_storage);
+    if (error != GRPC_ERROR_NONE) {
+      // If we couldn't copy the metadata, we won't be able to retry,
+      // but we can still proceed with the initial RPC.
+gpr_log(GPR_INFO, "grpc_metadata_batch_copy() for trailing metadata failed, committing");
+      retry_committed(exec_ctx, calld);
+      GRPC_ERROR_UNREF(error);
+      return;
+    }
   }
 }
 
@@ -1443,7 +1470,7 @@ gpr_log(GPR_INFO, "found recv_initial_metadata batch at index %" PRIdPTR, i);
   grpc_metadata_batch_move(
       &batch_data->recv_initial_metadata,
       original_batch->payload->recv_initial_metadata.recv_initial_metadata);
-gpr_log(GPR_INFO, "calling original recv_message_ready");
+gpr_log(GPR_INFO, "calling original recv_initial_metadata_ready");
   GRPC_CLOSURE_RUN(
       exec_ctx,
       original_batch->payload->recv_initial_metadata
@@ -1473,8 +1500,10 @@ gpr_log(GPR_INFO, "==> recv_initial_metadata_ready(): error=%s", grpc_error_stri
       return;
     }
   } else {
-    // If we got a Trailers-Only response), do nothing.  We'll probably
-    // wind up retrying when recv_trailing_metadata comes back.
+    // If we got a Trailers-Only response), do nothing.  We can evaluate
+    // whether to retry when recv_trailing_metadata comes back.
+// FIXME: what if we see recv_trailing_metadata before this? (e.g.,
+// because another filter delayed this callback)
 // FIXME: do we need to do anything from below before we do this?
 gpr_log(GPR_INFO, "trailing_metadata_available=%d", batch_data->trailing_metadata_available);
     if (batch_data->trailing_metadata_available) {
@@ -1626,6 +1655,9 @@ gpr_log(GPR_INFO, "call_finished=%d, status=%d", call_finished, status);
   if (call_finished) {
     if (maybe_retry(exec_ctx, batch_data, status)) {
       batch_data_unref(exec_ctx, batch_data);
+      if (retry_state->recv_initial_metadata_ready_pending) {
+        batch_data_unref(exec_ctx, batch_data);
+      }
       return;
     }
     // If we are not retrying and there is a pending
@@ -1675,6 +1707,7 @@ gpr_log(GPR_INFO, "CLEARING pending_batch->on_complete");
 static void start_retriable_subchannel_batch(grpc_exec_ctx *exec_ctx,
                                              grpc_call_element *elem) {
   call_data *calld = elem->call_data;
+gpr_log(GPR_INFO, "==> start_retriable_subchannel_batch()");
   // Figure out what ops we have to send.
   // Note that we don't check for send_message ops here, since those
   // are detected in a different way below.
@@ -1750,10 +1783,15 @@ static void start_retriable_subchannel_batch(grpc_exec_ctx *exec_ctx,
 // FIXME: don't do this yet if there are pending send_message ops
   if (send_trailing_metadata_idx != INT_MAX &&
       !retry_state->send_trailing_metadata) {
+    grpc_error *error = grpc_metadata_batch_copy(
+        exec_ctx, &calld->send_trailing_metadata,
+        &batch_data->send_trailing_metadata,
+        &batch_data->send_trailing_metadata_storage);
+    GPR_ASSERT(error == GRPC_ERROR_NONE);  // FIXME?
     retry_state->send_trailing_metadata = true;
     batch_data->batch.send_trailing_metadata = true;
     batch_data->batch.payload->send_trailing_metadata.send_trailing_metadata =
-        calld->send_trailing_metadata;
+        &batch_data->send_trailing_metadata;
   }
   // recv_initial_metadata.
   if (recv_initial_metadata_idx != INT_MAX &&
@@ -2076,6 +2114,11 @@ static bool pick_callback_start_locked(grpc_exec_ctx *exec_ctx,
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: starting pick on lb_policy=%p",
             chand, calld, chand->lb_policy);
+  }
+  if (calld->connected_subchannel != NULL) {
+    GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, calld->connected_subchannel,
+                                    "starting pick");
+    calld->connected_subchannel = NULL;
   }
   // Keep a ref to the LB policy in calld while the pick is pending.
   GRPC_LB_POLICY_REF(chand->lb_policy, "pick_subchannel");

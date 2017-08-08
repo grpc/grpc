@@ -697,7 +697,6 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
 static void subchannel_call_destroy(grpc_exec_ctx *exec_ctx, void *call,
                                     grpc_error *error) {
   grpc_subchannel_call *c = call;
-  GPR_ASSERT(c->schedule_closure_after_destroy != NULL);
   GPR_TIMER_BEGIN("grpc_subchannel_call_unref.destroy", 0);
   grpc_connected_subchannel *connection = c->connection;
   grpc_call_stack_destroy(exec_ctx, SUBCHANNEL_CALL_TO_CALL_STACK(c), NULL,
