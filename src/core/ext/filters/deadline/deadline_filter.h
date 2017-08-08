@@ -63,6 +63,8 @@ void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
 // to ensure that the timer callback is not invoked while it is in the
 // process of being reset, which means that attempting to increase the
 // deadline may result in the timer being called twice.
+//
+// Note: Must be called while holding the call combiner.
 void grpc_deadline_state_reset(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                                gpr_timespec new_deadline);
 
@@ -72,6 +74,8 @@ void grpc_deadline_state_reset(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
 //
 // Note: It is the caller's responsibility to chain to the next filter if
 // necessary after this function returns.
+//
+// Note: Must be called while holding the call combiner.
 void grpc_deadline_state_client_start_transport_stream_op_batch(
     grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     grpc_transport_stream_op_batch* op);

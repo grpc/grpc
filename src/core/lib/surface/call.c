@@ -588,6 +588,8 @@ grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved) {
   return GRPC_CALL_OK;
 }
 
+// This is called via the call combiner to start sending a batch down
+// the filter stack.
 static void execute_batch_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
                                            grpc_error *ignored) {
   grpc_transport_stream_op_batch *batch = arg;
@@ -649,6 +651,8 @@ typedef struct {
   grpc_closure finish_batch;
 } cancel_state;
 
+// The on_complete callback used when sending a cancel_stream batch down
+// the filter stack.  Yields the call combiner when the batch is done.
 static void done_termination(grpc_exec_ctx *exec_ctx, void *arg,
                              grpc_error *error) {
   cancel_state *state = (cancel_state *)arg;
@@ -661,6 +665,10 @@ static void done_termination(grpc_exec_ctx *exec_ctx, void *arg,
 static void cancel_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
                               status_source source, grpc_error *error) {
   GRPC_CALL_INTERNAL_REF(c, "termination");
+  // Inform the call combiner of the cancellation, so that it can cancel
+  // any in-flight asynchronous actions that may be holding the call
+  // combiner.  This ensures that the cancel_stream batch can be sent
+  // down the filter stack in a timely manner.
   grpc_call_combiner_cancel(exec_ctx, &c->call_combiner, GRPC_ERROR_REF(error));
   set_status_from_error(exec_ctx, c, source, GRPC_ERROR_REF(error));
   cancel_state *state = (cancel_state *)gpr_malloc(sizeof(*state));
@@ -1330,6 +1338,9 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   }
 }
 
+// The recv_message_ready callback used when sending a batch containing
+// a recv_message op down the filter stack.  Yields the call combiner
+// before processing the received message.
 static void receiving_stream_ready_in_call_combiner(grpc_exec_ctx *exec_ctx,
                                                     void *bctlp,
                                                     grpc_error *error) {

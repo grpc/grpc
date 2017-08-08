@@ -851,6 +851,7 @@ grpc_subchannel_call *grpc_client_channel_get_subchannel_call(
   return calld->subchannel_call;
 }
 
+// This is called via the call combiner, so access to calld is synchronized.
 static void waiting_for_pick_batches_add(
     call_data *calld, grpc_transport_stream_op_batch *batch) {
   if (batch->send_initial_metadata) {
@@ -863,6 +864,7 @@ static void waiting_for_pick_batches_add(
   }
 }
 
+// This is called via the call combiner, so access to calld is synchronized.
 static void fail_pending_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
                                                 void *arg, grpc_error *error) {
   call_data *calld = arg;
@@ -873,6 +875,7 @@ static void fail_pending_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
       GRPC_ERROR_REF(error), calld->call_combiner);
 }
 
+// This is called via the call combiner, so access to calld is synchronized.
 static void waiting_for_pick_batches_fail(grpc_exec_ctx *exec_ctx,
                                           grpc_call_element *elem,
                                           grpc_error *error) {
@@ -903,6 +906,7 @@ static void waiting_for_pick_batches_fail(grpc_exec_ctx *exec_ctx,
   GRPC_ERROR_UNREF(error);
 }
 
+// This is called via the call combiner, so access to calld is synchronized.
 static void run_pending_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
                                                void *arg, grpc_error *ignored) {
   call_data *calld = arg;
@@ -912,6 +916,7 @@ static void run_pending_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
       calld->waiting_for_pick_batches[calld->waiting_for_pick_batches_count]);
 }
 
+// This is called via the call combiner, so access to calld is synchronized.
 static void waiting_for_pick_batches_resume(grpc_exec_ctx *exec_ctx,
                                             grpc_call_element *elem) {
   channel_data *chand = elem->channel_data;
