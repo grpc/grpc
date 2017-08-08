@@ -43,8 +43,6 @@ namespace Grpc.Core
         static readonly HashSet<Channel> registeredChannels = new HashSet<Channel>();
         static readonly HashSet<Server> registeredServers = new HashSet<Server>();
 
-        static EventHandler shuttingDown;
-
         static ILogger logger = new NullLogger();
 
         readonly GrpcThreadPool threadPool;
@@ -242,17 +240,7 @@ namespace Grpc.Core
         /// <summary>
         /// Occurs when <c>GrpcEnvironment</c> is about the start the shutdown logic.
         /// </summary>
-        public static event EventHandler ShuttingDown
-        {
-            add
-            {
-                shuttingDown += value;
-            }
-            remove
-            {
-                shuttingDown -= value;
-            }
-        }
+        public static event EventHandler ShuttingDown;
 
         /// <summary>
         /// Creates gRPC environment.
@@ -333,7 +321,7 @@ namespace Grpc.Core
                 throw new InvalidOperationException("ShutdownAsync has already been called");
             }
 
-            await Task.Run(() => shuttingDown.Invoke(this, null));
+            await Task.Run(() => ShuttingDown?.Invoke(this, null));
 
             await threadPool.StopAsync().ConfigureAwait(false);
             GrpcNativeShutdown();
