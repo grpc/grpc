@@ -554,9 +554,6 @@ Object HHVM_METHOD(Call, startBatch,
         }
     }
 
-
-    //std::this_thread::sleep_for(std::chrono::seconds(2));
-
     grpc_event event( grpc_completion_queue_pluck(CompletionQueue::getClientQueue().queue(),
                                                   pCallData->call(),
                                                   gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) );
@@ -585,9 +582,12 @@ Object HHVM_METHOD(Call, startBatch,
         else
         {
             plugin_get_metadata_params* const pMetadataParams{ getPluginMetadataFuture.get() };
-            plugin_do_get_metadata(pMetadataParams->ptr, pMetadataParams->context, pMetadataParams->cb,
+            if (pMetadataParams != nullptr)
+            {
+              plugin_do_get_metadata(pMetadataParams->ptr, pMetadataParams->context, pMetadataParams->cb,
                                     pMetadataParams->user_data);
-            if (pMetadataParams) gpr_free(pMetadataParams);
+              /*if (pMetadataParams)*/ gpr_free(pMetadataParams);
+            }
         }
     }
 

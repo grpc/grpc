@@ -106,6 +106,7 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
     plugin_state *pState{ reinterpret_cast<plugin_state*>(gpr_zalloc(sizeof(plugin_state))) };
     pState->callback = callback;
     pState->pPluginGetMetadataPromise = &PluginGetMetadataPromise::GetPluginMetadataPromise();
+    pState->thread_id = std::this_thread::get_id();
 
     grpc_metadata_credentials_plugin plugin;
     plugin.get_metadata = plugin_get_metadata;
@@ -162,15 +163,22 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
 
     plugin_state *pState{ reinterpret_cast<plugin_state *>(ptr) };
     MetadataPromise* const pMetadataPromise = pState->pPluginGetMetadataPromise->getPromise();
+    if (pState->thread_id == std::this_thread::get_id())
+    {
+      plugin_do_get_metadata(ptr, context, cb, user_data);
+      pMetadataPromise->set_value(nullptr);
+    }
+    else
+    {
+      plugin_get_metadata_params *pParams{ reinterpret_cast<plugin_get_metadata_params *>(gpr_zalloc(sizeof(plugin_get_metadata_params))) };
+      pParams->ptr = ptr;
+      pParams->context = context;
+      pParams->cb = cb;
+      pParams->user_data = user_data;
 
-    plugin_get_metadata_params *pParams{ reinterpret_cast<plugin_get_metadata_params *>(gpr_zalloc(sizeof(plugin_get_metadata_params))) };
-    pParams->ptr = ptr;
-    pParams->context = context;
-    pParams->cb = cb;
-    pParams->user_data = user_data;
-
-    // return the meta data params in the promise
-    pMetadataPromise->set_value(pParams);
+      // return the meta data params in the promise
+      pMetadataPromise->set_value(pParams);
+    }
 }
 
 void plugin_destroy_state(void *ptr)

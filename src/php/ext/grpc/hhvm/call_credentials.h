@@ -20,6 +20,7 @@
 #define NET_GRPC_HHVM_GRPC_CALL_CREDENTIALS_H_
 
 #include <future>
+#include <thread>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -66,6 +67,7 @@ typedef struct plugin_state
 {
     Variant callback;
     PluginGetMetadataPromise* pPluginGetMetadataPromise;
+    std::thread::id thread_id;
 } plugin_state;
 
 class CallCredentialsData
