@@ -1,6 +1,6 @@
 {
   "name": "grpc",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "author": "Google Inc.",
   "description": "gRPC Library for Node",
   "homepage": "http://www.grpc.io/",
