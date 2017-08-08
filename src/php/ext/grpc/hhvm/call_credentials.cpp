@@ -105,7 +105,7 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 
     plugin_state *pState{ reinterpret_cast<plugin_state*>(gpr_zalloc(sizeof(plugin_state))) };
     pState->callback = callback;
-    pState->pMetadataPromise = PluginGetMetadataPromise::GetPluginMetadataPromise().getPromise();
+    pState->pPluginGetMetadataPromise = &PluginGetMetadataPromise::GetPluginMetadataPromise();
 
     grpc_metadata_credentials_plugin plugin;
     plugin.get_metadata = plugin_get_metadata;
@@ -161,7 +161,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
     HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata") // Degug Trace
 
     plugin_state *pState{ reinterpret_cast<plugin_state *>(ptr) };
-    MetadataPromise* const pMetadataPromise = pState->pMetadataPromise;
+    MetadataPromise* const pMetadataPromise = pState->pPluginGetMetadataPromise->getPromise();
 
     plugin_get_metadata_params *pParams{ reinterpret_cast<plugin_get_metadata_params *>(gpr_zalloc(sizeof(plugin_get_metadata_params))) };
     pParams->ptr = ptr;

@@ -65,7 +65,7 @@ private:
 typedef struct plugin_state
 {
     Variant callback;
-    MetadataPromise* pMetadataPromise;
+    PluginGetMetadataPromise* pPluginGetMetadataPromise;
 } plugin_state;
 
 class CallCredentialsData
