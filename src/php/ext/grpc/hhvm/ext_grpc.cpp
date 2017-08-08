@@ -41,6 +41,11 @@ class GrpcExtension : public Extension
 {
 public:
     GrpcExtension(void) : Extension("grpc", HHVM_GRPC_VERSION) {}
+    ~GrpcExtension(void)
+    {
+      grpc_shutdown();
+    }
+
     virtual void moduleInit(void)
     {
         /* Register call error constants */
@@ -148,23 +153,7 @@ public:
         loadSystemlib();
     }
 
-    virtual void moduleShutdown(void)
-    {
-        /*
-        {
-            Lock l1(s_global_channels_cache_mutex);
-            for (auto it = s_global_channels_cache.globalChannelMap.begin();
-                      it != s_global_channels_cache.globalChannelMap.end(); ++it)
-            {
-                grpc_channel_destroy(*it);
-            }
-
-            s_global_channels_cache.globalChannelMap.clear();
-        }
-        */
-
-        grpc_shutdown();
-    }
+    virtual void moduleShutdown(void) { }
 
 } s_grpc_extension;
 

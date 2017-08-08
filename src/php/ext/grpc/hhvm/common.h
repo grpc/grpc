@@ -49,8 +49,8 @@ public:
     std::string m_File;
 };
 
-#define HHVM_TRACE_DEBUG
-#define HHVM_TRACE_DEBUG_DETAILED
+//#define HHVM_TRACE_DEBUG
+//#define HHVM_TRACE_DEBUG_DETAILED
 
 #ifdef HHVM_TRACE_DEBUG
     #define HHVM_TRACE_SCOPE(x) TraceScope traceScope{ x, __func__, __FILE__ };

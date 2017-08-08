@@ -80,37 +80,41 @@ public:
     // interface functions
     bool init(const Array& argsArray);
     const grpc_channel_args& args(void) const { return m_ChannelArgs; }
+    const String& getHashKey(void) { return m_HashKey; }
 
 private:
     // helper functions
     void destroyArgs(void);
 
     // member variables
+    String m_HashKey;
     grpc_channel_args m_ChannelArgs;
 };
 
-/*
+class ChannelsCache
+{
+public:
+  static ChannelsCache& GetChannelsCache(void)
+  {
+      static ChannelsCache s_ChannelsCache;
+      return s_ChannelsCache;
+  }
 
-struct GlobalChannelsCache {
-  std::forward_list<grpc_channel *> globalChannelMap;
-};
+  // constructors/destructors
+  ChannelsCache(void);
+  ~ChannelsCache(void);
 
-extern GlobalChannelsCache s_global_channels_cache;
-extern Mutex s_global_channels_cache_mutex;
-
-struct ChannelsCache {
-  ChannelsCache();
+  // interface functions
   void addChannel(const String& key, grpc_channel *channel);
   grpc_channel *getChannel(const String& key);
   bool hasChannel(const String& key);
   void deleteChannel(const String& key);
-
-  std::map<std::string, grpc_channel *> channelMap;
-
-  static DECLARE_THREAD_LOCAL(ChannelsCache, tl_obj);
+  void destroyChannels(void);
+private:
+  // member variables
+  ReadWriteMutex m_ChannelMapMutex;
+  std::map<std::string, grpc_channel *> m_ChannelMap;
 };
-*/
-
 
 void HHVM_METHOD(Channel, __construct,
                  const String& target,
