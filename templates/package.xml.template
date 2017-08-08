@@ -24,8 +24,9 @@
    </stability>
    <license>BSD</license>
    <notes>
-  - Fixed hang bug when fork() was used #11814
-  - Channel are now by default persistent #11878
+  - Fixed a Windows installation issue #12108
+  - Fixed a MacOS mutex segfault #12109
+  - Fixed a ZTS compilation issue #12109
    </notes>
    <contents>
     <dir baseinstalldir="/" name="/">
