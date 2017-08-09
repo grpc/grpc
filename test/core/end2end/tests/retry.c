@@ -149,6 +149,7 @@ static void test_retry(grpc_end2end_test_config config) {
   grpc_metadata_array_init(&trailing_metadata_recv);
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -202,7 +203,6 @@ static void test_retry(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_ABORTED;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
   op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
   op->reserved = NULL;
@@ -217,6 +217,10 @@ static void test_retry(grpc_end2end_test_config config) {
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
   grpc_call_unref(s);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_metadata_array_init(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
+  grpc_call_details_init(&call_details);
 
   error =
       grpc_server_request_call(f.server, &s, &call_details,

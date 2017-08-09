@@ -1365,12 +1365,6 @@ static bool maybe_retry(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(calld->method_params != NULL);
   retry_policy_params *retry_policy = calld->method_params->retry_policy;
   GPR_ASSERT(retry_policy != NULL);
-  // Check status.
-  if (status == GRPC_STATUS_OK) {
-    grpc_server_retry_throttle_data_record_success(calld->retry_throttle_data);
-    return false;
-  }
-  // Status is not OK.
   // If we've already dispatched a retry from this call, return true.
   // This catches the case where the batch has multiple callbacks
   // (i.e., it includes either recv_message or recv_initial_metadata).
@@ -1378,7 +1372,12 @@ static bool maybe_retry(grpc_exec_ctx *exec_ctx,
       grpc_connected_subchannel_call_get_parent_data(
           batch_data->subchannel_call);
   if (retry_state->retry_dispatched) return true;
-  // Check whether the status is retryable.
+  // Check status.
+  if (status == GRPC_STATUS_OK) {
+    grpc_server_retry_throttle_data_record_success(calld->retry_throttle_data);
+    return false;
+  }
+  // Status is not OK.  Check whether the status is retryable.
   if (!is_status_code_in_list(status, retry_policy->retryable_status_codes,
                               retry_policy->num_retryable_status_codes)) {
 gpr_log(GPR_INFO, "status %d not in retryable_status_codes list", status);
@@ -1415,6 +1414,7 @@ gpr_log(GPR_INFO, "RETRYING");
                                "client_channel_call_retry");
     calld->subchannel_call = NULL;
   }
+// FIXME: what if this came from the surface via a cancel_stream op?
   if (calld->error != GRPC_ERROR_NONE) {
     GRPC_ERROR_UNREF(calld->error);
     calld->error = GRPC_ERROR_NONE;
@@ -1500,6 +1500,17 @@ gpr_log(GPR_INFO, "==> recv_initial_metadata_ready(): error=%s", grpc_error_stri
       return;
     }
   } else {
+
+gpr_log(GPR_INFO, "batch_data->recv_initial_metadata.list.head=%p", batch_data->recv_initial_metadata.list.head);
+for (grpc_linked_mdelem *elem = batch_data->recv_initial_metadata.list.head;
+     elem != NULL; elem = elem->next) {
+char *k = grpc_slice_to_c_string(GRPC_MDKEY(elem->md));
+char *v = grpc_slice_to_c_string(GRPC_MDVALUE(elem->md));
+gpr_log(GPR_INFO, "initial md: %s=%s", k, v);
+gpr_free(k);
+gpr_free(v);
+}
+
     // If we got a Trailers-Only response), do nothing.  We can evaluate
     // whether to retry when recv_trailing_metadata comes back.
 // FIXME: what if we see recv_trailing_metadata before this? (e.g.,
@@ -1643,6 +1654,17 @@ gpr_log(GPR_INFO, "  batch:%s%s%s%s%s%s%s",
     call_finished = true;
     grpc_error_get_status(error, calld->deadline, &status, NULL, NULL);
   } else if (batch_data->batch.recv_trailing_metadata) {  // Cases 2 and 3.
+
+gpr_log(GPR_INFO, "batch_data->recv_trailing_metadata.list.head=%p", batch_data->recv_trailing_metadata.list.head);
+for (grpc_linked_mdelem *e = batch_data->recv_trailing_metadata.list.head;
+     e != NULL; e = e->next) {
+char *k = grpc_slice_to_c_string(GRPC_MDKEY(e->md));
+char *v = grpc_slice_to_c_string(GRPC_MDVALUE(e->md));
+gpr_log(GPR_INFO, "trailing md: %s=%s", k, v);
+gpr_free(k);
+gpr_free(v);
+}
+
     call_finished = true;
     grpc_metadata_batch *md_batch =
         batch_data->batch.payload->recv_trailing_metadata
@@ -1686,6 +1708,7 @@ gpr_log(GPR_INFO, "starting next batch for pending send_message ops");
     pending_batch *pending = &calld->pending_batches[i];
     if (pending_batch_matches(pending, &batch_data->batch,
                               !have_pending_send_message_ops)) {
+gpr_log(GPR_INFO, "pending batch matches at index %" PRIdPTR, i);
       // Copy the trailing metadata to return it to the surface.
       if (batch_data->batch.recv_trailing_metadata) {
         grpc_metadata_batch_move(
