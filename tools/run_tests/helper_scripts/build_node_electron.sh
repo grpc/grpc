@@ -32,7 +32,7 @@
 ELECTRON_VERSION=$1
 source ~/.nvm/nvm.sh
 
-nvm use 6
+nvm use 8
 set -ex
 
 # change to grpc repo root
@@ -43,4 +43,5 @@ export npm_config_disturl=https://atom.io/download/atom-shell
 export npm_config_runtime=electron
 export npm_config_build_from_source=true
 mkdir -p ~/.electron-gyp
+HOME=~/.electron-gyp npm update --prefer-online
 HOME=~/.electron-gyp npm install --unsafe-perm

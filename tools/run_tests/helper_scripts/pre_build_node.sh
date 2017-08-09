@@ -35,9 +35,6 @@ source ~/.nvm/nvm.sh
 nvm install $NODE_VERSION
 set -ex
 
-# Update npm to at least version 5
-npm update -g npm
-
 export GRPC_CONFIG=${CONFIG:-opt}
 
 npm update --prefer-online

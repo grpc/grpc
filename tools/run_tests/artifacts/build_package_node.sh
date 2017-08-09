@@ -30,7 +30,7 @@
 
 source ~/.nvm/nvm.sh
 
-nvm use 4
+nvm use 8
 set -ex
 
 cd $(dirname $0)/../../..

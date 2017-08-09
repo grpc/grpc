@@ -31,7 +31,7 @@
 
 ELECTRON_VERSION=$1
 
-nvm install 6
+nvm install 8
 set -ex
 
 npm install xvfb-maybe
