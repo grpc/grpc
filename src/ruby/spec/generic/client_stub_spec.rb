@@ -185,14 +185,40 @@ describe 'ClientStub' do
         th.join
       end
 
-      it 'should send metadata to the server ok' do
+      def metadata_test(md)
         server_port = create_test_server
         host = "localhost:#{server_port}"
         th = run_request_response(@sent_msg, @resp, @pass,
-                                  expected_metadata: { k1: 'v1', k2: 'v2' })
+                                  expected_metadata: md)
         stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
+        @metadata = md
         expect(get_response(stub)).to eq(@resp)
         th.join
+      end
+
+      it 'should send metadata to the server ok' do
+        metadata_test(k1: 'v1', k2: 'v2')
+      end
+
+      # these tests mostly try to exercise when md might be allocated
+      # instead of inlined
+      it 'should send metadata with multiple large md to the server ok' do
+        val_array = %w(
+          '00000000000000000000000000000000000000000000000000000000000000',
+          '11111111111111111111111111111111111111111111111111111111111111',
+          '22222222222222222222222222222222222222222222222222222222222222',
+        )
+        md = {
+          k1: val_array,
+          k2: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          k3: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+          k4: 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
+          keeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeey5: 'v5',
+          'k66666666666666666666666666666666666666666666666666666' => 'v6',
+          'k77777777777777777777777777777777777777777777777777777' => 'v7',
+          'k88888888888888888888888888888888888888888888888888888' => 'v8'
+        }
+        metadata_test(md)
       end
 
       it 'should send a request when configured using an override channel' do
