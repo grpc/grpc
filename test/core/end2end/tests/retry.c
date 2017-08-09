@@ -216,6 +216,7 @@ static void test_retry(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
+  grpc_call_unref(s);
 
   error =
       grpc_server_request_call(f.server, &s, &call_details,

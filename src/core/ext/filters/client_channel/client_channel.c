@@ -959,9 +959,10 @@ typedef struct {
   bool recv_initial_metadata;
   bool recv_message;
   bool recv_trailing_metadata;
-  bool recv_initial_metadata_ready_pending;
   // subchannel_batch_data.batch.payload points to this.
   grpc_transport_stream_op_batch_payload batch_payload;
+  // State for callback processing.
+  bool recv_initial_metadata_ready_pending;
   bool retry_dispatched;
 } subchannel_call_retry_state;
 
@@ -2151,13 +2152,18 @@ static bool pick_subchannel_locked(grpc_exec_ctx *exec_ctx,
   call_data *calld = elem->call_data;
   bool pick_done = false;
   if (chand->lb_policy != NULL) {
-    apply_service_config_to_call_locked(exec_ctx, elem);
+    // Only get service config data on the first attempt.
+    if (calld->num_retry_attempts == 0) {
+      apply_service_config_to_call_locked(exec_ctx, elem);
+    }
     // If the application explicitly set wait_for_ready, use that.
     // Otherwise, if the service config specified a value for this
     // method, use that.
     //
     // The send_initial_metadata batch will be the first one in the
     // list, as set by get_batch_index() above.
+// FIXME: what if we already returned completion for the
+// send_initial_metadata op and cleared the pending batch?
     GPR_ASSERT(calld->pending_batches[0].batch != NULL);
     grpc_transport_stream_op_batch_payload *send_initial_metadata_payload =
         calld->pending_batches[0].batch->payload;
