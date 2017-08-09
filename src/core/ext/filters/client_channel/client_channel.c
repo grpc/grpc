@@ -1207,6 +1207,10 @@ gpr_log(GPR_INFO, "  destroying batch_data");
                                   &batch_data->send_trailing_metadata);
       gpr_free(batch_data->send_trailing_metadata_storage);
     }
+    grpc_metadata_batch_destroy(exec_ctx,
+                                &batch_data->recv_initial_metadata);
+    grpc_metadata_batch_destroy(exec_ctx,
+                                &batch_data->recv_trailing_metadata);
     GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, batch_data->subchannel_call,
                                "batch_data_unref");
   }
