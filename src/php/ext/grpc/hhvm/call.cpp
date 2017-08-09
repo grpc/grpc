@@ -559,36 +559,39 @@ Object HHVM_METHOD(Call, startBatch,
                                                   gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) );
     if ((event.success == 0) || (event.type != GRPC_OP_COMPLETE))
     {
-        std::stringstream oSS;
+        // Don't do anything in the error event. It will be taken care of in the return object
+        /*std::stringstream oSS;
         oSS << "There was a problem with the request. Event success code: " << event.success
             << " Type: " << event.type << std::endl;
-        SystemLib::throwBadMethodCallExceptionObject(oSS.str());
+        SystemLib::throwBadMethodCallExceptionObject(oSS.str());*/
     }
-
-    // This might look weird but it's required due to the way HHVM works. Each request in HHVM
-    // has it's own thread and you cannot run application code on a single request in more than
-    // one thread. However gRPC calls call_credentials.cpp:plugin_get_metadata in a different thread
-    // in many cases and that violates the thread safety within a request in HHVM and causes segfaults
-    // at any reasonable concurrency.
-    // TODO: See if this is necessary and if so use condition variable
-    if (sending_initial_metadata)
+    else
     {
-        auto getPluginMetadataFuture = pCallData->getPromise().get_future();
-        std::future_status status{ getPluginMetadataFuture.wait_for(std::chrono::milliseconds{ pCallData->getTimeout() }) };
-        if (status == std::future_status::timeout)
-        {
-            SystemLib::throwBadMethodCallExceptionObject("There was a problem with the request it timed out");
-        }
-        else
-        {
-            plugin_get_metadata_params* const pMetadataParams{ getPluginMetadataFuture.get() };
-            if (pMetadataParams != nullptr)
-            {
-              plugin_do_get_metadata(pMetadataParams->ptr, pMetadataParams->context, pMetadataParams->cb,
-                                    pMetadataParams->user_data);
-              /*if (pMetadataParams)*/ gpr_free(pMetadataParams);
-            }
-        }
+      // This might look weird but it's required due to the way HHVM works. Each request in HHVM
+      // has it's own thread and you cannot run application code on a single request in more than
+      // one thread. However gRPC calls call_credentials.cpp:plugin_get_metadata in a different thread
+      // in many cases and that violates the thread safety within a request in HHVM and causes segfaults
+      // at any reasonable concurrency.
+      // TODO: See if this is necessary and if so use condition variable
+      if (sending_initial_metadata)
+      {
+          auto getPluginMetadataFuture = pCallData->getPromise().get_future();
+          std::future_status status{ getPluginMetadataFuture.wait_for(std::chrono::milliseconds{ pCallData->getTimeout() }) };
+          if (status == std::future_status::timeout)
+          {
+              SystemLib::throwBadMethodCallExceptionObject("There was a problem with the request it timed out");
+          }
+          else
+          {
+              plugin_get_metadata_params* const pMetadataParams{ getPluginMetadataFuture.get() };
+              if (pMetadataParams != nullptr)
+              {
+                plugin_do_get_metadata(pMetadataParams->ptr, pMetadataParams->context, pMetadataParams->cb,
+                                      pMetadataParams->user_data);
+                /*if (pMetadataParams)*/ gpr_free(pMetadataParams);
+              }
+          }
+      }
     }
 
     // process results of call
