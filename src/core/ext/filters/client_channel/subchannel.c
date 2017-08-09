@@ -778,7 +778,7 @@ void *grpc_connected_subchannel_call_get_parent_data(
     grpc_subchannel_call *subchannel_call) {
   grpc_channel_stack *chanstk =
       CHANNEL_STACK_FROM_CONNECTION(subchannel_call->connection);
-  return (void *)subchannel_call + sizeof(grpc_subchannel_call) +
+  return (char *)subchannel_call + sizeof(grpc_subchannel_call) +
          chanstk->call_stack_size;
 }
 
