@@ -31,7 +31,7 @@ namespace Grpc.Core.Internal.Tests
         [Test]
         public void CreateAndDestroy()
         {
-            Assert.AreEqual(CompletionQueueEvent.NativeSize, Marshal.SizeOf(typeof(CompletionQueueEvent)));
+            Assert.AreEqual(CompletionQueueEvent.NativeSize, Marshal.SizeOf<CompletionQueueEvent>());
         }
     }
 }

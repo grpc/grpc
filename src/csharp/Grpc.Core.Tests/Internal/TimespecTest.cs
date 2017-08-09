@@ -60,7 +60,7 @@ namespace Grpc.Core.Internal.Tests
         [Test]
         public void TimespecSizeIsNativeSize()
         {
-            Assert.AreEqual(Timespec.NativeSize, Marshal.SizeOf(typeof(Timespec)));
+            Assert.AreEqual(Timespec.NativeSize, Marshal.SizeOf<Timespec>());
         }
 
         [Test]
