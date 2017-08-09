@@ -8724,9 +8724,7 @@
       "gpr_test_util", 
       "grpc_base", 
       "grpc_client_channel", 
-      "grpc_secure", 
-      "grpc_transport_chttp2", 
-      "tsi"
+      "grpc_transport_chttp2"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h", 
