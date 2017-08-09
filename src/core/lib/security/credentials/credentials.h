@@ -220,6 +220,8 @@ struct grpc_server_credentials {
   const char *type;
   gpr_refcount refcount;
   grpc_auth_metadata_processor processor;
+  grpc_get_server_credentials_callback get_server_credentials_cb;
+  void *get_server_credentials_cb_arg;
 };
 
 grpc_security_status grpc_server_credentials_create_security_connector(
