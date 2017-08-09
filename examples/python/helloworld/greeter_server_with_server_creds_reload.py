@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,39 +31,46 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
     return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
 
 
-with open('key1.pem') as f:
-  private_key_1 = f.read()
-with open('cert1.pem') as f:
-  certificate_chain_1 = f.read()
+# for verifying clients
+client_ca_pem = open('cert_hier_1/certs/ca.cert.pem').read()
 
-with open('key2.pem') as f:
-  private_key_2 = f.read()
-with open('cert2.pem') as f:
-  certificate_chain_2 = f.read()
+my_key_1_pem = \
+  open('cert_hier_1/intermediate/private/localhost-1.key.pem').read()
+my_cert_1_pem = '\n'.join([
+  open('cert_hier_1/intermediate/certs/localhost-1.cert.pem').read(),
+  open('cert_hier_1/intermediate/certs/intermediate.cert.pem').read(),
+])
 
+my_key_2_pem = \
+  open('cert_hier_2/intermediate/private/localhost-1.key.pem').read()
+my_cert_2_pem = '\n'.join([
+  open('cert_hier_2/intermediate/certs/localhost-1.cert.pem').read(),
+  open('cert_hier_2/intermediate/certs/intermediate.cert.pem').read(),
+])
 
 client_num = 0
 
 def get_server_credentials_cb():
   global client_num
   client_num += 1
+  print 'client_num', client_num
 
   if client_num != 3:
     return False, None
   else:
+    # use new credentials for client 3 on
     return True, grpc.ssl_server_credentials(
-      [(private_key_2, certificate_chain_2)])
+      [(my_key_2_pem, my_cert_2_pem)])
+
 
 def serve():
 
-  if 0:
-    server_credentials = grpc.ssl_server_credentials(
-      [(private_key_1, certificate_chain_1)])
-  else:
-    server_credentials = grpc.ssl_server_credentials(
-      [(private_key_1, certificate_chain_1)],
-      get_server_credentials_cb=get_server_credentials_cb,
-    )
+  server_credentials = grpc.ssl_server_credentials(
+    [(my_key_1_pem, my_cert_1_pem)],
+    require_client_auth=True,
+    root_certificates=client_ca_pem,
+    get_server_credentials_cb=get_server_credentials_cb,
+  )
 
   server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
   helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)

@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,28 +23,38 @@ import grpc
 import helloworld_pb2
 import helloworld_pb2_grpc
 
-cacerts = []
-with open('cert1.pem') as fp:
-  cacerts.append(fp.read())
-with open('cert2.pem') as fp:
-  cacerts.append(fp.read())
+# will switch between these two server-verifying certs
+server_cas_pem = [
+  open('cert_hier_1/certs/ca.cert.pem').read(),
+  open('cert_hier_2/certs/ca.cert.pem').read(),
+]
+
+my_key_pem = open('cert_hier_1/intermediate/private/client.key.pem').read()
+my_cert_pem = '\n'.join([
+  open('cert_hier_1/intermediate/certs/client.cert.pem').read(),
+  open('cert_hier_1/intermediate/certs/intermediate.cert.pem').read(),
+])
+
 
 def run():
 
-  cacert_idx = 0
+  server_ca_idx = 0
   for i in range(5):
     print('-'*50)
-    print( 'using ca cert{}.pem'.format(cacert_idx+1))
-    cacert = cacerts[cacert_idx]
-    credentials = grpc.ssl_channel_credentials(root_certificates=cacert)
+    print('using root ca cert {}'.format(server_ca_idx+1))
+    server_ca_pem = server_cas_pem[server_ca_idx] # for verifying server
+    credentials = grpc.ssl_channel_credentials(
+      root_certificates=server_ca_pem,
+      private_key=my_key_pem, certificate_chain=my_cert_pem,
+    )
     channel = grpc.secure_channel('localhost:50051', credentials)
     stub = helloworld_pb2_grpc.GreeterStub(channel)
     try:
       response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
       print("Greeter client received: " + response.message)
     except:
-      print("handshake fails? switching ca cert")
-      cacert_idx += 1
+      print("maybe handshake fails? switching root ca cert")
+      server_ca_idx += 1
       pass
     time.sleep(2)
     print
