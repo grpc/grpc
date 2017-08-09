@@ -928,9 +928,6 @@ filegroups:
   - test/core/tsi/transport_security_test_lib.c
   deps:
   - grpc
-  uses:
-  - tsi
-  - grpc_secure
 - name: tsi
   headers:
   - src/core/tsi/fake_transport_security.h
@@ -2038,17 +2035,15 @@ targets:
   src:
   - test/core/tsi/fake_transport_security_test.c
   deps:
-  - grpc
   - gpr_test_util
   - gpr
+  - grpc
   filegroups:
   - transport_security_test_lib
   platforms:
   - linux
   - posix
   - mac
-  uses:
-  - tsi
 - name: fd_conservation_posix_test
   build: test
   language: c
@@ -3126,17 +3121,15 @@ targets:
   src:
   - test/core/tsi/ssl_transport_security_test.c
   deps:
-  - grpc
   - gpr_test_util
   - gpr
+  - grpc
   filegroups:
   - transport_security_test_lib
   platforms:
   - linux
   - posix
   - mac
-  uses:
-  - tsi
 - name: status_conversion_test
   build: test
   language: c

@@ -484,10 +484,8 @@ void tsi_test_frame_protector_config_destroy(
 }
 
 void tsi_test_fixture_init(tsi_test_fixture *fixture) {
-  tsi_test_frame_protector_config *config =
-      tsi_test_frame_protector_config_create(true, true, true, true, true, true,
-                                             true, true);
-  fixture->config = config;
+  fixture->config = tsi_test_frame_protector_config_create(
+      true, true, true, true, true, true, true, true);
   fixture->handshake_buffer_size = TSI_TEST_DEFAULT_BUFFER_SIZE;
   fixture->client_channel = gpr_zalloc(TSI_TEST_DEFAULT_CHANNEL_SIZE);
   fixture->server_channel = gpr_zalloc(TSI_TEST_DEFAULT_CHANNEL_SIZE);

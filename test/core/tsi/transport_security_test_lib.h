@@ -37,12 +37,10 @@
 #define TSI_TEST_NUM_OF_COMBINATIONS 256
 
 /* ---  tsi_test_fixture object ---
-
-  This object wraps all information that will be used to test correctness of TSI
-  handshakes and frame protect/unprotect operations with respect to TSI
-  implementations. The tests for specific TSI implementations should create
-  their
-  own custom "subclass" of this fixture. */
+  The tests for specific TSI implementations should create their own
+  custom "subclass" of this fixture. This object wraps all information
+  that will be used to test correctness of TSI handshakes and frame
+  protect/unprotect operations with respect to TSI implementations. */
 typedef struct tsi_test_fixture tsi_test_fixture;
 
 /* ---  tsi_test_frame_protector_config object ---
@@ -137,7 +135,7 @@ void tsi_test_fixture_init(tsi_test_fixture *fixture);
 
 /* This method destroys a tsi_test_fixture instance. Notice that the
    fixture intance must be dynamically allocated and will be freed by
-   this functoin. */
+   this function. */
 void tsi_test_fixture_destroy(tsi_test_fixture *fixture);
 
 /* This method performs a full TSI handshake between a client and a server. */

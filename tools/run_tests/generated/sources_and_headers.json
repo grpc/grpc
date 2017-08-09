@@ -541,8 +541,7 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
-      "transport_security_test_lib", 
-      "tsi"
+      "transport_security_test_lib"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -2186,8 +2185,7 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
-      "transport_security_test_lib", 
-      "tsi"
+      "transport_security_test_lib"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -9129,10 +9127,7 @@
   }, 
   {
     "deps": [
-      "gpr", 
-      "grpc", 
-      "grpc_secure", 
-      "tsi"
+      "grpc"
     ], 
     "headers": [
       "test/core/tsi/transport_security_test_lib.h"

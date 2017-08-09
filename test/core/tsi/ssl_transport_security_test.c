@@ -30,6 +30,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #define SSL_TSI_TEST_ALPN1 "foo"
 #define SSL_TSI_TEST_ALPN2 "toto"
@@ -331,12 +332,6 @@ static const struct tsi_test_fixture_vtable vtable = {
     ssl_test_setup_handshakers, ssl_test_check_handshake_results,
     ssl_test_destruct};
 
-static char *malloc_and_copy(const char *src) {
-  char *dst = gpr_zalloc(strlen(src) + 1);
-  memcpy(dst, src, strlen(src) + 1);
-  return dst;
-}
-
 static char *load_file(const char *dir_path, const char *file_name) {
   char *file_path =
       gpr_zalloc(sizeof(char) * (strlen(dir_path) + strlen(file_name) + 1));
@@ -397,10 +392,10 @@ static tsi_test_fixture *ssl_tsi_test_fixture_create() {
       gpr_zalloc(sizeof(char *) * SSL_TSI_TEST_ALPN_NUM);
   alpn_lib->client_alpn_protocols =
       gpr_zalloc(sizeof(char *) * SSL_TSI_TEST_ALPN_NUM);
-  alpn_lib->server_alpn_protocols[0] = malloc_and_copy(SSL_TSI_TEST_ALPN1);
-  alpn_lib->server_alpn_protocols[1] = malloc_and_copy(SSL_TSI_TEST_ALPN3);
-  alpn_lib->client_alpn_protocols[0] = malloc_and_copy(SSL_TSI_TEST_ALPN2);
-  alpn_lib->client_alpn_protocols[1] = malloc_and_copy(SSL_TSI_TEST_ALPN3);
+  alpn_lib->server_alpn_protocols[0] = gpr_strdup(SSL_TSI_TEST_ALPN1);
+  alpn_lib->server_alpn_protocols[1] = gpr_strdup(SSL_TSI_TEST_ALPN3);
+  alpn_lib->client_alpn_protocols[0] = gpr_strdup(SSL_TSI_TEST_ALPN2);
+  alpn_lib->client_alpn_protocols[1] = gpr_strdup(SSL_TSI_TEST_ALPN3);
   alpn_lib->num_server_alpn_protocols = SSL_TSI_TEST_ALPN_NUM;
   alpn_lib->num_client_alpn_protocols = SSL_TSI_TEST_ALPN_NUM;
   alpn_lib->alpn_mode = NO_ALPN;
