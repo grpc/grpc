@@ -55,7 +55,7 @@ static void init_max_accept_queue_size(void) {
   if (fgets(buf, sizeof buf, fp)) {
     char *end;
     long i = strtol(buf, &end, 10);
-    if (i > 0 && i <= INT_MAX && end && *end == 0) {
+    if (i > 0 && i <= INT_MAX && end && *end == '\n') {
       n = (int)i;
     }
   }
