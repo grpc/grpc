@@ -27,16 +27,31 @@ namespace Grpc.Core.Logging
     /// <summary>Logger that filters out messages below certain log level.</summary>
     public class LogLevelFilterLogger : ILogger
     {
+        // Verbosity environment variable used by C core.
+        private const string CoreVerbosityEnvVarName = "GRPC_VERBOSITY";
         readonly ILogger innerLogger;
         readonly LogLevel logLevel;
 
         /// <summary>
         /// Creates and instance of <c>LogLevelFilter.</c>
         /// </summary>
-        public LogLevelFilterLogger(ILogger logger, LogLevel logLevel)
+        public LogLevelFilterLogger(ILogger logger, LogLevel logLevel) : this(logger, logLevel, false)
+        {
+        }
+
+        /// <summary>
+        /// Creates and instance of <c>LogLevelFilter.</c>
+        /// The <c>fromEnvironmentVariable</c> parameter allows looking up "GRPC_VERBOSITY" setting provided by C-core
+        /// and uses the same log level for C# logs. Using this setting is recommended as it makes the otherwise separate
+        /// C# and C-core logging settings work in lockstep and more intutively.
+        /// </summary>
+        /// <param name="logger">the logger to forward filtered logs to.</param>
+        /// <param name="defaultLogLevel">the default log level, unless overriden by env variable.</param>
+        /// <param name="fromEnvironmentVariable">if <c>true</c>, override log level with setting from environment variable.</param>
+        public LogLevelFilterLogger(ILogger logger, LogLevel defaultLogLevel, bool fromEnvironmentVariable)
         {
             this.innerLogger = GrpcPreconditions.CheckNotNull(logger);
-            this.logLevel = logLevel;
+            this.logLevel = GetLogLevelFromEnvironment(defaultLogLevel, fromEnvironmentVariable);
         }
 
         /// <summary>
@@ -139,6 +154,34 @@ namespace Grpc.Core.Logging
             if (logLevel <= LogLevel.Error)
             {
                 innerLogger.Error(exception, message);
+            }
+        }
+
+        /// <summary>Get log level based on a default and lookup of <c>GRPC_VERBOSITY</c> environment variable.</summary>
+        private static LogLevel GetLogLevelFromEnvironment(LogLevel defaultLogLevel, bool fromEnvironmentVariable)
+        {
+            if (!fromEnvironmentVariable)
+            {
+                return defaultLogLevel;
+            }
+
+            var verbosityString = System.Environment.GetEnvironmentVariable(CoreVerbosityEnvVarName);
+            if (verbosityString == null)
+            {
+                return defaultLogLevel;
+            }
+
+            // NOTE: C core doesn't have "WARNING" log level
+            switch (verbosityString.ToUpperInvariant())
+            {
+                case "DEBUG":
+                    return LogLevel.Debug;
+                case "INFO":
+                    return LogLevel.Info;
+                case "ERROR":
+                    return LogLevel.Error;
+                default:
+                    return defaultLogLevel;
             }
         }
     }

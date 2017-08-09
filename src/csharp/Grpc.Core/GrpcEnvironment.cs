@@ -43,7 +43,7 @@ namespace Grpc.Core
         static readonly HashSet<Channel> registeredChannels = new HashSet<Channel>();
         static readonly HashSet<Server> registeredServers = new HashSet<Server>();
 
-        static ILogger logger = new NullLogger();
+        static ILogger logger = new LogLevelFilterLogger(new ConsoleLogger(), LogLevel.Off, true);
 
         readonly GrpcThreadPool threadPool;
         readonly DebugStats debugStats = new DebugStats();
