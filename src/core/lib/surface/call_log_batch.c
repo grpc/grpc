@@ -93,9 +93,7 @@ char *grpc_op_string(const grpc_op *op) {
       gpr_strvec_add(&b, tmp);
       break;
     case GRPC_OP_RECV_CLOSE_ON_SERVER:
-      gpr_asprintf(&tmp, "RECV_CLOSE_ON_SERVER cancelled=%p",
-                   op->data.recv_close_on_server.cancelled);
-      gpr_strvec_add(&b, tmp);
+      gpr_strvec_add(&b, gpr_strdup("RECV_CLOSE_ON_SERVER"));
   }
   out = gpr_strvec_flatten(&b, NULL);
   gpr_strvec_destroy(&b);

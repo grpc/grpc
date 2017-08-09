@@ -70,7 +70,7 @@ typedef struct requested_call {
   grpc_call **call;
   grpc_cq_completion completion;
   grpc_metadata_array *initial_metadata;
-  bool recv_close;
+  int recv_close;
   void *recv_close_tag;
   grpc_cq_completion recv_close_completion;
   union {
@@ -515,8 +515,8 @@ static void publish_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
   grpc_op close_op;
   memset(&close_op, 0, sizeof(close_op));
   close_op.op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  close_op.data.recv_close_on_server.cancelled =
-      grpc_call_get_cancelled_ptr(call);
+  // close_op.data.recv_close_on_server.cancelled =
+  //     grpc_call_get_cancelled_ptr(call);
   close_op.flags = 0;
   close_op.reserved = NULL;
   if (rc->recv_close) {
@@ -1439,7 +1439,7 @@ grpc_call_error grpc_server_request_call(
     grpc_server *server, grpc_call **call, grpc_call_details *details,
     grpc_metadata_array *initial_metadata,
     grpc_completion_queue *cq_bound_to_call,
-    grpc_completion_queue *cq_for_notification, void *tag, bool recv_close,
+    grpc_completion_queue *cq_for_notification, void *tag, int recv_close,
     void *recv_close_tag) {
   grpc_call_error error;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -1489,7 +1489,7 @@ grpc_call_error grpc_server_request_registered_call(
     grpc_server *server, void *rmp, grpc_call **call, gpr_timespec *deadline,
     grpc_metadata_array *initial_metadata, grpc_byte_buffer **optional_payload,
     grpc_completion_queue *cq_bound_to_call,
-    grpc_completion_queue *cq_for_notification, void *tag, bool recv_close,
+    grpc_completion_queue *cq_for_notification, void *tag, int recv_close,
     void *recv_close_tag) {
   grpc_call_error error;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

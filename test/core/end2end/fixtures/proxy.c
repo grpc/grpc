@@ -377,7 +377,7 @@ static void on_new_call(void *arg, int success) {
 
     op.op = GRPC_OP_RECV_CLOSE_ON_SERVER;
     op.flags = 0;
-    op.data.recv_close_on_server.cancelled = &pc->c2p_server_cancelled;
+    // op.data.recv_close_on_server.cancelled = &pc->c2p_server_cancelled;
     refpc(pc, "on_c2p_closed");
     err = grpc_call_start_batch(pc->c2p, &op, 1, new_closure(on_c2p_closed, pc),
                                 NULL);
@@ -400,7 +400,7 @@ static void request_call(grpc_end2end_proxy *proxy) {
              grpc_server_request_call(
                  proxy->server, &proxy->new_call, &proxy->new_call_details,
                  &proxy->new_call_metadata, proxy->cq, proxy->cq,
-                 new_closure(on_new_call, proxy), false, NULL));
+                 new_closure(on_new_call, proxy), 0, NULL));
 }
 
 static void thread_main(void *arg) {

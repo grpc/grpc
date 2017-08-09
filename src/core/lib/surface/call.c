@@ -233,11 +233,10 @@ struct grpc_call {
       grpc_slice *status_details;
     } client;
     struct {
-      int *cancelled;
+      int cancelled;
     } server;
   } final_op;
 
-  int cancelled;
   void *saved_receiving_stream_ready_bctlp;
 };
 
@@ -463,9 +462,13 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
   return error;
 }
 
-bool grpc_call_get_cancelled(grpc_call *call) { return call->cancelled != 0; }
+bool grpc_call_get_cancelled(grpc_call *call) {
+  return call->final_op.server.cancelled != 0;
+}
 
-int *grpc_call_get_cancelled_ptr(grpc_call *call) { return &call->cancelled; }
+int *grpc_call_get_cancelled_ptr(grpc_call *call) {
+  return &call->final_op.server.cancelled;
+}
 
 void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                     grpc_completion_queue *cq) {
@@ -1315,7 +1318,7 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
                        call->final_op.client.status_details);
     } else {
       get_final_status(call, set_cancelled_value,
-                       call->final_op.server.cancelled, NULL);
+                       &call->final_op.server.cancelled, NULL);
     }
 
     GRPC_ERROR_UNREF(error);
@@ -1963,8 +1966,6 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         call->requested_final_op = true;
-        call->final_op.server.cancelled =
-            op->data.recv_close_on_server.cancelled;
         stream_op->recv_trailing_metadata = true;
         stream_op->collect_stats = true;
         stream_op_payload->recv_trailing_metadata.recv_trailing_metadata =

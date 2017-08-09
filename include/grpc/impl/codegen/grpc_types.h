@@ -546,11 +546,11 @@ typedef struct grpc_op {
       grpc_status_code *status;
       grpc_slice *status_details;
     } recv_status_on_client;
-    struct grpc_op_recv_close_on_server {
-      /** out argument, set to 1 if the call failed in any way (seen as a
-          cancellation on the server), or 0 if the call succeeded */
-      int *cancelled;
-    } recv_close_on_server;
+    // struct grpc_op_recv_close_on_server{
+    //   /** out argument, set to 1 if the call failed in any way (seen as a
+    //       cancellation on the server), or 0 if the call succeeded */
+    //   int *cancelled;
+    // } recv_close_on_server;
   } data;
 } grpc_op;
 

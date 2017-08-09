@@ -155,7 +155,7 @@ class Server::SyncRequest final : public CompletionQueueTag {
           grpc_server_request_registered_call(
               server, tag_, &call_, &deadline_, &request_metadata_,
               has_request_payload_ ? &request_payload_ : nullptr, cq_,
-              notify_cq, this, false, nullptr)) {
+              notify_cq, this, 0, nullptr)) {
         TeardownRequest();
         return;
       }
@@ -165,8 +165,8 @@ class Server::SyncRequest final : public CompletionQueueTag {
         grpc_call_details_init(call_details_);
       }
       if (grpc_server_request_call(server, &call_, call_details_,
-                                   &request_metadata_, cq_, notify_cq, this,
-                                   false, nullptr) != GRPC_CALL_OK) {
+                                   &request_metadata_, cq_, notify_cq, this, 0,
+                                   nullptr) != GRPC_CALL_OK) {
         TeardownRequest();
         return;
       }
@@ -658,15 +658,14 @@ void ServerInterface::RegisteredAsyncRequest::IssueRequest(
                                    &context_->deadline_,
                                    context_->client_metadata_.arr(), payload,
                                    call_cq_->cq(), notification_cq->cq(), this,
-                                   context_->has_notify_when_done_tag_,
-                                   context_->completion_op_));
+                                   1, context_->completion_op_));
   } else {
     GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_registered_call(
                                    server_->server(), registered_method, &call_,
                                    &context_->deadline_,
                                    context_->client_metadata_.arr(), payload,
                                    call_cq_->cq(), notification_cq->cq(), this,
-                                   false, nullptr));
+                                   0, nullptr));
   }
 }
 
@@ -684,14 +683,13 @@ ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
                                    server->server(), &call_, &call_details_,
                                    context->client_metadata_.arr(),
                                    call_cq->cq(), notification_cq->cq(), this,
-                                   context->has_notify_when_done_tag_,
-                                   context->completion_op_));
+                                   1, context->completion_op_));
   } else {
     GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
                                    server->server(), &call_, &call_details_,
                                    context->client_metadata_.arr(),
                                    call_cq->cq(), notification_cq->cq(), this,
-                                   false, nullptr));
+                                   0, nullptr));
   }
 }
 
