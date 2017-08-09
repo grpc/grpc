@@ -929,9 +929,6 @@ typedef struct {
   // For send_initial_metadata.
   grpc_linked_mdelem *send_initial_metadata_storage;
   grpc_metadata_batch send_initial_metadata;
-// FIXME: how do we propagate this back up, given that we may return
-// send_initial_metadata on_complete and then later decide to retry?
-  gpr_atm peer_string;
   // For send_message.
   grpc_caching_byte_stream send_message;
   // For send_trailing_metadata.
@@ -1030,6 +1027,7 @@ typedef struct client_channel_call_data {
   grpc_linked_mdelem *send_initial_metadata_storage;
   grpc_metadata_batch send_initial_metadata;
   uint32_t send_initial_metadata_flags;
+  gpr_atm *peer_string;
   // The contents for sent messages.
   // When we get a send_message op, we replace the original byte stream
   // with a grpc_caching_byte_stream that caches the slices to a
@@ -1309,6 +1307,7 @@ gpr_log(GPR_INFO, "grpc_metadata_batch_copy() for initial metadata failed, commi
     }
     calld->send_initial_metadata_flags =
         batch->payload->send_initial_metadata.send_initial_metadata_flags;
+    calld->peer_string = batch->payload->send_initial_metadata.peer_string;
   }
   // Set up cache for send_message ops.
   if (batch->send_message) {
@@ -1760,7 +1759,7 @@ gpr_log(GPR_INFO, "==> start_retriable_subchannel_batch()");
         .send_initial_metadata_flags =
             calld->send_initial_metadata_flags;
     batch_data->batch.payload->send_initial_metadata.peer_string =
-        &batch_data->peer_string;
+        calld->peer_string;
   }
   // send_message.
 // FIXME: if we get a new send_message op while there's one already

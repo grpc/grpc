@@ -155,6 +155,9 @@ struct grpc_transport_stream_op_batch_payload {
     uint32_t send_initial_metadata_flags;
     // If non-NULL, will be set by the transport to the peer string
     // (a char*, which the caller takes ownership of).
+    // Note: This pointer may be used by the transport after the
+    // send_initial_metadata op is completed.  It must remain valid
+    // until the call is destroyed.
     gpr_atm *peer_string;
   } send_initial_metadata;
 
@@ -182,6 +185,9 @@ struct grpc_transport_stream_op_batch_payload {
     bool *trailing_metadata_available;
     // If non-NULL, will be set by the transport to the peer string
     // (a char*, which the caller takes ownership of).
+    // Note: This pointer may be used by the transport after the
+    // recv_initial_metadata op is completed.  It must remain valid
+    // until the call is destroyed.
     gpr_atm *peer_string;
   } recv_initial_metadata;
 
