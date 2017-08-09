@@ -16,6 +16,29 @@ cimport cpython
 
 import time
 
+cdef grpc_get_server_credentials_result _get_server_credentials_cb_wrapper(
+        grpc_server_credentials **creds, void* cb_arg) with gil:
+  # this should be a grpc._cython._cygrpc.credentials.ServerCredentials
+  cdef ServerCredentials server_creds = None
+  try:
+    assert cb_arg
+    user_cb = <object>cb_arg
+    is_new, server_creds_wrapper = user_cb()
+    if not is_new:
+      return GRPC_GET_SERVER_CREDENTIALS_UNCHANGED
+    assert server_creds_wrapper
+    # TODO: make sure user gives us the correct stuff:
+    # server_creds_wrapper should be a grpc.ServerCredentials, e.g.,
+    # one returned by grpc.ssl_server_credentials()
+    server_creds = server_creds_wrapper._credentials
+    creds[0] = <grpc_server_credentials*>server_creds.c_credentials
+    # now the c-core lib owns the memory so we forget about it here
+    server_creds.c_credentials = NULL
+    return GRPC_GET_SERVER_CREDENTIALS_NEW
+  except Exception as exc:
+    pass
+  return GRPC_GET_SERVER_CREDENTIALS_FAIL
+
 
 cdef class Server:
 

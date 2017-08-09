@@ -34,6 +34,7 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "src/core/lib/security/transport/lb_targets_info.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
@@ -56,6 +57,10 @@ static const char *installed_roots_path = "/usr/share/grpc/roots.pem";
 static const char *installed_roots_path =
     INSTALL_PREFIX "/share/grpc/roots.pem";
 #endif
+
+static tsi_client_certificate_request_type
+get_tsi_client_certificate_request_type(
+    grpc_ssl_client_certificate_request_type grpc_request_type);
 
 /* -- Overridden default roots. -- */
 
@@ -520,12 +525,66 @@ static void ssl_server_add_handshakers(grpc_exec_ctx *exec_ctx,
       (grpc_ssl_server_security_connector *)sc;
   // Instantiate TSI handshaker.
   tsi_handshaker *tsi_hs = NULL;
-  tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
-      c->handshaker_factory, &tsi_hs);
+  grpc_server_credentials *server_creds = NULL;
+  const char **alpn_protocol_strings = NULL;
+  tsi_result result = TSI_UNKNOWN_ERROR;
+
+  if (sc->get_server_credentials_cb) {
+    // ask user for server credentials
+    grpc_get_server_credentials_result get_server_creds_result = \
+      sc->get_server_credentials_cb(&server_creds,
+                                    sc->get_server_credentials_cb_arg);
+
+    if (get_server_creds_result == GRPC_GET_SERVER_CREDENTIALS_UNCHANGED) {
+      gpr_log(GPR_DEBUG, "no change in server credentials");
+      GPR_ASSERT(server_creds == NULL);
+    }
+    else if (get_server_creds_result == GRPC_GET_SERVER_CREDENTIALS_NEW) {
+      gpr_log(GPR_DEBUG, "NEW server credentials!");
+      GPR_ASSERT(server_creds != NULL);
+
+      // TODO: make sure it's an ssl server creds?
+      const grpc_ssl_server_config *config =
+        &((grpc_ssl_server_credentials*)server_creds)->config;
+
+      tsi_ssl_server_handshaker_factory_destroy(c->handshaker_factory);
+      c->handshaker_factory = NULL;
+
+      // TODO: this alpn setup logic is now in 3 places, should go
+      // into a function
+      size_t num_alpn_protocols = grpc_chttp2_num_alpn_versions();
+      alpn_protocol_strings = gpr_malloc(sizeof(const char *) * num_alpn_protocols);
+      size_t i = 0;
+
+      for (i = 0; i < num_alpn_protocols; i++) {
+        alpn_protocol_strings[i] = grpc_chttp2_get_alpn_version_index(i);
+      }
+
+      result = tsi_create_ssl_server_handshaker_factory_ex(
+        config->pem_key_cert_pairs, config->num_key_cert_pairs,
+        config->pem_root_certs, get_tsi_client_certificate_request_type(
+                                  config->client_certificate_request),
+        ssl_cipher_suites(), alpn_protocol_strings, (uint16_t)num_alpn_protocols,
+        &c->handshaker_factory);
+      if (result != TSI_OK) {
+        gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
+                tsi_result_to_string(result));
+        goto done;
+      }
+      gpr_log(GPR_DEBUG, "successfully created new handshaker factory");
+    } else {
+      gpr_log(GPR_ERROR, "get_server_credentials_callback fails with code %d.",
+              get_server_creds_result);
+      goto done;
+    }
+  }
+
+  result = tsi_ssl_server_handshaker_factory_create_handshaker(
+        c->handshaker_factory, &tsi_hs);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
             tsi_result_to_string(result));
-    return;
+    goto done;
   }
 
   // Create handshakers.
@@ -533,6 +592,14 @@ static void ssl_server_add_handshakers(grpc_exec_ctx *exec_ctx,
       handshake_mgr,
       grpc_security_handshaker_create(
           exec_ctx, tsi_create_adapter_handshaker(tsi_hs), &sc->base));
+
+done:
+  if (alpn_protocol_strings) {
+    gpr_free((void *)alpn_protocol_strings);
+  }
+  if (server_creds) {
+    grpc_server_credentials_release(server_creds);
+  }
 }
 
 static int ssl_host_matches_name(const tsi_peer *peer, const char *peer_name) {
@@ -871,6 +938,8 @@ error:
 
 grpc_security_status grpc_ssl_server_security_connector_create(
     grpc_exec_ctx *exec_ctx, const grpc_ssl_server_config *config,
+    grpc_get_server_credentials_callback get_server_credentials_cb,
+    void *get_server_credentials_cb_arg,
     grpc_server_security_connector **sc) {
   size_t num_alpn_protocols = grpc_chttp2_num_alpn_versions();
   const char **alpn_protocol_strings =
@@ -907,6 +976,8 @@ grpc_security_status grpc_ssl_server_security_connector_create(
   }
   c->base.add_handshakers = ssl_server_add_handshakers;
   *sc = &c->base;
+  (*sc)->get_server_credentials_cb = get_server_credentials_cb;
+  (*sc)->get_server_credentials_cb_arg = get_server_credentials_cb_arg;
   gpr_free((void *)alpn_protocol_strings);
   return GRPC_SECURITY_OK;
 

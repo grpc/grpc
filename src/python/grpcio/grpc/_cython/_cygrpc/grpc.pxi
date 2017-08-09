@@ -379,6 +379,11 @@ cdef extern from "grpc/grpc_security.h":
     GRPC_SSL_ROOTS_OVERRIDE_FAILED_PERMANENTLY
     GRPC_SSL_ROOTS_OVERRIDE_FAILED
 
+  ctypedef enum grpc_get_server_credentials_result:
+    GRPC_GET_SERVER_CREDENTIALS_UNCHANGED
+    GRPC_GET_SERVER_CREDENTIALS_NEW
+    GRPC_GET_SERVER_CREDENTIALS_FAIL
+
   ctypedef enum grpc_ssl_client_certificate_request_type:
     GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
     GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY
@@ -402,6 +407,8 @@ cdef extern from "grpc/grpc_security.h":
 
   void grpc_set_ssl_roots_override_callback(
       grpc_ssl_roots_override_callback cb) nogil
+
+  ctypedef grpc_get_server_credentials_result (*grpc_get_server_credentials_callback)(grpc_server_credentials **creds, void* cb_arg)
 
   grpc_channel_credentials *grpc_google_default_credentials_create() nogil
   grpc_channel_credentials *grpc_ssl_credentials_create(
@@ -438,7 +445,10 @@ cdef extern from "grpc/grpc_security.h":
   grpc_server_credentials *grpc_ssl_server_credentials_create(
       const char *pem_root_certs,
       grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
-      size_t num_key_cert_pairs, int force_client_auth, void *reserved)
+      size_t num_key_cert_pairs, int force_client_auth,
+      grpc_get_server_credentials_callback get_server_credentials_cb,
+      void *get_server_credentials_cb_arg,
+      void *reserved)
   void grpc_server_credentials_release(grpc_server_credentials *creds) nogil
 
   int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,

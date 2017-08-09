@@ -290,6 +290,8 @@ GRPCAPI grpc_channel *grpc_secure_channel_create(
 
 typedef struct grpc_server_credentials grpc_server_credentials;
 
+typedef grpc_get_server_credentials_result (*grpc_get_server_credentials_callback)(grpc_server_credentials **creds, void *cb_arg);
+
 /** Releases a server_credentials object.
    The creator of the server_credentials object is responsible for its release.
    */
@@ -309,7 +311,10 @@ GRPCAPI void grpc_server_credentials_release(grpc_server_credentials *creds);
      NULL. */
 GRPCAPI grpc_server_credentials *grpc_ssl_server_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
-    size_t num_key_cert_pairs, int force_client_auth, void *reserved);
+    size_t num_key_cert_pairs, int force_client_auth,
+    grpc_get_server_credentials_callback get_server_credentials_cb,
+    void *get_server_credentials_cb_arg,
+    void *reserved);
 
 /** Same as grpc_ssl_server_credentials_create method except uses
    grpc_ssl_client_certificate_request_type enum to support more ways to
@@ -318,6 +323,8 @@ GRPCAPI grpc_server_credentials *grpc_ssl_server_credentials_create_ex(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
     size_t num_key_cert_pairs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
+    grpc_get_server_credentials_callback get_server_credentials_cb,
+    void *get_server_credentials_cb_arg,
     void *reserved);
 
 /** --- Server-side secure ports. --- */
