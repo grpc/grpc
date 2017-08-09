@@ -130,6 +130,7 @@ END2END_TESTS = {
     'registered_call': test_options(),
     'request_with_flags': test_options(proxyable=False),
     'request_with_payload': test_options(),
+    'retry': test_options(),
     'server_finishes_request': test_options(),
     'shutdown_finishes_calls': test_options(),
     'shutdown_finishes_tags': test_options(),
