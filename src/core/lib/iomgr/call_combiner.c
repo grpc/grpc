@@ -110,16 +110,17 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
       grpc_closure* closure = (grpc_closure*)gpr_mpscq_pop_and_check_end(
           &call_combiner->queue, &empty);
       if (closure == NULL) {
-        if (!empty) continue;  // Try again.
+        // This can happen either due to a race condition within the mpscq
+        // code or because of a race with grpc_call_combiner_start().
         if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
-          gpr_log(GPR_DEBUG, "  queue empty");
+          gpr_log(GPR_DEBUG, "  queue returned no result; checking again");
         }
-      } else {
-        if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
-          gpr_log(GPR_DEBUG, "  EXECUTING FROM QUEUE: closure=%p", closure);
-        }
-        GRPC_CLOSURE_SCHED(exec_ctx, closure, closure->error_data.error);
+        continue;
       }
+      if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
+        gpr_log(GPR_DEBUG, "  EXECUTING FROM QUEUE: closure=%p", closure);
+      }
+      GRPC_CLOSURE_SCHED(exec_ctx, closure, closure->error_data.error);
       break;
     }
   } else if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
