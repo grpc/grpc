@@ -274,6 +274,7 @@ def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
   get_server_creds_cb_wrapper = <grpc_get_server_credentials_callback>NULL
   user_get_server_creds_cb = NULL
   if get_server_credentials_cb:
+    credentials.references.append(get_server_credentials_cb)
     get_server_creds_cb_wrapper = _get_server_credentials_cb_wrapper
     user_get_server_creds_cb = <void*>get_server_credentials_cb
   for i in range(credentials.c_ssl_pem_key_cert_pairs_count):
