@@ -76,7 +76,7 @@ namespace Grpc.Core.Internal
                 {
                     Logger.Warning(e, "Exception occured in handler.");
                 }
-                status = HandlerUtils.StatusFromException(e, context.ResponseTrailers);
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
             try
             {
@@ -133,7 +133,7 @@ namespace Grpc.Core.Internal
                 {
                     Logger.Warning(e, "Exception occured in handler.");
                 }
-                status = HandlerUtils.StatusFromException(e, context.ResponseTrailers);
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
 
             try
@@ -191,7 +191,7 @@ namespace Grpc.Core.Internal
                 {
                     Logger.Warning(e, "Exception occured in handler.");
                 }
-                status = HandlerUtils.StatusFromException(e, context.ResponseTrailers);
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
 
             try
@@ -247,7 +247,7 @@ namespace Grpc.Core.Internal
                 {
                     Logger.Warning(e, "Exception occured in handler.");
                 }
-                status = HandlerUtils.StatusFromException(e, context.ResponseTrailers);
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
             try
             {
@@ -292,7 +292,7 @@ namespace Grpc.Core.Internal
 
     internal static class HandlerUtils
     {
-        public static Status StatusFromException(Exception e, Metadata callContextResponseTrailers)
+        public static Status GetStatusFromExceptionAndMergeTrailers(Exception e, Metadata callContextResponseTrailers)
         {
             var rpcException = e as RpcException;
             if (rpcException != null)
