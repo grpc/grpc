@@ -84,7 +84,7 @@ typedef struct grpc_compression_options {
    * behind \a GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL. If present, takes
    * precedence over \a default_algorithm.
    * TODO(dgq): currently only available for server channels. */
-  struct {
+  struct grpc_compression_options_default_level {
     int is_set;
     grpc_compression_level level;
   } default_level;
@@ -92,7 +92,7 @@ typedef struct grpc_compression_options {
   /** The default channel compression algorithm. It'll be used in the absence of
    * call specific settings. This option corresponds to the channel argument key
    * behind \a GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM. */
-  struct {
+  struct grpc_compression_options_default_algorithm {
     int is_set;
     grpc_compression_algorithm algorithm;
   } default_algorithm;
