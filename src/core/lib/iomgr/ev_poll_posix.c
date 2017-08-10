@@ -265,9 +265,9 @@ typedef struct poll_args {
   struct poll_args *prev;
 } poll_args;
 
-// This is a 2-tiered cash, we mantain a hash table
+// This is a 2-tiered cache, we mantain a hash table
 // of active poll calls, so we can wait on the result
-// of that call.  We also maintain a freelist of innactive
+// of that call.  We also maintain a freelist of inactive
 // poll threads.
 typedef struct poll_hash_table {
   poll_args *free_pollers;
@@ -1315,7 +1315,7 @@ static void cache_insert_locked(poll_args *args) {
   poll_cache.count++;
 }
 
-void init_result(poll_args *pargs) {
+static void init_result(poll_args *pargs) {
   pargs->result = gpr_malloc(sizeof(poll_result));
   gpr_ref_init(&pargs->result->refcount, 1);
   pargs->result->watchers = NULL;
