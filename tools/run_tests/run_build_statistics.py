@@ -88,6 +88,10 @@ _KNOWN_ERRORS = [
     'FAILED: bins/tsan/qps_openloop_test GRPC_POLL_STRATEGY=poll',
     ('tests.bins/asan/h2_proxy_test streaming_error_response '
      'GRPC_POLL_STRATEGY=legacy'),
+    'hudson.plugins.git.GitException',
+    'Couldn\'t find any revision to build',
+    'org.jenkinsci.plugin.Diskcheck.preCheckout',
+    'Something went wrong while deleting Files',
 ]
 _NO_REPORT_FILES_FOUND_ERROR = 'No test report files were found.'
 _UNKNOWN_ERROR = 'Unknown error'
@@ -161,8 +165,9 @@ def _process_build(json_url, console_url):
     html = urllib.urlopen(console_url).read()
     build_result['pass_count'] = 0  
     build_result['failure_count'] = 1
-    # In this case, the string doesn't exist but the fact that we fail to parse
-    # the result html indicate Jenkins failure and hence missing report files.
+    # In this case, the string doesn't exist in the result html but the fact 
+    # that we fail to parse the result html indicates Jenkins failure and hence 
+    # no report files were generated.
     build_result['no_report_files_found'] = True
     error_list = _scrape_for_known_errors(html)
 
@@ -210,6 +215,15 @@ for build_name in _BUILDS.keys() if 'all' in args.builds else args.builds:
     build = None
     try:
       build = job.get_build_metadata(build_number)
+      print('====> Build status: %s.' % build.get_status())
+      if build.get_status() == 'ABORTED':
+        continue
+      # If any build is still running, stop processing this job. Next time, we
+      # start from where it was left so that all builds are processed 
+      # sequentially.
+      if build.is_running():
+        print('====> Build %d is still running.' % build_number)
+        break
     except KeyError:
       print('====> Build %s is missing. Skip.' % build_number)
       continue
@@ -222,10 +236,10 @@ for build_name in _BUILDS.keys() if 'all' in args.builds else args.builds:
       json_url = '%s/testReport/api/json' % url_base
       console_url = '%s/consoleFull' % url_base
       build_result['duration'] = build.get_duration().total_seconds()
-      build_result.update(_process_build(json_url, console_url))
+      build_stat = _process_build(json_url, console_url)
+      build_result.update(build_stat)
     rows = [big_query_utils.make_row(build_number, build_result)]
     if not big_query_utils.insert_rows(bq, _PROJECT_ID, _DATASET_ID, build_name, 
                                        rows):
       print('====> Error uploading result to bigquery.')
       sys.exit(1)
-
