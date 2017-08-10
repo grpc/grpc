@@ -74,19 +74,21 @@ def get_flaky_tests(limit=None):
 
   bq = big_query_utils.create_big_query()
   query = """
-    SELECT
-      test_name,
-      SUM(result != 'PASSED'
-        AND result != 'SKIPPED') AS count_failed,
-    FROM
-      [grpc-testing:jenkins_test_results.aggregate_results]
-    WHERE
-      timestamp >= DATE_ADD(CURRENT_DATE(), -1, "WEEK")
-      AND NOT REGEXP_MATCH(job_name, '.*portability.*')
-    GROUP BY
-      test_name
-    HAVING
-      count_failed > 0"""
+SELECT
+  filtered_test_name,
+  FROM (
+  SELECT
+    REGEXP_REPLACE(test_name, r'/\d+', '') AS filtered_test_name,
+    result
+  FROM
+    [grpc-testing:jenkins_test_results.aggregate_results]
+  WHERE
+    timestamp >= DATE_ADD(CURRENT_DATE(), -1, "WEEK")
+    AND NOT REGEXP_MATCH(job_name, '.*portability.*') )
+GROUP BY
+  filtered_test_name
+HAVING
+  SUM(result != 'PASSED' AND result != 'SKIPPED') > 0"""
   if limit:
     query += " limit {}".format(limit)
   query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)

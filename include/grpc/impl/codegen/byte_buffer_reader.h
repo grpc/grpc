@@ -29,7 +29,7 @@ struct grpc_byte_buffer_reader {
   struct grpc_byte_buffer *buffer_in;
   struct grpc_byte_buffer *buffer_out;
   /** Different current objects correspond to different types of byte buffers */
-  union {
+  union grpc_byte_buffer_reader_current {
     /** Index into a slice buffer's array of slices */
     unsigned index;
   } current;

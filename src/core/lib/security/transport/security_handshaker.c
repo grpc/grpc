@@ -261,7 +261,7 @@ static grpc_error *do_handshaker_next_locked(
     grpc_exec_ctx *exec_ctx, security_handshaker *h,
     const unsigned char *bytes_received, size_t bytes_received_size) {
   // Invoke TSI handshaker.
-  unsigned char *bytes_to_send = NULL;
+  const unsigned char *bytes_to_send = NULL;
   size_t bytes_to_send_size = 0;
   tsi_handshaker_result *handshaker_result = NULL;
   tsi_result result = tsi_handshaker_next(

@@ -152,16 +152,13 @@ def _process_build(json_url, console_url):
     failure_count = test_result['failCount']
     build_result['pass_count'] = test_result['passCount']
     build_result['failure_count'] = failure_count
+    # This means Jenkins failure occurred.
     build_result['no_report_files_found'] = _no_report_files_found(html)
-    if failure_count > 0:
+    # Only check errors if Jenkins failure occurred.
+    if build_result['no_report_files_found']:
       error_list, known_error_count = _scrape_for_known_errors(html)
-      unknown_error_count = failure_count - known_error_count
-      # This can happen if the same error occurs multiple times in one test.
-      if failure_count < known_error_count:
-        print('====> Some errors are duplicates.')
-        unknown_error_count = 0
-      error_list.append({'description': _UNKNOWN_ERROR, 
-                         'count': unknown_error_count})
+      if not error_list:
+        error_list.append({'description': _UNKNOWN_ERROR, 'count': 1})
   except Exception as e:
     print('====> Got exception for %s: %s.' % (json_url, str(e)))   
     print('====> Parsing errors from %s.' % console_url)
@@ -176,6 +173,8 @@ def _process_build(json_url, console_url):
  
   if error_list:
     build_result['error'] = error_list
+  else:
+    build_result['error'] = [{'description': '', 'count': 0}]
 
   return build_result 
 

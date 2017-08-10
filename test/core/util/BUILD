@@ -38,7 +38,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_test_util",
+    name = "grpc_test_util_base",
     srcs = [
         "debugger_macros.c",
         "grpc_profiler.c",
@@ -68,7 +68,29 @@ grpc_cc_library(
     language = "C",
     deps = [
         ":gpr_test_util",
+        "//:grpc_common",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_test_util",
+    srcs = [],
+    hdrs = [],
+    language = "C",
+    deps = [
+        ":grpc_test_util_base",
         "//:grpc",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_test_util_unsecure",
+    srcs = [],
+    hdrs = [],
+    language = "C",
+    deps = [
+        ":grpc_test_util_base",
+        "//:grpc_unsecure",
     ],
 )
 

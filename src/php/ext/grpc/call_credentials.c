@@ -109,8 +109,8 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
   zend_fcall_info *fci;
   zend_fcall_info_cache *fci_cache;
 
-  fci = (zend_fcall_info *)emalloc(sizeof(zend_fcall_info));
-  fci_cache = (zend_fcall_info_cache *)emalloc(sizeof(zend_fcall_info_cache));
+  fci = (zend_fcall_info *)malloc(sizeof(zend_fcall_info));
+  fci_cache = (zend_fcall_info_cache *)malloc(sizeof(zend_fcall_info_cache));
   memset(fci, 0, sizeof(zend_fcall_info));
   memset(fci_cache, 0, sizeof(zend_fcall_info_cache));
 
@@ -123,7 +123,7 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
   }
 
   plugin_state *state;
-  state = (plugin_state *)emalloc(sizeof(plugin_state));
+  state = (plugin_state *)malloc(sizeof(plugin_state));
   memset(state, 0, sizeof(plugin_state));
 
   /* save the user provided PHP callback function */
@@ -210,13 +210,13 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
 /* Cleanup function for plugin creds API */
 void plugin_destroy_state(void *ptr) {
   plugin_state *state = (plugin_state *)ptr;
-  efree(state->fci);
-  efree(state->fci_cache);
+  free(state->fci);
+  free(state->fci_cache);
 #if PHP_MAJOR_VERSION < 7
   PHP_GRPC_FREE_STD_ZVAL(state->fci->params);
   PHP_GRPC_FREE_STD_ZVAL(state->fci->retval);
 #endif
-  efree(state);
+  free(state);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_createComposite, 0, 0, 2)

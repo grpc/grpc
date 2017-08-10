@@ -214,6 +214,9 @@ filegroups:
   - src/core/lib/iomgr/ev_windows.c
   - src/core/lib/iomgr/exec_ctx.c
   - src/core/lib/iomgr/executor.c
+  - src/core/lib/iomgr/gethostname_fallback.c
+  - src/core/lib/iomgr/gethostname_host_name_max.c
+  - src/core/lib/iomgr/gethostname_sysconf.c
   - src/core/lib/iomgr/iocp_windows.c
   - src/core/lib/iomgr/iomgr.c
   - src/core/lib/iomgr/iomgr_posix.c
@@ -359,6 +362,7 @@ filegroups:
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
+  - src/core/lib/iomgr/gethostname.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
   - src/core/lib/iomgr/iomgr_internal.h
@@ -415,6 +419,7 @@ filegroups:
   - src/core/lib/slice/slice_hash_table.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/surface/alarm_internal.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
@@ -920,22 +925,33 @@ filegroups:
   - src/core/tsi/gts_transport_security.h
   - src/core/tsi/ssl_transport_security.h
   - src/core/tsi/ssl_types.h
-  - src/core/tsi/transport_security.h
-  - src/core/tsi/transport_security_adapter.h
-  - src/core/tsi/transport_security_interface.h
+  - src/core/tsi/transport_security_grpc.h
   src:
   - src/core/tsi/fake_transport_security.c
   - src/core/tsi/gts_transport_security.c
   - src/core/tsi/ssl_transport_security.c
-  - src/core/tsi/transport_security.c
-  - src/core/tsi/transport_security_adapter.c
+  - src/core/tsi/transport_security_grpc.c
   deps:
   - gpr
   plugin: grpc_tsi_gts
   secure: true
   uses:
-  - grpc_trace
+  - tsi_interface
   - grpc_base
+  - grpc_trace
+- name: tsi_interface
+  headers:
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_adapter.h
+  - src/core/tsi/transport_security_interface.h
+  src:
+  - src/core/tsi/transport_security.c
+  - src/core/tsi/transport_security_adapter.c
+  deps:
+  - gpr
+  secure: true
+  uses:
+  - grpc_trace
 - name: grpc++_codegen_base
   language: c++
   public_headers:
