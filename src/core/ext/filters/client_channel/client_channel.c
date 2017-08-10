@@ -965,6 +965,7 @@ typedef struct {
   // State for callback processing.
   bool recv_initial_metadata_ready_pending : 1;
   bool seen_recv_trailing_metadata_on_complete : 1;
+  bool send_message_op_pending : 1;
   bool retry_dispatched : 1;
 } subchannel_call_retry_state;
 
@@ -1650,9 +1651,12 @@ gpr_log(GPR_INFO, "  batch:%s%s%s%s%s%s%s",
           batch_data->subchannel_call);
   const bool have_pending_send_message_ops =
       retry_state->send_message_count < calld->num_send_message_ops;
-  // Record that we've seen the recv_trailing_metadata on_complete callback.
+  // Update bookkeeping in retry_state.
   if (batch_data->batch.recv_trailing_metadata) {
     retry_state->seen_recv_trailing_metadata_on_complete = true;
+  }
+  if (batch_data->batch.send_message) {
+    retry_state->send_message_op_pending = false;
   }
   // There are several possible cases here:
   // 1. The batch failed (error != GRPC_ERROR_NONE).  In this case, the
@@ -1775,6 +1779,10 @@ gpr_log(GPR_INFO, "==> start_retriable_subchannel_batch()");
       calld->subchannel_call,
       "client_channel_start_retriable_subchannel_batch");
   batch_data->batch.payload = &retry_state->batch_payload;
+// FIXME: it's not safe to combine batches this way!  e.g., if the
+// application sends recv_trailing_metadata in one batch and then
+// send_message in another batch, we need to send the on_complete for
+// send_message without waiting for recv_trailing_metadata
   // send_initial_metadata.
   if (calld->seen_send_initial_metadata &&
       !retry_state->send_initial_metadata) {
@@ -1794,14 +1802,11 @@ gpr_log(GPR_INFO, "==> start_retriable_subchannel_batch()");
         calld->peer_string;
   }
   // send_message.
-// FIXME: if we get a new send_message op while there's one already
-// pending (e.g., if we told the surface that the first send_message
-// succeeded and then we had to retry and had already re-sent the first
-// message when we got the next send_message op), then we need to queue
-// it without sending it right away
+  // Note that we can only have one send_message op pending at a time.
   const bool have_pending_send_message_ops =
       retry_state->send_message_count < calld->num_send_message_ops;
-  if (have_pending_send_message_ops) {
+  if (have_pending_send_message_ops && !retry_state->send_message_op_pending) {
+    retry_state->send_message_op_pending = true;
     grpc_byte_stream_cache *cache =
         get_send_message_cache(calld, retry_state->send_message_count);
     ++retry_state->send_message_count;
