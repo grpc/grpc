@@ -42,7 +42,10 @@ $PROTOC \
     exit 1
 }
 
-# Verify names of the imported protos in generated code
+# TODO(jtattermusch): rewrite the tests to make them more readable.
+# Also, the way they are written, they need one extra command to run in order to
+# clear $? after they run (see end of this script)
+# Verify names of the imported protos in generated code don't contain dashes.
 [ "`cat PluginTest/TestDashFilename.pbrpc.h |
     egrep '#import ".*\.pb(objc|rpc)\.h"$' |
     egrep '-'`" ] && {
@@ -50,8 +53,12 @@ $PROTOC \
     exit 1
 }
 [ "`cat PluginTest/TestDashFilename.pbrpc.m |
-    egrep '#import ".*\.pb(objc|rpc)\.m"$' |
+    egrep '#import ".*\.pb(objc|rpc)\.h"$' |
     egrep '-'`" ] && {
     echo >&2 "protoc generated import with wrong filename."
     exit 1
 }
+
+# Run one extra command to clear $? before exiting the script to prevent
+# failing even when tests pass.
+echo "Plugin tests passed."
