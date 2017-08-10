@@ -56,9 +56,9 @@ static size_t run_closures(grpc_exec_ctx *exec_ctx, grpc_closure_list list) {
 
   grpc_closure *c = list.head;
   while (c != NULL) {
-    /* Need to ensure exec_ctx does not have a combiner. The closure c MAY
-       attach a combiner to this exec_ctx and this would fail if exec_ctx
-       already has a combiner */
+    /* Need to ensure exec_ctx does not have a combiner. The closure MAY attach
+       a combiner to this exec_ctx and this would fail if exec_ctx already has a
+       combiner */
     GPR_ASSERT(exec_ctx->combiner == NULL);
 
     grpc_closure *next = c->next_data.next;
