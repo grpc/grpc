@@ -954,17 +954,18 @@ typedef struct {
 typedef struct {
   // These fields indicate which ops have been sent down to this
   // subchannel call.
-  bool send_initial_metadata;
   size_t send_message_count;
-  bool send_trailing_metadata;
-  bool recv_initial_metadata;
-  bool recv_message;
-  bool recv_trailing_metadata;
+  bool send_initial_metadata : 1;
+  bool send_trailing_metadata : 1;
+  bool recv_initial_metadata : 1;
+  bool recv_message : 1;
+  bool recv_trailing_metadata : 1;
   // subchannel_batch_data.batch.payload points to this.
   grpc_transport_stream_op_batch_payload batch_payload;
   // State for callback processing.
-  bool recv_initial_metadata_ready_pending;
-  bool retry_dispatched;
+  bool recv_initial_metadata_ready_pending : 1;
+  bool seen_recv_trailing_metadata_on_complete : 1;
+  bool retry_dispatched : 1;
 } subchannel_call_retry_state;
 
 typedef struct {
@@ -1520,16 +1521,15 @@ gpr_free(k);
 gpr_free(v);
 }
 
-    // If we got a Trailers-Only response), do nothing.  We can evaluate
-    // whether to retry when recv_trailing_metadata comes back.
-// FIXME: what if we see recv_trailing_metadata before this? (e.g.,
-// because another filter delayed this callback)
-// FIXME: do we need to do anything from below before we do this?
-gpr_log(GPR_INFO, "trailing_metadata_available=%d", batch_data->trailing_metadata_available);
-    if (batch_data->trailing_metadata_available) {
-      subchannel_call_retry_state *retry_state =
-          grpc_connected_subchannel_call_get_parent_data(
-              batch_data->subchannel_call);
+    // If we got a Trailers-Only response and have not yet gotten the
+    // recv_trailing_metadata on_complete callback, do nothing.  We can
+    // evaluate whether to retry when recv_trailing_metadata comes back.
+    subchannel_call_retry_state *retry_state =
+        grpc_connected_subchannel_call_get_parent_data(
+            batch_data->subchannel_call);
+    if (batch_data->trailing_metadata_available &&
+        !retry_state->seen_recv_trailing_metadata_on_complete) {
+gpr_log(GPR_INFO, "deferring recv_initial_metadata_ready (Trailers-Only)");
       retry_state->recv_initial_metadata_ready_pending = true;
       GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
                               "recv_initial_metadata_ready trailers-only");
@@ -1646,6 +1646,10 @@ gpr_log(GPR_INFO, "  batch:%s%s%s%s%s%s%s",
           batch_data->subchannel_call);
   const bool have_pending_send_message_ops =
       retry_state->send_message_count < calld->num_send_message_ops;
+  // Record that we've seen the recv_trailing_metadata on_complete callback.
+  if (batch_data->batch.recv_trailing_metadata) {
+    retry_state->seen_recv_trailing_metadata_on_complete = true;
+  }
   // There are several possible cases here:
   // 1. The batch failed (error != GRPC_ERROR_NONE).  In this case, the
   //    call is complete and has failed.
@@ -2329,6 +2333,8 @@ static void cc_start_transport_stream_op_batch(
   pending_batches_add(elem, batch);
   // Check if we've already gotten a subchannel call.
   GPR_TIMER_BEGIN("cc_start_transport_stream_op_batch", 0);
+// FIXME: if we might retry, we don't necessarily want to fail the
+// pending batches here... maybe reverse the order of the next two blocks?
   if (calld->error != GRPC_ERROR_NONE) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: failing batch with error: %s",
