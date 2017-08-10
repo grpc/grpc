@@ -137,10 +137,12 @@ void fake_tsi_test_do_round_trip_odd_buffer_size() {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   fake_tsi_test_do_handshake_tiny_handshake_buffer();
   fake_tsi_test_do_handshake_small_handshake_buffer();
   fake_tsi_test_do_handshake();
   fake_tsi_test_do_round_trip_for_all_configs();
   fake_tsi_test_do_round_trip_odd_buffer_size();
+  grpc_shutdown();
   return 0;
 }
