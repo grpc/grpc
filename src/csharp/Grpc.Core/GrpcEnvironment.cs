@@ -239,6 +239,7 @@ namespace Grpc.Core
 
         /// <summary>
         /// Occurs when <c>GrpcEnvironment</c> is about the start the shutdown logic.
+        /// If <c>GrpcEnvironment</c> is later initialized and shutdown, the event will be fired again (unless unregistered first).
         /// </summary>
         public static event EventHandler ShuttingDown;
 
