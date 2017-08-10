@@ -1028,6 +1028,7 @@ typedef struct client_channel_call_data {
 
   // Copy of initial metadata.
   // Populated when we receive a send_initial_metadata op.
+  bool seen_send_initial_metadata;
   grpc_linked_mdelem *send_initial_metadata_storage;
   grpc_metadata_batch send_initial_metadata;
   uint32_t send_initial_metadata_flags;
@@ -1039,12 +1040,13 @@ typedef struct client_channel_call_data {
   // cache for the first send_message op, so that we don't need to allocate
   // memory for unary RPCs.  All subsequent messages are stored in
   // send_messages, which are dynamically allocated as needed.
+  size_t num_send_message_ops;
   grpc_byte_stream_cache initial_send_message;
   grpc_byte_stream_cache *send_messages;
-  size_t num_send_message_ops;
   // Copy of trailing metadata.
   // Populated when we receive a send_trailing_metadata op.
   // Non-NULL if we've received a send_trailing_metadata op.
+  bool seen_send_trailing_metadata;
   grpc_linked_mdelem *send_trailing_metadata_storage;
   grpc_metadata_batch send_trailing_metadata;
 } call_data;
@@ -1302,6 +1304,7 @@ gpr_log(GPR_INFO, "size exceeded, committing for retries");
   }
   // Save a copy of metadata for send_initial_metadata ops.
   if (batch->send_initial_metadata) {
+    calld->seen_send_initial_metadata = true;
     GPR_ASSERT(calld->send_initial_metadata_storage == NULL);
     grpc_error *error = grpc_metadata_batch_copy(
         exec_ctx,
@@ -1335,6 +1338,7 @@ gpr_log(GPR_INFO, "grpc_metadata_batch_copy() for initial metadata failed, commi
   }
   // Save metadata batch for send_trailing_metadata ops.
   if (batch->send_trailing_metadata) {
+    calld->seen_send_trailing_metadata = true;
     GPR_ASSERT(calld->send_trailing_metadata_storage == NULL);
     grpc_error *error = grpc_metadata_batch_copy(
         exec_ctx,
@@ -1744,24 +1748,15 @@ static void start_retriable_subchannel_batch(grpc_exec_ctx *exec_ctx,
                                              grpc_call_element *elem) {
   call_data *calld = elem->call_data;
 gpr_log(GPR_INFO, "==> start_retriable_subchannel_batch()");
-  // Figure out what ops we have to send.
-  // Note that we don't check for send_message ops here, since those
-  // are detected in a different way below.
-// FIXME: this isn't exactly right for the send ops -- we may have
-// already completed them and sent the completions back to the surface
-// (in which case they are no longer pending) but then need to send them
-// again for a retry.  consider changing the way state is kept for the
-// pending_batches list to avoid this problem.
-  size_t send_initial_metadata_idx = INT_MAX;
-  size_t send_trailing_metadata_idx = INT_MAX;
+  // Figure out what recv ops we have to send.
+  // Note that we don't check for send ops here, since those are detected
+  // in a different way below.
   size_t recv_initial_metadata_idx = INT_MAX;
   size_t recv_message_idx = INT_MAX;
   size_t recv_trailing_metadata_idx = INT_MAX;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
     grpc_transport_stream_op_batch *batch = calld->pending_batches[i].batch;
     if (batch == NULL) continue;
-    if (batch->send_initial_metadata) send_initial_metadata_idx = i;
-    if (batch->send_trailing_metadata) send_trailing_metadata_idx = i;
     if (batch->recv_initial_metadata) recv_initial_metadata_idx = i;
     if (batch->recv_message) recv_message_idx = i;
     if (batch->recv_trailing_metadata) recv_trailing_metadata_idx = i;
@@ -1781,7 +1776,7 @@ gpr_log(GPR_INFO, "==> start_retriable_subchannel_batch()");
       "client_channel_start_retriable_subchannel_batch");
   batch_data->batch.payload = &retry_state->batch_payload;
   // send_initial_metadata.
-  if (send_initial_metadata_idx != INT_MAX &&
+  if (calld->seen_send_initial_metadata &&
       !retry_state->send_initial_metadata) {
     grpc_error *error = grpc_metadata_batch_copy(
         exec_ctx, &calld->send_initial_metadata,
@@ -1816,8 +1811,11 @@ gpr_log(GPR_INFO, "==> start_retriable_subchannel_batch()");
         (grpc_byte_stream *)&batch_data->send_message;
   }
   // send_trailing_metadata.
-// FIXME: don't do this yet if there are pending send_message ops
-  if (send_trailing_metadata_idx != INT_MAX &&
+  // Note that we only add this op if we have no more pending
+  // send_message ops, since we can't send down any more send_message
+  // ops after send_trailing_metadata.
+  if (calld->seen_send_trailing_metadata &&
+      calld->num_send_message_ops == retry_state->send_message_count &&
       !retry_state->send_trailing_metadata) {
     grpc_error *error = grpc_metadata_batch_copy(
         exec_ctx, &calld->send_trailing_metadata,
