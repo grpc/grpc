@@ -411,6 +411,11 @@ static tsi_result do_ssl_read(SSL *ssl, unsigned char *unprotected_bytes,
   GPR_ASSERT(*unprotected_bytes_size <= INT_MAX);
   read_from_ssl =
       SSL_read(ssl, unprotected_bytes, (int)*unprotected_bytes_size);
+  if (read_from_ssl == 0 && SSL_get_shutdown(ssl) == SSL_RECEIVED_SHUTDOWN) {
+    /* Client has initiated shutdown, attempt graceful shutdown on our end. */
+    SSL_shutdown(ssl);
+    return TSI_SHUTTING_DOWN;
+  }
   if (read_from_ssl <= 0) {
     read_from_ssl = SSL_get_error(ssl, read_from_ssl);
     switch (read_from_ssl) {
