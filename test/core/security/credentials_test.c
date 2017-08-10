@@ -311,6 +311,7 @@ typedef struct {
   grpc_credentials_mdelem_array md_array;
   grpc_closure on_request_metadata;
   grpc_call_credentials *creds;
+  grpc_polling_entity pollent;
 } request_metadata_state;
 
 static void check_metadata(const expected_md *expected,
@@ -355,6 +356,8 @@ static void check_request_metadata(grpc_exec_ctx *exec_ctx, void *arg,
   GPR_ASSERT(state->md_array.size == state->expected_size);
   check_metadata(state->expected, &state->md_array);
   grpc_credentials_mdelem_array_destroy(exec_ctx, &state->md_array);
+  grpc_pollset_set_destroy(exec_ctx,
+                           grpc_polling_entity_pollset_set(&state->pollent));
   gpr_free(state);
 }
 
@@ -365,6 +368,8 @@ static request_metadata_state *make_request_metadata_state(
   state->expected_error = expected_error;
   state->expected = expected;
   state->expected_size = expected_size;
+  state->pollent =
+      grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create());
   GRPC_CLOSURE_INIT(&state->on_request_metadata, check_request_metadata, state,
                     grpc_schedule_on_exec_ctx);
   return state;
@@ -376,7 +381,7 @@ static void run_request_metadata_test(grpc_exec_ctx *exec_ctx,
                                       request_metadata_state *state) {
   grpc_error *error = GRPC_ERROR_NONE;
   if (grpc_call_credentials_get_request_metadata(
-          exec_ctx, creds, NULL, auth_md_ctx, &state->md_array,
+          exec_ctx, creds, &state->pollent, auth_md_ctx, &state->md_array,
           &state->on_request_metadata, &error)) {
     // Synchronous result.  Invoke the callback directly.
     check_request_metadata(exec_ctx, state, error);
