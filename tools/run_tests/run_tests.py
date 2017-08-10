@@ -1274,12 +1274,12 @@ argp.add_argument('--bq_result_table',
                   type=str,
                   nargs='?',
                   help='Upload test results to a specified BQ table.')
-argp.add_argument('--auto_set_flakes', default=True, type=bool,
-                  help='Set flakiness data from historic data')
+argp.add_argument('--disable_auto_set_flakes', default=False, const=True, action='store_const',
+                  help='Disable rerunning historically flaky tests')
 args = argp.parse_args()
 
 flaky_tests = set()
-if args.auto_set_flakes:
+if not args.disable_auto_set_flakes:
   try:
     flaky_tests = set(get_flaky_tests())
   except:
