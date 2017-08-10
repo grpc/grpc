@@ -23,25 +23,18 @@ using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
-    /// <summary>
-    /// Decorates an underlying <c>CallInvoker</c> to intercept call invocations.
-    /// </summary>
     internal class InterceptingCallInvoker : CallInvoker
     {
+	readonly IInterceptor interceptor;
         readonly CallInvoker callInvoker;
-        readonly Func<string, string> hostInterceptor;
-        readonly Func<CallOptions, CallOptions> callOptionsInterceptor;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Grpc.Core.Internal.InterceptingCallInvoker"/> class.
         /// </summary>
-        public InterceptingCallInvoker(CallInvoker callInvoker,
-            Func<string, string> hostInterceptor = null,
-            Func<CallOptions, CallOptions> callOptionsInterceptor = null)
+        public InterceptingCallInvoker(IInterceptor interceptor, CallInvoker callInvoker)
         {
-            this.callInvoker = GrpcPreconditions.CheckNotNull(callInvoker);
-            this.hostInterceptor = hostInterceptor;
-            this.callOptionsInterceptor = callOptionsInterceptor;
+		this.interceptor = interceptor;
+		this.callInvoker = callInvoker;
         }
 
         /// <summary>
@@ -49,9 +42,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         public override TResponse BlockingUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options, TRequest request)
         {
-            host = InterceptHost(host);
-            options = InterceptCallOptions(options);
-            return callInvoker.BlockingUnaryCall(method, host, options, request);
+            return interceptor.BlockingUnaryCall(method, host, options, request, callInvoker.BlockingUnaryCall);
         }
 
         /// <summary>
@@ -59,9 +50,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options, TRequest request)
         {
-            host = InterceptHost(host);
-            options = InterceptCallOptions(options);
-            return callInvoker.AsyncUnaryCall(method, host, options, request);
+            return interceptor.AsyncUnaryCall(method, host, options, request, callInvoker.AsyncUnaryCall);
         }
 
         /// <summary>
@@ -70,9 +59,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options, TRequest request)
         {
-            host = InterceptHost(host);
-            options = InterceptCallOptions(options);
-            return callInvoker.AsyncServerStreamingCall(method, host, options, request);
+            return interceptor.AsyncServerStreamingCall(method, host, options, request, callInvoker.AsyncServerStreamingCall);
         }
 
         /// <summary>
@@ -81,9 +68,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         public override AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options)
         {
-            host = InterceptHost(host);
-            options = InterceptCallOptions(options);
-            return callInvoker.AsyncClientStreamingCall(method, host, options);
+            return interceptor.AsyncClientStreamingCall(method, host, options, callInvoker.AsyncClientStreamingCall);
         }
 
         /// <summary>
@@ -93,27 +78,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options)
         {
-            host = InterceptHost(host);
-            options = InterceptCallOptions(options);
-            return callInvoker.AsyncDuplexStreamingCall(method, host, options);
-        }
-
-        private string InterceptHost(string host)
-        {
-            if (hostInterceptor == null)
-            {
-                return host;
-            }
-            return hostInterceptor(host);
-        }
-
-        private CallOptions InterceptCallOptions(CallOptions options)
-        {
-            if (callOptionsInterceptor == null)
-            {
-                return options;
-            }
-            return callOptionsInterceptor(options);
+            return interceptor.AsyncDuplexStreamingCall(method, host, options, callInvoker.AsyncDuplexStreamingCall);
         }
     }
 }
