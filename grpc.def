@@ -148,6 +148,8 @@ EXPORTS
     grpc_slice_new_with_len
     grpc_slice_malloc
     grpc_slice_malloc_large
+    grpc_write_slice_malloc
+    grpc_slice_write
     grpc_slice_intern
     grpc_slice_from_copied_string
     grpc_slice_from_copied_buffer

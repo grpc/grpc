@@ -46,6 +46,7 @@ typedef struct grpc_slice_refcount_vtable {
   void (*unref)(grpc_exec_ctx *exec_ctx, void *);
   int (*eq)(grpc_slice a, grpc_slice b);
   uint32_t (*hash)(grpc_slice slice);
+  void (*write)(grpc_exec_ctx *exec_ctx, grpc_slice slice);
 } grpc_slice_refcount_vtable;
 
 /** Reference count container for grpc_slice. Contains function pointers to

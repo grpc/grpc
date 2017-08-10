@@ -136,6 +136,10 @@ grpc_slice CoreCodegen::grpc_slice_malloc(size_t length) {
   return ::grpc_slice_malloc(length);
 }
 
+grpc_slice CoreCodegen::grpc_write_slice_malloc(size_t length) {
+  return ::grpc_write_slice_malloc(length);
+}
+
 void CoreCodegen::grpc_slice_unref(grpc_slice slice) {
   ::grpc_slice_unref(slice);
 }

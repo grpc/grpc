@@ -84,6 +84,7 @@ class CoreCodegen final : public CoreCodegenInterface {
                                            void* user_data) override;
   grpc_slice grpc_empty_slice() override;
   grpc_slice grpc_slice_malloc(size_t length) override;
+  grpc_slice grpc_write_slice_malloc(size_t length) override;
   void grpc_slice_unref(grpc_slice slice) override;
   grpc_slice grpc_slice_ref(grpc_slice slice) override;
   grpc_slice grpc_slice_split_tail(grpc_slice* s, size_t split) override;

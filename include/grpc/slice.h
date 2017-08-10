@@ -65,6 +65,10 @@ GPRAPI grpc_slice grpc_slice_new_with_len(void *p, size_t len,
 GPRAPI grpc_slice grpc_slice_malloc(size_t length);
 GPRAPI grpc_slice grpc_slice_malloc_large(size_t length);
 
+/** Malloc a write slice */
+GPRAPI grpc_slice grpc_write_slice_malloc(size_t len);
+GPRAPI void grpc_slice_write(grpc_exec_ctx *exec_ctx, grpc_slice s);
+
 #define GRPC_SLICE_MALLOC(len)                                    \
   ((len) <= GRPC_SLICE_INLINED_SIZE                               \
        ? (grpc_slice){.refcount = NULL,                           \
