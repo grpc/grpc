@@ -208,12 +208,12 @@ void grpc_channel_watch_connectivity_state(
       7, (channel, (int)last_observed_state, deadline.tv_sec, deadline.tv_nsec,
           (int)deadline.clock_type, cq, tag));
 
-  grpc_cq_begin_op(cq, tag);
+  GPR_ASSERT(grpc_cq_begin_op(cq, tag));
 
   gpr_mu_init(&w->mu);
-  grpc_closure_init(&w->on_complete, watch_complete, w,
+  GRPC_CLOSURE_INIT(&w->on_complete, watch_complete, w,
                     grpc_schedule_on_exec_ctx);
-  grpc_closure_init(&w->on_timeout, timeout_complete, w,
+  GRPC_CLOSURE_INIT(&w->on_timeout, timeout_complete, w,
                     grpc_schedule_on_exec_ctx);
   w->phase = WAITING;
   w->state = last_observed_state;
@@ -225,7 +225,7 @@ void grpc_channel_watch_connectivity_state(
   watcher_timer_init_arg *wa = gpr_malloc(sizeof(watcher_timer_init_arg));
   wa->w = w;
   wa->deadline = deadline;
-  grpc_closure_init(&w->watcher_timer_init, watcher_timer_init, wa,
+  GRPC_CLOSURE_INIT(&w->watcher_timer_init, watcher_timer_init, wa,
                     grpc_schedule_on_exec_ctx);
 
   if (client_channel_elem->filter == &grpc_client_channel_filter) {

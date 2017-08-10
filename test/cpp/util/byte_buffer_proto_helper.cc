@@ -36,8 +36,7 @@ std::unique_ptr<ByteBuffer> SerializeToByteBuffer(
     grpc::protobuf::Message* message) {
   grpc::string buf;
   message->SerializeToString(&buf);
-  grpc_slice s = grpc_slice_from_copied_string(buf.c_str());
-  Slice slice(s, Slice::STEAL_REF);
+  Slice slice(buf);
   return std::unique_ptr<ByteBuffer>(new ByteBuffer(&slice, 1));
 }
 

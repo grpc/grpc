@@ -59,4 +59,16 @@ void grpc_subchannel_index_init(void);
 /** Shutdown the subchannel index (global) */
 void grpc_subchannel_index_shutdown(void);
 
+/** \em TEST ONLY.
+ * If \a force_creation is true, all key comparisons will be false, resulting in
+ * new subchannels always being created. Otherwise, the keys will be compared as
+ * usual.
+ *
+ * This function is *not* threadsafe on purpose: it should *only* be used in
+ * test code.
+ *
+ * Tests using this function \em MUST run tests with and without \a
+ * force_creation set. */
+void grpc_subchannel_index_test_only_set_force_creation(bool force_creation);
+
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INDEX_H */

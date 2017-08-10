@@ -373,3 +373,29 @@ bool grpc_channel_args_want_minimal_stack(const grpc_channel_args *args) {
   return grpc_channel_arg_get_bool(
       grpc_channel_args_find(args, GRPC_ARG_MINIMAL_STACK), false);
 }
+
+grpc_arg grpc_channel_arg_string_create(char *name, char *value) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_STRING;
+  arg.key = name;
+  arg.value.string = value;
+  return arg;
+}
+
+grpc_arg grpc_channel_arg_integer_create(char *name, int value) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_INTEGER;
+  arg.key = name;
+  arg.value.integer = value;
+  return arg;
+}
+
+grpc_arg grpc_channel_arg_pointer_create(
+    char *name, void *value, const grpc_arg_pointer_vtable *vtable) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_POINTER;
+  arg.key = name;
+  arg.value.pointer.p = value;
+  arg.value.pointer.vtable = vtable;
+  return arg;
+}

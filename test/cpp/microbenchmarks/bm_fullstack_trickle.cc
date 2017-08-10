@@ -73,11 +73,11 @@ class TrickledCHTTP2 : public EndpointPairFixture {
       log_.reset(new std::ofstream(fn.str().c_str()));
       write_csv(log_.get(), "t", "iteration", "client_backlog",
                 "server_backlog", "client_t_stall", "client_s_stall",
-                "server_t_stall", "server_s_stall", "client_t_outgoing",
-                "server_t_outgoing", "client_t_incoming", "server_t_incoming",
-                "client_s_outgoing_delta", "server_s_outgoing_delta",
-                "client_s_incoming_delta", "server_s_incoming_delta",
-                "client_s_announce_window", "server_s_announce_window",
+                "server_t_stall", "server_s_stall", "client_t_remote",
+                "server_t_remote", "client_t_announced", "server_t_announced",
+                "client_s_remote_delta", "server_s_remote_delta",
+                "client_s_local_delta", "server_s_local_delta",
+                "client_s_announced_delta", "server_s_announced_delta",
                 "client_peer_iws", "client_local_iws", "client_sent_iws",
                 "client_acked_iws", "server_peer_iws", "server_local_iws",
                 "server_sent_iws", "server_acked_iws", "client_queued_bytes",
@@ -127,14 +127,15 @@ class TrickledCHTTP2 : public EndpointPairFixture {
         client->lists[GRPC_CHTTP2_LIST_STALLED_BY_STREAM].head != nullptr,
         server->lists[GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT].head != nullptr,
         server->lists[GRPC_CHTTP2_LIST_STALLED_BY_STREAM].head != nullptr,
-        client->outgoing_window, server->outgoing_window,
-        client->incoming_window, server->incoming_window,
-        client_stream ? client_stream->outgoing_window_delta : -1,
-        server_stream ? server_stream->outgoing_window_delta : -1,
-        client_stream ? client_stream->incoming_window_delta : -1,
-        server_stream ? server_stream->incoming_window_delta : -1,
-        client_stream ? client_stream->announce_window : -1,
-        server_stream ? server_stream->announce_window : -1,
+        client->flow_control.remote_window, server->flow_control.remote_window,
+        client->flow_control.announced_window,
+        server->flow_control.announced_window,
+        client_stream ? client_stream->flow_control.remote_window_delta : -1,
+        server_stream ? server_stream->flow_control.remote_window_delta : -1,
+        client_stream ? client_stream->flow_control.local_window_delta : -1,
+        server_stream ? server_stream->flow_control.local_window_delta : -1,
+        client_stream ? client_stream->flow_control.announced_window_delta : -1,
+        server_stream ? server_stream->flow_control.announced_window_delta : -1,
         client->settings[GRPC_PEER_SETTINGS]
                         [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
         client->settings[GRPC_LOCAL_SETTINGS]
@@ -315,7 +316,7 @@ BENCHMARK(BM_PumpStreamServerToClient_Trickle)->Apply(StreamingTrickleArgs);
 static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
   EchoTestService::AsyncService service;
   std::unique_ptr<TrickledCHTTP2> fixture(new TrickledCHTTP2(
-      &service, true, state.range(0) /* req_size */,
+      &service, false, state.range(0) /* req_size */,
       state.range(1) /* resp_size */, state.range(2) /* bw in kbit/s */));
   EchoRequest send_request;
   EchoResponse send_response;

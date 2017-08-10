@@ -38,7 +38,7 @@ HISTOGRAM_PARAMS = {
 # actual target will be slightly higher)
 OUTSTANDING_REQUESTS={
     'async': 6400,
-    'async-1core': 800,
+    'async-limited': 800,
     'sync': 1000
 }
 
@@ -82,6 +82,18 @@ def _payload_type(use_generic_payload, req_size, resp_size):
         r['simple_params'] = sizes
     return r
 
+def _add_channel_arg(config, key, value):
+  if 'channel_args' in config:
+    channel_args = config['channel_args']
+  else:
+    channel_args = []
+    config['channel_args'] = channel_args
+  arg = {'name': key}
+  if isinstance(value, int):
+    arg['int_value'] = value
+  else:
+    arg['str_value'] = value
+  channel_args.append(arg)
 
 def _ping_pong_scenario(name, rpc_type,
                         client_type, server_type,
@@ -93,6 +105,8 @@ def _ping_pong_scenario(name, rpc_type,
                         client_language=None,
                         server_language=None,
                         async_server_threads=0,
+                        server_threads_per_cq=0,
+                        client_threads_per_cq=0,
                         warmup_seconds=WARMUP_SECONDS,
                         categories=DEFAULT_CATEGORIES,
                         channels=None,
@@ -100,7 +114,8 @@ def _ping_pong_scenario(name, rpc_type,
                         num_clients=None,
                         resource_quota_size=None,
                         messages_per_stream=None,
-                        excluded_poll_engines=[]):
+                        excluded_poll_engines=[],
+                        minimal_stack=False):
   """Creates a basic ping pong scenario."""
   scenario = {
     'name': name,
@@ -112,16 +127,20 @@ def _ping_pong_scenario(name, rpc_type,
       'outstanding_rpcs_per_channel': 1,
       'client_channels': 1,
       'async_client_threads': 1,
+      'threads_per_cq': client_threads_per_cq,
       'rpc_type': rpc_type,
       'load_params': {
         'closed_loop': {}
       },
       'histogram_params': HISTOGRAM_PARAMS,
+      'channel_args': [],
     },
     'server_config': {
       'server_type': server_type,
       'security_params': _get_secargs(secure),
       'async_server_threads': async_server_threads,
+      'threads_per_cq': server_threads_per_cq,
+      'channel_args': [],
     },
     'warmup_seconds': warmup_seconds,
     'benchmark_seconds': BENCHMARK_SECONDS
@@ -134,6 +153,8 @@ def _ping_pong_scenario(name, rpc_type,
     scenario['server_config']['payload_config'] = _payload_type(use_generic_payload, req_size, resp_size)
 
   scenario['client_config']['payload_config'] = _payload_type(use_generic_payload, req_size, resp_size)
+
+  optimization_target = 'blend'
 
   if unconstrained_client:
     outstanding_calls = outstanding if outstanding is not None else OUTSTANDING_REQUESTS[unconstrained_client]
@@ -148,10 +169,23 @@ def _ping_pong_scenario(name, rpc_type,
     scenario['client_config']['outstanding_rpcs_per_channel'] = deep
     scenario['client_config']['client_channels'] = wide
     scenario['client_config']['async_client_threads'] = 0
+    optimization_target = 'throughput'
   else:
     scenario['client_config']['outstanding_rpcs_per_channel'] = 1
     scenario['client_config']['client_channels'] = 1
     scenario['client_config']['async_client_threads'] = 1
+    optimization_target = 'latency'
+
+  optimization_channel_arg = {
+    'name': 'grpc.optimization_target',
+    'str_value': optimization_target
+  }
+  scenario['client_config']['channel_args'].append(optimization_channel_arg)
+  scenario['server_config']['channel_args'].append(optimization_channel_arg)
+
+  if minimal_stack:
+    _add_channel_arg(scenario['client_config'], 'grpc.minimal_stack', 1)
+    _add_channel_arg(scenario['server_config'], 'grpc.minimal_stack', 1)
 
   if messages_per_stream:
     scenario['client_config']['messages_per_stream'] = messages_per_stream
@@ -220,6 +254,7 @@ class CXXLanguage:
           server_type='ASYNC_GENERIC_SERVER',
           unconstrained_client='async', use_generic_payload=True,
           secure=secure,
+          minimal_stack=not secure,
           categories=smoketest_categories+[SCALABLE])
 
       for mps in geometric_progression(1, 20, 10):
@@ -230,6 +265,7 @@ class CXXLanguage:
             server_type='ASYNC_GENERIC_SERVER',
             unconstrained_client='async', use_generic_payload=True,
             secure=secure, messages_per_stream=mps,
+            minimal_stack=not secure,
             categories=smoketest_categories+[SCALABLE])
 
       for mps in geometric_progression(1, 200, math.sqrt(10)):
@@ -240,6 +276,7 @@ class CXXLanguage:
             server_type='ASYNC_GENERIC_SERVER',
             unconstrained_client='async', use_generic_payload=True,
             secure=secure, messages_per_stream=mps,
+            minimal_stack=not secure,
             categories=[SWEEP])
 
       yield _ping_pong_scenario(
@@ -251,6 +288,7 @@ class CXXLanguage:
           server_type='ASYNC_GENERIC_SERVER',
           unconstrained_client='async', use_generic_payload=True,
           secure=secure,
+          minimal_stack=not secure,
           categories=smoketest_categories+[SCALABLE],
           channels=1, outstanding=100)
 
@@ -263,6 +301,68 @@ class CXXLanguage:
           server_type='ASYNC_GENERIC_SERVER',
           unconstrained_client='async', use_generic_payload=True,
           secure=secure,
+          minimal_stack=not secure,
+          categories=smoketest_categories+[SCALABLE])
+
+      # TODO(https://github.com/grpc/grpc/issues/11500) Re-enable this test
+      #yield _ping_pong_scenario(
+      #    'cpp_generic_async_streaming_qps_unconstrained_1cq_%s' % secstr,
+      #    rpc_type='STREAMING',
+      #    client_type='ASYNC_CLIENT',
+      #    server_type='ASYNC_GENERIC_SERVER',
+      #    unconstrained_client='async-limited', use_generic_payload=True,
+      #    secure=secure,
+      #    client_threads_per_cq=1000000, server_threads_per_cq=1000000,
+      #    categories=smoketest_categories+[SCALABLE])
+
+      yield _ping_pong_scenario(
+          'cpp_generic_async_streaming_qps_unconstrained_2waysharedcq_%s' % secstr,
+          rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_GENERIC_SERVER',
+          unconstrained_client='async', use_generic_payload=True,
+          secure=secure,
+          client_threads_per_cq=2, server_threads_per_cq=2,
+          categories=smoketest_categories+[SCALABLE])
+
+      #yield _ping_pong_scenario(
+      #    'cpp_protobuf_async_streaming_qps_unconstrained_1cq_%s' % secstr,
+      #    rpc_type='STREAMING',
+      #    client_type='ASYNC_CLIENT',
+      #    server_type='ASYNC_SERVER',
+      #    unconstrained_client='async-limited',
+      #    secure=secure,
+      #    client_threads_per_cq=1000000, server_threads_per_cq=1000000,
+      #    categories=smoketest_categories+[SCALABLE])
+
+      yield _ping_pong_scenario(
+          'cpp_protobuf_async_streaming_qps_unconstrained_2waysharedcq_%s' % secstr,
+          rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_SERVER',
+          unconstrained_client='async',
+          secure=secure,
+          client_threads_per_cq=2, server_threads_per_cq=2,
+          categories=smoketest_categories+[SCALABLE])
+
+      #yield _ping_pong_scenario(
+      #    'cpp_protobuf_async_unary_qps_unconstrained_1cq_%s' % secstr,
+      #    rpc_type='UNARY',
+      #    client_type='ASYNC_CLIENT',
+      #    server_type='ASYNC_SERVER',
+      #    unconstrained_client='async-limited',
+      #    secure=secure,
+      #    client_threads_per_cq=1000000, server_threads_per_cq=1000000,
+      #    categories=smoketest_categories+[SCALABLE])
+
+      yield _ping_pong_scenario(
+          'cpp_protobuf_async_unary_qps_unconstrained_2waysharedcq_%s' % secstr,
+          rpc_type='UNARY',
+          client_type='ASYNC_CLIENT',
+          server_type='ASYNC_SERVER',
+          unconstrained_client='async',
+          secure=secure,
+          client_threads_per_cq=2, server_threads_per_cq=2,
           categories=smoketest_categories+[SCALABLE])
 
       yield _ping_pong_scenario(
@@ -270,8 +370,9 @@ class CXXLanguage:
           rpc_type='STREAMING',
           client_type='ASYNC_CLIENT',
           server_type='ASYNC_GENERIC_SERVER',
-          unconstrained_client='async-1core', use_generic_payload=True,
+          unconstrained_client='async-limited', use_generic_payload=True,
           async_server_threads=1,
+          minimal_stack=not secure,
           secure=secure)
 
       yield _ping_pong_scenario(
@@ -282,6 +383,7 @@ class CXXLanguage:
           server_type='SYNC_SERVER',
           unconstrained_client='async',
           secure=secure,
+          minimal_stack=not secure,
           categories=smoketest_categories + [SCALABLE],
           excluded_poll_engines = ['poll-cv'])
 
@@ -296,6 +398,7 @@ class CXXLanguage:
           req_size=128,
           resp_size=8*1024*1024,
           secure=secure,
+          minimal_stack=not secure,
           categories=smoketest_categories + [SCALABLE])
 
       yield _ping_pong_scenario(
@@ -305,6 +408,7 @@ class CXXLanguage:
           server_type='SYNC_SERVER',
           unconstrained_client='async',
           secure=secure,
+          minimal_stack=not secure,
           categories=smoketest_categories+[SCALABLE],
           excluded_poll_engines = ['poll-cv'])
 
@@ -313,6 +417,7 @@ class CXXLanguage:
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         req_size=1024*1024, resp_size=1024*1024,
         secure=secure,
+        minimal_stack=not secure,
         categories=smoketest_categories + [SCALABLE])
 
       for rpc_type in ['unary', 'streaming', 'streaming_from_client', 'streaming_from_server']:
@@ -323,6 +428,7 @@ class CXXLanguage:
               client_type='%s_CLIENT' % synchronicity.upper(),
               server_type='%s_SERVER' % synchronicity.upper(),
               async_server_threads=1,
+              minimal_stack=not secure,
               secure=secure)
 
           for size in geometric_progression(1, 1024*1024*1024+1, 8):
@@ -335,6 +441,7 @@ class CXXLanguage:
                   server_type='%s_SERVER' % synchronicity.upper(),
                   unconstrained_client=synchronicity,
                   secure=secure,
+                  minimal_stack=not secure,
                   categories=[SWEEP])
 
           yield _ping_pong_scenario(
@@ -344,6 +451,7 @@ class CXXLanguage:
               server_type='%s_SERVER' % synchronicity.upper(),
               unconstrained_client=synchronicity,
               secure=secure,
+              minimal_stack=not secure,
               categories=smoketest_categories+[SCALABLE])
 
           # TODO(vjpai): Re-enable this test. It has a lot of timeouts
@@ -368,6 +476,7 @@ class CXXLanguage:
                   server_type='%s_SERVER' % synchronicity.upper(),
                   unconstrained_client=synchronicity,
                   secure=secure, messages_per_stream=mps,
+                  minimal_stack=not secure,
                   categories=smoketest_categories+[SCALABLE])
 
             for mps in geometric_progression(1, 200, math.sqrt(10)):
@@ -378,6 +487,7 @@ class CXXLanguage:
                   server_type='%s_SERVER' % synchronicity.upper(),
                   unconstrained_client=synchronicity,
                   secure=secure, messages_per_stream=mps,
+                  minimal_stack=not secure,
                   categories=[SWEEP])
 
           for channels in geometric_progression(1, 20000, math.sqrt(10)):
@@ -390,6 +500,7 @@ class CXXLanguage:
                     client_type='%s_CLIENT' % synchronicity.upper(),
                     server_type='%s_SERVER' % synchronicity.upper(),
                     unconstrained_client=synchronicity, secure=secure,
+                    minimal_stack=not secure,
                     categories=[SWEEP], channels=channels, outstanding=outstanding)
 
   def __str__(self):
@@ -753,7 +864,7 @@ class JavaLanguage:
       yield _ping_pong_scenario(
           'java_generic_async_streaming_qps_one_server_core_%s' % secstr, rpc_type='STREAMING',
           client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
-          unconstrained_client='async-1core', use_generic_payload=True,
+          unconstrained_client='async-limited', use_generic_payload=True,
           async_server_threads=1,
           secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
 

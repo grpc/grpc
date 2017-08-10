@@ -19,7 +19,10 @@
 #include <grpc/support/port_platform.h>
 #if GRPC_ARES == 1 && !defined(GRPC_UV)
 
+#include <limits.h>
+#include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
@@ -31,11 +34,14 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/support/backoff.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
+#include "src/core/lib/transport/service_config.h"
 
 #define GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS 1
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -54,6 +60,8 @@ typedef struct {
   char *default_port;
   /** channel args. */
   grpc_channel_args *channel_args;
+  /** whether to request the service config */
+  bool request_service_config;
   /** pollset_set to drive the name resolution process */
   grpc_pollset_set *interested_parties;
 
@@ -85,6 +93,8 @@ typedef struct {
 
   /** currently resolving addresses */
   grpc_lb_addresses *lb_addresses;
+  /** currently resolving service config */
+  char *service_config_json;
 } ares_dns_resolver;
 
 static void dns_ares_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
@@ -116,7 +126,7 @@ static void dns_ares_shutdown_locked(grpc_exec_ctx *exec_ctx,
   }
   if (r->next_completion != NULL) {
     *r->target_result = NULL;
-    grpc_closure_sched(
+    GRPC_CLOSURE_SCHED(
         exec_ctx, r->next_completion,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
     r->next_completion = NULL;
@@ -144,6 +154,77 @@ static void dns_ares_on_retry_timer_locked(grpc_exec_ctx *exec_ctx, void *arg,
   GRPC_RESOLVER_UNREF(exec_ctx, &r->base, "retry-timer");
 }
 
+static bool value_in_json_array(grpc_json *array, const char *value) {
+  for (grpc_json *entry = array->child; entry != NULL; entry = entry->next) {
+    if (entry->type == GRPC_JSON_STRING && strcmp(entry->value, value) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static char *choose_service_config(char *service_config_choice_json) {
+  grpc_json *choices_json = grpc_json_parse_string(service_config_choice_json);
+  if (choices_json == NULL || choices_json->type != GRPC_JSON_ARRAY) {
+    gpr_log(GPR_ERROR, "cannot parse service config JSON string");
+    return NULL;
+  }
+  char *service_config = NULL;
+  for (grpc_json *choice = choices_json->child; choice != NULL;
+       choice = choice->next) {
+    if (choice->type != GRPC_JSON_OBJECT) {
+      gpr_log(GPR_ERROR, "cannot parse service config JSON string");
+      break;
+    }
+    grpc_json *service_config_json = NULL;
+    for (grpc_json *field = choice->child; field != NULL; field = field->next) {
+      // Check client language, if specified.
+      if (strcmp(field->key, "clientLanguage") == 0) {
+        if (field->type != GRPC_JSON_ARRAY ||
+            !value_in_json_array(field, "c++")) {
+          service_config_json = NULL;
+          break;
+        }
+      }
+      // Check client hostname, if specified.
+      if (strcmp(field->key, "clientHostname") == 0) {
+        char *hostname = grpc_gethostname();
+        if (hostname == NULL || field->type != GRPC_JSON_ARRAY ||
+            !value_in_json_array(field, hostname)) {
+          service_config_json = NULL;
+          break;
+        }
+      }
+      // Check percentage, if specified.
+      if (strcmp(field->key, "percentage") == 0) {
+        if (field->type != GRPC_JSON_NUMBER) {
+          service_config_json = NULL;
+          break;
+        }
+        int random_pct = rand() % 100;
+        int percentage;
+        if (sscanf(field->value, "%d", &percentage) != 1 ||
+            random_pct > percentage) {
+          service_config_json = NULL;
+          break;
+        }
+      }
+      // Save service config.
+      if (strcmp(field->key, "serviceConfig") == 0) {
+        if (field->type == GRPC_JSON_OBJECT) {
+          service_config_json = field;
+        }
+      }
+    }
+    if (service_config_json != NULL) {
+      service_config = grpc_json_dump_to_string(service_config_json, 0);
+      break;
+    }
+  }
+  grpc_json_destroy(choices_json);
+  return service_config;
+}
+
 static void dns_ares_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                         grpc_error *error) {
   ares_dns_resolver *r = arg;
@@ -152,8 +233,40 @@ static void dns_ares_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
   r->resolving = false;
   r->pending_request = NULL;
   if (r->lb_addresses != NULL) {
-    grpc_arg new_arg = grpc_lb_addresses_create_channel_arg(r->lb_addresses);
-    result = grpc_channel_args_copy_and_add(r->channel_args, &new_arg, 1);
+    static const char *args_to_remove[2];
+    size_t num_args_to_remove = 0;
+    grpc_arg new_args[3];
+    size_t num_args_to_add = 0;
+    new_args[num_args_to_add++] =
+        grpc_lb_addresses_create_channel_arg(r->lb_addresses);
+    grpc_service_config *service_config = NULL;
+    char *service_config_string = NULL;
+    if (r->service_config_json != NULL) {
+      service_config_string = choose_service_config(r->service_config_json);
+      gpr_free(r->service_config_json);
+      if (service_config_string != NULL) {
+        gpr_log(GPR_INFO, "selected service config choice: %s",
+                service_config_string);
+        args_to_remove[num_args_to_remove++] = GRPC_ARG_SERVICE_CONFIG;
+        new_args[num_args_to_add++] = grpc_channel_arg_string_create(
+            GRPC_ARG_SERVICE_CONFIG, service_config_string);
+        service_config = grpc_service_config_create(service_config_string);
+        if (service_config != NULL) {
+          const char *lb_policy_name =
+              grpc_service_config_get_lb_policy_name(service_config);
+          if (lb_policy_name != NULL) {
+            args_to_remove[num_args_to_remove++] = GRPC_ARG_LB_POLICY_NAME;
+            new_args[num_args_to_add++] = grpc_channel_arg_string_create(
+                GRPC_ARG_LB_POLICY_NAME, (char *)lb_policy_name);
+          }
+        }
+      }
+    }
+    result = grpc_channel_args_copy_and_add_and_remove(
+        r->channel_args, args_to_remove, num_args_to_remove, new_args,
+        num_args_to_add);
+    if (service_config != NULL) grpc_service_config_destroy(service_config);
+    gpr_free(service_config_string);
     grpc_lb_addresses_destroy(exec_ctx, r->lb_addresses);
   } else {
     const char *msg = grpc_error_string(error);
@@ -207,10 +320,12 @@ static void dns_ares_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(!r->resolving);
   r->resolving = true;
   r->lb_addresses = NULL;
+  r->service_config_json = NULL;
   r->pending_request = grpc_dns_lookup_ares(
       exec_ctx, r->dns_server, r->name_to_resolve, r->default_port,
       r->interested_parties, &r->dns_ares_on_resolved_locked, &r->lb_addresses,
-      true /* check_grpclb */);
+      true /* check_grpclb */,
+      r->request_service_config ? &r->service_config_json : NULL);
 }
 
 static void dns_ares_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
@@ -221,7 +336,7 @@ static void dns_ares_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
                             ? NULL
                             : grpc_channel_args_copy(r->resolved_result);
     gpr_log(GPR_DEBUG, "dns_ares_maybe_finish_next_locked");
-    grpc_closure_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
     r->next_completion = NULL;
     r->published_version = r->resolved_version;
   }
@@ -256,6 +371,10 @@ static grpc_resolver *dns_ares_create(grpc_exec_ctx *exec_ctx,
   r->name_to_resolve = gpr_strdup(path);
   r->default_port = gpr_strdup(default_port);
   r->channel_args = grpc_channel_args_copy(args->args);
+  const grpc_arg *arg = grpc_channel_args_find(
+      r->channel_args, GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION);
+  r->request_service_config = !grpc_channel_arg_get_integer(
+      arg, (grpc_integer_options){false, false, true});
   r->interested_parties = grpc_pollset_set_create();
   if (args->pollset_set != NULL) {
     grpc_pollset_set_add_pollset_set(exec_ctx, r->interested_parties,
@@ -266,10 +385,10 @@ static grpc_resolver *dns_ares_create(grpc_exec_ctx *exec_ctx,
                    GRPC_DNS_RECONNECT_JITTER,
                    GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000,
                    GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
-  grpc_closure_init(&r->dns_ares_on_retry_timer_locked,
+  GRPC_CLOSURE_INIT(&r->dns_ares_on_retry_timer_locked,
                     dns_ares_on_retry_timer_locked, r,
                     grpc_combiner_scheduler(r->base.combiner));
-  grpc_closure_init(&r->dns_ares_on_resolved_locked,
+  GRPC_CLOSURE_INIT(&r->dns_ares_on_resolved_locked,
                     dns_ares_on_resolved_locked, r,
                     grpc_combiner_scheduler(r->base.combiner));
   return &r->base;

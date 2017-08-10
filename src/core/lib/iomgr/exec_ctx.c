@@ -51,6 +51,31 @@ bool grpc_exec_ctx_has_work(grpc_exec_ctx *exec_ctx) {
          !grpc_closure_list_empty(exec_ctx->closure_list);
 }
 
+void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
+  exec_ctx->flags |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
+  grpc_exec_ctx_flush(exec_ctx);
+}
+
+static void exec_ctx_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                         grpc_error *error) {
+#ifndef NDEBUG
+  closure->scheduled = false;
+  if (GRPC_TRACER_ON(grpc_trace_closure)) {
+    gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: %s [%s:%d]",
+            closure, closure->file_created, closure->line_created,
+            closure->run ? "run" : "scheduled", closure->file_initiated,
+            closure->line_initiated);
+  }
+#endif
+  closure->cb(exec_ctx, closure->cb_arg, error);
+#ifndef NDEBUG
+  if (GRPC_TRACER_ON(grpc_trace_closure)) {
+    gpr_log(GPR_DEBUG, "closure %p finished", closure);
+  }
+#endif
+  GRPC_ERROR_UNREF(error);
+}
+
 bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
   bool did_something = 0;
   GPR_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
@@ -62,11 +87,7 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
         grpc_closure *next = c->next_data.next;
         grpc_error *error = c->error_data.error;
         did_something = true;
-#ifndef NDEBUG
-        c->scheduled = false;
-#endif
-        c->cb(exec_ctx, c->cb_arg, error);
-        GRPC_ERROR_UNREF(error);
+        exec_ctx_run(exec_ctx, c, error);
         c = next;
       }
     } else if (!grpc_combiner_continue_exec_ctx(exec_ctx)) {
@@ -76,20 +97,6 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
   GPR_ASSERT(exec_ctx->combiner == NULL);
   GPR_TIMER_END("grpc_exec_ctx_flush", 0);
   return did_something;
-}
-
-void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
-  exec_ctx->flags |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
-  grpc_exec_ctx_flush(exec_ctx);
-}
-
-static void exec_ctx_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                         grpc_error *error) {
-#ifndef NDEBUG
-  closure->scheduled = false;
-#endif
-  closure->cb(exec_ctx, closure->cb_arg, error);
-  GRPC_ERROR_UNREF(error);
 }
 
 static void exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,

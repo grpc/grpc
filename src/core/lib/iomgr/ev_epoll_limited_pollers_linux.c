@@ -57,9 +57,6 @@
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
 
-/* Uncomment the following to enable extra checks on poll_object operations */
-/* #define PO_DEBUG */
-
 /* The maximum number of polling threads per polling island. By default no
    limit */
 static int g_max_pollers_per_pi = INT_MAX;
@@ -92,7 +89,7 @@ typedef enum {
 } poll_obj_type;
 
 typedef struct poll_obj {
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   poll_obj_type obj_type;
 #endif
   gpr_mu mu;
@@ -147,8 +144,7 @@ struct grpc_fd {
 };
 
 /* Reference counting for fds */
-// #define GRPC_FD_REF_COUNT_DEBUG
-#ifdef GRPC_FD_REF_COUNT_DEBUG
+#ifndef NDEBUG
 static void fd_ref(grpc_fd *fd, const char *reason, const char *file, int line);
 static void fd_unref(grpc_fd *fd, const char *reason, const char *file,
                      int line);
@@ -168,20 +164,18 @@ static void fd_global_shutdown(void);
  * Polling island Declarations
  */
 
-//#define PI_REFCOUNT_DEBUG
-
-#ifdef PI_REFCOUNT_DEBUG
+#ifndef NDEBUG
 
 #define PI_ADD_REF(p, r) pi_add_ref_dbg((p), (r), __FILE__, __LINE__)
 #define PI_UNREF(exec_ctx, p, r) \
   pi_unref_dbg((exec_ctx), (p), (r), __FILE__, __LINE__)
 
-#else /* defined(PI_REFCOUNT_DEBUG) */
+#else
 
 #define PI_ADD_REF(p, r) pi_add_ref((p))
 #define PI_UNREF(exec_ctx, p, r) pi_unref((exec_ctx), (p))
 
-#endif /* !defined(GRPC_PI_REF_COUNT_DEBUG) */
+#endif
 
 typedef struct worker_node {
   struct worker_node *next;
@@ -313,21 +307,27 @@ gpr_atm g_epoll_sync;
 static void pi_add_ref(polling_island *pi);
 static void pi_unref(grpc_exec_ctx *exec_ctx, polling_island *pi);
 
-#ifdef PI_REFCOUNT_DEBUG
+#ifndef NDEBUG
 static void pi_add_ref_dbg(polling_island *pi, const char *reason,
                            const char *file, int line) {
-  long old_cnt = gpr_atm_acq_load(&pi->ref_count);
+  if (GRPC_TRACER_ON(grpc_polling_trace)) {
+    gpr_atm old_cnt = gpr_atm_acq_load(&pi->ref_count);
+    gpr_log(GPR_DEBUG, "Add ref pi: %p, old:%" PRIdPTR " -> new:%" PRIdPTR
+                       " (%s) - (%s, %d)",
+            pi, old_cnt, old_cnt + 1, reason, file, line);
+  }
   pi_add_ref(pi);
-  gpr_log(GPR_DEBUG, "Add ref pi: %p, old: %ld -> new:%ld (%s) - (%s, %d)",
-          (void *)pi, old_cnt, old_cnt + 1, reason, file, line);
 }
 
 static void pi_unref_dbg(grpc_exec_ctx *exec_ctx, polling_island *pi,
                          const char *reason, const char *file, int line) {
-  long old_cnt = gpr_atm_acq_load(&pi->ref_count);
+  if (GRPC_TRACER_ON(grpc_polling_trace)) {
+    gpr_atm old_cnt = gpr_atm_acq_load(&pi->ref_count);
+    gpr_log(GPR_DEBUG, "Unref pi: %p, old:%" PRIdPTR " -> new:%" PRIdPTR
+                       " (%s) - (%s, %d)",
+            pi, old_cnt, (old_cnt - 1), reason, file, line);
+  }
   pi_unref(exec_ctx, pi);
-  gpr_log(GPR_DEBUG, "Unref pi: %p, old:%ld -> new:%ld (%s) - (%s, %d)",
-          (void *)pi, old_cnt, (old_cnt - 1), reason, file, line);
 }
 #endif
 
@@ -792,14 +792,17 @@ static void polling_island_global_shutdown() {
 static grpc_fd *fd_freelist = NULL;
 static gpr_mu fd_freelist_mu;
 
-#ifdef GRPC_FD_REF_COUNT_DEBUG
+#ifndef NDEBUG
 #define REF_BY(fd, n, reason) ref_by(fd, n, reason, __FILE__, __LINE__)
 #define UNREF_BY(fd, n, reason) unref_by(fd, n, reason, __FILE__, __LINE__)
 static void ref_by(grpc_fd *fd, int n, const char *reason, const char *file,
                    int line) {
-  gpr_log(GPR_DEBUG, "FD %d %p   ref %d %ld -> %ld [%s; %s:%d]", fd->fd,
-          (void *)fd, n, gpr_atm_no_barrier_load(&fd->refst),
-          gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
+  if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
+    gpr_log(GPR_DEBUG,
+            "FD %d %p   ref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
+            fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
+            gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
+  }
 #else
 #define REF_BY(fd, n, reason) ref_by(fd, n)
 #define UNREF_BY(fd, n, reason) unref_by(fd, n)
@@ -808,18 +811,19 @@ static void ref_by(grpc_fd *fd, int n) {
   GPR_ASSERT(gpr_atm_no_barrier_fetch_add(&fd->refst, n) > 0);
 }
 
-#ifdef GRPC_FD_REF_COUNT_DEBUG
+#ifndef NDEBUG
 static void unref_by(grpc_fd *fd, int n, const char *reason, const char *file,
                      int line) {
-  gpr_atm old;
-  gpr_log(GPR_DEBUG, "FD %d %p unref %d %ld -> %ld [%s; %s:%d]", fd->fd,
-          (void *)fd, n, gpr_atm_no_barrier_load(&fd->refst),
-          gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
+  if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
+    gpr_log(GPR_DEBUG,
+            "FD %d %p unref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
+            fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
+            gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
+  }
 #else
 static void unref_by(grpc_fd *fd, int n) {
-  gpr_atm old;
 #endif
-  old = gpr_atm_full_fetch_add(&fd->refst, -n);
+  gpr_atm old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
     /* Add the fd to the freelist */
     gpr_mu_lock(&fd_freelist_mu);
@@ -837,7 +841,7 @@ static void unref_by(grpc_fd *fd, int n) {
 }
 
 /* Increment refcount by two to avoid changing the orphan bit */
-#ifdef GRPC_FD_REF_COUNT_DEBUG
+#ifndef NDEBUG
 static void fd_ref(grpc_fd *fd, const char *reason, const char *file,
                    int line) {
   ref_by(fd, 2, reason, file, line);
@@ -886,7 +890,7 @@ static grpc_fd *fd_create(int fd, const char *name) {
    * would be holding a lock to it anyway. */
   gpr_mu_lock(&new_fd->po.mu);
   new_fd->po.pi = NULL;
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   new_fd->po.obj_type = POLL_OBJ_FD;
 #endif
 
@@ -905,8 +909,10 @@ static grpc_fd *fd_create(int fd, const char *name) {
   char *fd_name;
   gpr_asprintf(&fd_name, "%s fd=%d", name, fd);
   grpc_iomgr_register_object(&new_fd->iomgr_object, fd_name);
-#ifdef GRPC_FD_REF_COUNT_DEBUG
-  gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, (void *)new_fd, fd_name);
+#ifndef NDEBUG
+  if (GRPC_TRACER_ON(grpc_trace_fd_refcount)) {
+    gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, new_fd, fd_name);
+  }
 #endif
   gpr_free(fd_name);
   return new_fd;
@@ -925,24 +931,12 @@ static int fd_wrapped_fd(grpc_fd *fd) {
 
 static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                       grpc_closure *on_done, int *release_fd,
-                      const char *reason) {
-  bool is_fd_closed = false;
+                      bool already_closed, const char *reason) {
   grpc_error *error = GRPC_ERROR_NONE;
   polling_island *unref_pi = NULL;
 
   gpr_mu_lock(&fd->po.mu);
   fd->on_done_closure = on_done;
-
-  /* If release_fd is not NULL, we should be relinquishing control of the file
-     descriptor fd->fd (but we still own the grpc_fd structure). */
-  if (release_fd != NULL) {
-    *release_fd = fd->fd;
-  } else {
-    close(fd->fd);
-    is_fd_closed = true;
-  }
-
-  fd->orphaned = true;
 
   /* Remove the active status but keep referenced. We want this grpc_fd struct
      to be alive (and not added to freelist) until the end of this function */
@@ -958,14 +952,24 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
        before doing this.) */
   if (fd->po.pi != NULL) {
     polling_island *pi_latest = polling_island_lock(fd->po.pi);
-    polling_island_remove_fd_locked(pi_latest, fd, is_fd_closed, &error);
+    polling_island_remove_fd_locked(pi_latest, fd, already_closed, &error);
     gpr_mu_unlock(&pi_latest->mu);
 
     unref_pi = fd->po.pi;
     fd->po.pi = NULL;
   }
 
-  grpc_closure_sched(exec_ctx, fd->on_done_closure, GRPC_ERROR_REF(error));
+  /* If release_fd is not NULL, we should be relinquishing control of the file
+     descriptor fd->fd (but we still own the grpc_fd structure). */
+  if (release_fd != NULL) {
+    *release_fd = fd->fd;
+  } else {
+    close(fd->fd);
+  }
+
+  fd->orphaned = true;
+
+  GRPC_CLOSURE_SCHED(exec_ctx, fd->on_done_closure, GRPC_ERROR_REF(error));
 
   gpr_mu_unlock(&fd->po.mu);
   UNREF_BY(fd, 2, reason); /* Drop the reference */
@@ -1002,12 +1006,12 @@ static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
 
 static void fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                               grpc_closure *closure) {
-  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure);
+  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure, "read");
 }
 
 static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_closure *closure) {
-  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure);
+  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure, "write");
 }
 
 /*******************************************************************************
@@ -1162,7 +1166,7 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   gpr_mu_init(&pollset->po.mu);
   *mu = &pollset->po.mu;
   pollset->po.pi = NULL;
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   pollset->po.obj_type = POLL_OBJ_POLLSET;
 #endif
 
@@ -1218,7 +1222,7 @@ static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
 
 static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_pollset *notifier) {
-  grpc_lfev_set_ready(exec_ctx, &fd->read_closure);
+  grpc_lfev_set_ready(exec_ctx, &fd->read_closure, "read");
 
   /* Note, it is possible that fd_become_readable might be called twice with
      different 'notifier's when an fd becomes readable and it is in two epoll
@@ -1230,7 +1234,7 @@ static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 }
 
 static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
-  grpc_lfev_set_ready(exec_ctx, &fd->write_closure);
+  grpc_lfev_set_ready(exec_ctx, &fd->write_closure, "write");
 }
 
 static void pollset_release_polling_island(grpc_exec_ctx *exec_ctx,
@@ -1250,7 +1254,7 @@ static void finish_shutdown_locked(grpc_exec_ctx *exec_ctx,
 
   /* Release the ref and set pollset->po.pi to NULL */
   pollset_release_polling_island(exec_ctx, pollset, "ps_shutdown");
-  grpc_closure_sched(exec_ctx, pollset->shutdown_done, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, pollset->shutdown_done, GRPC_ERROR_NONE);
 }
 
 /* pollset->po.mu lock must be held by the caller before calling this */
@@ -1616,7 +1620,7 @@ static void add_poll_object(grpc_exec_ctx *exec_ctx, poll_obj *bag,
                             poll_obj_type item_type) {
   GPR_TIMER_BEGIN("add_poll_object", 0);
 
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   GPR_ASSERT(item->obj_type == item_type);
   GPR_ASSERT(bag->obj_type == bag_type);
 #endif
@@ -1775,7 +1779,7 @@ static grpc_pollset_set *pollset_set_create(void) {
   grpc_pollset_set *pss = gpr_malloc(sizeof(*pss));
   gpr_mu_init(&pss->po.mu);
   pss->po.pi = NULL;
-#ifdef PO_DEBUG
+#ifndef NDEBUG
   pss->po.obj_type = POLL_OBJ_POLLSET_SET;
 #endif
   return pss;

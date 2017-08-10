@@ -18,6 +18,8 @@
 
 #include "src/core/lib/iomgr/socket_mutator.h"
 
+#include "src/core/lib/channel/channel_args.h"
+
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
@@ -74,10 +76,6 @@ static const grpc_arg_pointer_vtable socket_mutator_arg_vtable = {
     socket_mutator_arg_copy, socket_mutator_arg_destroy, socket_mutator_cmp};
 
 grpc_arg grpc_socket_mutator_to_arg(grpc_socket_mutator *mutator) {
-  grpc_arg arg;
-  arg.type = GRPC_ARG_POINTER;
-  arg.key = GRPC_ARG_SOCKET_MUTATOR;
-  arg.value.pointer.vtable = &socket_mutator_arg_vtable;
-  arg.value.pointer.p = mutator;
-  return arg;
+  return grpc_channel_arg_pointer_create(GRPC_ARG_SOCKET_MUTATOR, mutator,
+                                         &socket_mutator_arg_vtable);
 }

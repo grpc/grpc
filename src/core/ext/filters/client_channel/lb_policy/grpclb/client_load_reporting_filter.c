@@ -53,7 +53,7 @@ static void on_complete_for_send(grpc_exec_ctx *exec_ctx, void *arg,
   if (error == GRPC_ERROR_NONE) {
     calld->send_initial_metadata_succeeded = true;
   }
-  grpc_closure_run(exec_ctx, calld->original_on_complete_for_send,
+  GRPC_CLOSURE_RUN(exec_ctx, calld->original_on_complete_for_send,
                    GRPC_ERROR_REF(error));
 }
 
@@ -63,7 +63,7 @@ static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
   if (error == GRPC_ERROR_NONE) {
     calld->recv_initial_metadata_succeeded = true;
   }
-  grpc_closure_run(exec_ctx, calld->original_recv_initial_metadata_ready,
+  GRPC_CLOSURE_RUN(exec_ctx, calld->original_recv_initial_metadata_ready,
                    GRPC_ERROR_REF(error));
 }
 
@@ -88,7 +88,6 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   // Record call finished, optionally setting client_failed_to_send and
   // received.
   grpc_grpclb_client_stats_add_call_finished(
-      false /* drop_for_rate_limiting */, false /* drop_for_load_balancing */,
       !calld->send_initial_metadata_succeeded /* client_failed_to_send */,
       calld->recv_initial_metadata_succeeded /* known_received */,
       calld->client_stats);
@@ -104,7 +103,7 @@ static void start_transport_stream_op_batch(
   // Intercept send_initial_metadata.
   if (batch->send_initial_metadata) {
     calld->original_on_complete_for_send = batch->on_complete;
-    grpc_closure_init(&calld->on_complete_for_send, on_complete_for_send, calld,
+    GRPC_CLOSURE_INIT(&calld->on_complete_for_send, on_complete_for_send, calld,
                       grpc_schedule_on_exec_ctx);
     batch->on_complete = &calld->on_complete_for_send;
   }
@@ -112,7 +111,7 @@ static void start_transport_stream_op_batch(
   if (batch->recv_initial_metadata) {
     calld->original_recv_initial_metadata_ready =
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
-    grpc_closure_init(&calld->recv_initial_metadata_ready,
+    GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
                       recv_initial_metadata_ready, calld,
                       grpc_schedule_on_exec_ctx);
     batch->payload->recv_initial_metadata.recv_initial_metadata_ready =

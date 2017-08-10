@@ -54,7 +54,7 @@ static void BM_CreateDestroyPollset(benchmark::State& state) {
   gpr_mu* mu;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure shutdown_ps_closure;
-  grpc_closure_init(&shutdown_ps_closure, shutdown_ps, ps,
+  GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
                     grpc_schedule_on_exec_ctx);
   while (state.KeepRunning()) {
     memset(ps, 0, ps_sz);
@@ -124,7 +124,7 @@ static void BM_PollEmptyPollset(benchmark::State& state) {
     GRPC_ERROR_UNREF(grpc_pollset_work(&exec_ctx, ps, NULL, now, deadline));
   }
   grpc_closure shutdown_ps_closure;
-  grpc_closure_init(&shutdown_ps_closure, shutdown_ps, ps,
+  GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, ps, &shutdown_ps_closure);
   gpr_mu_unlock(mu);
@@ -149,9 +149,9 @@ static void BM_PollAddFd(benchmark::State& state) {
     grpc_pollset_add_fd(&exec_ctx, ps, fd);
     grpc_exec_ctx_flush(&exec_ctx);
   }
-  grpc_fd_orphan(&exec_ctx, fd, NULL, NULL, "xxx");
+  grpc_fd_orphan(&exec_ctx, fd, NULL, NULL, false /* already_closed */, "xxx");
   grpc_closure shutdown_ps_closure;
-  grpc_closure_init(&shutdown_ps_closure, shutdown_ps, ps,
+  GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
                     grpc_schedule_on_exec_ctx);
   gpr_mu_lock(mu);
   grpc_pollset_shutdown(&exec_ctx, ps, &shutdown_ps_closure);
@@ -171,7 +171,7 @@ template <class F>
 Closure* MakeClosure(F f, grpc_closure_scheduler* scheduler) {
   struct C : public Closure {
     C(F f, grpc_closure_scheduler* scheduler) : f_(f) {
-      grpc_closure_init(this, C::cbfn, this, scheduler);
+      GRPC_CLOSURE_INIT(this, C::cbfn, this, scheduler);
     }
     static void cbfn(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
       C* p = static_cast<C*>(arg);
@@ -247,10 +247,11 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   while (!done) {
     GRPC_ERROR_UNREF(grpc_pollset_work(&exec_ctx, ps, NULL, now, deadline));
   }
-  grpc_fd_orphan(&exec_ctx, wakeup, NULL, NULL, "done");
+  grpc_fd_orphan(&exec_ctx, wakeup, NULL, NULL, false /* already_closed */,
+                 "done");
   wakeup_fd.read_fd = 0;
   grpc_closure shutdown_ps_closure;
-  grpc_closure_init(&shutdown_ps_closure, shutdown_ps, ps,
+  GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, ps, &shutdown_ps_closure);
   gpr_mu_unlock(mu);

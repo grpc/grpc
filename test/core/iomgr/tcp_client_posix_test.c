@@ -105,7 +105,7 @@ void test_succeeds(void) {
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr *)addr,
                          (socklen_t *)&resolved_addr.len) == 0);
-  grpc_closure_init(&done, must_succeed, NULL, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&done, must_succeed, NULL, grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set, NULL,
                           &resolved_addr, gpr_inf_future(GPR_CLOCK_REALTIME));
 
@@ -155,7 +155,7 @@ void test_fails(void) {
   gpr_mu_unlock(g_mu);
 
   /* connect to a broken address */
-  grpc_closure_init(&done, must_fail, NULL, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&done, must_fail, NULL, grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, g_pollset_set, NULL,
                           &resolved_addr, gpr_inf_future(GPR_CLOCK_REALTIME));
 
@@ -206,7 +206,7 @@ int main(int argc, char **argv) {
   gpr_log(GPR_ERROR, "End of first test");
   test_fails();
   grpc_pollset_set_destroy(&exec_ctx, g_pollset_set);
-  grpc_closure_init(&destroyed, destroy_pollset, g_pollset,
+  GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                     grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);

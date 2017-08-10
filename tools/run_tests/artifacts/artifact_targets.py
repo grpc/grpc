@@ -148,9 +148,7 @@ class PythonArtifact:
       return create_jobspec(self.name,
                             ['tools\\run_tests\\artifacts\\build_artifact_python.bat',
                              self.py_version,
-                             '32' if self.arch == 'x86' else '64',
-                             dir
-                            ],
+                             '32' if self.arch == 'x86' else '64'],
                             environ=environ,
                             use_workspace=True)
     else:
@@ -182,7 +180,8 @@ class RubyArtifact:
     # We are using a custom workspace instead.
     return create_jobspec(self.name,
                           ['tools/run_tests/artifacts/build_artifact_ruby.sh'],
-                          use_workspace=True)
+                          use_workspace=True,
+                          timeout_seconds=45*60)
 
 
 class CSharpExtArtifact:
@@ -264,11 +263,12 @@ class NodeExtArtifact:
         return create_docker_jobspec(
             self.name,
             'tools/dockerfile/grpc_artifact_linux_{}'.format(self.arch),
-            'tools/run_tests/artifacts/build_artifact_node.sh {}'.format(self.gyp_arch))
+            'tools/run_tests/artifacts/build_artifact_node.sh {} {}'.format(
+                self.gyp_arch, self.platform))
       else:
         return create_jobspec(self.name,
                               ['tools/run_tests/artifacts/build_artifact_node.sh',
-                               self.gyp_arch],
+                               self.gyp_arch, self.platform],
                                use_workspace=True)
 
 class PHPArtifact:
@@ -328,7 +328,7 @@ class ProtocArtifact:
             environ=environ,
             use_workspace=True)
     else:
-      generator = 'Visual Studio 12 Win64' if self.arch == 'x64' else 'Visual Studio 12' 
+      generator = 'Visual Studio 12 Win64' if self.arch == 'x64' else 'Visual Studio 12'
       vcplatform = 'x64' if self.arch == 'x64' else 'Win32'
       return create_jobspec(self.name,
                             ['tools\\run_tests\\artifacts\\build_artifact_protoc.bat'],

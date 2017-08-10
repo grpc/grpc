@@ -79,7 +79,8 @@ static void test_fd_cleanup(grpc_exec_ctx *exec_ctx, test_fd *tfds,
                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_fd_cleanup"));
     grpc_exec_ctx_flush(exec_ctx);
 
-    grpc_fd_orphan(exec_ctx, tfds[i].fd, NULL, &release_fd, "test_fd_cleanup");
+    grpc_fd_orphan(exec_ctx, tfds[i].fd, NULL, &release_fd,
+                   false /* already_closed */, "test_fd_cleanup");
     grpc_exec_ctx_flush(exec_ctx);
 
     GPR_ASSERT(release_fd == tfds[i].inner_fd);
@@ -106,7 +107,7 @@ static void test_pollset_cleanup(grpc_exec_ctx *exec_ctx,
   int i;
 
   for (i = 0; i < num_pollsets; i++) {
-    grpc_closure_init(&destroyed, destroy_pollset, pollsets[i].pollset,
+    GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, pollsets[i].pollset,
                       grpc_schedule_on_exec_ctx);
     grpc_pollset_shutdown(exec_ctx, pollsets[i].pollset, &destroyed);
 
@@ -280,7 +281,7 @@ static void test_threading(void) {
     grpc_pollset_add_fd(&exec_ctx, shared.pollset, shared.wakeup_desc);
     grpc_fd_notify_on_read(
         &exec_ctx, shared.wakeup_desc,
-        grpc_closure_init(&shared.on_wakeup, test_threading_wakeup, &shared,
+        GRPC_CLOSURE_INIT(&shared.on_wakeup, test_threading_wakeup, &shared,
                           grpc_schedule_on_exec_ctx));
     grpc_exec_ctx_finish(&exec_ctx);
   }
@@ -294,9 +295,10 @@ static void test_threading(void) {
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_fd_shutdown(&exec_ctx, shared.wakeup_desc, GRPC_ERROR_CANCELLED);
-    grpc_fd_orphan(&exec_ctx, shared.wakeup_desc, NULL, NULL, "done");
+    grpc_fd_orphan(&exec_ctx, shared.wakeup_desc, NULL, NULL,
+                   false /* already_closed */, "done");
     grpc_pollset_shutdown(&exec_ctx, shared.pollset,
-                          grpc_closure_create(destroy_pollset, shared.pollset,
+                          GRPC_CLOSURE_CREATE(destroy_pollset, shared.pollset,
                                               grpc_schedule_on_exec_ctx));
     grpc_exec_ctx_finish(&exec_ctx);
   }

@@ -24,12 +24,14 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/iomgr_uv.h"
 #include "src/core/lib/iomgr/timer.h"
 
 #include <uv.h>
 
-grpc_tracer_flag grpc_timer_trace = GRPC_TRACER_INITIALIZER(false);
-grpc_tracer_flag grpc_timer_check_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_timer_trace = GRPC_TRACER_INITIALIZER(false, "timer");
+grpc_tracer_flag grpc_timer_check_trace =
+    GRPC_TRACER_INITIALIZER(false, "timer_check");
 
 static void timer_close_callback(uv_handle_t *handle) { gpr_free(handle); }
 
@@ -42,9 +44,10 @@ static void stop_uv_timer(uv_timer_t *handle) {
 void run_expired_timer(uv_timer_t *handle) {
   grpc_timer *timer = (grpc_timer *)handle->data;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  GRPC_UV_ASSERT_SAME_THREAD();
   GPR_ASSERT(timer->pending);
   timer->pending = 0;
-  grpc_closure_sched(&exec_ctx, timer->closure, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(&exec_ctx, timer->closure, GRPC_ERROR_NONE);
   stop_uv_timer(handle);
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -54,10 +57,11 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
                      gpr_timespec now) {
   uint64_t timeout;
   uv_timer_t *uv_timer;
+  GRPC_UV_ASSERT_SAME_THREAD();
   timer->closure = closure;
   if (gpr_time_cmp(deadline, now) <= 0) {
     timer->pending = 0;
-    grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, timer->closure, GRPC_ERROR_NONE);
     return;
   }
   timer->pending = 1;
@@ -74,9 +78,10 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
 }
 
 void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
+  GRPC_UV_ASSERT_SAME_THREAD();
   if (timer->pending) {
     timer->pending = 0;
-    grpc_closure_sched(exec_ctx, timer->closure, GRPC_ERROR_CANCELLED);
+    GRPC_CLOSURE_SCHED(exec_ctx, timer->closure, GRPC_ERROR_CANCELLED);
     stop_uv_timer((uv_timer_t *)timer->uv_timer);
   }
 }

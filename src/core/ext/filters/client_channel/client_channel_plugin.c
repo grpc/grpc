@@ -54,10 +54,8 @@ static bool set_default_host_if_unset(grpc_exec_ctx *exec_ctx,
   char *default_authority = grpc_get_default_authority(
       exec_ctx, grpc_channel_stack_builder_get_target(builder));
   if (default_authority != NULL) {
-    grpc_arg arg;
-    arg.type = GRPC_ARG_STRING;
-    arg.key = GRPC_ARG_DEFAULT_AUTHORITY;
-    arg.value.string = default_authority;
+    grpc_arg arg = grpc_channel_arg_string_create(GRPC_ARG_DEFAULT_AUTHORITY,
+                                                  default_authority);
     grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
     grpc_channel_stack_builder_set_channel_arguments(exec_ctx, builder,
                                                      new_args);
@@ -80,6 +78,10 @@ void grpc_client_channel_init(void) {
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, append_filter,
       (void *)&grpc_client_channel_filter);
   grpc_http_connect_register_handshaker_factory();
+  grpc_register_tracer(&grpc_client_channel_trace);
+#ifndef NDEBUG
+  grpc_register_tracer(&grpc_trace_resolver_refcount);
+#endif
 }
 
 void grpc_client_channel_shutdown(void) {

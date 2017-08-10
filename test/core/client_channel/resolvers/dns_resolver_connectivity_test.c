@@ -54,13 +54,14 @@ static void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
     (*addrs)->addrs = gpr_malloc(sizeof(*(*addrs)->addrs));
     (*addrs)->addrs[0].len = 123;
   }
-  grpc_closure_sched(exec_ctx, on_done, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, error);
 }
 
 static grpc_ares_request *my_dns_lookup_ares(
     grpc_exec_ctx *exec_ctx, const char *dns_server, const char *addr,
     const char *default_port, grpc_pollset_set *interested_parties,
-    grpc_closure *on_done, grpc_lb_addresses **lb_addrs, bool check_grpclb) {
+    grpc_closure *on_done, grpc_lb_addresses **lb_addrs, bool check_grpclb,
+    char **service_config_json) {
   gpr_mu_lock(&g_mu);
   GPR_ASSERT(0 == strcmp("test", addr));
   grpc_error *error = GRPC_ERROR_NONE;
@@ -73,7 +74,7 @@ static grpc_ares_request *my_dns_lookup_ares(
     *lb_addrs = grpc_lb_addresses_create(1, NULL);
     grpc_lb_addresses_set_address(*lb_addrs, 0, NULL, 0, false, NULL, NULL);
   }
-  grpc_closure_sched(exec_ctx, on_done, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, on_done, error);
   return NULL;
 }
 
@@ -133,7 +134,7 @@ static void call_resolver_next_after_locking(grpc_exec_ctx *exec_ctx,
   a->resolver = resolver;
   a->result = result;
   a->on_complete = on_complete;
-  grpc_closure_sched(exec_ctx, grpc_closure_create(
+  GRPC_CLOSURE_SCHED(exec_ctx, GRPC_CLOSURE_CREATE(
                                    call_resolver_next_now_lock_taken, a,
                                    grpc_combiner_scheduler(resolver->combiner)),
                      GRPC_ERROR_NONE);
@@ -155,7 +156,7 @@ int main(int argc, char **argv) {
   gpr_event_init(&ev1);
   call_resolver_next_after_locking(
       &exec_ctx, resolver, &result,
-      grpc_closure_create(on_done, &ev1, grpc_schedule_on_exec_ctx));
+      GRPC_CLOSURE_CREATE(on_done, &ev1, grpc_schedule_on_exec_ctx));
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(wait_loop(5, &ev1));
   GPR_ASSERT(result == NULL);
@@ -164,7 +165,7 @@ int main(int argc, char **argv) {
   gpr_event_init(&ev2);
   call_resolver_next_after_locking(
       &exec_ctx, resolver, &result,
-      grpc_closure_create(on_done, &ev2, grpc_schedule_on_exec_ctx));
+      GRPC_CLOSURE_CREATE(on_done, &ev2, grpc_schedule_on_exec_ctx));
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(wait_loop(30, &ev2));
   GPR_ASSERT(result != NULL);

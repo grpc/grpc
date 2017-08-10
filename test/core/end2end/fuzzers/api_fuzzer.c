@@ -34,6 +34,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/support/env.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/metadata.h"
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -384,9 +385,9 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
       grpc_lb_addresses_set_address(lb_addrs, 0, NULL, 0, NULL, NULL, NULL);
       *r->lb_addrs = lb_addrs;
     }
-    grpc_closure_sched(exec_ctx, r->on_done, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, r->on_done, GRPC_ERROR_NONE);
   } else {
-    grpc_closure_sched(exec_ctx, r->on_done,
+    GRPC_CLOSURE_SCHED(exec_ctx, r->on_done,
                        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                            "Resolution failed", &error, 1));
   }
@@ -408,14 +409,15 @@ void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
   grpc_timer_init(
       exec_ctx, &r->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                         gpr_time_from_seconds(1, GPR_TIMESPAN)),
-      grpc_closure_create(finish_resolve, r, grpc_schedule_on_exec_ctx),
+      GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx),
       gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 grpc_ares_request *my_dns_lookup_ares(
     grpc_exec_ctx *exec_ctx, const char *dns_server, const char *addr,
     const char *default_port, grpc_pollset_set *interested_parties,
-    grpc_closure *on_done, grpc_lb_addresses **lb_addrs, bool check_grpclb) {
+    grpc_closure *on_done, grpc_lb_addresses **lb_addrs, bool check_grpclb,
+    char **service_config_json) {
   addr_req *r = gpr_malloc(sizeof(*r));
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
@@ -424,7 +426,7 @@ grpc_ares_request *my_dns_lookup_ares(
   grpc_timer_init(
       exec_ctx, &r->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                         gpr_time_from_seconds(1, GPR_TIMESPAN)),
-      grpc_closure_create(finish_resolve, r, grpc_schedule_on_exec_ctx),
+      GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx),
       gpr_now(GPR_CLOCK_MONOTONIC));
   return NULL;
 }
@@ -452,7 +454,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   future_connect *fc = arg;
   if (error != GRPC_ERROR_NONE) {
     *fc->ep = NULL;
-    grpc_closure_sched(exec_ctx, fc->closure, GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_SCHED(exec_ctx, fc->closure, GRPC_ERROR_REF(error));
   } else if (g_server != NULL) {
     grpc_endpoint *client;
     grpc_endpoint *server;
@@ -464,7 +466,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     grpc_server_setup_transport(exec_ctx, g_server, transport, NULL, NULL);
     grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL);
 
-    grpc_closure_sched(exec_ctx, fc->closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, fc->closure, GRPC_ERROR_NONE);
   } else {
     sched_connect(exec_ctx, fc->closure, fc->ep, fc->deadline);
   }
@@ -475,7 +477,7 @@ static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_endpoint **ep, gpr_timespec deadline) {
   if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) < 0) {
     *ep = NULL;
-    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                               "Connect deadline exceeded"));
     return;
   }
@@ -487,7 +489,7 @@ static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   grpc_timer_init(
       exec_ctx, &fc->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                          gpr_time_from_millis(1, GPR_TIMESPAN)),
-      grpc_closure_create(do_connect, fc, grpc_schedule_on_exec_ctx),
+      GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx),
       gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
@@ -731,7 +733,9 @@ static validator *make_finished_batch_validator(call_state *cs,
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_slice_hash_seed(0);
-  if (squelch) gpr_set_log_function(dont_log);
+  char *grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
+  if (squelch && grpc_trace_fuzzer == NULL) gpr_set_log_function(dont_log);
+  gpr_free(grpc_trace_fuzzer);
   input_stream inp = {data, data + size};
   grpc_tcp_client_connect_impl = my_tcp_client_connect;
   gpr_now_impl = now_impl;

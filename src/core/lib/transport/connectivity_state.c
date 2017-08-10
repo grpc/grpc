@@ -24,7 +24,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-grpc_tracer_flag grpc_connectivity_state_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_connectivity_state_trace =
+    GRPC_TRACER_INITIALIZER(false, "connectivity_state");
 
 const char *grpc_connectivity_state_name(grpc_connectivity_state state) {
   switch (state) {
@@ -67,7 +68,7 @@ void grpc_connectivity_state_destroy(grpc_exec_ctx *exec_ctx,
       error =
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Shutdown connectivity owner");
     }
-    grpc_closure_sched(exec_ctx, w->notify, error);
+    GRPC_CLOSURE_SCHED(exec_ctx, w->notify, error);
     gpr_free(w);
   }
   GRPC_ERROR_UNREF(tracker->current_error);
@@ -125,7 +126,7 @@ bool grpc_connectivity_state_notify_on_state_change(
   if (current == NULL) {
     grpc_connectivity_state_watcher *w = tracker->watchers;
     if (w != NULL && w->notify == notify) {
-      grpc_closure_sched(exec_ctx, notify, GRPC_ERROR_CANCELLED);
+      GRPC_CLOSURE_SCHED(exec_ctx, notify, GRPC_ERROR_CANCELLED);
       tracker->watchers = w->next;
       gpr_free(w);
       return false;
@@ -133,7 +134,7 @@ bool grpc_connectivity_state_notify_on_state_change(
     while (w != NULL) {
       grpc_connectivity_state_watcher *rm_candidate = w->next;
       if (rm_candidate != NULL && rm_candidate->notify == notify) {
-        grpc_closure_sched(exec_ctx, notify, GRPC_ERROR_CANCELLED);
+        GRPC_CLOSURE_SCHED(exec_ctx, notify, GRPC_ERROR_CANCELLED);
         w->next = w->next->next;
         gpr_free(rm_candidate);
         return false;
@@ -144,7 +145,7 @@ bool grpc_connectivity_state_notify_on_state_change(
   } else {
     if (cur != *current) {
       *current = cur;
-      grpc_closure_sched(exec_ctx, notify,
+      GRPC_CLOSURE_SCHED(exec_ctx, notify,
                          GRPC_ERROR_REF(tracker->current_error));
     } else {
       grpc_connectivity_state_watcher *w = gpr_malloc(sizeof(*w));
@@ -197,7 +198,7 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
       gpr_log(GPR_DEBUG, "NOTIFY: %p %s: %p", tracker, tracker->name,
               w->notify);
     }
-    grpc_closure_sched(exec_ctx, w->notify,
+    GRPC_CLOSURE_SCHED(exec_ctx, w->notify,
                        GRPC_ERROR_REF(tracker->current_error));
     gpr_free(w);
   }

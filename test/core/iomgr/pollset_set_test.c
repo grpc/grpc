@@ -79,7 +79,7 @@ static void cleanup_test_pollsets(grpc_exec_ctx *exec_ctx,
                                   const int num_pollsets) {
   grpc_closure destroyed;
   for (int i = 0; i < num_pollsets; i++) {
-    grpc_closure_init(&destroyed, destroy_pollset, pollsets[i].ps,
+    GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, pollsets[i].ps,
                       grpc_schedule_on_exec_ctx);
     grpc_pollset_shutdown(exec_ctx, pollsets[i].ps, &destroyed);
 
@@ -108,7 +108,7 @@ void on_readable(grpc_exec_ctx *exec_ctx, void *tfd, grpc_error *error) {
 static void reset_test_fd(grpc_exec_ctx *exec_ctx, test_fd *tfd) {
   tfd->is_on_readable_called = false;
 
-  grpc_closure_init(&tfd->on_readable, on_readable, tfd,
+  GRPC_CLOSURE_INIT(&tfd->on_readable, on_readable, tfd,
                     grpc_schedule_on_exec_ctx);
   grpc_fd_notify_on_read(exec_ctx, tfd->fd, &tfd->on_readable);
 }
@@ -137,7 +137,8 @@ static void cleanup_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds,
      * grpc_wakeup_fd and we would like to destroy it ourselves (by calling
      * grpc_wakeup_fd_destroy). To prevent grpc_fd from calling close() on the
      * underlying fd, call it with a non-NULL 'release_fd' parameter */
-    grpc_fd_orphan(exec_ctx, tfds[i].fd, NULL, &release_fd, "test_fd_cleanup");
+    grpc_fd_orphan(exec_ctx, tfds[i].fd, NULL, &release_fd,
+                   false /* already_closed */, "test_fd_cleanup");
     grpc_exec_ctx_flush(exec_ctx);
 
     grpc_wakeup_fd_destroy(&tfds[i].wakeup_fd);

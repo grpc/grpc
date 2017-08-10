@@ -100,7 +100,8 @@ class ThreadManager {
     // thd_mgr_>MarkAsCompleted(this) to mark the thread as completed
     void Run();
 
-    ThreadManager* thd_mgr_;
+    ThreadManager* const thd_mgr_;
+    std::mutex wt_mu_;
     std::thread thd_;
   };
 

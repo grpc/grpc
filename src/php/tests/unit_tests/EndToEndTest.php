@@ -28,8 +28,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
 
     public function tearDown()
     {
-        unset($this->channel);
-        unset($this->server);
+        $this->channel->close();
     }
 
     public function testSimpleRequestBody()
@@ -516,7 +515,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($idle_state == Grpc\CHANNEL_IDLE);
 
         $now = Grpc\Timeval::now();
-        $delta = new Grpc\Timeval(500000); // should timeout
+        $delta = new Grpc\Timeval(50000); // should timeout
         $deadline = $now->add($delta);
 
         $this->assertFalse($this->channel->watchConnectivityState(
@@ -545,7 +544,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($idle_state == Grpc\CHANNEL_IDLE);
 
         $now = Grpc\Timeval::now();
-        $delta = new Grpc\Timeval(100000);
+        $delta = new Grpc\Timeval(50000);
         $deadline = $now->add($delta);
 
         $this->assertFalse($this->channel->watchConnectivityState(

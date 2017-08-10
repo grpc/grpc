@@ -26,9 +26,22 @@
 
 namespace grpc_php_generator {
 
+inline grpc::string GetPHPServiceClassname(
+    const grpc::protobuf::ServiceDescriptor *service,
+    const grpc::string &parameter) {
+  grpc::string suffix;
+  if (parameter == "") {
+    suffix = "Client";
+  } else {
+    suffix = parameter;
+  }
+  return service->name() + suffix;
+}
+
 inline grpc::string GetPHPServiceFilename(
     const grpc::protobuf::FileDescriptor *file,
-    const grpc::protobuf::ServiceDescriptor *service) {
+    const grpc::protobuf::ServiceDescriptor *service,
+    const grpc::string &parameter) {
   std::vector<grpc::string> tokens =
       grpc_generator::tokenize(file->package(), ".");
   std::ostringstream oss;
@@ -36,7 +49,18 @@ inline grpc::string GetPHPServiceFilename(
     oss << (i == 0 ? "" : "/")
         << grpc_generator::CapitalizeFirstLetter(tokens[i]);
   }
-  return oss.str() + "/" + service->name() + "Client.php";
+  return oss.str() + "/" + GetPHPServiceClassname(service, parameter) + ".php";
+}
+
+// ReplaceAll replaces all instances of search with replace in s.
+inline grpc::string ReplaceAll(grpc::string s, const grpc::string &search,
+                               const grpc::string &replace) {
+  size_t pos = 0;
+  while ((pos = s.find(search, pos)) != grpc::string::npos) {
+    s.replace(pos, search.length(), replace);
+    pos += replace.length();
+  }
+  return s;
 }
 
 // Get leading or trailing comments in a string. Comment lines start with "// ".
@@ -44,7 +68,8 @@ inline grpc::string GetPHPServiceFilename(
 template <typename DescriptorType>
 inline grpc::string GetPHPComments(const DescriptorType *desc,
                                    grpc::string prefix) {
-  return grpc_generator::GetPrefixedComments(desc, true, prefix);
+  return ReplaceAll(grpc_generator::GetPrefixedComments(desc, true, prefix),
+                    "*/", "&#42;/");
 }
 
 }  // namespace grpc_php_generator

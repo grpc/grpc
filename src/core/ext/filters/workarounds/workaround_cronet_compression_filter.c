@@ -52,8 +52,8 @@ static bool get_user_agent_mdelem(const grpc_metadata_batch* batch,
 // Callback invoked when we receive an initial metadata.
 static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx,
                                         void* user_data, grpc_error* error) {
-  grpc_call_element* elem = user_data;
-  call_data* calld = elem->call_data;
+  grpc_call_element* elem = (grpc_call_element*)user_data;
+  call_data* calld = (call_data*)elem->call_data;
 
   if (GRPC_ERROR_NONE == error) {
     grpc_mdelem md;
@@ -67,7 +67,7 @@ static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx,
   }
 
   // Invoke the next callback.
-  grpc_closure_run(exec_ctx, calld->next_recv_initial_metadata_ready,
+  GRPC_CLOSURE_RUN(exec_ctx, calld->next_recv_initial_metadata_ready,
                    GRPC_ERROR_REF(error));
 }
 
@@ -75,7 +75,7 @@ static void recv_initial_metadata_ready(grpc_exec_ctx* exec_ctx,
 static void start_transport_stream_op_batch(
     grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     grpc_transport_stream_op_batch* op) {
-  call_data* calld = elem->call_data;
+  call_data* calld = (call_data*)elem->call_data;
 
   // Inject callback for receiving initial metadata
   if (op->recv_initial_metadata) {
@@ -103,10 +103,10 @@ static void start_transport_stream_op_batch(
 static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  call_data* calld = elem->call_data;
+  call_data* calld = (call_data*)elem->call_data;
   calld->next_recv_initial_metadata_ready = NULL;
   calld->workaround_active = false;
-  grpc_closure_init(&calld->recv_initial_metadata_ready,
+  GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
                     recv_initial_metadata_ready, elem,
                     grpc_schedule_on_exec_ctx);
   return GRPC_ERROR_NONE;

@@ -126,7 +126,7 @@ typedef struct {
   /* Destroy per call data.
      The filter does not need to do any chaining.
      The bottom filter of a stack will be passed a non-NULL pointer to
-     \a then_schedule_closure that should be passed to grpc_closure_sched when
+     \a then_schedule_closure that should be passed to GRPC_CLOSURE_SCHED when
      destruction is complete. \a final_info contains data about the completed
      call, mainly for reporting purposes. */
   void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
@@ -234,7 +234,7 @@ void grpc_call_stack_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
                                                 grpc_call_stack *call_stack,
                                                 grpc_polling_entity *pollent);
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define GRPC_CALL_STACK_REF(call_stack, reason) \
   grpc_stream_ref(&(call_stack)->refcount, reason)
 #define GRPC_CALL_STACK_UNREF(exec_ctx, call_stack, reason) \

@@ -50,11 +50,7 @@ static bool maybe_add_load_reporting_filter(grpc_exec_ctx *exec_ctx,
 }
 
 grpc_arg grpc_load_reporting_enable_arg() {
-  grpc_arg arg;
-  arg.type = GRPC_ARG_INTEGER;
-  arg.key = GRPC_ARG_ENABLE_LOAD_REPORTING;
-  arg.value.integer = 1;
-  return arg;
+  return grpc_channel_arg_integer_create(GRPC_ARG_ENABLE_LOAD_REPORTING, 1);
 }
 
 /* Plugin registration */

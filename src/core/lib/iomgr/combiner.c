@@ -27,7 +27,8 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/profiling/timers.h"
 
-grpc_tracer_flag grpc_combiner_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_combiner_trace =
+    GRPC_TRACER_INITIALIZER(false, "combiner");
 
 #define GRPC_COMBINER_TRACE(fn)                \
   do {                                         \
@@ -76,16 +77,14 @@ static void offload(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
 static void queue_offload(grpc_exec_ctx *exec_ctx, grpc_combiner *lock);
 
 grpc_combiner *grpc_combiner_create(void) {
-  grpc_combiner *lock = gpr_malloc(sizeof(*lock));
+  grpc_combiner *lock = gpr_zalloc(sizeof(*lock));
   gpr_ref_init(&lock->refs, 1);
-  lock->next_combiner_on_this_exec_ctx = NULL;
-  lock->time_to_execute_final_list = false;
   lock->scheduler.vtable = &scheduler;
   lock->finally_scheduler.vtable = &finally_scheduler;
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
   gpr_mpscq_init(&lock->queue);
   grpc_closure_list_init(&lock->final_list);
-  grpc_closure_init(&lock->offload, offload, lock, grpc_executor_scheduler);
+  GRPC_CLOSURE_INIT(&lock->offload, offload, lock, grpc_executor_scheduler);
   GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG, "C:%p create", lock));
   return lock;
 }
@@ -106,12 +105,14 @@ static void start_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   }
 }
 
-#ifdef GRPC_COMBINER_REFCOUNT_DEBUG
-#define GRPC_COMBINER_DEBUG_SPAM(op, delta)                               \
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,                             \
-          "combiner[%p] %s %" PRIdPTR " --> %" PRIdPTR " %s", lock, (op), \
-          gpr_atm_no_barrier_load(&lock->refs.count),                     \
-          gpr_atm_no_barrier_load(&lock->refs.count) + (delta), reason);
+#ifndef NDEBUG
+#define GRPC_COMBINER_DEBUG_SPAM(op, delta)                                \
+  if (GRPC_TRACER_ON(grpc_combiner_trace)) {                               \
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,                            \
+            "C:%p %s %" PRIdPTR " --> %" PRIdPTR " %s", lock, (op),        \
+            gpr_atm_no_barrier_load(&lock->refs.count),                    \
+            gpr_atm_no_barrier_load(&lock->refs.count) + (delta), reason); \
+  }
 #else
 #define GRPC_COMBINER_DEBUG_SPAM(op, delta)
 #endif
@@ -344,8 +345,8 @@ static void combiner_finally_exec(grpc_exec_ctx *exec_ctx,
   GPR_TIMER_BEGIN("combiner.execute_finally", 0);
   if (exec_ctx->combiner != lock) {
     GPR_TIMER_MARK("slowpath", 0);
-    grpc_closure_sched(exec_ctx,
-                       grpc_closure_create(enqueue_finally, closure,
+    GRPC_CLOSURE_SCHED(exec_ctx,
+                       GRPC_CLOSURE_CREATE(enqueue_finally, closure,
                                            grpc_combiner_scheduler(lock)),
                        error);
     GPR_TIMER_END("combiner.execute_finally", 0);

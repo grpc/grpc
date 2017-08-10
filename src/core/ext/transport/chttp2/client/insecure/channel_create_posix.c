@@ -41,10 +41,8 @@ grpc_channel *grpc_insecure_channel_create_from_fd(
   GRPC_API_TRACE("grpc_insecure_channel_create(target=%p, fd=%d, args=%p)", 3,
                  (target, fd, args));
 
-  grpc_arg default_authority_arg;
-  default_authority_arg.type = GRPC_ARG_STRING;
-  default_authority_arg.key = GRPC_ARG_DEFAULT_AUTHORITY;
-  default_authority_arg.value.string = "test.authority";
+  grpc_arg default_authority_arg = grpc_channel_arg_string_create(
+      GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
   grpc_channel_args *final_args =
       grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
 

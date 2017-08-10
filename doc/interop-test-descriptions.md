@@ -183,7 +183,8 @@ the `response_compressed` boolean.
 
 Whether compression was actually performed is determined by the compression bit
 in the response's message flags. *Note that some languages may not have access
-to the message flags*.
+to the message flags, in which case the client will be unable to verify that
+the `response_compressed` boolean is obeyed by the server*.
 
 
 Server features:
@@ -218,10 +219,10 @@ Procedure:
     ```
     Client asserts:
     * call was successful
-    * when `response_compressed` is true, the response MUST have the
-      compressed message flag set.
-    * when `response_compressed` is false, the response MUST NOT have
-      the compressed message flag set.
+    * if supported by the implementation, when `response_compressed` is true,
+      the response MUST have the compressed message flag set.
+    * if supported by the implementation, when `response_compressed` is false,
+      the response MUST NOT have the compressed message flag set.
     * response payload body is 314159 bytes in size in both cases.
     * clients are free to assert that the response payload body contents are
       zero and comparing the entire response message against a golden response
@@ -304,8 +305,8 @@ Procedure:
       }
     }
     ```
-    If the call fails with `INVALID_ARGUMENT`, the test fails. Otherwise, we
-    continue.
+    If the call does not fail with `INVALID_ARGUMENT`, the test fails.
+    Otherwise, we continue.
 
  1. Client calls `StreamingInputCall` again, sending the *compressed* message
 
@@ -377,7 +378,13 @@ Client asserts:
 ### server_compressed_streaming
 
 This test verifies that the server can compress streaming messages and disable
-compression on individual messages.
+compression on individual messages, expecting the server's response to be
+compressed or not according to the `response_compressed` boolean.
+
+Whether compression was actually performed is determined by the compression bit
+in the response's message flags. *Note that some languages may not have access
+to the message flags, in which case the client will be unable to verify that the
+`response_compressed` boolean is obeyed by the server*.
 
 Server features:
 * [StreamingOutputCall][]
@@ -407,14 +414,13 @@ Procedure:
     Client asserts:
     * call was successful
     * exactly two responses
-    * when `response_compressed` is false, the response's messages MUST
-      NOT have the compressed message flag set.
-    * when `response_compressed` is true, the response's messages MUST
-      have the compressed message flag set.
+    * if supported by the implementation, when `response_compressed` is false,
+      the response's messages MUST NOT have the compressed message flag set.
+    * if supported by the implementation, when `response_compressed` is true,
+      the response's messages MUST have the compressed message flag set.
     * response payload bodies are sized (in order): 31415, 92653
     * clients are free to assert that the response payload body contents are
       zero and comparing the entire response messages against golden responses
-
 
 ### ping_pong
 
@@ -1095,4 +1101,3 @@ Discussion:
 Ideally, this would be communicated via metadata and not in the
 request/response, but we want to use this test in code paths that don't yet
 fully communicate metadata.
-

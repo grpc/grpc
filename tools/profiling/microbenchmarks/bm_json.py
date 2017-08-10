@@ -167,6 +167,8 @@ def parse_name(name):
   return out
 
 def expand_json(js, js2 = None):
+  if not js and not js2: raise StopIteration()
+  if not js: js = js2
   for bm in js['benchmarks']:
     if bm['name'].endswith('_stddev') or bm['name'].endswith('_mean'): continue
     context = js['context']

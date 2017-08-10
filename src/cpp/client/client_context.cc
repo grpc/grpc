@@ -24,6 +24,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include <grpc++/impl/grpc_library.h>
 #include <grpc++/security/credentials.h>
 #include <grpc++/server_context.h>
 #include <grpc++/support/time.h>
@@ -38,6 +39,7 @@ class DefaultGlobalClientCallbacks final
   void Destructor(ClientContext* context) override {}
 };
 
+static internal::GrpcLibraryInitializer g_gli_initializer;
 static DefaultGlobalClientCallbacks g_default_client_callbacks;
 static ClientContext::GlobalCallbacks* g_client_callbacks =
     &g_default_client_callbacks;

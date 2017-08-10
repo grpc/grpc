@@ -25,8 +25,6 @@ from google.protobuf import descriptor_pool
 from google.protobuf import descriptor_pb2
 
 from src.proto.grpc.testing import empty_pb2
-#empty2_pb2 is imported for import-consequent side-effects.
-from src.proto.grpc.testing.proto2 import empty2_pb2  # pylint: disable=unused-import
 from src.proto.grpc.testing.proto2 import empty2_extensions_pb2
 
 from tests.unit.framework.common import test_constants
@@ -48,12 +46,10 @@ def _file_descriptor_to_proto(descriptor):
 class ReflectionServicerTest(unittest.TestCase):
 
     def setUp(self):
-        servicer = reflection.ReflectionServicer(service_names=_SERVICE_NAMES)
         server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
         self._server = grpc.server(server_pool)
+        reflection.enable_server_reflection(_SERVICE_NAMES, self._server)
         port = self._server.add_insecure_port('[::]:0')
-        reflection_pb2_grpc.add_ServerReflectionServicer_to_server(servicer,
-                                                                   self._server)
         self._server.start()
 
         channel = grpc.insecure_channel('localhost:%d' % port)

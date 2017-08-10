@@ -462,6 +462,35 @@ static BIGNUM *bignum_from_base64(grpc_exec_ctx *exec_ctx, const char *b64) {
   return result;
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+
+// Provide compatibility across OpenSSL 1.02 and 1.1.
+static int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d) {
+  /* If the fields n and e in r are NULL, the corresponding input
+   * parameters MUST be non-NULL for n and e.  d may be
+   * left NULL (in case only the public key is used).
+   */
+  if ((r->n == NULL && n == NULL) || (r->e == NULL && e == NULL)) {
+    return 0;
+  }
+
+  if (n != NULL) {
+    BN_free(r->n);
+    r->n = n;
+  }
+  if (e != NULL) {
+    BN_free(r->e);
+    r->e = e;
+  }
+  if (d != NULL) {
+    BN_free(r->d);
+    r->d = d;
+  }
+
+  return 1;
+}
+#endif  // OPENSSL_VERSION_NUMBER < 0x10100000L
+
 static EVP_PKEY *pkey_from_jwk(grpc_exec_ctx *exec_ctx, const grpc_json *json,
                                const char *kty) {
   const grpc_json *key_prop;
@@ -478,19 +507,25 @@ static EVP_PKEY *pkey_from_jwk(grpc_exec_ctx *exec_ctx, const grpc_json *json,
     gpr_log(GPR_ERROR, "Could not create rsa key.");
     goto end;
   }
+  BIGNUM *tmp_n = NULL;
+  BIGNUM *tmp_e = NULL;
   for (key_prop = json->child; key_prop != NULL; key_prop = key_prop->next) {
     if (strcmp(key_prop->key, "n") == 0) {
-      rsa->n =
+      tmp_n =
           bignum_from_base64(exec_ctx, validate_string_field(key_prop, "n"));
-      if (rsa->n == NULL) goto end;
+      if (tmp_n == NULL) goto end;
     } else if (strcmp(key_prop->key, "e") == 0) {
-      rsa->e =
+      tmp_e =
           bignum_from_base64(exec_ctx, validate_string_field(key_prop, "e"));
-      if (rsa->e == NULL) goto end;
+      if (tmp_e == NULL) goto end;
     }
   }
-  if (rsa->e == NULL || rsa->n == NULL) {
+  if (tmp_e == NULL || tmp_n == NULL) {
     gpr_log(GPR_ERROR, "Missing RSA public key field.");
+    goto end;
+  }
+  if (!RSA_set0_key(rsa, tmp_n, tmp_e, NULL)) {
+    gpr_log(GPR_ERROR, "Cannot set RSA key from inputs.");
     goto end;
   }
   result = EVP_PKEY_new();
@@ -668,7 +703,7 @@ static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
   grpc_httpcli_get(
       exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
-      grpc_closure_create(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
+      GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS]);
   grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
   grpc_json_destroy(json);
@@ -771,7 +806,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
       gpr_asprintf(&req.http.path, "/%s/%s", path_prefix, iss);
     }
     http_cb =
-        grpc_closure_create(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx);
+        GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx);
     rsp_idx = HTTP_RESPONSE_KEYS;
   } else {
     req.host = gpr_strdup(strstr(iss, "https://") == iss ? iss + 8 : iss);
@@ -783,7 +818,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
       gpr_asprintf(&req.http.path, "/%s%s", path_prefix,
                    GRPC_OPENID_CONFIG_URL_SUFFIX);
     }
-    http_cb = grpc_closure_create(on_openid_config_retrieved, ctx,
+    http_cb = GRPC_CLOSURE_CREATE(on_openid_config_retrieved, ctx,
                                   grpc_schedule_on_exec_ctx);
     rsp_idx = HTTP_RESPONSE_OPENID;
   }

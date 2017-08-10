@@ -74,20 +74,21 @@ def get_flaky_tests(limit=None):
 
   bq = big_query_utils.create_big_query()
   query = """
-    SELECT
-      test_name,
-      SUM(result != 'PASSED'
-        AND result != 'SKIPPED') AS count_failed,
-    FROM
-      [grpc-testing:jenkins_test_results.aggregate_results]
-    WHERE
-      timestamp >= DATE_ADD(DATE(CURRENT_TIMESTAMP()), -1, "WEEK")
-      AND NOT REGEXP_MATCH(job_name, '.*portability.*')
-      AND REGEXP_MATCH(job_name, '.*master.*')
-    GROUP BY
-      test_name
-    HAVING
-      count_failed > 0"""
+SELECT
+  filtered_test_name,
+  FROM (
+  SELECT
+    REGEXP_REPLACE(test_name, r'/\d+', '') AS filtered_test_name,
+    result
+  FROM
+    [grpc-testing:jenkins_test_results.aggregate_results]
+  WHERE
+    timestamp >= DATE_ADD(CURRENT_DATE(), -1, "WEEK")
+    AND NOT REGEXP_MATCH(job_name, '.*portability.*') )
+GROUP BY
+  filtered_test_name
+HAVING
+  SUM(result != 'PASSED' AND result != 'SKIPPED') > 0"""
   if limit:
     query += " limit {}".format(limit)
   query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)
@@ -145,7 +146,7 @@ class Config(object):
                           cpu_cost=cpu_cost,
                           timeout_seconds=(self.timeout_multiplier * timeout_seconds if timeout_seconds else None),
                           flake_retries=5 if flaky or args.allow_flakes else 0,
-                          timeout_retries=3 if args.allow_flakes else 0)
+                          timeout_retries=3 if flaky or args.allow_flakes else 0)
 
 
 def get_c_tests(travis, test_lang) :
@@ -246,7 +247,7 @@ class CLanguage(object):
       self._docker_distro, self._make_options = self._compiler_options(self.args.use_docker,
                                                                        self.args.compiler)
     if args.iomgr_platform == "uv":
-      cflags = '-DGRPC_UV '
+      cflags = '-DGRPC_UV -DGRPC_UV_THREAD_CHECK'
       try:
         cflags += subprocess.check_output(['pkg-config', '--cflags', 'libuv']).strip() + ' '
       except (subprocess.CalledProcessError, OSError):
@@ -451,10 +452,11 @@ class NodeLanguage(object):
     # we should specify in the compiler argument
     _check_compiler(self.args.compiler, ['default', 'node0.12',
                                          'node4', 'node5', 'node6',
-                                         'node7', 'electron1.3', 'electron1.6'])
+                                         'node7', 'node8',
+                                         'electron1.3', 'electron1.6'])
     if self.args.compiler == 'default':
       self.runtime = 'node'
-      self.node_version = '7'
+      self.node_version = '8'
     else:
       if self.args.compiler.startswith('electron'):
         self.runtime = 'electron'
@@ -1193,7 +1195,7 @@ argp.add_argument('--compiler',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2013', 'vs2015',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3', 'python_alpine',
-                           'node0.12', 'node4', 'node5', 'node6', 'node7',
+                           'node0.12', 'node4', 'node5', 'node6', 'node7', 'node8',
                            'electron1.3', 'electron1.6',
                            'coreclr',
                            'cmake'],

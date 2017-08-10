@@ -93,6 +93,11 @@ void CoreCodegen::grpc_byte_buffer_destroy(grpc_byte_buffer* bb) {
   ::grpc_byte_buffer_destroy(bb);
 }
 
+grpc_call_error CoreCodegen::grpc_call_cancel_with_status(
+    grpc_call* call, grpc_status_code status, const char* description,
+    void* reserved) {
+  return ::grpc_call_cancel_with_status(call, status, description, reserved);
+}
 void CoreCodegen::grpc_call_ref(grpc_call* call) { ::grpc_call_ref(call); }
 void CoreCodegen::grpc_call_unref(grpc_call* call) { ::grpc_call_unref(call); }
 void* CoreCodegen::grpc_call_arena_alloc(grpc_call* call, size_t length) {
