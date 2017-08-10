@@ -889,7 +889,8 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 //   send_message
 //   recv_trailing_metadata
 //   send_trailing_metadata
-#define MAX_PENDING_BATCHES 6
+// We also add space for one cancel_stream op.
+#define MAX_PENDING_BATCHES 7
 
 // Retry support:
 //
@@ -968,7 +969,8 @@ typedef struct {
 
 typedef struct {
   grpc_transport_stream_op_batch *batch;
-  bool retry_checks_for_new_batch_done;
+  bool retry_checks_for_new_batch_done : 1;
+  bool handler_in_flight : 1;
   grpc_call_element *elem;
   grpc_closure handle_in_call_combiner;
 } pending_batch;
@@ -1064,6 +1066,7 @@ static size_t get_batch_index(grpc_transport_stream_op_batch *batch) {
   if (batch->recv_initial_metadata) return 3;
   if (batch->recv_message) return 4;
   if (batch->recv_trailing_metadata) return 5;
+  if (batch->cancel_stream) return 6;
   GPR_UNREACHABLE_CODE(return (size_t)-1);
 }
 
@@ -1076,6 +1079,7 @@ static void pending_batches_add(grpc_call_element *elem,
   GPR_ASSERT(pending->batch == NULL);
   pending->batch = batch;
   pending->retry_checks_for_new_batch_done = false;
+  pending->handler_in_flight = false;
   pending->elem = elem;
 }
 
@@ -1109,7 +1113,8 @@ static void pending_batches_fail(grpc_exec_ctx *exec_ctx,
   size_t first_batch_idx = GPR_ARRAY_SIZE(calld->pending_batches);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
     pending_batch *pending = &calld->pending_batches[i];
-    if (pending->batch != NULL) {
+    if (pending->batch != NULL && !pending->handler_in_flight) {
+      pending->handler_in_flight = true;
       if (first_batch_idx == GPR_ARRAY_SIZE(calld->pending_batches)) {
         first_batch_idx = i;
       } else {
@@ -2234,9 +2239,6 @@ static void start_subchannel_pick_locked(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_call_element *elem = (grpc_call_element *)arg;
   call_data *calld = (call_data *)elem->call_data;
   channel_data *chand = (channel_data *)elem->channel_data;
-  /* If a subchannel is not available immediately, the polling entity from
-     call_data should be provided to channel_data's interested_parties, so
-     that IO of the lb_policy and resolver could be done under it. */
   if (pick_subchannel_locked(exec_ctx, elem)) {
     // Pick was returned synchronously.
     GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
@@ -2250,6 +2252,9 @@ static void start_subchannel_pick_locked(grpc_exec_ctx *exec_ctx, void *arg,
       create_subchannel_call_locked(exec_ctx, elem, GRPC_ERROR_NONE);
     }
   } else {
+    // Pick will be done asynchronously.  We provide the polling entity
+    // from call_data to channel_data's interested_parties, so that I/O
+    // for the lb_policy and resolver can be done under it.
     grpc_polling_entity_add_to_pollset_set(exec_ctx, calld->pollent,
                                            chand->interested_parties);
   }
