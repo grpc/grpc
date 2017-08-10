@@ -76,7 +76,7 @@ namespace Grpc.Core.Internal
                 {
                     Logger.Warning(e, "Exception occured in handler.");
                 }
-                status = HandlerUtils.StatusFromException(e);
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
             try
             {
@@ -133,7 +133,7 @@ namespace Grpc.Core.Internal
                 {
                     Logger.Warning(e, "Exception occured in handler.");
                 }
-                status = HandlerUtils.StatusFromException(e);
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
 
             try
@@ -191,7 +191,7 @@ namespace Grpc.Core.Internal
                 {
                     Logger.Warning(e, "Exception occured in handler.");
                 }
-                status = HandlerUtils.StatusFromException(e);
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
 
             try
@@ -247,7 +247,7 @@ namespace Grpc.Core.Internal
                 {
                     Logger.Warning(e, "Exception occured in handler.");
                 }
-                status = HandlerUtils.StatusFromException(e);
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
             try
             {
@@ -292,11 +292,20 @@ namespace Grpc.Core.Internal
 
     internal static class HandlerUtils
     {
-        public static Status StatusFromException(Exception e)
+        public static Status GetStatusFromExceptionAndMergeTrailers(Exception e, Metadata callContextResponseTrailers)
         {
             var rpcException = e as RpcException;
             if (rpcException != null)
             {
+                // There are two sources of metadata entries on the server-side:
+                // 1. serverCallContext.ResponseTrailers
+                // 2. trailers in RpcException thrown by user code in server side handler.
+                // As metadata allows duplicate keys, the logical thing to do is
+                // to just merge trailers from RpcException into serverCallContext.ResponseTrailers.
+                foreach (var entry in rpcException.Trailers)
+                {
+                    callContextResponseTrailers.Add(entry);
+                }
                 // use the status thrown by handler.
                 return rpcException.Status;
             }
