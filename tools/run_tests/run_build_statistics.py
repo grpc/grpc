@@ -89,23 +89,21 @@ _KNOWN_ERRORS = [
     ('tests.bins/asan/h2_proxy_test streaming_error_response '
      'GRPC_POLL_STRATEGY=legacy'),
 ]
-_NO_REPORT_FILES_FOUND_ERROR = 'No test report files were found. Configuration error?'
+_NO_REPORT_FILES_FOUND_ERROR = 'No test report files were found.'
 _UNKNOWN_ERROR = 'Unknown error'
 _DATASET_ID = 'build_statistics'
 
 
 def _scrape_for_known_errors(html):
   error_list = []
-  known_error_count = 0
   for known_error in _KNOWN_ERRORS:
     errors = re.findall(known_error, html)
     this_error_count = len(errors)
     if this_error_count > 0: 
-      known_error_count += this_error_count
       error_list.append({'description': known_error,
                          'count': this_error_count})
       print('====> %d failures due to %s' % (this_error_count, known_error))
-  return error_list, known_error_count
+  return error_list
 
 
 def _no_report_files_found(html):
@@ -156,23 +154,22 @@ def _process_build(json_url, console_url):
     build_result['no_report_files_found'] = _no_report_files_found(html)
     # Only check errors if Jenkins failure occurred.
     if build_result['no_report_files_found']:
-      error_list, known_error_count = _scrape_for_known_errors(html)
-      if not error_list:
-        error_list.append({'description': _UNKNOWN_ERROR, 'count': 1})
+      error_list = _scrape_for_known_errors(html)
   except Exception as e:
     print('====> Got exception for %s: %s.' % (json_url, str(e)))   
     print('====> Parsing errors from %s.' % console_url)
     html = urllib.urlopen(console_url).read()
     build_result['pass_count'] = 0  
     build_result['failure_count'] = 1
-    error_list, _ = _scrape_for_known_errors(html)
-    if error_list:
-      error_list.append({'description': _UNKNOWN_ERROR, 'count': 0})
-    else:
-      error_list.append({'description': _UNKNOWN_ERROR, 'count': 1})
- 
+    # In this case, the string doesn't exist but the fact that we fail to parse
+    # the result html indicate Jenkins failure and hence missing report files.
+    build_result['no_report_files_found'] = True
+    error_list = _scrape_for_known_errors(html)
+
   if error_list:
     build_result['error'] = error_list
+  elif build_result['no_report_files_found']:
+    build_result['error'] = [{'description': _UNKNOWN_ERROR, 'count': 1}]
   else:
     build_result['error'] = [{'description': '', 'count': 0}]
 
