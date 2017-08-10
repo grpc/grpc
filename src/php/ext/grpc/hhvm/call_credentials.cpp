@@ -161,13 +161,19 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
 
     plugin_state *pState{ reinterpret_cast<plugin_state *>(ptr) };
     MetadataPromise* const pMetadataPromise = pState->pPluginGetMetadataPromise->getPromise();
-    if (pState->thread_id == std::this_thread::get_id())
+    // TODO:
+    // This comparison doesn't seem to be logically correct.
+    // Even when we force this function into a different thread this case is still true.
+    // Probably not safe to copy around between threads
+    /*if (pState->thread_id == std::this_thread::get_id())
     {
+      HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata same thread") // Degug Trace
       plugin_do_get_metadata(ptr, context, cb, user_data);
       pMetadataPromise->set_value(nullptr);
     }
     else
-    {
+    {*/
+      //HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata different thread") // Degug Trace
       plugin_get_metadata_params *pParams{ reinterpret_cast<plugin_get_metadata_params *>(gpr_zalloc(sizeof(plugin_get_metadata_params))) };
       pParams->ptr = ptr;
       pParams->context = context;
@@ -176,7 +182,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
 
       // return the meta data params in the promise
       pMetadataPromise->set_value(pParams);
-    }
+    //}
 }
 
 void plugin_destroy_state(void *ptr)
