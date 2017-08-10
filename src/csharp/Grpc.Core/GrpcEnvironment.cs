@@ -49,7 +49,7 @@ namespace Grpc.Core
         readonly DebugStats debugStats = new DebugStats();
         readonly AtomicCounter cqPickerCounter = new AtomicCounter();
 
-        bool isClosed;
+        bool isShutdown;
 
         /// <summary>
         /// Returns a reference-counted instance of initialized gRPC environment.
@@ -238,6 +238,12 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Occurs when <c>GrpcEnvironment</c> is about the start the shutdown logic.
+        /// If <c>GrpcEnvironment</c> is later initialized and shutdown, the event will be fired again (unless unregistered first).
+        /// </summary>
+        public static event EventHandler ShuttingDown;
+
+        /// <summary>
         /// Creates gRPC environment.
         /// </summary>
         private GrpcEnvironment()
@@ -311,13 +317,16 @@ namespace Grpc.Core
         /// </summary>
         private async Task ShutdownAsync()
         {
-            if (isClosed)
+            if (isShutdown)
             {
-                throw new InvalidOperationException("Close has already been called");
+                throw new InvalidOperationException("ShutdownAsync has already been called");
             }
+
+            await Task.Run(() => ShuttingDown?.Invoke(this, null)).ConfigureAwait(false);
+
             await threadPool.StopAsync().ConfigureAwait(false);
             GrpcNativeShutdown();
-            isClosed = true;
+            isShutdown = true;
 
             debugStats.CheckOK();
         }
