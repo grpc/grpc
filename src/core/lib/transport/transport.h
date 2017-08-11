@@ -196,6 +196,7 @@ struct grpc_transport_stream_op_batch_payload {
     // containing a received message.
     // The caller is responsible for calling grpc_byte_stream_destroy()
     // on this byte stream.
+    // Will be NULL if trailing metadata is received instead of a message.
     grpc_byte_stream **recv_message;
     /** Should be enqueued when one message is ready to be processed. */
     grpc_closure *recv_message_ready;

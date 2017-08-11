@@ -530,6 +530,8 @@ typedef struct grpc_op {
     } recv_initial_metadata;
     /** ownership of the byte buffer is moved to the caller; the caller must
         call grpc_byte_buffer_destroy on this value, or reuse it in a future op.
+        The returned byte buffer will be NULL if trailing metadata was
+        received instead of a message.
        */
     struct grpc_op_recv_message {
       struct grpc_byte_buffer **recv_message;
