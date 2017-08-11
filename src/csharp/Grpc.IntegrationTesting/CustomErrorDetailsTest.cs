@@ -65,7 +65,7 @@ namespace Grpc.IntegrationTesting
         }
 
         [Test]
-        public async Task UnaryCall()
+        public async Task ErrorDetailsFromCallObject()
         {
             var call = client.UnaryCallAsync(new SimpleRequest { ResponseSize = 10 });
 
@@ -83,7 +83,24 @@ namespace Grpc.IntegrationTesting
             }
         }
 
-        private DebugInfo GetDebugInfo(Metadata trailers)
+        [Test]
+        public async Task ErrorDetailsFromRpcException()
+        {
+            try
+            {
+                await client.UnaryCallAsync(new SimpleRequest { ResponseSize = 10 });
+                Assert.Fail();
+            }
+            catch (RpcException e)
+            {
+                Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
+                var debugInfo = GetDebugInfo(e.Trailers);
+                Assert.AreEqual(debugInfo.Detail, ExceptionDetail);
+                Assert.IsNotEmpty(debugInfo.StackEntries);
+            }
+        }
+
+        private static DebugInfo GetDebugInfo(Metadata trailers)
         {
             var entry = trailers.First((e) => e.Key == DebugInfoTrailerName);
             return DebugInfo.Parser.ParseFrom(entry.ValueBytes);

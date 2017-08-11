@@ -550,8 +550,7 @@ static Status ProcessGenericRPC(const PayloadConfig &payload_config,
                                 ByteBuffer *response) {
   int resp_size = payload_config.bytebuf_params().resp_size();
   std::unique_ptr<char[]> buf(new char[resp_size]);
-  grpc_slice s = grpc_slice_from_copied_buffer(buf.get(), resp_size);
-  Slice slice(s, Slice::STEAL_REF);
+  Slice slice(buf.get(), resp_size);
   *response = ByteBuffer(&slice, 1);
   return Status::OK;
 }

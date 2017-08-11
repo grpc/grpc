@@ -51,33 +51,6 @@ bool grpc_exec_ctx_has_work(grpc_exec_ctx *exec_ctx) {
          !grpc_closure_list_empty(exec_ctx->closure_list);
 }
 
-bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
-  bool did_something = 0;
-  GPR_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
-  for (;;) {
-    if (!grpc_closure_list_empty(exec_ctx->closure_list)) {
-      grpc_closure *c = exec_ctx->closure_list.head;
-      exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
-      while (c != NULL) {
-        grpc_closure *next = c->next_data.next;
-        grpc_error *error = c->error_data.error;
-        did_something = true;
-#ifndef NDEBUG
-        c->scheduled = false;
-#endif
-        c->cb(exec_ctx, c->cb_arg, error);
-        GRPC_ERROR_UNREF(error);
-        c = next;
-      }
-    } else if (!grpc_combiner_continue_exec_ctx(exec_ctx)) {
-      break;
-    }
-  }
-  GPR_ASSERT(exec_ctx->active_combiner == NULL);
-  GPR_TIMER_END("grpc_exec_ctx_flush", 0);
-  return did_something;
-}
-
 void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
   exec_ctx->flags |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
   grpc_exec_ctx_flush(exec_ctx);
@@ -101,6 +74,29 @@ static void exec_ctx_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   }
 #endif
   GRPC_ERROR_UNREF(error);
+}
+
+bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
+  bool did_something = 0;
+  GPR_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
+  for (;;) {
+    if (!grpc_closure_list_empty(exec_ctx->closure_list)) {
+      grpc_closure *c = exec_ctx->closure_list.head;
+      exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
+      while (c != NULL) {
+        grpc_closure *next = c->next_data.next;
+        grpc_error *error = c->error_data.error;
+        did_something = true;
+        exec_ctx_run(exec_ctx, c, error);
+        c = next;
+      }
+    } else if (!grpc_combiner_continue_exec_ctx(exec_ctx)) {
+      break;
+    }
+  }
+  GPR_ASSERT(exec_ctx->active_combiner == NULL);
+  GPR_TIMER_END("grpc_exec_ctx_flush", 0);
+  return did_something;
 }
 
 static void exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
