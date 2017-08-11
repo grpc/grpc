@@ -75,12 +75,12 @@ typedef struct grpc_slice_refcount {
    of data that is copied by value. */
 struct grpc_slice {
   struct grpc_slice_refcount *refcount;
-  union {
-    struct {
+  union grpc_slice_data {
+    struct grpc_slice_refcounted {
       uint8_t *bytes;
       size_t length;
     } refcounted;
-    struct {
+    struct grpc_slice_inlined {
       uint8_t length;
       uint8_t bytes[GRPC_SLICE_INLINED_SIZE];
     } inlined;

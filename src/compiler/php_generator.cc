@@ -98,12 +98,12 @@ void PrintMethod(const MethodDescriptor *method, Printer *out) {
 
 // Prints out the service descriptor object
 void PrintService(const ServiceDescriptor *service,
-                  const grpc::string &parameter, Printer *out) {
+                  const grpc::string &class_suffix, Printer *out) {
   map<grpc::string, grpc::string> vars;
   out->Print("/**\n");
   out->Print(GetPHPComments(service, " *").c_str());
   out->Print(" */\n");
-  vars["name"] = GetPHPServiceClassname(service, parameter);
+  vars["name"] = GetPHPServiceClassname(service, class_suffix);
   out->Print(vars, "class $name$ extends \\Grpc\\BaseStub {\n\n");
   out->Indent();
   out->Indent();
@@ -133,7 +133,7 @@ void PrintService(const ServiceDescriptor *service,
 
 grpc::string GenerateFile(const FileDescriptor *file,
                           const ServiceDescriptor *service,
-                          const grpc::string &parameter) {
+                          const grpc::string &class_suffix) {
   grpc::string output;
   {
     StringOutputStream output_stream(&output);
@@ -149,10 +149,16 @@ grpc::string GenerateFile(const FileDescriptor *file,
     }
 
     map<grpc::string, grpc::string> vars;
-    vars["package"] = MessageIdentifierName(file->package());
+    grpc::string php_namespace;
+    if (file->options().has_php_namespace()) {
+      php_namespace = file->options().php_namespace();
+    } else {
+      php_namespace = MessageIdentifierName(file->package());
+    }
+    vars["package"] = php_namespace;
     out.Print(vars, "namespace $package$;\n\n");
 
-    PrintService(service, parameter, &out);
+    PrintService(service, class_suffix, &out);
   }
   return output;
 }
