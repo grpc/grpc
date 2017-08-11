@@ -74,19 +74,21 @@ def get_flaky_tests(limit=None):
 
   bq = big_query_utils.create_big_query()
   query = """
-    SELECT
-      test_name,
-      SUM(result != 'PASSED'
-        AND result != 'SKIPPED') AS count_failed,
-    FROM
-      [grpc-testing:jenkins_test_results.aggregate_results]
-    WHERE
-      timestamp >= DATE_ADD(CURRENT_DATE(), -1, "WEEK")
-      AND NOT REGEXP_MATCH(job_name, '.*portability.*')
-    GROUP BY
-      test_name
-    HAVING
-      count_failed > 0"""
+SELECT
+  filtered_test_name,
+  FROM (
+  SELECT
+    REGEXP_REPLACE(test_name, r'/\d+', '') AS filtered_test_name,
+    result
+  FROM
+    [grpc-testing:jenkins_test_results.aggregate_results]
+  WHERE
+    timestamp >= DATE_ADD(CURRENT_DATE(), -1, "WEEK")
+    AND NOT REGEXP_MATCH(job_name, '.*portability.*') )
+GROUP BY
+  filtered_test_name
+HAVING
+  SUM(result != 'PASSED' AND result != 'SKIPPED') > 0"""
   if limit:
     query += " limit {}".format(limit)
   query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)
@@ -886,11 +888,50 @@ class ObjCLanguage(object):
         self.config.job_spec(['src/objective-c/tests/run_tests.sh'],
                               timeout_seconds=60*60,
                               shortname='objc-tests',
+                              cpu_cost=1e6,
                               environ=_FORCE_ENVIRON_FOR_WRAPPERS),
-        self.config.job_spec(['src/objective-c/tests/build_example_test.sh'],
-                              timeout_seconds=30*60,
-                              shortname='objc-examples-build',
+        self.config.job_spec(['src/objective-c/tests/run_plugin_tests.sh'],
+                              timeout_seconds=60*60,
+                              shortname='objc-plugin-tests',
+                              cpu_cost=1e6,
                               environ=_FORCE_ENVIRON_FOR_WRAPPERS),
+        self.config.job_spec(['src/objective-c/tests/build_one_example.sh'],
+                              timeout_seconds=10*60,
+                              shortname='objc-build-example-helloworld',
+                              cpu_cost=1e6,
+                              environ={'SCHEME': 'HelloWorld',
+                                       'EXAMPLE_PATH': 'examples/objective-c/helloworld'}),
+        self.config.job_spec(['src/objective-c/tests/build_one_example.sh'],
+                              timeout_seconds=10*60,
+                              shortname='objc-build-example-routeguide',
+                              cpu_cost=1e6,
+                              environ={'SCHEME': 'RouteGuideClient',
+                                       'EXAMPLE_PATH': 'examples/objective-c/route_guide'}),
+        self.config.job_spec(['src/objective-c/tests/build_one_example.sh'],
+                              timeout_seconds=10*60,
+                              shortname='objc-build-example-authsample',
+                              cpu_cost=1e6,
+                              environ={'SCHEME': 'AuthSample',
+                                       'EXAMPLE_PATH': 'examples/objective-c/auth_sample'}),
+        self.config.job_spec(['src/objective-c/tests/build_one_example.sh'],
+                              timeout_seconds=10*60,
+                              shortname='objc-build-example-sample',
+                              cpu_cost=1e6,
+                              environ={'SCHEME': 'Sample',
+                                       'EXAMPLE_PATH': 'src/objective-c/examples/Sample'}),
+        self.config.job_spec(['src/objective-c/tests/build_one_example.sh'],
+                              timeout_seconds=10*60,
+                              shortname='objc-build-example-sample-frameworks',
+                              cpu_cost=1e6,
+                              environ={'SCHEME': 'Sample',
+                                       'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
+                                       'FRAMEWORKS': 'YES'}),
+        self.config.job_spec(['src/objective-c/tests/build_one_example.sh'],
+                              timeout_seconds=10*60,
+                              shortname='objc-build-example-switftsample',
+                              cpu_cost=1e6,
+                              environ={'SCHEME': 'SwiftSample',
+                                       'EXAMPLE_PATH': 'src/objective-c/examples/SwiftSample'}),
     ]
 
   def pre_build_steps(self):

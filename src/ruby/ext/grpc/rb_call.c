@@ -179,6 +179,38 @@ static VALUE grpc_rb_call_cancel(VALUE self) {
   return Qnil;
 }
 
+/* TODO: expose this as part of the surface API if needed.
+ * This is meant for internal usage by the "write thread" of grpc-ruby
+ * client-side bidi calls. It provides a way for the background write-thread
+ * to propogate failures to the main read-thread and give the user an error
+ * message. */
+static VALUE grpc_rb_call_cancel_with_status(VALUE self, VALUE status_code,
+                                             VALUE details) {
+  grpc_rb_call *call = NULL;
+  grpc_call_error err;
+  if (RTYPEDDATA_DATA(self) == NULL) {
+    // This call has been closed
+    return Qnil;
+  }
+
+  if (TYPE(details) != T_STRING || TYPE(status_code) != T_FIXNUM) {
+    rb_raise(rb_eTypeError,
+             "Bad parameter type error for cancel with status. Want Fixnum, "
+             "String.");
+    return Qnil;
+  }
+
+  TypedData_Get_Struct(self, grpc_rb_call, &grpc_call_data_type, call);
+  err = grpc_call_cancel_with_status(call->wrapped, NUM2LONG(status_code),
+                                     StringValueCStr(details), NULL);
+  if (err != GRPC_CALL_OK) {
+    rb_raise(grpc_rb_eCallError, "cancel with status failed: %s (code=%d)",
+             grpc_call_error_detail_of(err), err);
+  }
+
+  return Qnil;
+}
+
 /* Releases the c-level resources associated with a call
    Once a call has been closed, no further requests can be
    processed.
@@ -949,6 +981,8 @@ void Init_grpc_call() {
   /* Add ruby analogues of the Call methods. */
   rb_define_method(grpc_rb_cCall, "run_batch", grpc_rb_call_run_batch, 1);
   rb_define_method(grpc_rb_cCall, "cancel", grpc_rb_call_cancel, 0);
+  rb_define_method(grpc_rb_cCall, "cancel_with_status",
+                   grpc_rb_call_cancel_with_status, 2);
   rb_define_method(grpc_rb_cCall, "close", grpc_rb_call_close, 0);
   rb_define_method(grpc_rb_cCall, "peer", grpc_rb_call_get_peer, 0);
   rb_define_method(grpc_rb_cCall, "peer_cert", grpc_rb_call_get_peer_cert, 0);

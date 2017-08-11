@@ -1797,9 +1797,8 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
     bool pending_data = s->pending_byte_stream ||
                         s->unprocessed_incoming_frames_buffer.length > 0;
     if (s->stream_compression_recv_enabled && s->read_closed &&
-        s->frame_storage.length > 0 &&
-        s->unprocessed_incoming_frames_buffer.length == 0 && !pending_data &&
-        !s->seen_error && s->recv_trailing_metadata_finished != NULL) {
+        s->frame_storage.length > 0 && !pending_data && !s->seen_error &&
+        s->recv_trailing_metadata_finished != NULL) {
       /* Maybe some SYNC_FLUSH data is left in frame_storage. Consume them and
        * maybe decompress the next 5 bytes in the stream. */
       bool end_of_context;
@@ -1826,7 +1825,6 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
       }
     }
     if (s->read_closed && s->frame_storage.length == 0 &&
-        s->unprocessed_incoming_frames_buffer.length == 0 &&
         (!pending_data || s->seen_error) &&
         s->recv_trailing_metadata_finished != NULL) {
       grpc_chttp2_incoming_metadata_buffer_publish(

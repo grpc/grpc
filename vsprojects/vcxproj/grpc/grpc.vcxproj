@@ -347,6 +347,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\gts_transport_security.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_types.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_grpc.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_adapter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_interface.h" />
@@ -401,6 +402,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\exec_ctx.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\executor.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\gethostname.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iocp_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_internal.h" />
@@ -457,6 +459,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_hash_table.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\alarm_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\call.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\call_test_only.h" />
@@ -581,6 +584,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\exec_ctx.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\executor.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\gethostname_fallback.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\gethostname_host_name_max.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\gethostname_sysconf.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iocp_windows.c">
     </ClCompile>
@@ -883,6 +892,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\gts_transport_security.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security_grpc.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security.c">
     </ClCompile>

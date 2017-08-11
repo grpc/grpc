@@ -593,6 +593,9 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_windows.c",
         "src/core/lib/iomgr/exec_ctx.c",
         "src/core/lib/iomgr/executor.c",
+        "src/core/lib/iomgr/gethostname_host_name_max.c",
+        "src/core/lib/iomgr/gethostname_sysconf.c",
+        "src/core/lib/iomgr/gethostname_fallback.c",
         "src/core/lib/iomgr/iocp_windows.c",
         "src/core/lib/iomgr/iomgr.c",
         "src/core/lib/iomgr/iomgr_posix.c",
@@ -718,6 +721,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_posix.h",
         "src/core/lib/iomgr/exec_ctx.h",
         "src/core/lib/iomgr/executor.h",
+        "src/core/lib/iomgr/gethostname.h",
         "src/core/lib/iomgr/iocp_windows.h",
         "src/core/lib/iomgr/iomgr.h",
         "src/core/lib/iomgr/iomgr_internal.h",
@@ -774,6 +778,7 @@ grpc_cc_library(
         "src/core/lib/slice/slice_hash_table.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
+        "src/core/lib/surface/alarm_internal.h",
         "src/core/lib/surface/api_trace.h",
         "src/core/lib/surface/call.h",
         "src/core/lib/surface/call_test_only.h",
@@ -1407,31 +1412,45 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "tsi_interface",
+    srcs = [
+        "src/core/tsi/transport_security.c",
+        "src/core/tsi/transport_security_adapter.c",
+    ],
+    hdrs = [
+        "src/core/tsi/transport_security.h",
+        "src/core/tsi/transport_security_adapter.h",
+        "src/core/tsi/transport_security_interface.h",
+    ],
+    language = "c",
+    deps = [
+        "gpr",
+        "grpc_trace",
+    ],
+)
+
+grpc_cc_library(
     name = "tsi",
     srcs = [
         "src/core/tsi/fake_transport_security.c",
         "src/core/tsi/gts_transport_security.c",
         "src/core/tsi/ssl_transport_security.c",
-        "src/core/tsi/transport_security.c",
-        "src/core/tsi/transport_security_adapter.c",
+        "src/core/tsi/transport_security_grpc.c",
     ],
     hdrs = [
         "src/core/tsi/fake_transport_security.h",
         "src/core/tsi/gts_transport_security.h",
         "src/core/tsi/ssl_transport_security.h",
         "src/core/tsi/ssl_types.h",
-        "src/core/tsi/transport_security.h",
-        "src/core/tsi/transport_security_adapter.h",
-        "src/core/tsi/transport_security_interface.h",
+        "src/core/tsi/transport_security_grpc.h",
     ],
     external_deps = [
         "libssl",
     ],
     language = "c",
     deps = [
-        "gpr",
         "grpc_base",
-        "grpc_trace",
+        "tsi_interface",
     ],
 )
 
