@@ -142,11 +142,11 @@ namespace Grpc.Core.Tests
         [Test]
         public void UnaryCall_ServerHandlerSetsStatusAndTrailers()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 context.Status = new Status(StatusCode.Unauthenticated, "");
                 context.ResponseTrailers.Add("xyz", "xyz-value");
-                return "";
+                return Task.FromResult("");
             });
 
             var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
@@ -232,9 +232,9 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
-        public async Task ServerStreamingCall_TrailersFromMultipleSourcesGetConcatenated()
+        public void ServerStreamingCall_TrailersFromMultipleSourcesGetConcatenated()
         {
-            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>((request, responseStream, context) =>
             {
                 context.ResponseTrailers.Add("xyz", "xyz-value");
                 throw new RpcException(new Status(StatusCode.InvalidArgument, ""), new Metadata { {"abc", "abc-value"} });
