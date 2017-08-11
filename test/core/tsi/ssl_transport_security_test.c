@@ -85,7 +85,6 @@ static void ssl_test_setup_handshakers(tsi_test_fixture *fixture) {
   GPR_ASSERT(ssl_fixture->alpn_lib != NULL);
   ssl_key_cert_lib *key_cert_lib = ssl_fixture->key_cert_lib;
   ssl_alpn_lib *alpn_lib = ssl_fixture->alpn_lib;
-
   /* Create client handshaker factory. */
   tsi_ssl_pem_key_cert_pair *client_key_cert_pair = NULL;
   if (ssl_fixture->force_client_auth) {
@@ -106,7 +105,6 @@ static void ssl_test_setup_handshakers(tsi_test_fixture *fixture) {
                  (const char **)client_alpn_protocols,
                  num_client_alpn_protocols,
                  &ssl_fixture->client_handshaker_factory) == TSI_OK);
-
   /* Create server handshaker factory. */
   char **server_alpn_protocols = NULL;
   uint16_t num_server_alpn_protocols = 0;
@@ -119,7 +117,6 @@ static void ssl_test_setup_handshakers(tsi_test_fixture *fixture) {
       num_server_alpn_protocols--;
     }
   }
-
   GPR_ASSERT(tsi_create_ssl_server_handshaker_factory(
                  key_cert_lib->use_bad_server_cert
                      ? key_cert_lib->bad_server_pem_key_cert_pairs
@@ -131,7 +128,6 @@ static void ssl_test_setup_handshakers(tsi_test_fixture *fixture) {
                  (const char **)server_alpn_protocols,
                  num_server_alpn_protocols,
                  &ssl_fixture->server_handshaker_factory) == TSI_OK);
-
   /* Create server and client handshakers. */
   tsi_handshaker *client_handshaker = NULL;
   GPR_ASSERT(tsi_ssl_client_handshaker_factory_create_handshaker(
@@ -140,7 +136,6 @@ static void ssl_test_setup_handshakers(tsi_test_fixture *fixture) {
                  &client_handshaker) == TSI_OK);
   ssl_fixture->base.client_handshaker =
       tsi_create_adapter_handshaker(client_handshaker);
-
   tsi_handshaker *server_handshaker = NULL;
   GPR_ASSERT(tsi_ssl_server_handshaker_factory_create_handshaker(
                  ssl_fixture->server_handshaker_factory, &server_handshaker) ==
@@ -247,7 +242,7 @@ static void check_client_peer(ssl_tsi_test_fixture *ssl_fixture,
   tsi_peer_destruct(peer);
 }
 
-static void ssl_test_check_handshake_results(tsi_test_fixture *fixture) {
+static void ssl_test_check_handshaker_peers(tsi_test_fixture *fixture) {
   ssl_tsi_test_fixture *ssl_fixture = (ssl_tsi_test_fixture *)fixture;
   GPR_ASSERT(ssl_fixture != NULL);
   GPR_ASSERT(ssl_fixture->key_cert_lib != NULL);
@@ -256,7 +251,6 @@ static void ssl_test_check_handshake_results(tsi_test_fixture *fixture) {
   bool expect_success =
       !(key_cert_lib->use_bad_server_cert ||
         (key_cert_lib->use_bad_client_cert && ssl_fixture->force_client_auth));
-
   if (expect_success) {
     GPR_ASSERT(tsi_handshaker_result_extract_peer(
                    ssl_fixture->base.client_result, &peer) == TSI_OK);
@@ -270,7 +264,6 @@ static void ssl_test_check_handshake_results(tsi_test_fixture *fixture) {
   } else {
     GPR_ASSERT(ssl_fixture->base.client_result == NULL);
   }
-
   if (expect_success) {
     GPR_ASSERT(tsi_handshaker_result_extract_peer(
                    ssl_fixture->base.server_result, &peer) == TSI_OK);
@@ -302,7 +295,6 @@ static void ssl_test_destruct(tsi_test_fixture *fixture) {
   }
   gpr_free(alpn_lib->client_alpn_protocols);
   gpr_free(alpn_lib);
-
   /* Destroy ssl_key_cert_lib. */
   ssl_key_cert_lib *key_cert_lib = ssl_fixture->key_cert_lib;
   for (size_t i = 0; i < key_cert_lib->server_num_key_cert_pairs; i++) {
@@ -320,7 +312,6 @@ static void ssl_test_destruct(tsi_test_fixture *fixture) {
       key_cert_lib->bad_client_pem_key_cert_pair);
   gpr_free(key_cert_lib->root_cert);
   gpr_free(key_cert_lib);
-
   /* Destroy others. */
   tsi_ssl_server_handshaker_factory_destroy(
       ssl_fixture->server_handshaker_factory);
@@ -329,7 +320,7 @@ static void ssl_test_destruct(tsi_test_fixture *fixture) {
 }
 
 static const struct tsi_test_fixture_vtable vtable = {
-    ssl_test_setup_handshakers, ssl_test_check_handshake_results,
+    ssl_test_setup_handshakers, ssl_test_check_handshaker_peers,
     ssl_test_destruct};
 
 static char *load_file(const char *dir_path, const char *file_name) {
@@ -348,6 +339,7 @@ static char *load_file(const char *dir_path, const char *file_name) {
 static tsi_test_fixture *ssl_tsi_test_fixture_create() {
   ssl_tsi_test_fixture *ssl_fixture = gpr_zalloc(sizeof(*ssl_fixture));
   tsi_test_fixture_init(&ssl_fixture->base);
+  ssl_fixture->base.test_unused_bytes = false;
   ssl_fixture->base.vtable = &vtable;
   /* Create ssl_key_cert_lib. */
   ssl_key_cert_lib *key_cert_lib = gpr_zalloc(sizeof(*key_cert_lib));
@@ -385,7 +377,6 @@ static tsi_test_fixture *ssl_tsi_test_fixture_create() {
       load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "badclient.pem");
   key_cert_lib->root_cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "ca.pem");
   ssl_fixture->key_cert_lib = key_cert_lib;
-
   /* Create ssl_alpn_lib. */
   ssl_alpn_lib *alpn_lib = gpr_zalloc(sizeof(*alpn_lib));
   alpn_lib->server_alpn_protocols =

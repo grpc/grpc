@@ -32,6 +32,7 @@ typedef struct handshaker_args {
   size_t handshake_buffer_size;
   bool is_client;
   bool transferred_data;
+  bool appended_unused_bytes;
   grpc_error *error;
 } handshaker_args;
 
@@ -54,7 +55,7 @@ static void handshaker_args_destroy(handshaker_args *args) {
   gpr_free(args);
 }
 
-static void do_handshaker_next_locked(handshaker_args *args);
+static void do_handshaker_next(handshaker_args *args);
 
 static void setup_handshakers(tsi_test_fixture *fixture) {
   GPR_ASSERT(fixture != NULL);
@@ -63,11 +64,35 @@ static void setup_handshakers(tsi_test_fixture *fixture) {
   fixture->vtable->setup_handshakers(fixture);
 }
 
+static void check_unused_bytes(tsi_test_fixture *fixture) {
+  const unsigned char *bytes = NULL;
+  size_t bytes_size = 0;
+  GPR_ASSERT(tsi_handshaker_result_get_unused_bytes(
+                 fixture->client_result, &bytes, &bytes_size) == TSI_OK);
+  GPR_ASSERT(bytes_size == strlen(TSI_TEST_UNUSED_BYTES));
+  GPR_ASSERT(memcmp(bytes, TSI_TEST_UNUSED_BYTES, bytes_size) == 0);
+  GPR_ASSERT(tsi_handshaker_result_get_unused_bytes(
+                 fixture->server_result, &bytes, &bytes_size) == TSI_OK);
+  GPR_ASSERT(bytes_size == 0);
+  GPR_ASSERT(bytes == NULL);
+}
+
 static void check_handshake_results(tsi_test_fixture *fixture) {
   GPR_ASSERT(fixture != NULL);
   GPR_ASSERT(fixture->vtable != NULL);
-  GPR_ASSERT(fixture->vtable->check_handshake_results != NULL);
-  fixture->vtable->check_handshake_results(fixture);
+  GPR_ASSERT(fixture->vtable->check_handshaker_peers != NULL);
+  /* Check handshaker peers. */
+  fixture->vtable->check_handshaker_peers(fixture);
+  /* Check unused bytes. */
+  if (fixture->test_unused_bytes) {
+    if (fixture->server_result != NULL && fixture->client_result != NULL) {
+      check_unused_bytes(fixture);
+    }
+    fixture->bytes_written_to_server_channel = 0;
+    fixture->bytes_written_to_client_channel = 0;
+    fixture->bytes_read_from_client_channel = 0;
+    fixture->bytes_read_from_server_channel = 0;
+  }
 }
 
 static void send_bytes_to_peer(tsi_test_fixture *fixture,
@@ -85,6 +110,17 @@ static void send_bytes_to_peer(tsi_test_fixture *fixture,
   /* Write data to channel. */
   memcpy(channel + *bytes_written, buf, buf_size);
   *bytes_written += buf_size;
+}
+
+static void maybe_append_unused_bytes(handshaker_args *args) {
+  GPR_ASSERT(args != NULL);
+  GPR_ASSERT(args->fixture != NULL);
+  if (args->fixture->test_unused_bytes && !args->appended_unused_bytes) {
+    args->appended_unused_bytes = true;
+    send_bytes_to_peer(args->fixture,
+                       (const unsigned char *)TSI_TEST_UNUSED_BYTES,
+                       strlen(TSI_TEST_UNUSED_BYTES), args->is_client);
+  }
 }
 
 static void receive_bytes_from_peer(tsi_test_fixture *fixture,
@@ -127,7 +163,6 @@ static void send_message_to_peer(tsi_test_fixture *fixture,
   GPR_ASSERT(message != NULL);
   const unsigned char *message_bytes = (const unsigned char *)message;
   tsi_result result = TSI_OK;
-
   /* Do protect and send protected data to peer. */
   while (message_size > 0 && result == TSI_OK) {
     size_t protected_buffer_size_to_send = config->protected_buffer_size;
@@ -180,7 +215,6 @@ static void receive_message_from_peer(tsi_test_fixture *fixture,
   unsigned char *read_buffer = gpr_zalloc(config->read_buffer_allocated_size);
   unsigned char *message_buffer =
       gpr_zalloc(config->message_buffer_allocated_size);
-
   /* Do unprotect on data received from peer. */
   while (!done && result == TSI_OK) {
     /* Receive data from peer. */
@@ -218,9 +252,10 @@ static void receive_message_from_peer(tsi_test_fixture *fixture,
   gpr_free(message_buffer);
 }
 
-grpc_error *on_handshake_next_done_locked(
-    tsi_result result, void *user_data, const unsigned char *bytes_to_send,
-    size_t bytes_to_send_size, tsi_handshaker_result *handshaker_result) {
+grpc_error *on_handshake_next_done(tsi_result result, void *user_data,
+                                   const unsigned char *bytes_to_send,
+                                   size_t bytes_to_send_size,
+                                   tsi_handshaker_result *handshaker_result) {
   handshaker_args *args = (handshaker_args *)user_data;
   GPR_ASSERT(args != NULL);
   GPR_ASSERT(args->fixture != NULL);
@@ -248,6 +283,9 @@ grpc_error *on_handshake_next_done_locked(
                        args->is_client);
     args->transferred_data = true;
   }
+  if (handshaker_result != NULL) {
+    maybe_append_unused_bytes(args);
+  }
   return error;
 }
 
@@ -255,8 +293,8 @@ static void on_handshake_next_done_wrapper(
     tsi_result result, void *user_data, const unsigned char *bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result *handshaker_result) {
   handshaker_args *args = (handshaker_args *)user_data;
-  args->error = on_handshake_next_done_locked(
-      result, user_data, bytes_to_send, bytes_to_send_size, handshaker_result);
+  args->error = on_handshake_next_done(result, user_data, bytes_to_send,
+                                       bytes_to_send_size, handshaker_result);
 }
 
 static bool is_handshake_finished_properly(handshaker_args *args) {
@@ -270,7 +308,7 @@ static bool is_handshake_finished_properly(handshaker_args *args) {
   return false;
 }
 
-static void do_handshaker_next_locked(handshaker_args *args) {
+static void do_handshaker_next(handshaker_args *args) {
   /* Initialization. */
   GPR_ASSERT(args != NULL);
   GPR_ASSERT(args->fixture != NULL);
@@ -296,8 +334,8 @@ static void do_handshaker_next_locked(handshaker_args *args) {
       (const unsigned char **)&bytes_to_send, &bytes_to_send_size,
       &handshaker_result, &on_handshake_next_done_wrapper, args);
   if (result != TSI_ASYNC) {
-    args->error = on_handshake_next_done_locked(
-        result, args, bytes_to_send, bytes_to_send_size, handshaker_result);
+    args->error = on_handshake_next_done(result, args, bytes_to_send,
+                                         bytes_to_send_size, handshaker_result);
   }
 }
 
@@ -308,25 +346,22 @@ void tsi_test_do_handshake(tsi_test_fixture *fixture) {
       handshaker_args_create(fixture, true /* is_client */);
   handshaker_args *server_args =
       handshaker_args_create(fixture, false /* is_client */);
-
   /* Do handshake. */
   do {
     client_args->transferred_data = false;
     server_args->transferred_data = false;
-    do_handshaker_next_locked(client_args);
+    do_handshaker_next(client_args);
     if (client_args->error != GRPC_ERROR_NONE) {
       break;
     }
-    do_handshaker_next_locked(server_args);
+    do_handshaker_next(server_args);
     if (server_args->error != GRPC_ERROR_NONE) {
       break;
     }
     GPR_ASSERT(client_args->transferred_data || server_args->transferred_data);
   } while (fixture->client_result == NULL || fixture->server_result == NULL);
-
   /* Verify handshake results. */
   check_handshake_results(fixture);
-
   /* Cleanup. */
   handshaker_args_destroy(client_args);
   handshaker_args_destroy(server_args);
@@ -339,10 +374,8 @@ void tsi_test_do_round_trip(tsi_test_fixture *fixture) {
   tsi_test_frame_protector_config *config = fixture->config;
   tsi_frame_protector *client_frame_protector = NULL;
   tsi_frame_protector *server_frame_protector = NULL;
-
   /* Perform handshake. */
   tsi_test_do_handshake(fixture);
-
   /* Create frame protectors.*/
   size_t client_max_output_protected_frame_size =
       config->client_max_output_protected_frame_size;
@@ -360,7 +393,6 @@ void tsi_test_do_round_trip(tsi_test_fixture *fixture) {
                      ? NULL
                      : &server_max_output_protected_frame_size,
                  &server_frame_protector) == TSI_OK);
-
   /* Client sends a message to server. */
   send_message_to_peer(fixture, client_frame_protector, true /* is_client */);
   unsigned char *server_received_message =
@@ -372,7 +404,6 @@ void tsi_test_do_round_trip(tsi_test_fixture *fixture) {
   GPR_ASSERT(config->client_message_size == server_received_message_size);
   GPR_ASSERT(memcmp(config->client_message, server_received_message,
                     server_received_message_size) == 0);
-
   /* Server sends a message to client. */
   send_message_to_peer(fixture, server_frame_protector, false /* is_client */);
   unsigned char *client_received_message =
@@ -384,7 +415,6 @@ void tsi_test_do_round_trip(tsi_test_fixture *fixture) {
   GPR_ASSERT(config->server_message_size == client_received_message_size);
   GPR_ASSERT(memcmp(config->server_message, client_received_message,
                     client_received_message_size) == 0);
-
   /* Destroy server and client frame protectors. */
   tsi_frame_protector_destroy(client_frame_protector);
   tsi_frame_protector_destroy(server_frame_protector);
@@ -411,24 +441,20 @@ tsi_test_frame_protector_config *tsi_test_frame_protector_config_create(
     bool use_default_server_max_output_protected_frame_size,
     bool use_default_handshake_buffer_size) {
   tsi_test_frame_protector_config *config = gpr_zalloc(sizeof(*config));
-
   /* Set the value for read_buffer_allocated_size. */
   config->read_buffer_allocated_size =
       use_default_read_buffer_allocated_size
           ? TSI_TEST_DEFAULT_BUFFER_SIZE
           : TSI_TEST_SMALL_READ_BUFFER_ALLOCATED_SIZE;
-
   /* Set the value for message_buffer_allocated_size. */
   config->message_buffer_allocated_size =
       use_default_message_buffer_allocated_size
           ? TSI_TEST_DEFAULT_BUFFER_SIZE
           : TSI_TEST_SMALL_MESSAGE_BUFFER_ALLOCATED_SIZE;
-
   /* Set the value for protected_buffer_size. */
   config->protected_buffer_size = use_default_protected_buffer_size
                                       ? TSI_TEST_DEFAULT_PROTECTED_BUFFER_SIZE
                                       : TSI_TEST_SMALL_PROTECTED_BUFFER_SIZE;
-
   /* Set the value for client message. */
   config->client_message_size = use_default_client_message
                                     ? TSI_TEST_BIG_MESSAGE_SIZE
@@ -437,7 +463,6 @@ tsi_test_frame_protector_config *tsi_test_frame_protector_config_create(
       use_default_client_message
           ? generate_random_message(TSI_TEST_BIG_MESSAGE_SIZE)
           : generate_random_message(TSI_TEST_SMALL_MESSAGE_SIZE);
-
   /* Set the value for server message. */
   config->server_message_size = use_default_server_message
                                     ? TSI_TEST_BIG_MESSAGE_SIZE
@@ -446,14 +471,16 @@ tsi_test_frame_protector_config *tsi_test_frame_protector_config_create(
       use_default_server_message
           ? generate_random_message(TSI_TEST_BIG_MESSAGE_SIZE)
           : generate_random_message(TSI_TEST_SMALL_MESSAGE_SIZE);
-
-  /* Set the value for client max_output_protected_frame_size. */
+  /* Set the value for client max_output_protected_frame_size.
+     If it is 0, we pass NULL to tsi_handshaker_result_create_frame_protector(),
+     which then uses default protected frame size for it. */
   config->client_max_output_protected_frame_size =
       use_default_client_max_output_protected_frame_size
           ? 0
           : TSI_TEST_SMALL_CLIENT_MAX_OUTPUT_PROTECTED_FRAME_SIZE;
-
-  /* Set the value for server max_output_protected_frame_size. */
+  /* Set the value for server max_output_protected_frame_size.
+     If it is 0, we pass NULL to tsi_handshaker_result_create_frame_protector(),
+     which then uses default protected frame size for it. */
   config->server_max_output_protected_frame_size =
       use_default_server_max_output_protected_frame_size
           ? 0
@@ -478,6 +505,7 @@ void tsi_test_frame_protector_config_set_buffer_size(
 
 void tsi_test_frame_protector_config_destroy(
     tsi_test_frame_protector_config *config) {
+  GPR_ASSERT(config != NULL);
   gpr_free(config->client_message);
   gpr_free(config->server_message);
   gpr_free(config);
@@ -493,6 +521,7 @@ void tsi_test_fixture_init(tsi_test_fixture *fixture) {
   fixture->bytes_written_to_server_channel = 0;
   fixture->bytes_read_from_client_channel = 0;
   fixture->bytes_read_from_server_channel = 0;
+  fixture->test_unused_bytes = true;
 }
 
 void tsi_test_fixture_destroy(tsi_test_fixture *fixture) {

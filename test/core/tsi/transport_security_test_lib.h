@@ -21,7 +21,7 @@
 
 #include "src/core/tsi/transport_security_interface.h"
 
-#define TSI_TEST_TINY_HANDSHAKE_BUFFER_SIZE 128
+#define TSI_TEST_TINY_HANDSHAKE_BUFFER_SIZE 16
 #define TSI_TEST_SMALL_HANDSHAKE_BUFFER_SIZE 128
 #define TSI_TEST_SMALL_READ_BUFFER_ALLOCATED_SIZE 41
 #define TSI_TEST_SMALL_PROTECTED_BUFFER_SIZE 37
@@ -35,10 +35,11 @@
 #define TSI_TEST_SMALL_MESSAGE_SIZE 10
 #define TSI_TEST_NUM_OF_ARGUMENTS 8
 #define TSI_TEST_NUM_OF_COMBINATIONS 256
+#define TSI_TEST_UNUSED_BYTES "HELLO GOOGLE"
 
 /* ---  tsi_test_fixture object ---
   The tests for specific TSI implementations should create their own
-  custom "subclass" of this fixture. This object wraps all information
+  custom "subclass" of this fixture, which wraps all information
   that will be used to test correctness of TSI handshakes and frame
   protect/unprotect operations with respect to TSI implementations. */
 typedef struct tsi_test_fixture tsi_test_fixture;
@@ -53,7 +54,7 @@ typedef struct tsi_test_frame_protector_config tsi_test_frame_protector_config;
    different TSI implementations. */
 typedef struct tsi_test_fixture_vtable {
   void (*setup_handshakers)(tsi_test_fixture *fixture);
-  void (*check_handshake_results)(tsi_test_fixture *fixture);
+  void (*check_handshaker_peers)(tsi_test_fixture *fixture);
   void (*destruct)(tsi_test_fixture *fixture);
 } tranport_security_test_vtable;
 
@@ -64,9 +65,8 @@ struct tsi_test_fixture {
   tsi_handshaker *client_handshaker;
   tsi_handshaker *server_handshaker;
   /* client/server TSI handshaker results used to store the result of TSI
-     handshake, and will get validated during the call to
-     check_handshake_results. If the handshake fails, the result will store NULL
-     upon finishing the handshake. */
+     handshake. If the handshake fails, the result will store NULL upon
+     finishing the handshake. */
   tsi_handshaker_result *client_result;
   tsi_handshaker_result *server_result;
   /* size of buffer used to store data received from the peer. */
@@ -84,6 +84,12 @@ struct tsi_test_fixture {
   size_t bytes_read_from_server_channel;
   /* tsi_test_frame_protector_config instance */
   tsi_test_frame_protector_config *config;
+  /* a flag indicating whether to test tsi_handshaker_result_get_unused_bytes()
+     for TSI implementation. This field is true by default, and false
+     for SSL TSI implementation due to grpc issue #12164
+     (https://github.com/grpc/grpc/issues/12164).
+  */
+  bool test_unused_bytes;
 };
 
 struct tsi_test_frame_protector_config {
@@ -130,15 +136,19 @@ void tsi_test_frame_protector_config_set_buffer_size(
 void tsi_test_frame_protector_config_destroy(
     tsi_test_frame_protector_config *config);
 
-/* This method initializes members of tsi_test_fixture instance. */
+/* This method initializes members of tsi_test_fixture instance.
+   Note that the struct instance should be allocated before making
+   this call. */
 void tsi_test_fixture_init(tsi_test_fixture *fixture);
 
-/* This method destroys a tsi_test_fixture instance. Notice that the
+/* This method destroys a tsi_test_fixture instance. Note that the
    fixture intance must be dynamically allocated and will be freed by
    this function. */
 void tsi_test_fixture_destroy(tsi_test_fixture *fixture);
 
-/* This method performs a full TSI handshake between a client and a server. */
+/* This method performs a full TSI handshake between a client and a server.
+   Note that the test library will implement the new TSI handshaker API to
+   perform handshakes. */
 void tsi_test_do_handshake(tsi_test_fixture *fixture);
 
 /* This method performs a round trip test between the client and the server.
