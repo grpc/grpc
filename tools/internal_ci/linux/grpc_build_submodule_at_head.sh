@@ -24,6 +24,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 # Update submodule and commit it so changes are passed to Docker
 (cd third_party/$RUN_TESTS_FLAGS && git pull origin master)
+tools/buildgen/generate_projects.sh
 git -c user.name='foo' -c user.email='foo@google.com' commit -a -m 'Update submodule'
 
 tools/run_tests/run_tests_matrix.py -f linux --internal_ci --build_only
