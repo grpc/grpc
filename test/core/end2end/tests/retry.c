@@ -90,7 +90,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void test_retry(grpc_end2end_test_config config) {
+static void test_retry_basic(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
   grpc_op ops[6];
@@ -199,7 +199,7 @@ static void test_retry(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), true);
   cq_verify(cqv);
 
   peer = grpc_call_get_peer(s);
@@ -233,7 +233,9 @@ static void test_retry(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(102), true);
+  cq_verify(cqv);
+
   grpc_call_unref(s);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_metadata_array_init(&request_metadata_recv);
@@ -242,9 +244,9 @@ static void test_retry(grpc_end2end_test_config config) {
 
   error =
       grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(103));
+                               &request_metadata_recv, f.cq, f.cq, tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(201), true);
   cq_verify(cqv);
 
   peer = grpc_call_get_peer(s);
@@ -275,7 +277,9 @@ static void test_retry(grpc_end2end_test_config config) {
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
+  // Returning a retriable code, but because we are also sending a
+  // message, the client will commit instead of retrying again.
+  op->data.send_status_from_server.status = GRPC_STATUS_ABORTED;
   op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
   op->reserved = NULL;
@@ -285,14 +289,311 @@ static void test_retry(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), NULL);
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(202), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(202), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
 
-  GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
+  GPR_ASSERT(status == GRPC_STATUS_ABORTED);
+  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
+  GPR_ASSERT(0 == call_details.flags);
+  GPR_ASSERT(was_cancelled == 1);
+
+  grpc_slice_unref(details);
+  grpc_metadata_array_destroy(&initial_metadata_recv);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
+  grpc_byte_buffer_destroy(request_payload);
+  grpc_byte_buffer_destroy(response_payload);
+  grpc_byte_buffer_destroy(request_payload_recv);
+  grpc_byte_buffer_destroy(response_payload_recv);
+
+  grpc_call_unref(c);
+  grpc_call_unref(s);
+
+  cq_verifier_destroy(cqv);
+
+  end_test(&f);
+  config.tear_down_data(&f);
+}
+
+static void test_retry_streaming(grpc_end2end_test_config config) {
+  grpc_call *c;
+  grpc_call *s;
+  grpc_op ops[6];
+  grpc_op *op;
+  grpc_metadata_array initial_metadata_recv;
+  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata_array request_metadata_recv;
+  grpc_call_details call_details;
+  grpc_slice request_payload_slice = grpc_slice_from_static_string("foo");
+  grpc_slice response_payload_slice = grpc_slice_from_static_string("bar");
+  grpc_byte_buffer *request_payload =
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+  grpc_byte_buffer *response_payload =
+      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
+  grpc_byte_buffer *request_payload_recv = NULL;
+  grpc_byte_buffer *response_payload_recv = NULL;
+  grpc_status_code status;
+  grpc_call_error error;
+  grpc_slice details;
+  int was_cancelled = 2;
+  char *peer;
+
+  const grpc_arg arg = {
+      .key = GRPC_ARG_SERVICE_CONFIG,
+      .type = GRPC_ARG_STRING,
+      .value.string =
+          "{\n"
+          "  \"methodConfig\": [ {\n"
+          "    \"name\": [\n"
+          "      { \"service\": \"service\", \"method\": \"method\" }\n"
+          "    ],\n"
+          "    \"retryPolicy\": {\n"
+          "      \"maxRetryAttempts\": 1,\n"
+          "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+          "    }\n"
+          "  } ]\n"
+          "}"};
+  grpc_channel_args *client_args =
+      grpc_channel_args_copy_and_add(NULL, &arg, 1);
+  grpc_end2end_test_fixture f =
+      begin_test(config, "test_retry", client_args, NULL);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, client_args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+
+  cq_verifier *cqv = cq_verifier_create(f.cq);
+
+  gpr_timespec deadline = five_seconds_from_now();
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/service/method"),
+      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
+      NULL);
+  GPR_ASSERT(c);
+
+  peer = grpc_call_get_peer(c);
+  GPR_ASSERT(peer != NULL);
+  gpr_log(GPR_DEBUG, "client_peer_before_call=%s", peer);
+  gpr_free(peer);
+
+  grpc_metadata_array_init(&initial_metadata_recv);
+  grpc_metadata_array_init(&trailing_metadata_recv);
+  grpc_metadata_array_init(&request_metadata_recv);
+  grpc_call_details_init(&call_details);
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+
+  // Client starts a batch for receiving initial metadata, a message,
+  // and trailing metadata.
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message.recv_message = &response_payload_recv;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  // Client sends initial metadata and a message.
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message.send_message = request_payload;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(2), true);
+  cq_verify(cqv);
+
+  // Server gets a call with received initial metadata.
+  error =
+      grpc_server_request_call(f.server, &s, &call_details,
+                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), true);
+  cq_verify(cqv);
+
+  peer = grpc_call_get_peer(s);
+  GPR_ASSERT(peer != NULL);
+  gpr_log(GPR_DEBUG, "server_peer=%s", peer);
+  gpr_free(peer);
+  peer = grpc_call_get_peer(c);
+  GPR_ASSERT(peer != NULL);
+  gpr_log(GPR_DEBUG, "client_peer=%s", peer);
+  gpr_free(peer);
+
+  // Server receives a message.
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message.recv_message = &request_payload_recv;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(102), true);
+  cq_verify(cqv);
+  grpc_byte_buffer_destroy(request_payload_recv);
+  request_payload_recv = NULL;
+
+  // Client sends a second message and a close.
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message.send_message = request_payload;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(3), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(3), true);
+  cq_verify(cqv);
+
+  // Server receives the second message and the close and sends both
+  // initial and trailing metadata.
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message.recv_message = &request_payload_recv;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+  op->data.send_status_from_server.trailing_metadata_count = 0;
+  op->data.send_status_from_server.status = GRPC_STATUS_ABORTED;
+  op->data.send_status_from_server.status_details = &status_details;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(103), true);
+  cq_verify(cqv);
+  grpc_call_unref(s);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_metadata_array_init(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
+  grpc_call_details_init(&call_details);
+  grpc_byte_buffer_destroy(request_payload_recv);
+  request_payload_recv = NULL;
+
+  // Server gets a second call (the retry).
+  error =
+      grpc_server_request_call(f.server, &s, &call_details,
+                               &request_metadata_recv, f.cq, f.cq, tag(201));
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(201), true);
+  cq_verify(cqv);
+
+  peer = grpc_call_get_peer(s);
+  GPR_ASSERT(peer != NULL);
+  gpr_log(GPR_DEBUG, "server_peer=%s", peer);
+  gpr_free(peer);
+  peer = grpc_call_get_peer(c);
+  GPR_ASSERT(peer != NULL);
+  gpr_log(GPR_DEBUG, "client_peer=%s", peer);
+  gpr_free(peer);
+
+  // Server receives a message.
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message.recv_message = &request_payload_recv;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(202), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(202), true);
+  cq_verify(cqv);
+  grpc_byte_buffer_destroy(request_payload_recv);
+  request_payload_recv = NULL;
+
+  // Server receives a second message and a close and sends initial
+  // metadata, a message, and trailing metadata.
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message.recv_message = &request_payload_recv;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message.send_message = response_payload;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+  op->data.send_status_from_server.trailing_metadata_count = 0;
+  // Returning a retriable code, but because we are also sending a
+  // message, the client will commit instead of retrying again.
+  op->data.send_status_from_server.status = GRPC_STATUS_ABORTED;
+  op->data.send_status_from_server.status_details = &status_details;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(203), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  CQ_EXPECT_COMPLETION(cqv, tag(203), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
+  cq_verify(cqv);
+
+  GPR_ASSERT(status == GRPC_STATUS_ABORTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   validate_host_override_string("foo.test.google.fr:1234", call_details.host,
@@ -320,7 +621,8 @@ static void test_retry(grpc_end2end_test_config config) {
 }
 
 void retry(grpc_end2end_test_config config) {
-  test_retry(config);
+  test_retry_basic(config);
+  test_retry_streaming(config);
 }
 
 void retry_pre_init(void) {}
