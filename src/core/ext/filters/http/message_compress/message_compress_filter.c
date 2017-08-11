@@ -125,17 +125,19 @@ static grpc_error *process_send_initial_metadata(
             GRPC_MDVALUE(md), &stream_compression_algorithm)) {
       char *val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
       gpr_log(GPR_ERROR,
-              "Invalid compression algorithm: '%s' (unknown). Ignoring.", val);
+              "Invalid stream compression algorithm: '%s' (unknown). Ignoring.",
+              val);
       gpr_free(val);
       stream_compression_algorithm = GRPC_STREAM_COMPRESS_NONE;
     }
     if (!GPR_BITGET(channeld->enabled_stream_compression_algorithms_bitset,
                     stream_compression_algorithm)) {
       char *val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-      gpr_log(GPR_ERROR,
-              "Invalid compression algorithm: '%s' (previously disabled). "
-              "Ignoring.",
-              val);
+      gpr_log(
+          GPR_ERROR,
+          "Invalid stream compression algorithm: '%s' (previously disabled). "
+          "Ignoring.",
+          val);
       gpr_free(val);
       stream_compression_algorithm = GRPC_STREAM_COMPRESS_NONE;
     }
