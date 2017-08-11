@@ -8,6 +8,7 @@ import traceback
 import subprocess
 import tempfile
 import sys
+import os
 
 # tempfiles to contain the client's cert plus intermediate cert from
 # the two cert hierarchies
@@ -30,10 +31,7 @@ client_chain_2_fp.write('''{}
            ))
 client_chain_2_fp.flush()
 
-import pdb
-import os
-
-switch_creds_on_client_num = 7
+switch_creds_on_client_num = 8
 
 devnull_fp = open(os.devnull)
 server_process = subprocess.Popen(
@@ -46,6 +44,10 @@ time.sleep(1)
 
 server_ca_1_fpath = 'cert_hier_1/certs/ca.cert.pem'
 server_ca_2_fpath = 'cert_hier_2/certs/ca.cert.pem'
+
+# run a "background" client whose channel should work before and
+# continue to work after the server switches credentials
+background_client_process = None
 
 
 def run_client(cmd):
@@ -63,7 +65,7 @@ def run_client(cmd):
 
 # stdout and stderr when the client successfully performs the rpc
 def assert_client_success(stdout, stderr):
-    assert stdout == 'Greeter client received: Hello, you!\n', 'unexpected stdout: [{}]'.format(stdout)
+    assert stdout == 'Greeter client received: Hello, you\n', 'unexpected stdout: [{}]'.format(stdout)
     assert stderr == '', 'unexpected stderr: [{}]'.format(stderr)
     return
 
@@ -78,6 +80,16 @@ def assert_client_failure(stdout, stderr, client_rejects_server):
         assert 'Handshake failed with fatal error' in stderr
     assert not 'Greeter client received' in stderr
     return
+
+def check_background_client_success(stdout, stderr,
+                                    before_switch_timestamp, after_switch_timestamp):
+    assert stderr == ''
+    lines = stdout.splitlines()
+    assert len(lines) == 2
+    assert lines[0].startswith('Greeter client received: Hello, '), lines[0]
+    assert int(lines[0].split()[4]) < before_switch_timestamp
+    assert lines[1].startswith('Greeter client received: Hello, '), lines[1]
+    assert int(lines[1].split()[4]) > after_switch_timestamp
 
 # for stderr when the client fails we'll have to do some string search
 
@@ -125,12 +137,23 @@ try:
     assert_client_success(stdout, stderr)
     print 'good'
 
+    background_client_process = subprocess.Popen(
+        ['python', 'greeter_client_2.py', server_ca_1_fpath,
+         client_key_1_fpath, client_chain_1_fp.name, "4"],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,)
+
+    time.sleep(1)
+
+    before_switch_timestamp = time.time()
+
     print
     print 'moment of truth!! client should reject server because the server switch creds...',
     stdout, stderr = run_client(cmd_for_cert_hier_1)
     assert_client_failure(stdout, stderr, True)
     print 'NICE!!'
     print
+
+    after_switch_timestamp = time.time()
 
     print 'now should work again...',
     stdout, stderr = run_client(
@@ -158,6 +181,12 @@ try:
     assert_client_failure(stdout, stderr, True)
     print 'good'
 
+    print 'check background client...',
+    stdout, stderr = background_client_process.communicate()
+    check_background_client_success(stdout, stderr,
+                                    before_switch_timestamp, after_switch_timestamp)
+    print 'good'
+
     failed = False
 except Exception as exc:
     print
@@ -168,6 +197,9 @@ finally:
     assert server_process.poll() is None
     print 'good'
     server_process.terminate()
+
+    if background_client_process and background_client_process.poll() is None:
+        background_client_process.terminate()
 
 if failed:
     print 'FAILED'
