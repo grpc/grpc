@@ -1066,8 +1066,8 @@ grpc_subchannel_call *grpc_client_channel_get_subchannel_call(
   return calld->subchannel_call;
 }
 
-static void start_retriable_subchannel_batch(grpc_exec_ctx *exec_ctx,
-                                             grpc_call_element *elem);
+static void start_retriable_subchannel_batches(grpc_exec_ctx *exec_ctx,
+                                               grpc_call_element *elem);
 
 static size_t get_batch_index(grpc_transport_stream_op_batch *batch) {
   // Note: It is important the send_initial_metadata be the first entry
@@ -1185,7 +1185,7 @@ gpr_log(GPR_INFO, "retry_committed=%d", calld->retry_committed);
   if (calld->method_params != NULL &&
       calld->method_params->retry_policy != NULL && !calld->retry_committed) {
 gpr_log(GPR_INFO, "RETRIES CONFIGURED");
-    start_retriable_subchannel_batch(exec_ctx, elem);
+    start_retriable_subchannel_batches(exec_ctx, elem);
   } else {
     // Retries not enabled; send down batches as-is.
     size_t first_batch_idx = GPR_ARRAY_SIZE(calld->pending_batches);
@@ -1682,10 +1682,10 @@ static bool pending_batch_is_completed(
   return true;
 }
 
-static void start_retriable_subchannel_batch_in_call_combiner(
+static void start_retriable_subchannel_batches_in_call_combiner(
     grpc_exec_ctx *exec_ctx, void *arg, grpc_error *ignored) {
   grpc_call_element *elem = (grpc_call_element *)arg;
-  start_retriable_subchannel_batch(exec_ctx, elem);
+  start_retriable_subchannel_batches(exec_ctx, elem);
 }
 
 // Callback used to intercept on_complete from subchannel calls.
@@ -1806,7 +1806,7 @@ gpr_log(GPR_INFO, "call_finished=%d, status=%d", call_finished, status);
         have_pending_send_trailing_metadata_op) {
 gpr_log(GPR_INFO, "starting next batch for pending send_message or send_trailing_metadata ops");
       GRPC_CLOSURE_INIT(&batch_data->batch.handler_private.closure,
-                        start_retriable_subchannel_batch_in_call_combiner,
+                        start_retriable_subchannel_batches_in_call_combiner,
                         elem, grpc_schedule_on_exec_ctx);
       GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
                                &batch_data->batch.handler_private.closure,
@@ -1863,11 +1863,10 @@ static void start_retriable_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
                                   &batch_data->batch);
 }
 
-// FIXME: rename to something like maybe_start_retriable_subchannel_batches()
-static void start_retriable_subchannel_batch(grpc_exec_ctx *exec_ctx,
-                                             grpc_call_element *elem) {
+static void start_retriable_subchannel_batches(grpc_exec_ctx *exec_ctx,
+                                               grpc_call_element *elem) {
   call_data *calld = elem->call_data;
-gpr_log(GPR_INFO, "==> start_retriable_subchannel_batch()");
+gpr_log(GPR_INFO, "==> start_retriable_subchannel_batches()");
   subchannel_call_retry_state *retry_state =
       grpc_connected_subchannel_call_get_parent_data(calld->subchannel_call);
   // Do retry checks for new batches, if needed.
@@ -2017,20 +2016,16 @@ gpr_log(GPR_INFO, "==> start_retriable_subchannel_batch()");
   // send down.  We're already running in the call combiner, so one of
   // the batches can be started directly, but the others will have to
   // re-enter the call combiner.
-  if (num_batches > 0) {
-    grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call,
-                                    &batches[0]->batch);
-    for (size_t i = 1; i < num_batches; ++i) {
-      GRPC_CLOSURE_INIT(&batches[i]->batch.handler_private.closure,
-                        start_retriable_batch_in_call_combiner, batches[i],
-                        grpc_schedule_on_exec_ctx);
-      GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
-                               &batches[i]->batch.handler_private.closure,
-                               GRPC_ERROR_NONE, "start_retriable_batch");
-    }
-  } else {
-    GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
-                            "no retriable batches started");
+  GPR_ASSERT(num_batches > 0);
+  grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call,
+                                  &batches[0]->batch);
+  for (size_t i = 1; i < num_batches; ++i) {
+    GRPC_CLOSURE_INIT(&batches[i]->batch.handler_private.closure,
+                      start_retriable_batch_in_call_combiner, batches[i],
+                      grpc_schedule_on_exec_ctx);
+    GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
+                             &batches[i]->batch.handler_private.closure,
+                             GRPC_ERROR_NONE, "start_retriable_batch");
   }
 }
 
@@ -2345,16 +2340,18 @@ static bool pick_subchannel_locked(grpc_exec_ctx *exec_ctx,
     //
     // The send_initial_metadata batch will be the first one in the
     // list, as set by get_batch_index() above.
-// FIXME: what if we already returned completion for the
-// send_initial_metadata op and cleared the pending batch?
-    GPR_ASSERT(calld->pending_batches[0].batch != NULL);
-    grpc_transport_stream_op_batch_payload *send_initial_metadata_payload =
-        calld->pending_batches[0].batch->payload;
-    uint32_t initial_metadata_flags =
-        send_initial_metadata_payload->send_initial_metadata
-            .send_initial_metadata_flags;
+    grpc_metadata_batch *send_initial_metadata =
+        calld->seen_send_initial_metadata
+        ? &calld->send_initial_metadata
+        : calld->pending_batches[0].batch->payload->send_initial_metadata
+              .send_initial_metadata;
+    uint32_t send_initial_metadata_flags =
+        calld->seen_send_initial_metadata
+        ? calld->send_initial_metadata_flags
+        : calld->pending_batches[0].batch->payload->send_initial_metadata
+              .send_initial_metadata_flags;
     const bool wait_for_ready_set_from_api =
-        initial_metadata_flags &
+        send_initial_metadata_flags &
         GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
     const bool wait_for_ready_set_from_service_config =
         calld->method_params != NULL &&
@@ -2362,15 +2359,14 @@ static bool pick_subchannel_locked(grpc_exec_ctx *exec_ctx,
     if (!wait_for_ready_set_from_api &&
         wait_for_ready_set_from_service_config) {
       if (calld->method_params->wait_for_ready == WAIT_FOR_READY_TRUE) {
-        initial_metadata_flags |= GRPC_INITIAL_METADATA_WAIT_FOR_READY;
+        send_initial_metadata_flags |= GRPC_INITIAL_METADATA_WAIT_FOR_READY;
       } else {
-        initial_metadata_flags &= ~GRPC_INITIAL_METADATA_WAIT_FOR_READY;
+        send_initial_metadata_flags &= ~GRPC_INITIAL_METADATA_WAIT_FOR_READY;
       }
     }
     const grpc_lb_policy_pick_args inputs = {
-        send_initial_metadata_payload->send_initial_metadata
-            .send_initial_metadata,
-        initial_metadata_flags, &calld->lb_token_mdelem};
+        send_initial_metadata, send_initial_metadata_flags,
+        &calld->lb_token_mdelem};
     pick_done = pick_callback_start_locked(exec_ctx, elem, &inputs);
   } else if (chand->resolver != NULL) {
     if (!chand->started_resolving) {
