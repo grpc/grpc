@@ -1,3 +1,4 @@
+#!/bin/sh
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,19 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+set -e
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/windows/grpc_run_tests_matrix.bat"
-timeout_mins: 360
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.xml"
-    regex: "github/grpc/reports/**"
-  }
-}
+cd `dirname $0`/../../..
 
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "-f portability windows -j 1 --inner_jobs 8 --internal_ci"
-}
+#
+# Make sure that all core struct/unions have a name or are typedef'ed
+#
+
+egrep -Irn '(struct|union) *{' include/grpc |
+    egrep -v typedef |
+    diff - /dev/null
+

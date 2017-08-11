@@ -1414,13 +1414,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "tsi_interface",
+    srcs = [
+        "src/core/tsi/transport_security.c",
+        "src/core/tsi/transport_security_adapter.c",
+    ],
+    hdrs = [
+        "src/core/tsi/transport_security.h",
+        "src/core/tsi/transport_security_adapter.h",
+        "src/core/tsi/transport_security_interface.h",
+    ],
+    language = "c",
+    deps = [
+        "gpr",
+        "grpc_trace",
+    ],
+)
+
+grpc_cc_library(
     name = "tsi",
     srcs = [
         "src/core/tsi/fake_transport_security.c",
         "src/core/tsi/gts_transport_security.c",
         "src/core/tsi/ssl_transport_security.c",
-        "src/core/tsi/transport_security.c",
-        "src/core/tsi/transport_security_adapter.c",
         "src/core/tsi/transport_security_grpc.c",
     ],
     hdrs = [
@@ -1428,19 +1444,15 @@ grpc_cc_library(
         "src/core/tsi/gts_transport_security.h",
         "src/core/tsi/ssl_transport_security.h",
         "src/core/tsi/ssl_types.h",
-        "src/core/tsi/transport_security.h",
-        "src/core/tsi/transport_security_adapter.h",
         "src/core/tsi/transport_security_grpc.h",
-        "src/core/tsi/transport_security_interface.h",
     ],
     external_deps = [
         "libssl",
     ],
     language = "c",
     deps = [
-        "gpr",
         "grpc_base",
-        "grpc_trace",
+        "tsi_interface",
     ],
 )
 

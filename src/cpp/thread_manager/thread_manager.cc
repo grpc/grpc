@@ -158,11 +158,39 @@ void ThreadManager::MainWorkLoop() {
     }
     // If we decided to finish the thread, break out of the while loop
     if (done) break;
-    // ... otherwise increase poller count and continue
-    // There's a chance that we'll exceed the max poller count: that is
-    // explicitly ok - we'll decrease after one poll timeout, and prevent
-    // some thrashing starting up and shutting down threads
-    num_pollers_++;
+
+    // Otherwise go back to polling as long as it doesn't exceed max_pollers_
+    //
+    // **WARNING**:
+    // There is a possibility of threads thrashing here (i.e excessive thread
+    // shutdowns and creations than the ideal case). This happens if max_poller_
+    // count is small and the rate of incoming requests is also small. In such
+    // scenarios we can possibly configure max_pollers_ to a higher value and/or
+    // increase the cq timeout.
+    //
+    // However, not doing this check here and unconditionally incrementing
+    // num_pollers (and hoping that the system will eventually settle down) has
+    // far worse consequences i.e huge number of threads getting created to the
+    // point of thread-exhaustion. For example: if the incoming request rate is
+    // very high, all the polling threads will return very quickly from
+    // PollForWork() with WORK_FOUND. They all briefly decrement num_pollers_
+    // counter thereby possibly - and briefly - making it go below min_pollers;
+    // This will most likely result in the creation of a new poller since
+    // num_pollers_ dipped below min_pollers_.
+    //
+    // Now, If we didn't do the max_poller_ check here, all these threads will
+    // go back to doing PollForWork() and the whole cycle repeats (with a new
+    // thread being added in each cycle). Once the total number of threads in
+    // the system crosses a certain threshold (around ~1500), there is heavy
+    // contention on mutexes (the mu_ here or the mutexes in gRPC core like the
+    // pollset mutex) that makes DoWork() take longer to finish thereby causing
+    // new poller threads to be created even faster. This results in a thread
+    // avalanche.
+    if (num_pollers_ < max_pollers_) {
+      num_pollers_++;
+    } else {
+      break;
+    }
   };
 
   CleanupCompletedThreads();
