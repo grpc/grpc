@@ -1799,9 +1799,12 @@ gpr_log(GPR_INFO, "call_finished=%d, status=%d", call_finished, status);
   else {
     const bool have_pending_send_message_ops =
         retry_state->started_send_message_count < calld->num_send_message_ops;
-// FIXME: or pending send_trailing_metadata?
-    if (have_pending_send_message_ops) {
-gpr_log(GPR_INFO, "starting next batch for pending send_message ops");
+    const bool have_pending_send_trailing_metadata_op =
+        calld->seen_send_trailing_metadata &&
+        !retry_state->started_send_trailing_metadata;
+    if (have_pending_send_message_ops ||
+        have_pending_send_trailing_metadata_op) {
+gpr_log(GPR_INFO, "starting next batch for pending send_message or send_trailing_metadata ops");
       GRPC_CLOSURE_INIT(&batch_data->batch.handler_private.closure,
                         start_retriable_subchannel_batch_in_call_combiner,
                         elem, grpc_schedule_on_exec_ctx);
