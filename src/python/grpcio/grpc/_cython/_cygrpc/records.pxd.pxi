@@ -93,7 +93,6 @@ cdef class Metadatum:
 cdef class Metadata:
 
   cdef grpc_metadata_array c_metadata_array
-  cdef void _claim_slice_ownership(self)
 
 
 cdef class Operation:
