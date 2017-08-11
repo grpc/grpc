@@ -57,7 +57,7 @@ SELECT
 FROM
   [grpc-testing:jenkins_test_results.aggregate_results]
 WHERE
-    timestamp >= DATE_ADD(CURRENT_DATE(), {days_lower_bound}, "DAY")
+    timestamp > DATE_ADD(CURRENT_DATE(), {days_lower_bound}, "DAY")
     AND timestamp <= DATE_ADD(CURRENT_DATE(), {days_upper_bound}, "DAY")
   AND NOT REGEXP_MATCH(job_name, '.*portability.*')
   AND result != 'PASSED' AND result != 'SKIPPED'
@@ -76,7 +76,7 @@ ORDER BY timestamp desc
 
 def get_new_flakes():
   last_week_sans_yesterday = get_flaky_tests(-14, -1)
-  last_24 = get_flaky_tests(-1, +1)
+  last_24 = get_flaky_tests(0, +1)
   last_week_sans_yesterday_names = set(last_week_sans_yesterday.keys())
   last_24_names = set(last_24.keys())
   logging.debug('|last_week_sans_yesterday| =', len(last_week_sans_yesterday_names))
