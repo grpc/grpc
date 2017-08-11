@@ -1221,9 +1221,8 @@ static subchannel_batch_data *batch_data_create(grpc_call_element *elem,
   subchannel_batch_data *batch_data = gpr_arena_alloc(calld->arena,
                                                       sizeof(*batch_data));
   batch_data->elem = elem;
-  batch_data->subchannel_call = GRPC_SUBCHANNEL_CALL_REF(
-      calld->subchannel_call,
-      "client_channel_start_retriable_subchannel_batch");
+  batch_data->subchannel_call =
+      GRPC_SUBCHANNEL_CALL_REF(calld->subchannel_call, "batch_data_create");
   batch_data->batch.payload = &retry_state->batch_payload;
   gpr_ref_init(&batch_data->refs, refcount);
   GRPC_CLOSURE_INIT(&batch_data->on_complete, on_complete, batch_data,
@@ -1683,6 +1682,12 @@ static bool pending_batch_is_completed(
   return true;
 }
 
+static void start_retriable_subchannel_batch_in_call_combiner(
+    grpc_exec_ctx *exec_ctx, void *arg, grpc_error *ignored) {
+  grpc_call_element *elem = (grpc_call_element *)arg;
+  start_retriable_subchannel_batch(exec_ctx, elem);
+}
+
 // Callback used to intercept on_complete from subchannel calls.
 // Called only when retries are enabled.
 static void on_complete(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
@@ -1797,8 +1802,12 @@ gpr_log(GPR_INFO, "call_finished=%d, status=%d", call_finished, status);
 // FIXME: or pending send_trailing_metadata?
     if (have_pending_send_message_ops) {
 gpr_log(GPR_INFO, "starting next batch for pending send_message ops");
-// FIXME: need to re-enter the call combiner for this?
-      start_retriable_subchannel_batch(exec_ctx, elem);
+      GRPC_CLOSURE_INIT(&batch_data->batch.handler_private.closure,
+                        start_retriable_subchannel_batch_in_call_combiner,
+                        elem, grpc_schedule_on_exec_ctx);
+      GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
+                               &batch_data->batch.handler_private.closure,
+                               GRPC_ERROR_NONE, "handling queued send ops");
     }
   }
   // Call succeeded or is not retryable.
