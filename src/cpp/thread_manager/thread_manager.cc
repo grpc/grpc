@@ -129,7 +129,7 @@ void ThreadManager::MainWorkLoop() {
       case TIMEOUT:
         // If we timed out and we have more pollers than we need (or we are
         // shutdown), finish this thread
-        if (shutdown_ || num_pollers_ > max_pollers_) done = true;
+        if (shutdown_ || num_threads_ > min_pollers_) done = true;
         break;
       case SHUTDOWN:
         // If the thread manager is shutdown, finish this thread
@@ -138,7 +138,7 @@ void ThreadManager::MainWorkLoop() {
       case WORK_FOUND:
         // If we got work and there are now insufficient pollers, start a new
         // one
-        if (!shutdown_ && num_pollers_ < min_pollers_) {
+        if (!shutdown_ && num_threads_ < max_pollers_) {
           num_pollers_++;
           num_threads_++;
           // Drop lock before spawning thread to avoid contention
