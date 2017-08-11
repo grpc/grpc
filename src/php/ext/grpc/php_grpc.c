@@ -49,7 +49,6 @@
 #include <ext/standard/info.h>
 #include "php_grpc.h"
 
-ZEND_DECLARE_MODULE_GLOBALS(grpc)
 static PHP_GINIT_FUNCTION(grpc);
 
 /* {{{ grpc_functions[]
@@ -297,8 +296,17 @@ PHP_RINIT_FUNCTION(grpc) {
  */
 static PHP_GINIT_FUNCTION(grpc) {
   grpc_globals->initialized = 0;
+  grpc_globals->pem_root_certs = NULL;
 }
 /* }}} */
+
+void php_grpc_update_default_pem_root_certs(char *default_certs TSRMLS_DC) {
+  GRPC_G(pem_root_certs) = default_certs;
+}
+
+char *php_grpc_get_default_pem_root_certs(TSRMLS_D) {
+  return GRPC_G(pem_root_certs);
+}
 
 /* The previous line is meant for vim and emacs, so it can correctly fold and
    unfold functions in source code. See the corresponding marks just before

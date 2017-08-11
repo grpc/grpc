@@ -81,6 +81,7 @@ PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_channel)
       if (!(PHP_GRPC_PERSISTENT_LIST_FIND(&EG(persistent_list), p->wrapper->key,
                                           key_len, rsrc))) {
         grpc_channel_destroy(p->wrapper->wrapped);
+        free(p->wrapper->target);
       }
       gpr_mu_unlock(&global_persistent_list_mu);
     }
@@ -288,7 +289,9 @@ PHP_METHOD(Channel, __construct) {
   }
   channel->wrapper = malloc(sizeof(grpc_channel_wrapper));
   channel->wrapper->key = key;
-  channel->wrapper->target = target;
+  char *target_cpy = malloc(target_length + 1);
+  strcpy(target_cpy, target);
+  channel->wrapper->target = target_cpy;
   channel->wrapper->args_hashstr = sha1str;
   if (creds != NULL && creds->hashstr != NULL) {
     channel->wrapper->creds_hashstr = creds->hashstr;
@@ -431,6 +434,7 @@ PHP_METHOD(Channel, close) {
   gpr_mu_lock(&channel->wrapper->mu);
   if (channel->wrapper->wrapped != NULL) {
     grpc_channel_destroy(channel->wrapper->wrapped);
+    free(channel->wrapper->target);
     channel->wrapper->wrapped = NULL;
   }
 
@@ -464,6 +468,7 @@ static void php_grpc_channel_plink_dtor(php_grpc_zend_resource *rsrc
     gpr_mu_lock(&le->channel->mu);
     if (le->channel->wrapped != NULL) {
       grpc_channel_destroy(le->channel->wrapped);
+      free(le->channel->target);
       free(le->channel->key);
       free(le->channel);
     }
