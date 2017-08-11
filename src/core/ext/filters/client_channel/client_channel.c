@@ -971,6 +971,7 @@ typedef struct {
   grpc_transport_stream_op_batch_payload batch_payload;
   // State for callback processing.
   bool recv_initial_metadata_ready_pending : 1;
+  bool recv_message_null_pending : 1;
   bool retry_dispatched : 1;
 } subchannel_call_retry_state;
 
@@ -1512,19 +1513,18 @@ gpr_log(GPR_INFO, "found recv_initial_metadata batch at index %" PRIdPTR, i);
   }
   GPR_ASSERT(pending != NULL);
   // Return metadata and invoke callback.
-  grpc_transport_stream_op_batch *original_batch = pending->batch;
   grpc_metadata_batch_move(
       &batch_data->recv_initial_metadata,
-      original_batch->payload->recv_initial_metadata.recv_initial_metadata);
+      pending->batch->payload->recv_initial_metadata.recv_initial_metadata);
 gpr_log(GPR_INFO, "calling original recv_initial_metadata_ready");
   GRPC_CLOSURE_RUN(
       exec_ctx,
-      original_batch->payload->recv_initial_metadata
+      pending->batch->payload->recv_initial_metadata
           .recv_initial_metadata_ready,
       GRPC_ERROR_REF(error));
   // Update bookkeeping.
 gpr_log(GPR_INFO, "CLEARING pending_batch->recv_initial_metadata_ready");
-  original_batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
+  pending->batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
       NULL;
   maybe_clear_pending_batch(pending);
   batch_data_unref(exec_ctx, batch_data);
@@ -1565,6 +1565,8 @@ gpr_free(v);
             batch_data->subchannel_call);
     if (batch_data->trailing_metadata_available &&
         !retry_state->completed_recv_trailing_metadata) {
+// FIXME: need to pass along error somehow, so it can be passed back to
+// the original callback?
 gpr_log(GPR_INFO, "deferring recv_initial_metadata_ready (Trailers-Only)");
       retry_state->recv_initial_metadata_ready_pending = true;
       GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
@@ -1580,26 +1582,10 @@ gpr_log(GPR_INFO, "recv_initial_metadata_ready() commit");
   GRPC_ERROR_UNREF(error);
 }
 
-// Intercepts recv_message_ready callback for retries.
-// Commits the call and returns the message up the stack.
-static void recv_message_ready(grpc_exec_ctx *exec_ctx, void *arg,
-                               grpc_error *error) {
-gpr_log(GPR_INFO, "==> recv_message_ready()");
-  subchannel_batch_data *batch_data = arg;
-  call_data *calld = batch_data->elem->call_data;
-  // If we got an error, attempt to retry the call.
-  if (error != GRPC_ERROR_NONE) {
-    grpc_status_code status;
-    grpc_error_get_status(error, calld->deadline, &status, NULL, NULL);
-    if (maybe_retry(exec_ctx, batch_data, status)) {
-      batch_data_unref(exec_ctx, batch_data);
-      return;
-    }
-  } else {
-    // No error, so commit the call.
-gpr_log(GPR_INFO, "recv_message_ready() commit");
-    retry_committed(exec_ctx, calld);
-  }
+static void invoke_recv_message_callback(grpc_exec_ctx *exec_ctx, void *arg,
+                                         grpc_error *error) {
+  subchannel_batch_data *batch_data = (subchannel_batch_data *)arg;
+  call_data *calld = (call_data *)batch_data->elem->call_data;
   // Find pending op.
   pending_batch *pending = NULL;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
@@ -1614,19 +1600,56 @@ gpr_log(GPR_INFO, "found recv_message batch at index %" PRIdPTR, i);
   }
   GPR_ASSERT(pending != NULL);
   // Return payload and invoke callback.
-  grpc_transport_stream_op_batch *original_batch = pending->batch;
-  *original_batch->payload->recv_message.recv_message =
+  *pending->batch->payload->recv_message.recv_message =
       batch_data->recv_message;
 gpr_log(GPR_INFO, "calling original recv_message_ready");
   GRPC_CLOSURE_RUN(
       exec_ctx,
-      original_batch->payload->recv_message.recv_message_ready,
+      pending->batch->payload->recv_message.recv_message_ready,
       GRPC_ERROR_REF(error));
   // Update bookkeeping.
 gpr_log(GPR_INFO, "CLEARING pending_batch->recv_message_ready");
-  original_batch->payload->recv_message.recv_message_ready = NULL;
+  pending->batch->payload->recv_message.recv_message_ready = NULL;
   maybe_clear_pending_batch(pending);
   batch_data_unref(exec_ctx, batch_data);
+}
+
+// Intercepts recv_message_ready callback for retries.
+// Commits the call and returns the message up the stack.
+static void recv_message_ready(grpc_exec_ctx *exec_ctx, void *arg,
+                               grpc_error *error) {
+gpr_log(GPR_INFO, "==> recv_message_ready(): error=\"%s\"", grpc_error_string(error));
+  subchannel_batch_data *batch_data = arg;
+  call_data *calld = batch_data->elem->call_data;
+  subchannel_call_retry_state *retry_state =
+      grpc_connected_subchannel_call_get_parent_data(
+          batch_data->subchannel_call);
+  // If we got an error, attempt to retry the call.
+  if (error != GRPC_ERROR_NONE) {
+    grpc_status_code status;
+    grpc_error_get_status(error, calld->deadline, &status, NULL, NULL);
+    if (maybe_retry(exec_ctx, batch_data, status)) {
+      batch_data_unref(exec_ctx, batch_data);
+      return;
+    }
+  } else if (batch_data->recv_message == NULL &&
+             !retry_state->completed_recv_trailing_metadata) {
+gpr_log(GPR_INFO, "deferring recv_message_ready (NULL message and "
+                  "recv_trailing_metadata pending)");
+// FIXME: need to pass along error somehow, so it can be passed back to
+// the original callback?
+    retry_state->recv_message_null_pending = true;
+    GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
+                            "recv_message_ready null");
+    return;
+  } else {
+    // No error, so commit the call.
+gpr_log(GPR_INFO, "recv_message_ready() commit");
+    retry_committed(exec_ctx, calld);
+  }
+  // Manually invoking a callback function; it does not take ownership of error.
+  invoke_recv_message_callback(exec_ctx, batch_data, error);
+  GRPC_ERROR_UNREF(error);
 }
 
 // Returns true if all pending ops in the pending batch have been completed.
@@ -1739,6 +1762,9 @@ gpr_log(GPR_INFO, "call_finished=%d, status=%d", call_finished, status);
       if (retry_state->recv_initial_metadata_ready_pending) {
         batch_data_unref(exec_ctx, batch_data);
       }
+      if (retry_state->recv_message_null_pending) {
+        batch_data_unref(exec_ctx, batch_data);
+      }
       return;
     }
     // If we are not retrying and there is a pending
@@ -1751,6 +1777,14 @@ gpr_log(GPR_INFO, "call_finished=%d, status=%d", call_finished, status);
                                &batch_data->recv_initial_metadata_ready,
                                GRPC_ERROR_NONE,
                                "resuming recv_initial_metadata_ready");
+    }
+    if (retry_state->recv_message_null_pending) {
+      GRPC_CLOSURE_INIT(&batch_data->recv_message_ready,
+                        invoke_recv_message_callback, batch_data,
+                        grpc_schedule_on_exec_ctx);
+      GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
+                               &batch_data->recv_message_ready, GRPC_ERROR_NONE,
+                               "resuming recv_message_ready");
     }
   }
   // Case 4: call is not yet complete.

@@ -99,6 +99,14 @@ static void test_retry(grpc_end2end_test_config config) {
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
+  grpc_slice request_payload_slice = grpc_slice_from_static_string("foo");
+  grpc_slice response_payload_slice = grpc_slice_from_static_string("bar");
+  grpc_byte_buffer *request_payload =
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+  grpc_byte_buffer *response_payload =
+      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
+  grpc_byte_buffer *request_payload_recv = NULL;
+  grpc_byte_buffer *response_payload_recv = NULL;
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
@@ -155,6 +163,16 @@ static void test_retry(grpc_end2end_test_config config) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message.send_message = request_payload;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message.recv_message = &response_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -245,6 +263,16 @@ static void test_retry(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message.recv_message = &request_payload_recv;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message.send_message = response_payload;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
@@ -277,6 +305,10 @@ static void test_retry(grpc_end2end_test_config config) {
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
+  grpc_byte_buffer_destroy(request_payload);
+  grpc_byte_buffer_destroy(response_payload);
+  grpc_byte_buffer_destroy(request_payload_recv);
+  grpc_byte_buffer_destroy(response_payload_recv);
 
   grpc_call_unref(c);
   grpc_call_unref(s);
