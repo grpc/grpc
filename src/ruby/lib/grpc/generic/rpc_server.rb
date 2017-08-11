@@ -196,11 +196,18 @@ module GRPC
     #
     # * server_args:
     # A server arguments hash to be passed down to the underlying core server
+    #
+    # * interceptors:
+    # Am array of GRPC::ServerInterceptor objects that will be used for
+    # intercepting server handlers to provide extra functionality.
+    # Interceptors are an EXPERIMENTAL API.
+    #
     def initialize(pool_size:DEFAULT_POOL_SIZE,
                    max_waiting_requests:DEFAULT_MAX_WAITING_REQUESTS,
                    poll_period:DEFAULT_POLL_PERIOD,
                    connect_md_proc:nil,
-                   server_args:{})
+                   server_args:{},
+                   interceptors:[])
       @connect_md_proc = RpcServer.setup_connect_md_proc(connect_md_proc)
       @max_waiting_requests = max_waiting_requests
       @poll_period = poll_period
@@ -212,6 +219,7 @@ module GRPC
       # :stopped. State transitions can only proceed in that order.
       @running_state = :not_started
       @server = Core::Server.new(server_args)
+      @interceptors = InterceptorRegistry.new(interceptors)
     end
 
     # stops a running server
@@ -374,7 +382,11 @@ module GRPC
             @pool.schedule(active_call) do |ac|
               c, mth = ac
               begin
-                rpc_descs[mth].run_server_method(c, rpc_handlers[mth])
+                rpc_descs[mth].run_server_method(
+                  c,
+                  rpc_handlers[mth],
+                  @interceptors.build_context
+                )
               rescue StandardError
                 c.send_status(GRPC::Core::StatusCodes::INTERNAL,
                               'Server handler failed')
@@ -382,7 +394,7 @@ module GRPC
             end
           end
         rescue Core::CallError, RuntimeError => e
-          # these might happen for various reasonse.  The correct behaviour of
+          # these might happen for various reasons.  The correct behavior of
           # the server is to log them and continue, if it's not shutting down.
           if running_state == :running
             GRPC.logger.warn("server call failed: #{e}")
