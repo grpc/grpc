@@ -971,7 +971,9 @@ typedef struct {
   grpc_transport_stream_op_batch_payload batch_payload;
   // State for callback processing.
   bool recv_initial_metadata_ready_pending : 1;
+  grpc_error *recv_initial_metadata_error;
   bool recv_message_null_pending : 1;
+  grpc_error *recv_message_error;
   bool retry_dispatched : 1;
 } subchannel_call_retry_state;
 
@@ -1565,10 +1567,9 @@ gpr_free(v);
             batch_data->subchannel_call);
     if (batch_data->trailing_metadata_available &&
         !retry_state->completed_recv_trailing_metadata) {
-// FIXME: need to pass along error somehow, so it can be passed back to
-// the original callback?
 gpr_log(GPR_INFO, "deferring recv_initial_metadata_ready (Trailers-Only)");
       retry_state->recv_initial_metadata_ready_pending = true;
+      retry_state->recv_initial_metadata_error = GRPC_ERROR_REF(error);
       GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
                               "recv_initial_metadata_ready trailers-only");
       return;
@@ -1636,9 +1637,8 @@ gpr_log(GPR_INFO, "==> recv_message_ready(): error=\"%s\"", grpc_error_string(er
              !retry_state->completed_recv_trailing_metadata) {
 gpr_log(GPR_INFO, "deferring recv_message_ready (NULL message and "
                   "recv_trailing_metadata pending)");
-// FIXME: need to pass along error somehow, so it can be passed back to
-// the original callback?
     retry_state->recv_message_null_pending = true;
+    retry_state->recv_message_error = GRPC_ERROR_REF(error);
     GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
                             "recv_message_ready null");
     return;
@@ -1761,9 +1761,11 @@ gpr_log(GPR_INFO, "call_finished=%d, status=%d", call_finished, status);
       batch_data_unref(exec_ctx, batch_data);
       if (retry_state->recv_initial_metadata_ready_pending) {
         batch_data_unref(exec_ctx, batch_data);
+        GRPC_ERROR_UNREF(retry_state->recv_initial_metadata_error);
       }
       if (retry_state->recv_message_null_pending) {
         batch_data_unref(exec_ctx, batch_data);
+        GRPC_ERROR_UNREF(retry_state->recv_message_error);
       }
       return;
     }
@@ -1775,7 +1777,7 @@ gpr_log(GPR_INFO, "call_finished=%d, status=%d", call_finished, status);
                         grpc_schedule_on_exec_ctx);
       GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
                                &batch_data->recv_initial_metadata_ready,
-                               GRPC_ERROR_NONE,
+                               retry_state->recv_initial_metadata_error,
                                "resuming recv_initial_metadata_ready");
     }
     if (retry_state->recv_message_null_pending) {
@@ -1783,7 +1785,8 @@ gpr_log(GPR_INFO, "call_finished=%d, status=%d", call_finished, status);
                         invoke_recv_message_callback, batch_data,
                         grpc_schedule_on_exec_ctx);
       GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
-                               &batch_data->recv_message_ready, GRPC_ERROR_NONE,
+                               &batch_data->recv_message_ready,
+                               retry_state->recv_message_error,
                                "resuming recv_message_ready");
     }
   }
