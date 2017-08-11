@@ -34,6 +34,9 @@ typedef struct grpc_lb_policy_factory_vtable grpc_lb_policy_factory_vtable;
 
 struct grpc_lb_policy_factory {
   const grpc_lb_policy_factory_vtable *vtable;
+
+  /** Name for the LB policy this factory implements */
+  const char *name;
 };
 
 /** A resolved address alongside any LB related information associated with it.
@@ -117,9 +120,6 @@ struct grpc_lb_policy_factory_vtable {
   grpc_lb_policy *(*create_lb_policy)(grpc_exec_ctx *exec_ctx,
                                       grpc_lb_policy_factory *factory,
                                       grpc_lb_policy_args *args);
-
-  /** Name for the LB policy this factory implements */
-  const char *name;
 };
 
 void grpc_lb_policy_factory_ref(grpc_lb_policy_factory *factory);

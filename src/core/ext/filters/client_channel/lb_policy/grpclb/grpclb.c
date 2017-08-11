@@ -1867,9 +1867,9 @@ static void glb_factory_ref(grpc_lb_policy_factory *factory) {}
 static void glb_factory_unref(grpc_lb_policy_factory *factory) {}
 
 static const grpc_lb_policy_factory_vtable glb_factory_vtable = {
-    glb_factory_ref, glb_factory_unref, glb_create, "grpclb"};
+    glb_factory_ref, glb_factory_unref, glb_create};
 
-static grpc_lb_policy_factory glb_lb_policy_factory = {&glb_factory_vtable};
+static grpc_lb_policy_factory glb_lb_policy_factory = {&glb_factory_vtable, "grpclb"};
 
 grpc_lb_policy_factory *grpc_glb_lb_factory_create() {
   return &glb_lb_policy_factory;

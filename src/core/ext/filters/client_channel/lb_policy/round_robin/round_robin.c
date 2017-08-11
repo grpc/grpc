@@ -899,11 +899,10 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
 }
 
 static const grpc_lb_policy_factory_vtable round_robin_factory_vtable = {
-    round_robin_factory_ref, round_robin_factory_unref, round_robin_create,
-    "round_robin"};
+    round_robin_factory_ref, round_robin_factory_unref, round_robin_create};
 
 static grpc_lb_policy_factory round_robin_lb_policy_factory = {
-    &round_robin_factory_vtable};
+    &round_robin_factory_vtable, "round_robin"};
 
 static grpc_lb_policy_factory *round_robin_lb_factory_create() {
   return &round_robin_lb_policy_factory;
