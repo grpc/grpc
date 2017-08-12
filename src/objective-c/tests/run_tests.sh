@@ -38,7 +38,7 @@ trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 # element of the pipe fails.
 # TODO(jcanizales): Use xctool instead? Issue #2540.
 set -o pipefail
-XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail|\bpassed\b)'
+XCODEBUILD_FILTER='(^CompileC |^Ld |^.*clang |^ *cd |^ *export |^Libtool |^.*libtool |^CpHeader |^ *builtin-copy )'
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
@@ -48,8 +48,8 @@ xcodebuild \
     HOST_PORT_LOCAL=localhost:5050 \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test \
-    | egrep "$XCODEBUILD_FILTER" \
-    | egrep -v "(GPBDictionary|GPBArray)" -
+    | egrep -v "$XCODEBUILD_FILTER" \
+    | egrep -v '^$' -
 
 echo "TIME:  $(date)"
 xcodebuild \
