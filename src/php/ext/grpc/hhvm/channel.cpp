@@ -42,25 +42,41 @@
 namespace HPHP {
 
 /*****************************************************************************/
-/*                               ChannelData                                 */
+/*                               Channel Data                                */
 /*****************************************************************************/
 
-Class* ChannelData::s_Class{ nullptr };
+Class* ChannelData::s_pClass{ nullptr };
 const StaticString ChannelData::s_ClassName{ "Grpc\\Channel" };
+
+Class* const ChannelData::getClass(void)
+{
+    if (!s_pClass)
+    {
+        s_pClass = Unit::lookupClass(s_ClassName.get());
+        assert(s_pClass);
+    }
+    return s_pClass;
+}
+
+ChannelData::ChannelData(void) : m_pChannel{ nullptr }
+{
+}
+
+ChannelData::ChannelData(grpc_channel* const channel) : m_pChannel{ channel }
+{
+}
 
 ChannelData::~ChannelData(void)
 {
     destroy();
 }
 
-Class* const ChannelData::getClass(void)
+void ChannelData::init(grpc_channel* channel)
 {
-    if (!s_Class)
-    {
-        s_Class = Unit::lookupClass(s_ClassName.get());
-        assert(s_Class);
-    }
-    return s_Class;
+    // destroy any existing channel data
+    destroy();
+
+    m_pChannel = channel;
 }
 
 void ChannelData::destroy(void)
@@ -73,7 +89,7 @@ void ChannelData::destroy(void)
 }
 
 /*****************************************************************************/
-/*                               ChannelArgs                                 */
+/*                            Channel Arguments                              */
 /*****************************************************************************/
 
 ChannelArgs::ChannelArgs(void)
@@ -159,6 +175,10 @@ void ChannelArgs::destroyArgs(void)
     }
     m_ChannelArgs.num_args = 0;
 }
+
+/*****************************************************************************/
+/*                               Channel Cache                               */
+/*****************************************************************************/
 
 ChannelsCache::ChannelsCache(void) {}
 ChannelsCache::~ChannelsCache(void) {
@@ -293,7 +313,7 @@ void HHVM_METHOD(Channel, __construct,
       else
       {
           // create secure chhanel
-          pChannel = grpc_secure_channel_create(pChannelCredentialsData->getWrapped(), target.c_str(),
+          pChannel = grpc_secure_channel_create(pChannelCredentialsData->credentials(), target.c_str(),
                                                 &channelArgs.args(), nullptr);
       }
 

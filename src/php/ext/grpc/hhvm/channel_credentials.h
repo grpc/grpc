@@ -20,7 +20,7 @@
 #define NET_GRPC_HHVM_GRPC_CHANNEL_CREDENTIALS_H_
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
 
 #include "common.h"
@@ -42,40 +42,59 @@ struct DefaultPemRootCerts {
   static DECLARE_THREAD_LOCAL(DefaultPemRootCerts, tl_obj);
 };
 
-class ChannelCredentialsData {
-  private:
-    grpc_channel_credentials* wrapped{nullptr};
-    String key;
-  public:
-    static Class* s_class;
-    static const StaticString s_className;
+/*****************************************************************************/
+/*                           Channel Credentials Data                        */
+/*****************************************************************************/
 
-    static Class* getClass();
+class ChannelCredentialsData
+{
+public:
+    // constructors/destructors
+    ChannelCredentialsData(void);
+    ~ChannelCredentialsData(void);
+    ChannelCredentialsData(const ChannelCredentialsData& otherChannelCredentialsData) = delete;
+    ChannelCredentialsData(ChannelCredentialsData&& otherChannelCredentialsData) = delete;
+    ChannelCredentialsData& operator=(const ChannelCredentialsData& rhsChannelCredentialsData) = delete;
+    ChannelCredentialsData& operator&(ChannelCredentialsData&& rhsChannelCredentialsData) = delete;
 
-    ChannelCredentialsData();
-    ~ChannelCredentialsData();
+    // interface functions
+    void init(grpc_channel_credentials* const channel_credentials);
+    grpc_channel_credentials* const credentials(void) { return m_pChannelCredentials; }
+    void setHashKey(const String& hashKey) { m_HashKey = hashKey; }
+    const String& getHashKey(void) const { return m_HashKey; }
+    static Class* const getClass(void);
+    static const StaticString& className(void) { return s_ClassName; }
 
-    void init(grpc_channel_credentials* channel_credentials);
-    void sweep();
-    grpc_channel_credentials* getWrapped();
-    void setHashKey(const String& hashKey);
-    String getHashKey();
+private:
+    // helper functions
+    void destroy(void);
+
+    // member variables
+    grpc_channel_credentials* m_pChannelCredentials;
+    String m_HashKey;
+    static Class* s_pClass;
+    static const StaticString s_ClassName;
+
 };
 
+/*****************************************************************************/
+/*                       HHVM Channel Credentials Methods                    */
+/*****************************************************************************/
+
 void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,
-  const String& pem_roots);
+                        const String& pem_roots);
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault);
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createSsl,
-  const Variant& pem_root_certs,
-  const Variant& pem_key_cert_pair__private_key /*= null*/,
-  const Variant& pem_key_cert_pair__cert_chain /*=null*/
-  );
+                          const Variant& pem_root_certs,
+                          const Variant& pem_key_cert_pair__private_key /*= null*/,
+                          const Variant& pem_key_cert_pair__cert_chain /*=null*/
+                         );
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createComposite,
-  const Object& cred1_obj,
-  const Object& cred2_obj);
+                          const Object& cred1_obj,
+                          const Object& cred2_obj);
 
 Variant HHVM_STATIC_METHOD(ChannelCredentials, createInsecure);
 

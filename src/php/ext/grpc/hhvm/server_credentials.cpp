@@ -33,28 +33,52 @@
 
 namespace HPHP {
 
-Class* ServerCredentialsData::s_class = nullptr;
-const StaticString ServerCredentialsData::s_className("Grpc\\ServerCredentials");
+/*****************************************************************************/
+/*                             Server Credentials Data                       */
+/*****************************************************************************/
 
-IMPLEMENT_GET_CLASS(ServerCredentialsData);
+Class* ServerCredentialsData::s_pClass{ nullptr };
+const StaticString ServerCredentialsData::s_ClassName{ "Grpc\\ServerCredentials" };
 
-ServerCredentialsData::ServerCredentialsData() {}
-ServerCredentialsData::~ServerCredentialsData() { sweep(); }
-
-void ServerCredentialsData::init(grpc_server_credentials* server_credentials) {
-  wrapped = server_credentials;
+Class* const ServerCredentialsData::getClass(void)
+{
+    if (!s_pClass)
+    {
+        s_pClass = Unit::lookupClass(s_ClassName.get());
+        assert(s_pClass);
+    }
+    return s_pClass;
 }
 
-void ServerCredentialsData::sweep() {
-  if (wrapped) {
-    grpc_server_credentials_release(wrapped);
-    wrapped = nullptr;
-  }
+ServerCredentialsData::ServerCredentialsData(void) : m_pCredentials{ nullptr }
+{
 }
 
-grpc_server_credentials* ServerCredentialsData::getWrapped() {
-  return wrapped;
+ServerCredentialsData::~ServerCredentialsData()
+{
+    destroy();
 }
+
+void ServerCredentialsData::init(grpc_server_credentials* const server_credentials)
+{
+    // destroy any existing server credentials
+    destroy();
+
+    m_pCredentials = server_credentials;
+}
+
+void ServerCredentialsData::destroy(void)
+{
+    if (m_pCredentials)
+    {
+        grpc_server_credentials_release(m_pCredentials);
+        m_pCredentials = nullptr;
+    }
+}
+
+/*****************************************************************************/
+/*                         HHVM Server Credentials Methods                   */
+/*****************************************************************************/
 
 Object HHVM_STATIC_METHOD(ServerCredentials, createSsl,
   const String& pem_root_certs,

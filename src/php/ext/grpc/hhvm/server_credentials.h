@@ -20,7 +20,7 @@
 #define NET_GRPC_HHVM_GRPC_SERVER_CREDENTIALS_H_
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
 
 #include "common.h"
@@ -32,27 +32,45 @@
 
 namespace HPHP {
 
-class ServerCredentialsData {
-  private:
-    grpc_server_credentials* wrapped{nullptr};
-  public:
-    static Class* s_class;
-    static const StaticString s_className;
+/*****************************************************************************/
+/*                            Server Credentials Data                        */
+/*****************************************************************************/
 
-    static Class* getClass();
+class ServerCredentialsData
+{
+public:
+    // constructors/destructors
+    ServerCredentialsData(void);
+    ~ServerCredentialsData(void);
+    ServerCredentialsData(const ServerCredentialsData& otherServerCredentialsData) = delete;
+    ServerCredentialsData(ServerCredentialsData&& otherServerCredentialsData) = delete;
+    ServerCredentialsData& operator=(const ServerCredentialsData& rhsServerCredentialsData) = delete;
+    ServerCredentialsData& operator=(ServerCredentialsData&& rhsServerCredentialsData) = delete;
 
-    ServerCredentialsData();
-    ~ServerCredentialsData();
+    // interface functions
+    void init(grpc_server_credentials* const server_credentials);
+    grpc_server_credentials* const credentials(void) { return m_pCredentials; }
+    static Class* const getClass(void);
+    static const StaticString& className(void) { return s_ClassName; }
 
-    void init(grpc_server_credentials* server_credentials);
-    void sweep();
-    grpc_server_credentials* getWrapped();
+private:
+    // helper functions
+    void destroy(void);
+
+    // member variables
+    grpc_server_credentials* m_pCredentials;
+    static Class* s_pClass;
+    static const StaticString s_ClassName;
 };
 
+/*****************************************************************************/
+/*                       HHVM Server Credentials Methods                     */
+/*****************************************************************************/
+
 Object HHVM_STATIC_METHOD(ServerCredentials, createSsl,
-  const String& pem_root_certs,
-  const String& pem_private_key,
-  const String& pem_cert_chain);
+                          const String& pem_root_certs,
+                          const String& pem_private_key,
+                          const String& pem_cert_chain);
 
 }
 

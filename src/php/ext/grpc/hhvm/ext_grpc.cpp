@@ -141,10 +141,10 @@ public:
 
         Native::registerNativeDataInfo<TimevalData>(TimevalData::className().get());
 
-        Native::registerNativeDataInfo<ServerCredentialsData>(ServerCredentialsData::s_className.get());
+        Native::registerNativeDataInfo<ServerCredentialsData>(ServerCredentialsData::className().get());
         Native::registerNativeDataInfo<ServerData>(ServerData::className().get());
 
-        Native::registerNativeDataInfo<ChannelCredentialsData>(ChannelCredentialsData::s_className.get());
+        Native::registerNativeDataInfo<ChannelCredentialsData>(ChannelCredentialsData::className().get());
         Native::registerNativeDataInfo<ChannelData>(ChannelData::className().get());
 
         Native::registerNativeDataInfo<CallCredentialsData>(CallCredentialsData::className().get());

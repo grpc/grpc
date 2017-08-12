@@ -33,26 +33,43 @@
 
 namespace HPHP {
 
+typedef struct plugin_state
+{
+    Variant callback;
+    PluginGetMetadataPromise* pPluginGetMetadataPromise;
+    std::thread::id thread_id;
+} plugin_state;
+
+// forward declarations
+void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
+                         grpc_credentials_plugin_metadata_cb cb,
+                         void *user_data);
+void plugin_destroy_state(void *ptr);
+
 /*****************************************************************************/
-/*                           CallCredentialsData                             */
+/*                           Call Credentials Data                           */
 /*****************************************************************************/
 
-Class* CallCredentialsData::s_Class{ nullptr };
+Class* CallCredentialsData::s_pClass{ nullptr };
 const StaticString CallCredentialsData::s_ClassName{ "Grpc\\CallCredentials" };
+
+Class* const CallCredentialsData::getClass(void)
+{
+    if (!s_pClass)
+    {
+        s_pClass = Unit::lookupClass(s_ClassName.get());
+        assert(s_pClass);
+    }
+    return s_pClass;
+}
+
+CallCredentialsData::CallCredentialsData(void) : m_pCallCredentials{ nullptr }
+{
+}
 
 CallCredentialsData::~CallCredentialsData(void)
 {
     destroy();
-}
-
-Class* const CallCredentialsData::getClass(void)
-{
-    if (!s_Class)
-    {
-        s_Class = Unit::lookupClass(s_ClassName.get());
-        assert(s_Class);
-    }
-    return s_Class;
 }
 
 void CallCredentialsData::init(grpc_call_credentials* const pCallCredentials)
@@ -74,7 +91,7 @@ void CallCredentialsData::destroy(void)
 }
 
 /*****************************************************************************/
-/*                           HHVM Channel Methods                            */
+/*                        HHVM Call Credentials Methods                      */
 /*****************************************************************************/
 
 /**
@@ -149,6 +166,10 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 
     return newCallCredentialsObj;
 }
+
+/*****************************************************************************/
+/*                       Crendentials Plugin Functions                       */
+/*****************************************************************************/
 
 // This work done in this function MUST be done on the same thread as the HHVM request
 void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,

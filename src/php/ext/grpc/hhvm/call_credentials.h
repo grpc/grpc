@@ -33,6 +33,51 @@
 
 namespace HPHP {
 
+/*****************************************************************************/
+/*                         Call Credentials Data                             */
+/*****************************************************************************/
+
+class CallCredentialsData
+{
+public:
+    // constructors/destructors
+    CallCredentialsData(void);
+    ~CallCredentialsData(void);
+    CallCredentialsData(const CallCredentialsData& otherCallCredentialsData) = delete;
+    CallCredentialsData(CallCredentialsData&& otherCallCredentialsData) = delete;
+    CallCredentialsData& operator=(const CallCredentialsData& rhsCallCredentialsData) = delete;
+    CallCredentialsData& operator&(CallCredentialsData&& rhsCallCredentialsData) = delete;
+
+    // interface functions
+    void init(grpc_call_credentials* const pCallCredentials);
+    grpc_call_credentials* const credentials(void)  { return m_pCallCredentials; }
+    static Class* const getClass(void);
+    static const StaticString& className(void) { return s_ClassName; }
+
+private:
+    // helper functions
+    void destroy(void);
+
+    // member variables
+    grpc_call_credentials* m_pCallCredentials;
+    static Class* s_pClass;
+    static const StaticString s_ClassName;
+};
+
+/*****************************************************************************/
+/*                      HHVM Call Credentials Methods                        */
+/*****************************************************************************/
+Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
+                          const Object& cred1_obj,
+                          const Object& cred2_obj);
+
+Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
+                          const Variant& callback);
+
+/*****************************************************************************/
+/*                       Crendentials Plugin Functions                       */
+/*****************************************************************************/
+
 // this is the data passed back via promise from plugin_get_metadata
 typedef struct plugin_get_metadata_params
 {
@@ -63,55 +108,9 @@ private:
     MetadataPromise* m_pMetadataPromise;
 };
 
-typedef struct plugin_state
-{
-    Variant callback;
-    PluginGetMetadataPromise* pPluginGetMetadataPromise;
-    std::thread::id thread_id;
-} plugin_state;
-
-class CallCredentialsData
-{
-public:
-    // constructors/destructors
-    CallCredentialsData(void) : m_pCallCredentials{ nullptr } {}
-    ~CallCredentialsData(void);
-    CallCredentialsData(const CallCredentialsData& otherCallCredentialsData) = delete;
-    CallCredentialsData(CallCredentialsData&& otherCallCredentialsData) = delete;
-    CallCredentialsData& operator=(const CallCredentialsData& rhsCallCredentialsData) = delete;
-    CallCredentialsData& operator&(CallCredentialsData&& rhsCallCredentialsData) = delete;
-
-    // interface functions
-    void init(grpc_call_credentials* const pCallCredentials);
-    grpc_call_credentials* const credentials(void)  { return m_pCallCredentials; }
-    static Class* const getClass(void);
-    static const StaticString& className(void) { return s_ClassName; }
-
-private:
-    // helper functions
-    void destroy(void);
-
-    // member variables
-    grpc_call_credentials* m_pCallCredentials{nullptr};
-    static Class* s_Class;
-    static const StaticString s_ClassName;
-};
-
-Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
-                          const Object& cred1_obj,
-                          const Object& cred2_obj);
-
-Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
-                          const Variant& callback);
-
 void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
                             grpc_credentials_plugin_metadata_cb cb,
                             void *user_data);
-void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
-                         grpc_credentials_plugin_metadata_cb cb,
-                         void *user_data);
-void plugin_destroy_state(void *ptr);
-
 }
 
 #endif /* NET_GRPC_HHVM_GRPC_CALL_CREDENTIALS_H_ */

@@ -49,26 +49,12 @@ public:
     std::string m_File;
 };
 
-//#define HHVM_TRACE_DEBUG
-//#define HHVM_TRACE_DEBUG_DETAILED
+#define HHVM_TRACE_DEBUG
 
 #ifdef HHVM_TRACE_DEBUG
     #define HHVM_TRACE_SCOPE(x) TraceScope traceScope{ x, __func__, __FILE__ };
 #else
     #define HHVM_TRACE_SCOPE(x)
 #endif // HHVM_TRACE_DEBUG
-
-namespace HPHP {
-
-#define IMPLEMENT_GET_CLASS(cls) \
-  Class* cls::getClass() { \
-    if (s_class == nullptr) { \
-        s_class = Unit::lookupClass(s_className.get()); \
-        assert(s_class); \
-    } \
-    return s_class; \
-  }
-
-}
 
 #endif /* NET_GRPC_HHVM_GRPC_COMMON_H_ */

@@ -43,25 +43,45 @@
 namespace HPHP {
 
 /*****************************************************************************/
-/*                                  CallData                                 */
+/*                                 Call Data                                 */
 /*****************************************************************************/
 
-Class* CallData::s_Class{ nullptr };
+Class* CallData::s_pClass{ nullptr };
 const StaticString CallData::s_ClassName{ "Grpc\\Call" };
+
+Class* const CallData::getClass(void)
+{
+    if (!s_pClass)
+    {
+        s_pClass = Unit::lookupClass(s_ClassName.get());
+        assert(s_pClass);
+    }
+    return s_pClass;
+}
+
+CallData::CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_ChannelData{ nullptr },
+    m_Timeout{ 0 }
+{
+}
+
+CallData::CallData(grpc_call* const call, const bool owned, const int32_t timeoutMs) :
+    m_pCall{ call }, m_Owned{ owned }, m_ChannelData{ nullptr }, m_Timeout{ timeoutMs }
+{
+}
 
 CallData::~CallData(void)
 {
     destroy();
 }
 
-Class* const CallData::getClass(void)
+void CallData::init(grpc_call* const call, const bool owned, const int32_t timeoutMs)
 {
-    if (!s_Class)
-    {
-        s_Class = Unit::lookupClass(s_ClassName.get());
-        assert(s_Class);
-    }
-    return s_Class;
+    // destroy any existing call
+    destroy();
+
+    m_pCall = call;
+    m_Owned = owned;
+    m_Timeout = timeoutMs;
 }
 
 void CallData::destroy(void)
@@ -82,7 +102,7 @@ void CallData::destroy(void)
 }
 
 /*****************************************************************************/
-/*                               MetadataArray                               */
+/*                              Metadata Array                               */
 /*****************************************************************************/
 
 MetadataArray::MetadataArray(const bool ownPHP) : m_OwnPHP{ ownPHP },
@@ -253,8 +273,6 @@ void HHVM_METHOD(Call, __construct,
     pCallData->setChannelData(pChannelData);
 
     TimevalData* const pDeadlineTimevalData{ Native::data<TimevalData>(deadline_obj) };
-    pCallData->setTimeout(gpr_time_to_millis(gpr_convert_clock_type(pDeadlineTimevalData->time(),
-                                             GPR_TIMESPAN)));
 
     Slice method_slice{ !method.empty() ? method.c_str() : nullptr };
     Slice host_slice{ !host_override.isNull() && host_override.isString() ?
@@ -273,8 +291,9 @@ void HHVM_METHOD(Call, __construct,
         return;
     }
 
-    pCallData->init(pCall);
-    pCallData->setOwned(true);
+    int32_t timeout{ gpr_time_to_millis(gpr_convert_clock_type(pDeadlineTimevalData->time(),
+                                             GPR_TIMESPAN)) };
+    pCallData->init(pCall, true, timeout);
 
     return;
 }

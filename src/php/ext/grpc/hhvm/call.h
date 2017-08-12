@@ -36,6 +36,10 @@
 
 namespace HPHP {
 
+/*****************************************************************************/
+/*                             Channel Data                                  */
+/*****************************************************************************/
+
 // forward declarations
 class ChannelData;
 
@@ -43,9 +47,8 @@ class CallData
 {
 public:
     // constructors/destructors
-    CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_ChannelData{ nullptr }, m_Timeout{ 0 } {}
-    CallData(grpc_call* const call) : m_pCall{ call }, m_Owned{ false }, m_ChannelData{ nullptr },
-         m_Timeout{ 0 } {}
+    CallData(void);
+    CallData(grpc_call* const call, const bool owned, const int32_t timeoutMs = 0);
     ~CallData(void);
     CallData(const CallData& otherCallData) = delete;
     CallData(CallData&& otherCallData) = delete;
@@ -53,12 +56,10 @@ public:
     CallData& operator&(CallData&& rhsCallData) = delete;
 
     // interface functions
-    void init(grpc_call* call) { m_pCall = call; }
+    void init(grpc_call* const call, const bool owned, const int32_t timeoutMs = 0);
     grpc_call* const call(void) { return m_pCall; }
     bool getOwned(void) const { return m_Owned; }
-    void setOwned(const bool owned = true) { m_Owned = owned; }
     void setChannelData(ChannelData* channelData) { m_ChannelData = channelData; }
-    void setTimeout(const int32_t timeout) { m_Timeout = timeout; }
     int32_t getTimeout(void) const { return m_Timeout; }
     MetadataPromise& getPromise(void) { return m_MetadataPromise; }
     static Class* const getClass(void);
@@ -74,9 +75,13 @@ private:
     ChannelData* m_ChannelData;
     int32_t m_Timeout;
     MetadataPromise m_MetadataPromise;
-    static Class* s_Class;
+    static Class* s_pClass;
     static const StaticString s_ClassName;
 };
+
+/*****************************************************************************/
+/*                             Metadata Array                                */
+/*****************************************************************************/
 
 // This class is an RAII wrapper around a call metadata array
 class MetadataArray
@@ -108,6 +113,9 @@ private:
     std::vector<std::pair<Slice, Slice>> m_PHPData; // the key, value PHP Data
 };
 
+/*****************************************************************************/
+/*                             HHVM Call Methods                             */
+/*****************************************************************************/
 
 void HHVM_METHOD(Call, __construct,
                  const Object& channel_obj,

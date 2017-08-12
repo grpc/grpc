@@ -30,15 +30,18 @@
 
 #include <grpc/grpc.h>
 
-
 namespace HPHP {
+
+/*****************************************************************************/
+/*                               Channel Data                                */
+/*****************************************************************************/
 
 class ChannelData
 {
 public:
     // constructors/destructors
-    ChannelData(void) : m_pChannel{ nullptr } {}
-    ChannelData(grpc_channel* const channel) : m_pChannel{ channel } {}
+    ChannelData(void);
+    ChannelData(grpc_channel* const channel);
     ~ChannelData(void);
     ChannelData(const ChannelData& otherChannelData) = delete;
     ChannelData(ChannelData&& otherChannelData) = delete;
@@ -46,11 +49,10 @@ public:
     ChannelData& operator=(ChannelData&& rhsChannelData) = delete;
 
     // interface functions
-    void init(grpc_channel* channel) { m_pChannel = channel; }
+    void init(grpc_channel* channel);
     grpc_channel* const channel(void) { return m_pChannel; }
     void setHashKey(const String& hashKey) { m_HashKey = hashKey; }
     const String& getHashKey(void) const { return m_HashKey; }
-
     static Class* const getClass(void);
     static const StaticString& className(void) { return s_ClassName; }
 
@@ -61,10 +63,13 @@ public:
     // member variables
     grpc_channel* m_pChannel;
     String m_HashKey;
-    static Class* s_Class;
+    static Class* s_pClass;
     static const StaticString s_ClassName;
 };
 
+/*****************************************************************************/
+/*                             Channel Arguments                             */
+/*****************************************************************************/
 
 class ChannelArgs
 {
@@ -91,6 +96,10 @@ private:
     grpc_channel_args m_ChannelArgs;
 };
 
+/*****************************************************************************/
+/*                               Channel Cache                               */
+/*****************************************************************************/
+
 class ChannelsCache
 {
 public:
@@ -115,6 +124,10 @@ private:
   ReadWriteMutex m_ChannelMapMutex;
   std::map<std::string, grpc_channel *> m_ChannelMap;
 };
+
+/*****************************************************************************/
+/*                              HHVM Channel Methods                         */
+/*****************************************************************************/
 
 void HHVM_METHOD(Channel, __construct,
                  const String& target,

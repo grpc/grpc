@@ -16,24 +16,18 @@
  *
  */
 
-
 #ifdef HAVE_CONFIG_H
     #include "config.h"
 #endif
 
-#include "hphp/runtime/ext/extension.h"
-#include "hphp/runtime/base/req-containers.h"
-#include "hphp/runtime/vm/native-data.h"
-#include "hphp/runtime/base/builtin-functions.h"
-#include "hphp/runtime/base/string-util.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-
 #include "channel_credentials.h"
 #include "call_credentials.h"
 #include "common.h"
+
+#include "hphp/runtime/vm/native-data.h"
+#include "hphp/runtime/base/string-util.h"
+
+#include <grpc/support/alloc.h>
 
 namespace HPHP {
 
@@ -59,37 +53,53 @@ void DefaultPemRootCerts::setCerts(const String& pem_roots) {
   memcpy(default_pem_root_certs, pem_roots.c_str(), pem_roots.length() + 1);
 }
 
-Class* ChannelCredentialsData::s_class = nullptr;
-const StaticString ChannelCredentialsData::s_className("Grpc\\ChannelCredentials");
+/*****************************************************************************/
+/*                        Channel Credentials Data                           */
+/*****************************************************************************/
 
-IMPLEMENT_GET_CLASS(ChannelCredentialsData);
+Class* ChannelCredentialsData::s_pClass{ nullptr };
+const StaticString ChannelCredentialsData::s_ClassName{ "Grpc\\ChannelCredentials" };
 
-ChannelCredentialsData::ChannelCredentialsData() : key(String("")) {}
-
-ChannelCredentialsData::~ChannelCredentialsData() { sweep(); }
-
-void ChannelCredentialsData::init(grpc_channel_credentials* channel_credentials) {
-  wrapped = channel_credentials;
+Class* const ChannelCredentialsData::getClass(void)
+{
+    if (!s_pClass)
+    {
+        s_pClass = Unit::lookupClass(s_ClassName.get());
+        assert(s_pClass);
+    }
+    return s_pClass;
 }
 
-void ChannelCredentialsData::sweep() {
-  if (wrapped) {
-    grpc_channel_credentials_release(wrapped);
-    wrapped = nullptr;
-  }
+ChannelCredentialsData::ChannelCredentialsData(void) :
+    m_pChannelCredentials{ nullptr }, m_HashKey{ String{} }
+{
 }
 
-grpc_channel_credentials* ChannelCredentialsData::getWrapped() {
-  return wrapped;
+ChannelCredentialsData::~ChannelCredentialsData(void)
+{
+    destroy();
 }
 
-void ChannelCredentialsData::setHashKey(const String& hashKey) {
-  key = hashKey;
+void ChannelCredentialsData::init(grpc_channel_credentials* const channel_credentials)
+{
+    // destroy any existing channel credentials
+    destroy();
+
+    m_pChannelCredentials = channel_credentials;
 }
 
-String ChannelCredentialsData::getHashKey() {
-  return key;
+void ChannelCredentialsData::destroy(void)
+{
+    if (m_pChannelCredentials)
+    {
+        grpc_channel_credentials_release(m_pChannelCredentials);
+        m_pChannelCredentials = nullptr;
+    }
 }
+
+/*****************************************************************************/
+/*                     HHVM Channel Credentials Methods                      */
+/*****************************************************************************/
 
 void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,
                         const String& pem_roots)
@@ -168,7 +178,7 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createComposite,
   auto callCredentialsData = Native::data<CallCredentialsData>(cred2_obj);
 
   grpc_channel_credentials* channel_credentials = grpc_composite_channel_credentials_create(
-    channelCredentialsData->getWrapped(),
+    channelCredentialsData->credentials(),
     callCredentialsData->credentials(),
     NULL
   );

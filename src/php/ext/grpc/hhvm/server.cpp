@@ -39,11 +39,25 @@
 namespace HPHP {
 
 /*****************************************************************************/
-/*                               ServerData                                 */
+/*                              Server Data                                  */
 /*****************************************************************************/
 
-Class* ServerData::s_Class{ nullptr };
+Class* ServerData::s_pClass{ nullptr };
 const StaticString ServerData::s_ClassName{ "Grpc\\Server" };
+
+Class* const ServerData::getClass(void)
+{
+    if (!s_pClass)
+    {
+        s_pClass = Unit::lookupClass(s_ClassName.get());
+        assert(s_pClass);
+    }
+    return s_pClass;
+}
+
+ServerData::ServerData(void) : m_pServer{ nullptr }
+{
+}
 
 ServerData::~ServerData(void)
 {
@@ -52,21 +66,13 @@ ServerData::~ServerData(void)
 
 void ServerData::init(grpc_server* const pServer)
 {
+    // destroy any existing server
+    destroy();
+
     m_pServer = pServer;
 
     // create completion queue for server
     m_pComletionQueue = CompletionQueue::getServerQueue();
-}
-
-
-Class* const ServerData::getClass(void)
-{
-    if (!s_Class)
-    {
-        s_Class = Unit::lookupClass(s_ClassName.get());
-        assert(s_Class);
-    }
-    return s_Class;
 }
 
 void ServerData::destroy(void)
@@ -84,7 +90,7 @@ void ServerData::destroy(void)
 }
 
 /*****************************************************************************/
-/*                               HHVM Methods                                */
+/*                             HHVM Sever Methods                            */
 /*****************************************************************************/
 
 void HHVM_METHOD(Server, __construct,
@@ -196,7 +202,7 @@ Object HHVM_METHOD(Server, requestCall)
 
     Object callObj{ CallData::getClass() };
     CallData* const pCallData{ Native::data<CallData>(callObj) };
-    pCallData->init(pCall);
+    pCallData->init(pCall, false); // server doesn't own call
 
     Object timevalObj{ TimevalData::getClass() };
     TimevalData* const pTimevalData{ Native::data<TimevalData>(timevalObj) };
@@ -229,7 +235,7 @@ bool HHVM_METHOD(Server, addSecureHttp2Port,
     ServerCredentialsData* const pServerCredentialsData{ Native::data<ServerCredentialsData>(server_credentials) };
 
     return (grpc_server_add_secure_http2_port(pServerData->server(),
-                                              addr.c_str(), pServerCredentialsData->getWrapped()) != 0);
+                                              addr.c_str(), pServerCredentialsData->credentials()) != 0);
 }
 
 void HHVM_METHOD(Server, start)

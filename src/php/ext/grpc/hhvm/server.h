@@ -31,11 +31,15 @@
 
 namespace HPHP {
 
+/*****************************************************************************/
+/*                                  Server Data                              */
+/*****************************************************************************/
+
 class ServerData
 {
 public:
     // constructors/destructors
-    ServerData(void) : m_pServer{ nullptr } {}
+    ServerData(void);
     ~ServerData(void);
     ServerData(const ServerData& otherServerData) = delete;
     ServerData(ServerData&& otherServerData) = delete;
@@ -46,7 +50,6 @@ public:
     void init(grpc_server* const pServer);
     grpc_server* const server(void) { return m_pServer; }
     CompletionQueue* const queue(void) { return m_pComletionQueue.get(); };
-
     static Class* const getClass(void);
     static const StaticString& className(void) { return s_ClassName; }
 
@@ -57,12 +60,12 @@ private:
     // member variables
     grpc_server* m_pServer;
     std::unique_ptr<CompletionQueue> m_pComletionQueue;
-    static Class* s_Class;
+    static Class* s_pClass;
     static const StaticString s_ClassName;
 };
 
 /*****************************************************************************/
-/*                               HHVM Methods                                */
+/*                           HHVM Server Methods                             */
 /*****************************************************************************/
 
 void HHVM_METHOD(Server, __construct,

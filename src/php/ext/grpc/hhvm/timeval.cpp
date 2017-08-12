@@ -32,10 +32,10 @@
 namespace HPHP {
 
 /*****************************************************************************/
-/*                               TimevalData                                 */
+/*                           Time Value Data                                 */
 /*****************************************************************************/
 
-Class* TimevalData::s_Class{ nullptr };
+Class* TimevalData::s_pClass{ nullptr };
 const StaticString TimevalData::s_ClassName( "Grpc\\Timeval" );
 
 TimevalData::~TimevalData(void)
@@ -45,17 +45,20 @@ TimevalData::~TimevalData(void)
 
 void TimevalData::init(const gpr_timespec& timeValue)
 {
+    // destroy any existing time values
+    destroy();
+
     m_TimeValue = timeValue;
 }
 
 Class* const TimevalData::getClass(void)
 {
-    if (!s_Class)
+    if (!s_pClass)
     {
-        s_Class = Unit::lookupClass(s_ClassName.get());
-        assert(s_Class);
+        s_pClass = Unit::lookupClass(s_ClassName.get());
+        assert(s_pClass);
     }
-    return s_Class;
+    return s_pClass;
 }
 
 void TimevalData::destroy(void)
@@ -64,7 +67,7 @@ void TimevalData::destroy(void)
 }
 
 /*****************************************************************************/
-/*                              HHVM Methods                                 */
+/*                         HHVM Time Value Methods                           */
 /*****************************************************************************/
 
 void HHVM_METHOD(Timeval, __construct,

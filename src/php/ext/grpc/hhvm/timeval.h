@@ -30,6 +30,10 @@
 
 namespace HPHP {
 
+/*****************************************************************************/
+/*                               Time Value Data                             */
+/*****************************************************************************/
+
 class TimevalData
 {
 public:
@@ -43,7 +47,6 @@ public:
     // interface functions
     void init(const gpr_timespec& timeValue);
     const gpr_timespec& time(void) const { return m_TimeValue; }
-
     static Class* const getClass(void);
     static const StaticString& className(void) { return s_ClassName; }
 
@@ -53,9 +56,13 @@ private:
 
     // member variables
     gpr_timespec m_TimeValue;
-    static Class* s_Class;
+    static Class* s_pClass;
     static const StaticString s_ClassName;
 };
+
+/*****************************************************************************/
+/*                            HHVM Time Value Mehods                         */
+/*****************************************************************************/
 
 void HHVM_METHOD(Timeval, __construct,
                  int64_t microseconds);
