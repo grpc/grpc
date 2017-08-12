@@ -289,9 +289,7 @@ PHP_METHOD(Channel, __construct) {
   }
   channel->wrapper = malloc(sizeof(grpc_channel_wrapper));
   channel->wrapper->key = key;
-  char *target_cpy = malloc(target_length + 1);
-  strcpy(target_cpy, target);
-  channel->wrapper->target = target_cpy;
+  channel->wrapper->target = strdup(target);
   channel->wrapper->args_hashstr = sha1str;
   if (creds != NULL && creds->hashstr != NULL) {
     channel->wrapper->creds_hashstr = creds->hashstr;

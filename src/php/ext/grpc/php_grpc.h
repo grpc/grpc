@@ -73,7 +73,6 @@ PHP_RINIT_FUNCTION(grpc);
 */
 ZEND_BEGIN_MODULE_GLOBALS(grpc)
   zend_bool initialized;
-  char *pem_root_certs;
 ZEND_END_MODULE_GLOBALS(grpc)
 
 /* In every utility function you add that needs to use variables
@@ -92,13 +91,8 @@ ZEND_END_MODULE_GLOBALS(grpc)
 #define GRPC_G(v) (grpc_globals.v)
 #endif
 
-ZEND_DECLARE_MODULE_GLOBALS(grpc)
-
 #define GRPC_STARTUP_FUNCTION(module)  ZEND_MINIT_FUNCTION(grpc_##module)
 #define GRPC_STARTUP(module)           \
   ZEND_MODULE_STARTUP_N(grpc_##module)(INIT_FUNC_ARGS_PASSTHRU)
-
-void php_grpc_update_default_pem_root_certs(char *default_certs TSRMLS_DC);
-char *php_grpc_get_default_pem_root_certs(TSRMLS_D);
 
 #endif /* PHP_GRPC_H */
