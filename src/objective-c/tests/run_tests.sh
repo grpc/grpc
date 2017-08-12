@@ -60,16 +60,12 @@ xcodebuild \
     | egrep "$XCODEBUILD_FILTER" \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
-# Temporarily disabled for (possible) flakiness on Jenkins.
-# Fix or reenable after confirmation/disconfirmation that it is the source of
-# Jenkins problem.
-
-# echo "TIME:  $(date)"
-# xcodebuild \
-#     -workspace Tests.xcworkspace \
-#     -scheme CronetUnitTests \
-#     -destination name="iPhone 6" \
-#     test | xcpretty
+echo "TIME:  $(date)"
+xcodebuild \
+    -workspace Tests.xcworkspace \
+    -scheme CronetUnitTests \
+    -destination name="iPhone 6" \
+    test | xcpretty
 
 echo "TIME:  $(date)"
 xcodebuild \
