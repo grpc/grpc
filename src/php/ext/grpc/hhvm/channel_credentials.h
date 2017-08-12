@@ -32,14 +32,40 @@
 
 namespace HPHP {
 
-struct DefaultPemRootCerts {
-  DefaultPemRootCerts();
-  char * getCerts();
-  void setCerts(const String& pem_roots);
+/*****************************************************************************/
+/*                     Default Permanent Root Certificates                   */
+/*****************************************************************************/
 
-  char * default_pem_root_certs{nullptr};
+// This is a global singleton. It does not make sense to make this thread local
+// as differnent threads may access the default certs and they must be valid
+// in all.
+struct DefaultPermRootCerts
+{
+public:
+    // constructors/destructors
+    ~DefaultPermRootCerts(void);
+    DefaultPermRootCerts(const DefaultPermRootCerts& otherDefaultPermRootCerts) = delete;
+    DefaultPermRootCerts(DefaultPermRootCerts&& otherDefaultPermRootCerts) = delete;
+    DefaultPermRootCerts& operator=(const DefaultPermRootCerts& rhsDefaultPermRootCerts) = delete;
+    DefaultPermRootCerts& operator=(DefaultPermRootCerts&& rhsDefaultPermRootCerts) = delete;
 
-  static DECLARE_THREAD_LOCAL(DefaultPemRootCerts, tl_obj);
+    // interface functions
+    const char* const getCerts(void) const { return m_pPermRootCerts; }
+    void setCerts(const String& permRootsCerts);
+    static grpc_ssl_roots_override_result get_ssl_roots_override(char** pPermRootsCerts);
+
+    // singleton accessors
+    static DefaultPermRootCerts& getDefaultPermRootCerts(void);
+
+private:
+    // private constructor
+    DefaultPermRootCerts(void);
+
+    // helper functions
+    void destroy(void);
+
+    // member variables
+    char* m_pPermRootCerts{nullptr};
 };
 
 /*****************************************************************************/
@@ -58,10 +84,9 @@ public:
     ChannelCredentialsData& operator&(ChannelCredentialsData&& rhsChannelCredentialsData) = delete;
 
     // interface functions
-    void init(grpc_channel_credentials* const channel_credentials);
+    void init(grpc_channel_credentials* const pChannelCredentials, const String& hashKey = String{});
     grpc_channel_credentials* const credentials(void) { return m_pChannelCredentials; }
-    void setHashKey(const String& hashKey) { m_HashKey = hashKey; }
-    const String& getHashKey(void) const { return m_HashKey; }
+    const String& hashKey(void) const { return m_HashKey; }
     static Class* const getClass(void);
     static const StaticString& className(void) { return s_ClassName; }
 
@@ -82,14 +107,14 @@ private:
 /*****************************************************************************/
 
 void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,
-                        const String& pem_roots);
+                        const String& perm_root_certs);
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault);
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createSsl,
-                          const Variant& pem_root_certs,
-                          const Variant& pem_key_cert_pair__private_key /*= null*/,
-                          const Variant& pem_key_cert_pair__cert_chain /*=null*/
+                          const Variant& perm_root_certs,
+                          const Variant& perm_key_cert_pair__private_key /*= null*/,
+                          const Variant& perm_key_cert_pair__cert_chain /*=null*/
                          );
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createComposite,
@@ -98,7 +123,7 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createComposite,
 
 Variant HHVM_STATIC_METHOD(ChannelCredentials, createInsecure);
 
-void grpc_hhvm_init_channel_credentials();
+void grpc_hhvm_init_channel_credentials(void);
 
 }
 

@@ -119,7 +119,6 @@ Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
         SystemLib::throwBadMethodCallExceptionObject("Failed to create call credentials composite");
     }
 
-
     Object newCallCredentialsObj{ CallCredentialsData::getClass() };
     CallCredentialsData* const pNewCallCredentialsData{ Native::data<CallCredentialsData>(newCallCredentialsObj)};
     pNewCallCredentialsData->init(pCallCredentials);

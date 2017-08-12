@@ -31,18 +31,22 @@ namespace HPHP {
 class CompletionQueue
 {
  public:
+    // constructors/destructors
     ~CompletionQueue(void);
     CompletionQueue(const CompletionQueue&) = delete;
     CompletionQueue(CompletionQueue&&) = delete;
     CompletionQueue& operator=(const CompletionQueue&) = delete;
     CompletionQueue& operator=(CompletionQueue&&) = delete;
 
+    // interface functions
     grpc_completion_queue* const queue(void) { return m_pCompletionQueue; };
 
+    // singleton accessor and factory function
     static CompletionQueue& getClientQueue(void);
     static std::unique_ptr<CompletionQueue> getServerQueue(void);
 
 private:
+    // private constructor
     CompletionQueue(void);
 
     // The global completion queue for all operations

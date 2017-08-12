@@ -293,7 +293,7 @@ void HHVM_METHOD(Channel, __construct,
     String fullCacheKey = target + channelArgs.getHashKey();
     if (pChannelCredentialsData != nullptr)
     {
-        fullCacheKey += pChannelCredentialsData->getHashKey();
+        fullCacheKey += pChannelCredentialsData->hashKey();
     }
 
     pChannelData->setHashKey(fullCacheKey);

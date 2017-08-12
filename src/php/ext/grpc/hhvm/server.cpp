@@ -192,7 +192,6 @@ Object HHVM_METHOD(Server, requestCall)
         oSS << "There was a problem with the request. Event success code: " << event.success
             << " Type: " << event.type << std::endl;
         SystemLib::throwBadMethodCallExceptionObject(oSS.str());
-        return resultObj;
     }
 
     callDetails.method_text = grpc_slice_to_c_string(callDetails.details.method);

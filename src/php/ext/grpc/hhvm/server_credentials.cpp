@@ -20,16 +20,10 @@
     #include "config.h"
 #endif
 
-#include "hphp/runtime/ext/extension.h"
-#include "hphp/runtime/base/req-containers.h"
-#include "hphp/runtime/vm/native-data.h"
-#include "hphp/runtime/base/builtin-functions.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-
 #include "server_credentials.h"
 #include "common.h"
+
+#include "hphp/runtime/vm/native-data.h"
 
 namespace HPHP {
 
@@ -81,31 +75,32 @@ void ServerCredentialsData::destroy(void)
 /*****************************************************************************/
 
 Object HHVM_STATIC_METHOD(ServerCredentials, createSsl,
-  const String& pem_root_certs,
-  const String& pem_private_key,
-  const String& pem_cert_chain)
+                          const String& pem_root_certs,
+                          const String& pem_private_key,
+                          const String& pem_cert_chain)
 {
     HHVM_TRACE_SCOPE("ServerCredentials createSsl") // Degug Trace
 
-  grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
+    grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
+    pem_key_cert_pair.private_key = pem_private_key.c_str();
+    pem_key_cert_pair.cert_chain = pem_cert_chain.c_str();
 
-  pem_key_cert_pair.private_key = pem_private_key.c_str();
-  pem_key_cert_pair.cert_chain = pem_cert_chain.c_str();
+    Object newServerCredentialsObj{ ServerCredentialsData::getClass() };
+    ServerCredentialsData* const pServerCredentialsData{ Native::data<ServerCredentialsData>(newServerCredentialsObj) };
 
-  auto newServerCredentialsObj = Object{ServerCredentialsData::getClass()};
-  auto serverCredentialsData = Native::data<ServerCredentialsData>(newServerCredentialsObj);
+    // TODO: add a client_certificate_request field in ServerCredentials and pass it as the last parameter. */
+    grpc_server_credentials* const pServerCredentials{
+        grpc_ssl_server_credentials_create_ex(pem_root_certs.c_str(), &pem_key_cert_pair,
+                                              1, GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, nullptr) };
 
-  /* TODO: add a client_certificate_request field in ServerCredentials and pass
-   * it as the last parameter. */
-  serverCredentialsData->init(grpc_ssl_server_credentials_create_ex(
-    pem_root_certs.c_str(),
-    &pem_key_cert_pair,
-    1,
-    GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
-    nullptr
-  ));
+    if (!pServerCredentials)
+    {
+        SystemLib::throwBadMethodCallExceptionObject("failed to create server credentials");
+    }
 
-  return newServerCredentialsObj;
+    pServerCredentialsData->init(pServerCredentials);
+
+    return newServerCredentialsObj;
 }
 
 } // namespace HPHP
