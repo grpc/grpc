@@ -23,7 +23,7 @@
 #include <thread>
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
 
 #include "hphp/runtime/ext/extension.h"
@@ -72,23 +72,29 @@ typedef struct plugin_state
 
 class CallCredentialsData
 {
-private:
-    grpc_call_credentials* wrapped{nullptr};
-    MetadataPromise* m_pMetadataPromise;
 public:
-    static Class* s_class;
-    static const StaticString s_className;
+    // constructors/destructors
+    CallCredentialsData(void) : m_pCallCredentials{ nullptr } {}
+    ~CallCredentialsData(void);
+    CallCredentialsData(const CallCredentialsData& otherCallCredentialsData) = delete;
+    CallCredentialsData(CallCredentialsData&& otherCallCredentialsData) = delete;
+    CallCredentialsData& operator=(const CallCredentialsData& rhsCallCredentialsData) = delete;
+    CallCredentialsData& operator&(CallCredentialsData&& rhsCallCredentialsData) = delete;
 
-    static Class* getClass();
+    // interface functions
+    void init(grpc_call_credentials* const pCallCredentials);
+    grpc_call_credentials* const credentials(void)  { return m_pCallCredentials; }
+    static Class* const getClass(void);
+    static const StaticString& className(void) { return s_ClassName; }
 
-    CallCredentialsData();
-    ~CallCredentialsData();
+private:
+    // helper functions
+    void destroy(void);
 
-    void init(grpc_call_credentials* call_credentials);
-    void setPromise(MetadataPromise* const pMetadataPromise) { m_pMetadataPromise = pMetadataPromise; }
-    MetadataPromise* const getPromise(void) { return m_pMetadataPromise; }
-    void sweep();
-    grpc_call_credentials* getWrapped();
+    // member variables
+    grpc_call_credentials* m_pCallCredentials{nullptr};
+    static Class* s_Class;
+    static const StaticString s_ClassName;
 };
 
 Object HHVM_STATIC_METHOD(CallCredentials, createComposite,

@@ -33,28 +33,49 @@
 
 namespace HPHP {
 
-Class* CallCredentialsData::s_class = nullptr;
-const StaticString CallCredentialsData::s_className("Grpc\\CallCredentials");
+/*****************************************************************************/
+/*                           CallCredentialsData                             */
+/*****************************************************************************/
 
-IMPLEMENT_GET_CLASS(CallCredentialsData);
+Class* CallCredentialsData::s_Class{ nullptr };
+const StaticString CallCredentialsData::s_ClassName{ "Grpc\\CallCredentials" };
 
-CallCredentialsData::CallCredentialsData() : m_pMetadataPromise{ nullptr } {}
-CallCredentialsData::~CallCredentialsData() { sweep(); }
-
-void CallCredentialsData::init(grpc_call_credentials* call_credentials) {
-  wrapped = call_credentials;
+CallCredentialsData::~CallCredentialsData(void)
+{
+    destroy();
 }
 
-void CallCredentialsData::sweep() {
-  if (wrapped) {
-    grpc_call_credentials_release(wrapped);
-    wrapped = nullptr;
-  }
+Class* const CallCredentialsData::getClass(void)
+{
+    if (!s_Class)
+    {
+        s_Class = Unit::lookupClass(s_ClassName.get());
+        assert(s_Class);
+    }
+    return s_Class;
 }
 
-grpc_call_credentials* CallCredentialsData::getWrapped() {
-  return wrapped;
+void CallCredentialsData::init(grpc_call_credentials* const pCallCredentials)
+{
+    // destroy any existing call credetials
+    destroy();
+
+    // take ownership of new call credentials
+    m_pCallCredentials = pCallCredentials;
 }
+
+void CallCredentialsData::destroy(void)
+{
+    if (m_pCallCredentials)
+    {
+        grpc_call_credentials_release(m_pCallCredentials);
+        m_pCallCredentials = nullptr;
+    }
+}
+
+/*****************************************************************************/
+/*                           HHVM Channel Methods                            */
+/*****************************************************************************/
 
 /**
  * Create composite credentials from two existing credentials.
@@ -68,19 +89,25 @@ Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
 {
     HHVM_TRACE_SCOPE("CallCredentials createComposite") // Degug Trace
 
-  auto callCredentialsData1 = Native::data<CallCredentialsData>(cred1_obj);
-  auto callCredentialsData2 = Native::data<CallCredentialsData>(cred2_obj);
+    CallCredentialsData* const pCallCredentialsData1{ Native::data<CallCredentialsData>(cred1_obj) };
+    CallCredentialsData* const pCallCredentialsData2{ Native::data<CallCredentialsData>(cred2_obj) };
 
-  grpc_call_credentials *call_credentials =
-        grpc_composite_call_credentials_create(callCredentialsData1->getWrapped(),
-                                               callCredentialsData2->getWrapped(),
-                                               nullptr);
+    grpc_call_credentials* const pCallCredentials{
+        grpc_composite_call_credentials_create(pCallCredentialsData1->credentials(),
+                                               pCallCredentialsData2->credentials(),
+                                               nullptr) };
 
-  auto newCallCredentialsObj = Object{CallCredentialsData::getClass()};
-  auto newCallCredentialsData = Native::data<CallCredentialsData>(newCallCredentialsObj);
-  newCallCredentialsData->init(call_credentials);
+    if (!pCallCredentials)
+    {
+        SystemLib::throwBadMethodCallExceptionObject("Failed to create call credentials composite");
+    }
 
-  return newCallCredentialsObj;
+
+    Object newCallCredentialsObj{ CallCredentialsData::getClass() };
+    CallCredentialsData* const pNewCallCredentialsData{ Native::data<CallCredentialsData>(newCallCredentialsObj)};
+    pNewCallCredentialsData->init(pCallCredentials);
+
+    return newCallCredentialsObj;
 }
 
 /**

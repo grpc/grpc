@@ -147,7 +147,7 @@ public:
         Native::registerNativeDataInfo<ChannelCredentialsData>(ChannelCredentialsData::s_className.get());
         Native::registerNativeDataInfo<ChannelData>(ChannelData::className().get());
 
-        Native::registerNativeDataInfo<CallCredentialsData>(CallCredentialsData::s_className.get());
+        Native::registerNativeDataInfo<CallCredentialsData>(CallCredentialsData::className().get());
         Native::registerNativeDataInfo<CallData>(CallData::className().get());
 
         loadSystemlib();

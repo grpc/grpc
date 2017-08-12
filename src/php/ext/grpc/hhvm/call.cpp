@@ -169,32 +169,10 @@ Variant MetadataArray::phpData(void) const
     {
         const grpc_metadata& element(m_Array.metadata[elem]);
 
-        class CopySlice
-        {
-        public:
-            CopySlice(const gpr_slice& slice) : m_Length{ GRPC_SLICE_LENGTH(slice) },
-                m_pSlice{ reinterpret_cast<char*>(req::calloc(m_Length + 1, sizeof(char))) }
-            {
-                std::memcpy(m_pSlice, GRPC_SLICE_START_PTR(slice), m_Length);
-            }
-            ~CopySlice(void)
-            {
-                if (m_pSlice)
-                {
-                    req::free(m_pSlice);
-                    m_pSlice = nullptr;
-                }
-            }
-            const char* const slice(void) const { return m_pSlice; }
-            size_t length(void) const { return m_Length; }
-        private:
-            size_t m_Length;
-            char* m_pSlice;
-        };
-        CopySlice keySlice{ element.key };
-        CopySlice valueSlice{ element.value };
-        String key{ keySlice.slice(), keySlice.length(), CopyString };
-        String value{ valueSlice.slice(), valueSlice.length(), CopyString };
+        String key{ reinterpret_cast<const char* const>(GRPC_SLICE_START_PTR(element.key)),
+                    GRPC_SLICE_LENGTH(element.key), CopyString };
+        String value{ reinterpret_cast<const char* const>(GRPC_SLICE_START_PTR(element.value)),
+                      GRPC_SLICE_LENGTH(element.value), CopyString };
 
         if (!phpArray.exists(key, true))
         {
@@ -271,7 +249,6 @@ void HHVM_METHOD(Call, __construct,
     if (pChannelData->channel() == nullptr)
     {
         SystemLib::throwBadMethodCallExceptionObject("Call cannot be constructed from a closed Channel");
-        return;
     }
     pCallData->setChannelData(pChannelData);
 
@@ -672,7 +649,7 @@ int64_t HHVM_METHOD(Call, setCredentials,
     CallCredentialsData* const pCallCredentialsData{ Native::data<CallCredentialsData>(creds_obj) };
 
     grpc_call_error error{ grpc_call_set_credentials(pCallData->call(),
-                                                     pCallCredentialsData->getWrapped()) };
+                                                     pCallCredentialsData->credentials()) };
 
     return static_cast<int64_t>(error);
 }

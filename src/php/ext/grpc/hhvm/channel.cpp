@@ -35,10 +35,7 @@
 #include "grpc/grpc_security.h"
 
 #include "hphp/runtime/ext/extension.h"
-//#include "hphp/runtime/base/req-containers.h"
 #include "hphp/runtime/base/builtin-functions.h"
-//#include "hphp/runtime/ext/std/ext_std_variable.h"
-//#include "hphp/runtime/base/variable-unserializer.h"
 #include "hphp/runtime/base/string-util.h"
 #include "hphp/runtime/vm/native-data.h"
 
@@ -106,7 +103,6 @@ bool ChannelArgs::init(const Array& argsArray)
             m_ChannelArgs.args = (grpc_arg *) req::calloc(argsArray.size(), sizeof(grpc_arg));
         #endif
 
-        //std::cout << "Channel Args" << std::endl;
         size_t count{ 0 };
         for (ArrayIter iter(argsArray); iter; ++iter, ++count)
         {
@@ -117,7 +113,6 @@ bool ChannelArgs::init(const Array& argsArray)
                 return false;
             }
             m_ChannelArgs.args[count].key = const_cast<char*>(key.toString().c_str());
-            //std::cout << "Count: " << count << " - Key: " << m_ChannelArgs.args[count].key;
 
             Variant value{ iter.second() };
             if (!value.isNull())
@@ -126,13 +121,11 @@ bool ChannelArgs::init(const Array& argsArray)
                 {
                     m_ChannelArgs.args[count].value.integer = value.toInt32();
                     m_ChannelArgs.args[count].type = GRPC_ARG_INTEGER;
-                    //std::cout << " Value: " << m_ChannelArgs.args[count].value.integer << std::endl;
                 }
                 else if (value.isString())
                 {
                     m_ChannelArgs.args[count].value.string = const_cast<char*>(value.toString().c_str());
                     m_ChannelArgs.args[count].type = GRPC_ARG_STRING;
-                    //std::cout << " Value: " << m_ChannelArgs.args[count].value.string << std::endl;
                 }
                 else
                 {

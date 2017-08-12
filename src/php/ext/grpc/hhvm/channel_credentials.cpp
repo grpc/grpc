@@ -169,7 +169,7 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createComposite,
 
   grpc_channel_credentials* channel_credentials = grpc_composite_channel_credentials_create(
     channelCredentialsData->getWrapped(),
-    callCredentialsData->getWrapped(),
+    callCredentialsData->credentials(),
     NULL
   );
 
