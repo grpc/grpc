@@ -65,14 +65,20 @@ static void setup_handshakers(tsi_test_fixture *fixture) {
 }
 
 static void check_unused_bytes(tsi_test_fixture *fixture) {
+  tsi_handshaker_result *result_with_unused_bytes =
+      fixture->has_client_finished_first ? fixture->server_result
+                                         : fixture->client_result;
+  tsi_handshaker_result *result_without_unused_bytes =
+      fixture->has_client_finished_first ? fixture->client_result
+                                         : fixture->server_result;
   const unsigned char *bytes = NULL;
   size_t bytes_size = 0;
   GPR_ASSERT(tsi_handshaker_result_get_unused_bytes(
-                 fixture->client_result, &bytes, &bytes_size) == TSI_OK);
+                 result_with_unused_bytes, &bytes, &bytes_size) == TSI_OK);
   GPR_ASSERT(bytes_size == strlen(TSI_TEST_UNUSED_BYTES));
   GPR_ASSERT(memcmp(bytes, TSI_TEST_UNUSED_BYTES, bytes_size) == 0);
   GPR_ASSERT(tsi_handshaker_result_get_unused_bytes(
-                 fixture->server_result, &bytes, &bytes_size) == TSI_OK);
+                 result_without_unused_bytes, &bytes, &bytes_size) == TSI_OK);
   GPR_ASSERT(bytes_size == 0);
   GPR_ASSERT(bytes == NULL);
 }
@@ -115,11 +121,14 @@ static void send_bytes_to_peer(tsi_test_fixture *fixture,
 static void maybe_append_unused_bytes(handshaker_args *args) {
   GPR_ASSERT(args != NULL);
   GPR_ASSERT(args->fixture != NULL);
-  if (args->fixture->test_unused_bytes && !args->appended_unused_bytes) {
+  tsi_test_fixture *fixture = args->fixture;
+  if (fixture->test_unused_bytes && !args->appended_unused_bytes) {
     args->appended_unused_bytes = true;
-    send_bytes_to_peer(args->fixture,
-                       (const unsigned char *)TSI_TEST_UNUSED_BYTES,
+    send_bytes_to_peer(fixture, (const unsigned char *)TSI_TEST_UNUSED_BYTES,
                        strlen(TSI_TEST_UNUSED_BYTES), args->is_client);
+    if (fixture->client_result != NULL && fixture->server_result == NULL) {
+      fixture->has_client_finished_first = true;
+    }
   }
 }
 
@@ -522,6 +531,7 @@ void tsi_test_fixture_init(tsi_test_fixture *fixture) {
   fixture->bytes_read_from_client_channel = 0;
   fixture->bytes_read_from_server_channel = 0;
   fixture->test_unused_bytes = true;
+  fixture->has_client_finished_first = false;
 }
 
 void tsi_test_fixture_destroy(tsi_test_fixture *fixture) {

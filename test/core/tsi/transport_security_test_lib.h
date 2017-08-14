@@ -21,7 +21,7 @@
 
 #include "src/core/tsi/transport_security_interface.h"
 
-#define TSI_TEST_TINY_HANDSHAKE_BUFFER_SIZE 16
+#define TSI_TEST_TINY_HANDSHAKE_BUFFER_SIZE 32
 #define TSI_TEST_SMALL_HANDSHAKE_BUFFER_SIZE 128
 #define TSI_TEST_SMALL_READ_BUFFER_ALLOCATED_SIZE 41
 #define TSI_TEST_SMALL_PROTECTED_BUFFER_SIZE 37
@@ -84,6 +84,11 @@ struct tsi_test_fixture {
   size_t bytes_read_from_server_channel;
   /* tsi_test_frame_protector_config instance */
   tsi_test_frame_protector_config *config;
+  /* a flag indicating if client has finished TSI handshake first (i.e., before
+     server).
+     The flag should be referred if and only if TSI handshake finishes
+     successfully. */
+  bool has_client_finished_first;
   /* a flag indicating whether to test tsi_handshaker_result_get_unused_bytes()
      for TSI implementation. This field is true by default, and false
      for SSL TSI implementation due to grpc issue #12164
