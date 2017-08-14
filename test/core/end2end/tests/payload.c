@@ -187,13 +187,13 @@ static void request_response_with_payload(grpc_end2end_test_config config,
 
   memset(ops, 0, sizeof(ops));
   op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message.recv_message = &request_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &request_payload_recv;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -205,8 +205,8 @@ static void request_response_with_payload(grpc_end2end_test_config config,
 
   memset(ops, 0, sizeof(ops));
   op = ops;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
   op->flags = 0;
   op->reserved = NULL;
   op++;
