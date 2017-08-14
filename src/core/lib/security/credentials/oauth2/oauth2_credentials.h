@@ -62,6 +62,7 @@ typedef void (*grpc_fetch_oauth2_func)(grpc_exec_ctx *exec_ctx,
 typedef struct grpc_oauth2_pending_get_request_metadata {
   grpc_credentials_mdelem_array *md_array;
   grpc_closure *on_request_metadata;
+  grpc_polling_entity *pollent;
   struct grpc_oauth2_pending_get_request_metadata *next;
 } grpc_oauth2_pending_get_request_metadata;
 
@@ -74,6 +75,7 @@ typedef struct {
   grpc_oauth2_pending_get_request_metadata *pending_requests;
   grpc_httpcli_context httpcli_context;
   grpc_fetch_oauth2_func fetch_func;
+  grpc_polling_entity pollent;
 } grpc_oauth2_token_fetcher_credentials;
 
 // Google refresh token credentials.

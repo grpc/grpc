@@ -23,38 +23,6 @@ cd $(dirname $0)
 # Run the tests server.
 
 BINDIR=../../../bins/$CONFIG
-PROTOC=$BINDIR/protobuf/protoc
-PLUGIN=$BINDIR/grpc_objective_c_plugin
-
-rm -rf PluginTest/*pb*
-
-# Verify the output proto filename
-eval $PROTOC \
-    --plugin=protoc-gen-grpc=$PLUGIN \
-    --objc_out=PluginTest \
-    --grpc_out=PluginTest \
-    -I PluginTest \
-    -I ../../../third_party/protobuf/src \
-    PluginTest/*.proto
-
-[ -e ./PluginTest/TestDashFilename.pbrpc.h ] || {
-    echo >&2 "protoc outputs wrong filename."
-    exit 1
-}
-
-# Verify names of the imported protos in generated code
-[ "`cat PluginTest/TestDashFilename.pbrpc.h |
-    egrep '#import ".*\.pb(objc|rpc)\.h"$' |
-    egrep '-'`" ] && {
-    echo >&2 "protoc generated import with wrong filename."
-    exit 1
-}
-[ "`cat PluginTest/TestDashFilename.pbrpc.m |
-    egrep '#import ".*\.pb(objc|rpc)\.m"$' |
-    egrep '-'`" ] && {
-    echo >&2 "protoc generated import with wrong filename."
-    exit 1
-}
 
 [ -f $BINDIR/interop_server ] || {
     echo >&2 "Can't find the test server. Make sure run_tests.py is making" \
