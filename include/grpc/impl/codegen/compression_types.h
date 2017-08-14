@@ -128,7 +128,7 @@ typedef struct grpc_compression_options {
   /** The default stream compression level. It'll be used in the absence of call
    * specefic settings. If present, takes precedence over \a default_level,
    * \a default_algorithm and \a default_stream_compression_algorithm. */
-  struct grpc_stream_compression_options_default_algorithm {
+  struct grpc_stream_compression_options_default_level {
     int is_set;
     grpc_stream_compression_level level;
   } default_stream_compression_level;
