@@ -1178,6 +1178,7 @@ gpr_log(GPR_INFO, "retry_committed=%d", calld->retry_committed);
 gpr_log(GPR_INFO, "RETRIES CONFIGURED");
     start_retriable_subchannel_batches(exec_ctx, elem);
   } else {
+    // Retries not enabled; send down batches as-is.
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       size_t num_batches = 0;
       for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
@@ -1187,7 +1188,6 @@ gpr_log(GPR_INFO, "RETRIES CONFIGURED");
                          " pending batches to subchannel_call=%p",
               chand, calld, num_batches, calld->subchannel_call);
     }
-    // Retries not enabled; send down batches as-is.
     size_t first_batch_idx = GPR_ARRAY_SIZE(calld->pending_batches);
     for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
       pending_batch *pending = &calld->pending_batches[i];
@@ -2030,6 +2030,7 @@ gpr_log(GPR_INFO, "==> start_retriable_subchannel_batches()");
                        " retriable batches to subchannel_call=%p",
             chand, calld, num_batches, calld->subchannel_call);
   }
+// FIXME: this assertion fails on a cancel_stream op!
   GPR_ASSERT(num_batches > 0);
   grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call,
                                   &batches[0]->batch);
