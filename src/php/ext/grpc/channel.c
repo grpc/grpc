@@ -81,7 +81,6 @@ PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_channel)
       if (!(PHP_GRPC_PERSISTENT_LIST_FIND(&EG(persistent_list), p->wrapper->key,
                                           key_len, rsrc))) {
         grpc_channel_destroy(p->wrapper->wrapped);
-        free(p->wrapper->target);
       }
       gpr_mu_unlock(&global_persistent_list_mu);
     }
@@ -203,8 +202,10 @@ void create_and_add_channel_to_persistent_list(
  * credentials.
  *
  * If the $args array contains a "force_new" key mapping to a boolean value
- * of "true", a new and separate underlying grpc_channel will be created
- * regardless. This will not affect existing channels.
+ * of "true", a new underlying grpc_channel will be created regardless. If
+ * there are any opened channels on the same hostname, user must manually
+ * call close() on those dangling channels before the end of the PHP
+ * script.
  *
  * @param string $target The hostname to associate with this channel
  * @param array $args_array The arguments to pass to the Channel
@@ -287,7 +288,7 @@ PHP_METHOD(Channel, __construct) {
   }
   channel->wrapper = malloc(sizeof(grpc_channel_wrapper));
   channel->wrapper->key = key;
-  channel->wrapper->target = strdup(target);
+  channel->wrapper->target = target;
   channel->wrapper->args_hashstr = sha1str;
   if (creds != NULL && creds->hashstr != NULL) {
     channel->wrapper->creds_hashstr = creds->hashstr;
@@ -295,7 +296,11 @@ PHP_METHOD(Channel, __construct) {
   gpr_mu_init(&channel->wrapper->mu);
   smart_str_free(&buf);
 
-  if (force_new || (creds != NULL && creds->has_call_creds)) {
+  if (force_new) {
+    php_grpc_delete_persistent_list_entry(key, key_len TSRMLS_CC);
+  }
+
+  if (creds != NULL && creds->has_call_creds) {
     // If the ChannelCredentials object was composed with a CallCredentials
     // object, there is no way we can tell them apart. Do NOT persist
     // them. They should be individually destroyed.
@@ -426,7 +431,6 @@ PHP_METHOD(Channel, close) {
   gpr_mu_lock(&channel->wrapper->mu);
   if (channel->wrapper->wrapped != NULL) {
     grpc_channel_destroy(channel->wrapper->wrapped);
-    free(channel->wrapper->target);
     channel->wrapper->wrapped = NULL;
   }
 
@@ -460,7 +464,6 @@ static void php_grpc_channel_plink_dtor(php_grpc_zend_resource *rsrc
     gpr_mu_lock(&le->channel->mu);
     if (le->channel->wrapped != NULL) {
       grpc_channel_destroy(le->channel->wrapped);
-      free(le->channel->target);
       free(le->channel->key);
       free(le->channel);
     }

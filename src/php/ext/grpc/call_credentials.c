@@ -194,7 +194,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
   grpc_metadata_array metadata;
   bool cleanup = true;
 
-  if (retval == NULL || Z_TYPE_P(retval) != IS_ARRAY) {
+  if (Z_TYPE_P(retval) != IS_ARRAY) {
     cleanup = false;
     code = GRPC_STATUS_INVALID_ARGUMENT;
   } else if (!create_metadata_array(retval, &metadata)) {
