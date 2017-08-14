@@ -146,7 +146,7 @@ typedef struct grpc_compression_options {
    * default_algorithm. This option corresponds to the channel
    * argument key behind \a GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM.
    */
-  struct {
+  struct grpc_stream_compression_options_default_algorithm {
     int is_set;
     grpc_stream_compression_algorithm algorithm;
   } default_stream_compression_algorithm;
