@@ -55,6 +55,9 @@ public:
     grpc_byte_buffer* const byteBuffer(void) const;
 
 private:
+    // helper functions
+    void destroy(void);
+
     // member variables
     grpc_slice m_Slice;
 };

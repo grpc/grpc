@@ -21,7 +21,7 @@
 #ifndef GRPC_HHVM_GRPC_COMPLETION_QUEUE_H_
 #define GRPC_HHVM_GRPC_COMPLETION_QUEUE_H_
 
-#include <grpc/grpc.h>
+#include "grpc/grpc.h"
 
 #include "hphp/runtime/ext/extension.h"
 

@@ -58,7 +58,7 @@ Slice::Slice(const grpc_byte_buffer* const buffer)
 
 Slice::~Slice(void)
 {
-    gpr_slice_unref(m_Slice);
+    destroy();
 }
 
 Slice::Slice(const Slice& otherSlice)
@@ -69,13 +69,20 @@ Slice::Slice(const Slice& otherSlice)
 
 Slice::Slice(Slice&& otherSlice)
 {
-    std::swap(m_Slice, otherSlice.m_Slice);
+    // move is emulated as copy since when otherSlice goes out of scope
+    // it will decrease its refcount but now this slice will hold it
+    m_Slice = otherSlice.m_Slice;
+    increaseRef();
 }
 
 Slice& Slice::operator=(const Slice& rhsSlice)
 {
     if (this != &rhsSlice)
     {
+        // destroy existing slice
+        destroy();
+
+        // copy other slice via increasing refcount
         m_Slice = rhsSlice.m_Slice;
         increaseRef();
     }
@@ -86,6 +93,7 @@ Slice& Slice::operator=(Slice&& rhsSlice)
 {
     if (this != &rhsSlice)
     {
+        // swap these
         std::swap(m_Slice, rhsSlice.m_Slice);
     }
     return *this;
@@ -103,6 +111,11 @@ grpc_byte_buffer* const Slice::byteBuffer(void) const
 {
     grpc_slice* const pSlice{ const_cast<grpc_slice*>(&m_Slice) };
     return const_cast<grpc_byte_buffer* const>(grpc_raw_byte_buffer_create(pSlice, 1));
+}
+
+void Slice::destroy(void)
+{
+    gpr_slice_unref(m_Slice);
 }
 
 void Slice::increaseRef(void)

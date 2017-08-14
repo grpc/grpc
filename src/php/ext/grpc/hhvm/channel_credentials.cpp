@@ -27,7 +27,7 @@
 #include "hphp/runtime/vm/native-data.h"
 #include "hphp/runtime/base/string-util.h"
 
-#include <grpc/support/alloc.h>
+#include "grpc/support/alloc.h"
 
 namespace HPHP {
 

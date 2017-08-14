@@ -27,8 +27,8 @@
 
 #include "hphp/runtime/ext/extension.h"
 
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
+#include "grpc/grpc.h"
+#include "grpc/grpc_security.h"
 
 namespace HPHP {
 

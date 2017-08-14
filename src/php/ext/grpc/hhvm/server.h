@@ -27,7 +27,7 @@
 
 #include "hphp/runtime/ext/extension.h"
 
-#include <grpc/grpc.h>
+#include "grpc/grpc.h"
 
 namespace HPHP {
 

@@ -19,16 +19,19 @@
 #ifndef NET_GRPC_HHVM_GRPC_CHANNEL_H_
 #define NET_GRPC_HHVM_GRPC_CHANNEL_H_
 
-#include <map>
+#include <shared_mutex>
 #include <string>
+#include <unordered_map>
 
 #ifdef HAVE_CONFIG_H
     #include "config.h"
 #endif
 
+#include "slice.h"
+
 #include "hphp/runtime/ext/extension.h"
 
-#include <grpc/grpc.h>
+#include "grpc/grpc.h"
 
 namespace HPHP {
 
@@ -49,10 +52,9 @@ public:
     ChannelData& operator=(ChannelData&& rhsChannelData) = delete;
 
     // interface functions
-    void init(grpc_channel* channel);
+    void init(grpc_channel* channel, const bool owned, const String& hashKey = String{});
     grpc_channel* const channel(void) { return m_pChannel; }
-    void setHashKey(const String& hashKey) { m_HashKey = hashKey; }
-    const String& getHashKey(void) const { return m_HashKey; }
+    const String& hashKey(void) const { return m_HashKey; }
     static Class* const getClass(void);
     static const StaticString& className(void) { return s_ClassName; }
 
@@ -62,6 +64,7 @@ public:
 
     // member variables
     grpc_channel* m_pChannel;
+    bool m_Owned;
     String m_HashKey;
     static Class* s_pClass;
     static const StaticString s_ClassName;
@@ -85,7 +88,8 @@ public:
     // interface functions
     bool init(const Array& argsArray);
     const grpc_channel_args& args(void) const { return m_ChannelArgs; }
-    const String& getHashKey(void) { return m_HashKey; }
+    const String& hashKey(void) { return m_HashKey; }
+    const String& concatenatedArgs(void) const { return m_ConcatenatedArgs; }
 
 private:
     // helper functions
@@ -93,36 +97,50 @@ private:
 
     // member variables
     String m_HashKey;
+    String m_ConcatenatedArgs;
     grpc_channel_args m_ChannelArgs;
+    std::vector<std::pair<Slice, Slice>> m_PHPData; // the key, value PHP Data
 };
 
 /*****************************************************************************/
 /*                               Channel Cache                               */
 /*****************************************************************************/
 
+// Channels Cache Global Singleton
 class ChannelsCache
 {
 public:
-  static ChannelsCache& GetChannelsCache(void)
-  {
-      static ChannelsCache s_ChannelsCache;
-      return s_ChannelsCache;
-  }
+    // typedef's
+    typedef std::shared_timed_mutex     lock_type;
+    typedef std::shared_lock<lock_type> ReadLock;
+    typedef std::unique_lock<lock_type> WriteLock;
 
-  // constructors/destructors
-  ChannelsCache(void);
-  ~ChannelsCache(void);
+    // constructors/destructors
+    ~ChannelsCache(void);
+    ChannelsCache(const ChannelsCache& otherrhsChannelsCache) = delete;
+    ChannelsCache(ChannelsCache&& otherrhsChannelsCache) = delete;
+    ChannelsCache& operator=(const ChannelsCache& rhsChannelsCache) = delete;
+    ChannelsCache& operator=(ChannelsCache&& rhsChannelsCache) = delete;
 
-  // interface functions
-  void addChannel(const String& key, grpc_channel *channel);
-  grpc_channel *getChannel(const String& key);
-  bool hasChannel(const String& key);
-  void deleteChannel(const String& key);
-  void destroyChannels(void);
+    // interface functions
+    bool addChannel(const String& channelHash, grpc_channel* const pChannel);
+    grpc_channel* const getChannel(const String& channelHash);
+    bool hasChannel(const String& channelHash);
+    void deleteChannel(const String& channelHash);
+
+    // singleton function
+    static ChannelsCache& getChannelsCache(void);
+
 private:
-  // member variables
-  ReadWriteMutex m_ChannelMapMutex;
-  std::map<std::string, grpc_channel *> m_ChannelMap;
+    // constructors/destructors
+    ChannelsCache(void);
+
+    // helper functions
+    void destroyChannel(grpc_channel* const pChannel);
+
+    // member variables
+    lock_type m_ChannelMapMutex;
+    std::unordered_map<std::string, grpc_channel*> m_ChannelMap;
 };
 
 /*****************************************************************************/

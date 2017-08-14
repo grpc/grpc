@@ -16,8 +16,8 @@
  *
  */
 
-#include <map>
-#include <string>
+#include <algorithm>
+#include <vector>
 
 #ifdef HAVE_CONFIG_H
     #include "config.h"
@@ -71,19 +71,24 @@ ChannelData::~ChannelData(void)
     destroy();
 }
 
-void ChannelData::init(grpc_channel* channel)
+void ChannelData::init(grpc_channel* channel, const bool owned, const String& hashKey)
 {
     // destroy any existing channel data
     destroy();
 
     m_pChannel = channel;
+    m_Owned = owned;
+    m_HashKey = hashKey;
 }
 
 void ChannelData::destroy(void)
 {
     if (m_pChannel)
     {
-        // We don't destroy raw channels here because a channel may be shared by more than one object
+        if (m_Owned)
+        {
+            grpc_channel_destroy(m_pChannel);
+        }
         m_pChannel = nullptr;
     }
 }
@@ -105,12 +110,11 @@ ChannelArgs::~ChannelArgs(void)
 
 bool ChannelArgs::init(const Array& argsArray)
 {
-    String objectKey = "";
-
     // destroy existing
     destroyArgs();
 
     size_t elements{ static_cast<size_t>(argsArray.size()) };
+    std::vector<std::pair<char*, char*>> channelArgs;
     if (elements > 0)
     {
         #if HHVM_VERSION_MAJOR >= 3 && HHVM_VERSION_MINOR >= 19 || HHVM_VERSION_MAJOR > 3
@@ -120,6 +124,7 @@ bool ChannelArgs::init(const Array& argsArray)
         #endif
 
         size_t count{ 0 };
+        m_PHPData.resize(argsArray.size());
         for (ArrayIter iter(argsArray); iter; ++iter, ++count)
         {
             Variant key{ iter.first() };
@@ -128,19 +133,29 @@ bool ChannelArgs::init(const Array& argsArray)
                 destroyArgs();
                 return false;
             }
-            m_ChannelArgs.args[count].key = const_cast<char*>(key.toString().c_str());
+            Slice keySlice{ key.toString().c_str() };
 
             Variant value{ iter.second() };
             if (!value.isNull())
             {
                 if (value.isInteger())
                 {
-                    m_ChannelArgs.args[count].value.integer = value.toInt32();
+                    // convert and store PHP data
+                    int32_t valueInt{ value.toInt32() };
+                    Slice valueSlice{ std::to_string(valueInt).c_str() };
+                    m_PHPData[count] = std::move(std::make_pair(keySlice, valueSlice));
+
+                    m_ChannelArgs.args[count].value.integer = valueInt;
                     m_ChannelArgs.args[count].type = GRPC_ARG_INTEGER;
                 }
                 else if (value.isString())
                 {
-                    m_ChannelArgs.args[count].value.string = const_cast<char*>(value.toString().c_str());
+                    // convert and store PHP data
+                    String valueStr{ value.toString() };
+                    Slice valueSlice{ valueStr.c_str() };
+                    m_PHPData[count] = std::move(std::make_pair(keySlice, valueSlice));
+
+                    m_ChannelArgs.args[count].value.string = reinterpret_cast<char*>(const_cast<uint8_t*>(m_PHPData[count].second.data()));
                     m_ChannelArgs.args[count].type = GRPC_ARG_STRING;
                 }
                 else
@@ -148,75 +163,138 @@ bool ChannelArgs::init(const Array& argsArray)
                     destroyArgs();
                     return false;
                 }
-
-                objectKey += key.toString() + value.toString();
+                m_ChannelArgs.args[count].key = reinterpret_cast<char*>(const_cast<uint8_t*>(m_PHPData[count].first.data()));
+                channelArgs.emplace_back(reinterpret_cast<char*>(const_cast<uint8_t*>(m_PHPData[count].first.data())),
+                                         reinterpret_cast<char*>(const_cast<uint8_t*>(m_PHPData[count].second.data())));
             }
             else
             {
                 destroyArgs();
                 return false;
             }
+
         }
 
         m_ChannelArgs.num_args = count;
     }
 
-    m_HashKey = StringUtil::SHA1(objectKey, false);
+    // sort the channel arguments via key then value
+    auto sortLambda = [](const std::pair<char*, char*>& pair1,
+                         const std::pair<char*, char*>& pair2)
+    {
+        int keyCmp{ strcmp(pair1.first, pair2.first) };
+        if (keyCmp != 0)
+        {
+            return keyCmp < 0;
+        }
+        else
+        {
+            return (strcmp(pair1.second, pair2.second) < 0);
+        }
+    };
+    std::sort(channelArgs.begin(), channelArgs.end(), sortLambda);
+
+    for(const auto& argPair : channelArgs)
+    {
+        std::cout << "Args: " << argPair.first << ' ' << argPair.second << std::endl;
+        m_ConcatenatedArgs += String{ argPair.first } + String{ argPair.second };
+    }
+    m_HashKey = StringUtil::SHA1(m_ConcatenatedArgs, false);
 
     return true;
 }
 
 void ChannelArgs::destroyArgs(void)
 {
+    // destroy channel args
     if (m_ChannelArgs.args)
     {
         req::free(m_ChannelArgs.args);
         m_ChannelArgs.args = nullptr;
     }
     m_ChannelArgs.num_args = 0;
+
+    // destroy PHP data
+    m_PHPData.clear();
+
+    // reset cached values
+    m_HashKey.clear();
+    m_ConcatenatedArgs.clear();
 }
 
 /*****************************************************************************/
 /*                               Channel Cache                               */
 /*****************************************************************************/
 
-ChannelsCache::ChannelsCache(void) {}
-ChannelsCache::~ChannelsCache(void) {
-  WriteLock l(m_ChannelMapMutex);
-
-  std::map<std::string, grpc_channel *>::iterator it;
-  for (it = m_ChannelMap.begin(); it != m_ChannelMap.end(); ++it) {
-    grpc_channel_destroy(it->second);
-  }
-  m_ChannelMap.clear();
+ChannelsCache::ChannelsCache(void) : m_ChannelMapMutex{}, m_ChannelMap{}
+{
 }
 
-void ChannelsCache::addChannel(const String& key, grpc_channel *channel) {
-  WriteLock l(m_ChannelMapMutex);
-  m_ChannelMap[key.toCppString()] = channel;
+ChannelsCache::~ChannelsCache(void)
+{
+    WriteLock lock{ m_ChannelMapMutex };
+    for(auto& channelPair : m_ChannelMap)
+    {
+        destroyChannel(channelPair.second);
+    }
+    m_ChannelMap.clear();
 }
 
-grpc_channel *ChannelsCache::getChannel(const String& key) {
-  ReadLock l(m_ChannelMapMutex);
-  return m_ChannelMap[key.toCppString()];
+ChannelsCache& ChannelsCache::getChannelsCache(void)
+{
+    static ChannelsCache s_ChannelsCache;
+    return s_ChannelsCache;
 }
 
-bool ChannelsCache::hasChannel(const String& key) {
-  ReadLock l(m_ChannelMapMutex);
-  std::map<std::string, grpc_channel *>::iterator it;
-  it = m_ChannelMap.find(key.toCppString());
-  if (it == m_ChannelMap.end()) {
-    return false;
-  }
-
-  return true;
+bool ChannelsCache::addChannel(const String& key, grpc_channel* const pChannel)
+{
+    std::string keyString{ key.toCppString() };
+    {
+        WriteLock lock{ m_ChannelMapMutex };
+        auto insertPair = m_ChannelMap.emplace(keyString, pChannel);
+        if (!insertPair.second) return false;
+        else                    return true;
+    }
 }
 
-void ChannelsCache::deleteChannel(const String& key) {
-  if (hasChannel(key)) {
-    WriteLock l(m_ChannelMapMutex);
-    m_ChannelMap.erase(key.toCppString());
-  }
+grpc_channel* const ChannelsCache::getChannel(const String& channelHash)
+{
+    ReadLock lock{ m_ChannelMapMutex };
+
+    auto itrFind = m_ChannelMap.find(channelHash.toCppString());
+    if (itrFind == m_ChannelMap.cend())
+    {
+        return nullptr;
+    }
+    else
+    {
+        return itrFind->second;
+    }
+}
+
+bool ChannelsCache::hasChannel(const String& channelHash)
+{
+    return getChannel(channelHash) != nullptr;
+}
+
+void ChannelsCache::deleteChannel(const String& channelHash)
+{
+    std::string keyString{ channelHash.toCppString() };
+    {
+        WriteLock lock(m_ChannelMapMutex);
+
+        auto itrFind = m_ChannelMap.find(keyString);
+        if (itrFind != m_ChannelMap.cend())
+        {
+            destroyChannel(itrFind->second);
+            m_ChannelMap.erase(itrFind);
+        }
+    }
+}
+
+void ChannelsCache::destroyChannel(grpc_channel* const pChannel)
+{
+    grpc_channel_destroy(pChannel);
 }
 
 /*****************************************************************************/
@@ -290,40 +368,48 @@ void HHVM_METHOD(Channel, __construct,
         SystemLib::throwInvalidArgumentExceptionObject("invalid channel arguments");
     }
 
-    String fullCacheKey = target + channelArgs.getHashKey();
+    String fullCacheKey{ StringUtil::SHA1(target + channelArgs.concatenatedArgs(), false) };
     if (pChannelCredentialsData != nullptr)
     {
         fullCacheKey += pChannelCredentialsData->hashKey();
     }
+    grpc_channel* pChannel{ ChannelsCache::getChannelsCache().getChannel(fullCacheKey) };
 
-    pChannelData->setHashKey(fullCacheKey);
-
-    if (!force_new && ChannelsCache::GetChannelsCache().hasChannel(fullCacheKey))
+    if (!force_new && pChannel)
     {
-        pChannelData->init(ChannelsCache::GetChannelsCache().getChannel(fullCacheKey));
+        pChannelData->init(pChannel, false, fullCacheKey);
     }
     else
     {
-      grpc_channel* pChannel{ nullptr };
-      if (!pChannelCredentialsData)
-      {
-          // no credentials create insecure channel
-          pChannel = grpc_insecure_channel_create(target.c_str(), &channelArgs.args(), nullptr);
-      }
-      else
-      {
-          // create secure chhanel
-          pChannel = grpc_secure_channel_create(pChannelCredentialsData->credentials(), target.c_str(),
-                                                &channelArgs.args(), nullptr);
-      }
+        if (force_new && pChannel)
+        {
+            // delete existing channel
+            ChannelsCache::getChannelsCache().deleteChannel(fullCacheKey);
+        }
 
-      if (!pChannel)
-      {
-          SystemLib::throwBadMethodCallExceptionObject("failed to create channel");
-      }
-      pChannelData->init(pChannel);
+        if (!pChannelCredentialsData)
+        {
+            // no credentials create insecure channel
+            pChannel = grpc_insecure_channel_create(target.c_str(), &channelArgs.args(), nullptr);
+        }
+        else
+        {
+            // create secure chhanel
+            pChannel = grpc_secure_channel_create(pChannelCredentialsData->credentials(), target.c_str(),
+                                                  &channelArgs.args(), nullptr);
+        }
 
-      ChannelsCache::GetChannelsCache().addChannel(fullCacheKey, pChannel);
+        if (!pChannel)
+        {
+            SystemLib::throwBadMethodCallExceptionObject("failed to create channel");
+        }
+        pChannelData->init(pChannel, false, fullCacheKey);
+
+        bool addResult{ ChannelsCache::getChannelsCache().addChannel(fullCacheKey, pChannel) };
+        if (!addResult)
+        {
+            SystemLib::throwBadMethodCallExceptionObject("failed to cache channel");
+        }
     }
 }
 
@@ -415,12 +501,7 @@ void HHVM_METHOD(Channel, close)
     {
         SystemLib::throwBadMethodCallExceptionObject("Channel already closed.");
     }
-
-    ChannelsCache::GetChannelsCache().deleteChannel(pChannelData->getHashKey());
-
-    // destruct the channel
-    //grpc_channel_destroy(pChannelData->channel()); // todo: can we destroy here? Channel's are shared and may be in use by other objects
-    pChannelData->init(nullptr);
+    pChannelData->init(nullptr, false); // mark channel closed
 }
 
 } // namespace HPHP
