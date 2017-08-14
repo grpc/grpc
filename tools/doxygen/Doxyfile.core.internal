@@ -1407,6 +1407,7 @@ src/core/lib/transport/static_metadata.h \
 src/core/lib/transport/status_conversion.c \
 src/core/lib/transport/status_conversion.h \
 src/core/lib/transport/status_metadata.c \
+src/core/lib/transport/status_metadata.h \
 src/core/lib/transport/timeout_encoding.c \
 src/core/lib/transport/timeout_encoding.h \
 src/core/lib/transport/transport.c \
