@@ -33,8 +33,7 @@ namespace Grpc.Core.Internal
     internal class GrpcThreadPool
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<GrpcThreadPool>();
-        static readonly WaitCallback RunCompletionQueueEventCallbackSuccess = new WaitCallback((callback) => RunCompletionQueueEventCallback((OpCompletionDelegate) callback, true));
-        static readonly WaitCallback RunCompletionQueueEventCallbackFailure = new WaitCallback((callback) => RunCompletionQueueEventCallback((OpCompletionDelegate) callback, false));
+        const int FinishContinuationsSleepMillis = 10;
 
         readonly GrpcEnvironment environment;
         readonly object myLock = new object();
@@ -42,6 +41,9 @@ namespace Grpc.Core.Internal
         readonly int poolSize;
         readonly int completionQueueCount;
         readonly bool inlineHandlers;
+        readonly WaitCallback runCompletionQueueEventCallbackSuccess;
+        readonly WaitCallback runCompletionQueueEventCallbackFailure;
+        readonly AtomicCounter queuedContinuationCounter = new AtomicCounter();
 
         readonly List<BasicProfiler> threadProfilers = new List<BasicProfiler>();  // profilers assigned to threadpool threads
 
@@ -64,6 +66,9 @@ namespace Grpc.Core.Internal
             this.inlineHandlers = inlineHandlers;
             GrpcPreconditions.CheckArgument(poolSize >= completionQueueCount,
                 "Thread pool size cannot be smaller than the number of completion queues used.");
+
+            this.runCompletionQueueEventCallbackSuccess = new WaitCallback((callback) => RunCompletionQueueEventCallback((OpCompletionDelegate) callback, true));
+            this.runCompletionQueueEventCallbackFailure = new WaitCallback((callback) => RunCompletionQueueEventCallback((OpCompletionDelegate) callback, false));
         }
 
         public void Start()
@@ -173,7 +178,8 @@ namespace Grpc.Core.Internal
                         // Use cached delegates to avoid unnecessary allocations
                         if (!inlineHandlers)
                         {
-                            ThreadPool.QueueUserWorkItem(success ? RunCompletionQueueEventCallbackSuccess : RunCompletionQueueEventCallbackFailure, callback);
+                            queuedContinuationCounter.Increment();
+                            ThreadPool.QueueUserWorkItem(success ? runCompletionQueueEventCallbackSuccess : runCompletionQueueEventCallbackFailure, callback);
                         }
                         else
                         {
@@ -187,6 +193,16 @@ namespace Grpc.Core.Internal
                 }
             }
             while (ev.type != CompletionQueueEvent.CompletionType.Shutdown);
+
+            // Continuations are running on default threadpool that consists of background threads.
+            // GrpcThreadPool thread (a foreground thread) will not exit unless all queued work had
+            // been finished to prevent terminating the continuations queued prematurely.
+            while (queuedContinuationCounter.Count != 0)
+            {
+                // Only happens on shutdown and having pending continuations shouldn't very common,
+                // so sleeping here for a little bit is fine.
+                Thread.Sleep(FinishContinuationsSleepMillis);
+            }
         }
 
         private static IReadOnlyCollection<CompletionQueueSafeHandle> CreateCompletionQueueList(GrpcEnvironment environment, int completionQueueCount)
@@ -200,7 +216,7 @@ namespace Grpc.Core.Internal
             return list.AsReadOnly();
         }
 
-        private static void RunCompletionQueueEventCallback(OpCompletionDelegate callback, bool success)
+        private void RunCompletionQueueEventCallback(OpCompletionDelegate callback, bool success)
         {
             try
             {
@@ -209,6 +225,10 @@ namespace Grpc.Core.Internal
             catch (Exception e)
             {
                 Logger.Error(e, "Exception occured while invoking completion delegate");
+            }
+            finally
+            {
+                queuedContinuationCounter.Decrement();
             }
         }
     }
