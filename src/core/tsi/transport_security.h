@@ -70,7 +70,8 @@ typedef struct {
                                        tsi_frame_protector **protector);
   void (*destroy)(tsi_handshaker *self);
   tsi_result (*next)(tsi_handshaker *self, const unsigned char *received_bytes,
-                     size_t received_bytes_size, unsigned char **bytes_to_send,
+                     size_t received_bytes_size,
+                     const unsigned char **bytes_to_send,
                      size_t *bytes_to_send_size,
                      tsi_handshaker_result **handshaker_result,
                      tsi_handshaker_on_next_done_cb cb, void *user_data);
@@ -86,6 +87,10 @@ struct tsi_handshaker {
    See transport_security_interface.h for documentation. */
 typedef struct {
   tsi_result (*extract_peer)(const tsi_handshaker_result *self, tsi_peer *peer);
+  tsi_result (*create_zero_copy_grpc_protector)(
+      const tsi_handshaker_result *self,
+      size_t *max_output_protected_frame_size,
+      tsi_zero_copy_grpc_protector **protector);
   tsi_result (*create_frame_protector)(const tsi_handshaker_result *self,
                                        size_t *max_output_protected_frame_size,
                                        tsi_frame_protector **protector);

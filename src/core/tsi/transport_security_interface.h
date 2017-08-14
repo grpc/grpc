@@ -62,6 +62,15 @@ const char *tsi_result_to_string(tsi_result result);
 
 extern grpc_tracer_flag tsi_tracing_enabled;
 
+/* -- tsi_zero_copy_grpc_protector object --
+
+  This object protects and unprotects grpc slice buffers with zero or minimized
+  memory copy once the handshake is done. Implementations of this object must be
+  thread compatible. This object depends on grpc and the details of this object
+  is defined in transport_security_grpc.h.  */
+
+typedef struct tsi_zero_copy_grpc_protector tsi_zero_copy_grpc_protector;
+
 /* --- tsi_frame_protector object ---
 
   This object protects and unprotects buffers once the handshake is done.
@@ -429,7 +438,7 @@ typedef void (*tsi_handshaker_on_next_done_cb)(
    tsi_handshaker object.  */
 tsi_result tsi_handshaker_next(
     tsi_handshaker *self, const unsigned char *received_bytes,
-    size_t received_bytes_size, unsigned char **bytes_to_send,
+    size_t received_bytes_size, const unsigned char **bytes_to_send,
     size_t *bytes_to_send_size, tsi_handshaker_result **handshaker_result,
     tsi_handshaker_on_next_done_cb cb, void *user_data);
 
