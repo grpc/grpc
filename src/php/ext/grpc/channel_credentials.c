@@ -57,15 +57,28 @@ zend_class_entry *grpc_ce_channel_credentials;
 #if PHP_MAJOR_VERSION >= 7
 static zend_object_handlers channel_credentials_ce_handlers;
 #endif
-static char *default_pem_root_certs = NULL;
+static gpr_mu cc_persistent_list_mu;
+int le_cc_plink;
+const char *persistent_list_key = "default_root_certs";
 
 static grpc_ssl_roots_override_result get_ssl_roots_override(
     char **pem_root_certs) {
-  *pem_root_certs = default_pem_root_certs;
-  if (default_pem_root_certs == NULL) {
+  TSRMLS_FETCH();
+  php_grpc_zend_resource *rsrc;
+  php_grpc_int key_len = strlen(persistent_list_key);
+
+  gpr_mu_lock(&cc_persistent_list_mu);
+  if (PHP_GRPC_PERSISTENT_LIST_FIND(&EG(persistent_list), persistent_list_key,
+                                    key_len, rsrc)) {
+    channel_credentials_persistent_le_t *le =
+      (channel_credentials_persistent_le_t *)rsrc->ptr;
+    *pem_root_certs = le->default_root_certs;
+    gpr_mu_unlock(&cc_persistent_list_mu);
+    return GRPC_SSL_ROOTS_OVERRIDE_OK;
+  } else {
+    gpr_mu_unlock(&cc_persistent_list_mu);
     return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
   }
-  return GRPC_SSL_ROOTS_OVERRIDE_OK;
 }
 
 /* Frees and destroys an instance of wrapped_grpc_channel_credentials */
@@ -100,6 +113,26 @@ zval *grpc_php_wrap_channel_credentials(grpc_channel_credentials *wrapped,
   return credentials_object;
 }
 
+void update_root_certs_persistent_list(char *pem_roots,
+                                       php_grpc_int pem_roots_length
+                                       TSRMLS_DC) {
+
+  php_grpc_zend_resource new_rsrc;
+  channel_credentials_persistent_le_t *le;
+  php_grpc_int key_len = strlen(persistent_list_key);
+  new_rsrc.type = le_cc_plink;
+  le = malloc(sizeof(channel_credentials_persistent_le_t));
+
+  le->default_root_certs = malloc(pem_roots_length+1);
+  memcpy(le->default_root_certs, pem_roots, pem_roots_length+1);
+
+  new_rsrc.ptr = le;
+  gpr_mu_lock(&cc_persistent_list_mu);
+  PHP_GRPC_PERSISTENT_LIST_UPDATE(&EG(persistent_list), persistent_list_key,
+                                  key_len, (void *)&new_rsrc);
+  gpr_mu_unlock(&cc_persistent_list_mu);
+}
+
 /**
  * Set default roots pem.
  * @param string $pem_roots PEM encoding of the server root certificates
@@ -116,8 +149,21 @@ PHP_METHOD(ChannelCredentials, setDefaultRootsPem) {
                          "setDefaultRootsPem expects 1 string", 1 TSRMLS_CC);
     return;
   }
-  default_pem_root_certs = gpr_malloc((pem_roots_length + 1) * sizeof(char));
-  memcpy(default_pem_root_certs, pem_roots, pem_roots_length + 1);
+  php_grpc_zend_resource *rsrc;
+  php_grpc_int key_len = strlen(persistent_list_key);
+  if (!(PHP_GRPC_PERSISTENT_LIST_FIND(&EG(persistent_list),
+                                      persistent_list_key,
+                                      key_len, rsrc))) {
+    update_root_certs_persistent_list(pem_roots,
+                                      pem_roots_length TSRMLS_CC);
+  } else {
+    channel_credentials_persistent_le_t *le =
+      (channel_credentials_persistent_le_t *)rsrc->ptr;
+    if (strcmp(pem_roots, le->default_root_certs) != 0) {
+      update_root_certs_persistent_list(pem_roots, pem_roots_length
+                                        TSRMLS_CC);
+    }
+  }
 }
 
 /**
@@ -226,6 +272,14 @@ PHP_METHOD(ChannelCredentials, createInsecure) {
   RETURN_NULL();
 }
 
+static void php_grpc_channel_credentials_plink_dtor(
+    php_grpc_zend_resource *rsrc TSRMLS_DC) {
+  channel_credentials_persistent_le_t *le =
+    (channel_credentials_persistent_le_t *)rsrc->ptr;
+  free(le->default_root_certs);
+  free(le);
+}
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_setDefaultRootsPem, 0, 0, 1)
   ZEND_ARG_INFO(0, pem_roots)
 ZEND_END_ARG_INFO()
@@ -261,12 +315,17 @@ static zend_function_entry channel_credentials_methods[] = {
   PHP_FE_END
 };
 
-void grpc_init_channel_credentials(TSRMLS_D) {
+GRPC_STARTUP_FUNCTION(channel_credentials) {
   zend_class_entry ce;
   INIT_CLASS_ENTRY(ce, "Grpc\\ChannelCredentials",
                    channel_credentials_methods);
   ce.create_object = create_wrapped_grpc_channel_credentials;
   grpc_ce_channel_credentials = zend_register_internal_class(&ce TSRMLS_CC);
+  gpr_mu_init(&cc_persistent_list_mu);
+  le_cc_plink = zend_register_list_destructors_ex(
+      NULL, php_grpc_channel_credentials_plink_dtor,
+      "Channel Credentials persistent default certs", module_number);
   PHP_GRPC_INIT_HANDLER(wrapped_grpc_channel_credentials,
                         channel_credentials_ce_handlers);
+  return SUCCESS;
 }

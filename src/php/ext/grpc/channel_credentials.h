@@ -76,6 +76,10 @@ static inline wrapped_grpc_channel_credentials
 #endif /* PHP_MAJOR_VERSION */
 
 /* Initializes the ChannelCredentials PHP class */
-void grpc_init_channel_credentials(TSRMLS_D);
+GRPC_STARTUP_FUNCTION(channel_credentials);
+
+typedef struct _channel_credentials_persistent_le {
+  char *default_root_certs;
+} channel_credentials_persistent_le_t;
 
 #endif /* NET_GRPC_PHP_GRPC_CHANNEL_CREDENTIALS_H_ */
