@@ -2114,6 +2114,7 @@ static void create_subchannel_call_locked(grpc_exec_ctx *exec_ctx,
   GRPC_ERROR_UNREF(error);
 }
 
+// FIXME: this doesn't need to be run in the channel combiner anymore
 static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx,
                                     grpc_call_element *elem,
                                     grpc_error *error) {
@@ -2494,6 +2495,8 @@ static void cc_start_transport_stream_op_batch(
   GPR_TIMER_BEGIN("cc_start_transport_stream_op_batch", 0);
 // FIXME: if we might retry, we don't necessarily want to fail the
 // pending batches here... maybe reverse the order of the next two blocks?
+// also: if the batches are already in flight down to the transport, we
+// don't want to fail them, because the callbacks will come back up later
   if (calld->error != GRPC_ERROR_NONE) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: failing batch with error: %s",
