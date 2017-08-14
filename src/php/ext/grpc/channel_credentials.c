@@ -123,9 +123,8 @@ void update_root_certs_persistent_list(char *pem_roots,
   new_rsrc.type = le_cc_plink;
   le = malloc(sizeof(channel_credentials_persistent_le_t));
 
-  char *tmp = malloc(pem_roots_length+1);
-  memcpy(tmp, pem_roots, pem_roots_length+1);
-  le->default_root_certs = tmp;
+  le->default_root_certs = malloc(pem_roots_length+1);
+  memcpy(le->default_root_certs, pem_roots, pem_roots_length+1);
 
   new_rsrc.ptr = le;
   gpr_mu_lock(&cc_persistent_list_mu);
