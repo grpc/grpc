@@ -2123,6 +2123,7 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx,
                                            chand->interested_parties);
   if (calld->connected_subchannel == NULL) {
     // Failed to create subchannel.
+    GRPC_ERROR_UNREF(calld->error);
     calld->error = error == GRPC_ERROR_NONE
                        ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                              "Call dropped by load balancing policy")
@@ -2405,7 +2406,7 @@ static void start_subchannel_pick_locked(grpc_exec_ctx *exec_ctx, void *arg,
     // Pick was returned synchronously.
     GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
     if (calld->connected_subchannel == NULL) {
-      if (calld->error != GRPC_ERROR_NONE) GRPC_ERROR_UNREF(calld->error);
+      GRPC_ERROR_UNREF(calld->error);
       calld->error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Call dropped by load balancing policy");
       pending_batches_fail(exec_ctx, elem, GRPC_ERROR_REF(calld->error));
@@ -2449,7 +2450,7 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
     // cancelled before any batches are passed down (e.g., if the deadline
     // is in the past when the call starts), we can return the right
     // error to the caller when the first batch does get passed down.
-    if (calld->error != GRPC_ERROR_NONE) GRPC_ERROR_UNREF(calld->error);
+    GRPC_ERROR_UNREF(calld->error);
     calld->error = GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: recording cancel_error=%s", chand,
