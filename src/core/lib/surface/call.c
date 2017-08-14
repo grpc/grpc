@@ -1664,9 +1664,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
             const grpc_compression_algorithm calgo =
                 compression_algorithm_for_level_locked(
                     call, effective_compression_level);
-            // the following will be picked up by the compress filter and used
-            // as
-            // the call's compression algorithm.
+            /* the following will be picked up by the compress filter and used
+             * as the call's compression algorithm. */
             compression_md.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
             compression_md.value = grpc_compression_algorithm_slice(calgo);
             additional_metadata_count++;
