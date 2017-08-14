@@ -20,6 +20,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import datetime
 import os
 import sys
 import logging
@@ -31,6 +32,16 @@ sys.path.append(gcp_utils_dir)
 
 import big_query_utils
 
+def print_table(table):
+    for i, (k, v) in enumerate(table.items()):
+      job_name = v[0]
+      build_id = v[1]
+      ts = int(float(v[2]))
+      # TODO(dgq): timezone handling is wrong. We need to determine the timezone
+      # of the computer running this script.
+      human_ts = datetime.datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S PDT')
+      print("{}. Test: {}, Timestamp: {}, id: {}@{}\n".format(i, k, human_ts, job_name, build_id))
+
 
 def get_flaky_tests(days_lower_bound, days_upper_bound, limit=None):
   """ period is one of "WEEK", "DAY", etc.
@@ -39,43 +50,33 @@ def get_flaky_tests(days_lower_bound, days_upper_bound, limit=None):
   bq = big_query_utils.create_big_query()
   query = """
 SELECT
-  filtered_test_name,
-  FIRST(timestamp),
-  FIRST(build_url),
-FROM (
-  SELECT
-    REGEXP_REPLACE(test_name, r'/\d+', '') AS filtered_test_name,
-    result,
-    build_url,
-    timestamp
-  FROM
-    [grpc-testing:jenkins_test_results.aggregate_results]
-  WHERE
-    timestamp >= DATE_ADD(CURRENT_DATE(), {days_lower_bound}, "DAY")
+  REGEXP_REPLACE(test_name, r'/\d+', '') AS filtered_test_name,
+  job_name,
+  build_id,
+  timestamp
+FROM
+  [grpc-testing:jenkins_test_results.aggregate_results]
+WHERE
+    timestamp > DATE_ADD(CURRENT_DATE(), {days_lower_bound}, "DAY")
     AND timestamp <= DATE_ADD(CURRENT_DATE(), {days_upper_bound}, "DAY")
-    AND NOT REGEXP_MATCH(job_name, '.*portability.*'))
-GROUP BY
-  filtered_test_name,
-  timestamp,
-  build_url
-HAVING
-  SUM(result != 'PASSED'
-    AND result != 'SKIPPED') > 0
-ORDER BY
-  timestamp ASC
+  AND NOT REGEXP_MATCH(job_name, '.*portability.*')
+  AND result != 'PASSED' AND result != 'SKIPPED'
+ORDER BY timestamp desc
 """.format(days_lower_bound=days_lower_bound, days_upper_bound=days_upper_bound)
   if limit:
     query += '\n LIMIT {}'.format(limit)
   query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)
   page = bq.jobs().getQueryResults(
       pageToken=None, **query_job['jobReference']).execute(num_retries=3)
-  testname_to_ts_url_pair = {row['f'][0]['v']: (row['f'][1]['v'], row['f'][2]['v']) for row in page['rows']}
-  return testname_to_ts_url_pair
+  testname_to_cols = {row['f'][0]['v']:
+                      (row['f'][1]['v'], row['f'][2]['v'], row['f'][3]['v'])
+                      for row in page['rows']}
+  return testname_to_cols
 
 
 def get_new_flakes():
-  last_week_sans_yesterday = get_flaky_tests(-7, -1)
-  last_24 = get_flaky_tests(-1, +1)
+  last_week_sans_yesterday = get_flaky_tests(-14, -1)
+  last_24 = get_flaky_tests(0, +1)
   last_week_sans_yesterday_names = set(last_week_sans_yesterday.keys())
   last_24_names = set(last_24.keys())
   logging.debug('|last_week_sans_yesterday| =', len(last_week_sans_yesterday_names))
@@ -86,15 +87,10 @@ def get_new_flakes():
 
 
 def main():
-  import datetime
   new_flakes = get_new_flakes()
   if new_flakes:
     print("Found {} new flakes:".format(len(new_flakes)))
-    for k, v in new_flakes.items():
-      ts = int(float(v[0]))
-      url = v[1]
-      human_ts = datetime.datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S UTC')
-      print("Test: {}, Timestamp: {}, URL: {}\n".format(k, human_ts, url))
+    print_table(new_flakes)
 
 
 if __name__ == '__main__':
