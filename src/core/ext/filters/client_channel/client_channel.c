@@ -823,6 +823,10 @@ typedef struct client_channel_call_data {
   method_parameters *method_params;
 
   grpc_subchannel_call *subchannel_call;
+
+  // This must be written only when holding both the call combiner and
+  // the client_channel combiner.  This allows it to be read when holding
+  // *either* the call combiner or the client_channel combiner.
   grpc_error *error;
 
   grpc_lb_policy *lb_policy;  // Holds ref while LB pick is pending.
@@ -1014,6 +1018,7 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx,
                                            chand->interested_parties);
   if (calld->connected_subchannel == NULL) {
     // Failed to create subchannel.
+    GRPC_ERROR_UNREF(calld->error);
     calld->error = error == GRPC_ERROR_NONE
                        ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                              "Call dropped by load balancing policy")
@@ -1065,6 +1070,8 @@ typedef struct {
   grpc_closure closure;
 } pick_after_resolver_result_args;
 
+// Note: This runs under the client_channel combiner, but may NOT be
+// holding the call combiner.
 static void pick_after_resolver_result_cancel_locked(grpc_exec_ctx *exec_ctx,
                                                      void *arg,
                                                      grpc_error *error) {
@@ -1089,6 +1096,11 @@ static void pick_after_resolver_result_cancel_locked(grpc_exec_ctx *exec_ctx,
                 chand, calld);
       }
       args->cancelled = true;
+      // Note: Although we are not in the call combiner here, we are
+      // basically stealing the call combiner from the pending pick, so
+      // it's safe to call subchannel_ready_locked() here -- we are
+      // essentially calling it here instead of calling it in
+      // pick_after_resolver_result_done_locked().
       subchannel_ready_locked(exec_ctx, elem,
                               GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                   "Pick cancelled", &error, 1));
@@ -1153,6 +1165,8 @@ static void pick_after_resolver_result_start_locked(grpc_exec_ctx *exec_ctx,
                         grpc_combiner_scheduler(chand->combiner)));
 }
 
+// Note: This runs under the client_channel combiner, but may NOT be
+// holding the call combiner.
 static void pick_callback_cancel_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                         grpc_error *error) {
   grpc_call_element *elem = arg;
@@ -1286,7 +1300,7 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
     // cancelled before any batches are passed down (e.g., if the deadline
     // is in the past when the call starts), we can return the right
     // error to the caller when the first batch does get passed down.
-    if (calld->error != GRPC_ERROR_NONE) GRPC_ERROR_UNREF(calld->error);
+    GRPC_ERROR_UNREF(calld->error);
     calld->error = GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: recording cancel_error=%s", chand,
@@ -1309,7 +1323,7 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
       // Pick was returned synchronously.
       GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
       if (calld->connected_subchannel == NULL) {
-        if (calld->error != GRPC_ERROR_NONE) GRPC_ERROR_UNREF(calld->error);
+        GRPC_ERROR_UNREF(calld->error);
         calld->error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Call dropped by load balancing policy");
         waiting_for_pick_batches_fail(exec_ctx, elem,
