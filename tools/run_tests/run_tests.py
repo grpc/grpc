@@ -84,6 +84,7 @@ SELECT
     [grpc-testing:jenkins_test_results.aggregate_results]
   WHERE
     timestamp >= DATE_ADD(CURRENT_DATE(), -1, "WEEK")
+    AND platform = '"""+platform_string()+"""'
     AND NOT REGEXP_MATCH(job_name, '.*portability.*') )
 GROUP BY
   filtered_test_name
