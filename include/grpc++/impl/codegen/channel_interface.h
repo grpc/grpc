@@ -80,7 +80,7 @@ class ChannelInterface {
     return true;
   }
 
- private:
+ protected:
   template <class R>
   friend class ::grpc::ClientReader;
   template <class W>
