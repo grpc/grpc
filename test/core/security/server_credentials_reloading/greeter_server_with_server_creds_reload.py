@@ -52,31 +52,35 @@ my_cert_2_pem = '\n'.join([
   open('cert_hier_2/intermediate/certs/intermediate.cert.pem').read(),
 ])
 
-client_num = 0
 
-def get_server_credentials_cb():
-  global client_num
-  client_num += 1
-  print 'client_num', client_num
+class CertsReloadManager(object):
+  def __init__(self):
+    self.client_num = 0
 
-  if client_num != switch_creds_on_client_num:
-    return False, None
-  else:
-    # switch credentials
-    return True, grpc.ssl_server_credentials(
-      [(my_key_2_pem, my_cert_2_pem)],
-      require_client_auth=True,
-      root_certificates=client_ca_pem,
-    )
+  def __call__(self):
+    self.client_num += 1
+    print 'client_num', self.client_num
+
+    if self.client_num != switch_creds_on_client_num:
+      return False, None
+    else:
+      # switch credentials
+      return True, grpc.ssl_server_credentials(
+        [(my_key_2_pem, my_cert_2_pem)],
+        require_client_auth=True,
+        root_certificates=client_ca_pem,
+      )
 
 
 def serve():
+
+  certs_reload_manager = CertsReloadManager()
 
   server_credentials = grpc.ssl_server_credentials(
     [(my_key_1_pem, my_cert_1_pem)],
     require_client_auth=True,
     root_certificates=client_ca_pem,
-    get_server_credentials_cb=get_server_credentials_cb,
+    get_server_credentials_cb=certs_reload_manager,
   )
 
   server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
