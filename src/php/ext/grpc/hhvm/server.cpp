@@ -111,7 +111,6 @@ void HHVM_METHOD(Server, __construct,
         if (!channelArgs.init(args_array_or_null.toArray()))
         {
             SystemLib::throwInvalidArgumentExceptionObject("invalid channel arguments");
-            return;
         }
 
         pServer = grpc_server_create(&channelArgs.args(), nullptr);
@@ -119,13 +118,11 @@ void HHVM_METHOD(Server, __construct,
     else
     {
         SystemLib::throwInvalidArgumentExceptionObject("channel arguments must be array");
-        return;
     }
 
     if (!pServer)
     {
         SystemLib::throwBadMethodCallExceptionObject("failed to create server");
-        return;
     }
     pServerData->init(pServer);
 
@@ -169,7 +166,8 @@ Object HHVM_METHOD(Server, requestCall)
 
     CallDetails callDetails{};
     grpc_call *pCall;
-    grpc_call_error errorCode{ grpc_server_request_call(pServerData->server(), &pCall, &callDetails.details,
+    grpc_call_error errorCode{ grpc_server_request_call(pServerData->server(), &pCall,
+                                                        &callDetails.details,
                                                         &callDetails.metadata.array(),
                                                         pServerData->queue()->queue(),
                                                         pServerData->queue()->queue(), nullptr) };
@@ -179,7 +177,6 @@ Object HHVM_METHOD(Server, requestCall)
         std::stringstream oSS;
         oSS << "request_call failed: " << errorCode << std::endl;
         SystemLib::throwBadMethodCallExceptionObject(oSS.str());
-        return resultObj;
     }
 
     grpc_event event( grpc_completion_queue_pluck(pServerData->queue()->queue(), nullptr,

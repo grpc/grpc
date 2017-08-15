@@ -59,13 +59,14 @@ Class* const CallData::getClass(void)
     return s_pClass;
 }
 
-CallData::CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_ChannelData{ nullptr },
-    m_Timeout{ 0 }
+CallData::CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_Credentialed{ false },
+    m_ChannelData{ nullptr }, m_Timeout{ 0 }
 {
 }
 
 CallData::CallData(grpc_call* const call, const bool owned, const int32_t timeoutMs) :
-    m_pCall{ call }, m_Owned{ owned }, m_ChannelData{ nullptr }, m_Timeout{ timeoutMs }
+    m_pCall{ call }, m_Owned{ owned }, m_Credentialed{ false }, m_ChannelData{ nullptr },
+    m_Timeout{ timeoutMs }
 {
 }
 
@@ -288,11 +289,10 @@ void HHVM_METHOD(Call, __construct,
     if (!pCall)
     {
         SystemLib::throwBadMethodCallExceptionObject("failed to create call");
-        return;
     }
 
     int32_t timeout{ gpr_time_to_millis(gpr_convert_clock_type(pDeadlineTimevalData->time(),
-                                             GPR_TIMESPAN)) };
+                                                               GPR_TIMESPAN)) };
     pCallData->init(pCall, true, timeout);
 
     return;
@@ -312,7 +312,6 @@ Object HHVM_METHOD(Call, startBatch,
         std::stringstream oSS;
         oSS << "actions array must not be longer than " << maxActions << " operations" << std::endl;
         SystemLib::throwInvalidArgumentExceptionObject(oSS.str());
-        return resultObj;
     }
 
     typedef struct OpsManaged // this structure is managed data for the ops array
@@ -371,6 +370,7 @@ Object HHVM_METHOD(Call, startBatch,
 
     size_t op_num{ 0 };
     bool sending_initial_metadata{ false };
+    bool sending{ false };
     for (ArrayIter iter(actions); iter; ++iter, ++op_num)
     {
         Variant key{ iter.first() };
@@ -378,7 +378,6 @@ Object HHVM_METHOD(Call, startBatch,
         if (key.isNull() || !key.isInteger())
         {
             SystemLib::throwInvalidArgumentExceptionObject("batch keys must be integers");
-            return resultObj;
         }
 
         int32_t index{ key.toInt32() };
@@ -390,18 +389,17 @@ Object HHVM_METHOD(Call, startBatch,
             if (value.isNull() || !value.isArray())
             {
                 SystemLib::throwInvalidArgumentExceptionObject("Expected an array value for the metadata");
-                return resultObj;
             }
 
             if (!opsManaged.metadata.init(value.toArray(), true))
             {
                 SystemLib::throwInvalidArgumentExceptionObject("Bad metadata value given");
-                return resultObj;
             }
 
             ops[op_num].data.send_initial_metadata.count = opsManaged.metadata.size();
             ops[op_num].data.send_initial_metadata.metadata = opsManaged.metadata.data();
             sending_initial_metadata = true;
+            sending = true;
             break;
         }
         case GRPC_OP_SEND_MESSAGE:
@@ -409,7 +407,6 @@ Object HHVM_METHOD(Call, startBatch,
             if (value.isNull() || !value.isArray())
             {
                 SystemLib::throwInvalidArgumentExceptionObject("Expected an array for send message");
-                return resultObj;
             }
 
             Array messageArr{ value.toArray() };
@@ -419,7 +416,6 @@ Object HHVM_METHOD(Call, startBatch,
                 if (messageFlags.isNull() || !messageFlags.isInteger())
                 {
                     SystemLib::throwInvalidArgumentExceptionObject("Expected an int for message flags");
-                    return resultObj;
                 }
                 ops[op_num].flags = messageFlags.toInt32() & GRPC_WRITE_USED_MASK;
             }
@@ -430,7 +426,6 @@ Object HHVM_METHOD(Call, startBatch,
                 if (messageValue.isNull() || !messageValue.isString())
                 {
                     SystemLib::throwInvalidArgumentExceptionObject("Expected a string for send message");
-                    return resultObj;
                 }
                 // convert string to byte buffer and store message in managed data
                 String messageValueString{ messageValue.toString() };
@@ -439,16 +434,17 @@ Object HHVM_METHOD(Call, startBatch,
                 opsManaged.send_message = send_message.byteBuffer();
                 ops[op_num].data.send_message.send_message = opsManaged.send_message;
             }
+            sending = true;
             break;
         }
         case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+            sending = true;
             break;
         case GRPC_OP_SEND_STATUS_FROM_SERVER:
         {
             if (value.isNull() || !value.isArray())
             {
                 SystemLib::throwInvalidArgumentExceptionObject("Expected an array for server status");
-                return resultObj;
             }
 
             Array statusArr{ value.toArray() };
@@ -458,13 +454,11 @@ Object HHVM_METHOD(Call, startBatch,
                 if (innerMetadata.isNull() || !innerMetadata.isArray())
                 {
                     SystemLib::throwInvalidArgumentExceptionObject("Expected an array for server status metadata value");
-                    return resultObj;
                 }
 
                 if (!opsManaged.trailing_metadata.init(innerMetadata.toArray(), true))
                 {
                     SystemLib::throwInvalidArgumentExceptionObject("Bad trailing metadata value given");
-                    return resultObj;
                 }
 
                 ops[op_num].data.send_status_from_server.trailing_metadata_count = opsManaged.trailing_metadata.size();
@@ -474,33 +468,30 @@ Object HHVM_METHOD(Call, startBatch,
             if (!statusArr.exists(String{ "code" }, true))
             {
                 SystemLib::throwInvalidArgumentExceptionObject("Integer status code is required");
-                return resultObj;
             }
 
             Variant innerCode{ statusArr[String{ "code" }] };
             if (innerCode.isNull() || !innerCode.isInteger())
             {
                 SystemLib::throwInvalidArgumentExceptionObject("Status code must be an integer");
-                return resultObj;
             }
             ops[op_num].data.send_status_from_server.status = static_cast<grpc_status_code>(innerCode.toInt32());
 
             if (!statusArr.exists(String{ "details" }, true))
             {
                 SystemLib::throwInvalidArgumentExceptionObject("String status details is required");
-                return resultObj;
             }
 
             Variant innerDetails{ statusArr[String{ "details" }] };
             if (innerDetails.isNull() || !innerDetails.isString())
             {
                 SystemLib::throwInvalidArgumentExceptionObject("Status details must be a string");
-                return resultObj;
             }
 
             Slice innerDetailsSlice{ innerDetails.toString().c_str() };
             opsManaged.send_status_details = innerDetailsSlice;
             ops[op_num].data.send_status_from_server.status_details = &opsManaged.send_status_details.slice();
+            sending = true;
             break;
         }
         case GRPC_OP_RECV_INITIAL_METADATA:
@@ -519,7 +510,6 @@ Object HHVM_METHOD(Call, startBatch,
             break;
         default:
             SystemLib::throwInvalidArgumentExceptionObject("Unrecognized key in batch");
-            return resultObj;
         }
 
         ops[op_num].op = static_cast<grpc_op_type>(index);
@@ -535,8 +525,8 @@ Object HHVM_METHOD(Call, startBatch,
 
     static std::mutex s_WriteStartBatchMutex, s_ReadStartBatchMutex;
     {
-        // TODO : Update for read and write locks for efficiency
-        std::unique_lock<std::mutex> lock{ s_WriteStartBatchMutex };
+        // use write mutex for sending and read mutex for receiving
+        std::unique_lock<std::mutex> lock{ sending ? s_WriteStartBatchMutex : s_ReadStartBatchMutex};
         grpc_call_error errorCode{ grpc_call_start_batch(pCallData->call(), ops.data(),
                                                          op_num, pCallData->call(), nullptr) };
 
@@ -546,7 +536,6 @@ Object HHVM_METHOD(Call, startBatch,
             std::stringstream oSS;
             oSS << "start_batch was called incorrectly: " << errorCode << std::endl;
             SystemLib::throwBadMethodCallExceptionObject(oSS.str());
-            return resultObj;
         }
     }
 
@@ -669,6 +658,7 @@ int64_t HHVM_METHOD(Call, setCredentials,
 
     grpc_call_error error{ grpc_call_set_credentials(pCallData->call(),
                                                      pCallCredentialsData->credentials()) };
+    pCallData->setCredentialed(error == GRPC_CALL_OK);
 
     return static_cast<int64_t>(error);
 }

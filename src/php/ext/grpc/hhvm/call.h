@@ -59,6 +59,8 @@ public:
     void init(grpc_call* const call, const bool owned, const int32_t timeoutMs = 0);
     grpc_call* const call(void) { return m_pCall; }
     bool getOwned(void) const { return m_Owned; }
+    bool credentialed(void) const { return m_Credentialed; }
+    void setCredentialed(const bool credentialed = true) { m_Credentialed = credentialed; }
     void setChannelData(ChannelData* channelData) { m_ChannelData = channelData; }
     int32_t getTimeout(void) const { return m_Timeout; }
     MetadataPromise& getPromise(void) { return m_MetadataPromise; }
@@ -72,6 +74,7 @@ private:
     // member variables
     grpc_call* m_pCall;
     bool m_Owned;
+    bool m_Credentialed;
     ChannelData* m_ChannelData;
     int32_t m_Timeout;
     MetadataPromise m_MetadataPromise;
