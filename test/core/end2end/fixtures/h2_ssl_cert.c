@@ -85,9 +85,15 @@ static void chttp2_init_server_secure_fullstack(
   }
   f->server = grpc_server_create(server_args, NULL);
   grpc_server_register_completion_queue(f->server, f->cq, NULL);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr,
-                                               server_creds));
+  // Returns zero on failure.
+  int started = grpc_server_add_secure_http2_port(f->server, ffd->localaddr,
+                                                  server_creds);
   grpc_server_credentials_release(server_creds);
+  if (started == 0) {
+    grpc_server_destroy(f->server);
+    f->server = NULL;
+    return;
+  }
   grpc_server_start(f->server);
 }
 
@@ -109,31 +115,82 @@ static int fail_server_auth_check(grpc_channel_args *server_args) {
   return 0;
 }
 
-#define SERVER_INIT_NAME(REQUEST_TYPE) \
-  chttp2_init_server_simple_ssl_secure_fullstack_##REQUEST_TYPE
+const char *empty_root_cert = "";
+const char *invalid_root_cert = "INVALID";
+// TODO(deepaklukose): test for INVALID ca_certtype
+typedef enum {
+  NULL_CA_CERT,
+  EMPTY_CA_CERT,
+  INVALID_CA_CERT,
+  GOOD_CA_CERT
+} ca_certtype;
 
-#define SERVER_INIT(REQUEST_TYPE)                                           \
-  static void SERVER_INIT_NAME(REQUEST_TYPE)(                               \
-      grpc_end2end_test_fixture * f, grpc_channel_args * server_args) {     \
-    grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,       \
-                                                    test_server1_cert};     \
-    grpc_server_credentials *ssl_creds =                                    \
-        grpc_ssl_server_credentials_create_ex(                              \
-            test_root_cert, &pem_cert_key_pair, 1, REQUEST_TYPE, NULL);     \
-    if (fail_server_auth_check(server_args)) {                              \
-      grpc_auth_metadata_processor processor = {process_auth_failure, NULL, \
-                                                NULL};                      \
-      grpc_server_credentials_set_auth_metadata_processor(ssl_creds,        \
-                                                          processor);       \
-    }                                                                       \
-    chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);         \
+#define SERVER_INIT_NAME(REQUEST_TYPE, CA_CERT) \
+  chttp2_init_server_simple_ssl_secure_fullstack_##REQUEST_TYPE##_##CA_CERT
+
+#define SERVER_INIT(REQUEST_TYPE, CA_CERT_TYPE)                               \
+  static void SERVER_INIT_NAME(REQUEST_TYPE, CA_CERT_TYPE)(                   \
+      grpc_end2end_test_fixture * f, grpc_channel_args * server_args) {       \
+    grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,         \
+                                                    test_server1_cert};       \
+    const char *ca_cert = test_root_cert;                                     \
+    switch (CA_CERT_TYPE) {                                                   \
+      case NULL_CA_CERT:                                                      \
+        ca_cert = NULL;                                                       \
+        break;                                                                \
+      case EMPTY_CA_CERT:                                                     \
+        ca_cert = empty_root_cert;                                            \
+        break;                                                                \
+      case INVALID_CA_CERT:                                                   \
+        ca_cert = invalid_root_cert;                                          \
+        break;                                                                \
+      default:                                                                \
+        break;                                                                \
+    }                                                                         \
+    grpc_server_credentials *ssl_creds =                                      \
+        grpc_ssl_server_credentials_create_ex(ca_cert, &pem_cert_key_pair, 1, \
+                                              REQUEST_TYPE, NULL);            \
+    if (fail_server_auth_check(server_args)) {                                \
+      grpc_auth_metadata_processor processor = {process_auth_failure, NULL,   \
+                                                NULL};                        \
+      grpc_server_credentials_set_auth_metadata_processor(ssl_creds,          \
+                                                          processor);         \
+    }                                                                         \
+    chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);           \
   }
 
-SERVER_INIT(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE)
-SERVER_INIT(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY)
-SERVER_INIT(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY)
-SERVER_INIT(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY)
-SERVER_INIT(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY)
+SERVER_INIT(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, GOOD_CA_CERT)
+SERVER_INIT(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, GOOD_CA_CERT)
+SERVER_INIT(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, GOOD_CA_CERT)
+SERVER_INIT(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+            GOOD_CA_CERT)
+SERVER_INIT(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+            GOOD_CA_CERT)
+
+SERVER_INIT(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NULL_CA_CERT)
+SERVER_INIT(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, NULL_CA_CERT)
+SERVER_INIT(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, NULL_CA_CERT)
+SERVER_INIT(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+            NULL_CA_CERT)
+SERVER_INIT(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+            NULL_CA_CERT)
+
+SERVER_INIT(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, EMPTY_CA_CERT)
+SERVER_INIT(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, EMPTY_CA_CERT)
+SERVER_INIT(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, EMPTY_CA_CERT)
+SERVER_INIT(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+            EMPTY_CA_CERT)
+SERVER_INIT(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+            EMPTY_CA_CERT)
+
+SERVER_INIT(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, INVALID_CA_CERT)
+SERVER_INIT(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+            INVALID_CA_CERT)
+SERVER_INIT(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, INVALID_CA_CERT)
+SERVER_INIT(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+            INVALID_CA_CERT)
+SERVER_INIT(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+            INVALID_CA_CERT)
 
 #define CLIENT_INIT_NAME(cert_type) \
   chttp2_init_client_simple_ssl_secure_fullstack_##cert_type
@@ -184,19 +241,20 @@ CLIENT_INIT(SELF_SIGNED)
 CLIENT_INIT(SIGNED)
 CLIENT_INIT(BAD_CERT_PAIR)
 
-#define TEST_NAME(enum_name, cert_type, result) \
-  "chttp2/ssl_" #enum_name "_" #cert_type "_" #result "_"
+#define TEST_NAME(enum_name, ca_cert, cert_type, result) \
+  "chttp2/ssl_" #enum_name "_" #ca_cert "_" #cert_type "_" #result "_"
 
-typedef enum { SUCCESS, FAIL } test_result;
+typedef enum { SUCCESS, FAIL, DEATH } test_result;
 
-#define SSL_TEST(request_type, cert_type, result)                         \
+#define SSL_TEST(request_type, ca_cert, cert_type, result)                \
   {                                                                       \
-    {TEST_NAME(request_type, cert_type, result),                          \
+    {TEST_NAME(request_type, ca_cert, cert_type, result),                 \
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |                           \
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |                     \
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,                            \
      chttp2_create_fixture_secure_fullstack, CLIENT_INIT_NAME(cert_type), \
-     SERVER_INIT_NAME(request_type), chttp2_tear_down_secure_fullstack},  \
+     SERVER_INIT_NAME(request_type, ca_cert),                             \
+     chttp2_tear_down_secure_fullstack},                                  \
         result                                                            \
   }
 
@@ -206,44 +264,203 @@ typedef struct grpc_end2end_test_config_wrapper {
   test_result result;
 } grpc_end2end_test_config_wrapper;
 
+// Note that the DEATH and FAIL behave the same way as far as tests are
+// concerned but we expect the server to not start with these invalid
+// configurations (and can be verified by running this test with verbosity set
+// to INFO.
 static grpc_end2end_test_config_wrapper configs[] = {
-    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NONE, SUCCESS),
-    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, SELF_SIGNED, SUCCESS),
-    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, SIGNED, SUCCESS),
-    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, BAD_CERT_PAIR, FAIL),
-
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, NONE,
+    // CA cert is irrelevant if the server did not request for a client
+    // certificate.
+    // We should only reject bad client pair in this mode.
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, GOOD_CA_CERT, NONE,
              SUCCESS),
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, SELF_SIGNED,
-             SUCCESS),
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, SIGNED,
-             SUCCESS),
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, BAD_CERT_PAIR,
-             FAIL),
-
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, NONE, SUCCESS),
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, SELF_SIGNED, FAIL),
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, SIGNED, SUCCESS),
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, BAD_CERT_PAIR,
-             FAIL),
-
-    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
-             NONE, FAIL),
-    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, GOOD_CA_CERT,
              SELF_SIGNED, SUCCESS),
-    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
-             SIGNED, SUCCESS),
-    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, GOOD_CA_CERT, SIGNED,
+             SUCCESS),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, GOOD_CA_CERT,
              BAD_CERT_PAIR, FAIL),
 
-    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY, NONE,
-             FAIL),
-    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
-             SELF_SIGNED, FAIL),
-    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY, SIGNED,
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NULL_CA_CERT, NONE,
              SUCCESS),
-    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NULL_CA_CERT,
+             SELF_SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NULL_CA_CERT, SIGNED,
+             SUCCESS),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NULL_CA_CERT,
              BAD_CERT_PAIR, FAIL),
+
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, EMPTY_CA_CERT, NONE,
+             SUCCESS),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, EMPTY_CA_CERT,
+             SELF_SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, EMPTY_CA_CERT, SIGNED,
+             SUCCESS),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, EMPTY_CA_CERT,
+             BAD_CERT_PAIR, FAIL),
+
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, INVALID_CA_CERT, NONE,
+             SUCCESS),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, INVALID_CA_CERT,
+             SELF_SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, INVALID_CA_CERT, SIGNED,
+             SUCCESS),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, INVALID_CA_CERT,
+             BAD_CERT_PAIR, FAIL),
+
+    // CA cert is irrelevant if the server does not do any certificate
+    // validation.
+    // We should only reject bad client pair in this mode.
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, GOOD_CA_CERT,
+             NONE, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, GOOD_CA_CERT,
+             SELF_SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, GOOD_CA_CERT,
+             SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, GOOD_CA_CERT,
+             BAD_CERT_PAIR, FAIL),
+
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, NULL_CA_CERT,
+             NONE, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, NULL_CA_CERT,
+             SELF_SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, NULL_CA_CERT,
+             SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, NULL_CA_CERT,
+             BAD_CERT_PAIR, FAIL),
+
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, EMPTY_CA_CERT,
+             NONE, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, EMPTY_CA_CERT,
+             SELF_SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, EMPTY_CA_CERT,
+             SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, EMPTY_CA_CERT,
+             BAD_CERT_PAIR, FAIL),
+
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             INVALID_CA_CERT, NONE, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             INVALID_CA_CERT, SELF_SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             INVALID_CA_CERT, SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             INVALID_CA_CERT, BAD_CERT_PAIR, FAIL),
+
+    // CA cert is mandatory and the server refuses to start if the CA_CERT is
+    // empty or missing.
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, GOOD_CA_CERT, NONE,
+             SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, GOOD_CA_CERT,
+             SELF_SIGNED, FAIL),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, GOOD_CA_CERT,
+             SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, GOOD_CA_CERT,
+             BAD_CERT_PAIR, FAIL),
+
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, NULL_CA_CERT, NONE,
+             DEATH),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, NULL_CA_CERT,
+             SELF_SIGNED, DEATH),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, NULL_CA_CERT,
+             SIGNED, DEATH),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, NULL_CA_CERT,
+             BAD_CERT_PAIR, DEATH),
+
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, EMPTY_CA_CERT,
+             NONE, DEATH),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, EMPTY_CA_CERT,
+             SELF_SIGNED, DEATH),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, EMPTY_CA_CERT,
+             SIGNED, DEATH),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, EMPTY_CA_CERT,
+             BAD_CERT_PAIR, DEATH),
+
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, INVALID_CA_CERT,
+             NONE, DEATH),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, INVALID_CA_CERT,
+             SELF_SIGNED, DEATH),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, INVALID_CA_CERT,
+             SIGNED, DEATH),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, INVALID_CA_CERT,
+             BAD_CERT_PAIR, DEATH),
+
+    // CA cert is irrelevant if the server does not do any certificate
+    // validation.
+    // We should only reject bad client pair in this mode.
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             GOOD_CA_CERT, NONE, FAIL),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             GOOD_CA_CERT, SELF_SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             GOOD_CA_CERT, SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             GOOD_CA_CERT, BAD_CERT_PAIR, FAIL),
+
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             NULL_CA_CERT, NONE, FAIL),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             NULL_CA_CERT, SELF_SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             NULL_CA_CERT, SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             NULL_CA_CERT, BAD_CERT_PAIR, FAIL),
+
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             EMPTY_CA_CERT, NONE, FAIL),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             EMPTY_CA_CERT, SELF_SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             EMPTY_CA_CERT, SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             EMPTY_CA_CERT, BAD_CERT_PAIR, FAIL),
+
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             INVALID_CA_CERT, NONE, FAIL),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             INVALID_CA_CERT, SELF_SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             INVALID_CA_CERT, SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             INVALID_CA_CERT, BAD_CERT_PAIR, FAIL),
+
+    // CA cert is mandatory and the server refuses to start if the CA_CERT is
+    // empty or missing.
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             GOOD_CA_CERT, NONE, FAIL),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             GOOD_CA_CERT, SELF_SIGNED, FAIL),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             GOOD_CA_CERT, SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             GOOD_CA_CERT, BAD_CERT_PAIR, FAIL),
+
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             NULL_CA_CERT, NONE, DEATH),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             NULL_CA_CERT, SELF_SIGNED, DEATH),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             NULL_CA_CERT, SIGNED, DEATH),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             NULL_CA_CERT, BAD_CERT_PAIR, DEATH),
+
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             EMPTY_CA_CERT, NONE, DEATH),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             EMPTY_CA_CERT, SELF_SIGNED, DEATH),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             EMPTY_CA_CERT, SIGNED, DEATH),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             EMPTY_CA_CERT, BAD_CERT_PAIR, DEATH),
+
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             INVALID_CA_CERT, NONE, DEATH),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             INVALID_CA_CERT, SELF_SIGNED, DEATH),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             INVALID_CA_CERT, SIGNED, DEATH),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             INVALID_CA_CERT, BAD_CERT_PAIR, DEATH),
 };
 
 static void *tag(intptr_t t) { return (void *)t; }

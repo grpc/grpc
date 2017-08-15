@@ -114,7 +114,8 @@ typedef struct tsi_ssl_server_handshaker_factory
      server.
    - num_key_cert_pairs is the number of items in the pem_key_cert_pairs array.
    - pem_root_certs is the NULL-terminated string containing the PEM encoding
-     of the server root certificates.
+     of the server root certificates. We load and verify this field only when
+     force_client_auth is set to true.
    - cipher_suites contains an optional list of the ciphers that the server
      supports. The format of this string is described in:
      https://www.openssl.org/docs/apps/ciphers.html.
@@ -140,8 +141,12 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
    tsi_client_certificate_request_type to support more ways to handle client
    certificate authentication.
    - client_certificate_request, if set to non-zero will force the client to
-     authenticate with an SSL cert. Note that this option is ignored if
-     pem_client_root_certs is NULL or pem_client_roots_certs_size is 0 */
+     authenticate with an SSL cert.
+   - pem_client_root_certs is the NULL-terminated string containing the PEM
+     encoding of the server root certificates. We load and verify this field
+     only when client_certificate_requests is set to
+     TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY or
+     TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY. */
 tsi_result tsi_create_ssl_server_handshaker_factory_ex(
     const tsi_ssl_pem_key_cert_pair *pem_key_cert_pairs,
     size_t num_key_cert_pairs, const char *pem_client_root_certs,

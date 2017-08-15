@@ -1396,40 +1396,51 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
                                     &pem_key_cert_pairs[i], cipher_suites);
       if (result != TSI_OK) break;
 
-      if (pem_client_root_certs != NULL) {
+      // Server expects valid client CA list if the server is expected to
+      // verify the client certs.
+      if ((client_certificate_request ==
+               TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY ||
+           client_certificate_request ==
+               TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY)) {
         STACK_OF(X509_NAME) *root_names = NULL;
+        if (pem_client_root_certs == NULL) {
+          gpr_log(GPR_ERROR, "Missing CA certs for client cert verification.");
+          result = TSI_INVALID_ARGUMENT;
+          break;
+        }
         result = ssl_ctx_load_verification_certs(
             impl->ssl_contexts[i], pem_client_root_certs,
             strlen(pem_client_root_certs), &root_names);
         if (result != TSI_OK) {
-          gpr_log(GPR_ERROR, "Invalid verification certs.");
+          gpr_log(GPR_ERROR,
+                  "Empty or Invalid CA certs for client cert verification.");
           break;
         }
         SSL_CTX_set_client_CA_list(impl->ssl_contexts[i], root_names);
-        switch (client_certificate_request) {
-          case TSI_DONT_REQUEST_CLIENT_CERTIFICATE:
-            SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_NONE, NULL);
-            break;
-          case TSI_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
-            SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER,
-                               NullVerifyCallback);
-            break;
-          case TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY:
-            SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER, NULL);
-            break;
-          case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
-            SSL_CTX_set_verify(
-                impl->ssl_contexts[i],
-                SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                NullVerifyCallback);
-            break;
-          case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY:
-            SSL_CTX_set_verify(
-                impl->ssl_contexts[i],
-                SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
-            break;
-        }
-        /* TODO(jboeuf): Add revocation verification. */
+      }
+
+      switch (client_certificate_request) {
+        case TSI_DONT_REQUEST_CLIENT_CERTIFICATE:
+          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_NONE, NULL);
+          break;
+        case TSI_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
+          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER,
+                             NullVerifyCallback);
+          break;
+        case TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY:
+          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER, NULL);
+          break;
+        case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
+          SSL_CTX_set_verify(impl->ssl_contexts[i],
+                             SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+                             NullVerifyCallback);
+          break;
+        case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY:
+          SSL_CTX_set_verify(impl->ssl_contexts[i],
+                             SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+                             NULL);
+          break;
+          /* TODO(jboeuf): Add revocation verification. */
       }
 
       result = extract_x509_subject_names_from_pem_cert(
