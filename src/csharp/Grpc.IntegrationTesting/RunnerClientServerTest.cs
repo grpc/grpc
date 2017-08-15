@@ -35,7 +35,7 @@ namespace Grpc.IntegrationTesting
     {
         IServerRunner serverRunner;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void Init()
         {
             var serverConfig = new ServerConfig
@@ -45,7 +45,7 @@ namespace Grpc.IntegrationTesting
             serverRunner = ServerRunners.CreateStarted(serverConfig);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void Cleanup()
         {
             serverRunner.StopAsync().Wait();

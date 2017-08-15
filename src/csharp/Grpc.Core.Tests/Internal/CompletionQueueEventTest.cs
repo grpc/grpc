@@ -29,9 +29,12 @@ namespace Grpc.Core.Internal.Tests
     public class CompletionQueueEventTest
     {
         [Test]
-        public void CreateAndDestroy()
+        public void CompletionQueueEventSizeIsNativeSize()
         {
+            #pragma warning disable 0618
+            // We need to use the obsolete non-generic version of Marshal.SizeOf because the generic version is not available in net45
             Assert.AreEqual(CompletionQueueEvent.NativeSize, Marshal.SizeOf(typeof(CompletionQueueEvent)));
+            #pragma warning restore 0618
         }
     }
 }

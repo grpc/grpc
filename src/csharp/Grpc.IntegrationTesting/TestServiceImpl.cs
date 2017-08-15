@@ -63,9 +63,10 @@ namespace Grpc.Testing
             await EnsureEchoMetadataAsync(context);
 
             int sum = 0;
-            await requestStream.ForEachAsync(async request =>
+            await requestStream.ForEachAsync(request =>
             {
                 sum += request.Payload.Body.Length;
+                return TaskUtils.CompletedTask;
             });
             return new StreamingInputCallResponse { AggregatedPayloadSize = sum };
         }
@@ -85,7 +86,7 @@ namespace Grpc.Testing
             });
         }
 
-        public override async Task HalfDuplexCall(IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
+        public override Task HalfDuplexCall(IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
         {
             throw new NotImplementedException();
         }
