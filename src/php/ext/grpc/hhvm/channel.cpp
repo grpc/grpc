@@ -196,7 +196,6 @@ bool ChannelArgs::init(const Array& argsArray)
 
     for(const auto& argPair : channelArgs)
     {
-        std::cout << "Args: " << argPair.first << ' ' << argPair.second << std::endl;
         m_ConcatenatedArgs += String{ argPair.first } + String{ argPair.second };
     }
     m_HashKey = StringUtil::SHA1(m_ConcatenatedArgs, false);
