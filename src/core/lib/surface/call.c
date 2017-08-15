@@ -224,8 +224,8 @@ struct grpc_call {
   } final_op;
 
   // Either 0 (no initial metadata and messages received),
-  // 1 (recieved initial metadata first)
-  // or a batch_control* (received messages first the lowest bit is 0)
+  // 1 (received initial metadata first)
+  // or a batch_control* (received messages first, the lowest bit is 0)
   gpr_atm saved_receiving_stream_ready_bctlp;
 };
 
@@ -1290,6 +1290,9 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
     cancel_with_error(exec_ctx, call, STATUS_FROM_SURFACE,
                       GRPC_ERROR_REF(error));
   }
+  /* If saved_receiving_stream_ready_bctlp is 0, we will save the batch_control
+   * object with rel_cas, and will not use it after the cas. Its corresponding
+   * acq_load is in receiving_initial_metadata_ready() */
   if (error != GRPC_ERROR_NONE || call->receiving_stream == NULL ||
       !gpr_atm_rel_cas(&call->saved_receiving_stream_ready_bctlp, 0,
                        (gpr_atm)bctlp)) {
@@ -1390,7 +1393,11 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
     /* Should only receive initial metadata once */
     GPR_ASSERT(rsr_bctlp != 1);
     if (rsr_bctlp == 0) {
-      /* Not received initial metadata and messages */
+      /* We haven't seen initial metadata and messages before, thus initial
+       * metadata is received first.
+       * no_barrier_cas is used, as this function won't access the batch_control
+       * object saved by receiving_stream_ready() if the initial metadata is
+       * received first. */
       if (gpr_atm_no_barrier_cas(&call->saved_receiving_stream_ready_bctlp, 0,
                                  1)) {
         break;
