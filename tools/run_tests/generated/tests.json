@@ -6955,7 +6955,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -6978,7 +6978,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -7001,7 +7001,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -8270,7 +8270,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -8293,7 +8293,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -8316,7 +8316,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -9558,7 +9558,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -9580,7 +9580,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -9602,7 +9602,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -10723,7 +10723,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "linux", 
@@ -10746,7 +10746,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "linux", 
@@ -10769,7 +10769,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "linux", 
@@ -12061,7 +12061,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -12084,7 +12084,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -12107,7 +12107,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -13195,7 +13195,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "linux"
@@ -13214,7 +13214,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "linux"
@@ -13233,7 +13233,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "linux"
@@ -14455,7 +14455,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -14478,7 +14478,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -14501,7 +14501,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -15793,7 +15793,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -15816,7 +15816,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -15839,7 +15839,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -17201,7 +17201,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -17225,7 +17225,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -17249,7 +17249,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -18547,7 +18547,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -18570,7 +18570,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -18593,7 +18593,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -19931,7 +19931,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -19955,7 +19955,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -19979,7 +19979,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -21083,7 +21083,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -21107,7 +21107,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -22283,7 +22283,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -22307,7 +22307,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -22331,7 +22331,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -23435,7 +23435,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -23459,7 +23459,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -23483,7 +23483,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -24719,7 +24719,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -24745,7 +24745,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -24771,7 +24771,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -26081,7 +26081,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -26104,7 +26104,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -26127,7 +26127,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -27419,7 +27419,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -27442,7 +27442,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -27465,7 +27465,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -28563,7 +28563,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -28587,7 +28587,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -29858,7 +29858,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "linux", 
@@ -29881,7 +29881,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "linux", 
@@ -29904,7 +29904,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "linux", 
@@ -32139,7 +32139,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -32162,7 +32162,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -32185,7 +32185,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -33431,7 +33431,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -33454,7 +33454,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -33477,7 +33477,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -34581,7 +34581,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "linux", 
@@ -34604,7 +34604,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "linux", 
@@ -34627,7 +34627,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "linux", 
@@ -35896,7 +35896,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -35919,7 +35919,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -35942,7 +35942,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -37011,7 +37011,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "linux"
@@ -37030,7 +37030,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "linux"
@@ -37049,7 +37049,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "linux"
@@ -38248,7 +38248,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -38271,7 +38271,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -38294,7 +38294,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -39563,7 +39563,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -39586,7 +39586,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -39609,7 +39609,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -40947,7 +40947,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -40971,7 +40971,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -40995,7 +40995,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -42270,7 +42270,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -42293,7 +42293,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -42316,7 +42316,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -43390,7 +43390,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -43414,7 +43414,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -44566,7 +44566,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -44590,7 +44590,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -44614,7 +44614,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -45694,7 +45694,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -45718,7 +45718,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -45742,7 +45742,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -46952,7 +46952,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -46978,7 +46978,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "windows", 
@@ -47004,7 +47004,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "windows", 
@@ -48264,7 +48264,7 @@
   }, 
   {
     "args": [
-      "stream_compressed_payload"
+      "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
       "linux", 
@@ -48287,7 +48287,7 @@
   }, 
   {
     "args": [
-      "stream_payload"
+      "stream_compression_payload"
     ], 
     "ci_platforms": [
       "linux", 
@@ -48310,7 +48310,7 @@
   }, 
   {
     "args": [
-      "stream_ping_pong_streaming"
+      "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
       "linux", 
