@@ -14,14 +14,9 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_package")
 
-package(
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
-)
+grpc_package(name = "test/cpp/microbenchmarks")
 
 grpc_cc_test(
     name = "noop-benchmark",
