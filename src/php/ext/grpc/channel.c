@@ -434,11 +434,11 @@ PHP_METHOD(Channel, close) {
     grpc_channel_destroy(channel->wrapper->wrapped);
     free(channel->wrapper->target);
     channel->wrapper->wrapped = NULL;
-  }
 
-  php_grpc_delete_persistent_list_entry(channel->wrapper->key,
-                                        strlen(channel->wrapper->key)
-                                        TSRMLS_CC);
+    php_grpc_delete_persistent_list_entry(channel->wrapper->key,
+                                          strlen(channel->wrapper->key)
+                                          TSRMLS_CC);
+  }
   gpr_mu_unlock(&channel->wrapper->mu);
 }
 
@@ -467,12 +467,9 @@ static void php_grpc_channel_plink_dtor(php_grpc_zend_resource *rsrc
     if (le->channel->wrapped != NULL) {
       grpc_channel_destroy(le->channel->wrapped);
       free(le->channel->target);
-      free(le->channel->key);
-      free(le->channel);
     }
     gpr_mu_unlock(&le->channel->mu);
   }
-  free(le);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_construct, 0, 0, 2)
