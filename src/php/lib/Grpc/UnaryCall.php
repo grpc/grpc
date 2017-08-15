@@ -42,7 +42,6 @@ class UnaryCall extends AbstractCall
         }
         $event = $this->call->startBatch([
             OP_SEND_INITIAL_METADATA => $metadata,
-            OP_RECV_INITIAL_METADATA => true,
             OP_SEND_MESSAGE => $message_array,
             OP_SEND_CLOSE_FROM_CLIENT => true,
         ]);
@@ -56,14 +55,32 @@ class UnaryCall extends AbstractCall
      */
     public function wait()
     {
-        $event = $this->call->startBatch([
+        $batch = [
             OP_RECV_MESSAGE => true,
             OP_RECV_STATUS_ON_CLIENT => true,
-        ]);
-
+        ];
+        if ($this->metadata === null) {
+            $batch[OP_RECV_INITIAL_METADATA] = true;
+        }
+        $event = $this->call->startBatch($batch);
+        if ($this->metadata === null) {
+            $this->metadata = $event->metadata;
+        }
         $status = $event->status;
         $this->trailing_metadata = $status->metadata;
 
         return [$this->_deserializeResponse($event->message), $status];
+    }
+
+    /**
+     * @return mixed The metadata sent by the server
+     */
+    public function getMetadata()
+    {
+        if ($this->metadata === null) {
+            $event = $this->call->startBatch([OP_RECV_INITIAL_METADATA => true]);
+            $this->metadata = $event->metadata;
+        }
+        return $this->metadata;
     }
 }
