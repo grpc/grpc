@@ -59,13 +59,13 @@ Class* const CallData::getClass(void)
     return s_pClass;
 }
 
-CallData::CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_Credentialed{ false },
-    m_ChannelData{ nullptr }, m_Timeout{ 0 }
+CallData::CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_pCallCredentials{ nullptr },
+    m_pChannel{ nullptr }, m_Timeout{ 0 }
 {
 }
 
 CallData::CallData(grpc_call* const call, const bool owned, const int32_t timeoutMs) :
-    m_pCall{ call }, m_Owned{ owned }, m_Credentialed{ false }, m_ChannelData{ nullptr },
+    m_pCall{ call }, m_Owned{ owned }, m_pCallCredentials{ nullptr }, m_pChannel{ nullptr },
     m_Timeout{ timeoutMs }
 {
 }
@@ -96,10 +96,8 @@ void CallData::destroy(void)
         }
         m_pCall = nullptr;
     }
-    if (m_ChannelData)
-    {
-        m_ChannelData = nullptr;
-    }
+    m_pChannel = nullptr;
+    m_pCallCredentials = nullptr;
 }
 
 /*****************************************************************************/
@@ -159,7 +157,6 @@ bool MetadataArray::init(const Array& phpArray, const bool ownPHP)
 
     // create metadata array
     size_t elem{ 0 };
-    m_PHPData.resize(count);
     for (ArrayIter iter(phpArray); iter; ++iter)
     {
         Variant key{ iter.first() };
@@ -171,7 +168,7 @@ bool MetadataArray::init(const Array& phpArray, const bool ownPHP)
             String value2Str{ value2.toString() };
             Slice keySlice{ key.toString().c_str() };
             Slice valueSlice{ value2Str.c_str(), static_cast<size_t>(value2Str.size()) };
-            m_PHPData[elem] = std::move(std::make_pair(keySlice, valueSlice));
+            m_PHPData.emplace_back(keySlice, valueSlice);
 
             m_Array.metadata[elem].key = m_PHPData[elem].first.slice();
             m_Array.metadata[elem].value = m_PHPData[elem].second.slice();
@@ -271,7 +268,7 @@ void HHVM_METHOD(Call, __construct,
     {
         SystemLib::throwBadMethodCallExceptionObject("Call cannot be constructed from a closed Channel");
     }
-    pCallData->setChannelData(pChannelData);
+    pCallData->setChannel(pChannelData);
 
     TimevalData* const pDeadlineTimevalData{ Native::data<TimevalData>(deadline_obj) };
 
@@ -516,11 +513,14 @@ Object HHVM_METHOD(Call, startBatch,
         ops[op_num].reserved = nullptr;
     }
 
-    if (sending_initial_metadata)
+    // set up the crendential promise for the call credentials set up with this call for
+    // the plugin_get_metadata routine
+    if (sending_initial_metadata && pCallData->credentialed())
     {
-        // We do this above grpc_call_start_batch because it can also sometimes execute the callback
-        // from within itself and we need to have the promise setup by that point;
-        PluginGetMetadataPromise::GetPluginMetadataPromise().setPromise(&pCallData->getPromise());
+        PluginMetadataInfo& pluginMetadataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
+        PluginMetadataInfo::MetaDataInfo metaDataInfo{ &(pCallData->getPromise()),
+                                                       std::this_thread::get_id() };
+        pluginMetadataInfo.setInfo(pCallData->callCredentials(), metaDataInfo);
     }
 
     static std::mutex s_WriteStartBatchMutex, s_ReadStartBatchMutex;
@@ -539,22 +539,18 @@ Object HHVM_METHOD(Call, startBatch,
         }
     }
 
-    //grpc_completion_queue_pluck(CompletionQueue::getClientQueue().queue(),
-    //                                                  pCallData->call(),
-    //                                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-
-    std::thread t1(grpc_completion_queue_pluck, CompletionQueue::getClientQueue().queue(),
-                                                  pCallData->call(),
-                                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+    grpc_completion_queue_pluck(CompletionQueue::getClientQueue().queue(),
+                                                      pCallData->call(),
+                                                      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
     // has it's own thread and you cannot run application code on a single request in more than
     // one thread. However gRPC calls call_credentials.cpp:plugin_get_metadata in a different thread
     // in many cases and that violates the thread safety within a request in HHVM and causes segfaults
     // at any reasonable concurrency.
-    // TODO: See if this is necessary and if so use condition variable
-    if (sending_initial_metadata)
+    if (sending_initial_metadata && pCallData->credentialed())
     {
+        // wait on the plugin_get_metadata to complete
         auto getPluginMetadataFuture = pCallData->getPromise().get_future();
         std::future_status status{ getPluginMetadataFuture.wait_for(std::chrono::milliseconds{ pCallData->getTimeout() }) };
         if (status == std::future_status::timeout)
@@ -563,17 +559,15 @@ Object HHVM_METHOD(Call, startBatch,
         }
         else
         {
-            plugin_get_metadata_params* const pMetadataParams{ getPluginMetadataFuture.get() };
-            if (pMetadataParams != nullptr)
+            plugin_get_metadata_params metaDataParams{ getPluginMetadataFuture.get() };
+            if (!metaDataParams.completed)
             {
-              plugin_do_get_metadata(pMetadataParams->ptr, pMetadataParams->context, pMetadataParams->cb,
-                                    pMetadataParams->user_data);
-              /*if (pMetadataParams)*/ gpr_free(pMetadataParams);
+                // call the plugin in this thread if it wasn't completed already
+                plugin_do_get_metadata(metaDataParams.ptr, metaDataParams.context,
+                                       metaDataParams.cb, metaDataParams.user_data);
             }
         }
     }
-
-    t1.join();
 
     // process results of call
     for (size_t i{ 0 }; i < op_num; ++i)
@@ -658,7 +652,8 @@ int64_t HHVM_METHOD(Call, setCredentials,
 
     grpc_call_error error{ grpc_call_set_credentials(pCallData->call(),
                                                      pCallCredentialsData->credentials()) };
-    pCallData->setCredentialed(error == GRPC_CALL_OK);
+
+    pCallData->setCallCredentials((error == GRPC_CALL_OK) ? pCallCredentialsData : nullptr);
 
     return static_cast<int64_t>(error);
 }

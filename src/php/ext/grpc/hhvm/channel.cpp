@@ -124,7 +124,6 @@ bool ChannelArgs::init(const Array& argsArray)
         #endif
 
         size_t count{ 0 };
-        m_PHPData.resize(argsArray.size());
         for (ArrayIter iter(argsArray); iter; ++iter, ++count)
         {
             Variant key{ iter.first() };
@@ -143,7 +142,7 @@ bool ChannelArgs::init(const Array& argsArray)
                     // convert and store PHP data
                     int32_t valueInt{ value.toInt32() };
                     Slice valueSlice{ std::to_string(valueInt).c_str() };
-                    m_PHPData[count] = std::move(std::make_pair(keySlice, valueSlice));
+                    m_PHPData.emplace_back(keySlice, valueSlice);
 
                     m_ChannelArgs.args[count].value.integer = valueInt;
                     m_ChannelArgs.args[count].type = GRPC_ARG_INTEGER;
@@ -153,7 +152,7 @@ bool ChannelArgs::init(const Array& argsArray)
                     // convert and store PHP data
                     String valueStr{ value.toString() };
                     Slice valueSlice{ valueStr.c_str() };
-                    m_PHPData[count] = std::move(std::make_pair(keySlice, valueSlice));
+                    m_PHPData.emplace_back(keySlice, valueSlice);
 
                     m_ChannelArgs.args[count].value.string = reinterpret_cast<char*>(const_cast<uint8_t*>(m_PHPData[count].second.data()));
                     m_ChannelArgs.args[count].type = GRPC_ARG_STRING;

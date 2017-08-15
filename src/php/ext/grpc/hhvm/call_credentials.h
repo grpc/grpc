@@ -20,7 +20,10 @@
 #define NET_GRPC_HHVM_GRPC_CALL_CREDENTIALS_H_
 
 #include <future>
+#include <mutex>
 #include <thread>
+#include <tuple>
+#include <unordered_map>
 
 #ifdef HAVE_CONFIG_H
     #include "config.h"
@@ -81,31 +84,48 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 // this is the data passed back via promise from plugin_get_metadata
 typedef struct plugin_get_metadata_params
 {
+    plugin_get_metadata_params(void* const _ptr,  grpc_auth_metadata_context&& _context,
+                               grpc_credentials_plugin_metadata_cb&& _cb,
+                               void* const _user_data, const bool _completed = false) :
+        completed{ _completed }, ptr{ _ptr }, context{ std::move(_context) },
+        cb{ std::move(_cb) }, user_data{ _user_data } {}
+    bool completed;
     void *ptr;
     grpc_auth_metadata_context context;
     grpc_credentials_plugin_metadata_cb cb;
     void *user_data;
 } plugin_get_metadata_params;
 
-typedef std::promise<plugin_get_metadata_params*> MetadataPromise;
+typedef std::promise<plugin_get_metadata_params> MetadataPromise;
 
-// this is a singleton class which creates a thread local promise pointer.  The promise is
-// actually held by the calls
-class PluginGetMetadataPromise
+// this is a singleton class which manages the map of call credentials to promise and other data.
+//  The promise is actually held by the calls
+class PluginMetadataInfo
 {
 public:
-    void setPromise(MetadataPromise* const pMetadataPromise) { m_pMetadataPromise = pMetadataPromise; }
-    MetadataPromise* const getPromise(void) { return m_pMetadataPromise; }
+    // typedefs
+    typedef std::tuple<MetadataPromise*, std::thread::id> MetaDataInfo;
 
-    static PluginGetMetadataPromise& GetPluginMetadataPromise(void)
-    {
-        thread_local PluginGetMetadataPromise s_PluginGetMetadataPromise;
-        return s_PluginGetMetadataPromise;
-    }
+    // constructors/destructors
+    ~PluginMetadataInfo(void);
+    PluginMetadataInfo(const PluginMetadataInfo& otherPluginMetadataInfo) = delete;
+    PluginMetadataInfo(PluginMetadataInfo&& otherPluginMetadataInfo) = delete;
+    PluginMetadataInfo& operator=(const PluginMetadataInfo& rhsPluginMetadataInfo) = delete;
+    PluginMetadataInfo& operator&(PluginMetadataInfo&& rhsPluginMetadataInfo) = delete;
 
+    // interface functions
+    void setInfo(CallCredentialsData* const pCallCredentials, const MetaDataInfo& metaDataInfo);
+    MetaDataInfo getInfo(CallCredentialsData* const pCallCredentials);
+
+    // singleton accessor
+    static PluginMetadataInfo& getPluginMetadataInfo(void);
 private:
-    PluginGetMetadataPromise(void) :  m_pMetadataPromise{ nullptr } {}
-    MetadataPromise* m_pMetadataPromise;
+    // constructors destructors
+    PluginMetadataInfo(void) : m_MetaDataMap{} {}
+
+    // member variables
+    std::mutex m_Lock;
+    std::unordered_map<CallCredentialsData*,MetaDataInfo> m_MetaDataMap;
 };
 
 void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,

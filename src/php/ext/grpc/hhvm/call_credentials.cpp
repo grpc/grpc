@@ -33,11 +33,14 @@
 
 namespace HPHP {
 
+/*****************************************************************************/
+/*                       Crendentials Plugin Functions                       */
+/*****************************************************************************/
+
 typedef struct plugin_state
 {
     Variant callback;
-    PluginGetMetadataPromise* pPluginGetMetadataPromise;
-    std::thread::id thread_id;
+    CallCredentialsData* pCallCredentials;
 } plugin_state;
 
 // forward declarations
@@ -45,6 +48,51 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
                          grpc_credentials_plugin_metadata_cb cb,
                          void *user_data);
 void plugin_destroy_state(void *ptr);
+
+PluginMetadataInfo::~PluginMetadataInfo(void)
+{
+    std::lock_guard<std::mutex> lock{ m_Lock };
+    m_MetaDataMap.clear();
+}
+
+PluginMetadataInfo& PluginMetadataInfo::getPluginMetadataInfo(void)
+{
+    static PluginMetadataInfo s_PluginMetadataInfo;
+    return s_PluginMetadataInfo;
+}
+
+void PluginMetadataInfo::setInfo(CallCredentialsData* const pCallCredentials,
+                                    const MetaDataInfo& metaDataInfo)
+{
+    std::lock_guard<std::mutex> lock{ m_Lock };
+    auto itrPair = m_MetaDataMap.emplace(pCallCredentials, metaDataInfo);
+    if (!itrPair.second)
+    {
+        // call credentials exist already so update
+        // TODO:  The second entry may need to be a vector if we have multiple
+        // stacked but current thinking is this can't happen
+        itrPair.first->second = metaDataInfo;
+    }
+}
+
+typename PluginMetadataInfo::MetaDataInfo
+PluginMetadataInfo::getInfo(CallCredentialsData* const pCallCredentials)
+{
+    MetaDataInfo metaDataInfo{ nullptr, 0 };
+    {
+        std::lock_guard<std::mutex> lock{ m_Lock };
+        auto itrFind = m_MetaDataMap.find(pCallCredentials);
+        if (itrFind != m_MetaDataMap.cend())
+        {
+            // get the metadata info
+            metaDataInfo = itrFind->second;
+
+            // erase the entry
+            m_MetaDataMap.erase(itrFind);
+        }
+    }
+    return metaDataInfo;
+}
 
 /*****************************************************************************/
 /*                           Call Credentials Data                           */
@@ -146,8 +194,7 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 
     plugin_state *pState{ reinterpret_cast<plugin_state*>(gpr_zalloc(sizeof(plugin_state))) };
     pState->callback = callback;
-    pState->pPluginGetMetadataPromise = &PluginGetMetadataPromise::GetPluginMetadataPromise();
-    pState->thread_id = std::this_thread::get_id();
+    pState->pCallCredentials = pNewCallCredentialsData;
 
     grpc_metadata_credentials_plugin plugin;
     plugin.get_metadata = plugin_get_metadata;
@@ -170,7 +217,7 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 /*                       Crendentials Plugin Functions                       */
 /*****************************************************************************/
 
-// This work done in this function MUST be done on the same thread as the HHVM request
+// This work done in this function MUST be done on the same thread as the HHVM call request
 void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
                             grpc_credentials_plugin_metadata_cb cb,
                             void *user_data)
@@ -207,29 +254,28 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
     HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata") // Degug Trace
 
     plugin_state *pState{ reinterpret_cast<plugin_state *>(ptr) };
-    MetadataPromise* const pMetadataPromise = pState->pPluginGetMetadataPromise->getPromise();
-    // TODO:
-    // This comparison doesn't seem to be logically correct.
-    // Even when we force this function into a different thread this case is still true.
-    // Probably not safe to copy around between threads
-    /*if (pState->thread_id == std::this_thread::get_id())
+    CallCredentialsData* const pCallCrendentials{ pState->pCallCredentials };
+
+    PluginMetadataInfo& pluginMetaDataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
+    PluginMetadataInfo::MetaDataInfo metaDataInfo{ pluginMetaDataInfo.getInfo(pCallCrendentials) };
+
+    std::thread::id callThread{ std::get<1>(metaDataInfo) };
+    if (callThread == std::this_thread::get_id())
     {
-      HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata same thread") // Degug Trace
-      plugin_do_get_metadata(ptr, context, cb, user_data);
-      pMetadataPromise->set_value(nullptr);
+        HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata same thread") // Degug Trace
+        plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data,
+                                           true };
+        plugin_do_get_metadata(ptr, context, cb, user_data);
+        std::get<0>(metaDataInfo)->set_value(std::move(params));
     }
     else
-    {*/
-      //HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata different thread") // Degug Trace
-      plugin_get_metadata_params *pParams{ reinterpret_cast<plugin_get_metadata_params *>(gpr_zalloc(sizeof(plugin_get_metadata_params))) };
-      pParams->ptr = ptr;
-      pParams->context = context;
-      pParams->cb = cb;
-      pParams->user_data = user_data;
+    {
+        HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata different thread") // Degug Trace
+        plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data };
 
-      // return the meta data params in the promise
-      pMetadataPromise->set_value(pParams);
-    //}
+        // return the meta data params in the promise
+        std::get<0>(metaDataInfo)->set_value(std::move(params));
+    }
 }
 
 void plugin_destroy_state(void *ptr)
@@ -237,7 +283,7 @@ void plugin_destroy_state(void *ptr)
     HHVM_TRACE_SCOPE("CallCredentials plugin_destroy_state") // Degug Trace
 
     plugin_state* const pState{ reinterpret_cast<plugin_state *>(ptr) };
-    gpr_free(pState);
+    if (pState) gpr_free(pState);
 }
 
 } // namespace HPHP
