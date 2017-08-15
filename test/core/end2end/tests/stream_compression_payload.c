@@ -297,9 +297,9 @@ static void test_invoke_10_request_response_with_payload(
   config.tear_down_data(&f);
 }
 
-void stream_payload(grpc_end2end_test_config config) {
+void stream_compression_payload(grpc_end2end_test_config config) {
   test_invoke_request_response_with_payload(config);
   test_invoke_10_request_response_with_payload(config);
 }
 
-void stream_payload_pre_init(void) {}
+void stream_compression_payload_pre_init(void) {}

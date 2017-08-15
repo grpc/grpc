@@ -640,7 +640,7 @@ static void test_stream_compression_override_message_compression(
       /* ignored */ NULL, true, level, false, true, GRPC_COMPRESS_GZIP);
 }
 
-void stream_compressed_payload(grpc_end2end_test_config config) {
+void stream_compression_compressed_payload(grpc_end2end_test_config config) {
   test_invoke_request_with_compressed_payload(config);
   test_invoke_request_with_send_message_before_initial_metadata(config);
   test_invoke_request_with_server_level(config);
@@ -649,4 +649,4 @@ void stream_compressed_payload(grpc_end2end_test_config config) {
   test_stream_compression_override_message_compression(config);
 }
 
-void stream_compressed_payload_pre_init(void) {}
+void stream_compression_compressed_payload_pre_init(void) {}

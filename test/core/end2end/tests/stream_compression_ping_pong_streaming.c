@@ -280,7 +280,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   }
 }
 
-void stream_ping_pong_streaming(grpc_end2end_test_config config) {
+void stream_compression_ping_pong_streaming(grpc_end2end_test_config config) {
   int i;
 
   for (i = 1; i < 10; i++) {
@@ -288,4 +288,4 @@ void stream_ping_pong_streaming(grpc_end2end_test_config config) {
   }
 }
 
-void stream_ping_pong_streaming_pre_init(void) {}
+void stream_compression_ping_pong_streaming_pre_init(void) {}
