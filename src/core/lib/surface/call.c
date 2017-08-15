@@ -82,17 +82,6 @@ typedef enum {
   STATUS_SOURCE_COUNT
 } status_source;
 
-/* The state of receiving initial metadata and message; this enumerates
-   whether initial metadata or message is received first */
-typedef enum {
-  /* Neither initial metadata nor messages has been received */
-  RECV_NONE,
-  /* Initial metadata is received first */
-  RECV_INITIAL_METADATA_FIRST,
-  /* Message is received first */
-  RECV_MESSAGE_FIRST,
-} recv_state;
-
 typedef struct {
   bool is_set;
   grpc_error *error;
@@ -234,12 +223,10 @@ struct grpc_call {
     } server;
   } final_op;
 
-  /* a recv_state enum, records whether initial metadata or message is recived
-     first. If message is received first, we will save the batch_control pointer
-     in saved_receiving_stream_ready_bctlp, and invoke receiving_stream_ready()
-     after initial metadata is received. */
-  gpr_atm recv_state;
-  batch_control *saved_receiving_stream_ready_bctlp;
+  // Either 0 (no initial metadata and messages received),
+  // 1 (recieved initial metadata first)
+  // or a batch_control* (received messages first the lowest bit is 0)
+  gpr_atm saved_receiving_stream_ready_bctlp;
 };
 
 grpc_tracer_flag grpc_call_error_trace =
@@ -1303,10 +1290,9 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
     cancel_with_error(exec_ctx, call, STATUS_FROM_SURFACE,
                       GRPC_ERROR_REF(error));
   }
-  call->saved_receiving_stream_ready_bctlp = bctlp;
   if (error != GRPC_ERROR_NONE || call->receiving_stream == NULL ||
-      !gpr_atm_rel_cas(&call->recv_state, RECV_NONE, RECV_MESSAGE_FIRST)) {
-    call->saved_receiving_stream_ready_bctlp = NULL;
+      !gpr_atm_rel_cas(&call->saved_receiving_stream_ready_bctlp, 0,
+                       (gpr_atm)bctlp)) {
     process_data_after_md(exec_ctx, bctlp);
   }
 }
@@ -1397,12 +1383,28 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
     }
   }
 
-  if (!gpr_atm_acq_cas(&call->recv_state, RECV_NONE,
-                       RECV_INITIAL_METADATA_FIRST)) {
-    grpc_closure *saved_rsr_closure = GRPC_CLOSURE_CREATE(
-        receiving_stream_ready, call->saved_receiving_stream_ready_bctlp,
-        grpc_schedule_on_exec_ctx);
-    call->saved_receiving_stream_ready_bctlp = NULL;
+  grpc_closure *saved_rsr_closure = NULL;
+  while (true) {
+    gpr_atm rsr_bctlp =
+        gpr_atm_acq_load(&call->saved_receiving_stream_ready_bctlp);
+    /* Should only receive initial metadata once */
+    GPR_ASSERT(rsr_bctlp != 1);
+    if (rsr_bctlp == 0) {
+      /* Not received initial metadata and messages */
+      if (gpr_atm_no_barrier_cas(&call->saved_receiving_stream_ready_bctlp, 0,
+                                 1)) {
+        break;
+      }
+    } else {
+      /* Already received messages */
+      saved_rsr_closure = GRPC_CLOSURE_CREATE(receiving_stream_ready,
+                                              (batch_control *)rsr_bctlp,
+                                              grpc_schedule_on_exec_ctx);
+      /* No need to modify saved_receiving_stream_ready_bctlp */
+      break;
+    }
+  }
+  if (saved_rsr_closure != NULL) {
     GRPC_CLOSURE_RUN(exec_ctx, saved_rsr_closure, GRPC_ERROR_REF(error));
   }
 
