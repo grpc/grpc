@@ -2128,6 +2128,7 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx,
                                            chand->interested_parties);
   if (calld->connected_subchannel == NULL) {
     // Failed to create subchannel.
+// FIXME: don't retry on drops, but do on other failures?
     grpc_error *new_error = error == GRPC_ERROR_NONE
         ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Call dropped by load balancing policy")
