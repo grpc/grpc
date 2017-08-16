@@ -260,7 +260,7 @@ static void oauth2_token_fetcher_get_request_metadata(
         exec_ctx,
         grpc_credentials_metadata_request_create(creds, cb, user_data),
         &c->httpcli_context, pollent, on_oauth2_token_fetcher_http_response,
-        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), refresh_threshold));
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), refresh_threshold));
   }
 }
 
