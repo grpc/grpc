@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -27,13 +28,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/windows/grpc_portability_master.bat"
-timeout_mins: 360
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.xml"
-  }
-}
+# change to grpc repo root
+cd $(dirname $0)/../../..
+
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+
+export DOCKERFILE_DIR=tools/dockerfile/test/bazel
+export DOCKER_RUN_SCRIPT=$BAZEL_SCRIPT
+exec tools/run_tests/dockerize/build_and_run_docker.sh

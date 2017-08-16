@@ -163,9 +163,7 @@ class PythonArtifact:
       return create_jobspec(self.name,
                             ['tools\\run_tests\\artifacts\\build_artifact_python.bat',
                              self.py_version,
-                             '32' if self.arch == 'x86' else '64',
-                             dir
-                            ],
+                             '32' if self.arch == 'x86' else '64'],
                             environ=environ,
                             use_workspace=True)
     else:

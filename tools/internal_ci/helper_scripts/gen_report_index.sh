@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2017, Google Inc.
 # All rights reserved.
 #
@@ -26,14 +27,24 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Generates index.html that will contain links to various test results on kokoro.
+set -e
 
-# Config file for the internal CI (in protobuf text format)
+# change to grpc repo root
+cd $(dirname $0)/../../..
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/macos/grpc_master.sh"
-timeout_mins: 240
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.xml"
-  }
-}
+# Kororo URLs are in the form "grpc/job/macos/job/master/job/grpc_build_artifacts"
+KOKORO_JOB_PATH=$(echo "${KOKORO_JOB_NAME}" | sed "s|/|/job/|g")
+
+mkdir -p reports
+
+echo '<html><head></head><body>' > reports/kokoro_index.html
+echo '<h1>'${KOKORO_JOB_NAME}', build '#${KOKORO_BUILD_NUMBER}'</h1>' >> reports/kokoro_index.html
+echo '<h2><a href="https://kokoro.corp.google.com/job/'${KOKORO_JOB_PATH}'/'${KOKORO_BUILD_NUMBER}'/">Kokoro build dashboard (internal only)</a></h2>' >> reports/kokoro_index.html
+echo '<h2><a href="https://sponge.corp.google.com/invocation?id='${KOKORO_BUILD_ID}'&searchFor=">Test result dashboard (internal only)</a></h2>' >> reports/kokoro_index.html
+echo '<h2><a href="test_report.html">HTML test report (Not available yet)</a></h2>' >> reports/kokoro_index.html
+echo '<h2><a href="test_log.txt">Test log (Not available yet)</a></h2>' >> reports/kokoro_index.html
+echo '</body></html>' >> reports/kokoro_index.html
+
+echo 'Created reports/kokoro_index.html report index'

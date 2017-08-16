@@ -27,14 +27,10 @@
 @rem (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 @rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-@rem make sure msys binaries are preferred over cygwin binaries
-@rem set path to python 2.7
-set PATH=C:\tools\msys64\usr\bin;C:\Python27;%PATH%
-
 @rem enter repo root
 cd /d %~dp0\..\..\..
 
-git submodule update --init
+call tools/internal_ci/helper_scripts/prepare_build_windows.bat
 
 python tools/run_tests/run_tests_matrix.py -f portability windows -j 1 --inner_jobs 8 --internal_ci || goto :error
 goto :EOF
