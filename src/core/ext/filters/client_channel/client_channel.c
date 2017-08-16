@@ -2140,25 +2140,6 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx,
               calld, grpc_error_string(new_error));
     }
     pending_batches_fail(exec_ctx, elem, new_error);
-  } else if (calld->error != GRPC_ERROR_NONE) {
-    /* already cancelled before subchannel became ready */
-    grpc_error *child_errors[] = {error, calld->error};
-    grpc_error *cancellation_error =
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-            "Cancelled before creating subchannel", child_errors,
-            GPR_ARRAY_SIZE(child_errors));
-    /* if due to deadline, attach the deadline exceeded status to the error */
-    if (gpr_time_cmp(calld->deadline, gpr_now(GPR_CLOCK_MONOTONIC)) < 0) {
-      cancellation_error =
-          grpc_error_set_int(cancellation_error, GRPC_ERROR_INT_GRPC_STATUS,
-                             GRPC_STATUS_DEADLINE_EXCEEDED);
-    }
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-      gpr_log(GPR_DEBUG,
-              "chand=%p calld=%p: cancelled before subchannel became ready: %s",
-              chand, calld, grpc_error_string(cancellation_error));
-    }
-    pending_batches_fail(exec_ctx, elem, cancellation_error);
   } else {
     /* Create call on subchannel. */
     create_subchannel_call_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
@@ -2294,7 +2275,7 @@ static void pick_callback_cancel_locked(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 // Callback invoked by grpc_lb_policy_pick_locked() for async picks.
-// Unrefs the LB policy after invoking subchannel_ready_locked().
+// Unrefs the LB policy and invokes subchannel_ready_locked().
 static void pick_callback_done_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                       grpc_error *error) {
   grpc_call_element *elem = arg;
@@ -2462,8 +2443,10 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
               calld, grpc_error_string(calld->error));
     }
     if (calld->lb_policy != NULL) {
+      // Manually invoking callback function; does not take ownership of error.
       pick_callback_cancel_locked(exec_ctx, elem, calld->error);
     } else {
+      // Manually invoking callback function; does not take ownership of error.
       pick_after_resolver_result_cancel_locked(exec_ctx, elem, calld->error);
     }
     pending_batches_fail(exec_ctx, elem, GRPC_ERROR_REF(calld->error));
