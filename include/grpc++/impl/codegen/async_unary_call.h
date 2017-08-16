@@ -97,13 +97,13 @@ class ClientAsyncResponseReader final
   ///
   /// Side effect:
   ///   - the \a ClientContext associated with this call is updated with
-  ///     possible initial and trailing metadata sent from the serve.
+  ///     possible initial and trailing metadata sent from the server.
   void ReadInitialMetadata(void* tag) {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
-    meta_buf_.set_output_tag(tag);
-    meta_buf_.RecvInitialMetadata(context_);
-    call_.PerformOps(&meta_buf_);
+    meta_buf.set_output_tag(tag);
+    meta_buf.RecvInitialMetadata(context_);
+    call_.PerformOps(&meta_buf);
   }
 
   /// See \a ClientAysncResponseReaderInterface::Finish for semantics.
@@ -112,14 +112,14 @@ class ClientAsyncResponseReader final
   ///   - the \a ClientContext associated with this call is updated with
   ///     possible initial and trailing metadata sent from the server.
   void Finish(R* msg, Status* status, void* tag) {
-    finish_buf_.set_output_tag(tag);
+    finish_buf.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
-      finish_buf_.RecvInitialMetadata(context_);
+      finish_buf.RecvInitialMetadata(context_);
     }
-    finish_buf_.RecvMessage(msg);
-    finish_buf_.AllowNoMessage();
-    finish_buf_.ClientRecvStatus(context_, status);
-    call_.PerformOps(&finish_buf_);
+    finish_buf.RecvMessage(msg);
+    finish_buf.AllowNoMessage();
+    finish_buf.ClientRecvStatus(context_, status);
+    call_.PerformOps(&finish_buf);
   }
 
  private:
@@ -129,12 +129,12 @@ class ClientAsyncResponseReader final
   template <class W>
   ClientAsyncResponseReader(Call call, ClientContext* context, const W& request)
       : context_(context), call_(call) {
-    init_buf_.SendInitialMetadata(context->send_initial_metadata_,
-                                  context->initial_metadata_flags());
+    init_buf.SendInitialMetadata(context->send_initial_metadata_,
+                                 context->initial_metadata_flags());
     // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(init_buf_.SendMessage(request).ok());
-    init_buf_.ClientSendClose();
-    call_.PerformOps(&init_buf_);
+    GPR_CODEGEN_ASSERT(init_buf.SendMessage(request).ok());
+    init_buf.ClientSendClose();
+    call_.PerformOps(&init_buf);
   }
 
   // disable operator new
@@ -143,11 +143,11 @@ class ClientAsyncResponseReader final
 
   SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
                   CallOpClientSendClose>
-      init_buf_;
-  CallOpSet<CallOpRecvInitialMetadata> meta_buf_;
+      init_buf;
+  CallOpSet<CallOpRecvInitialMetadata> meta_buf;
   CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>,
             CallOpClientRecvStatus>
-      finish_buf_;
+      finish_buf;
 };
 
 /// Async server-side API for handling unary calls, where the single
@@ -256,6 +256,11 @@ class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
 namespace std {
 template <class R>
 class default_delete<grpc::ClientAsyncResponseReader<R>> {
+ public:
+  void operator()(void* p) {}
+};
+template <class R>
+class default_delete<grpc::ClientAsyncResponseReaderInterface<R>> {
  public:
   void operator()(void* p) {}
 };

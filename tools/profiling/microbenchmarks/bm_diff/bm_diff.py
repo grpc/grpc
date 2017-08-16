@@ -67,6 +67,12 @@ def _args():
     default=20,
     help='Number of times to loops the benchmarks. Must match what was passed to bm_run.py'
   )
+  argp.add_argument(
+    '-r',
+    '--regex',
+    type=str,
+    default="",
+    help='Regex to filter benchmarks run')
   argp.add_argument('--counters', dest='counters', action='store_true')
   argp.add_argument('--no-counters', dest='counters', action='store_false')
   argp.set_defaults(counters=True)
@@ -108,9 +114,10 @@ class Benchmark:
       mdn_diff = abs(_median(new) - _median(old))
       _maybe_print('%s: %s=%r %s=%r mdn_diff=%r' %
              (f, new_name, new, old_name, old, mdn_diff))
-      s = bm_speedup.speedup(new, old)
-      if abs(s) > 3 and mdn_diff > 0.5:
-        self.final[f] = '%+d%%' % s
+      s = bm_speedup.speedup(new, old, 1e-5)
+      if abs(s) > 3:
+        if mdn_diff > 0.5 or 'trickle' in f:
+          self.final[f] = '%+d%%' % s
     return self.final.keys()
 
   def skip(self):
@@ -143,7 +150,7 @@ def _read_json(filename, badjson_files, nonexistant_files):
 def fmt_dict(d):
   return ''.join(["    " + k + ": " + str(d[k]) + "\n" for k in d])
 
-def diff(bms, loops, track, old, new, counters):
+def diff(bms, loops, regex, track, old, new, counters):
   benchmarks = collections.defaultdict(Benchmark)
 
   badjson_files = {}
@@ -152,7 +159,8 @@ def diff(bms, loops, track, old, new, counters):
     for loop in range(0, loops):
       for line in subprocess.check_output(
         ['bm_diff_%s/opt/%s' % (old, bm),
-         '--benchmark_list_tests']).splitlines():
+         '--benchmark_list_tests', 
+         '--benchmark_filter=%s' % regex]).splitlines():
         stripped_line = line.strip().replace("/", "_").replace(
           "<", "_").replace(">", "_").replace(", ", "_")
         js_new_opt = _read_json('%s.%s.opt.%s.%d.json' %
@@ -172,18 +180,16 @@ def diff(bms, loops, track, old, new, counters):
           js_new_ctr = None
           js_old_ctr = None
 
-        if js_new_ctr:
-          for row in bm_json.expand_json(js_new_ctr, js_new_opt):
-            name = row['cpp_name']
-            if name.endswith('_mean') or name.endswith('_stddev'):
-              continue
-            benchmarks[name].add_sample(track, row, True)
-        if js_old_ctr:
-          for row in bm_json.expand_json(js_old_ctr, js_old_opt):
-            name = row['cpp_name']
-            if name.endswith('_mean') or name.endswith('_stddev'):
-              continue
-            benchmarks[name].add_sample(track, row, False)
+        for row in bm_json.expand_json(js_new_ctr, js_new_opt):
+          name = row['cpp_name']
+          if name.endswith('_mean') or name.endswith('_stddev'):
+            continue
+          benchmarks[name].add_sample(track, row, True)
+        for row in bm_json.expand_json(js_old_ctr, js_old_opt):
+          name = row['cpp_name']
+          if name.endswith('_mean') or name.endswith('_stddev'):
+            continue
+          benchmarks[name].add_sample(track, row, False)
 
   really_interesting = set()
   for name, bm in benchmarks.items():
@@ -212,6 +218,6 @@ def diff(bms, loops, track, old, new, counters):
 
 if __name__ == '__main__':
   args = _args()
-  diff, note = diff(args.benchmarks, args.loops, args.track, args.old,
+  diff, note = diff(args.benchmarks, args.loops, args.regex, args.track, args.old,
             args.new, args.counters)
   print('%s\n%s' % (note, diff if diff else "No performance differences"))

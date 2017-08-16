@@ -74,19 +74,22 @@ def get_flaky_tests(limit=None):
 
   bq = big_query_utils.create_big_query()
   query = """
-    SELECT
-      test_name,
-      SUM(result != 'PASSED'
-        AND result != 'SKIPPED') AS count_failed,
-    FROM
-      [grpc-testing:jenkins_test_results.aggregate_results]
-    WHERE
-      timestamp >= DATE_ADD(DATE(CURRENT_TIMESTAMP()), -1, "WEEK")
-      AND NOT REGEXP_MATCH(job_name, '.*portability.*')
-    GROUP BY
-      test_name
-    HAVING
-      count_failed > 0"""
+SELECT
+  filtered_test_name,
+  FROM (
+  SELECT
+    REGEXP_REPLACE(test_name, r'/\d+', '') AS filtered_test_name,
+    result
+  FROM
+    [grpc-testing:jenkins_test_results.aggregate_results]
+  WHERE
+    timestamp >= DATE_ADD(CURRENT_DATE(), -1, "WEEK")
+    AND platform = '"""+platform_string()+"""'
+    AND NOT REGEXP_MATCH(job_name, '.*portability.*') )
+GROUP BY
+  filtered_test_name
+HAVING
+  SUM(result != 'PASSED' AND result != 'SKIPPED') > 0"""
   if limit:
     query += " limit {}".format(limit)
   query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)
@@ -144,7 +147,7 @@ class Config(object):
                           cpu_cost=cpu_cost,
                           timeout_seconds=(self.timeout_multiplier * timeout_seconds if timeout_seconds else None),
                           flake_retries=5 if flaky or args.allow_flakes else 0,
-                          timeout_retries=3 if args.allow_flakes else 0)
+                          timeout_retries=3 if flaky or args.allow_flakes else 0)
 
 
 def get_c_tests(travis, test_lang) :
@@ -245,7 +248,7 @@ class CLanguage(object):
       self._docker_distro, self._make_options = self._compiler_options(self.args.use_docker,
                                                                        self.args.compiler)
     if args.iomgr_platform == "uv":
-      cflags = '-DGRPC_UV '
+      cflags = '-DGRPC_UV -DGRPC_UV_THREAD_CHECK'
       try:
         cflags += subprocess.check_output(['pkg-config', '--cflags', 'libuv']).strip() + ' '
       except (subprocess.CalledProcessError, OSError):
@@ -450,10 +453,11 @@ class NodeLanguage(object):
     # we should specify in the compiler argument
     _check_compiler(self.args.compiler, ['default', 'node0.12',
                                          'node4', 'node5', 'node6',
-                                         'node7', 'electron1.3', 'electron1.6'])
+                                         'node7', 'node8',
+                                         'electron1.3', 'electron1.6'])
     if self.args.compiler == 'default':
       self.runtime = 'node'
-      self.node_version = '7'
+      self.node_version = '8'
     else:
       if self.args.compiler.startswith('electron'):
         self.runtime = 'electron'
@@ -885,11 +889,50 @@ class ObjCLanguage(object):
         self.config.job_spec(['src/objective-c/tests/run_tests.sh'],
                               timeout_seconds=60*60,
                               shortname='objc-tests',
+                              cpu_cost=1e6,
                               environ=_FORCE_ENVIRON_FOR_WRAPPERS),
-        self.config.job_spec(['src/objective-c/tests/build_example_test.sh'],
-                              timeout_seconds=30*60,
-                              shortname='objc-examples-build',
+        self.config.job_spec(['src/objective-c/tests/run_plugin_tests.sh'],
+                              timeout_seconds=60*60,
+                              shortname='objc-plugin-tests',
+                              cpu_cost=1e6,
                               environ=_FORCE_ENVIRON_FOR_WRAPPERS),
+        self.config.job_spec(['src/objective-c/tests/build_one_example.sh'],
+                              timeout_seconds=10*60,
+                              shortname='objc-build-example-helloworld',
+                              cpu_cost=1e6,
+                              environ={'SCHEME': 'HelloWorld',
+                                       'EXAMPLE_PATH': 'examples/objective-c/helloworld'}),
+        self.config.job_spec(['src/objective-c/tests/build_one_example.sh'],
+                              timeout_seconds=10*60,
+                              shortname='objc-build-example-routeguide',
+                              cpu_cost=1e6,
+                              environ={'SCHEME': 'RouteGuideClient',
+                                       'EXAMPLE_PATH': 'examples/objective-c/route_guide'}),
+        self.config.job_spec(['src/objective-c/tests/build_one_example.sh'],
+                              timeout_seconds=10*60,
+                              shortname='objc-build-example-authsample',
+                              cpu_cost=1e6,
+                              environ={'SCHEME': 'AuthSample',
+                                       'EXAMPLE_PATH': 'examples/objective-c/auth_sample'}),
+        self.config.job_spec(['src/objective-c/tests/build_one_example.sh'],
+                              timeout_seconds=10*60,
+                              shortname='objc-build-example-sample',
+                              cpu_cost=1e6,
+                              environ={'SCHEME': 'Sample',
+                                       'EXAMPLE_PATH': 'src/objective-c/examples/Sample'}),
+        self.config.job_spec(['src/objective-c/tests/build_one_example.sh'],
+                              timeout_seconds=10*60,
+                              shortname='objc-build-example-sample-frameworks',
+                              cpu_cost=1e6,
+                              environ={'SCHEME': 'Sample',
+                                       'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
+                                       'FRAMEWORKS': 'YES'}),
+        self.config.job_spec(['src/objective-c/tests/build_one_example.sh'],
+                              timeout_seconds=10*60,
+                              shortname='objc-build-example-switftsample',
+                              cpu_cost=1e6,
+                              environ={'SCHEME': 'SwiftSample',
+                                       'EXAMPLE_PATH': 'src/objective-c/examples/SwiftSample'}),
     ]
 
   def pre_build_steps(self):
@@ -1192,7 +1235,7 @@ argp.add_argument('--compiler',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2013', 'vs2015',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3', 'python_alpine',
-                           'node0.12', 'node4', 'node5', 'node6', 'node7',
+                           'node0.12', 'node4', 'node5', 'node6', 'node7', 'node8',
                            'electron1.3', 'electron1.6',
                            'coreclr',
                            'cmake'],

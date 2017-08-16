@@ -14,7 +14,16 @@
 
 licenses(["notice"])  # Apache v2
 
-cc_library(
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+
+package(
+    features = [
+        "-layering_check",
+        "-parse_headers",
+    ],
+)
+
+grpc_cc_library(
     name = "server_helper_lib",
     srcs = [
         "server_helper.cc",
@@ -22,21 +31,35 @@ cc_library(
     hdrs = [
         "server_helper.h",
     ],
+    external_deps = [
+        "gflags",
+    ],
+    language = "C++",
     deps = [
         "//test/cpp/util:test_util",
-        "//external:gflags",
     ],
 )
 
-cc_binary(
+grpc_cc_binary(
     name = "interop_server",
     srcs = [
-        "interop_server.cc",
         "interop_server_bootstrap.cc",
     ],
+    language = "C++",
+    deps = [
+        ":interop_server_lib",
+        "//:grpc++",
+    ],
+)
+
+grpc_cc_library(
+    name = "interop_server_lib",
+    srcs = [
+        "interop_server.cc",
+    ],
+    language = "C++",
     deps = [
         ":server_helper_lib",
-        "//:grpc++",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
@@ -44,7 +67,7 @@ cc_binary(
     ],
 )
 
-cc_library(
+grpc_cc_library(
     name = "client_helper_lib",
     srcs = [
         "client_helper.cc",
@@ -54,22 +77,73 @@ cc_library(
         "client_helper.h",
         "interop_client.h",
     ],
+    language = "C++",
     deps = [
-        "//test/cpp/util:test_util",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
         "//test/core/security:oauth2_utils",
         "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
     ],
 )
 
-cc_binary(
-    name = "interop_client",
+grpc_cc_library(
+    name = "interop_client_main",
     srcs = [
         "client.cc",
     ],
+    language = "C++",
     deps = [
         ":client_helper_lib",
+    ],
+)
+
+grpc_cc_binary(
+    name = "interop_client",
+    language = "C++",
+    deps = [
+        ":interop_client_main",
+        "//:grpc++",
+    ],
+)
+
+grpc_cc_binary(
+    name = "reconnect_interop_client",
+    srcs = [
+        "reconnect_interop_client.cc",
+    ],
+    deps = [
+        ":client_helper_lib",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_binary(
+    name = "reconnect_interop_server",
+    srcs = [
+        "reconnect_interop_server.cc",
+    ],
+    language = "C++",
+    deps = [
+        ":interop_server_lib",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_binary(
+    name = "stress_test",
+    srcs = [
+        "stress_interop_client.cc",
+        "stress_interop_client.h",
+        "stress_test.cc",
+    ],
+    deps = [
+        ":client_helper_lib",
+        "//:grpc++",
+        "//test/cpp/util:metrics_server_lib",
+        "//test/cpp/util:test_config",
     ],
 )

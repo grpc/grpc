@@ -100,7 +100,8 @@ int GetCallCounterValue() {
 
 class ChannelDataImpl : public ChannelData {
  public:
-  grpc_error* Init(grpc_exec_ctx* exec_ctx, grpc_channel_element_args* args) {
+  grpc_error* Init(grpc_exec_ctx* exec_ctx, grpc_channel_element* elem,
+                   grpc_channel_element_args* args) {
     IncrementConnectionCounter();
     return GRPC_ERROR_NONE;
   }

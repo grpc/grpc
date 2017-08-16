@@ -345,7 +345,7 @@ grpc_call *grpc_channel_create_registered_call(
   return call;
 }
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define REF_REASON reason
 #define REF_ARG , const char *reason
 #else

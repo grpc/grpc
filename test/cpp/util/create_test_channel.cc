@@ -51,29 +51,31 @@ void AddProdSslType() {
 
 }  // namespace
 
-// When ssl is enabled, if server is empty, override_hostname is used to
+// When cred_type is 'ssl', if server is empty, override_hostname is used to
 // create channel. Otherwise, connect to server and override hostname if
 // override_hostname is provided.
-// When ssl is not enabled, override_hostname is ignored.
+// When cred_type is not 'ssl', override_hostname is ignored.
 // Set use_prod_root to true to use the SSL root for connecting to google.
 // In this case, path to the roots pem file must be set via environment variable
 // GRPC_DEFAULT_SSL_ROOTS_FILE_PATH.
 // Otherwise, root for test SSL cert will be used.
-// creds will be used to create a channel when enable_ssl is true.
+// creds will be used to create a channel when cred_type is 'ssl'.
 // Use examples:
 //   CreateTestChannel(
-//       "1.1.1.1:12345", "override.hostname.com", true, false, creds);
-//   CreateTestChannel("test.google.com:443", "", true, true, creds);
+//       "1.1.1.1:12345", "ssl", "override.hostname.com", false, creds);
+//   CreateTestChannel("test.google.com:443", "ssl", "", true, creds);
 //   same as above
-//   CreateTestChannel("", "test.google.com:443", true, true, creds);
+//   CreateTestChannel("", "ssl", "test.google.com:443", true, creds);
 std::shared_ptr<Channel> CreateTestChannel(
-    const grpc::string& server, const grpc::string& override_hostname,
-    bool enable_ssl, bool use_prod_roots,
+    const grpc::string& server, const grpc::string& cred_type,
+    const grpc::string& override_hostname, bool use_prod_roots,
     const std::shared_ptr<CallCredentials>& creds,
     const ChannelArguments& args) {
   ChannelArguments channel_args(args);
   std::shared_ptr<ChannelCredentials> channel_creds;
-  if (enable_ssl) {
+  if (cred_type.empty()) {
+    return CreateChannel(server, InsecureChannelCredentials());
+  } else if (cred_type == testing::kTlsCredentialsType) {  // cred_type == "ssl"
     if (use_prod_roots) {
       gpr_once_init(&g_once_init_add_prod_ssl_provider, &AddProdSslType);
       channel_creds = testing::GetCredentialsProvider()->GetChannelCredentials(
@@ -95,8 +97,26 @@ std::shared_ptr<Channel> CreateTestChannel(
     }
     return CreateCustomChannel(connect_to, channel_creds, channel_args);
   } else {
-    return CreateChannel(server, InsecureChannelCredentials());
+    channel_creds = testing::GetCredentialsProvider()->GetChannelCredentials(
+        cred_type, &channel_args);
+    GPR_ASSERT(channel_creds != nullptr);
+
+    return CreateChannel(server, channel_creds);
   }
+}
+
+std::shared_ptr<Channel> CreateTestChannel(
+    const grpc::string& server, const grpc::string& override_hostname,
+    bool enable_ssl, bool use_prod_roots,
+    const std::shared_ptr<CallCredentials>& creds,
+    const ChannelArguments& args) {
+  grpc::string type;
+  if (enable_ssl) {
+    type = testing::kTlsCredentialsType;
+  }
+
+  return CreateTestChannel(server, type, override_hostname, use_prod_roots,
+                           creds, args);
 }
 
 std::shared_ptr<Channel> CreateTestChannel(

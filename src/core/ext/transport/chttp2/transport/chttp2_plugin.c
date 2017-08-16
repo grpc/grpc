@@ -21,8 +21,11 @@
 #include "src/core/lib/transport/metadata.h"
 
 void grpc_chttp2_plugin_init(void) {
-  grpc_register_tracer("http", &grpc_http_trace);
-  grpc_register_tracer("flowctl", &grpc_flowctl_trace);
+  grpc_register_tracer(&grpc_http_trace);
+  grpc_register_tracer(&grpc_flowctl_trace);
+#ifndef NDEBUG
+  grpc_register_tracer(&grpc_trace_chttp2_refcount);
+#endif
 }
 
 void grpc_chttp2_plugin_shutdown(void) {}

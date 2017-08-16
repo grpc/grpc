@@ -919,11 +919,6 @@ Server.prototype.addService = function(service, implementation) {
   });
 };
 
-var logAddProtoServiceDeprecationOnce = _.once(function() {
-    common.log(constants.logVerbosity.INFO,
-               'Server#addProtoService is deprecated. Use addService instead');
-});
-
 /**
  * Add a proto service to the server, with a corresponding implementation
  * @deprecated Use {@link grpc.Server#addService} instead
@@ -931,11 +926,11 @@ var logAddProtoServiceDeprecationOnce = _.once(function() {
  * @param {Object<String, grpc.Server~handleCall>} implementation Map of method
  *     names to method implementation for the provided service.
  */
-Server.prototype.addProtoService = function(service, implementation) {
+Server.prototype.addProtoService = util.deprecate(function(service,
+                                                           implementation) {
   var options;
   var protobuf_js_5_common = require('./protobuf_js_5_common');
   var protobuf_js_6_common = require('./protobuf_js_6_common');
-  logAddProtoServiceDeprecationOnce();
   if (protobuf_js_5_common.isProbablyProtobufJs5(service)) {
     options = _.defaults(service.grpc_options, common.defaultGrpcOptions);
     this.addService(
@@ -950,7 +945,7 @@ Server.prototype.addProtoService = function(service, implementation) {
     // We assume that this is a service attributes object
     this.addService(service, implementation);
   }
-};
+}, 'Server#addProtoService: Use Server#addService instead');
 
 /**
  * Binds the server to the given port, with SSL disabled if creds is an

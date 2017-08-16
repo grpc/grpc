@@ -47,7 +47,9 @@
  * used to determine which kind of element a pointer refers to.
  */
 
-#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_metadata =
+    GRPC_TRACER_INITIALIZER(false, "metadata");
 #define DEBUG_ARGS , const char *file, int line
 #define FWD_DEBUG_ARGS , file, line
 #define REF_MD_LOCKED(shard, s) ref_md_locked((shard), (s), __FILE__, __LINE__)
@@ -144,15 +146,17 @@ static int is_mdelem_static(grpc_mdelem e) {
 
 static void ref_md_locked(mdtab_shard *shard,
                           interned_metadata *md DEBUG_ARGS) {
-#ifdef GRPC_METADATA_REFCOUNT_DEBUG
-  char *key_str = grpc_slice_to_c_string(md->key);
-  char *value_str = grpc_slice_to_c_string(md->value);
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "ELM   REF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
-          gpr_atm_no_barrier_load(&md->refcnt),
-          gpr_atm_no_barrier_load(&md->refcnt) + 1, key_str, value_str);
-  gpr_free(key_str);
-  gpr_free(value_str);
+#ifndef NDEBUG
+  if (GRPC_TRACER_ON(grpc_trace_metadata)) {
+    char *key_str = grpc_slice_to_c_string(md->key);
+    char *value_str = grpc_slice_to_c_string(md->value);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "ELM   REF:%p:%" PRIdPTR "->%" PRIdPTR ": '%s' = '%s'", (void *)md,
+            gpr_atm_no_barrier_load(&md->refcnt),
+            gpr_atm_no_barrier_load(&md->refcnt) + 1, key_str, value_str);
+    gpr_free(key_str);
+    gpr_free(value_str);
+  }
 #endif
   if (0 == gpr_atm_no_barrier_fetch_add(&md->refcnt, 1)) {
     gpr_atm_no_barrier_fetch_add(&shard->free_estimate, -1);
@@ -243,13 +247,16 @@ grpc_mdelem grpc_mdelem_create(
     allocated->key = grpc_slice_ref_internal(key);
     allocated->value = grpc_slice_ref_internal(value);
     gpr_atm_rel_store(&allocated->refcnt, 1);
-#ifdef GRPC_METADATA_REFCOUNT_DEBUG
-    char *key_str = grpc_slice_to_c_string(allocated->key);
-    char *value_str = grpc_slice_to_c_string(allocated->value);
-    gpr_log(GPR_DEBUG, "ELM ALLOC:%p:%zu: '%s' = '%s'", (void *)allocated,
-            gpr_atm_no_barrier_load(&allocated->refcnt), key_str, value_str);
-    gpr_free(key_str);
-    gpr_free(value_str);
+#ifndef NDEBUG
+    if (GRPC_TRACER_ON(grpc_trace_metadata)) {
+      char *key_str = grpc_slice_to_c_string(allocated->key);
+      char *value_str = grpc_slice_to_c_string(allocated->value);
+      gpr_log(GPR_DEBUG, "ELM ALLOC:%p:%" PRIdPTR ": '%s' = '%s'",
+              (void *)allocated, gpr_atm_no_barrier_load(&allocated->refcnt),
+              key_str, value_str);
+      gpr_free(key_str);
+      gpr_free(value_str);
+    }
 #endif
     return GRPC_MAKE_MDELEM(allocated, GRPC_MDELEM_STORAGE_ALLOCATED);
   }
@@ -294,13 +301,15 @@ grpc_mdelem grpc_mdelem_create(
   md->bucket_next = shard->elems[idx];
   shard->elems[idx] = md;
   gpr_mu_init(&md->mu_user_data);
-#ifdef GRPC_METADATA_REFCOUNT_DEBUG
-  char *key_str = grpc_slice_to_c_string(md->key);
-  char *value_str = grpc_slice_to_c_string(md->value);
-  gpr_log(GPR_DEBUG, "ELM   NEW:%p:%zu: '%s' = '%s'", (void *)md,
-          gpr_atm_no_barrier_load(&md->refcnt), key_str, value_str);
-  gpr_free(key_str);
-  gpr_free(value_str);
+#ifndef NDEBUG
+  if (GRPC_TRACER_ON(grpc_trace_metadata)) {
+    char *key_str = grpc_slice_to_c_string(md->key);
+    char *value_str = grpc_slice_to_c_string(md->value);
+    gpr_log(GPR_DEBUG, "ELM   NEW:%p:%" PRIdPTR ": '%s' = '%s'", (void *)md,
+            gpr_atm_no_barrier_load(&md->refcnt), key_str, value_str);
+    gpr_free(key_str);
+    gpr_free(value_str);
+  }
 #endif
   shard->count++;
 
@@ -356,15 +365,17 @@ grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {
       break;
     case GRPC_MDELEM_STORAGE_INTERNED: {
       interned_metadata *md = (interned_metadata *)GRPC_MDELEM_DATA(gmd);
-#ifdef GRPC_METADATA_REFCOUNT_DEBUG
-      char *key_str = grpc_slice_to_c_string(md->key);
-      char *value_str = grpc_slice_to_c_string(md->value);
-      gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-              "ELM   REF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
-              gpr_atm_no_barrier_load(&md->refcnt),
-              gpr_atm_no_barrier_load(&md->refcnt) + 1, key_str, value_str);
-      gpr_free(key_str);
-      gpr_free(value_str);
+#ifndef NDEBUG
+      if (GRPC_TRACER_ON(grpc_trace_metadata)) {
+        char *key_str = grpc_slice_to_c_string(md->key);
+        char *value_str = grpc_slice_to_c_string(md->value);
+        gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+                "ELM   REF:%p:%" PRIdPTR "->%" PRIdPTR ": '%s' = '%s'",
+                (void *)md, gpr_atm_no_barrier_load(&md->refcnt),
+                gpr_atm_no_barrier_load(&md->refcnt) + 1, key_str, value_str);
+        gpr_free(key_str);
+        gpr_free(value_str);
+      }
 #endif
       /* we can assume the ref count is >= 1 as the application is calling
          this function - meaning that no adjustment to mdtab_free is necessary,
@@ -376,15 +387,17 @@ grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {
     }
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
       allocated_metadata *md = (allocated_metadata *)GRPC_MDELEM_DATA(gmd);
-#ifdef GRPC_METADATA_REFCOUNT_DEBUG
-      char *key_str = grpc_slice_to_c_string(md->key);
-      char *value_str = grpc_slice_to_c_string(md->value);
-      gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-              "ELM   REF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
-              gpr_atm_no_barrier_load(&md->refcnt),
-              gpr_atm_no_barrier_load(&md->refcnt) + 1, key_str, value_str);
-      gpr_free(key_str);
-      gpr_free(value_str);
+#ifndef NDEBUG
+      if (GRPC_TRACER_ON(grpc_trace_metadata)) {
+        char *key_str = grpc_slice_to_c_string(md->key);
+        char *value_str = grpc_slice_to_c_string(md->value);
+        gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+                "ELM   REF:%p:%" PRIdPTR "->%" PRIdPTR ": '%s' = '%s'",
+                (void *)md, gpr_atm_no_barrier_load(&md->refcnt),
+                gpr_atm_no_barrier_load(&md->refcnt) + 1, key_str, value_str);
+        gpr_free(key_str);
+        gpr_free(value_str);
+      }
 #endif
       /* we can assume the ref count is >= 1 as the application is calling
          this function - meaning that no adjustment to mdtab_free is necessary,
@@ -404,15 +417,17 @@ void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem gmd DEBUG_ARGS) {
       break;
     case GRPC_MDELEM_STORAGE_INTERNED: {
       interned_metadata *md = (interned_metadata *)GRPC_MDELEM_DATA(gmd);
-#ifdef GRPC_METADATA_REFCOUNT_DEBUG
-      char *key_str = grpc_slice_to_c_string(md->key);
-      char *value_str = grpc_slice_to_c_string(md->value);
-      gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-              "ELM UNREF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
-              gpr_atm_no_barrier_load(&md->refcnt),
-              gpr_atm_no_barrier_load(&md->refcnt) - 1, key_str, value_str);
-      gpr_free(key_str);
-      gpr_free(value_str);
+#ifndef NDEBUG
+      if (GRPC_TRACER_ON(grpc_trace_metadata)) {
+        char *key_str = grpc_slice_to_c_string(md->key);
+        char *value_str = grpc_slice_to_c_string(md->value);
+        gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+                "ELM UNREF:%p:%" PRIdPTR "->%" PRIdPTR ": '%s' = '%s'",
+                (void *)md, gpr_atm_no_barrier_load(&md->refcnt),
+                gpr_atm_no_barrier_load(&md->refcnt) - 1, key_str, value_str);
+        gpr_free(key_str);
+        gpr_free(value_str);
+      }
 #endif
       uint32_t hash = GRPC_MDSTR_KV_HASH(grpc_slice_hash(md->key),
                                          grpc_slice_hash(md->value));
@@ -428,15 +443,17 @@ void grpc_mdelem_unref(grpc_exec_ctx *exec_ctx, grpc_mdelem gmd DEBUG_ARGS) {
     }
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
       allocated_metadata *md = (allocated_metadata *)GRPC_MDELEM_DATA(gmd);
-#ifdef GRPC_METADATA_REFCOUNT_DEBUG
-      char *key_str = grpc_slice_to_c_string(md->key);
-      char *value_str = grpc_slice_to_c_string(md->value);
-      gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-              "ELM UNREF:%p:%zu->%zu: '%s' = '%s'", (void *)md,
-              gpr_atm_no_barrier_load(&md->refcnt),
-              gpr_atm_no_barrier_load(&md->refcnt) - 1, key_str, value_str);
-      gpr_free(key_str);
-      gpr_free(value_str);
+#ifndef NDEBUG
+      if (GRPC_TRACER_ON(grpc_trace_metadata)) {
+        char *key_str = grpc_slice_to_c_string(md->key);
+        char *value_str = grpc_slice_to_c_string(md->value);
+        gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+                "ELM UNREF:%p:%" PRIdPTR "->%" PRIdPTR ": '%s' = '%s'",
+                (void *)md, gpr_atm_no_barrier_load(&md->refcnt),
+                gpr_atm_no_barrier_load(&md->refcnt) - 1, key_str, value_str);
+        gpr_free(key_str);
+        gpr_free(value_str);
+      }
 #endif
       const gpr_atm prev_refcount = gpr_atm_full_fetch_add(&md->refcnt, -1);
       GPR_ASSERT(prev_refcount >= 1);

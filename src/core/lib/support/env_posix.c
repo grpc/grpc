@@ -29,6 +29,11 @@
 #include <grpc/support/string_util.h>
 #include "src/core/lib/support/string.h"
 
+const char *gpr_getenv_silent(const char *name, char **dst) {
+  *dst = gpr_getenv(name);
+  return NULL;
+}
+
 char *gpr_getenv(const char *name) {
   char *result = getenv(name);
   return result == NULL ? result : gpr_strdup(result);

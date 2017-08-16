@@ -184,6 +184,7 @@ static VALUE grpc_rb_channel_credentials_compose(int argc, VALUE *argv,
                                                  VALUE self) {
   grpc_channel_credentials *creds;
   grpc_call_credentials *other;
+  grpc_channel_credentials *prev = NULL;
   VALUE mark;
   if (argc == 0) {
     return self;
@@ -195,6 +196,11 @@ static VALUE grpc_rb_channel_credentials_compose(int argc, VALUE *argv,
     rb_ary_push(mark, argv[i]);
     other = grpc_rb_get_wrapped_call_credentials(argv[i]);
     creds = grpc_composite_channel_credentials_create(creds, other, NULL);
+    if (prev != NULL) {
+      grpc_channel_credentials_release(prev);
+    }
+    prev = creds;
+
     if (creds == NULL) {
       rb_raise(rb_eRuntimeError,
                "Failed to compose channel and call credentials");

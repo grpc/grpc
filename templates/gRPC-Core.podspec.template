@@ -28,7 +28,7 @@
       if lib.name in ("grpc", "gpr"):
         out += lib.get('headers', [])
         out += lib.get('src', [])
-    return out;
+    return [f for f in out if not f.startswith("third_party/nanopb/")]
 
   def grpc_public_headers(libs):
     out = []
@@ -42,7 +42,7 @@
     for lib in libs:
       if lib.name in ("grpc", "gpr"):
         out += lib.get('headers', [])
-    return out
+    return [f for f in out if not f.startswith("third_party/nanopb/")]
 
   def ruby_multiline_list(files, indent):
     return (',\n' + indent*' ').join('\'%s\'' % f for f in files)
@@ -52,15 +52,13 @@
     version = '${settings.version}'
     s.version  = version
     s.summary  = 'Core cross-platform gRPC library, written in C'
-    s.homepage = 'http://www.grpc.io'
+    s.homepage = 'https://grpc.io'
     s.license  = 'Apache License, Version 2.0'
     s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
     s.source = {
       :git => 'https://github.com/grpc/grpc.git',
       :tag => "v#{version}",
-      # TODO(jcanizales): Depend explicitly on the nanopb pod, and disable submodules.
-      :submodules => true,
     }
 
     s.ios.deployment_target = '7.0'
@@ -137,7 +135,8 @@
       ss.header_mappings_dir = '.'
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
-      ss.dependency 'BoringSSL', '~> 8.0'
+      ss.dependency 'BoringSSL', '~> 9.0'
+      ss.dependency 'nanopb', '~> 0.3'
 
       # To save you from scrolling, this is the last part of the podspec.
       ss.source_files = ${ruby_multiline_list(grpc_private_files(libs), 22)}
@@ -179,4 +178,9 @@
                         'test/core/util/port.c',
                         'test/core/util/port_server_client.{c,h}'
     end
+
+    # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
+    s.prepare_command = <<-END_OF_COMMAND
+      find src/core/ -type f -exec sed -E -i '.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
+    END_OF_COMMAND
   end

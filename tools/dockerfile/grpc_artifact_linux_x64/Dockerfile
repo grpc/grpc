@@ -49,19 +49,7 @@ RUN apt-get update && apt-key update && apt-get install -y \
 # Install Node dependencies
 RUN touch .profile
 RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
-RUN /bin/bash -l -c "nvm install 4 && npm install -g node-pre-gyp"
-
-##################
-# Python dependencies
-
-RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-pip
-
-RUN pip install pip --upgrade
-RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.2.0
+RUN /bin/bash -l -c "nvm install 8 && npm install -g node-pre-gyp"
 
 
 ##################
@@ -85,6 +73,14 @@ RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
 
 RUN apt-get update && apt-get install -y \
     php5 php5-dev php-pear phpunit
+
+##################
+# Install cross compiler for ARM
+
+RUN echo 'deb http://emdebian.org/tools/debian/ jessie main' | tee -a /etc/apt/sources.list.d/crosstools.list && \
+  curl http://emdebian.org/tools/debian/emdebian-toolchain-archive.key | apt-key add -
+
+RUN dpkg --add-architecture armhf && apt-get update && apt-get install -y crossbuild-essential-armhf
 
 RUN mkdir /var/local/jenkins
 

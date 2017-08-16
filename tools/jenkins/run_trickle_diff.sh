@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2015 gRPC authors.
+# Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,4 +20,4 @@ set -ex
 cd $(dirname $0)/../..
 
 tools/run_tests/start_port_server.py
-tools/profiling/microbenchmarks/bm_diff/bm_main.py -d origin/$ghprbTargetBranch -b bm_fullstack_trickle -l 4 -t cli_transport_stalls cli_stream_stalls svr_transport_stalls svr_stream_stalls --no-counters --pr_comment_name trickle
+tools/profiling/microbenchmarks/bm_diff/bm_main.py -d origin/$ghprbTargetBranch -b bm_fullstack_trickle -l 4 -t cli_transport_stalls_per_iteration cli_stream_stalls_per_iteration svr_transport_stalls_per_iteration svr_stream_stalls_per_iteration --no-counters --pr_comment_name trickle

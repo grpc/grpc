@@ -39,6 +39,7 @@ namespace Grpc.Core
         static int refCount;
         static int? customThreadPoolSize;
         static int? customCompletionQueueCount;
+        static bool inlineHandlers;
         static readonly HashSet<Channel> registeredChannels = new HashSet<Channel>();
         static readonly HashSet<Server> registeredServers = new HashSet<Server>();
 
@@ -48,7 +49,7 @@ namespace Grpc.Core
         readonly DebugStats debugStats = new DebugStats();
         readonly AtomicCounter cqPickerCounter = new AtomicCounter();
 
-        bool isClosed;
+        bool isShutdown;
 
         /// <summary>
         /// Returns a reference-counted instance of initialized gRPC environment.
@@ -218,12 +219,37 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// By default, gRPC's internal event handlers get offloaded to .NET default thread pool thread (<c>inlineHandlers=false</c>).
+        /// Setting <c>inlineHandlers</c> to <c>true</c> will allow scheduling the event handlers directly to
+        /// <c>GrpcThreadPool</c> internal threads. That can lead to significant performance gains in some situations,
+        /// but requires user to never block in async code (incorrectly written code can easily lead to deadlocks).
+        /// Inlining handlers is an advanced setting and you should only use it if you know what you are doing.
+        /// Most users should rely on the default value provided by gRPC library.
+        /// Note: this method is part of an experimental API that can change or be removed without any prior notice.
+        /// Note: <c>inlineHandlers=true</c> was the default in gRPC C# v1.4.x and earlier.
+        /// </summary>
+        public static void SetHandlerInlining(bool inlineHandlers)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckState(instance == null, "Can only be set before GrpcEnvironment is initialized");
+                GrpcEnvironment.inlineHandlers = inlineHandlers;
+            }
+        }
+
+        /// <summary>
+        /// Occurs when <c>GrpcEnvironment</c> is about the start the shutdown logic.
+        /// If <c>GrpcEnvironment</c> is later initialized and shutdown, the event will be fired again (unless unregistered first).
+        /// </summary>
+        public static event EventHandler ShuttingDown;
+
+        /// <summary>
         /// Creates gRPC environment.
         /// </summary>
         private GrpcEnvironment()
         {
             GrpcNativeInit();
-            threadPool = new GrpcThreadPool(this, GetThreadPoolSizeOrDefault(), GetCompletionQueueCountOrDefault());
+            threadPool = new GrpcThreadPool(this, GetThreadPoolSizeOrDefault(), GetCompletionQueueCountOrDefault(), inlineHandlers);
             threadPool.Start();
         }
 
@@ -291,13 +317,16 @@ namespace Grpc.Core
         /// </summary>
         private async Task ShutdownAsync()
         {
-            if (isClosed)
+            if (isShutdown)
             {
-                throw new InvalidOperationException("Close has already been called");
+                throw new InvalidOperationException("ShutdownAsync has already been called");
             }
+
+            await Task.Run(() => ShuttingDown?.Invoke(this, null)).ConfigureAwait(false);
+
             await threadPool.StopAsync().ConfigureAwait(false);
             GrpcNativeShutdown();
-            isClosed = true;
+            isShutdown = true;
 
             debugStats.CheckOK();
         }

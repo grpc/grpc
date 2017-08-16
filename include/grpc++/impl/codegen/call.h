@@ -349,6 +349,28 @@ class CallOpRecvMessage {
   bool allow_not_getting_message_;
 };
 
+namespace CallOpGenericRecvMessageHelper {
+class DeserializeFunc {
+ public:
+  virtual Status Deserialize(grpc_byte_buffer* buf) = 0;
+  virtual ~DeserializeFunc() {}
+};
+
+template <class R>
+class DeserializeFuncType final : public DeserializeFunc {
+ public:
+  DeserializeFuncType(R* message) : message_(message) {}
+  Status Deserialize(grpc_byte_buffer* buf) override {
+    return SerializationTraits<R>::Deserialize(buf, message_);
+  }
+
+  ~DeserializeFuncType() override {}
+
+ private:
+  R* message_;  // Not a managed pointer because management is external to this
+};
+}  // namespace CallOpGenericRecvMessageHelper
+
 class CallOpGenericRecvMessage {
  public:
   CallOpGenericRecvMessage()
@@ -356,9 +378,11 @@ class CallOpGenericRecvMessage {
 
   template <class R>
   void RecvMessage(R* message) {
-    deserialize_ = [message](grpc_byte_buffer* buf) -> Status {
-      return SerializationTraits<R>::Deserialize(buf, message);
-    };
+    // Use an explicit base class pointer to avoid resolution error in the
+    // following unique_ptr::reset for some old implementations.
+    CallOpGenericRecvMessageHelper::DeserializeFunc* func =
+        new CallOpGenericRecvMessageHelper::DeserializeFuncType<R>(message);
+    deserialize_.reset(func);
   }
 
   // Do not change status if no message is received.
@@ -381,7 +405,7 @@ class CallOpGenericRecvMessage {
     if (recv_buf_) {
       if (*status) {
         got_message = true;
-        *status = deserialize_(recv_buf_).ok();
+        *status = deserialize_->Deserialize(recv_buf_).ok();
       } else {
         got_message = false;
         g_core_codegen_interface->grpc_byte_buffer_destroy(recv_buf_);
@@ -392,12 +416,11 @@ class CallOpGenericRecvMessage {
         *status = false;
       }
     }
-    deserialize_ = DeserializeFunc();
+    deserialize_.reset();
   }
 
  private:
-  typedef std::function<Status(grpc_byte_buffer*)> DeserializeFunc;
-  DeserializeFunc deserialize_;
+  std::unique_ptr<CallOpGenericRecvMessageHelper::DeserializeFunc> deserialize_;
   grpc_byte_buffer* recv_buf_;
   bool allow_not_getting_message_;
 };
@@ -593,6 +616,7 @@ class CallOpSet : public CallOpSetInterface,
     this->Op5::FinishOp(status);
     this->Op6::FinishOp(status);
     *tag = return_tag_;
+
     g_core_codegen_interface->grpc_call_unref(call_);
     return true;
   }

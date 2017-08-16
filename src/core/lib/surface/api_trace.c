@@ -19,4 +19,4 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/debug/trace.h"
 
-grpc_tracer_flag grpc_api_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_api_trace = GRPC_TRACER_INITIALIZER(false, "api");

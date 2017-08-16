@@ -260,7 +260,10 @@ class SendClientCloseOp : public Op {
 
 class SendServerStatusOp : public Op {
  public:
-  SendServerStatusOp() { grpc_metadata_array_init(&status_metadata); }
+  SendServerStatusOp() {
+    details = grpc_empty_slice();
+    grpc_metadata_array_init(&status_metadata);
+  }
   ~SendServerStatusOp() {
     grpc_slice_unref(details);
     DestroyMetadataArray(&status_metadata);
@@ -381,9 +384,15 @@ class ReadMessageOp : public Op {
 
 class ClientStatusOp : public Op {
  public:
-  ClientStatusOp() { grpc_metadata_array_init(&metadata_array); }
+  ClientStatusOp() {
+    grpc_metadata_array_init(&metadata_array);
+    status_details = grpc_empty_slice();
+  }
 
-  ~ClientStatusOp() { grpc_metadata_array_destroy(&metadata_array); }
+  ~ClientStatusOp() {
+    grpc_metadata_array_destroy(&metadata_array);
+    grpc_slice_unref(status_details);
+  }
 
   bool ParseOp(Local<Value> value, grpc_op *out) {
     out->data.recv_status_on_client.trailing_metadata = &metadata_array;

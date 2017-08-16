@@ -15,12 +15,18 @@
 
 # Source this rc script to prepare the environment for linux builds
 
+tools/internal_ci/helper_scripts/gen_report_index.sh
+
 # Need to increase open files limit for c tests
 ulimit -n 32768
 
 # Move docker's storage location to scratch disk so we don't run out of space.
 echo 'DOCKER_OPTS="${DOCKER_OPTS} --graph=/tmpfs/docker"' | sudo tee --append /etc/default/docker
 sudo service docker restart
+
+# Populate xdg-cache-home to workaround https://github.com/grpc/grpc/issues/11968
+sudo mkdir -p /tmp/xdg-cache-home
+PYTHONWARNINGS=ignore XDG_CACHE_HOME=/tmp/xdg-cache-home sudo -E pip install coverage==4.4 pylint==1.6.5
 
 # Download Docker images from DockerHub
 export DOCKERHUB_ORGANIZATION=grpctesting

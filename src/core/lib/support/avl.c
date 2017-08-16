@@ -39,15 +39,16 @@ static gpr_avl_node *ref_node(gpr_avl_node *node) {
   return node;
 }
 
-static void unref_node(const gpr_avl_vtable *vtable, gpr_avl_node *node) {
+static void unref_node(const gpr_avl_vtable *vtable, gpr_avl_node *node,
+                       void *user_data) {
   if (node == NULL) {
     return;
   }
   if (gpr_unref(&node->refs)) {
-    vtable->destroy_key(node->key);
-    vtable->destroy_value(node->value);
-    unref_node(vtable, node->left);
-    unref_node(vtable, node->right);
+    vtable->destroy_key(node->key, user_data);
+    vtable->destroy_value(node->value, user_data);
+    unref_node(vtable, node->left, user_data);
+    unref_node(vtable, node->right, user_data);
     gpr_free(node);
   }
 }
@@ -76,7 +77,7 @@ static gpr_avl_node *assert_invariants(gpr_avl_node *n) { return n; }
 
 gpr_avl_node *new_node(void *key, void *value, gpr_avl_node *left,
                        gpr_avl_node *right) {
-  gpr_avl_node *node = gpr_malloc(sizeof(*node));
+  gpr_avl_node *node = (gpr_avl_node *)gpr_malloc(sizeof(*node));
   gpr_ref_init(&node->refs, 1);
   node->key = key;
   node->value = value;
@@ -87,30 +88,30 @@ gpr_avl_node *new_node(void *key, void *value, gpr_avl_node *left,
 }
 
 static gpr_avl_node *get(const gpr_avl_vtable *vtable, gpr_avl_node *node,
-                         void *key) {
+                         void *key, void *user_data) {
   long cmp;
 
   if (node == NULL) {
     return NULL;
   }
 
-  cmp = vtable->compare_keys(node->key, key);
+  cmp = vtable->compare_keys(node->key, key, user_data);
   if (cmp == 0) {
     return node;
   } else if (cmp > 0) {
-    return get(vtable, node->left, key);
+    return get(vtable, node->left, key, user_data);
   } else {
-    return get(vtable, node->right, key);
+    return get(vtable, node->right, key, user_data);
   }
 }
 
-void *gpr_avl_get(gpr_avl avl, void *key) {
-  gpr_avl_node *node = get(avl.vtable, avl.root, key);
+void *gpr_avl_get(gpr_avl avl, void *key, void *user_data) {
+  gpr_avl_node *node = get(avl.vtable, avl.root, key, user_data);
   return node ? node->value : NULL;
 }
 
-int gpr_avl_maybe_get(gpr_avl avl, void *key, void **value) {
-  gpr_avl_node *node = get(avl.vtable, avl.root, key);
+int gpr_avl_maybe_get(gpr_avl avl, void *key, void **value, void *user_data) {
+  gpr_avl_node *node = get(avl.vtable, avl.root, key, user_data);
   if (node != NULL) {
     *value = node->value;
     return 1;
@@ -120,70 +121,75 @@ int gpr_avl_maybe_get(gpr_avl avl, void *key, void **value) {
 
 static gpr_avl_node *rotate_left(const gpr_avl_vtable *vtable, void *key,
                                  void *value, gpr_avl_node *left,
-                                 gpr_avl_node *right) {
-  gpr_avl_node *n =
-      new_node(vtable->copy_key(right->key), vtable->copy_value(right->value),
-               new_node(key, value, left, ref_node(right->left)),
-               ref_node(right->right));
-  unref_node(vtable, right);
+                                 gpr_avl_node *right, void *user_data) {
+  gpr_avl_node *n = new_node(vtable->copy_key(right->key, user_data),
+                             vtable->copy_value(right->value, user_data),
+                             new_node(key, value, left, ref_node(right->left)),
+                             ref_node(right->right));
+  unref_node(vtable, right, user_data);
   return n;
 }
 
 static gpr_avl_node *rotate_right(const gpr_avl_vtable *vtable, void *key,
                                   void *value, gpr_avl_node *left,
-                                  gpr_avl_node *right) {
-  gpr_avl_node *n = new_node(
-      vtable->copy_key(left->key), vtable->copy_value(left->value),
-      ref_node(left->left), new_node(key, value, ref_node(left->right), right));
-  unref_node(vtable, left);
+                                  gpr_avl_node *right, void *user_data) {
+  gpr_avl_node *n =
+      new_node(vtable->copy_key(left->key, user_data),
+               vtable->copy_value(left->value, user_data), ref_node(left->left),
+               new_node(key, value, ref_node(left->right), right));
+  unref_node(vtable, left, user_data);
   return n;
 }
 
 static gpr_avl_node *rotate_left_right(const gpr_avl_vtable *vtable, void *key,
                                        void *value, gpr_avl_node *left,
-                                       gpr_avl_node *right) {
+                                       gpr_avl_node *right, void *user_data) {
   /* rotate_right(..., rotate_left(left), right) */
-  gpr_avl_node *n = new_node(
-      vtable->copy_key(left->right->key),
-      vtable->copy_value(left->right->value),
-      new_node(vtable->copy_key(left->key), vtable->copy_value(left->value),
-               ref_node(left->left), ref_node(left->right->left)),
-      new_node(key, value, ref_node(left->right->right), right));
-  unref_node(vtable, left);
+  gpr_avl_node *n =
+      new_node(vtable->copy_key(left->right->key, user_data),
+               vtable->copy_value(left->right->value, user_data),
+               new_node(vtable->copy_key(left->key, user_data),
+                        vtable->copy_value(left->value, user_data),
+                        ref_node(left->left), ref_node(left->right->left)),
+               new_node(key, value, ref_node(left->right->right), right));
+  unref_node(vtable, left, user_data);
   return n;
 }
 
 static gpr_avl_node *rotate_right_left(const gpr_avl_vtable *vtable, void *key,
                                        void *value, gpr_avl_node *left,
-                                       gpr_avl_node *right) {
+                                       gpr_avl_node *right, void *user_data) {
   /* rotate_left(..., left, rotate_right(right)) */
-  gpr_avl_node *n = new_node(
-      vtable->copy_key(right->left->key),
-      vtable->copy_value(right->left->value),
-      new_node(key, value, left, ref_node(right->left->left)),
-      new_node(vtable->copy_key(right->key), vtable->copy_value(right->value),
-               ref_node(right->left->right), ref_node(right->right)));
-  unref_node(vtable, right);
+  gpr_avl_node *n =
+      new_node(vtable->copy_key(right->left->key, user_data),
+               vtable->copy_value(right->left->value, user_data),
+               new_node(key, value, left, ref_node(right->left->left)),
+               new_node(vtable->copy_key(right->key, user_data),
+                        vtable->copy_value(right->value, user_data),
+                        ref_node(right->left->right), ref_node(right->right)));
+  unref_node(vtable, right, user_data);
   return n;
 }
 
 static gpr_avl_node *rebalance(const gpr_avl_vtable *vtable, void *key,
                                void *value, gpr_avl_node *left,
-                               gpr_avl_node *right) {
+                               gpr_avl_node *right, void *user_data) {
   switch (node_height(left) - node_height(right)) {
     case 2:
       if (node_height(left->left) - node_height(left->right) == -1) {
         return assert_invariants(
-            rotate_left_right(vtable, key, value, left, right));
+            rotate_left_right(vtable, key, value, left, right, user_data));
       } else {
-        return assert_invariants(rotate_right(vtable, key, value, left, right));
+        return assert_invariants(
+            rotate_right(vtable, key, value, left, right, user_data));
       }
     case -2:
       if (node_height(right->left) - node_height(right->right) == 1) {
         return assert_invariants(
-            rotate_right_left(vtable, key, value, left, right));
+            rotate_right_left(vtable, key, value, left, right, user_data));
       } else {
-        return assert_invariants(rotate_left(vtable, key, value, left, right));
+        return assert_invariants(
+            rotate_left(vtable, key, value, left, right, user_data));
       }
     default:
       return assert_invariants(new_node(key, value, left, right));
@@ -191,30 +197,32 @@ static gpr_avl_node *rebalance(const gpr_avl_vtable *vtable, void *key,
 }
 
 static gpr_avl_node *add_key(const gpr_avl_vtable *vtable, gpr_avl_node *node,
-                             void *key, void *value) {
+                             void *key, void *value, void *user_data) {
   long cmp;
   if (node == NULL) {
     return new_node(key, value, NULL, NULL);
   }
-  cmp = vtable->compare_keys(node->key, key);
+  cmp = vtable->compare_keys(node->key, key, user_data);
   if (cmp == 0) {
     return new_node(key, value, ref_node(node->left), ref_node(node->right));
   } else if (cmp > 0) {
-    return rebalance(
-        vtable, vtable->copy_key(node->key), vtable->copy_value(node->value),
-        add_key(vtable, node->left, key, value), ref_node(node->right));
+    return rebalance(vtable, vtable->copy_key(node->key, user_data),
+                     vtable->copy_value(node->value, user_data),
+                     add_key(vtable, node->left, key, value, user_data),
+                     ref_node(node->right), user_data);
   } else {
-    return rebalance(vtable, vtable->copy_key(node->key),
-                     vtable->copy_value(node->value), ref_node(node->left),
-                     add_key(vtable, node->right, key, value));
+    return rebalance(
+        vtable, vtable->copy_key(node->key, user_data),
+        vtable->copy_value(node->value, user_data), ref_node(node->left),
+        add_key(vtable, node->right, key, value, user_data), user_data);
   }
 }
 
-gpr_avl gpr_avl_add(gpr_avl avl, void *key, void *value) {
+gpr_avl gpr_avl_add(gpr_avl avl, void *key, void *value, void *user_data) {
   gpr_avl_node *old_root = avl.root;
-  avl.root = add_key(avl.vtable, avl.root, key, value);
+  avl.root = add_key(avl.vtable, avl.root, key, value, user_data);
   assert_invariants(avl.root);
-  unref_node(avl.vtable, old_root);
+  unref_node(avl.vtable, old_root, user_data);
   return avl;
 }
 
@@ -233,12 +241,13 @@ static gpr_avl_node *in_order_tail(gpr_avl_node *node) {
 }
 
 static gpr_avl_node *remove_key(const gpr_avl_vtable *vtable,
-                                gpr_avl_node *node, void *key) {
+                                gpr_avl_node *node, void *key,
+                                void *user_data) {
   long cmp;
   if (node == NULL) {
     return NULL;
   }
-  cmp = vtable->compare_keys(node->key, key);
+  cmp = vtable->compare_keys(node->key, key, user_data);
   if (cmp == 0) {
     if (node->left == NULL) {
       return ref_node(node->right);
@@ -246,39 +255,45 @@ static gpr_avl_node *remove_key(const gpr_avl_vtable *vtable,
       return ref_node(node->left);
     } else if (node->left->height < node->right->height) {
       gpr_avl_node *h = in_order_head(node->right);
-      return rebalance(vtable, vtable->copy_key(h->key),
-                       vtable->copy_value(h->value), ref_node(node->left),
-                       remove_key(vtable, node->right, h->key));
+      return rebalance(
+          vtable, vtable->copy_key(h->key, user_data),
+          vtable->copy_value(h->value, user_data), ref_node(node->left),
+          remove_key(vtable, node->right, h->key, user_data), user_data);
     } else {
       gpr_avl_node *h = in_order_tail(node->left);
-      return rebalance(
-          vtable, vtable->copy_key(h->key), vtable->copy_value(h->value),
-          remove_key(vtable, node->left, h->key), ref_node(node->right));
+      return rebalance(vtable, vtable->copy_key(h->key, user_data),
+                       vtable->copy_value(h->value, user_data),
+                       remove_key(vtable, node->left, h->key, user_data),
+                       ref_node(node->right), user_data);
     }
   } else if (cmp > 0) {
-    return rebalance(
-        vtable, vtable->copy_key(node->key), vtable->copy_value(node->value),
-        remove_key(vtable, node->left, key), ref_node(node->right));
+    return rebalance(vtable, vtable->copy_key(node->key, user_data),
+                     vtable->copy_value(node->value, user_data),
+                     remove_key(vtable, node->left, key, user_data),
+                     ref_node(node->right), user_data);
   } else {
-    return rebalance(vtable, vtable->copy_key(node->key),
-                     vtable->copy_value(node->value), ref_node(node->left),
-                     remove_key(vtable, node->right, key));
+    return rebalance(
+        vtable, vtable->copy_key(node->key, user_data),
+        vtable->copy_value(node->value, user_data), ref_node(node->left),
+        remove_key(vtable, node->right, key, user_data), user_data);
   }
 }
 
-gpr_avl gpr_avl_remove(gpr_avl avl, void *key) {
+gpr_avl gpr_avl_remove(gpr_avl avl, void *key, void *user_data) {
   gpr_avl_node *old_root = avl.root;
-  avl.root = remove_key(avl.vtable, avl.root, key);
+  avl.root = remove_key(avl.vtable, avl.root, key, user_data);
   assert_invariants(avl.root);
-  unref_node(avl.vtable, old_root);
+  unref_node(avl.vtable, old_root, user_data);
   return avl;
 }
 
-gpr_avl gpr_avl_ref(gpr_avl avl) {
+gpr_avl gpr_avl_ref(gpr_avl avl, void *user_data) {
   ref_node(avl.root);
   return avl;
 }
 
-void gpr_avl_unref(gpr_avl avl) { unref_node(avl.vtable, avl.root); }
+void gpr_avl_unref(gpr_avl avl, void *user_data) {
+  unref_node(avl.vtable, avl.root, user_data);
+}
 
 int gpr_avl_is_empty(gpr_avl avl) { return avl.root == NULL; }

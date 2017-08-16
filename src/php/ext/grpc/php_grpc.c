@@ -221,7 +221,7 @@ PHP_MINIT_FUNCTION(grpc) {
                          CONST_CS | CONST_PERSISTENT);
 
   grpc_init_call(TSRMLS_C);
-  grpc_init_channel(TSRMLS_C);
+  GRPC_STARTUP(channel);
   grpc_init_server(TSRMLS_C);
   grpc_init_timeval(TSRMLS_C);
   grpc_init_channel_credentials(TSRMLS_C);

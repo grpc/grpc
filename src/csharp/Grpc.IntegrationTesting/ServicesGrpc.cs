@@ -17,6 +17,7 @@
 //
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
+#pragma warning disable 1591
 #region Designer generated code
 
 using System;
@@ -46,6 +47,27 @@ namespace Grpc.Testing {
         __Marshaller_SimpleRequest,
         __Marshaller_SimpleResponse);
 
+    static readonly grpc::Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> __Method_StreamingFromClient = new grpc::Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse>(
+        grpc::MethodType.ClientStreaming,
+        __ServiceName,
+        "StreamingFromClient",
+        __Marshaller_SimpleRequest,
+        __Marshaller_SimpleResponse);
+
+    static readonly grpc::Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> __Method_StreamingFromServer = new grpc::Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse>(
+        grpc::MethodType.ServerStreaming,
+        __ServiceName,
+        "StreamingFromServer",
+        __Marshaller_SimpleRequest,
+        __Marshaller_SimpleResponse);
+
+    static readonly grpc::Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> __Method_StreamingBothWays = new grpc::Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse>(
+        grpc::MethodType.DuplexStreaming,
+        __ServiceName,
+        "StreamingBothWays",
+        __Marshaller_SimpleRequest,
+        __Marshaller_SimpleResponse);
+
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
@@ -68,14 +90,53 @@ namespace Grpc.Testing {
       }
 
       /// <summary>
-      /// One request followed by one response.
-      /// The server returns the client payload as-is.
+      /// Repeated sequence of one request followed by one response.
+      /// Should be called streaming ping-pong
+      /// The server returns the client payload as-is on each response
       /// </summary>
       /// <param name="requestStream">Used for reading requests from the client.</param>
       /// <param name="responseStream">Used for sending responses back to the client.</param>
       /// <param name="context">The context of the server-side call handler being invoked.</param>
       /// <returns>A task indicating completion of the handler.</returns>
       public virtual global::System.Threading.Tasks.Task StreamingCall(grpc::IAsyncStreamReader<global::Grpc.Testing.SimpleRequest> requestStream, grpc::IServerStreamWriter<global::Grpc.Testing.SimpleResponse> responseStream, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      /// <summary>
+      /// Single-sided unbounded streaming from client to server
+      /// The server returns the client payload as-is once the client does WritesDone
+      /// </summary>
+      /// <param name="requestStream">Used for reading requests from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
+      public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.SimpleResponse> StreamingFromClient(grpc::IAsyncStreamReader<global::Grpc.Testing.SimpleRequest> requestStream, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      /// <summary>
+      /// Single-sided unbounded streaming from server to client
+      /// The server repeatedly returns the client payload as-is
+      /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="responseStream">Used for sending responses back to the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>A task indicating completion of the handler.</returns>
+      public virtual global::System.Threading.Tasks.Task StreamingFromServer(global::Grpc.Testing.SimpleRequest request, grpc::IServerStreamWriter<global::Grpc.Testing.SimpleResponse> responseStream, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      /// <summary>
+      /// Two-sided unbounded streaming between server to client
+      /// Both sides send the content of their own choice to the other
+      /// </summary>
+      /// <param name="requestStream">Used for reading requests from the client.</param>
+      /// <param name="responseStream">Used for sending responses back to the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>A task indicating completion of the handler.</returns>
+      public virtual global::System.Threading.Tasks.Task StreamingBothWays(grpc::IAsyncStreamReader<global::Grpc.Testing.SimpleRequest> requestStream, grpc::IServerStreamWriter<global::Grpc.Testing.SimpleResponse> responseStream, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -154,8 +215,9 @@ namespace Grpc.Testing {
         return CallInvoker.AsyncUnaryCall(__Method_UnaryCall, null, options, request);
       }
       /// <summary>
-      /// One request followed by one response.
-      /// The server returns the client payload as-is.
+      /// Repeated sequence of one request followed by one response.
+      /// Should be called streaming ping-pong
+      /// The server returns the client payload as-is on each response
       /// </summary>
       /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
       /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
@@ -166,14 +228,83 @@ namespace Grpc.Testing {
         return StreamingCall(new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      /// One request followed by one response.
-      /// The server returns the client payload as-is.
+      /// Repeated sequence of one request followed by one response.
+      /// Should be called streaming ping-pong
+      /// The server returns the client payload as-is on each response
       /// </summary>
       /// <param name="options">The options for the call.</param>
       /// <returns>The call object.</returns>
       public virtual grpc::AsyncDuplexStreamingCall<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> StreamingCall(grpc::CallOptions options)
       {
         return CallInvoker.AsyncDuplexStreamingCall(__Method_StreamingCall, null, options);
+      }
+      /// <summary>
+      /// Single-sided unbounded streaming from client to server
+      /// The server returns the client payload as-is once the client does WritesDone
+      /// </summary>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
+      public virtual grpc::AsyncClientStreamingCall<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> StreamingFromClient(grpc::Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return StreamingFromClient(new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// Single-sided unbounded streaming from client to server
+      /// The server returns the client payload as-is once the client does WritesDone
+      /// </summary>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
+      public virtual grpc::AsyncClientStreamingCall<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> StreamingFromClient(grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncClientStreamingCall(__Method_StreamingFromClient, null, options);
+      }
+      /// <summary>
+      /// Single-sided unbounded streaming from server to client
+      /// The server repeatedly returns the client payload as-is
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
+      public virtual grpc::AsyncServerStreamingCall<global::Grpc.Testing.SimpleResponse> StreamingFromServer(global::Grpc.Testing.SimpleRequest request, grpc::Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return StreamingFromServer(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// Single-sided unbounded streaming from server to client
+      /// The server repeatedly returns the client payload as-is
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
+      public virtual grpc::AsyncServerStreamingCall<global::Grpc.Testing.SimpleResponse> StreamingFromServer(global::Grpc.Testing.SimpleRequest request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncServerStreamingCall(__Method_StreamingFromServer, null, options, request);
+      }
+      /// <summary>
+      /// Two-sided unbounded streaming between server to client
+      /// Both sides send the content of their own choice to the other
+      /// </summary>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
+      public virtual grpc::AsyncDuplexStreamingCall<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> StreamingBothWays(grpc::Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return StreamingBothWays(new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// Two-sided unbounded streaming between server to client
+      /// Both sides send the content of their own choice to the other
+      /// </summary>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
+      public virtual grpc::AsyncDuplexStreamingCall<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> StreamingBothWays(grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncDuplexStreamingCall(__Method_StreamingBothWays, null, options);
       }
       /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override BenchmarkServiceClient NewInstance(ClientBaseConfiguration configuration)
@@ -188,7 +319,10 @@ namespace Grpc.Testing {
     {
       return grpc::ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
-          .AddMethod(__Method_StreamingCall, serviceImpl.StreamingCall).Build();
+          .AddMethod(__Method_StreamingCall, serviceImpl.StreamingCall)
+          .AddMethod(__Method_StreamingFromClient, serviceImpl.StreamingFromClient)
+          .AddMethod(__Method_StreamingFromServer, serviceImpl.StreamingFromServer)
+          .AddMethod(__Method_StreamingBothWays, serviceImpl.StreamingBothWays).Build();
     }
 
   }
@@ -486,6 +620,125 @@ namespace Grpc.Testing {
           .AddMethod(__Method_RunClient, serviceImpl.RunClient)
           .AddMethod(__Method_CoreCount, serviceImpl.CoreCount)
           .AddMethod(__Method_QuitWorker, serviceImpl.QuitWorker).Build();
+    }
+
+  }
+  public static partial class ReportQpsScenarioService
+  {
+    static readonly string __ServiceName = "grpc.testing.ReportQpsScenarioService";
+
+    static readonly grpc::Marshaller<global::Grpc.Testing.ScenarioResult> __Marshaller_ScenarioResult = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ScenarioResult.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.Void> __Marshaller_Void = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.Void.Parser.ParseFrom);
+
+    static readonly grpc::Method<global::Grpc.Testing.ScenarioResult, global::Grpc.Testing.Void> __Method_ReportScenario = new grpc::Method<global::Grpc.Testing.ScenarioResult, global::Grpc.Testing.Void>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "ReportScenario",
+        __Marshaller_ScenarioResult,
+        __Marshaller_Void);
+
+    /// <summary>Service descriptor</summary>
+    public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
+    {
+      get { return global::Grpc.Testing.ServicesReflection.Descriptor.Services[2]; }
+    }
+
+    /// <summary>Base class for server-side implementations of ReportQpsScenarioService</summary>
+    public abstract partial class ReportQpsScenarioServiceBase
+    {
+      /// <summary>
+      /// Report results of a QPS test benchmark scenario.
+      /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
+      public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.Void> ReportScenario(global::Grpc.Testing.ScenarioResult request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+    }
+
+    /// <summary>Client for ReportQpsScenarioService</summary>
+    public partial class ReportQpsScenarioServiceClient : grpc::ClientBase<ReportQpsScenarioServiceClient>
+    {
+      /// <summary>Creates a new client for ReportQpsScenarioService</summary>
+      /// <param name="channel">The channel to use to make remote calls.</param>
+      public ReportQpsScenarioServiceClient(grpc::Channel channel) : base(channel)
+      {
+      }
+      /// <summary>Creates a new client for ReportQpsScenarioService that uses a custom <c>CallInvoker</c>.</summary>
+      /// <param name="callInvoker">The callInvoker to use to make remote calls.</param>
+      public ReportQpsScenarioServiceClient(grpc::CallInvoker callInvoker) : base(callInvoker)
+      {
+      }
+      /// <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      protected ReportQpsScenarioServiceClient() : base()
+      {
+      }
+      /// <summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <param name="configuration">The client configuration.</param>
+      protected ReportQpsScenarioServiceClient(ClientBaseConfiguration configuration) : base(configuration)
+      {
+      }
+
+      /// <summary>
+      /// Report results of a QPS test benchmark scenario.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
+      public virtual global::Grpc.Testing.Void ReportScenario(global::Grpc.Testing.ScenarioResult request, grpc::Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return ReportScenario(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// Report results of a QPS test benchmark scenario.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
+      public virtual global::Grpc.Testing.Void ReportScenario(global::Grpc.Testing.ScenarioResult request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_ReportScenario, null, options, request);
+      }
+      /// <summary>
+      /// Report results of a QPS test benchmark scenario.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
+      public virtual grpc::AsyncUnaryCall<global::Grpc.Testing.Void> ReportScenarioAsync(global::Grpc.Testing.ScenarioResult request, grpc::Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return ReportScenarioAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// Report results of a QPS test benchmark scenario.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
+      public virtual grpc::AsyncUnaryCall<global::Grpc.Testing.Void> ReportScenarioAsync(global::Grpc.Testing.ScenarioResult request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_ReportScenario, null, options, request);
+      }
+      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
+      protected override ReportQpsScenarioServiceClient NewInstance(ClientBaseConfiguration configuration)
+      {
+        return new ReportQpsScenarioServiceClient(configuration);
+      }
+    }
+
+    /// <summary>Creates service definition that can be registered with a server</summary>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
+    public static grpc::ServerServiceDefinition BindService(ReportQpsScenarioServiceBase serviceImpl)
+    {
+      return grpc::ServerServiceDefinition.CreateBuilder()
+          .AddMethod(__Method_ReportScenario, serviceImpl.ReportScenario).Build();
     }
 
   }

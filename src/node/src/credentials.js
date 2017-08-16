@@ -82,7 +82,7 @@ var _ = require('lodash');
  * @memberof grpc.credentials
  * @alias grpc.credentials.createSsl
  * @kind function
- * @param {Buffer} root_certs The root certificate data
+ * @param {Buffer=} root_certs The root certificate data
  * @param {Buffer=} private_key The client certificate private key, if
  *     applicable
  * @param {Buffer=} cert_chain The client certificate cert chain, if applicable

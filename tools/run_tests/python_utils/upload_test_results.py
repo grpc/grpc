@@ -49,6 +49,7 @@ _RESULTS_SCHEMA = [
   ('elapsed_time', 'FLOAT', 'How long test took to run'),
   ('cpu_estimated', 'FLOAT', 'Estimated CPU usage of test'),
   ('cpu_measured', 'FLOAT', 'Actual CPU usage of test'),
+  ('return_code', 'INTEGER', 'Exit code of test'),
 ]
 
 
@@ -96,6 +97,7 @@ def upload_results_to_bq(resultset, bq_table, args, platform):
       test_results['language'] = args.language[0]
       test_results['platform'] = platform
       test_results['result'] = result.state
+      test_results['return_code'] = result.returncode
       test_results['test_name'] = shortname
       test_results['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 

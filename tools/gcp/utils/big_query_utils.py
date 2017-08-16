@@ -31,7 +31,7 @@ def create_big_query():
   """Authenticates with cloud platform and gets a BiqQuery service object
   """
   creds = GoogleCredentials.get_application_default()
-  return discovery.build('bigquery', 'v2', credentials=creds)
+  return discovery.build('bigquery', 'v2', credentials=creds, cache_discovery=False)
 
 
 def create_dataset(biq_query, project_id, dataset_id):
@@ -113,6 +113,33 @@ def create_table2(big_query, project_id, dataset_id, table_id, fields_schema,
     else:
       print 'Error in creating table: %s. Err: %s' % (table_id, http_error)
       is_success = False
+  return is_success
+
+
+def patch_table(big_query, project_id, dataset_id, table_id, fields_schema):
+  is_success = True
+
+  body = {
+      'schema': {
+          'fields': fields_schema
+      },
+      'tableReference': {
+          'datasetId': dataset_id,
+          'projectId': project_id,
+          'tableId': table_id
+      }
+  }
+
+  try:
+    table_req = big_query.tables().patch(projectId=project_id,
+                                         datasetId=dataset_id,
+                                         tableId=table_id,
+                                         body=body)
+    res = table_req.execute(num_retries=NUM_RETRIES)
+    print 'Successfully patched %s "%s"' % (res['kind'], res['id'])
+  except HttpError as http_error:
+    print 'Error in creating table: %s. Err: %s' % (table_id, http_error)
+    is_success = False
   return is_success
 
 

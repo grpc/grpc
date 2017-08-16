@@ -73,7 +73,9 @@ static void sockaddr_shutdown_locked(grpc_exec_ctx *exec_ctx,
   sockaddr_resolver *r = (sockaddr_resolver *)resolver;
   if (r->next_completion != NULL) {
     *r->target_result = NULL;
-    GRPC_CLOSURE_SCHED(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(
+        exec_ctx, r->next_completion,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
     r->next_completion = NULL;
   }
 }
@@ -175,7 +177,8 @@ static grpc_resolver *sockaddr_create(grpc_exec_ctx *exec_ctx,
     return NULL;
   }
   /* Instantiate resolver. */
-  sockaddr_resolver *r = gpr_zalloc(sizeof(sockaddr_resolver));
+  sockaddr_resolver *r =
+      (sockaddr_resolver *)gpr_zalloc(sizeof(sockaddr_resolver));
   r->addresses = addresses;
   r->channel_args = grpc_channel_args_copy(args->args);
   grpc_resolver_init(&r->base, &sockaddr_resolver_vtable, args->combiner);

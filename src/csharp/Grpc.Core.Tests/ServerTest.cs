@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.IO;
 using System.Linq;
 using Grpc.Core;
 using Grpc.Core.Internal;
@@ -62,6 +63,21 @@ namespace Grpc.Core.Tests
             Assert.Greater(boundPort.BoundPort, 0);
 
             server.Start();
+            server.ShutdownAsync().Wait();
+        }
+
+        [Test]
+        public void StartThrowsWithUnboundPorts()
+        {
+            int twiceBoundPort = 9999;
+            Server server = new Server(new[] { new ChannelOption(ChannelOptions.SoReuseport, 0) })
+            {
+                Ports = {
+                    new ServerPort("localhost", twiceBoundPort, ServerCredentials.Insecure),
+                    new ServerPort("localhost", twiceBoundPort, ServerCredentials.Insecure)
+                }
+            };
+            Assert.Throws(typeof(IOException), () => server.Start());
             server.ShutdownAsync().Wait();
         }
 

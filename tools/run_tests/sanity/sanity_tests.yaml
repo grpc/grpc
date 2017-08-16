@@ -1,9 +1,12 @@
 # a set of tests that are run in parallel for sanity tests
 - script: tools/run_tests/sanity/check_cache_mk.sh
+- script: tools/run_tests/sanity/check_owners.sh
 - script: tools/run_tests/sanity/check_sources_and_headers.py
 - script: tools/run_tests/sanity/check_submodules.sh
 - script: tools/run_tests/sanity/check_test_filtering.py
+- script: tools/run_tests/sanity/check_tracer_sanity.py
 - script: tools/run_tests/sanity/core_banned_functions.py
+- script: tools/run_tests/sanity/core_untyped_structs.sh
 - script: tools/buildgen/generate_projects.sh -j 3
   cpu_cost: 3
 - script: tools/distrib/check_copyright.py
