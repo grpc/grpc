@@ -34,6 +34,7 @@ namespace Grpc.Core.Internal
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<GrpcThreadPool>();
         const int FinishContinuationsSleepMillis = 10;
+        const int MaxFinishContinuationsSleepTotalMillis = 10000;
 
         readonly GrpcEnvironment environment;
         readonly object myLock = new object();
@@ -197,11 +198,19 @@ namespace Grpc.Core.Internal
             // Continuations are running on default threadpool that consists of background threads.
             // GrpcThreadPool thread (a foreground thread) will not exit unless all queued work had
             // been finished to prevent terminating the continuations queued prematurely.
+            int sleepIterations = 0;
             while (queuedContinuationCounter.Count != 0)
             {
                 // Only happens on shutdown and having pending continuations shouldn't very common,
                 // so sleeping here for a little bit is fine.
+                if (sleepIterations >= MaxFinishContinuationsSleepTotalMillis / FinishContinuationsSleepMillis)
+                {
+                    Logger.Warning("Shutting down gRPC thread [{0}] with unfinished callbacks (Timed out waiting for callbacks to finish).",
+                        Thread.CurrentThread.Name);
+                    break;
+                }
                 Thread.Sleep(FinishContinuationsSleepMillis);
+                sleepIterations ++;
             }
         }
 
