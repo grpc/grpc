@@ -299,7 +299,7 @@ static bool oauth2_token_fetcher_get_request_metadata(
     c->fetch_func(exec_ctx, grpc_credentials_metadata_request_create(creds),
                   &c->httpcli_context, &c->pollent,
                   on_oauth2_token_fetcher_http_response,
-                  gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), refresh_threshold));
+                  gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), refresh_threshold));
   }
   return false;
 }
