@@ -60,14 +60,13 @@ Class* const CallData::getClass(void)
 }
 
 CallData::CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_pCallCredentials{ nullptr },
-    m_pChannel{ nullptr }, m_Timeout{ 0 }, m_pCompletionQueue{ nullptr }
+    m_pChannel{ nullptr }, m_Timeout{ 0 }
 {
 }
 
-CallData::CallData(grpc_call* const call, const bool owned,
-                   std::unique_ptr<CompletionQueue>&& pCompletionQueue, const int32_t timeoutMs) :
+CallData::CallData(grpc_call* const call, const bool owned, const int32_t timeoutMs) :
     m_pCall{ call }, m_Owned{ owned }, m_pCallCredentials{ nullptr }, m_pChannel{ nullptr },
-    m_Timeout{ timeoutMs }, m_pCompletionQueue{ std::move(pCompletionQueue) }
+    m_Timeout{ timeoutMs }
 {
 }
 
@@ -76,8 +75,7 @@ CallData::~CallData(void)
     destroy();
 }
 
-void CallData::init(grpc_call* const call, const bool owned,
-                    std::unique_ptr<CompletionQueue>&& pCompletionQueue, const int32_t timeoutMs)
+void CallData::init(grpc_call* const call, const bool owned, const int32_t timeoutMs)
 {
     // destroy any existing call
     destroy();
@@ -85,7 +83,6 @@ void CallData::init(grpc_call* const call, const bool owned,
     m_pCall = call;
     m_Owned = owned;
     m_Timeout = timeoutMs;
-    m_pCompletionQueue = std::move(pCompletionQueue);
 }
 
 void CallData::destroy(void)
@@ -101,6 +98,11 @@ void CallData::destroy(void)
     }
     m_pChannel = nullptr;
     m_pCallCredentials = nullptr;
+}
+
+ void CallData::setQueue(std::unique_ptr<CompletionQueue>&& pCompletionQueue)
+{
+    m_pCompletionQueue = std::move(pCompletionQueue);
 }
 
 /*****************************************************************************/
@@ -295,7 +297,8 @@ void HHVM_METHOD(Call, __construct,
 
     int32_t timeout{ gpr_time_to_millis(gpr_convert_clock_type(pDeadlineTimevalData->time(),
                                                                GPR_TIMESPAN)) };
-    pCallData->init(pCall, true, std::move(pCompletionQueue), timeout);
+    pCallData->init(pCall, true, timeout);
+    pCallData->setQueue(std::move(pCompletionQueue));
 
     return;
 }

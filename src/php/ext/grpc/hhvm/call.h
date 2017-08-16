@@ -20,6 +20,7 @@
 #define NET_GRPC_HHVM_GRPC_CALL_H_
 
 #include <cstdint>
+#include <memory>
 #include <future>
 
 #ifdef HAVE_CONFIG_H
@@ -49,9 +50,7 @@ class CallData
 public:
     // constructors/destructors
     CallData(void);
-    CallData(grpc_call* const call, const bool owned,
-             std::unique_ptr<CompletionQueue>&& pCompletionQueue = nullptr,
-             const int32_t timeoutMs = 0);
+    CallData(grpc_call* const call, const bool owned, const int32_t timeoutMs = 0);
     ~CallData(void);
     CallData(const CallData& otherCallData) = delete;
     CallData(CallData&& otherCallData) = delete;
@@ -59,15 +58,14 @@ public:
     CallData& operator&(CallData&& rhsCallData) = delete;
 
     // interface functions
-    void init(grpc_call* const call, const bool owned,
-              std::unique_ptr<CompletionQueue>&& pCompletionQueue = nullptr,
-              const int32_t timeoutMs = 0);
+    void init(grpc_call* const call, const bool owned, const int32_t timeoutMs = 0);
     grpc_call* const call(void) { return m_pCall; }
     bool getOwned(void) const { return m_Owned; }
     bool credentialed(void) const { return (m_pCallCredentials != nullptr); }
     CallCredentialsData* const callCredentials(void) { return m_pCallCredentials; }
     void setCallCredentials(CallCredentialsData* const pCallCredentials) { m_pCallCredentials = pCallCredentials; }
     void setChannel(ChannelData* const pChannel) { m_pChannel = pChannel; }
+    void setQueue(std::unique_ptr<CompletionQueue>&& pCompletionQueue);
     CompletionQueue* const queue(void) { return m_pCompletionQueue.get(); }
     int32_t getTimeout(void) const { return m_Timeout; }
     MetadataPromise& getPromise(void) { return m_MetadataPromise; }
