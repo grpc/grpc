@@ -406,7 +406,7 @@ void HHVM_METHOD(Channel, __construct,
         bool addResult{ ChannelsCache::getChannelsCache().addChannel(fullCacheKey, pChannel) };
         if (!addResult)
         {
-            SystemLib::throwBadMethodCallExceptionObject("failed to cache channel");
+            // channel already cached
         }
     }
 }
@@ -472,7 +472,7 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
 
     TimevalData* const pTimevalDataDeadline{ Native::data<TimevalData>(deadline) };
 
-    grpc_channel_watch_connectivity_state(pChannelData->channel(),
+   /* grpc_channel_watch_connectivity_state(pChannelData->channel(),
                                           static_cast<grpc_connectivity_state>(last_state),
                                           pTimevalDataDeadline->time(),
                                           CompletionQueue::getClientQueue().queue(),
@@ -482,7 +482,8 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
                                                   nullptr,
                                                   gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) );
 
-    return (event.success != 0);
+    return (event.success != 0);*/
+    return true;
 }
 
 /**

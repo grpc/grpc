@@ -31,26 +31,25 @@ namespace HPHP {
 
 CompletionQueue::CompletionQueue(void)
 {
-    m_pCompletionQueue = grpc_completion_queue_create_for_pluck(nullptr);
+    m_pCompletionQueue = grpc_completion_queue_create_for_next(nullptr);
 }
 
 CompletionQueue::~CompletionQueue(void)
 {
     // queue must be destroyed after server
     // note: this is causing a segfault on shutdown for some reason
-    //grpc_completion_queue_destroy(m_pCompletionQueue);
+    grpc_completion_queue_destroy(m_pCompletionQueue);
 }
 
-CompletionQueue& CompletionQueue::getClientQueue(void)
+std::unique_ptr<CompletionQueue> CompletionQueue::getClientQueue(void)
 {
-    // Each client gets a completion queue for the thread it is runnin in
-    thread_local CompletionQueue s_CompletionQueue{};
-    return s_CompletionQueue;
+    // Each client gets a completion queue for the thread it is running in
+    return std::unique_ptr<CompletionQueue>{ new CompletionQueue{} };
 }
 
 std::unique_ptr<CompletionQueue> CompletionQueue::getServerQueue(void)
 {
-    // Each client gets a completion queue for the thread it is runnin in
+    // Each server gets a completion queue for the thread it is running in
     return std::unique_ptr<CompletionQueue>{ new CompletionQueue{} };
 }
 

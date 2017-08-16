@@ -42,13 +42,16 @@ namespace HPHP {
 
 // forward declarations
 class ChannelData;
+class CompletionQueue;
 
 class CallData
 {
 public:
     // constructors/destructors
     CallData(void);
-    CallData(grpc_call* const call, const bool owned, const int32_t timeoutMs = 0);
+    CallData(grpc_call* const call, const bool owned,
+             std::unique_ptr<CompletionQueue>&& pCompletionQueue = nullptr,
+             const int32_t timeoutMs = 0);
     ~CallData(void);
     CallData(const CallData& otherCallData) = delete;
     CallData(CallData&& otherCallData) = delete;
@@ -56,13 +59,16 @@ public:
     CallData& operator&(CallData&& rhsCallData) = delete;
 
     // interface functions
-    void init(grpc_call* const call, const bool owned, const int32_t timeoutMs = 0);
+    void init(grpc_call* const call, const bool owned,
+              std::unique_ptr<CompletionQueue>&& pCompletionQueue = nullptr,
+              const int32_t timeoutMs = 0);
     grpc_call* const call(void) { return m_pCall; }
     bool getOwned(void) const { return m_Owned; }
     bool credentialed(void) const { return (m_pCallCredentials != nullptr); }
     CallCredentialsData* const callCredentials(void) { return m_pCallCredentials; }
     void setCallCredentials(CallCredentialsData* const pCallCredentials) { m_pCallCredentials = pCallCredentials; }
     void setChannel(ChannelData* const pChannel) { m_pChannel = pChannel; }
+    CompletionQueue* const queue(void) { return m_pCompletionQueue.get(); }
     int32_t getTimeout(void) const { return m_Timeout; }
     MetadataPromise& getPromise(void) { return m_MetadataPromise; }
     static Class* const getClass(void);
@@ -79,6 +85,7 @@ private:
     ChannelData* m_pChannel;
     int32_t m_Timeout;
     MetadataPromise m_MetadataPromise;
+    std::unique_ptr<CompletionQueue> m_pCompletionQueue;
     static Class* s_pClass;
     static const StaticString s_ClassName;
 };

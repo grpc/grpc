@@ -60,13 +60,14 @@ Class* const CallData::getClass(void)
 }
 
 CallData::CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_pCallCredentials{ nullptr },
-    m_pChannel{ nullptr }, m_Timeout{ 0 }
+    m_pChannel{ nullptr }, m_Timeout{ 0 }, m_pCompletionQueue{ nullptr }
 {
 }
 
-CallData::CallData(grpc_call* const call, const bool owned, const int32_t timeoutMs) :
+CallData::CallData(grpc_call* const call, const bool owned,
+                   std::unique_ptr<CompletionQueue>&& pCompletionQueue, const int32_t timeoutMs) :
     m_pCall{ call }, m_Owned{ owned }, m_pCallCredentials{ nullptr }, m_pChannel{ nullptr },
-    m_Timeout{ timeoutMs }
+    m_Timeout{ timeoutMs }, m_pCompletionQueue{ std::move(pCompletionQueue) }
 {
 }
 
@@ -75,7 +76,8 @@ CallData::~CallData(void)
     destroy();
 }
 
-void CallData::init(grpc_call* const call, const bool owned, const int32_t timeoutMs)
+void CallData::init(grpc_call* const call, const bool owned,
+                    std::unique_ptr<CompletionQueue>&& pCompletionQueue, const int32_t timeoutMs)
 {
     // destroy any existing call
     destroy();
@@ -83,6 +85,7 @@ void CallData::init(grpc_call* const call, const bool owned, const int32_t timeo
     m_pCall = call;
     m_Owned = owned;
     m_Timeout = timeoutMs;
+    m_pCompletionQueue = std::move(pCompletionQueue);
 }
 
 void CallData::destroy(void)
@@ -276,9 +279,11 @@ void HHVM_METHOD(Call, __construct,
     Slice host_slice{ !host_override.isNull() && host_override.isString() ?
                        host_override.toString().c_str() : nullptr };
 
+    std::unique_ptr<CompletionQueue> pCompletionQueue{ CompletionQueue::getClientQueue() };
+
     grpc_call* const pCall{ grpc_channel_create_call(pChannelData->channel(),
                                                      nullptr, GRPC_PROPAGATE_DEFAULTS,
-                                                     CompletionQueue::getClientQueue().queue(),
+                                                     pCompletionQueue->queue(),
                                                      method_slice.slice(),
                                                      !host_slice.empty() ? &host_slice.slice() : nullptr,
                                                      pDeadlineTimevalData->time(), nullptr) };
@@ -290,7 +295,7 @@ void HHVM_METHOD(Call, __construct,
 
     int32_t timeout{ gpr_time_to_millis(gpr_convert_clock_type(pDeadlineTimevalData->time(),
                                                                GPR_TIMESPAN)) };
-    pCallData->init(pCall, true, timeout);
+    pCallData->init(pCall, true, std::move(pCompletionQueue), timeout);
 
     return;
 }
@@ -540,12 +545,13 @@ Object HHVM_METHOD(Call, startBatch,
     }
 
 
-    //grpc_completion_queue_pluck(CompletionQueue::getClientQueue().queue(),
-    //                                                  pCallData->call(),
-    //                                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+    //grpc_completion_queue_next(pCallData->queue()->queue(),
+    //                           gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
-    std::thread t1{grpc_completion_queue_pluck, CompletionQueue::getClientQueue().queue(),
-                                                      pCallData->call(),
+    //grpc_completion_queue_next(pCallData->queue()->queue(), pCallData->call(),
+    //                            gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+
+    std::thread t1{grpc_completion_queue_next, pCallData->queue()->queue(),
                                                       gpr_inf_future(GPR_CLOCK_REALTIME), nullptr};
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM

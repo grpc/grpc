@@ -268,8 +268,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
         plugin_do_get_metadata(ptr, context, cb, user_data);
         std::get<0>(metaDataInfo)->set_value(std::move(params));
     }
-    else
-    */
+    else*/
     {
         HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata different thread") // Degug Trace
         plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data };

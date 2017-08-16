@@ -87,7 +87,7 @@ typedef struct plugin_get_metadata_params
     plugin_get_metadata_params(void* const _ptr,  grpc_auth_metadata_context&& _context,
                                grpc_credentials_plugin_metadata_cb&& _cb,
                                void* const _user_data, const bool _completed = false) :
-        completed{ _completed }, ptr{ _ptr }, context( std::move(_context) })
+        completed{ _completed }, ptr{ _ptr }, context(std::move(_context)),
         cb{ std::move(_cb) }, user_data{ _user_data } {}
     bool completed;
     void *ptr;
