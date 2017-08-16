@@ -45,7 +45,6 @@ class UnaryCall extends AbstractCall
             OP_SEND_MESSAGE => $message_array,
             OP_SEND_CLOSE_FROM_CLIENT => true,
         ]);
-        $this->metadata = $event->metadata;
     }
 
     /**
