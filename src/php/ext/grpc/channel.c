@@ -204,10 +204,8 @@ void create_and_add_channel_to_persistent_list(
  * credentials.
  *
  * If the $args array contains a "force_new" key mapping to a boolean value
- * of "true", a new underlying grpc_channel will be created regardless. If
- * there are any opened channels on the same hostname, user must manually
- * call close() on those dangling channels before the end of the PHP
- * script.
+ * of "true", a new and separate underlying grpc_channel will be created
+ * and returned. This will not affect existing channels.
  *
  * @param string $target The hostname to associate with this channel
  * @param array $args_array The arguments to pass to the Channel
@@ -298,11 +296,7 @@ PHP_METHOD(Channel, __construct) {
   gpr_mu_init(&channel->wrapper->mu);
   smart_str_free(&buf);
 
-  if (force_new) {
-    php_grpc_delete_persistent_list_entry(key, key_len TSRMLS_CC);
-  }
-
-  if (creds != NULL && creds->has_call_creds) {
+  if (force_new || (creds != NULL && creds->has_call_creds)) {
     // If the ChannelCredentials object was composed with a CallCredentials
     // object, there is no way we can tell them apart. Do NOT persist
     // them. They should be individually destroyed.
