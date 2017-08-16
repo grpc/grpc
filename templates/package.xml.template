@@ -24,9 +24,7 @@
    </stability>
    <license>BSD</license>
    <notes>
-  - Fixed a Windows installation issue #12108
-  - Fixed a MacOS mutex segfault #12109
-  - Fixed a ZTS compilation issue #12109
+  - Fixed segfault when tests were run under Travis #12123
    </notes>
    <contents>
     <dir baseinstalldir="/" name="/">
