@@ -406,7 +406,14 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   gpr_mu_init(&pollset->mu);
   *mu = &pollset->mu;
   pollset->neighbourhood = &g_neighbourhoods[choose_neighbourhood()];
+  pollset->reassigning_neighbourhood = false;
+  pollset->root_worker = NULL;
+  pollset->kicked_without_poller = false;
   pollset->seen_inactive = true;
+  pollset->shutting_down = false;
+  pollset->shutdown_closure = NULL;
+  pollset->begin_refs = 0;
+  pollset->next = pollset->prev = NULL;
 }
 
 static void pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
