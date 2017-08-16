@@ -1459,17 +1459,17 @@ gpr_log(GPR_INFO, "max_retry_attempts=%d", retry_policy->max_retry_attempts);
 gpr_log(GPR_INFO, "EXHAUSTED NUMBER OF ALLOWED RETRY ATTEMPTS");
     return false;
   }
+  // If the call was cancelled from the surface, don't retry.
+  if (calld->error != GRPC_ERROR_NONE) {
+gpr_log(GPR_INFO, "call cancelled from surface, not retrying");
+    return false;
+  }
 gpr_log(GPR_INFO, "RETRYING");
   // Reset subchannel call.
   if (calld->subchannel_call != NULL) {
     GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, calld->subchannel_call,
                                "client_channel_call_retry");
     calld->subchannel_call = NULL;
-  }
-// FIXME: what if this came from the surface via a cancel_stream op?
-  if (calld->error != GRPC_ERROR_NONE) {
-    GRPC_ERROR_UNREF(calld->error);
-    calld->error = GRPC_ERROR_NONE;
   }
   // Compute backoff delay.
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
@@ -2128,18 +2128,17 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx,
                                            chand->interested_parties);
   if (calld->connected_subchannel == NULL) {
     // Failed to create subchannel.
-    GRPC_ERROR_UNREF(calld->error);
-    calld->error = error == GRPC_ERROR_NONE
-                       ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                             "Call dropped by load balancing policy")
-                       : GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Failed to create subchannel", &error, 1);
+    grpc_error *new_error = error == GRPC_ERROR_NONE
+        ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Call dropped by load balancing policy")
+        : GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+              "Failed to create subchannel", &error, 1);
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: failed to create subchannel: error=%s", chand,
-              calld, grpc_error_string(calld->error));
+              calld, grpc_error_string(new_error));
     }
-    pending_batches_fail(exec_ctx, elem, GRPC_ERROR_REF(calld->error));
+    pending_batches_fail(exec_ctx, elem, new_error);
   } else if (calld->error != GRPC_ERROR_NONE) {
     /* already cancelled before subchannel became ready */
     grpc_error *child_errors[] = {error, calld->error};
@@ -2420,10 +2419,9 @@ static void start_subchannel_pick_locked(grpc_exec_ctx *exec_ctx, void *arg,
     // Pick was returned synchronously.
     GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
     if (calld->connected_subchannel == NULL) {
-      GRPC_ERROR_UNREF(calld->error);
-      calld->error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      grpc_error *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Call dropped by load balancing policy");
-      pending_batches_fail(exec_ctx, elem, GRPC_ERROR_REF(calld->error));
+      pending_batches_fail(exec_ctx, elem, error);
     } else {
       // Create subchannel call.
       create_subchannel_call_locked(exec_ctx, elem, GRPC_ERROR_NONE);
@@ -2447,18 +2445,10 @@ static void start_transport_stream_op_batch_locked(grpc_exec_ctx *exec_ctx,
   channel_data *chand = elem->channel_data;
   // If this is a cancellation, cancel the pending pick (if any) and
   // fail any pending batches.
+// FIXME: don't fail pending batches if they're retriable... in that
+// case we keep things pending while they're en route down to the
+// transport
   if (batch->cancel_stream) {
-
-// FIXME: if retrying, need to stop all retries
-// can only happen in one of the following cases:
-// - we allowed an error to propagate up, in which case we've given up
-//   and no longer need to retry
-// - a filter above us in the parent channel stack generated an error,
-//   in which case it's fine to give up on retries (might want to audit
-//   this)
-// - the application canceled from the API, in which case we definitely
-//   want to give up on retries
-
     // Stash a copy of cancel_error in our call data, so that we can use
     // it for subsequent operations.  This ensures that if the call is
     // cancelled before any batches are passed down (e.g., if the deadline
