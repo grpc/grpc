@@ -57,10 +57,10 @@ namespace Grpc.Core.Tests
         [Test]
         public void InfiniteDeadline()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 Assert.AreEqual(DateTime.MaxValue, context.Deadline);
-                return "PASS";
+                return Task.FromResult("PASS");
             });
 
             // no deadline specified, check server sees infinite deadline
@@ -75,13 +75,13 @@ namespace Grpc.Core.Tests
         {
             var clientDeadline = DateTime.UtcNow + TimeSpan.FromDays(7);
 
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 // A fairly relaxed check that the deadline set by client and deadline seen by server
                 // are in agreement. C core takes care of the work with transferring deadline over the wire,
                 // so we don't need an exact check here.
                 Assert.IsTrue(Math.Abs((clientDeadline - context.Deadline).TotalMilliseconds) < 5000);
-                return "PASS";
+                return Task.FromResult("PASS");
             });
             Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: clientDeadline)), "abc");
         }

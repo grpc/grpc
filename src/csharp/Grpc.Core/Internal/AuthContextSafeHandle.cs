@@ -74,7 +74,10 @@ namespace Grpc.Core.Internal
 
         private AuthProperty PtrToAuthProperty(IntPtr authPropertyPtr)
         {
+            #pragma warning disable 0618
+            // We need to use the obsolete non-generic version of Marshal.PtrToStructure, because the generic version is not available in net45
             var nativeAuthProperty = (NativeAuthProperty) Marshal.PtrToStructure(authPropertyPtr, typeof(NativeAuthProperty));
+            #pragma warning restore 0618
             var name = Marshal.PtrToStringAnsi(nativeAuthProperty.Name);
             var valueBytes = new byte[(int) nativeAuthProperty.ValueLength];
             Marshal.Copy(nativeAuthProperty.Value, valueBytes, 0, (int)nativeAuthProperty.ValueLength);
