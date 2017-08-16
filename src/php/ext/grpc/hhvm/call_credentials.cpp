@@ -78,7 +78,7 @@ void PluginMetadataInfo::setInfo(CallCredentialsData* const pCallCredentials,
 typename PluginMetadataInfo::MetaDataInfo
 PluginMetadataInfo::getInfo(CallCredentialsData* const pCallCredentials)
 {
-    MetaDataInfo metaDataInfo{ nullptr, 0 };
+    MetaDataInfo metaDataInfo{ nullptr, std::thread::id{ 0 } };
     {
         std::lock_guard<std::mutex> lock{ m_Lock };
         auto itrFind = m_MetaDataMap.find(pCallCredentials);
@@ -260,7 +260,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
     PluginMetadataInfo::MetaDataInfo metaDataInfo{ pluginMetaDataInfo.getInfo(pCallCrendentials) };
 
     std::thread::id callThread{ std::get<1>(metaDataInfo) };
-    if (callThread == std::this_thread::get_id())
+    /*if (callThread == std::this_thread::get_id())
     {
         HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata same thread") // Degug Trace
         plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data,
@@ -269,6 +269,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
         std::get<0>(metaDataInfo)->set_value(std::move(params));
     }
     else
+    */
     {
         HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata different thread") // Degug Trace
         plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data };

@@ -539,9 +539,14 @@ Object HHVM_METHOD(Call, startBatch,
         }
     }
 
-    grpc_completion_queue_pluck(CompletionQueue::getClientQueue().queue(),
+
+    //grpc_completion_queue_pluck(CompletionQueue::getClientQueue().queue(),
+    //                                                  pCallData->call(),
+    //                                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+
+    std::thread t1{grpc_completion_queue_pluck, CompletionQueue::getClientQueue().queue(),
                                                       pCallData->call(),
-                                                      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+                                                      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr};
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
     // has it's own thread and you cannot run application code on a single request in more than
@@ -568,6 +573,7 @@ Object HHVM_METHOD(Call, startBatch,
             }
         }
     }
+    if (t1.joinable()) t1.join();
 
     // process results of call
     for (size_t i{ 0 }; i < op_num; ++i)
