@@ -40,7 +40,7 @@ class UnaryCall extends AbstractCall
         if (isset($options['flags'])) {
             $message_array['flags'] = $options['flags'];
         }
-        $event = $this->call->startBatch([
+        $this->call->startBatch([
             OP_SEND_INITIAL_METADATA => $metadata,
             OP_SEND_MESSAGE => $message_array,
             OP_SEND_CLOSE_FROM_CLIENT => true,
