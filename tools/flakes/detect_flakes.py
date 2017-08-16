@@ -68,10 +68,13 @@ ORDER BY timestamp desc
   query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)
   page = bq.jobs().getQueryResults(
       pageToken=None, **query_job['jobReference']).execute(num_retries=3)
-  testname_to_cols = {row['f'][0]['v']:
-                      (row['f'][1]['v'], row['f'][2]['v'], row['f'][3]['v'])
-                      for row in page['rows']}
-  return testname_to_cols
+  rows = page.get('rows')
+  if rows:
+    return {row['f'][0]['v']:
+            (row['f'][1]['v'], row['f'][2]['v'], row['f'][3]['v'])
+            for row in rows}
+  else:
+    return {}
 
 
 def get_new_flakes():
@@ -91,6 +94,8 @@ def main():
   if new_flakes:
     print("Found {} new flakes:".format(len(new_flakes)))
     print_table(new_flakes)
+  else:
+    print("No new flakes found!")
 
 
 if __name__ == '__main__':
