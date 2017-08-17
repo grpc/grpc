@@ -29,7 +29,9 @@
     s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
     s.platform      = Gem::Platform::RUBY
 
-    s.add_dependency 'google-protobuf', '~> 3.1'
+    # TODO: workaround for https://github.com/google/protobuf/issues/3509
+    # remove '< 3.4' later
+    s.add_dependency 'google-protobuf', ['~> 3.1', '< 3.4']
     s.add_dependency 'googleauth',      '~> 0.5.1'
 
     s.add_development_dependency 'bundler',            '~> 1.9'
