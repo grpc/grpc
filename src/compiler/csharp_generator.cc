@@ -670,6 +670,7 @@ grpc::string GetServices(const FileDescriptor *file, bool generate_client,
       out.Print(leading_comments.c_str());
     }
 
+    out.Print("#pragma warning disable 1591\n");
     out.Print("#region Designer generated code\n");
     out.Print("\n");
     out.Print("using System;\n");

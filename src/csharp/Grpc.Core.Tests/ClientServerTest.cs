@@ -57,9 +57,9 @@ namespace Grpc.Core.Tests
         [Test]
         public async Task UnaryCall()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
-                return request;
+                return Task.FromResult(request);
             });
 
             Assert.AreEqual("ABC", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "ABC"));
@@ -124,10 +124,10 @@ namespace Grpc.Core.Tests
         [Test]
         public void UnaryCall_ServerHandlerSetsStatus()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 context.Status = new Status(StatusCode.Unauthenticated, "");
-                return "";
+                return Task.FromResult("");
             });
 
             var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
@@ -142,11 +142,11 @@ namespace Grpc.Core.Tests
         [Test]
         public void UnaryCall_ServerHandlerSetsStatusAndTrailers()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 context.Status = new Status(StatusCode.Unauthenticated, "");
                 context.ResponseTrailers.Add("xyz", "xyz-value");
-                return "";
+                return Task.FromResult("");
             });
 
             var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
@@ -168,9 +168,10 @@ namespace Grpc.Core.Tests
             helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
             {
                 string result = "";
-                await requestStream.ForEachAsync(async (request) =>
+                await requestStream.ForEachAsync((request) =>
                 {
                     result += request;
+                    return TaskUtils.CompletedTask;
                 });
                 await Task.Delay(100);
                 return result;
@@ -203,9 +204,7 @@ namespace Grpc.Core.Tests
         [Test]
         public async Task ServerStreamingCall_EndOfStreamIsIdempotent()
         {
-            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
-            {
-            });
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>((request, responseStream, context) => TaskUtils.CompletedTask);
 
             var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "");
 
@@ -214,11 +213,12 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
-        public async Task ServerStreamingCall_ErrorCanBeAwaitedTwice()
+        public void ServerStreamingCall_ErrorCanBeAwaitedTwice()
         {
-            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>((request, responseStream, context) =>
             {
                 context.Status = new Status(StatusCode.InvalidArgument, "");
+                return TaskUtils.CompletedTask;
             });
 
             var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "");
@@ -232,9 +232,9 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
-        public async Task ServerStreamingCall_TrailersFromMultipleSourcesGetConcatenated()
+        public void ServerStreamingCall_TrailersFromMultipleSourcesGetConcatenated()
         {
-            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>((request, responseStream, context) =>
             {
                 context.ResponseTrailers.Add("xyz", "xyz-value");
                 throw new RpcException(new Status(StatusCode.InvalidArgument, ""), new Metadata { {"abc", "abc-value"} });
@@ -343,7 +343,7 @@ namespace Grpc.Core.Tests
         [Test]
         public async Task AsyncUnaryCall_EchoMetadata()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 foreach (Metadata.Entry metadataEntry in context.RequestHeaders)
                 {
@@ -352,7 +352,7 @@ namespace Grpc.Core.Tests
                         context.ResponseTrailers.Add(metadataEntry);
                     }
                 }
-                return "";
+                return Task.FromResult("");
             });
 
             var headers = new Metadata
@@ -395,10 +395,10 @@ namespace Grpc.Core.Tests
         {
             // some japanese and chinese characters
             var nonAsciiString = "\u30a1\u30a2\u30a3 \u62b5\u6297\u662f\u5f92\u52b3\u7684";
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 context.Status = new Status(StatusCode.Unknown, nonAsciiString);
-                return "";
+                return Task.FromResult("");
             });
 
             var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
@@ -409,9 +409,9 @@ namespace Grpc.Core.Tests
         [Test]
         public void ServerCallContext_PeerInfoPresent()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
-                return context.Peer;
+                return Task.FromResult(context.Peer);
             });
 
             string peer = Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc");
@@ -421,11 +421,11 @@ namespace Grpc.Core.Tests
         [Test]
         public void ServerCallContext_HostAndMethodPresent()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 Assert.IsTrue(context.Host.Contains(Host));
                 Assert.AreEqual("/tests.Test/Unary", context.Method);
-                return "PASS";
+                return Task.FromResult("PASS");
             });
             Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
         }
@@ -433,11 +433,11 @@ namespace Grpc.Core.Tests
         [Test]
         public void ServerCallContext_AuthContextNotPopulated()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 Assert.IsFalse(context.AuthContext.IsPeerAuthenticated);
                 Assert.AreEqual(0, context.AuthContext.Properties.Count());
-                return "PASS";
+                return Task.FromResult("PASS");
             });
             Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
         }
@@ -445,9 +445,9 @@ namespace Grpc.Core.Tests
         [Test]
         public async Task Channel_WaitForStateChangedAsync()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
-                return request;
+                return Task.FromResult(request);
             });
 
             Assert.ThrowsAsync(typeof(TaskCanceledException), 
