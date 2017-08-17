@@ -123,7 +123,7 @@ public:
     ChannelsCache& operator=(ChannelsCache&& rhsChannelsCache) = delete;
 
     // interface functions
-    bool addChannel(const String& channelHash, grpc_channel* const pChannel);
+    std::pair<bool, grpc_channel* const> addChannel(const String& channelHash,grpc_channel* const pChannel);
     grpc_channel* const getChannel(const String& channelHash);
     bool hasChannel(const String& channelHash);
     void deleteChannel(const String& channelHash);

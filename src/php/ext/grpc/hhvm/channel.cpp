@@ -244,14 +244,15 @@ ChannelsCache& ChannelsCache::getChannelsCache(void)
     return s_ChannelsCache;
 }
 
-bool ChannelsCache::addChannel(const String& key, grpc_channel* const pChannel)
+std::pair<bool, grpc_channel* const>
+ChannelsCache::addChannel(const String& key, grpc_channel* const pChannel)
 {
     std::string keyString{ key.toCppString() };
     {
         WriteLock lock{ m_ChannelMapMutex };
         auto insertPair = m_ChannelMap.emplace(keyString, pChannel);
-        if (!insertPair.second) return false;
-        else                    return true;
+        if (!insertPair.second) return std::make_pair(false, insertPair.first->second);
+        else                    return std::make_pair(true, insertPair.first->second);
     }
 }
 
@@ -381,8 +382,13 @@ void HHVM_METHOD(Channel, __construct,
     {
         if (force_new && pChannel)
         {
+            // TODO: deleting an existing channel is problematic
+            // the channel cache really needs to track all channels associated with
+            // each hash along with a reference count on the channel and then if there are more
+            // than 1 channels associated with the hash to delete the one with no references
+            // during channel close
             // delete existing channel
-            ChannelsCache::getChannelsCache().deleteChannel(fullCacheKey);
+            // ChannelsCache::getChannelsCache().deleteChannel(fullCacheKey);
         }
 
         if (!pChannelCredentialsData)
@@ -401,13 +407,21 @@ void HHVM_METHOD(Channel, __construct,
         {
             SystemLib::throwBadMethodCallExceptionObject("failed to create channel");
         }
-        pChannelData->init(pChannel, false, fullCacheKey);
 
-        bool addResult{ ChannelsCache::getChannelsCache().addChannel(fullCacheKey, pChannel) };
-        if (!addResult)
+        std::pair<bool, grpc_channel* const>
+            addResult{ ChannelsCache::getChannelsCache().addChannel(fullCacheKey, pChannel) };
+        if (!addResult.first)
         {
-            // channel already cached
+            // channel already cached.  This can happen if we currently force new and now
+            // have two channels with same hash or via race conditions with multiple create channels
+            // at same time
+            //SystemLib::throwBadMethodCallExceptionObject("failed to create channel");
+
+            // delete new channel and use existing
+            grpc_channel_destroy(pChannel);
+            pChannel = addResult.second;
         }
+        pChannelData->init(pChannel, false, fullCacheKey);
     }
 }
 

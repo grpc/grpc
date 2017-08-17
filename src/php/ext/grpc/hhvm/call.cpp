@@ -521,6 +521,7 @@ Object HHVM_METHOD(Call, startBatch,
         ops[op_num].reserved = nullptr;
     }
 
+/*
     // set up the crendential promise for the call credentials set up with this call for
     // the plugin_get_metadata routine
     if (sending_initial_metadata && pCallData->credentialed())
@@ -530,11 +531,12 @@ Object HHVM_METHOD(Call, startBatch,
                                                        std::this_thread::get_id() };
         pluginMetadataInfo.setInfo(pCallData->callCredentials(), metaDataInfo);
     }
+*/
 
     static std::mutex s_WriteStartBatchMutex, s_ReadStartBatchMutex;
     {
         // use write mutex for sending and read mutex for receiving
-        std::unique_lock<std::mutex> lock{ sending ? s_WriteStartBatchMutex : s_ReadStartBatchMutex};
+        std::unique_lock<std::mutex> lock{ s_WriteStartBatchMutex };// sending ? s_WriteStartBatchMutex : s_ReadStartBatchMutex};
         grpc_call_error errorCode{ grpc_call_start_batch(pCallData->call(), ops.data(),
                                                          op_num, pCallData->call(), nullptr) };
 
@@ -547,15 +549,40 @@ Object HHVM_METHOD(Call, startBatch,
         }
     }
 
+    try
+    {
 
-    //grpc_completion_queue_next(pCallData->queue()->queue(),
-    //                           gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
+     //  grpc_completion_queue_next(pCallData->queue()->queue(),
+     //                              gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+        grpc_completion_queue_pluck(pCallData->queue()->queue(), pCallData->call(),
+                                    gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+
+    }
+   catch(...)
+    {
+        // don't abort just return empty result
+        return resultObj;
+        //SystemLib::throwBadMethodCallExceptionObject("There was a problem with the request=");
+    }
     //grpc_completion_queue_next(pCallData->queue()->queue(), pCallData->call(),
     //                            gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
-    std::thread t1{grpc_completion_queue_next, pCallData->queue()->queue(),
-                                                      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr};
+
+/*
+    std::packaged_task<grpc_event(grpc_completion_queue*, gpr_timespec,void*)>
+        queueTask{ grpc_completion_queue_next };
+    std::future<grpc_event> queueResult{ queueTask.get_future() };
+    std::thread t1{};
+    try
+    {
+        t1=std::thread{ std::move(queueTask), pCallData->queue()->queue(),
+                gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr };
+    }
+    catch(...)
+    {
+        SystemLib::throwBadMethodCallExceptionObject("There was a problem with the request=");
+    }
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
     // has it's own thread and you cannot run application code on a single request in more than
@@ -582,8 +609,8 @@ Object HHVM_METHOD(Call, startBatch,
             }
         }
     }
-    if (t1.joinable()) t1.join();
-
+*/
+   // if (t1.joinable()) t1.join();
     // process results of call
     for (size_t i{ 0 }; i < op_num; ++i)
     {

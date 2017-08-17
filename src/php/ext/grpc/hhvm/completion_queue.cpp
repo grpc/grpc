@@ -31,13 +31,17 @@ namespace HPHP {
 
 CompletionQueue::CompletionQueue(void)
 {
-    m_pCompletionQueue = grpc_completion_queue_create_for_next(nullptr);
+    m_pCompletionQueue = grpc_completion_queue_create_for_pluck(nullptr);
 }
 
 CompletionQueue::~CompletionQueue(void)
 {
     // queue must be destroyed after server
-    // note: this is causing a segfault on shutdown for some reason
+
+    // shutdown queue
+    grpc_completion_queue_shutdown(m_pCompletionQueue);
+
+    // destroy queue
     grpc_completion_queue_destroy(m_pCompletionQueue);
 }
 
