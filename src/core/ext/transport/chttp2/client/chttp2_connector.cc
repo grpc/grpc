@@ -136,6 +136,8 @@ static void start_handshake_locked(grpc_exec_ctx *exec_ctx,
   c->handshake_mgr = grpc_handshake_manager_create();
   grpc_handshakers_add(exec_ctx, HANDSHAKER_CLIENT, c->args.channel_args,
                        c->handshake_mgr);
+  grpc_endpoint_add_to_pollset_set(exec_ctx, c->endpoint,
+                                   c->args.interested_parties);
   grpc_handshake_manager_do_handshake(
       exec_ctx, c->handshake_mgr, c->endpoint, c->args.channel_args,
       c->args.deadline, NULL /* acceptor */, on_handshake_done, c);
