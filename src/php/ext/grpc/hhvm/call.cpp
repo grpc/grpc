@@ -98,6 +98,7 @@ void CallData::destroy(void)
     }
     m_pChannel = nullptr;
     m_pCallCredentials = nullptr;
+    m_pCompletionQueue.release();
 }
 
  void CallData::setQueue(std::unique_ptr<CompletionQueue>&& pCompletionQueue)
