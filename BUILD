@@ -34,11 +34,11 @@ load(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gregarious"
+g_stands_for = "garcia"
 
-core_version = "4.0.0-dev"
+core_version = "4.0.0"
 
-version = "1.5.0-dev"
+version = "1.6.0-pre1"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -593,9 +593,9 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_windows.c",
         "src/core/lib/iomgr/exec_ctx.c",
         "src/core/lib/iomgr/executor.c",
+        "src/core/lib/iomgr/gethostname_fallback.c",
         "src/core/lib/iomgr/gethostname_host_name_max.c",
         "src/core/lib/iomgr/gethostname_sysconf.c",
-        "src/core/lib/iomgr/gethostname_fallback.c",
         "src/core/lib/iomgr/iocp_windows.c",
         "src/core/lib/iomgr/iomgr.c",
         "src/core/lib/iomgr/iomgr_posix.c",
