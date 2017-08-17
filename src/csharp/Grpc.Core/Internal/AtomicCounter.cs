@@ -64,7 +64,7 @@ namespace Grpc.Core.Internal
         {
             get
             {
-                return counter;
+                return Interlocked.Read(ref counter);
             }
         }
     }
