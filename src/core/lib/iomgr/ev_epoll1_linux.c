@@ -1050,6 +1050,10 @@ static const grpc_event_engine_vtable vtable = {
 /* It is possible that GLIBC has epoll but the underlying kernel doesn't.
  * Create a dummy epoll_fd to make sure epoll support is available */
 const grpc_event_engine_vtable *grpc_init_epoll1_linux(bool explicit_request) {
+  if (!explicit_request) {
+    return NULL;
+  }
+
   if (!grpc_has_wakeup_fd()) {
     return NULL;
   }
