@@ -52,6 +52,13 @@ describe GRPC::RpcDesc do
       this_desc.run_server_method(@call, method(:other_error))
     end
 
+    it 'sends status UNKNOWN if NotImplementedErrors are raised' do
+      expect(@call).to receive(:read_unary_request).once.and_return(Object.new)
+      expect(@call).to receive(:send_status).once.with(
+        UNKNOWN, not_implemented_error_msg, false, metadata: {})
+      this_desc.run_server_method(@call, method(:not_implemented))
+    end
+
     it 'absorbs CallError with no further action' do
       expect(@call).to receive(:read_unary_request).once.and_raise(CallError)
       blk = proc do
@@ -100,6 +107,12 @@ describe GRPC::RpcDesc do
         expect(@call).to receive(:send_status).once.with(UNKNOWN, arg_error_msg,
                                                          false, metadata: {})
         @client_streamer.run_server_method(@call, method(:other_error_alt))
+      end
+
+      it 'sends status UNKNOWN if NotImplementedErrors are raised' do
+        expect(@call).to receive(:send_status).once.with(
+          UNKNOWN, not_implemented_error_msg, false, metadata: {})
+        @client_streamer.run_server_method(@call, method(:not_implemented_alt))
       end
 
       it 'absorbs CallError with no further action' do
@@ -164,6 +177,14 @@ describe GRPC::RpcDesc do
         expect(@call).to receive(:send_status).once.with(UNKNOWN, error_msg,
                                                          false, metadata: {})
         @bidi_streamer.run_server_method(@call, method(:other_error_alt))
+      end
+
+      it 'sends status UNKNOWN if NotImplementedErrors are raised' do
+        expect(@call).to receive(:run_server_bidi).and_raise(
+          not_implemented_error)
+        expect(@call).to receive(:send_status).once.with(
+          UNKNOWN, not_implemented_error_msg, false, metadata: {})
+        @bidi_streamer.run_server_method(@call, method(:not_implemented_alt))
       end
 
       it 'closes the stream if there no errors' do
@@ -329,8 +350,25 @@ describe GRPC::RpcDesc do
     fail(ArgumentError, 'other error')
   end
 
+  def not_implemented(_req, _call)
+    fail not_implemented_error
+  end
+
+  def not_implemented_alt(_call)
+    fail not_implemented_error
+  end
+
   def arg_error_msg(error = nil)
     error ||= ArgumentError.new('other error')
+    "#{error.class}: #{error.message}"
+  end
+
+  def not_implemented_error
+    NotImplementedError.new('some OS feature not implemented')
+  end
+
+  def not_implemented_error_msg(error = nil)
+    error ||= not_implemented_error
     "#{error.class}: #{error.message}"
   end
 end
