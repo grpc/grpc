@@ -997,14 +997,13 @@ typedef struct client_channel_call_data {
   // The code in deadline_filter.c requires this to be the first field.
   // TODO(roth): This is slightly sub-optimal in that grpc_deadline_state
   // and this struct both independently store a pointer to the call
-  // stack and the call combiner.  If/when we have time, find a way to avoid
-  // this without breaking the grpc_deadline_state abstraction.
+  // combiner.  If/when we have time, find a way to avoid this without
+  // breaking the grpc_deadline_state abstraction.
   grpc_deadline_state deadline_state;
 
   grpc_slice path;  // Request path.
   gpr_timespec call_start_time;
   gpr_timespec deadline;
-  grpc_call_stack *owning_call;
   gpr_arena *arena;
   grpc_call_combiner *call_combiner;
 
@@ -1401,8 +1400,8 @@ static bool is_status_code_in_list(grpc_status_code status,
   return false;
 }
 
-static void start_subchannel_pick_locked(grpc_exec_ctx *exec_ctx, void *arg,
-                                         grpc_error *ignored);
+static void start_pick_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                              grpc_error *ignored);
 
 // Returns true if the call is being retried.
 static bool maybe_retry(grpc_exec_ctx *exec_ctx,
@@ -1484,9 +1483,8 @@ gpr_log(GPR_INFO, "RETRYING");
     next_attempt_time = gpr_backoff_step(&calld->retry_backoff, now);
   }
   // Schedule retry after computed delay.
-  GRPC_CALL_STACK_REF(calld->owning_call, "maybe_retry");
   GRPC_CLOSURE_INIT(&batch_data->batch.handler_private.closure,
-                    start_subchannel_pick_locked, elem,
+                    start_pick_locked, elem,
                     grpc_combiner_scheduler(chand->combiner));
   grpc_timer_init(exec_ctx, &calld->retry_timer, next_attempt_time,
                   &batch_data->batch.handler_private.closure, now);
@@ -2142,7 +2140,6 @@ static void subchannel_ready_locked(grpc_exec_ctx *exec_ctx,
     /* Create call on subchannel. */
     create_subchannel_call_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
   }
-  GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
   GRPC_ERROR_UNREF(error);
 }
 
@@ -2390,14 +2387,15 @@ static bool pick_subchannel_locked(grpc_exec_ctx *exec_ctx,
   return pick_done;
 }
 
-static void start_subchannel_pick_locked(grpc_exec_ctx *exec_ctx, void *arg,
-                                         grpc_error *ignored) {
+static void start_pick_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                              grpc_error *error_ignored) {
+  GPR_TIMER_BEGIN("start_pick_locked", 0);
   grpc_call_element *elem = (grpc_call_element *)arg;
   call_data *calld = (call_data *)elem->call_data;
   channel_data *chand = (channel_data *)elem->channel_data;
+  GPR_ASSERT(calld->connected_subchannel == NULL);
   if (pick_subchannel_locked(exec_ctx, elem)) {
     // Pick was returned synchronously.
-    GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_subchannel");
     if (calld->connected_subchannel == NULL) {
       grpc_error *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Call dropped by load balancing policy");
@@ -2407,22 +2405,15 @@ static void start_subchannel_pick_locked(grpc_exec_ctx *exec_ctx, void *arg,
       create_subchannel_call_locked(exec_ctx, elem, GRPC_ERROR_NONE);
     }
   } else {
-    // Pick will be done asynchronously.  We provide the polling entity
-    // from call_data to channel_data's interested_parties, so that I/O
-    // for the lb_policy and resolver can be done under it.
+    // Pick will be done asynchronously.  Add the call's polling entity to
+    // the channel's interested_parties, so that I/O for the resolver
+    // and LB policy can be done under it.
     grpc_polling_entity_add_to_pollset_set(exec_ctx, calld->pollent,
                                            chand->interested_parties);
   }
+  GPR_TIMER_END("start_pick_locked", 0);
 }
 
-// The logic here is fairly complicated, due to (a) the fact that we
-// need to handle the case where we receive a send_message op before the
-// send_initial_metadata op, and (b) the need for efficiency, especially in
-// the streaming case.
-//
-// We check to see if we've already gotten a subchannel pick.  If so, we
-// proceed on the fast path.  If not, we acquire the channel combiner and
-// do the pick there.
 static void cc_start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *batch) {
@@ -2433,8 +2424,7 @@ static void cc_start_transport_stream_op_batch(
                                                                batch);
   }
   GPR_TIMER_BEGIN("cc_start_transport_stream_op_batch", 0);
-  // If we've already gotten a cancellation from above, immediately fail
-  // any new batches that come down.
+  // If we've previously been cancelled, immediately fail any new batches.
   if (calld->error != GRPC_ERROR_NONE) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: failing batch with error: %s",
@@ -2471,6 +2461,9 @@ static void cc_start_transport_stream_op_batch(
     goto done;
   }
   // Check if we've already gotten a subchannel call.
+  // Note that once we have completed the pick, we do not need to enter
+  // the channel combiner, which is more efficient (especially for
+  // streaming calls).
   if (calld->subchannel_call != NULL) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG,
@@ -2487,12 +2480,10 @@ static void cc_start_transport_stream_op_batch(
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: entering combiner", chand, calld);
     }
-    GRPC_CALL_STACK_REF(calld->owning_call, "pick_subchannel");
     GRPC_CLOSURE_SCHED(
         exec_ctx,
-        GRPC_CLOSURE_INIT(&batch->handler_private.closure,
-                          start_subchannel_pick_locked, elem,
-                          grpc_combiner_scheduler(chand->combiner)),
+        GRPC_CLOSURE_INIT(&batch->handler_private.closure, start_pick_locked,
+                          elem, grpc_combiner_scheduler(chand->combiner)),
         GRPC_ERROR_NONE);
   } else {
     // For all other batches, release the call combiner.
@@ -2518,7 +2509,6 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
   calld->path = grpc_slice_ref_internal(args->path);
   calld->call_start_time = args->start_time;
   calld->deadline = gpr_convert_clock_type(args->deadline, GPR_CLOCK_MONOTONIC);
-  calld->owning_call = args->call_stack;
   calld->arena = args->arena;
   calld->call_combiner = args->call_combiner;
   if (chand->deadline_checking_enabled) {
