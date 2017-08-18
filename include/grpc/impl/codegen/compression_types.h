@@ -50,6 +50,10 @@ extern "C" {
 /** Default compression level for the channel.
  * Its value is an int from the \a grpc_compression_level enum. */
 #define GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL "grpc.default_compression_level"
+/** Default stream compression level for the channel.
+ * Its value is an int from the \a grpc_stream_compression_level enum. */
+#define GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_LEVEL \
+  "grpc.default_stream_compression_level"
 /** Compression algorithms supported by the channel.
  * Its value is a bitset (an int). Bits correspond to algorithms in \a
  * grpc_compression_algorithm. For example, its LSB corresponds to

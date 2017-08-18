@@ -488,7 +488,7 @@ static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_channel_element_args *args) {
   channel_data *channeld = elem->channel_data;
 
-  /* Configuration for message-wise compression */
+  /* Configuration for message compression */
   channeld->enabled_algorithms_bitset =
       grpc_channel_args_compression_algorithm_get_states(args->channel_args);
 
