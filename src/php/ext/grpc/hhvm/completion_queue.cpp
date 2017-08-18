@@ -47,10 +47,8 @@ CompletionQueue::~CompletionQueue(void)
 
 std::unique_ptr<CompletionQueue> CompletionQueue::getClientQueue(void)
 {
-    thread_local CompletionQueue s_CompletionQueue;
-    return std::unique_ptr<CompletionQueue>{&s_CompletionQueue};
     // Each client gets a completion queue for the thread it is running in
-    //return std::unique_ptr<CompletionQueue>{ new CompletionQueue{} };
+    return std::unique_ptr<CompletionQueue>{ new CompletionQueue{} };
 }
 
 std::unique_ptr<CompletionQueue> CompletionQueue::getServerQueue(void)

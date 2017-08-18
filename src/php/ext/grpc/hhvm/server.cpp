@@ -174,7 +174,9 @@ Object HHVM_METHOD(Server, requestCall)
 
     if (errorCode != GRPC_CALL_OK)
     {
-        return resultObj;
+        std::stringstream oSS;
+        oSS << "server request call was called incorrectly: " << errorCode << std::endl;
+        SystemLib::throwBadMethodCallExceptionObject(oSS.str());
     }
 
     grpc_event event( grpc_completion_queue_pluck(pServerData->queue()->queue(), nullptr,

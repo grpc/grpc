@@ -98,7 +98,6 @@ void CallData::destroy(void)
     }
     m_pChannel = nullptr;
     m_pCallCredentials = nullptr;
-    m_pCompletionQueue.release();
 }
 
  void CallData::setQueue(std::unique_ptr<CompletionQueue>&& pCompletionQueue)
@@ -364,19 +363,15 @@ Object HHVM_METHOD(Call, startBatch,
         grpc_status_code status;
     } OpsManaged;
 
-    // NOTE:  Come back and look at make ops and opsManaged data thread_local
+    // clear any existing ops data
     std::array<grpc_op, maxActions> ops;
-    OpsManaged opsManaged{};
-
-    // clear any existing ops data and recycle managed data
     std::memset(ops.data(), 0, sizeof(grpc_op) * maxActions);
-    //opsManaged.recycle();
 
+    OpsManaged opsManaged{};
     CallData* const pCallData{ Native::data<CallData>(this_) };
 
     size_t op_num{ 0 };
     bool sending_initial_metadata{ false };
-    bool sending{ false };
     for (ArrayIter iter(actions); iter; ++iter, ++op_num)
     {
         Variant key{ iter.first() };
@@ -405,7 +400,6 @@ Object HHVM_METHOD(Call, startBatch,
             ops[op_num].data.send_initial_metadata.count = opsManaged.metadata.size();
             ops[op_num].data.send_initial_metadata.metadata = opsManaged.metadata.data();
             sending_initial_metadata = true;
-            sending = true;
             break;
         }
         case GRPC_OP_SEND_MESSAGE:
@@ -440,11 +434,9 @@ Object HHVM_METHOD(Call, startBatch,
                 opsManaged.send_message = send_message.byteBuffer();
                 ops[op_num].data.send_message.send_message = opsManaged.send_message;
             }
-            sending = true;
             break;
         }
         case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
-            sending = true;
             break;
         case GRPC_OP_SEND_STATUS_FROM_SERVER:
         {
@@ -497,7 +489,6 @@ Object HHVM_METHOD(Call, startBatch,
             Slice innerDetailsSlice{ innerDetails.toString().c_str() };
             opsManaged.send_status_details = innerDetailsSlice;
             ops[op_num].data.send_status_from_server.status_details = &opsManaged.send_status_details.slice();
-            sending = true;
             break;
         }
         case GRPC_OP_RECV_INITIAL_METADATA:
@@ -522,7 +513,6 @@ Object HHVM_METHOD(Call, startBatch,
         ops[op_num].reserved = nullptr;
     }
 
-/*
     // set up the crendential promise for the call credentials set up with this call for
     // the plugin_get_metadata routine
     if (sending_initial_metadata && pCallData->credentialed())
@@ -532,12 +522,10 @@ Object HHVM_METHOD(Call, startBatch,
                                                        std::this_thread::get_id() };
         pluginMetadataInfo.setInfo(pCallData->callCredentials(), metaDataInfo);
     }
-*/
 
-    static std::mutex s_WriteStartBatchMutex, s_ReadStartBatchMutex;
+    static std::mutex s_StartBatchMutex;
     {
-        // use write mutex for sending and read mutex for receiving
-        std::unique_lock<std::mutex> lock{ s_WriteStartBatchMutex };// sending ? s_WriteStartBatchMutex : s_ReadStartBatchMutex};
+        std::unique_lock<std::mutex> lock{ s_StartBatchMutex };
         grpc_call_error errorCode{ grpc_call_start_batch(pCallData->call(), ops.data(),
                                                          op_num, pCallData->call(), nullptr) };
 
@@ -550,39 +538,11 @@ Object HHVM_METHOD(Call, startBatch,
         }
     }
 
-    // without this try catch the completion queue will throw sometimes and bring down HHVM
-    try
+    grpc_event event {grpc_completion_queue_pluck(pCallData->queue()->queue(), pCallData->call(),
+                                gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)};
+    if (event.type != GRPC_OP_COMPLETE )
     {
-        grpc_event event {grpc_completion_queue_pluck(pCallData->queue()->queue(), pCallData->call(),
-                                    gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)};
-        if (event.type != GRPC_OP_COMPLETE )
-        {
-            return resultObj;
-        }
-    }
-    catch(...)
-    {
-        // don't abort just return empty result
         return resultObj;
-        //SystemLib::throwBadMethodCallExceptionObject("There was a problem with the request=");
-    }
-    //grpc_completion_queue_next(pCallData->queue()->queue(), pCallData->call(),
-    //                            gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-
-
-/*
-    std::packaged_task<grpc_event(grpc_completion_queue*, gpr_timespec,void*)>
-        queueTask{ grpc_completion_queue_next };
-    std::future<grpc_event> queueResult{ queueTask.get_future() };
-    std::thread t1{};
-    try
-    {
-        t1=std::thread{ std::move(queueTask), pCallData->queue()->queue(),
-                gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr };
-    }
-    catch(...)
-    {
-        SystemLib::throwBadMethodCallExceptionObject("There was a problem with the request=");
     }
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
@@ -610,8 +570,7 @@ Object HHVM_METHOD(Call, startBatch,
             }
         }
     }
-*/
-   // if (t1.joinable()) t1.join();
+
     // process results of call
     for (size_t i{ 0 }; i < op_num; ++i)
     {

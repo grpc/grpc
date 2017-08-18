@@ -486,6 +486,9 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
 
     TimevalData* const pTimevalDataDeadline{ Native::data<TimevalData>(deadline) };
 
+    // TODO: In order to perform this we need to get the queue associated with the channel
+    // which is associated with the call since each call gets own queue
+
    /* grpc_channel_watch_connectivity_state(pChannelData->channel(),
                                           static_cast<grpc_connectivity_state>(last_state),
                                           pTimevalDataDeadline->time(),

@@ -256,28 +256,26 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
     plugin_state *pState{ reinterpret_cast<plugin_state *>(ptr) };
     CallCredentialsData* const pCallCrendentials{ pState->pCallCredentials };
 
-    //PluginMetadataInfo& pluginMetaDataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
-    //PluginMetadataInfo::MetaDataInfo metaDataInfo{ pluginMetaDataInfo.getInfo(pCallCrendentials) };
+    PluginMetadataInfo& pluginMetaDataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
+    PluginMetadataInfo::MetaDataInfo metaDataInfo{ pluginMetaDataInfo.getInfo(pCallCrendentials) };
 
-//    std::thread::id callThread{ std::get<1>(metaDataInfo) };
-   // if (callThread == std::this_thread::get_id())
+    std::thread::id callThread{ std::get<1>(metaDataInfo) };
+    if (callThread == std::this_thread::get_id())
     {
         HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata same thread") // Degug Trace
         plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data,
                                            true };
         plugin_do_get_metadata(ptr, context, cb, user_data);
-        //std::get<0>(metaDataInfo)->set_value(std::move(params));
+        std::get<0>(metaDataInfo)->set_value(std::move(params));
     }
- /*   else
+    else
     {
-        std::cout << "different" << std::endl;
         HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata different thread") // Degug Trace
         plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data };
 
         // return the meta data params in the promise
         std::get<0>(metaDataInfo)->set_value(std::move(params));
     }
-    */
 }
 
 void plugin_destroy_state(void *ptr)
