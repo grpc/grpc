@@ -2775,6 +2775,7 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_benchmark", 

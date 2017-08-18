@@ -3619,6 +3619,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   args:
   - --benchmark_min_time=0
   defaults: benchmark

@@ -26,6 +26,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
+#include "test/cpp/util/test_config.h"
 extern "C" {
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -420,6 +421,6 @@ BENCHMARK(BM_PumpUnbalancedUnary_Trickle)->Apply(UnaryTrickleArgs);
 
 int main(int argc, char** argv) {
   ::benchmark::Initialize(&argc, argv);
-  ::google::ParseCommandLineFlags(&argc, &argv, false);
+  ::grpc::testing::InitTest(&argc, &argv, false);
   ::benchmark::RunSpecifiedBenchmarks();
 }
