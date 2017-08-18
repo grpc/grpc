@@ -35,7 +35,7 @@ def do_div(stub)
   GRPC.logger.info('----------------')
   req = Math::DivArgs.new(dividend: 7, divisor: 3)
   GRPC.logger.info("div(7/3): req=#{req.inspect}")
-  resp = stub.div(req, timeout: INFINITE_FUTURE)
+  resp = stub.div(req, deadline: INFINITE_FUTURE)
   GRPC.logger.info("Answer: #{resp.inspect}")
   GRPC.logger.info('----------------')
 end
@@ -56,7 +56,7 @@ def do_fib(stub)
   GRPC.logger.info('----------------')
   req = Math::FibArgs.new(limit: 11)
   GRPC.logger.info("fib(11): req=#{req.inspect}")
-  resp = stub.fib(req, timeout: INFINITE_FUTURE)
+  resp = stub.fib(req, deadline: INFINITE_FUTURE)
   resp.each do |r|
     GRPC.logger.info("Answer: #{r.inspect}")
   end
@@ -71,7 +71,7 @@ def do_div_many(stub)
   reqs << Math::DivArgs.new(dividend: 5, divisor: 2)
   reqs << Math::DivArgs.new(dividend: 7, divisor: 2)
   GRPC.logger.info("div(7/3), div(5/2), div(7/2): reqs=#{reqs.inspect}")
-  resp = stub.div_many(reqs, timeout: INFINITE_FUTURE)
+  resp = stub.div_many(reqs, deadline: INFINITE_FUTURE)
   resp.each do |r|
     GRPC.logger.info("Answer: #{r.inspect}")
   end
@@ -110,16 +110,15 @@ def main
 
   p options
   if options['secure']
-    stub_opts = {
-      :creds => test_creds,
+    channel_args = {
       GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.fr'
     }
-    p stub_opts
+    p channel_args
     p options['host']
-    stub = Math::Math::Stub.new(options['host'], **stub_opts)
+    stub = Math::Math::Stub.new(options['host'], test_creds, channel_args: channel_args)
     GRPC.logger.info("... connecting securely on #{options['host']}")
   else
-    stub = Math::Math::Stub.new(options['host'])
+    stub = Math::Math::Stub.new(options['host'], :this_channel_is_insecure)
     GRPC.logger.info("... connecting insecurely on #{options['host']}")
   end
 
