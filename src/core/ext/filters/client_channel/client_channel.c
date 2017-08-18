@@ -2156,7 +2156,7 @@ typedef struct {
   grpc_closure closure;
 } pick_after_resolver_result_args;
 
-// Note: This runs under the client_channel combiner, but may NOT be
+// Note: This runs under the client_channel combiner, but will NOT be
 // holding the call combiner.
 static void pick_after_resolver_result_cancel_locked(grpc_exec_ctx *exec_ctx,
                                                      void *arg,
@@ -2251,7 +2251,7 @@ static void pick_after_resolver_result_start_locked(grpc_exec_ctx *exec_ctx,
                         grpc_combiner_scheduler(chand->combiner)));
 }
 
-// Note: This runs under the client_channel combiner, but may NOT be
+// Note: This runs under the client_channel combiner, but will NOT be
 // holding the call combiner.
 static void pick_callback_cancel_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                         grpc_error *error) {

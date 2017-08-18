@@ -61,8 +61,9 @@ void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
   if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
     gpr_log(GPR_DEBUG,
             "==> grpc_call_combiner_start() [%p] closure=%p [" DEBUG_FMT_STR
-            "%s]",
-            call_combiner, closure DEBUG_FMT_ARGS, reason);
+            "%s] error=%s",
+            call_combiner, closure DEBUG_FMT_ARGS, reason,
+            grpc_error_string(error));
   }
   size_t prev_size =
       (size_t)gpr_atm_full_fetch_add(&call_combiner->size, (gpr_atm)1);
@@ -118,7 +119,8 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
         continue;
       }
       if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
-        gpr_log(GPR_DEBUG, "  EXECUTING FROM QUEUE: closure=%p", closure);
+        gpr_log(GPR_DEBUG, "  EXECUTING FROM QUEUE: closure=%p error=%s",
+                closure, grpc_error_string(closure->error_data.error));
       }
       GRPC_CLOSURE_SCHED(exec_ctx, closure, closure->error_data.error);
       break;
