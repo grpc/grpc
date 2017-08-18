@@ -63,6 +63,9 @@ class ChannelArguments {
   // TODO(yangg) add flow control options
   /// Set the compression algorithm for the channel.
   void SetCompressionAlgorithm(grpc_compression_algorithm algorithm);
+  /// Set the stream compression algorithm for the channel.
+  void SetStreamCompressionAlgorithm(
+      grpc_stream_compression_algorithm algorithm);
 
   /// Set the socket mutator for the channel.
   void SetSocketMutator(grpc_socket_mutator* mutator);

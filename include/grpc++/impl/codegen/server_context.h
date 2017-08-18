@@ -193,6 +193,13 @@ class ServerContext {
   /// \param algorithm The compression algorithm used for the server call.
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
 
+  /// Set \a algorithm to be the stream compression algorithm used for the
+  /// server call.
+  /// \param algorithm The stream compression algorithm used for the server
+  /// call.
+  void set_stream_compression_algorithm(
+      grpc_stream_compression_algorithm algorithm);
+
   /// Set the load reporting costs in \a cost_data for the call.
   void SetLoadReportingCosts(const std::vector<grpc::string>& cost_data);
 

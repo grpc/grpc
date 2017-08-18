@@ -290,6 +290,13 @@ class ClientContext {
   /// \param algorithm The compression algorithm used for the client call.
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
 
+  /// Set \a algorithm to be the stream compression algorithm used for the
+  /// client call.
+  /// \param algorithm The stream compression algorithm used for the client
+  /// call.
+  void set_stream_compression_algorithm(
+      grpc_stream_compression_algorithm algorithm);
+
   /// Flag whether the initial metadata should be \a corked
   ///
   /// If \a corked is true, then the initial metadata will be coalesced with the

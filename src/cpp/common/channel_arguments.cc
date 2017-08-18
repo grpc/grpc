@@ -86,6 +86,11 @@ void ChannelArguments::SetCompressionAlgorithm(
   SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, algorithm);
 }
 
+void ChannelArguments::SetStreamCompressionAlgorithm(
+    grpc_stream_compression_algorithm algorithm) {
+  SetInt(GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, algorithm);
+}
+
 void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
   if (!mutator) {
     return;

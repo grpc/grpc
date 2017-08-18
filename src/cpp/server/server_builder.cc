@@ -54,10 +54,16 @@ ServerBuilder::ServerBuilder()
   // all compression algorithms enabled by default.
   enabled_compression_algorithms_bitset_ =
       (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
+  enabled_stream_compression_algorithms_bitset_ =
+      (1u << GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT) - 1;
   memset(&maybe_default_compression_level_, 0,
          sizeof(maybe_default_compression_level_));
+  memset(&maybe_default_stream_compression_level_, 0,
+         sizeof(maybe_default_stream_compression_level_));
   memset(&maybe_default_compression_algorithm_, 0,
          sizeof(maybe_default_compression_algorithm_));
+  memset(&maybe_default_stream_compression_algorithm_, 0,
+         sizeof(maybe_default_stream_compression_algorithm_));
 }
 
 ServerBuilder::~ServerBuilder() {
@@ -133,9 +139,25 @@ ServerBuilder& ServerBuilder::SetCompressionAlgorithmSupportStatus(
   return *this;
 }
 
+ServerBuilder& ServerBuilder::SetStreamCompressionAlgorithmSupportStatus(
+    grpc_stream_compression_algorithm algorithm, bool enabled) {
+  if (enabled) {
+    GPR_BITSET(&enabled_stream_compression_algorithms_bitset_, algorithm);
+  } else {
+    GPR_BITCLEAR(&enabled_stream_compression_algorithms_bitset_, algorithm);
+  }
+  return *this;
+}
+
 ServerBuilder& ServerBuilder::SetDefaultCompressionLevel(
     grpc_compression_level level) {
   maybe_default_compression_level_.level = level;
+  return *this;
+}
+
+ServerBuilder& ServerBuilder::SetDefaultStreamCompressionLevel(
+    grpc_stream_compression_level level) {
+  maybe_default_stream_compression_level_.level = level;
   return *this;
 }
 
@@ -143,6 +165,13 @@ ServerBuilder& ServerBuilder::SetDefaultCompressionAlgorithm(
     grpc_compression_algorithm algorithm) {
   maybe_default_compression_algorithm_.is_set = true;
   maybe_default_compression_algorithm_.algorithm = algorithm;
+  return *this;
+}
+
+ServerBuilder& ServerBuilder::SetDefaultStreamCompressionAlgorithm(
+    grpc_stream_compression_algorithm algorithm) {
+  maybe_default_stream_compression_algorithm_.is_set = true;
+  maybe_default_stream_compression_algorithm_.algorithm = algorithm;
   return *this;
 }
 
@@ -196,13 +225,23 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
 
   args.SetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
               enabled_compression_algorithms_bitset_);
+  args.SetInt(GRPC_STREAM_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
+              enabled_stream_compression_algorithms_bitset_);
   if (maybe_default_compression_level_.is_set) {
     args.SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL,
                 maybe_default_compression_level_.level);
   }
+  if (maybe_default_stream_compression_level_.is_set) {
+    args.SetInt(GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_LEVEL,
+                maybe_default_stream_compression_level_.level);
+  }
   if (maybe_default_compression_algorithm_.is_set) {
     args.SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
                 maybe_default_compression_algorithm_.algorithm);
+  }
+  if (maybe_default_stream_compression_algorithm_.is_set) {
+    args.SetInt(GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
+                maybe_default_stream_compression_algorithm_.algorithm);
   }
 
   if (resource_quota_ != nullptr) {
