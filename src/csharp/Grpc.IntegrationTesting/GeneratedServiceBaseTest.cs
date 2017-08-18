@@ -65,7 +65,7 @@ namespace Grpc.IntegrationTesting
         }
 
         [Test]
-        public async Task UnimplementedByDefault_ClientStreaming()
+        public void UnimplementedByDefault_ClientStreaming()
         {
             var call = client.StreamingInputCall();
 
@@ -74,7 +74,7 @@ namespace Grpc.IntegrationTesting
         }
 
         [Test]
-        public async Task UnimplementedByDefault_ServerStreamingCall()
+        public void UnimplementedByDefault_ServerStreamingCall()
         {
             var call = client.StreamingOutputCall(new StreamingOutputCallRequest());
 
@@ -83,7 +83,7 @@ namespace Grpc.IntegrationTesting
         }
 
         [Test]
-        public async Task UnimplementedByDefault_DuplexStreamingCall()
+        public void UnimplementedByDefault_DuplexStreamingCall()
         {
             var call = client.FullDuplexCall();
 
