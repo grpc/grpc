@@ -256,10 +256,10 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
     plugin_state *pState{ reinterpret_cast<plugin_state *>(ptr) };
     CallCredentialsData* const pCallCrendentials{ pState->pCallCredentials };
 
-    PluginMetadataInfo& pluginMetaDataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
-    PluginMetadataInfo::MetaDataInfo metaDataInfo{ pluginMetaDataInfo.getInfo(pCallCrendentials) };
+    //PluginMetadataInfo& pluginMetaDataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
+    //PluginMetadataInfo::MetaDataInfo metaDataInfo{ pluginMetaDataInfo.getInfo(pCallCrendentials) };
 
-    std::thread::id callThread{ std::get<1>(metaDataInfo) };
+//    std::thread::id callThread{ std::get<1>(metaDataInfo) };
    // if (callThread == std::this_thread::get_id())
     {
         HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata same thread") // Degug Trace

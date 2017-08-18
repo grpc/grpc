@@ -174,21 +174,17 @@ Object HHVM_METHOD(Server, requestCall)
 
     if (errorCode != GRPC_CALL_OK)
     {
-        std::stringstream oSS;
-        oSS << "request_call failed: " << errorCode << std::endl;
-        SystemLib::throwBadMethodCallExceptionObject(oSS.str());
+        return resultObj;
     }
 
     grpc_event event( grpc_completion_queue_pluck(pServerData->queue()->queue(), nullptr,
                                                   gpr_inf_future(GPR_CLOCK_REALTIME),
                                                   nullptr) );
 
-    if (event.success == 0 || event.type != GRPC_OP_COMPLETE )
+    if (event.type != GRPC_OP_COMPLETE )
     {
-        std::stringstream oSS;
-        oSS << "There was a problem with the request. Event success code: " << event.success
-            << " Type: " << event.type << std::endl;
-        SystemLib::throwBadMethodCallExceptionObject(oSS.str());
+        // return empty object
+        return resultObj;
     }
 
     callDetails.method_text = grpc_slice_to_c_string(callDetails.details.method);

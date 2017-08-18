@@ -550,17 +550,17 @@ Object HHVM_METHOD(Call, startBatch,
         }
     }
 
+    // without this try catch the completion queue will throw sometimes and bring down HHVM
     try
     {
-
-
-     //  grpc_completion_queue_next(pCallData->queue()->queue(),
-     //                              gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-        grpc_completion_queue_pluck(pCallData->queue()->queue(), pCallData->call(),
-                                    gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-
+        grpc_event event {grpc_completion_queue_pluck(pCallData->queue()->queue(), pCallData->call(),
+                                    gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)};
+        if (event.type != GRPC_OP_COMPLETE )
+        {
+            return resultObj;
+        }
     }
-   catch(...)
+    catch(...)
     {
         // don't abort just return empty result
         return resultObj;
