@@ -1371,11 +1371,18 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->fetching_send_message_finished = add_closure_barrier(op->on_complete);
     if (s->write_closed) {
+      // Return an error unless the client has already received trailing
+      // metadata from the server, since an application using a
+      // streaming call might send another message before getting a
+      // recv_message failure, breaking out of its loop, and then
+      // starting recv_trailing_metadata.
       grpc_chttp2_complete_closure_step(
           exec_ctx, t, s, &s->fetching_send_message_finished,
-          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-              "Attempt to send message after stream was closed",
-              &s->write_closed_error, 1),
+          t->is_client && s->received_trailing_metadata
+              ? GRPC_ERROR_NONE
+              : GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                    "Attempt to send message after stream was closed",
+                    &s->write_closed_error, 1),
           "fetching_send_message_finished");
     } else {
       GPR_ASSERT(s->fetching_send_message == NULL);
