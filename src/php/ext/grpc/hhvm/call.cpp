@@ -36,6 +36,7 @@
 #include "hphp/runtime/base/array-iterator.h"
 #include "hphp/runtime/base/memory-manager.h"
 #include "hphp/runtime/vm/native-data.h"
+#include "hphp/runtime/vm/vm-regs.h"
 
 #include "grpc/grpc_security.h"
 #include "grpc/support/alloc.h"
@@ -306,6 +307,8 @@ void HHVM_METHOD(Call, __construct,
 Object HHVM_METHOD(Call, startBatch,
                    const Array& actions) // array<int, mixed>
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Call startBatch") // Degug Trace
 
     Object resultObj{ SystemLib::AllocStdClassObject() };
