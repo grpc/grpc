@@ -538,8 +538,8 @@ Object HHVM_METHOD(Call, startBatch,
         }
     }
 
-    grpc_event event {grpc_completion_queue_pluck(pCallData->queue()->queue(), pCallData->call(),
-                                gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)};
+    grpc_event event (grpc_completion_queue_pluck(pCallData->queue()->queue(), pCallData->call(),
+                                gpr_inf_future(GPR_CLOCK_REALTIME), nullptr));
     if (event.type != GRPC_OP_COMPLETE )
     {
         return resultObj;
@@ -557,7 +557,8 @@ Object HHVM_METHOD(Call, startBatch,
         std::future_status status{ getPluginMetadataFuture.wait_for(std::chrono::milliseconds{ pCallData->getTimeout() }) };
         if (status == std::future_status::timeout)
         {
-            SystemLib::throwBadMethodCallExceptionObject("There was a problem with the request it timed out");
+            return resultObj;
+            //SystemLib::throwBadMethodCallExceptionObject("There was a problem with the request it timed out");
         }
         else
         {
