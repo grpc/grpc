@@ -72,16 +72,15 @@ def main
   end.parse!
 
   if options['secure']
-    stub_opts = {
-      :creds => test_creds,
+    channel_args = {
       GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.fr'
     }
-    p stub_opts
+    p channel_args
     p options['host']
-    stub = NoProtoStub.new(options['host'], **stub_opts)
+    stub = NoProtoStub.new(options['host'], test_creds, channel_args: channel_args)
     GRPC.logger.info("... connecting securely on #{options['host']}")
   else
-    stub = NoProtoStub.new(options['host'])
+    stub = NoProtoStub.new(options['host'], :this_channel_is_insecure)
     GRPC.logger.info("... connecting insecurely on #{options['host']}")
   end
 
