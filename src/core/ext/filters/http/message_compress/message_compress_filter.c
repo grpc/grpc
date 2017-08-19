@@ -206,10 +206,13 @@ static grpc_error *process_send_initial_metadata(
 
   if (error != GRPC_ERROR_NONE) return error;
 
-  error = grpc_metadata_batch_add_tail(
-      exec_ctx, initial_metadata, &calld->accept_stream_encoding_storage,
-      GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(
-          channeld->supported_stream_compression_algorithms));
+  /* Do not overwrite accept-encoding header if it already presents. */
+  if (!initial_metadata->idx.named.accept_encoding) {
+    error = grpc_metadata_batch_add_tail(
+        exec_ctx, initial_metadata, &calld->accept_stream_encoding_storage,
+        GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(
+            channeld->supported_stream_compression_algorithms));
+  }
 
   return error;
 }
