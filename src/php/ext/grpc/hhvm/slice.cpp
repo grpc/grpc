@@ -69,10 +69,7 @@ Slice::Slice(const Slice& otherSlice)
 
 Slice::Slice(Slice&& otherSlice)
 {
-    // move is emulated as copy since when otherSlice goes out of scope
-    // it will decrease its refcount but now this slice will hold it
     m_Slice = otherSlice.m_Slice;
-    increaseRef();
 }
 
 Slice& Slice::operator=(const Slice& rhsSlice)
