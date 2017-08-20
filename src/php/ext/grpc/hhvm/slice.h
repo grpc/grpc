@@ -26,6 +26,7 @@
 #endif
 
 #include "hphp/runtime/ext/extension.h"
+#include "hphp/runtime/base/string-util.h"
 
 #include "grpc/grpc.h"
 #include "grpc/slice.h"
@@ -36,6 +37,7 @@ class Slice
 public:
     // constructors/descructors
     Slice(void) : m_Slice( grpc_empty_slice() ) {}
+    Slice(HPHP::String string);
     Slice(const char* const string);
     Slice(const char* const string, const size_t length);
     Slice(const grpc_byte_buffer* const buffer);
@@ -51,6 +53,7 @@ public:
     const uint8_t* const data(void) const;
     const grpc_slice& slice(void) const { return m_Slice; }
     grpc_slice& slice(void) { return m_Slice; } // several methods need non const &
+    HPHP::String string(void);
     void increaseRef(void);
     grpc_byte_buffer* const byteBuffer(void) const;
 

@@ -31,6 +31,12 @@
 /*                                   Slice                                   */
 /*****************************************************************************/
 
+Slice::Slice(HPHP::String string)
+{
+  size_t length { static_cast<size_t>(string.size()) };
+  m_Slice = grpc_slice_from_copied_buffer(string.c_str(), length);
+}
+
 Slice::Slice(const char* const string)
 {
     m_Slice = string ? grpc_slice_from_copied_string(string) :
@@ -96,6 +102,8 @@ Slice& Slice::operator=(Slice&& rhsSlice)
     return *this;
 }
 
+// Note: Just casting this to a "char *" can read past
+// the end of the string and into other memory
 const uint8_t* const Slice::data(void) const
 {
     static char* emptyString{""};
@@ -108,6 +116,11 @@ grpc_byte_buffer* const Slice::byteBuffer(void) const
 {
     grpc_slice* const pSlice{ const_cast<grpc_slice*>(&m_Slice) };
     return const_cast<grpc_byte_buffer* const>(grpc_raw_byte_buffer_create(pSlice, 1));
+}
+
+HPHP::String Slice::string(void)
+{
+  return HPHP::String{ reinterpret_cast<const char*>(data()), length(), HPHP::CopyString };
 }
 
 void Slice::destroy(void)

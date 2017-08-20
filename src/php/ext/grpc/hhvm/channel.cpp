@@ -114,7 +114,7 @@ bool ChannelArgs::init(const Array& argsArray)
     destroyArgs();
 
     size_t elements{ static_cast<size_t>(argsArray.size()) };
-    std::vector<std::pair<char*, char*>> channelArgs;
+    std::vector<std::pair<const char*, const char*>> channelArgs;
     if (elements > 0)
     {
         #if HHVM_VERSION_MAJOR >= 3 && HHVM_VERSION_MINOR >= 19 || HHVM_VERSION_MAJOR > 3
@@ -132,7 +132,7 @@ bool ChannelArgs::init(const Array& argsArray)
                 destroyArgs();
                 return false;
             }
-            Slice keySlice{ key.toString().c_str() };
+            Slice keySlice{ key.toString() };
 
             Variant value{ iter.second() };
             if (!value.isNull())
@@ -141,7 +141,7 @@ bool ChannelArgs::init(const Array& argsArray)
                 {
                     // convert and store PHP data
                     int32_t valueInt{ value.toInt32() };
-                    Slice valueSlice{ std::to_string(valueInt).c_str() };
+                    Slice valueSlice{ std::to_string(valueInt) };
                     m_PHPData.emplace_back(keySlice, valueSlice);
 
                     m_ChannelArgs.args[count].value.integer = valueInt;
@@ -151,10 +151,9 @@ bool ChannelArgs::init(const Array& argsArray)
                 {
                     // convert and store PHP data
                     String valueStr{ value.toString() };
-                    Slice valueSlice{ valueStr.c_str() };
+                    Slice valueSlice{ valueStr };
                     m_PHPData.emplace_back(keySlice, valueSlice);
-
-                    m_ChannelArgs.args[count].value.string = reinterpret_cast<char*>(const_cast<uint8_t*>(m_PHPData[count].second.data()));
+                    m_ChannelArgs.args[count].value.string = m_PHPData[count].second.string().mutableData();
                     m_ChannelArgs.args[count].type = GRPC_ARG_STRING;
                 }
                 else
@@ -162,9 +161,8 @@ bool ChannelArgs::init(const Array& argsArray)
                     destroyArgs();
                     return false;
                 }
-                m_ChannelArgs.args[count].key = reinterpret_cast<char*>(const_cast<uint8_t*>(m_PHPData[count].first.data()));
-                channelArgs.emplace_back(reinterpret_cast<char*>(const_cast<uint8_t*>(m_PHPData[count].first.data())),
-                                         reinterpret_cast<char*>(const_cast<uint8_t*>(m_PHPData[count].second.data())));
+                m_ChannelArgs.args[count].key = m_PHPData[count].first.string().mutableData();
+                channelArgs.emplace_back(m_PHPData[count].first.string().c_str(), m_PHPData[count].second.string().c_str());
             }
             else
             {
@@ -178,8 +176,8 @@ bool ChannelArgs::init(const Array& argsArray)
     }
 
     // sort the channel arguments via key then value
-    auto sortLambda = [](const std::pair<char*, char*>& pair1,
-                         const std::pair<char*, char*>& pair2)
+    auto sortLambda = [](const std::pair<const char*, const char*>& pair1,
+                         const std::pair<const char*, const char*>& pair2)
     {
         int keyCmp{ strcmp(pair1.first, pair2.first) };
         if (keyCmp != 0)
@@ -197,6 +195,7 @@ bool ChannelArgs::init(const Array& argsArray)
     {
         m_ConcatenatedArgs += String{ argPair.first } + String{ argPair.second };
     }
+
     m_HashKey = StringUtil::SHA1(m_ConcatenatedArgs, false);
 
     return true;

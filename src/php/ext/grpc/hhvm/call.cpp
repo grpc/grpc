@@ -172,8 +172,8 @@ bool MetadataArray::init(const Array& phpArray, const bool ownPHP)
         {
             Variant value2{ iter2.second() };
             String value2Str{ value2.toString() };
-            Slice keySlice{ key.toString().c_str() };
-            Slice valueSlice{ value2Str.c_str(), static_cast<size_t>(value2Str.size()) };
+            Slice keySlice{ key.toString() };
+            Slice valueSlice{ value2Str };
             m_PHPData.emplace_back(keySlice, valueSlice);
 
             m_Array.metadata[elem].key = m_PHPData[elem].first.slice();
@@ -267,6 +267,9 @@ void HHVM_METHOD(Call, __construct,
 {
     HHVM_TRACE_SCOPE("Call construct") // Degug Trace
 
+    Slice method_slice;
+    Slice host_slice;
+
     CallData* const pCallData{ Native::data<CallData>(this_) };
     ChannelData* const pChannelData{ Native::data<ChannelData>(channel_obj) };
 
@@ -278,9 +281,8 @@ void HHVM_METHOD(Call, __construct,
 
     TimevalData* const pDeadlineTimevalData{ Native::data<TimevalData>(deadline_obj) };
 
-    Slice method_slice{ !method.empty() ? method.c_str() : nullptr };
-    Slice host_slice{ !host_override.isNull() && host_override.isString() ?
-                       host_override.toString().c_str() : nullptr };
+    method_slice = !method.empty() ? Slice{ method } : Slice{ };
+    host_slice = !host_override.isNull() && host_override.isString() ? Slice{ host_override.toString() } : Slice { };
 
     std::unique_ptr<CompletionQueue> pCompletionQueue{ CompletionQueue::getClientQueue() };
 
@@ -432,8 +434,7 @@ Object HHVM_METHOD(Call, startBatch,
                 }
                 // convert string to byte buffer and store message in managed data
                 String messageValueString{ messageValue.toString() };
-                const Slice send_message{ messageValueString.c_str(),
-                                          static_cast<size_t>(messageValueString.size()) };
+                const Slice send_message{ messageValueString };
                 opsManaged.send_message = send_message.byteBuffer();
                 ops[op_num].data.send_message.send_message = opsManaged.send_message;
             }
@@ -489,7 +490,7 @@ Object HHVM_METHOD(Call, startBatch,
                 SystemLib::throwInvalidArgumentExceptionObject("Status details must be a string");
             }
 
-            Slice innerDetailsSlice{ innerDetails.toString().c_str() };
+            Slice innerDetailsSlice{ innerDetails.toString() };
             opsManaged.send_status_details = innerDetailsSlice;
             ops[op_num].data.send_status_from_server.status_details = &opsManaged.send_status_details.slice();
             break;
