@@ -74,7 +74,7 @@ void DefaultPermRootCerts::setCerts(const String& permRootsCerts)
 
     // copy new certs
     size_t length{ static_cast<size_t>(permRootsCerts.length() + 1) }; // length + null
-    char* const m_pPermRootCerts{ reinterpret_cast<char *>(gpr_malloc(length)) };
+    m_pPermRootCerts = reinterpret_cast<char *>(gpr_malloc(length));
     std::memcpy(reinterpret_cast<void*>(m_pPermRootCerts),
                 reinterpret_cast<const void*>(permRootsCerts.c_str()), length);
 }
