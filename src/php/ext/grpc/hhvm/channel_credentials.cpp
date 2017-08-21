@@ -74,7 +74,6 @@ void DefaultPermRootCerts::setCerts(const String& permRootsCerts)
     std::unique_lock<std::shared_timed_mutex> lock{ s_DefaultPermRootCertsMutex };
 
     if (m_PermRootCerts.string() == permRootsCerts) return;
-    std::cout << "setCerts" << std::endl;
 
     // copy new certs
     m_PermRootCerts = Slice { permRootsCerts };
