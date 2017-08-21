@@ -42,7 +42,8 @@ DefaultPermRootCerts::DefaultPermRootCerts(void) : m_pPermRootCerts{ nullptr }
 
 DefaultPermRootCerts::~DefaultPermRootCerts(void)
 {
-    destroy();
+    // Appears to cause segfaults sometimes
+    //destroy();
 }
 
 void DefaultPermRootCerts::destroy(void)
