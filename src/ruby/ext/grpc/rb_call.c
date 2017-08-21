@@ -905,6 +905,9 @@ static void Init_grpc_error_codes() {
   rb_define_const(grpc_rb_mRpcErrors, "INVALID_FLAGS",
                   UINT2NUM(GRPC_CALL_ERROR_INVALID_FLAGS));
 
+  /* Hint the GC that this is a global and shouldn't be sweeped. */
+  rb_global_variable(&rb_error_code_details);
+
   /* Add the detail strings to a Hash */
   rb_error_code_details = rb_hash_new();
   rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_OK),
