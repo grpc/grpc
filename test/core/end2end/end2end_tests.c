@@ -132,13 +132,11 @@ extern void simple_metadata(grpc_end2end_test_config config);
 extern void simple_metadata_pre_init(void);
 extern void simple_request(grpc_end2end_test_config config);
 extern void simple_request_pre_init(void);
-extern void stream_compression_compressed_payload(
-    grpc_end2end_test_config config);
+extern void stream_compression_compressed_payload(grpc_end2end_test_config config);
 extern void stream_compression_compressed_payload_pre_init(void);
 extern void stream_compression_payload(grpc_end2end_test_config config);
 extern void stream_compression_payload_pre_init(void);
-extern void stream_compression_ping_pong_streaming(
-    grpc_end2end_test_config config);
+extern void stream_compression_ping_pong_streaming(grpc_end2end_test_config config);
 extern void stream_compression_ping_pong_streaming_pre_init(void);
 extern void streaming_error_response(grpc_end2end_test_config config);
 extern void streaming_error_response_pre_init(void);
