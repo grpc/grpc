@@ -96,26 +96,28 @@ namespace Grpc.Core.Tests
 
             var defaultStatus = new Status(StatusCode.Unknown, "Default mock implementation. Please provide your own.");
 
-            unaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            unaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 context.Status = defaultStatus;
-                return "";
+                return Task.FromResult("");
             });
 
-            clientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
+            clientStreamingHandler = new ClientStreamingServerMethod<string, string>((requestStream, context) =>
             {
                 context.Status = defaultStatus;
-                return "";
+                return Task.FromResult("");
             });
 
-            serverStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
+            serverStreamingHandler = new ServerStreamingServerMethod<string, string>((request, responseStream, context) =>
             {
                 context.Status = defaultStatus;
+                return TaskUtils.CompletedTask;
             });
 
-            duplexStreamingHandler = new DuplexStreamingServerMethod<string, string>(async (requestStream, responseStream, context) =>
+            duplexStreamingHandler = new DuplexStreamingServerMethod<string, string>((requestStream, responseStream, context) =>
             {
                 context.Status = defaultStatus;
+                return TaskUtils.CompletedTask;
             });
         }
 

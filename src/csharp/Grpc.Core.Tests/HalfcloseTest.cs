@@ -62,9 +62,9 @@ namespace Grpc.Core.Tests
         [Test]
         public async Task HalfcloseAfterFullclose_ClientStreamingCall()
         {
-            helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
+            helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>((requestStream, context) =>
             {
-                return "PASS";
+                return Task.FromResult("PASS");
             });
 
             var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall());

@@ -33,20 +33,24 @@ void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator, const char *name) {
   estimator->bw_est = 0;
 }
 
-bool grpc_bdp_estimator_get_estimate(grpc_bdp_estimator *estimator,
+bool grpc_bdp_estimator_get_estimate(const grpc_bdp_estimator *estimator,
                                      int64_t *estimate) {
   *estimate = estimator->estimate;
   return true;
 }
 
-bool grpc_bdp_estimator_get_bw(grpc_bdp_estimator *estimator, double *bw) {
+bool grpc_bdp_estimator_get_bw(const grpc_bdp_estimator *estimator,
+                               double *bw) {
   *bw = estimator->bw_est;
   return true;
 }
 
-bool grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
+void grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
                                            int64_t num_bytes) {
   estimator->accumulator += num_bytes;
+}
+
+bool grpc_bdp_estimator_need_ping(const grpc_bdp_estimator *estimator) {
   switch (estimator->ping_state) {
     case GRPC_BDP_PING_UNSCHEDULED:
       return true;
