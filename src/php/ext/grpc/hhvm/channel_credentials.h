@@ -24,6 +24,7 @@
 #endif
 
 #include "common.h"
+#include "slice.h"
 
 #include "hphp/runtime/ext/extension.h"
 
@@ -43,14 +44,13 @@ struct DefaultPermRootCerts
 {
 public:
     // constructors/destructors
-    ~DefaultPermRootCerts(void);
     DefaultPermRootCerts(const DefaultPermRootCerts& otherDefaultPermRootCerts) = delete;
     DefaultPermRootCerts(DefaultPermRootCerts&& otherDefaultPermRootCerts) = delete;
     DefaultPermRootCerts& operator=(const DefaultPermRootCerts& rhsDefaultPermRootCerts) = delete;
     DefaultPermRootCerts& operator=(DefaultPermRootCerts&& rhsDefaultPermRootCerts) = delete;
 
     // interface functions
-    const char* const getCerts(void) const { return m_pPermRootCerts; }
+    Slice getCerts(void);
     void setCerts(const String& permRootsCerts);
     static grpc_ssl_roots_override_result get_ssl_roots_override(char** pPermRootsCerts);
 
@@ -61,11 +61,8 @@ private:
     // private constructor
     DefaultPermRootCerts(void);
 
-    // helper functions
-    void destroy(void);
-
     // member variables
-    char* m_pPermRootCerts{nullptr};
+    Slice m_PermRootCerts;
 };
 
 /*****************************************************************************/

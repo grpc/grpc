@@ -26,6 +26,7 @@
 #include "common.h"
 
 #include "grpc/byte_buffer_reader.h"
+#include "grpc/support/alloc.h"
 
 /*****************************************************************************/
 /*                                   Slice                                   */
@@ -124,6 +125,27 @@ grpc_byte_buffer* const Slice::byteBuffer(void) const
 HPHP::String Slice::string(void)
 {
   return HPHP::String{ reinterpret_cast<const char*>(data()), length(), HPHP::CopyString };
+}
+
+// Make an explicit copy of c strings
+char *Slice::c_str(void)
+{
+    const char *currentData { reinterpret_cast<const char *>(data()) };
+    size_t cStrLen { length() };
+    char *cStr;
+
+    if (currentData[cStrLen-1] != '\0')
+    {
+        // Append on a null byte
+        cStr = reinterpret_cast<char *>(gpr_zalloc(cStrLen + 1));
+    } else {
+        cStr = reinterpret_cast<char *>(gpr_zalloc(cStrLen));
+    }
+
+    std::memcpy(reinterpret_cast<void*>(cStr),
+                reinterpret_cast<const void*>(currentData), cStrLen);
+
+    return cStr;
 }
 
 void Slice::destroy(void)

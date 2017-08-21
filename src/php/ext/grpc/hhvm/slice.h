@@ -54,6 +54,7 @@ public:
     const grpc_slice& slice(void) const { return m_Slice; }
     grpc_slice& slice(void) { return m_Slice; } // several methods need non const &
     HPHP::String string(void);
+    char *c_str(void);
     void increaseRef(void);
     grpc_byte_buffer* const byteBuffer(void) const;
 

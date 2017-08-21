@@ -16,6 +16,8 @@
  *
  */
 
+#include <shared_mutex>
+
 #ifdef HAVE_CONFIG_H
     #include "config.h"
 #endif
@@ -35,29 +37,19 @@ namespace HPHP {
 /*                     Default Permanent Root Certificates                   */
 /*****************************************************************************/
 
+static std::shared_timed_mutex s_DefaultPermRootCertsMutex;
 
-DefaultPermRootCerts::DefaultPermRootCerts(void) : m_pPermRootCerts{ nullptr }
+DefaultPermRootCerts::DefaultPermRootCerts(void) : m_PermRootCerts{}
 {
-}
-
-DefaultPermRootCerts::~DefaultPermRootCerts(void)
-{
-    // Appears to cause segfaults sometimes
-    //destroy();
-}
-
-void DefaultPermRootCerts::destroy(void)
-{
-    if (m_pPermRootCerts)
-    {
-        gpr_free(m_pPermRootCerts);
-        m_pPermRootCerts = nullptr;
-    }
 }
 
 grpc_ssl_roots_override_result DefaultPermRootCerts::get_ssl_roots_override(char** pPermRootsCerts)
 {
-    *pPermRootsCerts = const_cast<char*>(getDefaultPermRootCerts().getCerts());
+    // The output of this function (the char *) is gpr_free'd by the calling function
+    // so we must std::memcpy it before passing it to pPermRootsCerts
+    // if we also want to manage it ourselves / share it with others
+
+    *pPermRootsCerts = getDefaultPermRootCerts().getCerts().c_str();
     if (!(*pPermRootsCerts))
     {
         return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
@@ -68,21 +60,28 @@ grpc_ssl_roots_override_result DefaultPermRootCerts::get_ssl_roots_override(char
     }
 }
 
+Slice DefaultPermRootCerts::getCerts(void)
+{
+    std::shared_lock<std::shared_timed_mutex> lock{ s_DefaultPermRootCertsMutex };
+    return m_PermRootCerts;
+}
+
 void DefaultPermRootCerts::setCerts(const String& permRootsCerts)
 {
-    // destroy and existing perm certs
-    destroy();
+    // optimistic locking
+    if (getCerts().string() == permRootsCerts) return;
+
+    std::unique_lock<std::shared_timed_mutex> lock{ s_DefaultPermRootCertsMutex };
+
+    if (m_PermRootCerts.string() == permRootsCerts) return;
+    std::cout << "setCerts" << std::endl;
 
     // copy new certs
-    size_t length{ static_cast<size_t>(permRootsCerts.length() + 1) }; // length + null
-    m_pPermRootCerts = reinterpret_cast<char *>(gpr_malloc(length));
-    std::memcpy(reinterpret_cast<void*>(m_pPermRootCerts),
-                reinterpret_cast<const void*>(permRootsCerts.c_str()), length);
+    m_PermRootCerts = Slice { permRootsCerts };
 }
 
 DefaultPermRootCerts& DefaultPermRootCerts::getDefaultPermRootCerts(void)
 {
-    // Each client gets a completion queue for the thread it is runnin in
     static DefaultPermRootCerts s_DefaultPermRootCerts{};
     return s_DefaultPermRootCerts;
 }
