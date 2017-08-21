@@ -14,7 +14,6 @@
 
 
 cdef bytes _slice_bytes(grpc_slice slice)
-cdef grpc_slice _copy_slice(grpc_slice slice) nogil
 cdef grpc_slice _slice_from_bytes(bytes value) nogil
 
 
@@ -87,13 +86,12 @@ cdef class ChannelArgs:
 cdef class Metadatum:
 
   cdef grpc_metadata c_metadata
-  cdef void _copy_metadatum(self, grpc_metadata *destination) nogil
 
 
 cdef class Metadata:
 
+  cdef int _init_md_count
   cdef grpc_metadata_array c_metadata_array
-  cdef void _claim_slice_ownership(self)
 
 
 cdef class Operation:
