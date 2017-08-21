@@ -694,11 +694,10 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
 }
 
 static const grpc_lb_policy_factory_vtable pick_first_factory_vtable = {
-    pick_first_factory_ref, pick_first_factory_unref, create_pick_first,
-    "pick_first"};
+    pick_first_factory_ref, pick_first_factory_unref, create_pick_first};
 
 static grpc_lb_policy_factory pick_first_lb_policy_factory = {
-    &pick_first_factory_vtable};
+    &pick_first_factory_vtable, "pick_first"};
 
 static grpc_lb_policy_factory *pick_first_lb_factory_create() {
   return &pick_first_lb_policy_factory;
