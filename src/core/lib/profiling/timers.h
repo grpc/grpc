@@ -37,7 +37,8 @@ void gpr_timers_set_log_filename(const char *filename);
 
 void gpr_timer_set_enabled(int enabled);
 
-#if !(defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER))
+#if !(defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER) + \
+      defined(GRPC_CUSTOM_PROFILER))
 /* No profiling. No-op all the things. */
 #define GPR_TIMER_MARK(tag, important) \
   do {                                 \
@@ -55,6 +56,12 @@ void gpr_timer_set_enabled(int enabled);
 /* ... hopefully only one. */
 #if defined(GRPC_STAP_PROFILER) && defined(GRPC_BASIC_PROFILER)
 #error "GRPC_STAP_PROFILER and GRPC_BASIC_PROFILER are mutually exclusive."
+#endif
+#if defined(GRPC_STAP_PROFILER) && defined(GRPC_CUSTOM_PROFILER)
+#error "GRPC_STAP_PROFILER and GRPC_CUSTOM_PROFILER are mutually exclusive."
+#endif
+#if defined(GRPC_CUSTOM_PROFILER) && defined(GRPC_BASIC_PROFILER)
+#error "GRPC_CUSTOM_PROFILER and GRPC_BASIC_PROFILER are mutually exclusive."
 #endif
 
 /* Generic profiling interface. */
@@ -80,7 +87,8 @@ void gpr_timer_set_enabled(int enabled);
 #ifdef __cplusplus
 }
 
-#if (defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER))
+#if (defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER) + \
+     defined(GRPC_CUSTOM_PROFILER))
 namespace grpc {
 class ProfileScope {
  public:
@@ -92,7 +100,7 @@ class ProfileScope {
  private:
   const char *const desc_;
 };
-}
+}  // namespace grpc
 
 #define GPR_TIMER_SCOPE(tag, important) \
   ::grpc::ProfileScope _profile_scope_##__LINE__((tag), (important))
