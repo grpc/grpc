@@ -330,7 +330,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                       s->stream_compression_ctx, &s->flow_controlled_buffer,
                       s->compressed_data_buffer, NULL, MAX_SIZE_T,
                       GRPC_STREAM_COMPRESSION_FLUSH_FINISH));
-                  grpc_stream_compression_context_destroy(s->stream_compression_ctx);
+                  grpc_stream_compression_context_destroy(
+                      s->stream_compression_ctx);
                   s->stream_compression_ctx = NULL;
                   /* After finish, bytes in s->compressed_data_buffer may be
                    * more than max_outgoing. Start another round of the current
