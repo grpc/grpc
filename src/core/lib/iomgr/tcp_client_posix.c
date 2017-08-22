@@ -41,6 +41,7 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -291,11 +292,17 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
     return;
   }
 
+   int flags = fcntl(fd, F_GETFL, 0);
+   GPR_ASSERT(flags > 0);
+   GPR_ASSERT(fcntl(fd, F_SETFL, flags & ~O_NONBLOCK) != -1);
+
   do {
     GPR_ASSERT(addr->len < ~(socklen_t)0);
     err =
         connect(fd, (const struct sockaddr *)addr->addr, (socklen_t)addr->len);
   } while (err < 0 && errno == EINTR);
+
+  GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
 
   addr_str = grpc_sockaddr_to_uri(addr);
   gpr_asprintf(&name, "tcp-client:%s", addr_str);
