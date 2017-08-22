@@ -305,6 +305,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   if (err >= 0) {
     *ep =
         grpc_tcp_client_create_from_fd(exec_ctx, fdobj, channel_args, addr_str);
+    grpc_pollset_set_add_fd(exec_ctx, interested_parties, fdobj);
     grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
     goto done;
   }
