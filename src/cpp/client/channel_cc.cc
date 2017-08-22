@@ -41,7 +41,6 @@
 namespace grpc {
 
 namespace {
-const int kWaitForStateChangeTimeoutMsec = 100;
 void WatchStateChange(void* arg);
 }  // namespace
 
@@ -51,32 +50,33 @@ void WatchStateChange(void* arg);
 class ChannelConnectivityWatcher {
  public:
   explicit ChannelConnectivityWatcher(Channel* channel)
-      : channel_(channel), thd_id_(0), being_destroyed_(0) {}
+      : channel_(channel), thd_id_(0), shutting_down_(0) {}
 
   void WatchStateChangeImpl() {
     grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
     while (state != GRPC_CHANNEL_SHUTDOWN) {
-      if (gpr_atm_no_barrier_load(&being_destroyed_) == 1) {
+      channel_->WaitForStateChange(state, gpr_inf_future(GPR_CLOCK_REALTIME));
+      if (gpr_atm_no_barrier_load(&shutting_down_) == 1) {
         break;
       }
-      channel_->WaitForStateChange(
-          state,
-          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                       gpr_time_from_millis(kWaitForStateChangeTimeoutMsec,
-                                            GPR_TIMESPAN)));
       state = channel_->GetState(false);
     }
   }
 
   void StartWatching() {
-    gpr_thd_options options = gpr_thd_options_default();
-    gpr_thd_options_set_joinable(&options);
-    gpr_thd_new(&thd_id_, &WatchStateChange, this, &options);
+    const char* disabled_str =
+        std::getenv("GRPC_DISABLE_CHANNEL_CONNECTIVITY_WATCHER");
+    if (disabled_str == nullptr || strcmp(disabled_str, "1")) {
+      gpr_thd_options options = gpr_thd_options_default();
+      gpr_thd_options_set_joinable(&options);
+      gpr_thd_new(&thd_id_, &WatchStateChange, this, &options);
+    }
   }
+
+  void Shutdown() { gpr_atm_no_barrier_store(&shutting_down_, 1); }
 
   void Destroy() {
     if (thd_id_ != 0) {
-      gpr_atm_no_barrier_store(&being_destroyed_, 1);
       gpr_thd_join(thd_id_);
     }
   }
@@ -84,7 +84,7 @@ class ChannelConnectivityWatcher {
  private:
   Channel* channel_;
   gpr_thd_id thd_id_;
-  gpr_atm being_destroyed_;
+  gpr_atm shutting_down_;
 };
 
 namespace {
@@ -107,8 +107,9 @@ Channel::Channel(const grpc::string& host, grpc_channel* channel)
 }
 
 Channel::~Channel() {
-  connectivity_watcher_->Destroy();
+  connectivity_watcher_->Shutdown();
   grpc_channel_destroy(c_channel_);
+  connectivity_watcher_->Destroy();
 }
 
 namespace {

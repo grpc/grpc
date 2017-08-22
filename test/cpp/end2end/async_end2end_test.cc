@@ -272,6 +272,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     cq_->Shutdown();
     while (cq_->Next(&ignored_tag, &ignored_ok))
       ;
+    stub_.reset();
     poll_overrider_.reset();
     gpr_tls_set(&g_is_async_end2end_test, 0);
     grpc_recycle_unused_port(port_);
