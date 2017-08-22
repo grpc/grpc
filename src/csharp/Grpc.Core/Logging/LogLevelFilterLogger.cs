@@ -35,23 +35,23 @@ namespace Grpc.Core.Logging
         /// <summary>
         /// Creates and instance of <c>LogLevelFilter.</c>
         /// </summary>
-        public LogLevelFilterLogger(ILogger logger, LogLevel logLevel) : this(logger, logLevel, false)
+        public LogLevelFilterLogger(ILogger logger, LogLevel logLevel)
         {
+            this.innerLogger = GrpcPreconditions.CheckNotNull(logger);
+            this.logLevel = logLevel;
         }
 
         /// <summary>
         /// Creates and instance of <c>LogLevelFilter.</c>
         /// The <c>fromEnvironmentVariable</c> parameter allows looking up "GRPC_VERBOSITY" setting provided by C-core
-        /// and uses the same log level for C# logs. Using this setting is recommended as it makes the otherwise separate
-        /// C# and C-core logging settings work in lockstep and more intutively.
+        /// and uses the same log level for C# logs. Using this setting is recommended as it can prevent unintentionally hiding
+        /// C core logs requested by "GRPC_VERBOSITY" environment variable (which could happen if C# logger's log level was set to a more restrictive value).
         /// </summary>
         /// <param name="logger">the logger to forward filtered logs to.</param>
         /// <param name="defaultLogLevel">the default log level, unless overriden by env variable.</param>
         /// <param name="fromEnvironmentVariable">if <c>true</c>, override log level with setting from environment variable.</param>
-        public LogLevelFilterLogger(ILogger logger, LogLevel defaultLogLevel, bool fromEnvironmentVariable)
+        public LogLevelFilterLogger(ILogger logger, LogLevel defaultLogLevel, bool fromEnvironmentVariable) : this(logger, GetLogLevelFromEnvironment(defaultLogLevel, fromEnvironmentVariable))
         {
-            this.innerLogger = GrpcPreconditions.CheckNotNull(logger);
-            this.logLevel = GetLogLevelFromEnvironment(defaultLogLevel, fromEnvironmentVariable);
         }
 
         /// <summary>
