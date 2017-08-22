@@ -1830,8 +1830,7 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
         }
       }
     }
-    if (s->read_closed && s->frame_storage.length == 0 &&
-        (!pending_data || s->seen_error) &&
+    if (s->read_closed && s->frame_storage.length == 0 && !pending_data &&
         s->recv_trailing_metadata_finished != NULL) {
       grpc_chttp2_incoming_metadata_buffer_publish(
           exec_ctx, &s->metadata_buffer[1], s->recv_trailing_metadata);
