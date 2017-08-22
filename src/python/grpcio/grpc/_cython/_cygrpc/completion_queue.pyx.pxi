@@ -64,13 +64,10 @@ cdef class CompletionQueue:
         request_call_details = tag.request_call_details
         if tag.request_metadata is not None:
           request_metadata = tag.request_metadata
-          request_metadata._claim_slice_ownership()
         batch_operations = tag.batch_operations
         if tag.batch_operations is not None:
           for op in batch_operations.operations:
             batch_operation = <Operation>op
-            if batch_operation._received_metadata is not None:
-              batch_operation._received_metadata._claim_slice_ownership()
         if tag.is_new_request:
           # Stuff in the tag not explicitly handled by us needs to live through
           # the life of the call

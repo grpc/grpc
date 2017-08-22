@@ -495,20 +495,6 @@ cdef class Metadata:
   def __iter__(self):
     return _MetadataIterator(self)
 
-  cdef void _claim_slice_ownership(self):
-    cdef grpc_metadata_array new_c_metadata_array
-    grpc_metadata_array_init(&new_c_metadata_array)
-    new_c_metadata_array.metadata = <grpc_metadata *>gpr_malloc(
-        self.c_metadata_array.count*sizeof(grpc_metadata))
-    new_c_metadata_array.count = self.c_metadata_array.count
-    for i in range(self.c_metadata_array.count):
-      new_c_metadata_array.metadata[i].key = _copy_slice(
-          self.c_metadata_array.metadata[i].key)
-      new_c_metadata_array.metadata[i].value = _copy_slice(
-          self.c_metadata_array.metadata[i].value)
-    grpc_metadata_array_destroy(&self.c_metadata_array)
-    self.c_metadata_array = new_c_metadata_array
-
 
 cdef class Operation:
 
