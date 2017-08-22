@@ -31,9 +31,7 @@ struct grpc_channel;
 
 namespace grpc {
 class ChannelConnectivityWatcher;
-}
 
-namespace grpc {
 /// Channels represent a connection to an endpoint. Created by \a CreateChannel.
 class Channel final : public ChannelInterface,
                       public CallHook,

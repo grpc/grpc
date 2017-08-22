@@ -50,7 +50,7 @@ void WatchStateChange(void* arg);
 // support.
 class ChannelConnectivityWatcher {
  public:
-  ChannelConnectivityWatcher(Channel* channel)
+  explicit ChannelConnectivityWatcher(Channel* channel)
       : channel_(channel), thd_id_(0), being_destroyed_(0) {}
 
   void WatchStateChangeImpl() {
@@ -67,6 +67,7 @@ class ChannelConnectivityWatcher {
       state = channel_->GetState(false);
     }
   }
+
   void StartWatching() {
     gpr_thd_options options = gpr_thd_options_default();
     gpr_thd_options_set_joinable(&options);
