@@ -976,6 +976,7 @@ endpoint_pair_test: $(BINDIR)/$(CONFIG)/endpoint_pair_test
 error_test: $(BINDIR)/$(CONFIG)/error_test
 ev_epollsig_linux_test: $(BINDIR)/$(CONFIG)/ev_epollsig_linux_test
 fake_resolver_test: $(BINDIR)/$(CONFIG)/fake_resolver_test
+fake_transport_security_test: $(BINDIR)/$(CONFIG)/fake_transport_security_test
 fd_conservation_posix_test: $(BINDIR)/$(CONFIG)/fd_conservation_posix_test
 fd_posix_test: $(BINDIR)/$(CONFIG)/fd_posix_test
 fling_client: $(BINDIR)/$(CONFIG)/fling_client
@@ -1075,6 +1076,7 @@ sockaddr_resolver_test: $(BINDIR)/$(CONFIG)/sockaddr_resolver_test
 sockaddr_utils_test: $(BINDIR)/$(CONFIG)/sockaddr_utils_test
 socket_utils_test: $(BINDIR)/$(CONFIG)/socket_utils_test
 ssl_server_fuzzer: $(BINDIR)/$(CONFIG)/ssl_server_fuzzer
+ssl_transport_security_test: $(BINDIR)/$(CONFIG)/ssl_transport_security_test
 status_conversion_test: $(BINDIR)/$(CONFIG)/status_conversion_test
 stream_compression_test: $(BINDIR)/$(CONFIG)/stream_compression_test
 stream_owned_slice_test: $(BINDIR)/$(CONFIG)/stream_owned_slice_test
@@ -1366,6 +1368,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/error_test \
   $(BINDIR)/$(CONFIG)/ev_epollsig_linux_test \
   $(BINDIR)/$(CONFIG)/fake_resolver_test \
+  $(BINDIR)/$(CONFIG)/fake_transport_security_test \
   $(BINDIR)/$(CONFIG)/fd_conservation_posix_test \
   $(BINDIR)/$(CONFIG)/fd_posix_test \
   $(BINDIR)/$(CONFIG)/fling_client \
@@ -1448,6 +1451,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/sockaddr_resolver_test \
   $(BINDIR)/$(CONFIG)/sockaddr_utils_test \
   $(BINDIR)/$(CONFIG)/socket_utils_test \
+  $(BINDIR)/$(CONFIG)/ssl_transport_security_test \
   $(BINDIR)/$(CONFIG)/status_conversion_test \
   $(BINDIR)/$(CONFIG)/stream_compression_test \
   $(BINDIR)/$(CONFIG)/stream_owned_slice_test \
@@ -1788,6 +1792,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/ev_epollsig_linux_test || ( echo test ev_epollsig_linux_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fake_resolver_test"
 	$(Q) $(BINDIR)/$(CONFIG)/fake_resolver_test || ( echo test fake_resolver_test failed ; exit 1 )
+	$(E) "[RUN]     Testing fake_transport_security_test"
+	$(Q) $(BINDIR)/$(CONFIG)/fake_transport_security_test || ( echo test fake_transport_security_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fd_conservation_posix_test"
 	$(Q) $(BINDIR)/$(CONFIG)/fd_conservation_posix_test || ( echo test fd_conservation_posix_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fd_posix_test"
@@ -1936,6 +1942,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/sockaddr_utils_test || ( echo test sockaddr_utils_test failed ; exit 1 )
 	$(E) "[RUN]     Testing socket_utils_test"
 	$(Q) $(BINDIR)/$(CONFIG)/socket_utils_test || ( echo test socket_utils_test failed ; exit 1 )
+	$(E) "[RUN]     Testing ssl_transport_security_test"
+	$(Q) $(BINDIR)/$(CONFIG)/ssl_transport_security_test || ( echo test ssl_transport_security_test failed ; exit 1 )
 	$(E) "[RUN]     Testing status_conversion_test"
 	$(Q) $(BINDIR)/$(CONFIG)/status_conversion_test || ( echo test status_conversion_test failed ; exit 1 )
 	$(E) "[RUN]     Testing stream_compression_test"
@@ -9569,6 +9577,41 @@ endif
 endif
 
 
+FAKE_TRANSPORT_SECURITY_TEST_SRC = \
+    test/core/tsi/fake_transport_security_test.c \
+    test/core/tsi/transport_security_test_lib.c \
+
+FAKE_TRANSPORT_SECURITY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FAKE_TRANSPORT_SECURITY_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/fake_transport_security_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/fake_transport_security_test: $(FAKE_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(FAKE_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/fake_transport_security_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/fake_transport_security_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/transport_security_test_lib.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_fake_transport_security_test: $(FAKE_TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(FAKE_TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 FD_CONSERVATION_POSIX_TEST_SRC = \
     test/core/iomgr/fd_conservation_posix_test.c \
 
@@ -12733,6 +12776,41 @@ deps_ssl_server_fuzzer: $(SSL_SERVER_FUZZER_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(SSL_SERVER_FUZZER_OBJS:.o=.dep)
+endif
+endif
+
+
+SSL_TRANSPORT_SECURITY_TEST_SRC = \
+    test/core/tsi/ssl_transport_security_test.c \
+    test/core/tsi/transport_security_test_lib.c \
+
+SSL_TRANSPORT_SECURITY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SSL_TRANSPORT_SECURITY_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/ssl_transport_security_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/ssl_transport_security_test: $(SSL_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SSL_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/ssl_transport_security_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/ssl_transport_security_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/transport_security_test_lib.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_ssl_transport_security_test: $(SSL_TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SSL_TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
 endif
 endif
 
