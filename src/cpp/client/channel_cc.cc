@@ -101,7 +101,7 @@ Channel::Channel(const grpc::string& host, grpc_channel* channel)
       host_(host),
       c_channel_(channel) {
   g_gli_initializer.summon();
-  if (host != "inproc") {
+  if (grpc_channel_support_connectivity_watcher(channel)) {
     connectivity_watcher_->StartWatching();
   }
 }
