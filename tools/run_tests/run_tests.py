@@ -63,8 +63,8 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 }
 
 _POLLING_STRATEGIES = {
-  'linux': ['epollsig', 'poll', 'poll-cv'],
-# TODO(ctiller, sreecha): enable epoll1, epollex, epoll-thread-pool
+  'linux': ['epollsig', 'epoll1', 'poll', 'poll-cv'],
+# TODO(ctiller, sreecha): enable epollex, epoll-thread-pool
   'mac': ['poll'],
 }
 
@@ -1268,18 +1268,22 @@ argp.add_argument('--quiet_success',
                        'Useful when running many iterations of each test (argument -n).')
 argp.add_argument('--force_default_poller', default=False, action='store_const', const=True,
                   help='Don\'t try to iterate over many polling strategies when they exist')
+argp.add_argument('--force_use_pollers', default=None, type=str,
+                  help='Only use the specified comma-delimited list of polling engines. '
+                  'Example: --force_use_pollers epollsig,poll '
+                  ' (This flag has no effect if --force_default_poller flag is also used)')
 argp.add_argument('--max_time', default=-1, type=int, help='Maximum test runtime in seconds')
 argp.add_argument('--bq_result_table',
                   default='',
                   type=str,
                   nargs='?',
                   help='Upload test results to a specified BQ table.')
-argp.add_argument('--auto_set_flakes', default=True, type=bool,
-                  help='Set flakiness data from historic data')
+argp.add_argument('--disable_auto_set_flakes', default=False, const=True, action='store_const',
+                  help='Disable rerunning historically flaky tests')
 args = argp.parse_args()
 
 flaky_tests = set()
-if args.auto_set_flakes:
+if not args.disable_auto_set_flakes:
   try:
     flaky_tests = set(get_flaky_tests())
   except:
@@ -1287,6 +1291,8 @@ if args.auto_set_flakes:
 
 if args.force_default_poller:
   _POLLING_STRATEGIES = {}
+elif args.force_use_pollers:
+  _POLLING_STRATEGIES[platform_string()] = args.force_use_pollers.split(',')
 
 jobset.measure_cpu_costs = args.measure_cpu_costs
 
