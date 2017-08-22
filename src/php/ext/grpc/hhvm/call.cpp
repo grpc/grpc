@@ -546,7 +546,7 @@ Object HHVM_METHOD(Call, startBatch,
                                 gpr_inf_future(GPR_CLOCK_REALTIME), nullptr));
     if (event.type != GRPC_OP_COMPLETE )
     {
-        return resultObj;
+        goto finish;
     }
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
@@ -561,8 +561,7 @@ Object HHVM_METHOD(Call, startBatch,
         std::future_status status{ getPluginMetadataFuture.wait_for(std::chrono::milliseconds{ pCallData->getTimeout() }) };
         if (status == std::future_status::timeout)
         {
-            return resultObj;
-            //SystemLib::throwBadMethodCallExceptionObject("There was a problem with the request it timed out");
+            goto finish;
         }
         else
         {
@@ -576,6 +575,7 @@ Object HHVM_METHOD(Call, startBatch,
         }
     }
 
+finish:
     // process results of call
     for (size_t i{ 0 }; i < op_num; ++i)
     {
