@@ -451,7 +451,6 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobinUpdateInError) {
-  // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
   ResetStub("round_robin");
@@ -461,17 +460,15 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdateInError) {
   ports.emplace_back(servers_[0]->port_);
   SetNextResolution(ports);
   WaitForServer(0);
-  // Send RPCs. They should all go servers_[0]
+  // Send RPCs. They should all go to servers_[0]
   for (size_t i = 0; i < 10; ++i) SendRpc();
   EXPECT_EQ(10, servers_[0]->service_.request_count());
   EXPECT_EQ(0, servers_[1]->service_.request_count());
   EXPECT_EQ(0, servers_[2]->service_.request_count());
   servers_[0]->service_.ResetCounters();
 
-  // All servers, but one is shutdown.
+  // Shutdown one of the servers to be sent in the update.
   servers_[1]->Shutdown(false);
-  ports.clear();
-  ports.emplace_back(servers_[0]->port_);
   ports.emplace_back(servers_[1]->port_);
   ports.emplace_back(servers_[2]->port_);
   SetNextResolution(ports);
@@ -482,9 +479,6 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdateInError) {
   for (size_t i = 0; i < kNumServers; ++i) SendRpc();
   // The server in shutdown shouldn't receive any.
   EXPECT_EQ(0, servers_[1]->service_.request_count());
-
-  // Check LB policy name for the channel.
-  EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobinManyUpdates) {
