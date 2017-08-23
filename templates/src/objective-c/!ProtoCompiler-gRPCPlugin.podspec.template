@@ -2,7 +2,7 @@
 --- |
   # This file has been automatically generated from a template file.
   # Please make modifications to
-  # `templates/src/objective-c/!ProtoCompiler-gRPCPlugin.podspec.template`
+  # `templates/src/objective-c/ProtoCompiler-gRPCPlugin.podspec.template`
   # instead. This file can be regenerated from the template by running
   # `tools/buildgen/generate_projects.sh`.
 
@@ -43,7 +43,7 @@
     # Because CocoaPods installs pods in alphabetical order, beginning this pod's name with an
     # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
     # before them.
-    s.name     = '!ProtoCompiler-gRPCPlugin'
+    s.name     = 'ProtoCompiler-gRPCPlugin'
     v = '${settings.version}'
     s.version  = v
     s.summary  = 'The gRPC ProtoC plugin generates Objective-C files from .proto services.'
@@ -103,7 +103,7 @@
     s.preserve_paths = plugin
 
     # Restrict the protoc version to the one supported by this plugin.
-    s.dependency '!ProtoCompiler', '3.4.0'
+    s.dependency 'ProtoCompiler', '3.4.0'
     # For the Protobuf dependency not to complain:
     s.ios.deployment_target = '7.0'
     s.osx.deployment_target = '10.9'

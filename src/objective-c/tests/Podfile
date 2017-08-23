@@ -19,8 +19,8 @@ GRPC_LOCAL_SRC = '../../..'
   target target_name do
     pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf", :inhibit_warnings => true
 
-    pod '!ProtoCompiler',            :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
-    pod '!ProtoCompiler-gRPCPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
+    pod 'ProtoCompiler',            :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
+    pod 'ProtoCompiler-gRPCPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
 
     pod 'BoringSSL',       :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
 

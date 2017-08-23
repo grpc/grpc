@@ -11,7 +11,7 @@ Pod::Spec.new do |s|
   s.osx.deployment_target = '10.9'
 
   # Run protoc with the Objective-C and gRPC plugins to generate protocol messages and gRPC clients.
-  s.dependency "!ProtoCompiler-gRPCPlugin"
+  s.dependency "ProtoCompiler-gRPCPlugin"
 
   repo_root = '../../../..'
   bin_dir = "#{repo_root}/bins/$CONFIG"
