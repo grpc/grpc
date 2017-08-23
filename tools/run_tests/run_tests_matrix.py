@@ -131,7 +131,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                              inner_jobs=inner_jobs)
 
   # supported on all platforms.
-  test_jobs += _generate_jobs(languages=['c'],
+  test_jobs += _generate_jobs(languages=['c', 'c++'],
                              configs=['dbg', 'opt'],
                              platforms=['linux', 'macos', 'windows'],
                              labels=['basictests', 'corelang'],
@@ -146,13 +146,6 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                              inner_jobs=inner_jobs)
 
   # supported on linux and mac.
-  test_jobs += _generate_jobs(languages=['c++'],
-                              configs=['dbg', 'opt'],
-                              platforms=['linux', 'macos'],
-                              labels=['basictests', 'corelang'],
-                              extra_args=extra_args,
-                              inner_jobs=inner_jobs)
-  
   test_jobs += _generate_jobs(languages=['ruby', 'php'],
                               configs=['dbg', 'opt'],
                               platforms=['linux', 'macos'],
