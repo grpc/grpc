@@ -322,7 +322,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                     (send_bytes == s->compressed_data_buffer->length &&
                      s->flow_controlled_buffer.length == 0 &&
                      s->fetching_send_message == NULL);
-                if (is_last_data_frame && s->stream_compression_ctx) {
+                if (is_last_data_frame && s->stream_compression_ctx != NULL) {
                   GPR_ASSERT(grpc_stream_compress(
                       s->stream_compression_ctx, &s->flow_controlled_buffer,
                       s->compressed_data_buffer, NULL, MAX_SIZE_T,
