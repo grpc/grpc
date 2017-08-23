@@ -38,12 +38,14 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_posix.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 
 void grpc_iomgr_platform_init(void) {
   grpc_wakeup_fd_global_init();
   grpc_event_engine_init();
   grpc_register_tracer("tcp", &grpc_tcp_trace);
+  grpc_register_tracer("dns", &grpc_dns_trace);
 }
 
 void grpc_iomgr_platform_flush(void) {}

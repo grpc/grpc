@@ -51,6 +51,8 @@
 
 #include <string.h>
 
+int grpc_dns_trace;
+
 typedef struct request {
   grpc_closure *on_done;
   grpc_resolved_addresses **addresses;
@@ -184,6 +186,11 @@ static grpc_error *blocking_resolve_address_impl(
   grpc_error *err;
   int retry_status;
 
+  if (grpc_dns_trace) {
+    gpr_log(GPR_DEBUG, "resolve_address (blocking): name=%s, default_port=%s",
+            name, default_port);
+  }
+
   req.addrinfo = NULL;
 
   err = try_split_host_port(name, default_port, &host, &port);
@@ -238,6 +245,11 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
   char *port;
   grpc_error *err;
   int s;
+
+  if (grpc_dns_trace) {
+    gpr_log(GPR_DEBUG, "resolve_address: name=%s, default_port=%s", name,
+            default_port);
+  }
   err = try_split_host_port(name, default_port, &host, &port);
   if (err != GRPC_ERROR_NONE) {
     grpc_closure_sched(exec_ctx, on_done, err);

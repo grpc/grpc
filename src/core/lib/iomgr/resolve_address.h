@@ -40,6 +40,8 @@
 
 #define GRPC_MAX_SOCKADDR_SIZE 128
 
+extern int grpc_dns_trace;
+
 typedef struct {
   char addr[GRPC_MAX_SOCKADDR_SIZE];
   size_t len;

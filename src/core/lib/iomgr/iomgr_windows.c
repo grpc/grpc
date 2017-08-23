@@ -39,9 +39,11 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 
 /* Windows' io manager is going to be fully designed using IO completion
@@ -63,6 +65,7 @@ void grpc_iomgr_platform_init(void) {
   winsock_init();
   grpc_iocp_init();
   grpc_pollset_global_init();
+  grpc_register_tracer("dns", &grpc_dns_trace);
 }
 
 void grpc_iomgr_platform_flush(void) { grpc_iocp_flush(); }

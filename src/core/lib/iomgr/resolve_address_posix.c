@@ -54,6 +54,8 @@
 #include "src/core/lib/support/block_annotate.h"
 #include "src/core/lib/support/string.h"
 
+int grpc_dns_trace;
+
 static grpc_error *blocking_resolve_address_impl(
     const char *name, const char *default_port,
     grpc_resolved_addresses **addresses) {
@@ -64,6 +66,11 @@ static grpc_error *blocking_resolve_address_impl(
   int s;
   size_t i;
   grpc_error *err;
+
+  if (grpc_dns_trace) {
+    gpr_log(GPR_DEBUG, "resolve_address (blocking): name=%s, default_port=%s",
+            name, default_port);
+  }
 
   if (name[0] == 'u' && name[1] == 'n' && name[2] == 'i' && name[3] == 'x' &&
       name[4] == ':' && name[5] != 0) {
@@ -98,6 +105,8 @@ static grpc_error *blocking_resolve_address_impl(
   s = getaddrinfo(host, port, &hints, &result);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
 
+  /* Note: This block is a workaround for the case where /etc/services does not
+     exist. */
   if (s != 0) {
     /* Retry if well-known service name is recognized */
     char *svc[][2] = {{"http", "80"}, {"https", "443"}};
@@ -190,6 +199,11 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                  grpc_closure *on_done,
                                  grpc_resolved_addresses **addrs) {
   request *r = gpr_malloc(sizeof(request));
+
+  if (grpc_dns_trace) {
+    gpr_log(GPR_DEBUG, "resolve_address: name=%s, default_port=%s", name,
+            default_port);
+  }
   grpc_closure_init(&r->request_closure, do_request_thread, r,
                     grpc_executor_scheduler);
   r->name = gpr_strdup(name);

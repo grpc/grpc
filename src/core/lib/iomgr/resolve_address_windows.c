@@ -54,6 +54,8 @@
 #include "src/core/lib/support/block_annotate.h"
 #include "src/core/lib/support/string.h"
 
+int grpc_dns_trace;
+
 typedef struct {
   char *name;
   char *default_port;
@@ -72,6 +74,11 @@ static grpc_error *blocking_resolve_address_impl(
   int s;
   size_t i;
   grpc_error *error = GRPC_ERROR_NONE;
+
+  if (grpc_dns_trace) {
+    gpr_log(GPR_DEBUG, "resolve_address (blocking): name=%s, default_port=%s",
+            name, default_port);
+  }
 
   /* parse name, splitting it into host and port parts */
   gpr_split_host_port(name, &host, &port);
@@ -173,6 +180,11 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                  grpc_closure *on_done,
                                  grpc_resolved_addresses **addresses) {
   request *r = gpr_malloc(sizeof(request));
+
+  if (grpc_dns_trace) {
+    gpr_log(GPR_DEBUG, "resolve_address: name=%s, default_port=%s", name,
+            default_port);
+  }
   grpc_closure_init(&r->request_closure, do_request_thread, r,
                     grpc_executor_scheduler);
   r->name = gpr_strdup(name);
