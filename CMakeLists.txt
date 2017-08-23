@@ -333,6 +333,13 @@ function(protobuf_generate_grpc_cpp)
     get_filename_component(REL_DIR ${REL_FIL} DIRECTORY)
     set(RELFIL_WE "${REL_DIR}/${FIL_WE}")
 
+    #if cross-compiling, find host plugin
+    if(CMAKE_CROSSCOMPILING)
+        find_program(gRPC_CPP_PLUGIN grpc_cpp_plugin)
+    else()
+        set(gRPC_CPP_PLUGIN $<TARGET_FILE:grpc_cpp_plugin>)
+    endif()
+
     add_custom_command(
       OUTPUT "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc"
              "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"
@@ -342,7 +349,7 @@ function(protobuf_generate_grpc_cpp)
       COMMAND $<TARGET_FILE:${_gRPC_PROTOBUF_PROTOC}>
       ARGS --grpc_out=generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}
            --cpp_out=${_gRPC_PROTO_GENS_DIR}
-           --plugin=protoc-gen-grpc=$<TARGET_FILE:grpc_cpp_plugin>
+           --plugin=protoc-gen-grpc=${gRPC_CPP_PLUGIN}
            ${_protobuf_include_path}
            ${REL_FIL}
       DEPENDS ${ABS_FIL} ${_gRPC_PROTOBUF_PROTOC} grpc_cpp_plugin
