@@ -235,9 +235,10 @@ class CLanguage(object):
     self.config = config
     self.args = args
     if self.platform == 'windows':
-      _check_compiler(self.args.compiler, ['default', 'cmake'])
+      _check_compiler(self.args.compiler, ['default', 'cmake', 'cmake_vs2015',
+                                           'cmake_vs2017'])
       _check_arch(self.args.arch, ['default', 'x64', 'x86'])
-      self._cmake_generator_option = 'Visual Studio 14 2015'
+      self._cmake_generator_option = 'Visual Studio 15 2017' if self.args.compiler == 'cmake_vs2017' else 'Visual Studio 14 2015'
       self._cmake_arch_option = 'x64' if self.args.arch == 'x64' else 'Win32'
       self._use_cmake = True
       self._make_options = []
@@ -1208,7 +1209,7 @@ argp.add_argument('--compiler',
                            'node0.12', 'node4', 'node5', 'node6', 'node7', 'node8',
                            'electron1.3', 'electron1.6',
                            'coreclr',
-                           'cmake'],
+                           'cmake', 'cmake_vs2015', 'cmake_vs2017'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
 argp.add_argument('--iomgr_platform',
