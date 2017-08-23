@@ -30,17 +30,27 @@
 extern "C" {
 #endif
 
-/** Parses the first \a name_length bytes of \a name as a
- * grpc_compression_algorithm instance, updating \a algorithm. Returns 1 upon
- * success, 0 otherwise. */
+/** Parses \a value into a grpc_compression_algorithm instance, updating \a
+ * algorithm. Returns 1 upon success, 0 otherwise. */
 GRPCAPI int grpc_compression_algorithm_parse(
     grpc_slice value, grpc_compression_algorithm *algorithm);
 
-/** Updates \a name with the encoding name corresponding to a valid \a
- * algorithm. Note that \a name is statically allocated and must *not* be freed.
+/** Parses \a name into a grpc_compression_level instance, updating \a level.
  * Returns 1 upon success, 0 otherwise. */
+GRPCAPI int grpc_compression_level_parse(const char *name,
+                                         grpc_compression_level *level);
+
+/** Updates \a name with the encoding name corresponding to a valid \a
+ * compression algorithm. Note that \a name is statically allocated and must
+ * *not* be freed. Returns 1 upon success, 0 otherwise. */
 GRPCAPI int grpc_compression_algorithm_name(
     grpc_compression_algorithm algorithm, char **name);
+
+/** Updates \a name with the human readable name corresponding to a valid \a
+ * compression level. Note that \a name is statically allocated and must *not*
+ * be freed. Returns 1 upon success, 0 otherwise. */
+GRPCAPI int grpc_compression_level_name(grpc_compression_level level,
+                                        char **name);
 
 /** Returns the compression algorithm corresponding to \a level for the
  * compression algorithms encoded in the \a accepted_encodings bitset.
