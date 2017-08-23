@@ -21,6 +21,14 @@ netperf >netperf_latency.txt -P 0 -t TCP_RR -H "$NETPERF_SERVER_HOST" -- -r 1,1 
 
 cat netperf_latency.txt
 
+# Now run a bidirectional streaming bandwidth test
+
+netperf >netperf_maerts.txt -t TCP_MAERTS -H "$NETPERF_SERVER_HOST" -- -m 1M -o THROUGHPUT &
+netperf >netperf_stream.txt -t TCP_STREAM -H "$NETPERF_SERVER_HOST" -- -m 1M -o THROUGHPUT &
+
+wait
+egrep -v Throughput netperf_stream.txt netperf_maerts.txt | tee -a netperf_latency.txt
+
 if [ "$BQ_RESULT_TABLE" != "" ]
 then
   tools/run_tests/performance/bq_upload_result.py \

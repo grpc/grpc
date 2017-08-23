@@ -37,10 +37,13 @@ _PROJECT_ID='grpc-testing'
 
 def _upload_netperf_latency_csv_to_bigquery(dataset_id, table_id, result_file):
   with open(result_file, 'r') as f:
-    (col1, col2, col3) = f.read().split(',')
+    (col1, col2, col3) = f.readline().split(',')
     latency50 = float(col1.strip()) * 1000
     latency90 = float(col2.strip()) * 1000
     latency99 = float(col3.strip()) * 1000
+
+    streambw = float(f.readline().strip())
+    maertsbw = float(f.readline().strip())
 
     scenario_result = {
         'scenario': {
@@ -53,11 +56,25 @@ def _upload_netperf_latency_csv_to_bigquery(dataset_id, table_id, result_file):
         }
     }
 
+    scenario_result2 = {
+        'scenario': {
+          'name': 'netperf_tcp_bidi_bw'
+        },
+        'summary': {
+          'clt_srv_bw': streambw,
+          'srv_clt_bw': maertsbw,
+        }
+    }
+
   bq = big_query_utils.create_big_query()
   _create_results_table(bq, dataset_id, table_id)
 
   if not _insert_result(bq, dataset_id, table_id, scenario_result, flatten=False):
     print('Error uploading result to bigquery.')
+    sys.exit(1)
+
+  if not _insert_result(bq, dataset_id, table_id, scenario_result2, flatten=False):
+    print 'Error uploading result to bigquery.'
     sys.exit(1)
 
 
