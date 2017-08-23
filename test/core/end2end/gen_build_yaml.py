@@ -69,8 +69,8 @@ END2END_FIXTURES = {
 
 TestOptions = collections.namedtuple(
     'TestOptions',
-    'needs_fullstack needs_dns needs_names proxyable secure traceable cpu_cost exclude_iomgrs large_writes flaky allows_compression needs_compression exclude_inproc needs_http2 needs_proxy_auth')
-default_test_options = TestOptions(False, False, False, True, False, True, 1.0, [], False, False, True, False, False, False, False)
+    'needs_fullstack needs_dns needs_names proxyable secure traceable cpu_cost exclude_iomgrs large_writes flaky allows_compression needs_compression exclude_inproc needs_http2 needs_proxy_auth timeout_seconds exclude_configs')
+default_test_options = TestOptions(False, False, False, True, False, True, 1.0, [], False, False, True, False, False, False, False, 300, [])
 connectivity_test_options = default_test_options._replace(needs_fullstack=True)
 
 LOWCPU = 0.1
@@ -108,7 +108,7 @@ END2END_TESTS = {
                                                 cpu_cost=LOWCPU),
     'high_initial_seqno': default_test_options._replace(cpu_cost=LOWCPU),
     'idempotent_request': default_test_options,
-    'invoke_large_request': default_test_options,
+    'invoke_large_request': default_test_options._replace(large_writes=True, traceable=False, timeout_seconds=1000, exclude_configs=['dbg', 'msan', 'tsan', 'asan', 'ubsan'], cpu_cost=100),
     'keepalive_timeout': default_test_options._replace(proxyable=False,
                                                        cpu_cost=LOWCPU,
                                                        needs_http2=True),
@@ -279,7 +279,8 @@ def main():
           {
               'name': '%s_test' % f,
               'args': [t],
-              'exclude_configs': END2END_FIXTURES[f].exclude_configs,
+              'exclude_configs': list(set(END2END_FIXTURES[f].exclude_configs) |
+                                     set(END2END_TESTS[t].exclude_configs)),
               'exclude_iomgrs': list(set(END2END_FIXTURES[f].exclude_iomgrs) |
                                      set(END2END_TESTS[t].exclude_iomgrs)),
               'platforms': END2END_FIXTURES[f].platforms,
@@ -289,6 +290,7 @@ def main():
               'flaky': END2END_TESTS[t].flaky,
               'language': 'c',
               'cpu_cost': END2END_TESTS[t].cpu_cost,
+              'timeout_seconds': END2END_TESTS[t].timeout_seconds,
           }
           for f in sorted(END2END_FIXTURES.keys())
           for t in sorted(END2END_TESTS.keys()) if compatible(f, t)
@@ -296,7 +298,8 @@ def main():
           {
               'name': '%s_nosec_test' % f,
               'args': [t],
-              'exclude_configs': END2END_FIXTURES[f].exclude_configs,
+              'exclude_configs': list(set(END2END_FIXTURES[f].exclude_configs) |
+                                     set(END2END_TESTS[t].exclude_configs)),
               'exclude_iomgrs': list(set(END2END_FIXTURES[f].exclude_iomgrs) |
                                      set(END2END_TESTS[t].exclude_iomgrs)),
               'platforms': END2END_FIXTURES[f].platforms,
@@ -306,6 +309,7 @@ def main():
               'flaky': END2END_TESTS[t].flaky,
               'language': 'c',
               'cpu_cost': END2END_TESTS[t].cpu_cost,
+              'timeout_seconds': END2END_TESTS[t].timeout_seconds,
           }
           for f in sorted(END2END_FIXTURES.keys())
           if not END2END_FIXTURES[f].secure
