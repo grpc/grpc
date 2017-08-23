@@ -450,6 +450,37 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
 }
 
+TEST_F(ClientLbEnd2endTest, RoundRobinUpdateInError) {
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  ResetStub("round_robin");
+  std::vector<int> ports;
+
+  // Start with a single server.
+  ports.emplace_back(servers_[0]->port_);
+  SetNextResolution(ports);
+  WaitForServer(0);
+  // Send RPCs. They should all go to servers_[0]
+  for (size_t i = 0; i < 10; ++i) SendRpc();
+  EXPECT_EQ(10, servers_[0]->service_.request_count());
+  EXPECT_EQ(0, servers_[1]->service_.request_count());
+  EXPECT_EQ(0, servers_[2]->service_.request_count());
+  servers_[0]->service_.ResetCounters();
+
+  // Shutdown one of the servers to be sent in the update.
+  servers_[1]->Shutdown(false);
+  ports.emplace_back(servers_[1]->port_);
+  ports.emplace_back(servers_[2]->port_);
+  SetNextResolution(ports);
+  WaitForServer(0);
+  WaitForServer(2);
+
+  // Send three RPCs, one per server.
+  for (size_t i = 0; i < kNumServers; ++i) SendRpc();
+  // The server in shutdown shouldn't receive any.
+  EXPECT_EQ(0, servers_[1]->service_.request_count());
+}
+
 TEST_F(ClientLbEnd2endTest, RoundRobinManyUpdates) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
