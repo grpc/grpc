@@ -2932,6 +2932,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: resolve_srv_records
+  build: private
+  language: c
+  src:
+  - test/core/naming_end2end/resolve_srv_records.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: resource_quota_test
   cpu_cost: 30
   build: test
