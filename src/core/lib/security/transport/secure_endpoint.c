@@ -270,6 +270,7 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
     }
   }
 
+  gpr_mu_lock(&ep->protector_mu);
   for (i = 0; i < slices->count; i++) {
     grpc_slice plain = slices->slices[i];
     uint8_t *message_bytes = GRPC_SLICE_START_PTR(plain);
@@ -277,11 +278,9 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
     while (message_size > 0) {
       size_t protected_buffer_size_to_send = (size_t)(end - cur);
       size_t processed_message_size = message_size;
-      gpr_mu_lock(&ep->protector_mu);
       result = tsi_frame_protector_protect(ep->protector, message_bytes,
                                            &processed_message_size, cur,
                                            &protected_buffer_size_to_send);
-      gpr_mu_unlock(&ep->protector_mu);
       if (result != TSI_OK) {
         gpr_log(GPR_ERROR, "Encryption error: %s",
                 tsi_result_to_string(result));
@@ -297,6 +296,7 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
     }
     if (result != TSI_OK) break;
   }
+  gpr_mu_unlock(&ep->protector_mu);
   if (result == TSI_OK) {
     size_t still_pending_size;
     do {
