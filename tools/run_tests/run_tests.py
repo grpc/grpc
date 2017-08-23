@@ -237,6 +237,7 @@ class CLanguage(object):
     if self.platform == 'windows':
       _check_compiler(self.args.compiler, ['default', 'cmake'])
       _check_arch(self.args.arch, ['default', 'x64', 'x86'])
+      self._cmake_generator_option = 'Visual Studio 14 2015'
       self._cmake_arch_option = 'x64' if self.args.arch == 'x64' else 'Win32'
       self._use_cmake = True
       self._make_options = []
@@ -363,11 +364,13 @@ class CLanguage(object):
             'check_epollexclusive']
 
   def make_options(self):
-    return self._make_options;
+    return self._make_options
 
   def pre_build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\helper_scripts\\pre_build_cmake.bat', self._cmake_arch_option]]
+      return [['tools\\run_tests\\helper_scripts\\pre_build_cmake.bat',
+               self._cmake_generator_option,
+               self._cmake_arch_option]]
     elif self._use_cmake:
       return [['tools/run_tests/helper_scripts/pre_build_cmake.sh']]
     else:
