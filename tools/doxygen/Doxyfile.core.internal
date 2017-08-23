@@ -1424,9 +1424,13 @@ src/core/tsi/transport_security_adapter.h \
 src/core/tsi/transport_security_grpc.c \
 src/core/tsi/transport_security_grpc.h \
 src/core/tsi/transport_security_interface.h \
+third_party/nanopb/pb.h \
 third_party/nanopb/pb_common.c \
+third_party/nanopb/pb_common.h \
 third_party/nanopb/pb_decode.c \
-third_party/nanopb/pb_encode.c
+third_party/nanopb/pb_decode.h \
+third_party/nanopb/pb_encode.c \
+third_party/nanopb/pb_encode.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
