@@ -37,7 +37,7 @@ class Slice
 public:
     // constructors/descructors
     Slice(void) : m_Slice( grpc_empty_slice() ) {}
-    Slice(HPHP::String string);
+    Slice(const HPHP::String& string);
     Slice(const char* const string);
     Slice(const char* const string, const size_t length);
     Slice(const grpc_byte_buffer* const buffer);
@@ -54,7 +54,7 @@ public:
     const grpc_slice& slice(void) const { return m_Slice; }
     grpc_slice& slice(void) { return m_Slice; } // several methods need non const &
     HPHP::String string(void);
-    char *c_str(void);
+    char* const c_str(void) const;
     void increaseRef(void);
     grpc_byte_buffer* const byteBuffer(void) const;
 

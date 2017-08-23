@@ -16,8 +16,6 @@
  *
  */
 
-#include <shared_mutex>
-
 #ifdef HAVE_CONFIG_H
     #include "config.h"
 #endif
@@ -37,52 +35,44 @@ namespace HPHP {
 /*                     Default Permanent Root Certificates                   */
 /*****************************************************************************/
 
-static std::shared_timed_mutex s_DefaultPermRootCertsMutex;
-
-DefaultPermRootCerts::DefaultPermRootCerts(void) : m_PermRootCerts{}
+DefaultPEMRootCerts::DefaultPEMRootCerts(void) : m_PEMRootCerts{}
 {
 }
 
-grpc_ssl_roots_override_result DefaultPermRootCerts::get_ssl_roots_override(char** pPermRootsCerts)
+grpc_ssl_roots_override_result DefaultPEMRootCerts::get_ssl_roots_override(char** pPermRootsCerts)
 {
     // The output of this function (the char *) is gpr_free'd by the calling function
     // so we must std::memcpy it before passing it to pPermRootsCerts
     // if we also want to manage it ourselves / share it with others
+    DefaultPEMRootCerts& singletonCerts{ getDefaultPEMRootCerts() };
 
-    *pPermRootsCerts = getDefaultPermRootCerts().getCerts().c_str();
-    if (!(*pPermRootsCerts))
     {
-        return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
-    }
-    else
-    {
-        return GRPC_SSL_ROOTS_OVERRIDE_OK;
+        ReadLock lock{ singletonCerts.m_CertsLock };
+
+        *pPermRootsCerts = singletonCerts.m_PEMRootCerts.c_str();
+        if (!(*pPermRootsCerts))
+        {
+            return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
+        }
+        else
+        {
+            return GRPC_SSL_ROOTS_OVERRIDE_OK;
+        }
     }
 }
 
-Slice DefaultPermRootCerts::getCerts(void)
+void DefaultPEMRootCerts::setCerts(const String& pemRootsCerts)
 {
-    std::shared_lock<std::shared_timed_mutex> lock{ s_DefaultPermRootCertsMutex };
-    return m_PermRootCerts;
-}
-
-void DefaultPermRootCerts::setCerts(const String& permRootsCerts)
-{
-    // optimistic locking
-    if (getCerts().string() == permRootsCerts) return;
-
-    std::unique_lock<std::shared_timed_mutex> lock{ s_DefaultPermRootCertsMutex };
-
-    if (m_PermRootCerts.string() == permRootsCerts) return;
+    WriteLock lock{ m_CertsLock };
 
     // copy new certs
-    m_PermRootCerts = Slice { permRootsCerts };
+    m_PEMRootCerts = Slice{ pemRootsCerts };
 }
 
-DefaultPermRootCerts& DefaultPermRootCerts::getDefaultPermRootCerts(void)
+DefaultPEMRootCerts& DefaultPEMRootCerts::getDefaultPEMRootCerts(void)
 {
-    static DefaultPermRootCerts s_DefaultPermRootCerts{};
-    return s_DefaultPermRootCerts;
+    static DefaultPEMRootCerts s_DefaultPEMRootCerts{};
+    return s_DefaultPEMRootCerts;
 }
 
 /*****************************************************************************/
@@ -140,7 +130,7 @@ void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,
 {
     HHVM_TRACE_SCOPE("ChannelCredentials setDefaultRootsPem") // Degug Trace
 
-    DefaultPermRootCerts::getDefaultPermRootCerts().setCerts(perm_root_certs);
+    DefaultPEMRootCerts::getDefaultPEMRootCerts().setCerts(perm_root_certs);
 }
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault)
@@ -242,7 +232,13 @@ Variant HHVM_STATIC_METHOD(ChannelCredentials, createInsecure)
 
 void grpc_hhvm_init_channel_credentials(void)
 {
-    grpc_set_ssl_roots_override_callback(DefaultPermRootCerts::get_ssl_roots_override);
+    static std::mutex s_CallLock;
+
+    {
+        // NOTE:  This function call is not thread safe and requires an exclusive lock
+        std::unique_lock<std::mutex> lock{ s_CallLock };
+        grpc_set_ssl_roots_override_callback(DefaultPEMRootCerts::get_ssl_roots_override);
+    }
 }
 
 } // namespace HPHP

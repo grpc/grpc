@@ -19,6 +19,8 @@
 #ifndef NET_GRPC_HHVM_GRPC_CHANNEL_CREDENTIALS_H_
 #define NET_GRPC_HHVM_GRPC_CHANNEL_CREDENTIALS_H_
 
+#include <shared_mutex>
+
 #ifdef HAVE_CONFIG_H
     #include "config.h"
 #endif
@@ -40,29 +42,37 @@ namespace HPHP {
 // This is a global singleton. It does not make sense to make this thread local
 // as differnent threads may access the default certs and they must be valid
 // in all.
-struct DefaultPermRootCerts
+// TODO: In a mutliple channel environment with different PEM Cert's per channel
+// a channel to cert mapping needs to take place.
+struct DefaultPEMRootCerts
 {
 public:
+    // typedef's
+    typedef std::shared_timed_mutex     lock_type;
+    typedef std::shared_lock<lock_type> ReadLock;
+    typedef std::unique_lock<lock_type> WriteLock;
+
     // constructors/destructors
-    DefaultPermRootCerts(const DefaultPermRootCerts& otherDefaultPermRootCerts) = delete;
-    DefaultPermRootCerts(DefaultPermRootCerts&& otherDefaultPermRootCerts) = delete;
-    DefaultPermRootCerts& operator=(const DefaultPermRootCerts& rhsDefaultPermRootCerts) = delete;
-    DefaultPermRootCerts& operator=(DefaultPermRootCerts&& rhsDefaultPermRootCerts) = delete;
+    ~DefaultPEMRootCerts(void) = default;
+    DefaultPEMRootCerts(const DefaultPEMRootCerts& otherDefaultPEMRootCerts) = delete;
+    DefaultPEMRootCerts(DefaultPEMRootCerts&& otherDefaultPEMRootCerts) = delete;
+    DefaultPEMRootCerts& operator=(const DefaultPEMRootCerts& rhsDefaultPEMRootCerts) = delete;
+    DefaultPEMRootCerts& operator=(DefaultPEMRootCerts&& rhsDefaultPEMRootCerts) = delete;
 
     // interface functions
-    Slice getCerts(void);
-    void setCerts(const String& permRootsCerts);
-    static grpc_ssl_roots_override_result get_ssl_roots_override(char** pPermRootsCerts);
+    void setCerts(const String& pemRootsCerts);
+    static grpc_ssl_roots_override_result get_ssl_roots_override(char** pPEMRootsCerts);
 
     // singleton accessors
-    static DefaultPermRootCerts& getDefaultPermRootCerts(void);
+    static DefaultPEMRootCerts& getDefaultPEMRootCerts(void);
 
 private:
     // private constructor
-    DefaultPermRootCerts(void);
+    DefaultPEMRootCerts(void);
 
     // member variables
-    Slice m_PermRootCerts;
+    Slice m_PEMRootCerts;
+    lock_type m_CertsLock;
 };
 
 /*****************************************************************************/

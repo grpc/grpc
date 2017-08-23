@@ -32,10 +32,11 @@
 /*                                   Slice                                   */
 /*****************************************************************************/
 
-Slice::Slice(HPHP::String string)
+Slice::Slice(const HPHP::String& string)
 {
   size_t length { static_cast<size_t>(string.size()) };
-  m_Slice = grpc_slice_from_copied_buffer(string.c_str(), length);
+  m_Slice = (length > 0) ? grpc_slice_from_copied_buffer(string.c_str(), length) :
+                           grpc_empty_slice();
 }
 
 Slice::Slice(const char* const string)
@@ -127,25 +128,26 @@ HPHP::String Slice::string(void)
   return HPHP::String{ reinterpret_cast<const char*>(data()), length(), HPHP::CopyString };
 }
 
-// Make an explicit copy of c strings
-char *Slice::c_str(void)
+// Return an explicit c_str copy which must be freed via gpr_free.
+char* const Slice::c_str(void) const
 {
-    const char *currentData { reinterpret_cast<const char *>(data()) };
-    size_t cStrLen { length() };
-    char *cStr;
+    const char* const pData { reinterpret_cast<const char *>(data()) };
+    const size_t strLength { length() };
+    char* pStr;
 
-    if (currentData[cStrLen-1] != '\0')
+    if ((strLength == 0) || (pData[strLength-1] != 0))
     {
         // Append on a null byte
-        cStr = reinterpret_cast<char *>(gpr_zalloc(cStrLen + 1));
-    } else {
-        cStr = reinterpret_cast<char *>(gpr_zalloc(cStrLen));
+        pStr = reinterpret_cast<char *>(gpr_zalloc(strLength + 1));
+    }
+    else
+    {
+        pStr = reinterpret_cast<char *>(gpr_zalloc(strLength));
     }
 
-    std::memcpy(reinterpret_cast<void*>(cStr),
-                reinterpret_cast<const void*>(currentData), cStrLen);
+    std::memcpy(reinterpret_cast<void*>(pStr), reinterpret_cast<const void*>(pData), strLength);
 
-    return cStr;
+    return pStr;
 }
 
 void Slice::destroy(void)

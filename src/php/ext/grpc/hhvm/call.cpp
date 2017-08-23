@@ -267,9 +267,6 @@ void HHVM_METHOD(Call, __construct,
 {
     HHVM_TRACE_SCOPE("Call construct") // Degug Trace
 
-    Slice method_slice;
-    Slice host_slice;
-
     CallData* const pCallData{ Native::data<CallData>(this_) };
     ChannelData* const pChannelData{ Native::data<ChannelData>(channel_obj) };
 
@@ -281,8 +278,9 @@ void HHVM_METHOD(Call, __construct,
 
     TimevalData* const pDeadlineTimevalData{ Native::data<TimevalData>(deadline_obj) };
 
-    method_slice = !method.empty() ? Slice{ method } : Slice{ };
-    host_slice = !host_override.isNull() && host_override.isString() ? Slice{ host_override.toString() } : Slice { };
+    Slice method_slice{ !method.empty() ? Slice{ method } : Slice{ } };
+    Slice host_slice{ !host_override.isNull() && host_override.isString() ?
+                       Slice{ host_override.toString() } : Slice { } };
 
     std::unique_ptr<CompletionQueue> pCompletionQueue{ CompletionQueue::getClientQueue() };
 
@@ -546,7 +544,7 @@ Object HHVM_METHOD(Call, startBatch,
                                 gpr_inf_future(GPR_CLOCK_REALTIME), nullptr));
     if (event.type != GRPC_OP_COMPLETE )
     {
-        goto finish;
+        return resultObj;
     }
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
@@ -561,7 +559,8 @@ Object HHVM_METHOD(Call, startBatch,
         std::future_status status{ getPluginMetadataFuture.wait_for(std::chrono::milliseconds{ pCallData->getTimeout() }) };
         if (status == std::future_status::timeout)
         {
-            goto finish;
+            // NOTE: If a credential call fails then this should be a failure.
+            return resultObj;
         }
         else
         {
@@ -575,7 +574,6 @@ Object HHVM_METHOD(Call, startBatch,
         }
     }
 
-finish:
     // process results of call
     for (size_t i{ 0 }; i < op_num; ++i)
     {
