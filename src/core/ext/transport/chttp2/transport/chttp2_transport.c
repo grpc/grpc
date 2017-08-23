@@ -2712,6 +2712,9 @@ static grpc_error *incoming_byte_stream_pull(grpc_exec_ctx *exec_ctx,
         grpc_stream_compression_context_destroy(s->stream_decompression_ctx);
         s->stream_decompression_ctx = NULL;
       }
+      if (s->unprocessed_incoming_frames_buffer.length == 0) {
+        *slice = grpc_empty_slice();
+      }
     }
     error = grpc_deframe_unprocessed_incoming_frames(
         exec_ctx, &s->data_parser, s, &s->unprocessed_incoming_frames_buffer,
