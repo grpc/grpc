@@ -1364,27 +1364,11 @@ _check_arch_option(args.arch)
 
 def make_jobspec(cfg, targets, makefile='Makefile'):
   if platform_string() == 'windows':
-    if makefile.startswith('cmake/build/'):
-      return [jobset.JobSpec(['cmake', '--build', '.',
-                              '--target', '%s' % target,
-                              '--config', _MSBUILD_CONFIG[cfg]],
-                             cwd=os.path.dirname(makefile),
-                             timeout_seconds=None) for target in targets]
-    extra_args = []
-    # better do parallel compilation
-    # empirically /m:2 gives the best performance/price and should prevent
-    # overloading the windows workers.
-    extra_args.extend(['/m:2'])
-    # disable PDB generation: it's broken, and we don't need it during CI
-    extra_args.extend(['/p:Jenkins=true'])
-    return [
-      jobset.JobSpec([_windows_build_bat(args.compiler),
-                      'vsprojects\\%s.sln' % target,
-                      '/p:Configuration=%s' % _MSBUILD_CONFIG[cfg]] +
-                      extra_args +
-                      language_make_options,
-                      shell=True, timeout_seconds=None)
-      for target in targets]
+    return [jobset.JobSpec(['cmake', '--build', '.',
+                            '--target', '%s' % target,
+                            '--config', _MSBUILD_CONFIG[cfg]],
+                           cwd=os.path.dirname(makefile),
+                           timeout_seconds=None) for target in targets]
   else:
     if targets and makefile.startswith('cmake/build/'):
       # With cmake, we've passed all the build configuration in the pre-build step already
