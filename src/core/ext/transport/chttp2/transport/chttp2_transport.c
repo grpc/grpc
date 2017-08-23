@@ -1361,17 +1361,28 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
             "send_initial_metadata_finished");
       }
     }
+    if (op_payload->send_initial_metadata.peer_string != NULL) {
+      gpr_atm_rel_store(op_payload->send_initial_metadata.peer_string,
+                        (gpr_atm)gpr_strdup(t->peer_string));
+    }
   }
 
   if (op->send_message) {
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->fetching_send_message_finished = add_closure_barrier(op->on_complete);
     if (s->write_closed) {
+      // Return an error unless the client has already received trailing
+      // metadata from the server, since an application using a
+      // streaming call might send another message before getting a
+      // recv_message failure, breaking out of its loop, and then
+      // starting recv_trailing_metadata.
       grpc_chttp2_complete_closure_step(
           exec_ctx, t, s, &s->fetching_send_message_finished,
-          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-              "Attempt to send message after stream was closed",
-              &s->write_closed_error, 1),
+          t->is_client && s->received_trailing_metadata
+              ? GRPC_ERROR_NONE
+              : GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                    "Attempt to send message after stream was closed",
+                    &s->write_closed_error, 1),
           "fetching_send_message_finished");
     } else {
       GPR_ASSERT(s->fetching_send_message == NULL);
@@ -1457,6 +1468,10 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
         op_payload->recv_initial_metadata.recv_initial_metadata;
     s->trailing_metadata_available =
         op_payload->recv_initial_metadata.trailing_metadata_available;
+    if (op_payload->recv_initial_metadata.peer_string != NULL) {
+      gpr_atm_rel_store(op_payload->recv_initial_metadata.peer_string,
+                        (gpr_atm)gpr_strdup(t->peer_string));
+    }
     grpc_chttp2_maybe_complete_recv_initial_metadata(exec_ctx, t, s);
   }
 
@@ -1815,8 +1830,7 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
         }
       }
     }
-    if (s->read_closed && s->frame_storage.length == 0 &&
-        (!pending_data || s->seen_error) &&
+    if (s->read_closed && s->frame_storage.length == 0 && !pending_data &&
         s->recv_trailing_metadata_finished != NULL) {
       grpc_chttp2_incoming_metadata_buffer_publish(
           exec_ctx, &s->metadata_buffer[1], s->recv_trailing_metadata);
@@ -2920,14 +2934,6 @@ static void destructive_reclaimer_locked(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 /*******************************************************************************
- * INTEGRATION GLUE
- */
-
-static char *chttp2_get_peer(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
-  return gpr_strdup(((grpc_chttp2_transport *)t)->peer_string);
-}
-
-/*******************************************************************************
  * MONITORING
  */
 static grpc_endpoint *chttp2_get_endpoint(grpc_exec_ctx *exec_ctx,
@@ -2944,7 +2950,6 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              perform_transport_op,
                                              destroy_stream,
                                              destroy_transport,
-                                             chttp2_get_peer,
                                              chttp2_get_endpoint};
 
 grpc_transport *grpc_create_chttp2_transport(
