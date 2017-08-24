@@ -107,7 +107,7 @@ static void server_verifier(grpc_server *server, grpc_completion_queue *cq,
   grpc_metadata_array_init(&request_metadata_recv);
 
   error = grpc_server_request_call(server, &s, &call_details,
-                                   &request_metadata_recv, cq, cq, tag(101));
+                                   &request_metadata_recv, cq, cq, tag(101), 0, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -134,7 +134,7 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   grpc_metadata_array_init(&request_metadata_recv);
 
   error = grpc_server_request_call(server, &s, &call_details,
-                                   &request_metadata_recv, cq, cq, tag(101));
+                                   &request_metadata_recv, cq, cq, tag(101), 0, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);

@@ -24,6 +24,7 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/lib/surface/call.h"
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
@@ -89,7 +90,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  int was_cancelled = 2;
+// //   int was_cancelled = 2;
 
   config.init_client(f, client_args);
   config.init_server(f, server_args);
@@ -135,7 +136,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
 
   error =
       grpc_server_request_call(f->server, &s, &call_details,
-                               &request_metadata_recv, f->cq, f->cq, tag(101));
+                               &request_metadata_recv, f->cq, f->cq, tag(101), 0, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -155,11 +156,11 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
+//   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+//   op->data.recv_close_on_server.cancelled = &was_cancelled;
+//   op->flags = 0;
+//   op->reserved = NULL;
+//   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
@@ -172,7 +173,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   validate_host_override_string("foo.test.google.fr:1234", call_details.host,
                                 config);
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(grpc_call_get_cancelled(s));
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

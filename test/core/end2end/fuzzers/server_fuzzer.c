@@ -74,7 +74,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_server_request_call(server, &call1, &call_details1,
-                                      &request_metadata1, cq, cq, tag(1)));
+                                      &request_metadata1, cq, cq, tag(1), 0, NULL));
   requested_calls++;
 
   grpc_event ev;

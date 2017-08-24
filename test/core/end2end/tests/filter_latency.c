@@ -117,7 +117,7 @@ static void test_request(grpc_end2end_test_config config) {
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  int was_cancelled = 2;
+// //   int was_cancelled = 2;
 
   gpr_mu_lock(&g_mu);
   g_client_latency = gpr_time_0(GPR_TIMESPAN);
@@ -171,7 +171,7 @@ static void test_request(grpc_end2end_test_config config) {
 
   error =
       grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+                               &request_metadata_recv, f.cq, f.cq, tag(101), 0, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
@@ -192,11 +192,11 @@ static void test_request(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
+//   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+//   op->data.recv_close_on_server.cancelled = &was_cancelled;
+//   op->flags = 0;
+//   op->reserved = NULL;
+//   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 

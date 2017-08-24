@@ -57,7 +57,7 @@
       - initial metadata recv
       - message recv
       - status/close recv (depending on client/server) */
-#define MAX_CONCURRENT_BATCHES 6
+#define MAX_CONCURRENT_BATCHES 7
 
 #define MAX_SEND_EXTRA_METADATA_COUNT 3
 
@@ -1213,8 +1213,9 @@ static int batch_slot_for_op(grpc_op_type type) {
     case GRPC_OP_RECV_MESSAGE:
       return 4;
     case GRPC_OP_RECV_CLOSE_ON_SERVER:
-    case GRPC_OP_RECV_STATUS_ON_CLIENT:
       return 5;
+    case GRPC_OP_RECV_STATUS_ON_CLIENT:
+      return 6;
   }
   GPR_UNREACHABLE_CODE(return 123456789);
 }

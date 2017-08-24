@@ -309,11 +309,11 @@ void resource_quota_server(grpc_end2end_test_config config) {
 
       memset(ops, 0, sizeof(ops));
       op = ops;
-      op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-      op->data.recv_close_on_server.cancelled = &was_cancelled[call_id];
-      op->flags = 0;
-      op->reserved = NULL;
-      op++;
+//       op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+//       op->data.recv_close_on_server.cancelled = &was_cancelled[call_id];
+//       op->flags = 0;
+//       op->reserved = NULL;
+//       op++;
       op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
       op->data.send_status_from_server.trailing_metadata_count = 0;
       op->data.send_status_from_server.status = GRPC_STATUS_OK;

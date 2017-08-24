@@ -134,8 +134,8 @@ int main(int argc, char **argv) {
   grpc_resolve_address = my_resolve_address;
   grpc_dns_lookup_ares = my_dns_lookup_ares;
 
-  int was_cancelled1;
-  int was_cancelled2;
+  //   int was_cancelled1;
+  //   int was_cancelled2;
 
   grpc_metadata_array trailing_metadata_recv1;
   grpc_metadata_array request_metadata1;
@@ -217,7 +217,8 @@ int main(int argc, char **argv) {
   grpc_call *server_call1;
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_server_request_call(server1, &server_call1, &request_details1,
-                                      &request_metadata1, cq, cq, tag(0x301)));
+                                      &request_metadata1, cq, cq, tag(0x301), 1,
+                                      tag(0x302)));
 
   set_resolve_port(port1);
 
@@ -233,15 +234,15 @@ int main(int argc, char **argv) {
                                         tag(0x9999));
 
   /* listen for close on the server call to probe for finishing */
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled1;
-  op->flags = 0;
-  op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(server_call1, ops,
-                                                   (size_t)(op - ops),
-                                                   tag(0x302), NULL));
+  // memset(ops, 0, sizeof(ops));
+  // op = ops;
+  //   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  //   op->data.recv_close_on_server.cancelled = &was_cancelled1;
+  //   op->flags = 0;
+  //   op++;
+  // GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(server_call1, ops,
+  //                                                  (size_t)(op - ops),
+  //                                                  tag(0x302), NULL));
 
   /* shutdown first server:
    * we should see a connectivity change and then nothing */
@@ -294,7 +295,8 @@ int main(int argc, char **argv) {
   grpc_call *server_call2;
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_server_request_call(server2, &server_call2, &request_details2,
-                                      &request_metadata2, cq, cq, tag(0x401)));
+                                      &request_metadata2, cq, cq, tag(0x401), 1,
+                                      tag(0x402)));
 
   /* second call should now start */
   CQ_EXPECT_COMPLETION(cqv, tag(0x201), 1);
@@ -302,15 +304,15 @@ int main(int argc, char **argv) {
   cq_verify(cqv);
 
   /* listen for close on the server call to probe for finishing */
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled2;
-  op->flags = 0;
-  op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(server_call2, ops,
-                                                   (size_t)(op - ops),
-                                                   tag(0x402), NULL));
+  // memset(ops, 0, sizeof(ops));
+  // op = ops;
+  //   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  //   op->data.recv_close_on_server.cancelled = &was_cancelled2;
+  //   op->flags = 0;
+  //   op++;
+  //   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(server_call2, ops,
+  //  (size_t)(op - ops),
+  //  tag(0x402), NULL));
 
   /* shutdown second server: we should see nothing */
   grpc_server_shutdown_and_notify(server2, cq, tag(0xdead2));

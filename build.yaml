@@ -2990,20 +2990,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: server_fuzzer
-  build: fuzzer
-  language: c
-  src:
-  - test/core/end2end/fuzzers/server_fuzzer.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  corpus_dirs:
-  - test/core/end2end/fuzzers/server_fuzzer_corpus
-  dict: test/core/end2end/fuzzers/hpack.dictionary
-  maxlen: 2048
+# - name: server_fuzzer
+#   build: fuzzer
+#   language: c
+#   src:
+#   - test/core/end2end/fuzzers/server_fuzzer.c
+#   deps:
+#   - grpc_test_util
+#   - grpc
+#   - gpr_test_util
+#   - gpr
+#   corpus_dirs:
+#   - test/core/end2end/fuzzers/server_fuzzer_corpus
+#   dict: test/core/end2end/fuzzers/hpack.dictionary
+#   maxlen: 2048
 - name: server_test
   build: test
   language: c

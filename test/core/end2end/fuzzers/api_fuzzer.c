@@ -1064,10 +1064,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                   &g_active_call->recv_status_details;
               break;
             case GRPC_OP_RECV_CLOSE_ON_SERVER:
-              op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-              has_ops |= 1 << GRPC_OP_RECV_CLOSE_ON_SERVER;
-              op->data.recv_close_on_server.cancelled =
-                  &g_active_call->cancelled;
+              //               op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+              //               has_ops |= 1 << GRPC_OP_RECV_CLOSE_ON_SERVER;
+              //               op->data.recv_close_on_server.cancelled =
+              //                   &g_active_call->cancelled;
               break;
           }
           op->reserved = NULL;
@@ -1154,9 +1154,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         call_state *cs = new_call(g_active_call, PENDING_SERVER);
         cs->pending_ops++;
         validator *v = create_validator(finished_request_call, cs);
-        grpc_call_error error =
-            grpc_server_request_call(g_server, &cs->call, &cs->call_details,
-                                     &cs->recv_initial_metadata, cq, cq, v);
+        grpc_call_error error = grpc_server_request_call(
+            g_server, &cs->call, &cs->call_details, &cs->recv_initial_metadata,
+            cq, cq, v, 0, NULL);
         if (error != GRPC_CALL_OK) {
           v->validate(v->arg, false);
           gpr_free(v);

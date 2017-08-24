@@ -47,7 +47,7 @@ static grpc_op status_op;
 static int got_sigint = 0;
 static grpc_byte_buffer *payload_buffer = NULL;
 static grpc_byte_buffer *terminal_buffer = NULL;
-static int was_cancelled = 2;
+// // static int was_cancelled = 2;
 
 static void *tag(intptr_t t) { return (void *)t; }
 
@@ -77,9 +77,10 @@ static void request_call_unary(int call_idx) {
     _exit(0);
   }
   grpc_metadata_array_init(&calls[call_idx].request_metadata_recv);
-  grpc_server_request_call(
-      server, &calls[call_idx].call, &calls[call_idx].call_details,
-      &calls[call_idx].request_metadata_recv, cq, cq, &calls[call_idx]);
+  grpc_server_request_call(server, &calls[call_idx].call,
+                           &calls[call_idx].call_details,
+                           &calls[call_idx].request_metadata_recv, cq, cq,
+                           &calls[call_idx], 0, NULL);
 }
 
 static void send_initial_metadata_unary(void *tag) {
@@ -129,10 +130,10 @@ static void send_snapshot(void *tag, struct grpc_memory_counters *snapshot) {
   grpc_slice details = grpc_slice_from_static_string("");
   op->data.send_status_from_server.status_details = &details;
   op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op++;
-
+  //   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  //   op->data.recv_close_on_server.cancelled = &was_cancelled;
+  //   op++;
+  //
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch((*(fling_call *)tag).call, snapshot_ops,
                                    (size_t)(op - snapshot_ops), tag, NULL));

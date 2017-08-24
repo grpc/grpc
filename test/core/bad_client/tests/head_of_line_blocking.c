@@ -80,7 +80,7 @@ static void verifier(grpc_server *server, grpc_completion_queue *cq,
 
   error = grpc_server_request_registered_call(server, registered_method, &s,
                                               &deadline, &request_metadata_recv,
-                                              &payload, cq, cq, tag(101));
+                                              &payload, cq, cq, tag(101), 0, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);

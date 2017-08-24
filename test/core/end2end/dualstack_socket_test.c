@@ -28,6 +28,7 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include "src/core/lib/surface/call.h"
 
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
@@ -75,7 +76,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  int was_cancelled = 2;
+  // //   int was_cancelled = 2;
   grpc_call_details call_details;
   char *peer;
   int picked_port = 0;
@@ -188,7 +189,8 @@ void test_connect(const char *server_host, const char *client_host, int port,
   if (expect_ok) {
     /* Check for a successful request. */
     error = grpc_server_request_call(server, &s, &call_details,
-                                     &request_metadata_recv, cq, cq, tag(101));
+                                     &request_metadata_recv, cq, cq, tag(101),
+                                     0, NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
     CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
     cq_verify(cqv);
@@ -206,10 +208,10 @@ void test_connect(const char *server_host, const char *client_host, int port,
     op->data.send_status_from_server.status_details = &status_details;
     op->flags = 0;
     op++;
-    op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-    op->data.recv_close_on_server.cancelled = &was_cancelled;
-    op->flags = 0;
-    op++;
+    //     op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+    //     op->data.recv_close_on_server.cancelled = &was_cancelled;
+    //     op->flags = 0;
+    //     op++;
     error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
@@ -226,7 +228,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
     GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
     GPR_ASSERT(0 ==
                grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"));
-    GPR_ASSERT(was_cancelled == 1);
+    GPR_ASSERT(grpc_call_get_cancelled(s));
 
     grpc_call_unref(s);
   } else {
