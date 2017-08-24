@@ -704,10 +704,10 @@ TEST_P(End2endTest, ReconnectChannel) {
   ResetStub();
   SendRpc(stub_.get(), 1, false);
   RestartServer(std::shared_ptr<AuthMetadataProcessor>());
-  // It needs more than 2 * kConnectivityCheckIntervalMsec time to reconnect
-  // the channel
+  // It needs more than kConnectivityCheckIntervalMsec time to reconnect the
+  // channel.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                               gpr_time_from_millis(210, GPR_TIMESPAN)));
+                               gpr_time_from_millis(510, GPR_TIMESPAN)));
   SendRpc(stub_.get(), 1, false);
 }
 

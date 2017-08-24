@@ -30,8 +30,6 @@
 struct grpc_channel;
 
 namespace grpc {
-class ChannelConnectivityWatcher;
-
 /// Channels represent a connection to an endpoint. Created by \a CreateChannel.
 class Channel final : public ChannelInterface,
                       public CallHook,
@@ -73,7 +71,6 @@ class Channel final : public ChannelInterface,
   bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                               gpr_timespec deadline) override;
 
-  std::unique_ptr<ChannelConnectivityWatcher> connectivity_watcher_;
   const grpc::string host_;
   grpc_channel* const c_channel_;  // owned
 };
