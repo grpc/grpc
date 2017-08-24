@@ -8463,17 +8463,17 @@
       "grpc_base"
     ], 
     "headers": [
-      "src/core/ext/filters/load_reporting/load_reporting.h", 
-      "src/core/ext/filters/load_reporting/load_reporting_filter.h"
+      "src/core/ext/filters/load_reporting/load_reporting_filter.h", 
+      "src/core/ext/filters/load_reporting/load_reporting_plugin.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "grpc_load_reporting", 
     "src": [
-      "src/core/ext/filters/load_reporting/load_reporting.c", 
-      "src/core/ext/filters/load_reporting/load_reporting.h", 
       "src/core/ext/filters/load_reporting/load_reporting_filter.c", 
-      "src/core/ext/filters/load_reporting/load_reporting_filter.h"
+      "src/core/ext/filters/load_reporting/load_reporting_filter.h", 
+      "src/core/ext/filters/load_reporting/load_reporting_plugin.c", 
+      "src/core/ext/filters/load_reporting/load_reporting_plugin.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

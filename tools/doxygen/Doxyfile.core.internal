@@ -976,10 +976,10 @@ src/core/ext/filters/http/message_compress/message_compress_filter.c \
 src/core/ext/filters/http/message_compress/message_compress_filter.h \
 src/core/ext/filters/http/server/http_server_filter.c \
 src/core/ext/filters/http/server/http_server_filter.h \
-src/core/ext/filters/load_reporting/load_reporting.c \
-src/core/ext/filters/load_reporting/load_reporting.h \
 src/core/ext/filters/load_reporting/load_reporting_filter.c \
 src/core/ext/filters/load_reporting/load_reporting_filter.h \
+src/core/ext/filters/load_reporting/load_reporting_plugin.c \
+src/core/ext/filters/load_reporting/load_reporting_plugin.h \
 src/core/ext/filters/max_age/max_age_filter.c \
 src/core/ext/filters/max_age/max_age_filter.h \
 src/core/ext/filters/message_size/message_size_filter.c \

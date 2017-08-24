@@ -25,8 +25,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/ext/filters/load_reporting/load_reporting.h"
 #include "src/core/ext/filters/load_reporting/load_reporting_filter.h"
+#include "src/core/ext/filters/load_reporting/load_reporting_plugin.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"

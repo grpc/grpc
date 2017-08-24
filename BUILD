@@ -1086,12 +1086,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_load_reporting",
     srcs = [
-        "src/core/ext/filters/load_reporting/load_reporting.c",
         "src/core/ext/filters/load_reporting/load_reporting_filter.c",
+        "src/core/ext/filters/load_reporting/load_reporting_plugin.c",
     ],
     hdrs = [
-        "src/core/ext/filters/load_reporting/load_reporting.h",
         "src/core/ext/filters/load_reporting/load_reporting_filter.h",
+        "src/core/ext/filters/load_reporting/load_reporting_plugin.h",
     ],
     language = "c",
     deps = [

@@ -24,8 +24,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/ext/filters/load_reporting/load_reporting.h"
 #include "src/core/ext/filters/load_reporting/load_reporting_filter.h"
+#include "src/core/ext/filters/load_reporting/load_reporting_plugin.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"

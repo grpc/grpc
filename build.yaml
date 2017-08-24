@@ -589,11 +589,11 @@ filegroups:
   - grpc_client_channel
 - name: grpc_load_reporting
   headers:
-  - src/core/ext/filters/load_reporting/load_reporting.h
   - src/core/ext/filters/load_reporting/load_reporting_filter.h
+  - src/core/ext/filters/load_reporting/load_reporting_plugin.h
   src:
-  - src/core/ext/filters/load_reporting/load_reporting.c
   - src/core/ext/filters/load_reporting/load_reporting_filter.c
+  - src/core/ext/filters/load_reporting/load_reporting_plugin.c
   plugin: grpc_load_reporting_plugin
   uses:
   - grpc_base

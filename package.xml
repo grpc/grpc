@@ -382,8 +382,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/load_reporting.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/load_reporting_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/load_reporting_plugin.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/aggregation.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/base_resources.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/census_interface.h" role="src" />
@@ -642,8 +642,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/load_reporting.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/load_reporting_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/load_reporting_plugin.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/base_resources.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/context.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.c" role="src" />
