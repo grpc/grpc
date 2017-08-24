@@ -69,7 +69,7 @@ class TagSaver final : public CompletionQueueTag {
 // support.
 class ChannelConnectivityWatcher {
  public:
-  ChannelConnectivityWatcher() : thd_id_(0) {
+  static void StartWatching(grpc_channel* channel) {
     char* env = gpr_getenv("GRPC_DISABLE_CHANNEL_CONNECTIVITY_WATCHER");
     bool disabled = false;
     if (env != nullptr) {
@@ -83,11 +83,22 @@ class ChannelConnectivityWatcher {
     }
     gpr_free(env);
     if (!disabled) {
-      gpr_ref_init(&ref_, 0);
-      gpr_thd_options options = gpr_thd_options_default();
-      gpr_thd_options_set_detached(&options);
-      gpr_thd_new(&thd_id_, &WatchStateChange, this, &options);
+      gpr_once_init(&g_connectivity_watcher_once_, InitConnectivityWatcherOnce);
+      gpr_mu_lock(&g_watcher_mu_);
+      if (g_watcher_ == nullptr) {
+        g_watcher_ = new ChannelConnectivityWatcher();
+      }
+      g_watcher_->StartWatchingLocked(channel);
+      gpr_mu_unlock(&g_watcher_mu_);
     }
+  }
+
+ private:
+  ChannelConnectivityWatcher() {
+    gpr_ref_init(&ref_, 0);
+    gpr_thd_options options = gpr_thd_options_default();
+    gpr_thd_options_set_detached(&options);
+    gpr_thd_new(&thd_id_, &WatchStateChange, this, &options);
   }
 
   void WatchStateChangeImpl() {
@@ -130,19 +141,6 @@ class ChannelConnectivityWatcher {
     }
   }
 
-  static void StartWatching(grpc_channel* channel) {
-    gpr_once_init(&g_connectivity_watcher_once_, InitConnectivityWatcherOnce);
-    gpr_mu_lock(&g_watcher_mu_);
-    if (g_watcher_ == nullptr) {
-      g_watcher_ = new ChannelConnectivityWatcher();
-    }
-    g_watcher_->StartWatchingLocked(channel);
-    gpr_mu_unlock(&g_watcher_mu_);
-  }
-
-  static void InitOnce() { gpr_mu_init(&g_watcher_mu_); }
-
- private:
   void StartWatchingLocked(grpc_channel* channel) {
     if (thd_id_ != 0) {
       gpr_ref(&ref_);
@@ -162,6 +160,11 @@ class ChannelConnectivityWatcher {
     }
   }
 
+  static void InitOnce() { gpr_mu_init(&g_watcher_mu_); }
+
+  friend void WatchStateChange(void* arg);
+  friend void InitConnectivityWatcherOnce();
+
   struct ChannelState {
     explicit ChannelState(grpc_channel* channel)
         : channel(channel), state(GRPC_CHANNEL_IDLE){};
@@ -175,6 +178,7 @@ class ChannelConnectivityWatcher {
 
   static gpr_once g_connectivity_watcher_once_;
   static gpr_mu g_watcher_mu_;
+  // protected under g_watcher_mu_
   static ChannelConnectivityWatcher* g_watcher_;
 };
 
@@ -190,8 +194,6 @@ void WatchStateChange(void* arg) {
 }
 
 void InitConnectivityWatcherOnce() { ChannelConnectivityWatcher::InitOnce(); };
-
-ChannelConnectivityWatcher channel_connectivity_watcher;
 }  // namespace
 
 static internal::GrpcLibraryInitializer g_gli_initializer;
