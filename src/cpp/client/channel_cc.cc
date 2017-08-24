@@ -60,17 +60,19 @@ class TagSaver final : public CompletionQueueTag {
   void* tag_;
 };
 
-}  // namespace
-
 // Constantly watches channel connectivity status to reconnect a transiently
 // disconnected channel. This is a temporary work-around before we have retry
 // support.
 class ChannelConnectivityWatcher {
  public:
-  ChannelConnectivityWatcher() {
-    gpr_thd_options options = gpr_thd_options_default();
-    gpr_thd_options_set_joinable(&options);
-    gpr_thd_new(&thd_id_, &WatchStateChange, this, &options);
+  ChannelConnectivityWatcher() : thd_id_(0) {
+    const char* disabled_str =
+        std::getenv("GRPC_DISABLE_CHANNEL_CONNECTIVITY_WATCHER");
+    if (disabled_str == nullptr || strcmp(disabled_str, "1")) {
+      gpr_thd_options options = gpr_thd_options_default();
+      gpr_thd_options_set_joinable(&options);
+      gpr_thd_new(&thd_id_, &WatchStateChange, this, &options);
+    }
   }
 
   ~ChannelConnectivityWatcher() {
@@ -114,9 +116,7 @@ class ChannelConnectivityWatcher {
   }
 
   void StartWatching(grpc_channel* channel) {
-    const char* disabled_str =
-        std::getenv("GRPC_DISABLE_CHANNEL_CONNECTIVITY_WATCHER");
-    if (disabled_str == nullptr || strcmp(disabled_str, "1")) {
+    if (thd_id_ != 0) {
       ChannelState* channel_state = new ChannelState(channel);
       // The first grpc_channel_watch_connectivity_state() is not used to
       // monitor the channel state change, but to hold a reference of the
@@ -146,7 +146,6 @@ class ChannelConnectivityWatcher {
   CompletionQueue shutdown_cq_;
 };
 
-namespace {
 void WatchStateChange(void* arg) {
   ChannelConnectivityWatcher* watcher =
       static_cast<ChannelConnectivityWatcher*>(arg);
