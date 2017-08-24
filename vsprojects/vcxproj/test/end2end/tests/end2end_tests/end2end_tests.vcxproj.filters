@@ -163,6 +163,15 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\simple_request.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\stream_compression_compressed_payload.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\stream_compression_payload.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\stream_compression_ping_pong_streaming.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\streaming_error_response.c">
       <Filter>test\core\end2end\tests</Filter>
     </ClCompile>

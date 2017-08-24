@@ -1544,6 +1544,7 @@ static void lb_on_response_received_locked(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_byte_buffer_reader bbr;
     grpc_byte_buffer_reader_init(&bbr, glb_policy->lb_response_payload);
     grpc_slice response_slice = grpc_byte_buffer_reader_readall(&bbr);
+    grpc_byte_buffer_reader_destroy(&bbr);
     grpc_byte_buffer_destroy(glb_policy->lb_response_payload);
 
     grpc_grpclb_initial_response *response = NULL;

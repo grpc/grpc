@@ -55,6 +55,7 @@ pod repo update  # needed by python
 brew install coreutils  # we need grealpath
 sudo pip install virtualenv
 sudo pip install -U six tox setuptools
+export PYTHONPATH=/Library/Python/3.4/site-packages
 
 # python 3.4
 wget -q https://www.python.org/ftp/python/3.4.4/python-3.4.4-macosx10.6.pkg

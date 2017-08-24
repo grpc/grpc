@@ -200,8 +200,12 @@ struct grpc_call {
 
   /* Compression algorithm for *incoming* data */
   grpc_compression_algorithm incoming_compression_algorithm;
+  /* Stream compression algorithm for *incoming* data */
+  grpc_stream_compression_algorithm incoming_stream_compression_algorithm;
   /* Supported encodings (compression algorithms), a bitset */
   uint32_t encodings_accepted_by_peer;
+  /* Supported stream encodings (stream compression algorithms), a bitset */
+  uint32_t stream_encodings_accepted_by_peer;
 
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context[GRPC_CONTEXT_COUNT];
@@ -793,6 +797,12 @@ static void set_incoming_compression_algorithm(
   call->incoming_compression_algorithm = algo;
 }
 
+static void set_incoming_stream_compression_algorithm(
+    grpc_call *call, grpc_stream_compression_algorithm algo) {
+  GPR_ASSERT(algo < GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT);
+  call->incoming_stream_compression_algorithm = algo;
+}
+
 grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
     grpc_call *call) {
   grpc_compression_algorithm algorithm;
@@ -804,6 +814,13 @@ static grpc_compression_algorithm compression_algorithm_for_level_locked(
     grpc_call *call, grpc_compression_level level) {
   return grpc_compression_algorithm_for_level(level,
                                               call->encodings_accepted_by_peer);
+}
+
+static grpc_stream_compression_algorithm
+stream_compression_algorithm_for_level_locked(
+    grpc_call *call, grpc_stream_compression_level level) {
+  return grpc_stream_compression_algorithm_for_level(
+      level, call->stream_encodings_accepted_by_peer);
 }
 
 uint32_t grpc_call_test_only_get_message_flags(grpc_call *call) {
@@ -860,10 +877,68 @@ static void set_encodings_accepted_by_peer(grpc_exec_ctx *exec_ctx,
       (void *)(((uintptr_t)call->encodings_accepted_by_peer) + 1));
 }
 
+static void set_stream_encodings_accepted_by_peer(grpc_exec_ctx *exec_ctx,
+                                                  grpc_call *call,
+                                                  grpc_mdelem mdel) {
+  size_t i;
+  grpc_stream_compression_algorithm algorithm;
+  grpc_slice_buffer accept_encoding_parts;
+  grpc_slice accept_encoding_slice;
+  void *accepted_user_data;
+
+  accepted_user_data =
+      grpc_mdelem_get_user_data(mdel, destroy_encodings_accepted_by_peer);
+  if (accepted_user_data != NULL) {
+    call->stream_encodings_accepted_by_peer =
+        (uint32_t)(((uintptr_t)accepted_user_data) - 1);
+    return;
+  }
+
+  accept_encoding_slice = GRPC_MDVALUE(mdel);
+  grpc_slice_buffer_init(&accept_encoding_parts);
+  grpc_slice_split(accept_encoding_slice, ",", &accept_encoding_parts);
+
+  /* Always support no compression */
+  GPR_BITSET(&call->stream_encodings_accepted_by_peer,
+             GRPC_STREAM_COMPRESS_NONE);
+  for (i = 0; i < accept_encoding_parts.count; i++) {
+    grpc_slice accept_encoding_entry_slice = accept_encoding_parts.slices[i];
+    if (grpc_stream_compression_algorithm_parse(accept_encoding_entry_slice,
+                                                &algorithm)) {
+      GPR_BITSET(&call->stream_encodings_accepted_by_peer, algorithm);
+    } else {
+      char *accept_encoding_entry_str =
+          grpc_slice_to_c_string(accept_encoding_entry_slice);
+      gpr_log(GPR_ERROR,
+              "Invalid entry in accept encoding metadata: '%s'. Ignoring.",
+              accept_encoding_entry_str);
+      gpr_free(accept_encoding_entry_str);
+    }
+  }
+
+  grpc_slice_buffer_destroy_internal(exec_ctx, &accept_encoding_parts);
+
+  grpc_mdelem_set_user_data(
+      mdel, destroy_encodings_accepted_by_peer,
+      (void *)(((uintptr_t)call->stream_encodings_accepted_by_peer) + 1));
+}
+
 uint32_t grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call *call) {
   uint32_t encodings_accepted_by_peer;
   encodings_accepted_by_peer = call->encodings_accepted_by_peer;
   return encodings_accepted_by_peer;
+}
+
+uint32_t grpc_call_test_only_get_stream_encodings_accepted_by_peer(
+    grpc_call *call) {
+  uint32_t stream_encodings_accepted_by_peer;
+  stream_encodings_accepted_by_peer = call->stream_encodings_accepted_by_peer;
+  return stream_encodings_accepted_by_peer;
+}
+
+grpc_stream_compression_algorithm
+grpc_call_test_only_get_incoming_stream_encodings(grpc_call *call) {
+  return call->incoming_stream_compression_algorithm;
 }
 
 static grpc_linked_mdelem *linked_from_md(const grpc_metadata *md) {
@@ -952,6 +1027,22 @@ static grpc_compression_algorithm decode_compression(grpc_mdelem md) {
   return algorithm;
 }
 
+static grpc_stream_compression_algorithm decode_stream_compression(
+    grpc_mdelem md) {
+  grpc_stream_compression_algorithm algorithm =
+      grpc_stream_compression_algorithm_from_slice(GRPC_MDVALUE(md));
+  if (algorithm == GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT) {
+    char *md_c_str = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+    gpr_log(GPR_ERROR,
+            "Invalid incoming stream compression algorithm: '%s'. Interpreting "
+            "incoming data as uncompressed.",
+            md_c_str);
+    gpr_free(md_c_str);
+    return GRPC_STREAM_COMPRESS_NONE;
+  }
+  return algorithm;
+}
+
 static void publish_app_metadata(grpc_call *call, grpc_metadata_batch *b,
                                  int is_trailing) {
   if (b->list.count == 0) return;
@@ -976,7 +1067,19 @@ static void publish_app_metadata(grpc_call *call, grpc_metadata_batch *b,
 
 static void recv_initial_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                 grpc_metadata_batch *b) {
-  if (b->idx.named.grpc_encoding != NULL) {
+  if (b->idx.named.content_encoding != NULL) {
+    if (b->idx.named.grpc_encoding != NULL) {
+      gpr_log(GPR_ERROR,
+              "Received both content-encoding and grpc-encoding header. "
+              "Ignoring grpc-encoding.");
+      grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_encoding);
+    }
+    GPR_TIMER_BEGIN("incoming_stream_compression_algorithm", 0);
+    set_incoming_stream_compression_algorithm(
+        call, decode_stream_compression(b->idx.named.content_encoding->md));
+    GPR_TIMER_END("incoming_stream_compression_algorithm", 0);
+    grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.content_encoding);
+  } else if (b->idx.named.grpc_encoding != NULL) {
     GPR_TIMER_BEGIN("incoming_compression_algorithm", 0);
     set_incoming_compression_algorithm(
         call, decode_compression(b->idx.named.grpc_encoding->md));
@@ -989,6 +1092,13 @@ static void recv_initial_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                    b->idx.named.grpc_accept_encoding->md);
     grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_accept_encoding);
     GPR_TIMER_END("encodings_accepted_by_peer", 0);
+  }
+  if (b->idx.named.accept_encoding != NULL) {
+    GPR_TIMER_BEGIN("stream_encodings_accepted_by_peer", 0);
+    set_stream_encodings_accepted_by_peer(exec_ctx, call,
+                                          b->idx.named.accept_encoding->md);
+    grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.accept_encoding);
+    GPR_TIMER_END("stream_encodings_accepted_by_peer", 0);
   }
   publish_app_metadata(call, b, false);
 }
@@ -1330,8 +1440,49 @@ static void receiving_stream_ready_in_call_combiner(grpc_exec_ctx *exec_ctx,
 static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
                                        batch_control *bctl) {
   grpc_call *call = bctl->call;
-  /* validate call->incoming_compression_algorithm */
-  if (call->incoming_compression_algorithm != GRPC_COMPRESS_NONE) {
+  /* validate compression algorithms */
+  if (call->incoming_stream_compression_algorithm !=
+      GRPC_STREAM_COMPRESS_NONE) {
+    const grpc_stream_compression_algorithm algo =
+        call->incoming_stream_compression_algorithm;
+    char *error_msg = NULL;
+    const grpc_compression_options compression_options =
+        grpc_channel_compression_options(call->channel);
+    if (algo >= GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT) {
+      gpr_asprintf(&error_msg,
+                   "Invalid stream compression algorithm value '%d'.", algo);
+      gpr_log(GPR_ERROR, "%s", error_msg);
+      cancel_with_status(exec_ctx, call, STATUS_FROM_SURFACE,
+                         GRPC_STATUS_UNIMPLEMENTED, error_msg);
+    } else if (grpc_compression_options_is_stream_compression_algorithm_enabled(
+                   &compression_options, algo) == 0) {
+      /* check if algorithm is supported by current channel config */
+      char *algo_name = NULL;
+      grpc_stream_compression_algorithm_name(algo, &algo_name);
+      gpr_asprintf(&error_msg, "Stream compression algorithm '%s' is disabled.",
+                   algo_name);
+      gpr_log(GPR_ERROR, "%s", error_msg);
+      cancel_with_status(exec_ctx, call, STATUS_FROM_SURFACE,
+                         GRPC_STATUS_UNIMPLEMENTED, error_msg);
+    }
+    gpr_free(error_msg);
+
+    GPR_ASSERT(call->stream_encodings_accepted_by_peer != 0);
+    if (!GPR_BITGET(call->stream_encodings_accepted_by_peer,
+                    call->incoming_stream_compression_algorithm)) {
+      if (GRPC_TRACER_ON(grpc_compression_trace)) {
+        char *algo_name = NULL;
+        grpc_stream_compression_algorithm_name(
+            call->incoming_stream_compression_algorithm, &algo_name);
+        gpr_log(
+            GPR_ERROR,
+            "Stream compression algorithm (content-encoding = '%s') not "
+            "present in the bitset of accepted encodings (accept-encodings: "
+            "'0x%x')",
+            algo_name, call->stream_encodings_accepted_by_peer);
+      }
+    }
+  } else if (call->incoming_compression_algorithm != GRPC_COMPRESS_NONE) {
     const grpc_compression_algorithm algo =
         call->incoming_compression_algorithm;
     char *error_msg = NULL;
@@ -1358,22 +1509,20 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
       call->incoming_compression_algorithm = algo;
     }
     gpr_free(error_msg);
-  }
 
-  /* make sure the received grpc-encoding is amongst the ones listed in
-   * grpc-accept-encoding */
-  GPR_ASSERT(call->encodings_accepted_by_peer != 0);
-  if (!GPR_BITGET(call->encodings_accepted_by_peer,
-                  call->incoming_compression_algorithm)) {
-    if (GRPC_TRACER_ON(grpc_compression_trace)) {
-      char *algo_name = NULL;
-      grpc_compression_algorithm_name(call->incoming_compression_algorithm,
-                                      &algo_name);
-      gpr_log(GPR_ERROR,
-              "Compression algorithm (grpc-encoding = '%s') not present in "
-              "the bitset of accepted encodings (grpc-accept-encodings: "
-              "'0x%x')",
-              algo_name, call->encodings_accepted_by_peer);
+    GPR_ASSERT(call->encodings_accepted_by_peer != 0);
+    if (!GPR_BITGET(call->encodings_accepted_by_peer,
+                    call->incoming_compression_algorithm)) {
+      if (GRPC_TRACER_ON(grpc_compression_trace)) {
+        char *algo_name = NULL;
+        grpc_compression_algorithm_name(call->incoming_compression_algorithm,
+                                        &algo_name);
+        gpr_log(GPR_ERROR,
+                "Compression algorithm (grpc-encoding = '%s') not present in "
+                "the bitset of accepted encodings (grpc-accept-encodings: "
+                "'0x%x')",
+                algo_name, call->encodings_accepted_by_peer);
+      }
     }
   }
 }
@@ -1501,29 +1650,58 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         /* process compression level */
         memset(&call->compression_md, 0, sizeof(call->compression_md));
         size_t additional_metadata_count = 0;
-        grpc_compression_level effective_compression_level;
+        grpc_compression_level effective_compression_level =
+            GRPC_COMPRESS_LEVEL_NONE;
+        grpc_stream_compression_level effective_stream_compression_level =
+            GRPC_STREAM_COMPRESS_LEVEL_NONE;
         bool level_set = false;
-        if (op->data.send_initial_metadata.maybe_compression_level.is_set) {
+        bool stream_compression = false;
+        if (op->data.send_initial_metadata.maybe_stream_compression_level
+                .is_set) {
+          effective_stream_compression_level =
+              op->data.send_initial_metadata.maybe_stream_compression_level
+                  .level;
+          level_set = true;
+          stream_compression = true;
+        } else if (op->data.send_initial_metadata.maybe_compression_level
+                       .is_set) {
           effective_compression_level =
               op->data.send_initial_metadata.maybe_compression_level.level;
           level_set = true;
         } else {
           const grpc_compression_options copts =
               grpc_channel_compression_options(call->channel);
-          level_set = copts.default_level.is_set;
-          if (level_set) {
+          if (copts.default_stream_compression_level.is_set) {
+            level_set = true;
+            effective_stream_compression_level =
+                copts.default_stream_compression_level.level;
+            stream_compression = true;
+          } else if (copts.default_level.is_set) {
+            level_set = true;
             effective_compression_level = copts.default_level.level;
           }
         }
         if (level_set && !call->is_client) {
-          const grpc_compression_algorithm calgo =
-              compression_algorithm_for_level_locked(
-                  call, effective_compression_level);
-          // the following will be picked up by the compress filter and used as
-          // the call's compression algorithm.
-          call->compression_md.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
-          call->compression_md.value = grpc_compression_algorithm_slice(calgo);
-          additional_metadata_count++;
+          if (stream_compression) {
+            const grpc_stream_compression_algorithm calgo =
+                stream_compression_algorithm_for_level_locked(
+                    call, effective_stream_compression_level);
+            call->compression_md.key =
+                GRPC_MDSTR_GRPC_INTERNAL_STREAM_ENCODING_REQUEST;
+            call->compression_md.value =
+                grpc_stream_compression_algorithm_slice(calgo);
+          } else {
+            const grpc_compression_algorithm calgo =
+                compression_algorithm_for_level_locked(
+                    call, effective_compression_level);
+            /* the following will be picked up by the compress filter and used
+             * as the call's compression algorithm. */
+            call->compression_md.key =
+                GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
+            call->compression_md.value =
+                grpc_compression_algorithm_slice(calgo);
+            additional_metadata_count++;
+          }
         }
 
         if (op->data.send_initial_metadata.count + additional_metadata_count >
