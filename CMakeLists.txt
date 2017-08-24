@@ -9909,6 +9909,7 @@ target_link_libraries(bm_fullstack_trickle
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
