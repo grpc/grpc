@@ -118,4 +118,6 @@ some configuration as environment variables that can be set.
   The channel connectivity watcher uses one extra thread to check the channel
   state every 500 ms on the client side. It can help reconnect disconnected
   client channels (mostly due to idleness), so that the next RPC on this channel
-  won't fail. Set to 1 to turn off this watcher and save a thread.
+  won't fail. Set to 1 to turn off this watcher and save a thread. Please note
+  this is a temporary work-around, it will be removed in the future once we have
+  support for automatically reestablishing failed connections.
