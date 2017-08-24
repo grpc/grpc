@@ -94,6 +94,23 @@ PluginMetadataInfo::getInfo(CallCredentialsData* const pCallCredentials)
     return metaDataInfo;
 }
 
+bool PluginMetadataInfo::deleteInfo(CallCredentialsData* const pCallCredentials)
+{
+    std::lock_guard<std::mutex> lock{ m_Lock };
+    auto itrFind = m_MetaDataMap.find(pCallCredentials);
+    if (itrFind != m_MetaDataMap.cend())
+    {
+        // erase the entry
+        m_MetaDataMap.erase(itrFind);
+        return true;
+    }
+    else
+    {
+        // does not exist
+        return false;
+    }
+}
+
 /*****************************************************************************/
 /*                           Call Credentials Data                           */
 /*****************************************************************************/
@@ -259,6 +276,13 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
     PluginMetadataInfo& pluginMetaDataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
     PluginMetadataInfo::MetaDataInfo metaDataInfo{ pluginMetaDataInfo.getInfo(pCallCrendentials) };
 
+    MetadataPromise* const pMetaDataPromise{ std::get<0>(metaDataInfo) };
+    if (!pMetaDataPromise)
+    {
+        // failed to get promise associated with call credentials
+        return;
+    }
+
     std::thread::id callThread{ std::get<1>(metaDataInfo) };
     if (callThread == std::this_thread::get_id())
     {
@@ -266,7 +290,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
         plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data,
                                            true };
         plugin_do_get_metadata(ptr, context, cb, user_data);
-        std::get<0>(metaDataInfo)->set_value(std::move(params));
+        pMetaDataPromise->set_value(std::move(params));
     }
     else
     {
@@ -274,7 +298,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
         plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data };
 
         // return the meta data params in the promise
-        std::get<0>(metaDataInfo)->set_value(std::move(params));
+        pMetaDataPromise->set_value(std::move(params));
     }
 }
 

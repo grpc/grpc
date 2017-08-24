@@ -116,6 +116,7 @@ public:
     // interface functions
     void setInfo(CallCredentialsData* const pCallCredentials, const MetaDataInfo& metaDataInfo);
     MetaDataInfo getInfo(CallCredentialsData* const pCallCredentials);
+    bool deleteInfo(CallCredentialsData* const pCallCredentals);
 
     // singleton accessor
     static PluginMetadataInfo& getPluginMetadataInfo(void);

@@ -517,7 +517,8 @@ Object HHVM_METHOD(Call, startBatch,
 
     // set up the crendential promise for the call credentials set up with this call for
     // the plugin_get_metadata routine
-    if (sending_initial_metadata && pCallData->credentialed())
+    bool credentialedCall{ sending_initial_metadata && pCallData->credentialed() };
+    if (credentialedCall)
     {
         PluginMetadataInfo& pluginMetadataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
         PluginMetadataInfo::MetaDataInfo metaDataInfo{ &(pCallData->getPromise()),
@@ -544,6 +545,12 @@ Object HHVM_METHOD(Call, startBatch,
                                 gpr_inf_future(GPR_CLOCK_REALTIME), nullptr));
     if (event.type != GRPC_OP_COMPLETE )
     {
+        // failed so remove promise info and return empty object
+        if (credentialedCall)
+        {
+            PluginMetadataInfo& pluginMetadataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
+            pluginMetadataInfo.deleteInfo(pCallData->callCredentials());
+        }
         return resultObj;
     }
 
@@ -552,15 +559,18 @@ Object HHVM_METHOD(Call, startBatch,
     // one thread. However gRPC calls call_credentials.cpp:plugin_get_metadata in a different thread
     // in many cases and that violates the thread safety within a request in HHVM and causes segfaults
     // at any reasonable concurrency.
-    if (sending_initial_metadata && pCallData->credentialed())
+    if (credentialedCall)
     {
         // wait on the plugin_get_metadata to complete
         auto getPluginMetadataFuture = pCallData->getPromise().get_future();
         std::future_status status{ getPluginMetadataFuture.wait_for(std::chrono::milliseconds{ pCallData->getTimeout() }) };
         if (status == std::future_status::timeout)
         {
-            std::cout << "Got plugin metadata future timeout" << std::endl;
-            // NOTE: If a credential call fails then this should be a failure.
+            //std::cout << "Got plugin metadata future timeout" << std::endl;
+
+            // failed so remove promise info and return empty object
+            PluginMetadataInfo& pluginMetadataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
+            pluginMetadataInfo.deleteInfo(pCallData->callCredentials());
             return resultObj;
         }
         else
@@ -569,7 +579,7 @@ Object HHVM_METHOD(Call, startBatch,
             //std::cout << "Got plugin metadata future: " << metaDataParams.completed << std::endl;
             if (!metaDataParams.completed)
             {
-                std::cout << "Metadata plugin not completed. Running now." << std::endl;
+                //std::cout << "Metadata plugin not completed. Running now." << std::endl;
                 // call the plugin in this thread if it wasn't completed already
                 plugin_do_get_metadata(metaDataParams.ptr, metaDataParams.context,
                                        metaDataParams.cb, metaDataParams.user_data);
