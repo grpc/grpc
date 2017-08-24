@@ -69,6 +69,7 @@
     <file baseinstalldir="/" name="include/grpc/support/string_util.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/subprocess.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/sync_custom.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync_windows.h" role="src" />
@@ -87,6 +88,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_custom.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
@@ -169,6 +171,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_custom.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
