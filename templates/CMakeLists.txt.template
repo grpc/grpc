@@ -224,6 +224,7 @@
       endif()
       if(TARGET protoc)
         set(_gRPC_PROTOBUF_PROTOC protoc)
+        set(_gRPC_PROTOBUF_PROTOC_EXECUTABLE $<TARGET_FILE:protoc>)
       endif()
     else()
         message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
@@ -247,8 +248,10 @@
       endif()
       if(TARGET protobuf::protoc)
         set(_gRPC_PROTOBUF_PROTOC protobuf::protoc)
+        set(_gRPC_PROTOBUF_PROTOC_EXECUTABLE $<TARGET_FILE:protobuf::protoc>)
       else()
         set(_gRPC_PROTOBUF_PROTOC <%text>${PROTOBUF_PROTOC_EXECUTABLE}</%text>)
+        set(_gRPC_PROTOBUF_PROTOC_EXECUTABLE <%text>${PROTOBUF_PROTOC_EXECUTABLE}</%text>)
       endif()
       set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND AND NOT PROTOBUF_FOUND)\n  find_package(Protobuf <%text>${gRPC_PROTOBUF_PACKAGE_TYPE}</%text>)\nendif()")
     endif()
@@ -373,7 +376,7 @@
                <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h"</%text>
                <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc"</%text>
                <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h"</%text>
-        COMMAND <%text>$<TARGET_FILE:${_gRPC_PROTOBUF_PROTOC}></%text>
+        COMMAND <%text>${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}</%text>
         ARGS --grpc_out=<%text>generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}</%text>
              --cpp_out=<%text>${_gRPC_PROTO_GENS_DIR}</%text>
              --plugin=protoc-gen-grpc=$<TARGET_FILE:grpc_cpp_plugin>
