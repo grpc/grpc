@@ -23,10 +23,14 @@
 
 /* Users defining GPR_CUSTOM_SYNC need to define the following macros. */
 
+#ifdef GPR_CUSTOM_SYNC
+
 typedef GPR_CUSTOM_MU_TYPE gpr_mu;
 typedef GPR_CUSTOM_CV_TYPE gpr_cv;
 typedef GPR_CUSTOM_ONCE_TYPE gpr_once;
 
 #define GPR_ONCE_INIT GPR_CUSTOM_ONCE_INIT
+
+#endif
 
 #endif /* GRPC_IMPL_CODEGEN_SYNC_CUSTOM_H */
