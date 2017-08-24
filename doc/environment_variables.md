@@ -113,3 +113,9 @@ some configuration as environment variables that can be set.
   - native (default)- a DNS resolver based around getaddrinfo(), creates a new thread to
     perform name resolution
   - ares - a DNS resolver based around the c-ares library
+
+* GRPC_DISABLE_CHANNEL_CONNECTIVITY_WATCHER
+  The channel connectivity watcher uses one extra thread to check the channel
+  state every 500 ms on the client side. It can help reconnect disconnected
+  client channels (mostly due to idleness), so that the next RPC on this channel
+  won't fail. Set to 1 to turn off this watcher and save a thread.

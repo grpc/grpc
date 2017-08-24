@@ -38,7 +38,9 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <grpc/support/useful.h>
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/support/env.h"
 
 namespace grpc {
 
@@ -66,9 +68,20 @@ class TagSaver final : public CompletionQueueTag {
 class ChannelConnectivityWatcher {
  public:
   ChannelConnectivityWatcher() : thd_id_(0) {
-    const char* disabled_str =
-        std::getenv("GRPC_DISABLE_CHANNEL_CONNECTIVITY_WATCHER");
-    if (disabled_str == nullptr || strcmp(disabled_str, "1")) {
+    char* env = gpr_getenv("GRPC_DISABLE_CHANNEL_CONNECTIVITY_WATCHER");
+    bool disabled = false;
+    if (env != nullptr) {
+      static const char* truthy[] = {"yes",  "Yes",  "YES", "true",
+                                     "True", "TRUE", "1"};
+      for (size_t i = 0; i < GPR_ARRAY_SIZE(truthy); i++) {
+        if (0 == strcmp(env, truthy[i])) {
+          disabled = true;
+          break;
+        }
+      }
+    }
+    gpr_free(env);
+    if (!disabled) {
       gpr_thd_options options = gpr_thd_options_default();
       gpr_thd_options_set_joinable(&options);
       gpr_thd_new(&thd_id_, &WatchStateChange, this, &options);
@@ -121,7 +134,7 @@ class ChannelConnectivityWatcher {
       // The first grpc_channel_watch_connectivity_state() is not used to
       // monitor the channel state change, but to hold a reference of the
       // c channel. So that WatchStateChangeImpl() can observe state ==
-      // GRPC_CHANNEL_SHUTDOWN without holding any lock on the channel object.
+      // GRPC_CHANNEL_SHUTDOWN before the channel gets destroyed.
       grpc_channel_watch_connectivity_state(
           channel_state->channel, channel_state->state,
           gpr_inf_future(GPR_CLOCK_REALTIME), channel_state->shutdown_cq.cq(),
