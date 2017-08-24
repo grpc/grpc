@@ -35,12 +35,15 @@
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
+#include <grpc/support/time.h>
 #include "src/core/lib/profiling/timers.h"
 
 namespace grpc {
 
 namespace {
+int kConnectivityCheckIntervalMsec = 100;
 void WatchStateChange(void* arg);
 }  // namespace
 
@@ -59,7 +62,13 @@ class ChannelConnectivityWatcher {
     while (state != GRPC_CHANNEL_SHUTDOWN) {
       channel_->NotifyOnStateChange(state, gpr_inf_future(GPR_CLOCK_REALTIME),
                                     &cq_, NULL);
-      cq_.Next(&tag, &ok);
+      while (cq_.AsyncNext(&tag, &ok, gpr_inf_past(GPR_CLOCK_REALTIME)) ==
+             CompletionQueue::TIMEOUT) {
+        gpr_sleep_until(
+            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                         gpr_time_from_micros(kConnectivityCheckIntervalMsec,
+                                              GPR_TIMESPAN)));
+      }
       state = channel_->GetState(false);
     }
   }
@@ -84,10 +93,10 @@ class ChannelConnectivityWatcher {
   void Destroy() {
     if (thd_id_ != 0) {
       gpr_thd_join(thd_id_);
-      bool ok = false;
-      void* tag = NULL;
-      shutdown_cq_.Next(&tag, &ok);
     }
+    bool ok = false;
+    void* tag = NULL;
+    shutdown_cq_.Next(&tag, &ok);
   }
 
  private:
