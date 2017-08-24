@@ -29,7 +29,7 @@ for dir in $DIRS
 do
   for glob in $GLOB
   do
-    files="$files `find ${CLANG_FORMAT_ROOT}/$dir -name $glob -and -not -name *.generated.* -and -not -name *.pb.h -and -not -name *.pb.c -and -not -name *.pb.cc`"
+    files="$files `find ${CLANG_FORMAT_ROOT}/$dir -name $glob -and -not -name *.generated.* -and -not -name *.pb.h -and -not -name *.pb.c -and -not -name *.pb.cc -and -not -name end2end_tests.c -and -not -name end2end_nosec_tests.c`"
   done
 done
 

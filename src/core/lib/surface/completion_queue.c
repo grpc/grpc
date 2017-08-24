@@ -976,7 +976,6 @@ static void cq_shutdown_next(grpc_exec_ctx *exec_ctx,
   if (cqd->shutdown_called) {
     gpr_mu_unlock(cq->mu);
     GRPC_CQ_INTERNAL_UNREF(exec_ctx, cq, "shutting_down");
-    GPR_TIMER_END("grpc_completion_queue_shutdown", 0);
     return;
   }
   cqd->shutdown_called = true;
@@ -1208,7 +1207,6 @@ static void cq_shutdown_pluck(grpc_exec_ctx *exec_ctx,
   if (cqd->shutdown_called) {
     gpr_mu_unlock(cq->mu);
     GRPC_CQ_INTERNAL_UNREF(exec_ctx, cq, "shutting_down (pluck cq)");
-    GPR_TIMER_END("grpc_completion_queue_shutdown", 0);
     return;
   }
   cqd->shutdown_called = true;

@@ -8424,6 +8424,9 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/simple_delayed_request.c \
     test/core/end2end/tests/simple_metadata.c \
     test/core/end2end/tests/simple_request.c \
+    test/core/end2end/tests/stream_compression_compressed_payload.c \
+    test/core/end2end/tests/stream_compression_payload.c \
+    test/core/end2end/tests/stream_compression_ping_pong_streaming.c \
     test/core/end2end/tests/streaming_error_response.c \
     test/core/end2end/tests/trailing_metadata.c \
     test/core/end2end/tests/workaround_cronet_compression.c \
@@ -8519,6 +8522,9 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/simple_delayed_request.c \
     test/core/end2end/tests/simple_metadata.c \
     test/core/end2end/tests/simple_request.c \
+    test/core/end2end/tests/stream_compression_compressed_payload.c \
+    test/core/end2end/tests/stream_compression_payload.c \
+    test/core/end2end/tests/stream_compression_ping_pong_streaming.c \
     test/core/end2end/tests/streaming_error_response.c \
     test/core/end2end/tests/trailing_metadata.c \
     test/core/end2end/tests/workaround_cronet_compression.c \
