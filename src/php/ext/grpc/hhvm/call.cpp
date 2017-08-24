@@ -544,8 +544,7 @@ Object HHVM_METHOD(Call, startBatch,
                                 gpr_inf_future(GPR_CLOCK_REALTIME), nullptr));
     if (event.type != GRPC_OP_COMPLETE )
     {
-    	//  NOTE: Process partial return results
-        // return resultObj;
+        return resultObj;
     }
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
