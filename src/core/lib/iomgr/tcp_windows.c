@@ -24,7 +24,8 @@
 
 #include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
-
+#include <iphlpapi.h>
+#include <Mstcpip.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -71,11 +72,33 @@ static grpc_error *set_dualstack(SOCKET sock) {
              : GRPC_WSA_ERROR(WSAGetLastError(), "setsockopt(IPV6_V6ONLY)");
 }
 
+static const int kTCPKeepAliveSeconds = 45;
+
+static grpc_error *set_tcp_keepalive(SOCKET socket, BOOL enable, int delay_secs)
+{
+    unsigned delay = delay_secs * 1000;
+    struct tcp_keepalive keepalive_vals = {
+        enable ? 1u : 0u,  // TCP keep-alive on.
+        delay,             // Delay seconds before sending first TCP keep-alive packet.
+        delay,             // Delay seconds between sending TCP keep-alive packets.
+    };
+    DWORD bytes_returned = 0xABAB;
+    int rv = WSAIoctl(socket, SIO_KEEPALIVE_VALS, &keepalive_vals, sizeof(keepalive_vals), NULL, 0, &bytes_returned, NULL, NULL);
+    if (rv != 0) {
+        int os_error = WSAGetLastError();
+		gpr_log(GPR_ERROR, "Could not enable TCP Keep-Alive for socket. error = %d", os_error); 
+		return GRPC_WSA_ERROR(WSAGetLastError(), "WSAIoctl(SIO_KEEPALIVE_VALS)");
+    }
+    return GRPC_ERROR_NONE;
+}
+
 grpc_error *grpc_tcp_prepare_socket(SOCKET sock) {
   grpc_error *err;
   err = set_non_block(sock);
   if (err != GRPC_ERROR_NONE) return err;
   err = set_dualstack(sock);
+  if (err != GRPC_ERROR_NONE) return err;
+  err = set_tcp_keepalive(sock, TRUE, kTCPKeepAliveSeconds);
   if (err != GRPC_ERROR_NONE) return err;
   return GRPC_ERROR_NONE;
 }
