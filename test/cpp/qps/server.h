@@ -42,10 +42,9 @@ class Server {
   explicit Server(const ServerConfig& config)
       : timer_(new UsageTimer), last_reset_poll_count_(0) {
     cores_ = gpr_cpu_num_cores();
-    if (config.port()) {
+    if (config.port()) {  // positive for a fixed port, negative for inproc
       port_ = config.port();
-
-    } else {
+    } else {  // zero for dynamic port
       port_ = grpc_pick_unused_port_or_die();
     }
   }
@@ -114,6 +113,9 @@ class Server {
     // For sync server.
     return 0;
   }
+
+  virtual std::shared_ptr<Channel> InProcessChannel(
+      const ChannelArguments& args) = 0;
 
  protected:
   static void ApplyConfigToBuilder(const ServerConfig& config,
