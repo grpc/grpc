@@ -473,8 +473,10 @@ class Jobset(object):
     while self._running:
       if self.cancelled(): pass  # poll cancellation
       self.reap()
-    if platform_string() != 'windows':
-      signal.alarm(0)
+    global have_alarm
+    if platform_string() != 'windows' and have_alarm:
+      signal.alarm(1)
+      signal.pause()
     return not self.cancelled() and self._failures == 0
 
 
