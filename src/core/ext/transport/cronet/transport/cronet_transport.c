@@ -187,8 +187,34 @@ struct stream_obj {
 
   /* Mutex to protect storage */
   gpr_mu mu;
+
+  /* Refcount object of the stream */
+  grpc_stream_refcount *refcount;
 };
 typedef struct stream_obj stream_obj;
+
+#ifndef NDEBUG
+#define GRPC_CRONET_STREAM_REF(stream, reason) \
+grpc_cronet_stream_ref((stream), (reason))
+#define GRPC_CRONET_STREAM_UNREF(exec_ctx, stream, reason) \
+grpc_cronet_stream_unref((exec_ctx), (stream), (reason))
+void grpc_cronet_stream_ref(stream_obj *s, const char *reason) {
+  grpc_stream_ref(s->refcount, reason);
+}
+void grpc_cronet_stream_unref(grpc_exec_ctx *exec_ctx, stream_obj *s, const char *reason) {
+  grpc_stream_unref(exec_ctx, s->refcount, reason);
+}
+#else
+#define GRPC_CRONET_STREAM_REF(stream, reason) grpc_cronet_stream_ref((stream))
+#define GRPC_CRONET_STREAM_UNREF(exec_ctx, stream, reason) \
+grpc_cronet_stream_unref((exec_ctx), (stream))
+void grpc_cronet_stream_ref(stream_obj *s) {
+  grpc_stream_ref(s->refcount);
+}
+void grpc_cronet_stream_unref(grpc_exec_ctx *exec_ctx, stream_obj *s) {
+  grpc_stream_unref(exec_ctx, s->refcount);
+}
+#endif
 
 static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
                                           struct op_and_state *oas);
@@ -377,6 +403,8 @@ static void execute_from_storage(stream_obj *s) {
 */
 static void on_failed(bidirectional_stream *stream, int net_error) {
   CRONET_LOG(GPR_DEBUG, "on_failed(%p, %d)", stream, net_error);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
   stream_obj *s = (stream_obj *)stream->annotation;
   gpr_mu_lock(&s->mu);
   bidirectional_stream_destroy(s->cbs);
@@ -393,6 +421,8 @@ static void on_failed(bidirectional_stream *stream, int net_error) {
   null_and_maybe_free_read_buffer(s);
   gpr_mu_unlock(&s->mu);
   execute_from_storage(s);
+  GRPC_CRONET_STREAM_UNREF(&exec_ctx, s, "cronet transport");
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 /*
@@ -400,6 +430,8 @@ static void on_failed(bidirectional_stream *stream, int net_error) {
 */
 static void on_canceled(bidirectional_stream *stream) {
   CRONET_LOG(GPR_DEBUG, "on_canceled(%p)", stream);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
   stream_obj *s = (stream_obj *)stream->annotation;
   gpr_mu_lock(&s->mu);
   bidirectional_stream_destroy(s->cbs);
@@ -416,6 +448,8 @@ static void on_canceled(bidirectional_stream *stream) {
   null_and_maybe_free_read_buffer(s);
   gpr_mu_unlock(&s->mu);
   execute_from_storage(s);
+  GRPC_CRONET_STREAM_UNREF(&exec_ctx, s, "cronet transport");
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 /*
@@ -423,6 +457,8 @@ static void on_canceled(bidirectional_stream *stream) {
 */
 static void on_succeeded(bidirectional_stream *stream) {
   CRONET_LOG(GPR_DEBUG, "on_succeeded(%p)", stream);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
   stream_obj *s = (stream_obj *)stream->annotation;
   gpr_mu_lock(&s->mu);
   bidirectional_stream_destroy(s->cbs);
@@ -431,6 +467,8 @@ static void on_succeeded(bidirectional_stream *stream) {
   null_and_maybe_free_read_buffer(s);
   gpr_mu_unlock(&s->mu);
   execute_from_storage(s);
+  GRPC_CRONET_STREAM_UNREF(&exec_ctx, s, "cronet transport");
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 /*
@@ -1313,6 +1351,9 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                        grpc_stream *gs, grpc_stream_refcount *refcount,
                        const void *server_data, gpr_arena *arena) {
   stream_obj *s = (stream_obj *)gs;
+
+  s->refcount = refcount;
+  GRPC_CRONET_STREAM_REF(s, "cronet transport");
   memset(&s->storage, 0, sizeof(s->storage));
   s->storage.head = NULL;
   memset(&s->state, 0, sizeof(s->state));
