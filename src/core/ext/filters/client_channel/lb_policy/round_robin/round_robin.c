@@ -654,7 +654,6 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
       sc_args.args = sd->channel_args_for_subchannel;
       sd->subchannel = grpc_client_channel_factory_create_subchannel(
           exec_ctx, p->client_channel_factory, &sc_args);
-
       if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
         gpr_log(GPR_DEBUG,
                 "[RR %p]: Created (reconnect) subchannel %p for address uri %s "

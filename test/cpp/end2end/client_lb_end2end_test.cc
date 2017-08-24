@@ -516,7 +516,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinConcurrentUpdates) {
   // update provisions of RR.
 }
 
-TEST_F(ClientLbEnd2endTest, RoundRobinReconnect) {
+TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   std::vector<int> ports;
@@ -540,16 +540,14 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReconnect) {
   }
   // Client request should fail.
   CheckRpcSendFailure();
-
   // Bring servers back up on the same port (we aren't recreating the channel).
   StartServers(kNumServers, ports);
-
   // Client request should succeed.
   CheckRpcSendOk();
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
-  const int kNumServers = 2;
+  const int kNumServers = 3;
   StartServers(kNumServers);
   ResetStub("round_robin");
   std::vector<int> ports;
@@ -565,8 +563,6 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
   for (size_t i = 0; i < servers_.size(); ++i) {
     EXPECT_EQ(1, servers_[i]->service_.request_count());
   }
-  // Check LB policy name for the channel.
-  EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
   const auto pre_death = servers_[0]->service_.request_count();
   // Kill the first server.
   servers_[0]->Shutdown(true);
@@ -574,6 +570,8 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
   // before noticing the change in the server's connectivity.
   while (!SendRpc().ok())
     ;  // Retry until success.
+  // Send a bunch of RPCs that should succeed.
+  for (int i = 0; i < 10 * kNumServers; ++i) CheckRpcSendOk();
   const auto post_death = servers_[0]->service_.request_count();
   // No requests have gone to the deceased server.
   EXPECT_EQ(pre_death, post_death);
