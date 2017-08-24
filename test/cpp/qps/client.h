@@ -31,7 +31,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/payloads.pb.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 
