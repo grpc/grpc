@@ -195,22 +195,21 @@ typedef struct stream_obj stream_obj;
 
 #ifndef NDEBUG
 #define GRPC_CRONET_STREAM_REF(stream, reason) \
-grpc_cronet_stream_ref((stream), (reason))
+  grpc_cronet_stream_ref((stream), (reason))
 #define GRPC_CRONET_STREAM_UNREF(exec_ctx, stream, reason) \
-grpc_cronet_stream_unref((exec_ctx), (stream), (reason))
+  grpc_cronet_stream_unref((exec_ctx), (stream), (reason))
 void grpc_cronet_stream_ref(stream_obj *s, const char *reason) {
   grpc_stream_ref(s->refcount, reason);
 }
-void grpc_cronet_stream_unref(grpc_exec_ctx *exec_ctx, stream_obj *s, const char *reason) {
+void grpc_cronet_stream_unref(grpc_exec_ctx *exec_ctx, stream_obj *s,
+                              const char *reason) {
   grpc_stream_unref(exec_ctx, s->refcount, reason);
 }
 #else
 #define GRPC_CRONET_STREAM_REF(stream, reason) grpc_cronet_stream_ref((stream))
 #define GRPC_CRONET_STREAM_UNREF(exec_ctx, stream, reason) \
-grpc_cronet_stream_unref((exec_ctx), (stream))
-void grpc_cronet_stream_ref(stream_obj *s) {
-  grpc_stream_ref(s->refcount);
-}
+  grpc_cronet_stream_unref((exec_ctx), (stream))
+void grpc_cronet_stream_ref(stream_obj *s) { grpc_stream_ref(s->refcount); }
 void grpc_cronet_stream_unref(grpc_exec_ctx *exec_ctx, stream_obj *s) {
   grpc_stream_unref(exec_ctx, s->refcount);
 }
