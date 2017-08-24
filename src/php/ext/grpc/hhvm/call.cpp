@@ -559,14 +559,17 @@ Object HHVM_METHOD(Call, startBatch,
         std::future_status status{ getPluginMetadataFuture.wait_for(std::chrono::milliseconds{ pCallData->getTimeout() }) };
         if (status == std::future_status::timeout)
         {
+            std::cout << "Got plugin metadata future timeout" << std::endl;
             // NOTE: If a credential call fails then this should be a failure.
             return resultObj;
         }
         else
         {
             plugin_get_metadata_params metaDataParams{ getPluginMetadataFuture.get() };
+            //std::cout << "Got plugin metadata future: " << metaDataParams.completed << std::endl;
             if (!metaDataParams.completed)
             {
+                std::cout << "Metadata plugin not completed. Running now." << std::endl;
                 // call the plugin in this thread if it wasn't completed already
                 plugin_do_get_metadata(metaDataParams.ptr, metaDataParams.context,
                                        metaDataParams.cb, metaDataParams.user_data);
