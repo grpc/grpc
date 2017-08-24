@@ -278,9 +278,9 @@ void HHVM_METHOD(Call, __construct,
 
     TimevalData* const pDeadlineTimevalData{ Native::data<TimevalData>(deadline_obj) };
 
-    Slice method_slice{ !method.empty() ? Slice{ method } : Slice{ } };
+    Slice method_slice{ !method.empty() ? method : String{} };
     Slice host_slice{ !host_override.isNull() && host_override.isString() ?
-                       Slice{ host_override.toString() } : Slice { } };
+                       host_override.toString() : String{} };
 
     std::unique_ptr<CompletionQueue> pCompletionQueue{ CompletionQueue::getClientQueue() };
 
@@ -544,7 +544,8 @@ Object HHVM_METHOD(Call, startBatch,
                                 gpr_inf_future(GPR_CLOCK_REALTIME), nullptr));
     if (event.type != GRPC_OP_COMPLETE )
     {
-        return resultObj;
+    	//  NOTE: Process partial return results
+        // return resultObj;
     }
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
