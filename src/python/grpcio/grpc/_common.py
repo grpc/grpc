@@ -150,6 +150,7 @@ class CleanupThread(threading.Thread):
             kwargs: Keyword arguments passed to threading.Thread constructor.
         """
         super(CleanupThread, self).__init__(*args, **kwargs)
+        self.daemon = True
         self._behavior = behavior
 
     def join(self, timeout=None):
