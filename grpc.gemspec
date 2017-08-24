@@ -95,7 +95,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/support/stack_lockfree.h )
   s.files += %w( src/core/lib/support/string.h )
   s.files += %w( src/core/lib/support/string_windows.h )
-  s.files += %w( src/core/lib/support/thd_internal.h )
   s.files += %w( src/core/lib/support/time_precise.h )
   s.files += %w( src/core/lib/support/tmpfile.h )
   s.files += %w( src/core/lib/profiling/basic_timers.c )

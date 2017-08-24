@@ -1330,7 +1330,6 @@ src/core/lib/support/sync.c \
 src/core/lib/support/sync_posix.c \
 src/core/lib/support/sync_windows.c \
 src/core/lib/support/thd.c \
-src/core/lib/support/thd_internal.h \
 src/core/lib/support/thd_posix.c \
 src/core/lib/support/thd_windows.c \
 src/core/lib/support/time.c \

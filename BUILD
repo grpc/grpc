@@ -523,7 +523,6 @@ grpc_cc_library(
         "src/core/lib/support/stack_lockfree.h",
         "src/core/lib/support/string.h",
         "src/core/lib/support/string_windows.h",
-        "src/core/lib/support/thd_internal.h",
         "src/core/lib/support/time_precise.h",
         "src/core/lib/support/tmpfile.h",
     ],
