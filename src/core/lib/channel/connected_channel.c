@@ -41,7 +41,6 @@ typedef struct {
   grpc_closure *original_closure;
   grpc_call_combiner *call_combiner;
   const char *reason;
-  bool free_when_done;
 } callback_state;
 
 typedef struct connected_channel_call_data {
@@ -58,7 +57,12 @@ static void run_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
   GRPC_CALL_COMBINER_START(exec_ctx, state->call_combiner,
                            state->original_closure, GRPC_ERROR_REF(error),
                            state->reason);
-  if (state->free_when_done) gpr_free(state);
+}
+
+static void run_cancel_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
+                                        grpc_error *error) {
+  run_in_call_combiner(exec_ctx, arg, error);
+  gpr_free(arg);
 }
 
 static void intercept_callback(call_data *calld, callback_state *state,
@@ -67,9 +71,10 @@ static void intercept_callback(call_data *calld, callback_state *state,
   state->original_closure = *original_closure;
   state->call_combiner = calld->call_combiner;
   state->reason = reason;
-  state->free_when_done = free_when_done;
-  *original_closure = GRPC_CLOSURE_INIT(&state->closure, run_in_call_combiner,
-                                        state, grpc_schedule_on_exec_ctx);
+  *original_closure = GRPC_CLOSURE_INIT(
+      &state->closure,
+      free_when_done ? run_cancel_in_call_combiner : run_in_call_combiner,
+      state, grpc_schedule_on_exec_ctx);
 }
 
 static callback_state *get_state_for_batch(
