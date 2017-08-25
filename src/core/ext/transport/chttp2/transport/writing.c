@@ -163,7 +163,10 @@ static bool is_default_initial_metadata(grpc_metadata_batch *initial_metadata) {
       (initial_metadata->idx.named.status != NULL) +
       (initial_metadata->idx.named.content_type != NULL) +
       (initial_metadata->idx.named.grpc_encoding != NULL) +
-      (initial_metadata->idx.named.grpc_accept_encoding != NULL);
+      (initial_metadata->idx.named.grpc_accept_encoding != NULL) +
+      (initial_metadata->idx.named.grpc_internal_stream_encoding_request
+       != NULL) +
+      (initial_metadata->idx.named.accept_encoding != NULL);
   return (size_t)num_default_fields == initial_metadata->list.count;
 }
 

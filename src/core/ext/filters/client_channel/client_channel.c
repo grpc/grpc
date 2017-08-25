@@ -2378,7 +2378,6 @@ static void start_pick_locked(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_call_element *elem = arg;
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  GPR_ASSERT(calld->connected_subchannel == NULL);
   if (chand->lb_policy != NULL) {
     // We already have an LB policy, so ask it for a pick.
     if (pick_callback_start_locked(exec_ctx, elem)) {
