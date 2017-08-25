@@ -14523,7 +14523,7 @@ if (gRPC_INSTALL)
 endif()
 
 foreach(_config gRPCConfig gRPCConfigVersion)
-  configure_file(tools/cmake/${_config}.cmake.in
+  configure_file(cmake/${_config}.cmake.in
     ${_config}.cmake @ONLY)
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${_config}.cmake
     DESTINATION ${gRPC_INSTALL_CMAKEDIR}
