@@ -1014,7 +1014,7 @@ typedef struct client_channel_call_data {
   grpc_error *error;
 
   grpc_lb_policy *lb_policy;  // Holds ref while LB pick is pending.
-  grpc_closure lb_pick_closure;
+  grpc_closure pick_closure;
   grpc_closure cancel_closure;
 
   grpc_connected_subchannel *connected_subchannel;
@@ -2079,9 +2079,8 @@ static void apply_service_config_to_call_locked(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static void create_subchannel_call_locked(grpc_exec_ctx *exec_ctx,
-                                          grpc_call_element *elem,
-                                          grpc_error *error) {
+static void create_subchannel_call(grpc_exec_ctx *exec_ctx,
+                                   grpc_call_element *elem, grpc_error *error) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
   const bool retries_enabled = calld->method_params != NULL &&
@@ -2115,9 +2114,8 @@ static void create_subchannel_call_locked(grpc_exec_ctx *exec_ctx,
 }
 
 // Invoked when a pick is completed, on both success or failure.
-// FIXME: this doesn't need to be run in the channel combiner anymore
-static void pick_done_locked(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                             grpc_error *error) {
+static void pick_done(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  grpc_call_element *elem = arg;
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   if (calld->connected_subchannel == NULL) {
@@ -2136,9 +2134,19 @@ static void pick_done_locked(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     pending_batches_fail(exec_ctx, elem, new_error);
   } else {
     /* Create call on subchannel. */
-    create_subchannel_call_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
+    create_subchannel_call(exec_ctx, elem, GRPC_ERROR_REF(error));
   }
   GRPC_ERROR_UNREF(error);
+}
+
+// Invoked when a pick is completed to leave the client_channel combiner
+// and continue processing in the call combiner.
+static void pick_done_locked(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                             grpc_error *error) {
+  call_data *calld = elem->call_data;
+  GRPC_CLOSURE_INIT(&calld->pick_closure, pick_done, elem,
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_SCHED(exec_ctx, &calld->pick_closure, error);
 }
 
 // A wrapper around pick_done_locked() that is used in cases where
@@ -2245,11 +2253,11 @@ static bool pick_callback_start_locked(grpc_exec_ctx *exec_ctx,
   // Keep a ref to the LB policy in calld while the pick is pending.
   GRPC_LB_POLICY_REF(chand->lb_policy, "pick_subchannel");
   calld->lb_policy = chand->lb_policy;
-  GRPC_CLOSURE_INIT(&calld->lb_pick_closure, pick_callback_done_locked, elem,
+  GRPC_CLOSURE_INIT(&calld->pick_closure, pick_callback_done_locked, elem,
                     grpc_combiner_scheduler(chand->combiner));
   const bool pick_done = grpc_lb_policy_pick_locked(
       exec_ctx, chand->lb_policy, &inputs, &calld->connected_subchannel,
-      calld->subchannel_call_context, NULL, &calld->lb_pick_closure);
+      calld->subchannel_call_context, NULL, &calld->pick_closure);
   if (pick_done) {
     /* synchronous grpc_lb_policy_pick call. Unref the LB policy. */
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
