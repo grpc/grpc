@@ -33,7 +33,7 @@ cat << EOF | awk '{ print $1 }' | sort > $want_submodules
  ec44c6c1675c25b9827aacd08c02433cccde7780 third_party/googletest (release-1.8.0)
  80a37e0782d2d702d52234b62dd4b9ec74fd2c95 third_party/protobuf (v3.4.0)
  cacf7f1d4e3d44d871b605da3b647f07d718623f third_party/zlib (v1.2.11)
- 7691f773af79bf75a62d1863fd0f13ebf9dc51b1 third_party/cares/cares (1.12.0)
+ 3be1924221e1326df520f8498d704a5c4c8d0cce third_party/cares/cares (cares-1_13_0)
 EOF
 
 diff -u $submodules $want_submodules
