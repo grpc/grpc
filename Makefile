@@ -2809,6 +2809,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/string_util.h \
     include/grpc/support/subprocess.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
@@ -2827,6 +2828,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -3173,6 +3175,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -3480,6 +3483,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -3758,6 +3762,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -4010,6 +4015,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -4283,6 +4289,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -4520,6 +4527,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/string_util.h \
     include/grpc/support/subprocess.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
@@ -4538,6 +4546,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -4961,6 +4970,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/string_util.h \
     include/grpc/support/subprocess.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
@@ -4979,6 +4989,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -5399,6 +5410,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -5513,6 +5525,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -5669,6 +5682,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/string_util.h \
     include/grpc/support/subprocess.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
@@ -5687,6 +5701,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -13995,17 +14010,17 @@ $(BINDIR)/$(CONFIG)/bm_fullstack_trickle: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/bm_fullstack_trickle: $(PROTOBUF_DEP) $(BM_FULLSTACK_TRICKLE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/bm_fullstack_trickle: $(PROTOBUF_DEP) $(BM_FULLSTACK_TRICKLE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(BM_FULLSTACK_TRICKLE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_fullstack_trickle
+	$(Q) $(LDXX) $(LDFLAGS) $(BM_FULLSTACK_TRICKLE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_fullstack_trickle
 
 endif
 
 endif
 
 $(BM_FULLSTACK_TRICKLE_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
-$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_fullstack_trickle.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_fullstack_trickle.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
 deps_bm_fullstack_trickle: $(BM_FULLSTACK_TRICKLE_OBJS:.o=.dep)
 

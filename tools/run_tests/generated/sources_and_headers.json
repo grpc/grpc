@@ -2775,6 +2775,7 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_benchmark", 
@@ -7654,6 +7655,7 @@
       "include/grpc/support/string_util.h", 
       "include/grpc/support/subprocess.h", 
       "include/grpc/support/sync.h", 
+      "include/grpc/support/sync_custom.h", 
       "include/grpc/support/sync_generic.h", 
       "include/grpc/support/sync_posix.h", 
       "include/grpc/support/sync_windows.h", 
@@ -7679,7 +7681,6 @@
       "src/core/lib/support/stack_lockfree.h", 
       "src/core/lib/support/string.h", 
       "src/core/lib/support/string_windows.h", 
-      "src/core/lib/support/thd_internal.h", 
       "src/core/lib/support/time_precise.h", 
       "src/core/lib/support/tmpfile.h"
     ], 
@@ -7703,6 +7704,7 @@
       "include/grpc/support/string_util.h", 
       "include/grpc/support/subprocess.h", 
       "include/grpc/support/sync.h", 
+      "include/grpc/support/sync_custom.h", 
       "include/grpc/support/sync_generic.h", 
       "include/grpc/support/sync_posix.h", 
       "include/grpc/support/sync_windows.h", 
@@ -7728,7 +7730,6 @@
       "src/core/lib/support/stack_lockfree.h", 
       "src/core/lib/support/string.h", 
       "src/core/lib/support/string_windows.h", 
-      "src/core/lib/support/thd_internal.h", 
       "src/core/lib/support/time_precise.h", 
       "src/core/lib/support/tmpfile.h"
     ], 
@@ -7746,6 +7747,7 @@
       "include/grpc/impl/codegen/gpr_types.h", 
       "include/grpc/impl/codegen/port_platform.h", 
       "include/grpc/impl/codegen/sync.h", 
+      "include/grpc/impl/codegen/sync_custom.h", 
       "include/grpc/impl/codegen/sync_generic.h", 
       "include/grpc/impl/codegen/sync_posix.h", 
       "include/grpc/impl/codegen/sync_windows.h"
@@ -7762,6 +7764,7 @@
       "include/grpc/impl/codegen/gpr_types.h", 
       "include/grpc/impl/codegen/port_platform.h", 
       "include/grpc/impl/codegen/sync.h", 
+      "include/grpc/impl/codegen/sync_custom.h", 
       "include/grpc/impl/codegen/sync_generic.h", 
       "include/grpc/impl/codegen/sync_posix.h", 
       "include/grpc/impl/codegen/sync_windows.h"

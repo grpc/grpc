@@ -14,7 +14,7 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary")
 
 package(
     features = [
@@ -33,6 +33,7 @@ grpc_cc_test(
 
 grpc_cc_library(
     name = "helpers",
+    testonly = 1,
     srcs = ["helpers.cc"],
     hdrs = [
         "fullstack_context_mutators.h",
@@ -49,59 +50,68 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_binary(
     name = "bm_closure",
+    testonly = 1,
     srcs = ["bm_closure.cc"],
     deps = [":helpers"],
 )
 
-grpc_cc_test(
+grpc_cc_binary(
     name = "bm_cq",
+    testonly = 1,
     srcs = ["bm_cq.cc"],
     deps = [":helpers"],
 )
 
-grpc_cc_test(
+grpc_cc_binary(
     name = "bm_cq_multiple_threads",
+    testonly = 1,
     srcs = ["bm_cq_multiple_threads.cc"],
     deps = [":helpers"],
 )
 
-grpc_cc_test(
+grpc_cc_binary(
     name = "bm_error",
+    testonly = 1,
     srcs = ["bm_error.cc"],
     deps = [":helpers"],
 )
 
-grpc_cc_test(
+grpc_cc_binary(
     name = "bm_fullstack_streaming_ping_pong",
+    testonly = 1,
     srcs = ["bm_fullstack_streaming_ping_pong.cc"],
     deps = [":helpers"],
 )
 
-grpc_cc_test(
+grpc_cc_binary(
     name = "bm_fullstack_streaming_pump",
+    testonly = 1,
     srcs = ["bm_fullstack_streaming_pump.cc"],
     deps = [":helpers"],
 )
 
-grpc_cc_test(
+grpc_cc_binary(
     name = "bm_fullstack_trickle",
+    testonly = 1,
     srcs = ["bm_fullstack_trickle.cc"],
-    deps = [":helpers"],
-    external_deps = [
-        "gflags",
+    deps = [
+      ":helpers",
+      "//test/cpp/util:test_config",
     ],
 )
 
-grpc_cc_test(
+grpc_cc_binary(
     name = "bm_fullstack_unary_ping_pong",
+    testonly = 1,
     srcs = ["bm_fullstack_unary_ping_pong.cc"],
     deps = [":helpers"],
 )
 
-grpc_cc_test(
+grpc_cc_binary(
     name = "bm_metadata",
+    testonly = 1,
     srcs = ["bm_metadata.cc"],
     deps = [":helpers"],
 )
