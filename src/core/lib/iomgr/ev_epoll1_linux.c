@@ -913,8 +913,8 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *ps,
   grpc_error *error = GRPC_ERROR_NONE;
   static const char *err_desc = "pollset_work";
   GPR_TIMER_BEGIN("pollset_work", 0);
-  if (pollset->kicked_without_poller) {
-    pollset->kicked_without_poller = false;
+  if (ps->kicked_without_poller) {
+    ps->kicked_without_poller = false;
     GPR_TIMER_END("pollset_work", 0);
     return GRPC_ERROR_NONE;
   }
