@@ -28,6 +28,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpc/support/port_platform.h>
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+#include <grpc/grpc_posix.h>
+#endif  /* GPR_SUPPORT_CHANNELS_FROM_FD */
 #include "rb_call.h"
 #include "rb_channel_args.h"
 #include "rb_channel_credentials.h"
@@ -260,6 +264,65 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   rb_ivar_set(self, id_target, target);
   return self;
 }
+
+/*
+  call-seq:
+    ch = Channel.insecure_create_from_fd("fd:42", 42, {'arg1': 'value1'})
+
+  Creates channel instances from an existing file descriptor. */
+static VALUE grpc_rb_channel_insecure_create_from_fd(
+    VALUE klass, VALUE rb_target, VALUE rb_fd, VALUE rb_args) {
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+  VALUE self;
+  grpc_rb_channel *wrapper = NULL;
+  grpc_channel *ch = NULL;
+  grpc_channel_args args;
+  channel_init_try_register_stack stack;
+  int stop_waiting_for_thread_start = 0;
+  MEMZERO(&args, grpc_channel_args, 1);
+
+  grpc_ruby_once_init();
+  rb_thread_call_without_gvl(
+      wait_until_channel_polling_thread_started_no_gil,
+      &stop_waiting_for_thread_start,
+      wait_until_channel_polling_thread_started_unblocking_func,
+      &stop_waiting_for_thread_start);
+
+  if (TYPE(rb_fd) != T_FIXNUM) {
+    rb_raise(rb_eTypeError, "bad fd, wanted an integer");
+    return Qnil;
+  }
+
+  grpc_rb_hash_convert_to_channel_args(rb_args, &args);
+
+  self = grpc_rb_channel_alloc(klass);
+  TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
+  ch = grpc_insecure_channel_create_from_fd(StringValueCStr(rb_target),
+                                            NUM2INT(rb_fd), &args);
+  GPR_ASSERT(ch);
+  stack.channel = ch;
+  stack.wrapper = wrapper;
+  rb_thread_call_without_gvl(
+      channel_init_try_register_connection_polling_without_gil, &stack, NULL,
+      NULL);
+
+  if (args.args != NULL) {
+    xfree(args.args); /* Allocated by grpc_rb_hash_convert_to_channel_args */
+  }
+  if (ch == NULL) {
+    rb_raise(rb_eRuntimeError, "could not create an rpc channel to target:%s",
+             StringValueCStr(rb_target));
+    return Qnil;
+  }
+  rb_ivar_set(self, id_target, rb_target);
+  return self;
+#else /* GPR_SUPPORT_CHANNELS_FROM_FD */
+  rb_raise(
+      rb_eNotImpError,
+      "insecure_create_from_fd not implemented on this platform");
+#endif  /* GPR_SUPPORT_CHANNELS_FROM_FD */
+}
+
 
 typedef struct get_state_stack {
   bg_watched_channel *bg;
@@ -794,6 +857,10 @@ void Init_grpc_channel() {
   rb_define_method(grpc_rb_cChannel, "initialize", grpc_rb_channel_init, -1);
   rb_define_method(grpc_rb_cChannel, "initialize_copy",
                    grpc_rb_cannot_init_copy, 1);
+
+  /* Provides a Ruby constructor for wrapping an existing file descriptor */
+  rb_define_singleton_method(grpc_rb_cChannel, "insecure_create_from_fd",
+                             grpc_rb_channel_insecure_create_from_fd, 3);
 
   /* Add ruby analogues of the Channel methods. */
   rb_define_method(grpc_rb_cChannel, "connectivity_state",

@@ -25,6 +25,10 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+#include <grpc/grpc_posix.h>
+#endif  /* GPR_SUPPORT_CHANNELS_FROM_FD */
 #include "rb_byte_buffer.h"
 #include "rb_call.h"
 #include "rb_channel_args.h"
@@ -310,6 +314,29 @@ static VALUE grpc_rb_server_add_http2_port(VALUE self, VALUE port,
   return INT2NUM(recvd_port);
 }
 
+static VALUE grpc_rb_server_add_insecure_channel_from_fd(VALUE self, VALUE rb_fd) {
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+  grpc_rb_server *s = NULL;
+
+  TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
+  if (s->wrapped == NULL) {
+    rb_raise(rb_eRuntimeError, "destroyed!");
+    return Qnil;
+  }
+  if (TYPE(rb_fd) != T_FIXNUM) {
+    rb_raise(rb_eTypeError, "bad fd, wanted an integer");
+    return Qnil;
+  }
+
+  grpc_server_add_insecure_channel_from_fd(s->wrapped, NULL, NUM2INT(rb_fd));
+  return Qnil;
+#else /* GPR_SUPPORT_CHANNELS_FROM_FD */
+  rb_raise(
+      rb_eNotImpError,
+      "add_insecure_channel_from_fd not implemented on this platform.");
+#endif  /* GPR_SUPPORT_CHANNELS_FROM_FD */
+}
+
 void Init_grpc_server() {
   grpc_rb_cServer =
       rb_define_class_under(grpc_rb_mGrpcCore, "Server", rb_cObject);
@@ -330,6 +357,8 @@ void Init_grpc_server() {
   rb_define_alias(grpc_rb_cServer, "close", "destroy");
   rb_define_method(grpc_rb_cServer, "add_http2_port",
                    grpc_rb_server_add_http2_port, 2);
+  rb_define_method(grpc_rb_cServer, "add_insecure_channel_from_fd",
+                   grpc_rb_server_add_insecure_channel_from_fd, 1);
   id_at = rb_intern("at");
   id_insecure_server = rb_intern("this_port_is_insecure");
 }
