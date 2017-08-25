@@ -150,7 +150,7 @@ module GRPC
     include Core::TimeConsts
     extend ::Forwardable
 
-    def_delegators :@server, :add_http2_port
+    def_delegators :@server, :add_http2_port, :add_insecure_channel_from_fd
 
     # Default thread pool size is 30
     DEFAULT_POOL_SIZE = 30
