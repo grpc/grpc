@@ -41,6 +41,7 @@ typedef struct grpc_linked_mdelem {
 
 typedef struct grpc_mdelem_list {
   size_t count;
+  size_t static_count;
   grpc_linked_mdelem *head;
   grpc_linked_mdelem *tail;
 } grpc_mdelem_list;
