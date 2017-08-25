@@ -205,9 +205,7 @@ Channel::Channel(const grpc::string& host, grpc_channel* channel)
   }
 }
 
-Channel::~Channel() {
-  grpc_channel_destroy(c_channel_);
-}
+Channel::~Channel() { grpc_channel_destroy(c_channel_); }
 
 namespace {
 
