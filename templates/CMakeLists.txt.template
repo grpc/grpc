@@ -515,7 +515,7 @@
   % endfor
 
   target_include_directories(${lib.name}
-    PUBLIC <%text>$<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include></%text>
+    PUBLIC <%text>$<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include></%text>
     PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
     PRIVATE <%text>${BORINGSSL_ROOT_DIR}</%text>/include
     PRIVATE <%text>${PROTOBUF_ROOT_DIR}</%text>/src
