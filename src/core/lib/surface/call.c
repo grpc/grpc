@@ -144,6 +144,9 @@ typedef struct {
   grpc_call *sibling_prev;
 } child_call;
 
+#define RECV_NONE ((gpr_atm)0)
+#define RECV_INITIAL_METADATA_FIRST ((gpr_atm)1)
+
 struct grpc_call {
   gpr_refcount ext_ref;
   gpr_arena *arena;
@@ -223,10 +226,23 @@ struct grpc_call {
     } server;
   } final_op;
 
-  // Either 0 (no initial metadata and messages received),
-  // 1 (received initial metadata first)
-  // or a batch_control* (received messages first, the lowest bit is 0)
-  gpr_atm saved_receiving_stream_ready_bctlp;
+  /* recv_state can contain one of the following values:
+     RECV_NONE :                 :  no initial metadata and messages received
+     RECV_INITIAL_METADATA_FIRST :  received initial metadata first
+     a batch_control*            :  received messages first
+
+                 +------1------RECV_NONE------3-----+
+                 |                                  |
+                 |                                  |
+                 v                                  v
+     RECV_INITIAL_METADATA_FIRST        receiving_stream_ready_bctlp
+           |           ^                      |           ^
+           |           |                      |           |
+           +-----2-----+                      +-----4-----+
+
+    For 1, 4: See receiving_initial_metadata_ready() function
+    For 2, 3: See receiving_stream_ready() function */
+  gpr_atm recv_state;
 };
 
 grpc_tracer_flag grpc_call_error_trace =
@@ -1290,12 +1306,11 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
     cancel_with_error(exec_ctx, call, STATUS_FROM_SURFACE,
                       GRPC_ERROR_REF(error));
   }
-  /* If saved_receiving_stream_ready_bctlp is 0, we will save the batch_control
+  /* If recv_state is RECV_NONE, we will save the batch_control
    * object with rel_cas, and will not use it after the cas. Its corresponding
    * acq_load is in receiving_initial_metadata_ready() */
   if (error != GRPC_ERROR_NONE || call->receiving_stream == NULL ||
-      !gpr_atm_rel_cas(&call->saved_receiving_stream_ready_bctlp, 0,
-                       (gpr_atm)bctlp)) {
+      !gpr_atm_rel_cas(&call->recv_state, RECV_NONE, (gpr_atm)bctlp)) {
     process_data_after_md(exec_ctx, bctlp);
   }
 }
@@ -1388,8 +1403,7 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
 
   grpc_closure *saved_rsr_closure = NULL;
   while (true) {
-    gpr_atm rsr_bctlp =
-        gpr_atm_acq_load(&call->saved_receiving_stream_ready_bctlp);
+    gpr_atm rsr_bctlp = gpr_atm_acq_load(&call->recv_state);
     /* Should only receive initial metadata once */
     GPR_ASSERT(rsr_bctlp != 1);
     if (rsr_bctlp == 0) {
@@ -1398,8 +1412,8 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
        * no_barrier_cas is used, as this function won't access the batch_control
        * object saved by receiving_stream_ready() if the initial metadata is
        * received first. */
-      if (gpr_atm_no_barrier_cas(&call->saved_receiving_stream_ready_bctlp, 0,
-                                 1)) {
+      if (gpr_atm_no_barrier_cas(&call->recv_state, RECV_NONE,
+                                 RECV_INITIAL_METADATA_FIRST)) {
         break;
       }
     } else {
@@ -1407,7 +1421,7 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
       saved_rsr_closure = GRPC_CLOSURE_CREATE(receiving_stream_ready,
                                               (batch_control *)rsr_bctlp,
                                               grpc_schedule_on_exec_ctx);
-      /* No need to modify saved_receiving_stream_ready_bctlp */
+      /* No need to modify recv_state */
       break;
     }
   }
