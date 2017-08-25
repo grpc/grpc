@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2017 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,14 @@
  *
  */
 
+#import "GRPCCall.h"
+#import "GRPCCall+OAuth2.h"
 
-#ifndef VERSION_H
-#define VERSION_H
+#import <Google/SignIn.h>
 
-#define PHP_GRPC_VERSION "1.7.0dev"
-
-#endif /* VERSION_H */
+/**
+ * Extend GIDSignIn class to comply GRPCAuthorizationProtocol
+ */
+@interface GIDSignIn (GRPC) <GRPCAuthorizationProtocol>
+- (void)getTokenWithHandler:(void (^)(NSString *token))hander;
+@end

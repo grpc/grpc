@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2017 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
  *
  */
 
+#import "GRPCCall+GID.h"
 
-#ifndef VERSION_H
-#define VERSION_H
+@implementation GIDSignIn (GRPC)
 
-#define PHP_GRPC_VERSION "1.7.0dev"
+- (void)getTokenWithHandler:(void (^)(NSString *token))handler {
+  NSString *token = self.currentUser.authentication.accessToken;
+  handler(token);
+}
 
-#endif /* VERSION_H */
+@end
