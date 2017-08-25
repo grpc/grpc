@@ -165,6 +165,6 @@ void grpc_iomgr_unregister_object(grpc_iomgr_object *obj) {
 bool grpc_iomgr_abort_on_leaks(void) {
   char *env = gpr_getenv("GRPC_ABORT_ON_LEAKS");
   bool should_we = gpr_is_true(env);
-  grp_free(env);
+  gpr_free(env);
   return should_we;
 }

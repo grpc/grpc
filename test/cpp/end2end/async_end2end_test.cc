@@ -378,6 +378,10 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
   while (cq_->Next(&ignored_tag, &ignored_ok))
     ;
   BuildAndStartServer();
+  // It needs more than kConnectivityCheckIntervalMsec time to reconnect the
+  // channel.
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                               gpr_time_from_millis(510, GPR_TIMESPAN)));
   SendRpc(1);
 }
 

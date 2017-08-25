@@ -71,16 +71,7 @@ class ChannelConnectivityWatcher {
  public:
   static void StartWatching(grpc_channel* channel) {
     char* env = gpr_getenv("GRPC_DISABLE_CHANNEL_CONNECTIVITY_WATCHER");
-    bool disabled = false;
-    if (env != nullptr) {
-      static const char* truthy[] = {"yes", "true", "1"};
-      for (size_t i = 0; i < GPR_ARRAY_SIZE(truthy); i++) {
-        if (0 == gpr_stricmp(env, truthy[i])) {
-          disabled = true;
-          break;
-        }
-      }
-    }
+    bool disabled = gpr_is_true(env);
     gpr_free(env);
     if (!disabled) {
       gpr_once_init(&g_connectivity_watcher_once_, InitConnectivityWatcherOnce);
@@ -125,11 +116,7 @@ class ChannelConnectivityWatcher {
         void* shutdown_tag = NULL;
         channel_state->shutdown_cq.Next(&shutdown_tag, &ok);
         delete channel_state;
-        if (gpr_unref(&ref_)) {
-          gpr_mu_lock(&g_watcher_mu_);
-          delete g_watcher_;
-          g_watcher_ = nullptr;
-          gpr_mu_unlock(&g_watcher_mu_);
+        if (Unref()) {
           break;
         }
       } else {
@@ -143,7 +130,7 @@ class ChannelConnectivityWatcher {
 
   void StartWatchingLocked(grpc_channel* channel) {
     if (thd_id_ != 0) {
-      gpr_ref(&ref_);
+      Ref();
       ChannelState* channel_state = new ChannelState(channel);
       // The first grpc_channel_watch_connectivity_state() is not used to
       // monitor the channel state change, but to hold a reference of the
@@ -158,6 +145,19 @@ class ChannelConnectivityWatcher {
           gpr_inf_future(GPR_CLOCK_REALTIME), cq_.cq(),
           new TagSaver(channel_state));
     }
+  }
+
+  void Ref() { gpr_ref(&ref_); }
+
+  bool Unref() {
+    if (gpr_unref(&ref_)) {
+      gpr_mu_lock(&g_watcher_mu_);
+      delete g_watcher_;
+      g_watcher_ = nullptr;
+      gpr_mu_unlock(&g_watcher_mu_);
+      return true;
+    }
+    return false;
   }
 
   static void InitOnce() { gpr_mu_init(&g_watcher_mu_); }
