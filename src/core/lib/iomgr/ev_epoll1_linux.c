@@ -54,7 +54,7 @@ static grpc_wakeup_fd global_wakeup_fd;
  */
 
 #define MAX_EPOLL_EVENTS 100
-#define MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION 5
+#define MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION 1
 
 /* Note: Since fields in this struct are only modified by the designated poller,
    we do not need any locks to protect the struct */
