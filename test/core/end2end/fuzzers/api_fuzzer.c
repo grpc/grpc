@@ -16,13 +16,13 @@
  *
  */
 
-#include <string.h>
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
@@ -761,7 +761,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   g_resource_quota = grpc_resource_quota_create("api_fuzzer");
 
   grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
-
+  int k = 0;
   while (!is_eof(&inp) || g_channel != NULL || g_server != NULL ||
          pending_channel_watches > 0 || pending_pings > 0 ||
          g_active_call->type != ROOT || g_active_call->next != g_active_call) {
@@ -795,8 +795,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     }
 
     grpc_timer_manager_tick();
+    uint8_t x = next_byte(&inp);
 
-    switch (next_byte(&inp)) {
+    if (k++ < 30) {
+      printf("%d\n", x);
+    }
+    switch (x) {
       // terminate on bad bytes
       default:
         end(&inp);
@@ -805,6 +809,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       case 0: {
         grpc_event ev = grpc_completion_queue_next(
             cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
+        gpr_log(GPR_INFO, "+++++++ %d\n", ev.type);
         switch (ev.type) {
           case GRPC_OP_COMPLETE: {
             validator *v = ev.tag;
@@ -813,6 +818,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
             break;
           }
           case GRPC_QUEUE_TIMEOUT:
+            if (is_eof(&inp)) {
+              return 0;
+            }
             break;
           case GRPC_QUEUE_SHUTDOWN:
             abort();
@@ -1063,12 +1071,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               op->data.recv_status_on_client.status_details =
                   &g_active_call->recv_status_details;
               break;
-            case GRPC_OP_RECV_CLOSE_ON_SERVER:
+              // case GRPC_OP_RECV_CLOSE_ON_SERVER:
               //               op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
               //               has_ops |= 1 << GRPC_OP_RECV_CLOSE_ON_SERVER;
               //               op->data.recv_close_on_server.cancelled =
               //                   &g_active_call->cancelled;
-              break;
+              // break;
           }
           op->reserved = NULL;
           op->flags = read_uint32(&inp);

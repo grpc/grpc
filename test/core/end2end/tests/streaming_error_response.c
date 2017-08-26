@@ -237,7 +237,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
     GPR_ASSERT(response_payload1_recv != NULL);
     GPR_ASSERT(response_payload2_recv != NULL);
   }
-
+  cq_verify_empty(cqv);
   GPR_ASSERT(status == GRPC_STATUS_FAILED_PRECONDITION);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
