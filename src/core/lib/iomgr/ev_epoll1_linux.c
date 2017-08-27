@@ -80,7 +80,6 @@ typedef struct epoll_set {
 
 /* The global singleton epoll set */
 static epoll_set g_epoll_set;
-static gpr_atm g_cs = 0;
 
 /* Must be called *only* once */
 static bool epoll_set_init() {
@@ -930,7 +929,6 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *ps,
   }
 
   if (begin_worker(ps, &worker, worker_hdl, &now, deadline)) {
-    GPR_ASSERT(gpr_atm_no_barrier_cas(&g_cs, 0, 1));
     gpr_tls_set(&g_current_thread_pollset, (intptr_t)ps);
     gpr_tls_set(&g_current_thread_worker, (intptr_t)&worker);
     GPR_ASSERT(!ps->shutting_down);
@@ -961,7 +959,6 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *ps,
     gpr_mu_lock(&ps->mu); /* lock */
 
     gpr_tls_set(&g_current_thread_worker, 0);
-    GPR_ASSERT(gpr_atm_no_barrier_cas(&g_cs, 1, 0));
   } else {
     gpr_tls_set(&g_current_thread_pollset, (intptr_t)ps);
   }
