@@ -56,8 +56,14 @@ static grpc_wakeup_fd global_wakeup_fd;
 #define MAX_EPOLL_EVENTS 100
 #define MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION 1
 
-/* Note: Since fields in this struct are only modified by the designated poller,
-   we do not need any locks to protect the struct */
+ /* NOTE ON SYNCHRONIZATION:
+   - Fields in this struct are only modified by the designated poller. Hence
+     there is no need for any locks to protect the struct.
+
+   - num_events and cursor fields have to be of atomic type to provide memory
+     visibility guarantees only. i.e In case of multiple pollers, the designated
+     polling thread keeps changing; the thread that wrote these values may be
+     different from the thread reading the values */
 typedef struct epoll_set {
   int epfd;
 
@@ -65,15 +71,16 @@ typedef struct epoll_set {
   struct epoll_event events[MAX_EPOLL_EVENTS];
 
   /* The number of epoll_events after the last call to epoll_wait() */
-  int num_events;
+  gpr_atm num_events;
 
   /* Index of the first event in epoll_events that has to be processed. This
    * field is only valid if num_events > 0 */
-  int cursor;
+  gpr_atm cursor;
 } epoll_set;
 
 /* The global singleton epoll set */
 static epoll_set g_epoll_set;
+static gpr_atm g_cs = 0;
 
 /* Must be called *only* once */
 static bool epoll_set_init() {
@@ -83,9 +90,9 @@ static bool epoll_set_init() {
     return false;
   }
 
-  gpr_log(GPR_ERROR, "grpc epoll fd: %d", g_epoll_set.epfd);
-  g_epoll_set.num_events = 0;
-  g_epoll_set.cursor = 0;
+  gpr_log(GPR_INFO, "grpc epoll fd: %d", g_epoll_set.epfd);
+  gpr_atm_no_barrier_store(&g_epoll_set.num_events, 0);
+  gpr_atm_no_barrier_store(&g_epoll_set.cursor, 0);
   return true;
 }
 
@@ -580,10 +587,12 @@ static grpc_error *process_epoll_events(grpc_exec_ctx *exec_ctx,
   grpc_error *error = GRPC_ERROR_NONE;
 
   GPR_TIMER_BEGIN("process_epoll_events", 0);
-  for (int idx = 0; (idx < MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION) &&
-                    g_epoll_set.cursor != g_epoll_set.num_events;
+  long num_events = gpr_atm_acq_load(&g_epoll_set.num_events);
+  long cursor = gpr_atm_acq_load(&g_epoll_set.cursor);
+  for (int idx = 0;
+       (idx < MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION) && cursor != num_events;
        idx++) {
-    int c = g_epoll_set.cursor++;
+    long c = cursor++;
     struct epoll_event *ev = &g_epoll_set.events[c];
     void *data_ptr = ev->data.ptr;
 
@@ -605,6 +614,7 @@ static grpc_error *process_epoll_events(grpc_exec_ctx *exec_ctx,
       }
     }
   }
+  gpr_atm_rel_store(&g_epoll_set.cursor, cursor);
   GPR_TIMER_END("process_epoll_events", 0);
   return error;
 }
@@ -639,8 +649,8 @@ static grpc_error *do_epoll_wait(grpc_exec_ctx *exec_ctx, grpc_pollset *ps,
     gpr_log(GPR_DEBUG, "ps: %p poll got %d events", ps, r);
   }
 
-  g_epoll_set.num_events = r;
-  g_epoll_set.cursor = 0;
+  gpr_atm_rel_store(&g_epoll_set.num_events, r);
+  gpr_atm_rel_store(&g_epoll_set.cursor, 0);
 
   GPR_TIMER_END("do_epoll_wait", 0);
   return GRPC_ERROR_NONE;
@@ -920,13 +930,13 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *ps,
   }
 
   if (begin_worker(ps, &worker, worker_hdl, &now, deadline)) {
+    GPR_ASSERT(gpr_atm_no_barrier_cas(&g_cs, 0, 1));
     gpr_tls_set(&g_current_thread_pollset, (intptr_t)ps);
     gpr_tls_set(&g_current_thread_worker, (intptr_t)&worker);
     GPR_ASSERT(!ps->shutting_down);
     GPR_ASSERT(!ps->seen_inactive);
 
     gpr_mu_unlock(&ps->mu); /* unlock */
-
     /* This is the designated polling thread at this point and should ideally do
        polling. However, if there are unprocessed events left from a previous
        call to do_epoll_wait(), skip calling epoll_wait() in this iteration and
@@ -941,7 +951,8 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *ps,
        accurately grpc_exec_ctx_flush() happens in end_worker() AFTER selecting
        a designated poller). So we are not waiting long periods without a
        designated poller */
-    if (g_epoll_set.cursor == g_epoll_set.num_events) {
+    if (gpr_atm_acq_load(&g_epoll_set.cursor) ==
+        gpr_atm_acq_load(&g_epoll_set.num_events)) {
       append_error(&error, do_epoll_wait(exec_ctx, ps, now, deadline),
                    err_desc);
     }
@@ -950,6 +961,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *ps,
     gpr_mu_lock(&ps->mu); /* lock */
 
     gpr_tls_set(&g_current_thread_worker, 0);
+    GPR_ASSERT(gpr_atm_no_barrier_cas(&g_cs, 1, 0));
   } else {
     gpr_tls_set(&g_current_thread_pollset, (intptr_t)ps);
   }
