@@ -62,30 +62,31 @@ PluginMetadataInfo& PluginMetadataInfo::getPluginMetadataInfo(void)
 }
 
 void PluginMetadataInfo::setInfo(CallCredentialsData* const pCallCredentials,
-                                    const MetaDataInfo& metaDataInfo)
+                                 MetaDataInfo&& metaDataInfo)
 {
     std::lock_guard<std::mutex> lock{ m_Lock };
-    auto itrPair = m_MetaDataMap.emplace(pCallCredentials, metaDataInfo);
+    auto itrPair = m_MetaDataMap.emplace(pCallCredentials, std::move(metaDataInfo));
     if (!itrPair.second)
     {
         // call credentials exist already so update
         // TODO:  The second entry may need to be a vector if we have multiple
         // stacked but current thinking is this can't happen
-        itrPair.first->second = metaDataInfo;
+        itrPair.first->second = std::move(metaDataInfo);
     }
 }
 
 typename PluginMetadataInfo::MetaDataInfo
 PluginMetadataInfo::getInfo(CallCredentialsData* const pCallCredentials)
 {
-    MetaDataInfo metaDataInfo{ nullptr, std::thread::id{ 0 } };
+    MetaDataInfo metaDataInfo{ std::shared_ptr<MetadataPromise>{ nullptr },
+                               std::thread::id{ 0 } };
     {
         std::lock_guard<std::mutex> lock{ m_Lock };
         auto itrFind = m_MetaDataMap.find(pCallCredentials);
         if (itrFind != m_MetaDataMap.cend())
         {
             // get the metadata info
-            metaDataInfo = itrFind->second;
+            metaDataInfo = std::move(itrFind->second);
 
             // erase the entry
             m_MetaDataMap.erase(itrFind);
@@ -276,15 +277,16 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
     PluginMetadataInfo& pluginMetaDataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
     PluginMetadataInfo::MetaDataInfo metaDataInfo{ pluginMetaDataInfo.getInfo(pCallCrendentials) };
 
-    MetadataPromise* const pMetaDataPromise{ std::get<0>(metaDataInfo) };
+    MetadataPromise* const pMetaDataPromise{ std::get<0>(metaDataInfo).get() };
     if (!pMetaDataPromise)
     {
-        // failed to get promise associated with call credentials
+        // failed to get promise associated with call credentials.  This can happen if the call timed
+        // out and the metadata was erased before this function was invoked
         return;
     }
 
-    std::thread::id callThread{ std::get<1>(metaDataInfo) };
-    if (callThread == std::this_thread::get_id())
+    std::thread::id callThreadId{ std::get<1>(metaDataInfo) };
+    if (callThreadId == std::this_thread::get_id())
     {
         HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata same thread") // Degug Trace
         plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data,

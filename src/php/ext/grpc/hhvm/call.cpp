@@ -61,13 +61,14 @@ Class* const CallData::getClass(void)
 }
 
 CallData::CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_pCallCredentials{ nullptr },
-    m_pChannel{ nullptr }, m_Timeout{ 0 }
+    m_pChannel{ nullptr }, m_Timeout{ 0 },
+    m_pMetadataPromise{ std::make_shared<MetadataPromise>() }
 {
 }
 
 CallData::CallData(grpc_call* const call, const bool owned, const int32_t timeoutMs) :
     m_pCall{ call }, m_Owned{ owned }, m_pCallCredentials{ nullptr }, m_pChannel{ nullptr },
-    m_Timeout{ timeoutMs }
+    m_Timeout{ timeoutMs }, m_pMetadataPromise{ std::make_shared<MetadataPromise>() }
 {
 }
 
@@ -521,9 +522,9 @@ Object HHVM_METHOD(Call, startBatch,
     if (credentialedCall)
     {
         PluginMetadataInfo& pluginMetadataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
-        PluginMetadataInfo::MetaDataInfo metaDataInfo{ &(pCallData->getPromise()),
+        PluginMetadataInfo::MetaDataInfo metaDataInfo{ std::shared_ptr<MetadataPromise>{ pCallData->getSharedPromise() },
                                                        std::this_thread::get_id() };
-        pluginMetadataInfo.setInfo(pCallData->callCredentials(), metaDataInfo);
+        pluginMetadataInfo.setInfo(pCallData->callCredentials(), std::move(metaDataInfo));
     }
 
     static std::mutex s_StartBatchMutex;
@@ -542,9 +543,9 @@ Object HHVM_METHOD(Call, startBatch,
     }
 
     grpc_event event (grpc_completion_queue_pluck(pCallData->queue()->queue(), pCallData->call(),
-                                                  gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN)
-                                                  /*gpr_inf_future(GPR_CLOCK_REALTIME)*/, nullptr));
-    if (event.type != GRPC_OP_COMPLETE )
+                                                  gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN),
+                                                  nullptr));
+    if (event.type != GRPC_OP_COMPLETE)
     {
         // failed so remove promise info and return empty object
         if (credentialedCall)
@@ -567,8 +568,6 @@ Object HHVM_METHOD(Call, startBatch,
         std::future_status status{ getPluginMetadataFuture.wait_for(std::chrono::milliseconds{ pCallData->getTimeout() }) };
         if (status == std::future_status::timeout)
         {
-            //std::cout << "Got plugin metadata future timeout" << std::endl;
-
             // failed so remove promise info and return empty object
             PluginMetadataInfo& pluginMetadataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
             pluginMetadataInfo.deleteInfo(pCallData->callCredentials());
@@ -577,10 +576,8 @@ Object HHVM_METHOD(Call, startBatch,
         else
         {
             plugin_get_metadata_params metaDataParams{ getPluginMetadataFuture.get() };
-            //std::cout << "Got plugin metadata future: " << metaDataParams.completed << std::endl;
             if (!metaDataParams.completed)
             {
-                //std::cout << "Metadata plugin not completed. Running now." << std::endl;
                 // call the plugin in this thread if it wasn't completed already
                 plugin_do_get_metadata(metaDataParams.ptr, metaDataParams.context,
                                        metaDataParams.cb, metaDataParams.user_data);

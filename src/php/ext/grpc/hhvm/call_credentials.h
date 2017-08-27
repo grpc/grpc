@@ -20,6 +20,7 @@
 #define NET_GRPC_HHVM_GRPC_CALL_CREDENTIALS_H_
 
 #include <future>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <tuple>
@@ -104,7 +105,7 @@ class PluginMetadataInfo
 {
 public:
     // typedefs
-    typedef std::tuple<MetadataPromise*, std::thread::id> MetaDataInfo;
+    typedef std::tuple<std::shared_ptr<MetadataPromise>, std::thread::id> MetaDataInfo;
 
     // constructors/destructors
     ~PluginMetadataInfo(void);
@@ -114,7 +115,7 @@ public:
     PluginMetadataInfo& operator&(PluginMetadataInfo&& rhsPluginMetadataInfo) = delete;
 
     // interface functions
-    void setInfo(CallCredentialsData* const pCallCredentials, const MetaDataInfo& metaDataInfo);
+    void setInfo(CallCredentialsData* const pCallCredentials, MetaDataInfo&& metaDataInfo);
     MetaDataInfo getInfo(CallCredentialsData* const pCallCredentials);
     bool deleteInfo(CallCredentialsData* const pCallCredentals);
 
@@ -126,7 +127,7 @@ private:
 
     // member variables
     std::mutex m_Lock;
-    std::unordered_map<CallCredentialsData*,MetaDataInfo> m_MetaDataMap;
+    std::unordered_map<CallCredentialsData*, MetaDataInfo> m_MetaDataMap;
 };
 
 void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,

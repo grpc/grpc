@@ -68,7 +68,8 @@ public:
     void setQueue(std::unique_ptr<CompletionQueue>&& pCompletionQueue);
     CompletionQueue* const queue(void) { return m_pCompletionQueue.get(); }
     int32_t getTimeout(void) const { return m_Timeout; }
-    MetadataPromise& getPromise(void) { return m_MetadataPromise; }
+    std::shared_ptr<MetadataPromise>& getSharedPromise(void) { return m_pMetadataPromise; }
+    MetadataPromise& getPromise(void) { return *m_pMetadataPromise.get(); }
     static Class* const getClass(void);
     static const StaticString& className(void) { return s_ClassName; }
 
@@ -82,7 +83,7 @@ private:
     CallCredentialsData* m_pCallCredentials;
     ChannelData* m_pChannel;
     int32_t m_Timeout;
-    MetadataPromise m_MetadataPromise;
+    std::shared_ptr<MetadataPromise> m_pMetadataPromise;
     std::unique_ptr<CompletionQueue> m_pCompletionQueue;
     static Class* s_pClass;
     static const StaticString s_ClassName;
