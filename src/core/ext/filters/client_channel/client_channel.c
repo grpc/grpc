@@ -2127,7 +2127,7 @@ static void pick_done(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     // we return an error; otherwise, we may retry.
     grpc_status_code status = GRPC_STATUS_OK;
     grpc_error_get_status(error, calld->deadline, &status, NULL, NULL);
-    if (error == GRPC_ERROR_NONE ||
+    if (error == GRPC_ERROR_NONE || calld->method_params == NULL ||
         !maybe_retry(exec_ctx, elem, NULL /* batch_data */, status)) {
       grpc_error *new_error = error == GRPC_ERROR_NONE
           ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -2145,7 +2145,6 @@ static void pick_done(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     /* Create call on subchannel. */
     create_subchannel_call(exec_ctx, elem, GRPC_ERROR_REF(error));
   }
-  GRPC_ERROR_UNREF(error);
 }
 
 // Invoked when a pick is completed to leave the client_channel combiner
