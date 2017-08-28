@@ -1404,10 +1404,9 @@ static void start_pick_locked(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *ignored);
 
 // Returns true if the call is being retried.
-static bool maybe_retry(grpc_exec_ctx *exec_ctx,
+static bool maybe_retry(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                         subchannel_batch_data *batch_data,
                         grpc_status_code status) {
-  grpc_call_element *elem = batch_data->elem;
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   // Get retry policy.
@@ -1417,10 +1416,12 @@ static bool maybe_retry(grpc_exec_ctx *exec_ctx,
   // If we've already dispatched a retry from this call, return true.
   // This catches the case where the batch has multiple callbacks
   // (i.e., it includes either recv_message or recv_initial_metadata).
-  subchannel_call_retry_state *retry_state =
-      grpc_connected_subchannel_call_get_parent_data(
-          batch_data->subchannel_call);
-  if (retry_state->retry_dispatched) return true;
+  subchannel_call_retry_state *retry_state = NULL;
+  if (batch_data != NULL) {
+    retry_state = grpc_connected_subchannel_call_get_parent_data(
+        batch_data->subchannel_call);
+    if (retry_state->retry_dispatched) return true;
+  }
   // Check status.
   if (status == GRPC_STATUS_OK) {
     grpc_server_retry_throttle_data_record_success(calld->retry_throttle_data);
@@ -1483,13 +1484,12 @@ gpr_log(GPR_INFO, "RETRYING");
     next_attempt_time = gpr_backoff_step(&calld->retry_backoff, now);
   }
   // Schedule retry after computed delay.
-  GRPC_CLOSURE_INIT(&batch_data->batch.handler_private.closure,
-                    start_pick_locked, elem,
+  GRPC_CLOSURE_INIT(&calld->pick_closure, start_pick_locked, elem,
                     grpc_combiner_scheduler(chand->combiner));
   grpc_timer_init(exec_ctx, &calld->retry_timer, next_attempt_time,
-                  &batch_data->batch.handler_private.closure, now);
+                  &calld->pick_closure, now);
   // Update bookkeeping.
-  retry_state->retry_dispatched = true;
+  if (retry_state != NULL) retry_state->retry_dispatched = true;
   ++calld->num_retry_attempts;
   return true;
 }
@@ -1545,7 +1545,7 @@ gpr_log(GPR_INFO, "==> recv_initial_metadata_ready(): error=%s", grpc_error_stri
   if (error != GRPC_ERROR_NONE) {
     grpc_status_code status;
     grpc_error_get_status(error, calld->deadline, &status, NULL, NULL);
-    if (maybe_retry(exec_ctx, batch_data, status)) {
+    if (maybe_retry(exec_ctx, batch_data->elem, batch_data, status)) {
       batch_data_unref(exec_ctx, batch_data);
       return;
     }
@@ -1633,7 +1633,7 @@ gpr_log(GPR_INFO, "==> recv_message_ready(): error=%s", grpc_error_string(error)
   if (error != GRPC_ERROR_NONE) {
     grpc_status_code status;
     grpc_error_get_status(error, calld->deadline, &status, NULL, NULL);
-    if (maybe_retry(exec_ctx, batch_data, status)) {
+    if (maybe_retry(exec_ctx, batch_data->elem, batch_data, status)) {
       batch_data_unref(exec_ctx, batch_data);
       return;
     }
@@ -1767,8 +1767,9 @@ gpr_free(v);
 gpr_log(GPR_INFO, "call_finished=%d, status=%d", call_finished, status);
   // Cases 1, 2, and 3 are handled by maybe_retry().
   if (call_finished) {
-    if (maybe_retry(exec_ctx, batch_data, status)) {
+    if (maybe_retry(exec_ctx, elem, batch_data, status)) {
       batch_data_unref(exec_ctx, batch_data);
+// FIXME: what if these are not from the completed batch?
       if (retry_state->recv_initial_metadata_ready_pending) {
         batch_data_unref(exec_ctx, batch_data);
         GRPC_ERROR_UNREF(retry_state->recv_initial_metadata_error);
@@ -1779,8 +1780,10 @@ gpr_log(GPR_INFO, "call_finished=%d, status=%d", call_finished, status);
       }
       return;
     }
-    // If we are not retrying and there is a pending
-    // recv_initial_metadata_ready callback, invoke it.
+    // If we are not retrying and there are pending
+    // recv_initial_metadata_ready or recv_message_ready callbacks,
+    // invoke them.
+// FIXME: what if these are not from the completed batch?
     if (retry_state->recv_initial_metadata_ready_pending) {
       GRPC_CLOSURE_INIT(&batch_data->recv_initial_metadata_ready,
                         invoke_recv_initial_metadata_callback, batch_data,
@@ -2120,18 +2123,24 @@ static void pick_done(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   channel_data *chand = elem->channel_data;
   if (calld->connected_subchannel == NULL) {
     // Failed to create subchannel.
-// FIXME: don't retry on drops, but do on other failures?
-    grpc_error *new_error = error == GRPC_ERROR_NONE
-        ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Call dropped by load balancing policy")
-        : GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-              "Failed to create subchannel", &error, 1);
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-      gpr_log(GPR_DEBUG,
-              "chand=%p calld=%p: failed to create subchannel: error=%s", chand,
-              calld, grpc_error_string(new_error));
+    // If there was no error, this is an LB policy drop, in which case
+    // we return an error; otherwise, we may retry.
+    grpc_status_code status = GRPC_STATUS_OK;
+    grpc_error_get_status(error, calld->deadline, &status, NULL, NULL);
+    if (error == GRPC_ERROR_NONE ||
+        !maybe_retry(exec_ctx, elem, NULL /* batch_data */, status)) {
+      grpc_error *new_error = error == GRPC_ERROR_NONE
+          ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "Call dropped by load balancing policy")
+          : GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                "Failed to create subchannel", &error, 1);
+      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+        gpr_log(GPR_DEBUG,
+                "chand=%p calld=%p: failed to create subchannel: error=%s",
+                chand, calld, grpc_error_string(new_error));
+      }
+      pending_batches_fail(exec_ctx, elem, new_error);
     }
-    pending_batches_fail(exec_ctx, elem, new_error);
   } else {
     /* Create call on subchannel. */
     create_subchannel_call(exec_ctx, elem, GRPC_ERROR_REF(error));
