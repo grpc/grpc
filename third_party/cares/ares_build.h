@@ -199,7 +199,7 @@
 #    define CARES_TYPEOF_ARES_SSIZE_T long
 #  endif
 #else
-#  define CARES_TYPEOF_ARES_SSIZE_T ssize_t;
+#  define CARES_TYPEOF_ARES_SSIZE_T ssize_t
 #endif
 
 typedef CARES_TYPEOF_ARES_SSIZE_T ares_ssize_t;
