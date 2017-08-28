@@ -31,6 +31,7 @@ cd cmake/build
 cmake -DCMAKE_BUILD_TYPE=Release ../..
 make -j4 install
 cd ../../../../..
+rm -rf third_party/cares/cares  # wipe out to prevent influencing the grpc build
 
 # Install zlib
 cd third_party/zlib
@@ -39,6 +40,7 @@ cd cmake/build
 cmake -DCMAKE_BUILD_TYPE=Release ../..
 make -j4 install
 cd ../../../..
+rm -rf third_party/zlib  # wipe out to prevent influencing the grpc build
 
 # Install protobuf
 cd third_party/protobuf
@@ -47,8 +49,7 @@ cd cmake/build
 cmake -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ..
 make -j4 install
 cd ../../../..
-
-# TODO: Install boringssl
+rm -rf third_party/protobuf  # wipe out to prevent influencing the grpc build
 
 # Install gRPC
 mkdir -p cmake/build
