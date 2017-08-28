@@ -79,11 +79,20 @@ void ServerData::destroy(void)
 {
     if (m_pServer)
     {
+        // shudown server and cancel all calls
         grpc_server_shutdown_and_notify(m_pServer,
-                                        m_pComletionQueue->queue(), nullptr);
+                                        m_pComletionQueue->queue(), m_pServer);
         grpc_server_cancel_all_calls(m_pServer);
-        grpc_completion_queue_pluck(m_pComletionQueue->queue(), nullptr,
-                                    gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+
+        // wait for all calls to finish
+        for(;;)
+        {
+            grpc_event event{ grpc_completion_queue_next(m_pComletionQueue->queue(),
+                                                         gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) };
+            if ((event.type == GRPC_OP_COMPLETE) && (event.tag == m_pServer)) break;
+        }
+
+        // destroy server no calls can be in progress
         grpc_server_destroy(m_pServer);
         m_pServer = nullptr;
     }
@@ -179,9 +188,8 @@ Object HHVM_METHOD(Server, requestCall)
         SystemLib::throwBadMethodCallExceptionObject(oSS.str());
     }
 
-    grpc_event event( grpc_completion_queue_pluck(pServerData->queue()->queue(), nullptr,
-                                                  gpr_inf_future(GPR_CLOCK_REALTIME),
-                                                  nullptr) );
+    grpc_event event( grpc_completion_queue_next(pServerData->queue()->queue(),
+                                                 gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) );
 
     if (event.type != GRPC_OP_COMPLETE )
     {

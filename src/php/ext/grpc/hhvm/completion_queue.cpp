@@ -31,7 +31,7 @@ namespace HPHP {
 
 CompletionQueue::CompletionQueue(void)
 {
-    m_pCompletionQueue = grpc_completion_queue_create_for_pluck(nullptr);
+    m_pCompletionQueue = grpc_completion_queue_create_for_next(nullptr);
 }
 
 CompletionQueue::~CompletionQueue(void)
@@ -44,9 +44,8 @@ CompletionQueue::~CompletionQueue(void)
     // Wait for confirmation of queue shutdown
     for(;;)
     {
-        int dummyTag{ 0 };
-        grpc_event event { grpc_completion_queue_pluck(m_pCompletionQueue, &dummyTag,
-                                                       gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) };
+        grpc_event event { grpc_completion_queue_next(m_pCompletionQueue,
+                                                      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) };
         if (event.type == GRPC_QUEUE_SHUTDOWN) break;
     }
 

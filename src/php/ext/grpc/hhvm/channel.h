@@ -127,6 +127,7 @@ public:
     grpc_channel* const getChannel(const String& channelHash);
     bool hasChannel(const String& channelHash);
     void deleteChannel(const String& channelHash);
+    size_t numChannels(void) const;
 
     // singleton function
     static ChannelsCache& getChannelsCache(void);
@@ -139,7 +140,7 @@ private:
     void destroyChannel(grpc_channel* const pChannel);
 
     // member variables
-    lock_type m_ChannelMapMutex;
+    mutable lock_type m_ChannelMapMutex;
     std::unordered_map<std::string, grpc_channel*> m_ChannelMap;
 };
 

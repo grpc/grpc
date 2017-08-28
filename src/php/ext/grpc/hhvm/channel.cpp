@@ -290,6 +290,12 @@ void ChannelsCache::deleteChannel(const String& channelHash)
     }
 }
 
+size_t ChannelsCache::numChannels(void) const
+{
+    ReadLock lock{ m_ChannelMapMutex };
+    return m_ChannelMap.size();
+}
+
 void ChannelsCache::destroyChannel(grpc_channel* const pChannel)
 {
     grpc_channel_destroy(pChannel);

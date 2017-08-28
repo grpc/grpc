@@ -93,6 +93,9 @@ void CallData::destroy(void)
     {
         if (m_Owned)
         {
+            // cancel the call
+            grpc_call_cancel(m_pCall, nullptr);
+            // destroy call
             grpc_call_unref(m_pCall);
             m_Owned = false;
         }
@@ -557,10 +560,10 @@ Object HHVM_METHOD(Call, startBatch,
         }
     }
 
-    grpc_event event (grpc_completion_queue_pluck(pCallData->queue()->queue(), pCallData->call(),
+    grpc_event event (grpc_completion_queue_next(pCallData->queue()->queue(),
                                                   gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN),
                                                   nullptr));
-    if (event.type != GRPC_OP_COMPLETE)
+    if (event.type != GRPC_OP_COMPLETE || event.tag != pCallData->call())
     {
         // failed so clean up and return empty object
         callFailure();
