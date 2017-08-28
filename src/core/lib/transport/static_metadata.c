@@ -107,9 +107,10 @@ static void static_ref(void *unused) {}
 static void static_unref(grpc_exec_ctx *exec_ctx, void *unused) {}
 static const grpc_slice_refcount_vtable static_sub_vtable = {
     static_ref, static_unref, grpc_slice_default_eq_impl,
-    grpc_slice_default_hash_impl};
+    grpc_slice_default_hash_impl, NULL};
 const grpc_slice_refcount_vtable grpc_static_metadata_vtable = {
-    static_ref, static_unref, grpc_static_slice_eq, grpc_static_slice_hash};
+    static_ref, static_unref, grpc_static_slice_eq, grpc_static_slice_hash,
+    NULL};
 static grpc_slice_refcount static_sub_refcnt = {&static_sub_vtable,
                                                 &static_sub_refcnt};
 grpc_slice_refcount grpc_static_metadata_refcounts[GRPC_STATIC_MDSTR_COUNT] = {

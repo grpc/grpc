@@ -503,6 +503,12 @@ extern grpc_slice_malloc_type grpc_slice_malloc_import;
 typedef grpc_slice(*grpc_slice_malloc_large_type)(size_t length);
 extern grpc_slice_malloc_large_type grpc_slice_malloc_large_import;
 #define grpc_slice_malloc_large grpc_slice_malloc_large_import
+typedef grpc_slice(*grpc_write_slice_malloc_type)(size_t len);
+extern grpc_write_slice_malloc_type grpc_write_slice_malloc_import;
+#define grpc_write_slice_malloc grpc_write_slice_malloc_import
+typedef void(*grpc_slice_write_type)(grpc_exec_ctx *exec_ctx, grpc_slice s);
+extern grpc_slice_write_type grpc_slice_write_import;
+#define grpc_slice_write grpc_slice_write_import
 typedef grpc_slice(*grpc_slice_intern_type)(grpc_slice slice);
 extern grpc_slice_intern_type grpc_slice_intern_import;
 #define grpc_slice_intern grpc_slice_intern_import

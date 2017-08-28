@@ -40,6 +40,8 @@ grpc_slice grpc_empty_slice(void) {
   return out;
 }
 
+void grpc_slice_standard_write(grpc_slice s) {}
+
 grpc_slice grpc_slice_copy(grpc_slice s) {
   grpc_slice out = GRPC_SLICE_MALLOC(GRPC_SLICE_LENGTH(s));
   memcpy(GRPC_SLICE_START_PTR(out), GRPC_SLICE_START_PTR(s),
@@ -79,7 +81,7 @@ static void noop_unref(grpc_exec_ctx *exec_ctx, void *unused) {}
 
 static const grpc_slice_refcount_vtable noop_refcount_vtable = {
     noop_ref, noop_unref, grpc_slice_default_eq_impl,
-    grpc_slice_default_hash_impl};
+    grpc_slice_default_hash_impl, NULL};
 static grpc_slice_refcount noop_refcount = {&noop_refcount_vtable,
                                             &noop_refcount};
 
@@ -119,7 +121,7 @@ static void new_slice_unref(grpc_exec_ctx *exec_ctx, void *p) {
 
 static const grpc_slice_refcount_vtable new_slice_vtable = {
     new_slice_ref, new_slice_unref, grpc_slice_default_eq_impl,
-    grpc_slice_default_hash_impl};
+    grpc_slice_default_hash_impl, NULL};
 
 grpc_slice grpc_slice_new_with_user_data(void *p, size_t len,
                                          void (*destroy)(void *),
@@ -168,7 +170,7 @@ static void new_with_len_unref(grpc_exec_ctx *exec_ctx, void *p) {
 
 static const grpc_slice_refcount_vtable new_with_len_vtable = {
     new_with_len_ref, new_with_len_unref, grpc_slice_default_eq_impl,
-    grpc_slice_default_hash_impl};
+    grpc_slice_default_hash_impl, NULL};
 
 grpc_slice grpc_slice_new_with_len(void *p, size_t len,
                                    void (*destroy)(void *, size_t)) {
@@ -218,7 +220,7 @@ static void malloc_unref(grpc_exec_ctx *exec_ctx, void *p) {
 
 static const grpc_slice_refcount_vtable malloc_vtable = {
     malloc_ref, malloc_unref, grpc_slice_default_eq_impl,
-    grpc_slice_default_hash_impl};
+    grpc_slice_default_hash_impl, NULL};
 
 grpc_slice grpc_slice_malloc_large(size_t length) {
   grpc_slice slice;
@@ -256,6 +258,83 @@ grpc_slice grpc_slice_malloc(size_t length) {
 
   if (length > sizeof(slice.data.inlined.bytes)) {
     return grpc_slice_malloc_large(length);
+  } else {
+    /* small slice: just inline the data */
+    slice.refcount = NULL;
+    slice.data.inlined.length = (uint8_t)length;
+  }
+  return slice;
+}
+
+typedef struct {
+  grpc_slice_refcount base;
+  gpr_refcount refs;
+  bool written;
+  void *bytes;
+} write_malloc_refcount;
+
+static void write_malloc_ref(void *p) {
+  write_malloc_refcount *r = p;
+  gpr_ref(&r->refs);
+}
+
+static void write_malloc_unref(grpc_exec_ctx *exec_ctx, void *p) {
+  write_malloc_refcount *r = p;
+  if (gpr_unref(&r->refs)) {
+    if (!r->written) {
+      gpr_free(r->bytes);
+    }
+    gpr_free(r);
+  }
+}
+
+void grpc_slice_write(grpc_exec_ctx *exec_ctx, grpc_slice s) {
+  if (s.refcount && s.refcount->vtable->write) {
+    s.refcount->vtable->write(exec_ctx, s);
+  }
+}
+
+static void grpc_write_slice_write_impl(grpc_exec_ctx *exec_ctx, grpc_slice s) {
+  if (s.refcount) {
+    write_malloc_refcount *r = (write_malloc_refcount *)s.refcount;
+    r->written = true;
+    gpr_free(r->bytes);
+  }
+}
+
+static const grpc_slice_refcount_vtable write_malloc_vtable = {
+    write_malloc_ref, write_malloc_unref, grpc_slice_default_eq_impl,
+    grpc_slice_default_hash_impl, grpc_write_slice_write_impl};
+
+grpc_slice grpc_write_slice_malloc_large(size_t length) {
+  grpc_slice slice;
+
+  write_malloc_refcount *rc = gpr_malloc(sizeof(write_malloc_refcount));
+
+  /* Initial refcount on rc is 1 - and it's up to the caller to release
+     this reference. */
+  gpr_ref_init(&rc->refs, 1);
+  rc->written = false;
+
+  rc->base.vtable = &write_malloc_vtable;
+  rc->base.sub_refcount = &rc->base;
+
+  /* Build up the slice to be returned. */
+  /* The slices refcount points back to the allocated block. */
+  slice.refcount = &rc->base;
+  /* The data bytes are placed immediately after the refcount struct */
+  slice.data.refcounted.bytes = gpr_malloc(length);
+  rc->bytes = slice.data.refcounted.bytes;
+  slice.data.refcounted.length = length;
+
+  return slice;
+}
+
+grpc_slice grpc_write_slice_malloc(size_t length) {
+  grpc_slice slice;
+
+  if (length > sizeof(slice.data.inlined.bytes)) {
+    return grpc_write_slice_malloc_large(length);
   } else {
     /* small slice: just inline the data */
     slice.refcount = NULL;

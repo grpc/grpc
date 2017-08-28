@@ -109,7 +109,8 @@ static const grpc_slice_refcount_vtable stream_ref_slice_vtable = {
     .ref = slice_stream_ref,
     .unref = slice_stream_unref,
     .eq = grpc_slice_default_eq_impl,
-    .hash = grpc_slice_default_hash_impl};
+    .hash = grpc_slice_default_hash_impl,
+    .write = NULL};
 
 #ifndef NDEBUG
 void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,

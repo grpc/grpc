@@ -174,6 +174,8 @@ grpc_slice_new_with_user_data_type grpc_slice_new_with_user_data_import;
 grpc_slice_new_with_len_type grpc_slice_new_with_len_import;
 grpc_slice_malloc_type grpc_slice_malloc_import;
 grpc_slice_malloc_large_type grpc_slice_malloc_large_import;
+grpc_write_slice_malloc_type grpc_write_slice_malloc_import;
+grpc_slice_write_type grpc_slice_write_import;
 grpc_slice_intern_type grpc_slice_intern_import;
 grpc_slice_from_copied_string_type grpc_slice_from_copied_string_import;
 grpc_slice_from_copied_buffer_type grpc_slice_from_copied_buffer_import;
@@ -480,6 +482,8 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_slice_new_with_len_import = (grpc_slice_new_with_len_type) GetProcAddress(library, "grpc_slice_new_with_len");
   grpc_slice_malloc_import = (grpc_slice_malloc_type) GetProcAddress(library, "grpc_slice_malloc");
   grpc_slice_malloc_large_import = (grpc_slice_malloc_large_type) GetProcAddress(library, "grpc_slice_malloc_large");
+  grpc_write_slice_malloc_import = (grpc_write_slice_malloc_type) GetProcAddress(library, "grpc_write_slice_malloc");
+  grpc_slice_write_import = (grpc_slice_write_type) GetProcAddress(library, "grpc_slice_write");
   grpc_slice_intern_import = (grpc_slice_intern_type) GetProcAddress(library, "grpc_slice_intern");
   grpc_slice_from_copied_string_import = (grpc_slice_from_copied_string_type) GetProcAddress(library, "grpc_slice_from_copied_string");
   grpc_slice_from_copied_buffer_import = (grpc_slice_from_copied_buffer_type) GetProcAddress(library, "grpc_slice_from_copied_buffer");

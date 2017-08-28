@@ -59,7 +59,7 @@ class GrpcBufferWriter final
       slice_ = backup_slice_;
       have_backup_ = false;
     } else {
-      slice_ = g_core_codegen_interface->grpc_slice_malloc(block_size_);
+      slice_ = g_core_codegen_interface->grpc_write_slice_malloc(block_size_);
     }
     *data = GRPC_SLICE_START_PTR(slice_);
     // On win x64, int is only 32bit
@@ -179,7 +179,8 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
     *own_buffer = true;
     int byte_size = msg.ByteSize();
     if (byte_size <= internal::kGrpcBufferWriterMaxBufferLength) {
-      grpc_slice slice = g_core_codegen_interface->grpc_slice_malloc(byte_size);
+      grpc_slice slice =
+          g_core_codegen_interface->grpc_slice_malloc(byte_size);
       GPR_CODEGEN_ASSERT(
           GRPC_SLICE_END_PTR(slice) ==
           msg.SerializeWithCachedSizesToArray(GRPC_SLICE_START_PTR(slice)));

@@ -361,7 +361,8 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
 /* returns true if done, false if pending; if returning true, *error is set */
 #define MAX_WRITE_IOVEC 1000
-static bool tcp_flush(grpc_tcp *tcp, grpc_error **error) {
+static bool tcp_flush(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
+                      grpc_error **error) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];
   msg_iovlen_type iov_size;
@@ -423,11 +424,21 @@ static bool tcp_flush(grpc_tcp *tcp, grpc_error **error) {
       }
     }
 
+    size_t bytes_written = 0;
+    size_t index_offset = unwind_byte_idx;
+    size_t i = 0;
+    for (i = unwind_slice_idx; i < tcp->outgoing_slice_idx; i++) {
+      bytes_written +=
+          GRPC_SLICE_LENGTH(tcp->outgoing_buffer->slices[i]) - index_offset;
+      if (bytes_written <= (size_t)sent_length) {
+        grpc_slice_write(exec_ctx, tcp->outgoing_buffer->slices[i]);
+      }
+      index_offset = 0;
+    }
     GPR_ASSERT(tcp->outgoing_byte_idx == 0);
     trailing = sending_length - (size_t)sent_length;
     while (trailing > 0) {
       size_t slice_length;
-
       tcp->outgoing_slice_idx--;
       slice_length = GRPC_SLICE_LENGTH(
           tcp->outgoing_buffer->slices[tcp->outgoing_slice_idx]);
@@ -459,7 +470,7 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
     return;
   }
 
-  if (!tcp_flush(tcp, &error)) {
+  if (!tcp_flush(exec_ctx, tcp, &error)) {
     if (GRPC_TRACER_ON(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "write: delayed");
     }
@@ -510,7 +521,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   tcp->outgoing_slice_idx = 0;
   tcp->outgoing_byte_idx = 0;
 
-  if (!tcp_flush(tcp, &error)) {
+  if (!tcp_flush(exec_ctx, tcp, &error)) {
     TCP_REF(tcp, "write");
     tcp->write_cb = cb;
     if (GRPC_TRACER_ON(grpc_tcp_trace)) {

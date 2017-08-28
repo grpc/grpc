@@ -116,10 +116,10 @@ static int interned_slice_eq(grpc_slice a, grpc_slice b) {
 
 static const grpc_slice_refcount_vtable interned_slice_vtable = {
     interned_slice_ref, interned_slice_unref, interned_slice_eq,
-    interned_slice_hash};
+    interned_slice_hash, NULL};
 static const grpc_slice_refcount_vtable interned_slice_sub_vtable = {
     interned_slice_sub_ref, interned_slice_sub_unref,
-    grpc_slice_default_eq_impl, grpc_slice_default_hash_impl};
+    grpc_slice_default_eq_impl, grpc_slice_default_hash_impl, NULL};
 
 static void grow_shard(slice_shard *shard) {
   size_t capacity = shard->capacity * 2;

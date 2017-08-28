@@ -394,7 +394,7 @@ static void ru_slice_unref(grpc_exec_ctx *exec_ctx, void *p) {
 
 static const grpc_slice_refcount_vtable ru_slice_vtable = {
     ru_slice_ref, ru_slice_unref, grpc_slice_default_eq_impl,
-    grpc_slice_default_hash_impl};
+    grpc_slice_default_hash_impl, NULL};
 
 static grpc_slice ru_slice_create(grpc_resource_user *resource_user,
                                   size_t size) {
