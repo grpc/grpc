@@ -314,23 +314,24 @@ grpc_error *grpc_metadata_batch_filter(grpc_exec_ctx *exec_ctx,
   return error;
 }
 
-grpc_error *grpc_metadata_batch_copy(grpc_exec_ctx *exec_ctx,
-                                     grpc_metadata_batch *src,
-                                     grpc_metadata_batch *dst,
-                                     grpc_linked_mdelem **storage) {
+void grpc_metadata_batch_copy(grpc_exec_ctx *exec_ctx,
+                              grpc_metadata_batch *src,
+                              grpc_metadata_batch *dst,
+                              grpc_linked_mdelem *storage) {
   grpc_metadata_batch_init(dst);
   dst->deadline = src->deadline;
-// FIXME: allocate via arena?
-  *storage = gpr_zalloc(sizeof(grpc_linked_mdelem) * src->list.count);
   size_t i = 0;
   for (grpc_linked_mdelem *elem = src->list.head; elem != NULL;
        elem = elem->next) {
     grpc_error *error = grpc_metadata_batch_add_tail(exec_ctx, dst,
-                                                     &(*storage)[i++],
+                                                     &storage[i++],
                                                      GRPC_MDELEM_REF(elem->md));
-    if (error != GRPC_ERROR_NONE) return error;
+    // The only way that grpc_metadata_batch_add_tail() can fail is if
+    // there's a duplicate entry for a callout.  However, that can't be
+    // the case here, because we would not have been allowed to create
+    // a source batch that had that kind of conflict.
+    GPR_ASSERT(error == GRPC_ERROR_NONE);
   }
-  return GRPC_ERROR_NONE;
 }
 
 void grpc_metadata_batch_move(grpc_metadata_batch *src,

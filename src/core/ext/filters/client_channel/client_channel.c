@@ -1245,12 +1245,10 @@ gpr_log(GPR_INFO, "==> batch_data_unref()");
 gpr_log(GPR_INFO, "  destroying batch_data");
     if (batch_data->send_initial_metadata_storage != NULL) {
       grpc_metadata_batch_destroy(exec_ctx, &batch_data->send_initial_metadata);
-      gpr_free(batch_data->send_initial_metadata_storage);
     }
     if (batch_data->send_trailing_metadata_storage != NULL) {
       grpc_metadata_batch_destroy(exec_ctx,
                                   &batch_data->send_trailing_metadata);
-      gpr_free(batch_data->send_trailing_metadata_storage);
     }
     if (batch_data->batch.recv_initial_metadata) {
       grpc_metadata_batch_destroy(exec_ctx,
@@ -1286,7 +1284,6 @@ static void retry_committed(grpc_exec_ctx *exec_ctx, call_data *calld) {
   calld->retry_committed = true;
   if (calld->send_initial_metadata_storage != NULL) {
     grpc_metadata_batch_destroy(exec_ctx, &calld->send_initial_metadata);
-    gpr_free(calld->send_initial_metadata_storage);
   }
   if (calld->num_send_message_ops > 0) {
     grpc_byte_stream_cache_destroy(exec_ctx, &calld->initial_send_message);
@@ -1296,7 +1293,6 @@ static void retry_committed(grpc_exec_ctx *exec_ctx, call_data *calld) {
   }
   if (calld->send_trailing_metadata_storage != NULL) {
     grpc_metadata_batch_destroy(exec_ctx, &calld->send_trailing_metadata);
-    gpr_free(calld->send_trailing_metadata_storage);
   }
   gpr_free(calld->send_messages);
 }
@@ -1347,19 +1343,14 @@ gpr_log(GPR_INFO, "size exceeded, committing for retries");
   if (batch->send_initial_metadata) {
     calld->seen_send_initial_metadata = true;
     GPR_ASSERT(calld->send_initial_metadata_storage == NULL);
-    grpc_error *error = grpc_metadata_batch_copy(
-        exec_ctx,
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->send_initial_metadata,
-        &calld->send_initial_metadata_storage);
-    if (error != GRPC_ERROR_NONE) {
-      // If we couldn't copy the metadata, we won't be able to retry,
-      // but we can still proceed with the initial RPC.
-gpr_log(GPR_INFO, "grpc_metadata_batch_copy() for initial metadata failed, committing");
-      retry_committed(exec_ctx, calld);
-      GRPC_ERROR_UNREF(error);
-      return;
-    }
+    grpc_metadata_batch *send_initial_metadata =
+        batch->payload->send_initial_metadata.send_initial_metadata;
+    calld->send_initial_metadata_storage = gpr_arena_alloc(
+        calld->arena,
+        sizeof(grpc_linked_mdelem) * send_initial_metadata->list.count);
+    grpc_metadata_batch_copy(exec_ctx, send_initial_metadata,
+                             &calld->send_initial_metadata,
+                             calld->send_initial_metadata_storage);
     calld->send_initial_metadata_flags =
         batch->payload->send_initial_metadata.send_initial_metadata_flags;
     calld->peer_string = batch->payload->send_initial_metadata.peer_string;
@@ -1381,19 +1372,14 @@ gpr_log(GPR_INFO, "grpc_metadata_batch_copy() for initial metadata failed, commi
   if (batch->send_trailing_metadata) {
     calld->seen_send_trailing_metadata = true;
     GPR_ASSERT(calld->send_trailing_metadata_storage == NULL);
-    grpc_error *error = grpc_metadata_batch_copy(
-        exec_ctx,
-        batch->payload->send_trailing_metadata.send_trailing_metadata,
-        &calld->send_trailing_metadata,
-        &calld->send_trailing_metadata_storage);
-    if (error != GRPC_ERROR_NONE) {
-      // If we couldn't copy the metadata, we won't be able to retry,
-      // but we can still proceed with the initial RPC.
-gpr_log(GPR_INFO, "grpc_metadata_batch_copy() for trailing metadata failed, committing");
-      retry_committed(exec_ctx, calld);
-      GRPC_ERROR_UNREF(error);
-      return;
-    }
+    grpc_metadata_batch *send_trailing_metadata =
+        batch->payload->send_trailing_metadata.send_trailing_metadata;
+    calld->send_trailing_metadata_storage = gpr_arena_alloc(
+        calld->arena,
+        sizeof(grpc_linked_mdelem) * send_trailing_metadata->list.count);
+    grpc_metadata_batch_copy(exec_ctx, send_trailing_metadata,
+                             &calld->send_trailing_metadata,
+                             calld->send_trailing_metadata_storage);
   }
 }
 
@@ -1910,11 +1896,12 @@ gpr_log(GPR_INFO, "==> start_retriable_subchannel_batches()");
   if (calld->seen_send_initial_metadata &&
       !retry_state->started_send_initial_metadata) {
     send_batch_data = batch_data_create(elem, 1);
-    grpc_error *error = grpc_metadata_batch_copy(
-        exec_ctx, &calld->send_initial_metadata,
-        &send_batch_data->send_initial_metadata,
-        &send_batch_data->send_initial_metadata_storage);
-    GPR_ASSERT(error == GRPC_ERROR_NONE);  // FIXME?
+    send_batch_data->send_initial_metadata_storage = gpr_arena_alloc(
+        calld->arena,
+        sizeof(grpc_linked_mdelem) * calld->send_initial_metadata.list.count);
+    grpc_metadata_batch_copy(exec_ctx, &calld->send_initial_metadata,
+                             &send_batch_data->send_initial_metadata,
+                             send_batch_data->send_initial_metadata_storage);
     retry_state->started_send_initial_metadata = true;
     send_batch_data->batch.send_initial_metadata = true;
     send_batch_data->batch.payload->send_initial_metadata.send_initial_metadata
@@ -1950,11 +1937,12 @@ gpr_log(GPR_INFO, "==> start_retriable_subchannel_batches()");
       retry_state->started_send_message_count == calld->num_send_message_ops &&
       !retry_state->started_send_trailing_metadata) {
     if (send_batch_data == NULL) send_batch_data = batch_data_create(elem, 1);
-    grpc_error *error = grpc_metadata_batch_copy(
-        exec_ctx, &calld->send_trailing_metadata,
-        &send_batch_data->send_trailing_metadata,
-        &send_batch_data->send_trailing_metadata_storage);
-    GPR_ASSERT(error == GRPC_ERROR_NONE);  // FIXME?
+    send_batch_data->send_trailing_metadata_storage = gpr_arena_alloc(
+        calld->arena,
+        sizeof(grpc_linked_mdelem) * calld->send_trailing_metadata.list.count);
+    grpc_metadata_batch_copy(exec_ctx, &calld->send_trailing_metadata,
+                             &send_batch_data->send_trailing_metadata,
+                             send_batch_data->send_trailing_metadata_storage);
     retry_state->started_send_trailing_metadata = true;
     send_batch_data->batch.send_trailing_metadata = true;
     send_batch_data->batch.payload->send_trailing_metadata
