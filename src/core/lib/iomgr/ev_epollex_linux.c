@@ -49,7 +49,7 @@
 #include "src/core/lib/support/spinlock.h"
 
 /*******************************************************************************
- * Pollset-set sibling link
+ * Polling object
  */
 
 typedef enum {
