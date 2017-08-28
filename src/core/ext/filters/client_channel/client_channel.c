@@ -1769,12 +1769,13 @@ gpr_log(GPR_INFO, "call_finished=%d, status=%d", call_finished, status);
   if (call_finished) {
     if (maybe_retry(exec_ctx, elem, batch_data, status)) {
       batch_data_unref(exec_ctx, batch_data);
-// FIXME: what if these are not from the completed batch?
-      if (retry_state->recv_initial_metadata_ready_pending) {
+      if (batch_data->batch.recv_initial_metadata &&
+          retry_state->recv_initial_metadata_ready_pending) {
         batch_data_unref(exec_ctx, batch_data);
         GRPC_ERROR_UNREF(retry_state->recv_initial_metadata_error);
       }
-      if (retry_state->recv_message_null_pending) {
+      if (batch_data->batch.recv_message &&
+          retry_state->recv_message_null_pending) {
         batch_data_unref(exec_ctx, batch_data);
         GRPC_ERROR_UNREF(retry_state->recv_message_error);
       }
@@ -1783,8 +1784,8 @@ gpr_log(GPR_INFO, "call_finished=%d, status=%d", call_finished, status);
     // If we are not retrying and there are pending
     // recv_initial_metadata_ready or recv_message_ready callbacks,
     // invoke them.
-// FIXME: what if these are not from the completed batch?
-    if (retry_state->recv_initial_metadata_ready_pending) {
+    if (batch_data->batch.recv_initial_metadata &&
+        retry_state->recv_initial_metadata_ready_pending) {
       GRPC_CLOSURE_INIT(&batch_data->recv_initial_metadata_ready,
                         invoke_recv_initial_metadata_callback, batch_data,
                         grpc_schedule_on_exec_ctx);
@@ -1793,7 +1794,8 @@ gpr_log(GPR_INFO, "call_finished=%d, status=%d", call_finished, status);
                                retry_state->recv_initial_metadata_error,
                                "resuming recv_initial_metadata_ready");
     }
-    if (retry_state->recv_message_null_pending) {
+    if (batch_data->batch.recv_message &&
+        retry_state->recv_message_null_pending) {
       GRPC_CLOSURE_INIT(&batch_data->recv_message_ready,
                         invoke_recv_message_callback, batch_data,
                         grpc_schedule_on_exec_ctx);
