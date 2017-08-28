@@ -83,19 +83,9 @@
 /*  DEFINITION OF THESE SYMBOLS SHALL NOT TAKE PLACE ANYWHERE ELSE  */
 /* ================================================================ */
 
-#ifdef CARES_SIZEOF_LONG
-#  error "CARES_SIZEOF_LONG shall not be defined except in ares_build.h"
-   Error Compilation_aborted_CARES_SIZEOF_LONG_already_defined
-#endif
-
 #ifdef CARES_TYPEOF_ARES_SOCKLEN_T
 #  error "CARES_TYPEOF_ARES_SOCKLEN_T shall not be defined except in ares_build.h"
    Error Compilation_aborted_CARES_TYPEOF_ARES_SOCKLEN_T_already_defined
-#endif
-
-#ifdef CARES_SIZEOF_ARES_SOCKLEN_T
-#  error "CARES_SIZEOF_ARES_SOCKLEN_T shall not be defined except in ares_build.h"
-   Error Compilation_aborted_CARES_SIZEOF_ARES_SOCKLEN_T_already_defined
 #endif
 
 /* ================================================================ */
@@ -103,128 +93,78 @@
 /* ================================================================ */
 
 #if defined(__DJGPP__) || defined(__GO32__)
-#  define CARES_SIZEOF_LONG           4
 #  define CARES_TYPEOF_ARES_SOCKLEN_T int
-#  define CARES_SIZEOF_ARES_SOCKLEN_T 4
 
 #elif defined(__SALFORDC__)
-#  define CARES_SIZEOF_LONG           4
 #  define CARES_TYPEOF_ARES_SOCKLEN_T int
-#  define CARES_SIZEOF_ARES_SOCKLEN_T 4
 
 #elif defined(__BORLANDC__)
-#  define CARES_SIZEOF_LONG           4
 #  define CARES_TYPEOF_ARES_SOCKLEN_T int
-#  define CARES_SIZEOF_ARES_SOCKLEN_T 4
 
 #elif defined(__TURBOC__)
-#  define CARES_SIZEOF_LONG           4
 #  define CARES_TYPEOF_ARES_SOCKLEN_T int
-#  define CARES_SIZEOF_ARES_SOCKLEN_T 4
 
 #elif defined(__WATCOMC__)
-#  define CARES_SIZEOF_LONG           4
 #  define CARES_TYPEOF_ARES_SOCKLEN_T int
-#  define CARES_SIZEOF_ARES_SOCKLEN_T 4
 
 #elif defined(__POCC__)
-#  define CARES_SIZEOF_LONG           4
 #  define CARES_TYPEOF_ARES_SOCKLEN_T int
-#  define CARES_SIZEOF_ARES_SOCKLEN_T 4
 
 #elif defined(__LCC__)
-#  define CARES_SIZEOF_LONG           4
 #  define CARES_TYPEOF_ARES_SOCKLEN_T int
-#  define CARES_SIZEOF_ARES_SOCKLEN_T 4
 
 #elif defined(__SYMBIAN32__)
-#  define CARES_SIZEOF_LONG           4
 #  define CARES_TYPEOF_ARES_SOCKLEN_T unsigned int
-#  define CARES_SIZEOF_ARES_SOCKLEN_T 4
 
 #elif defined(__MWERKS__)
-#  define CARES_SIZEOF_LONG           4
 #  define CARES_TYPEOF_ARES_SOCKLEN_T int
-#  define CARES_SIZEOF_ARES_SOCKLEN_T 4
 
 #elif defined(_WIN32_WCE)
-#  define CARES_SIZEOF_LONG           4
 #  define CARES_TYPEOF_ARES_SOCKLEN_T int
-#  define CARES_SIZEOF_ARES_SOCKLEN_T 4
 
 #elif defined(__MINGW32__)
-#  define CARES_SIZEOF_LONG           4
 #  define CARES_TYPEOF_ARES_SOCKLEN_T int
-#  define CARES_SIZEOF_ARES_SOCKLEN_T 4
 
 #elif defined(__VMS)
-#  define CARES_SIZEOF_LONG           4
 #  define CARES_TYPEOF_ARES_SOCKLEN_T unsigned int
-#  define CARES_SIZEOF_ARES_SOCKLEN_T 4
 
 #elif defined(__OS400__)
 #  if defined(__ILEC400__)
-#    define CARES_SIZEOF_LONG           4
 #    define CARES_TYPEOF_ARES_SOCKLEN_T socklen_t
-#    define CARES_SIZEOF_ARES_SOCKLEN_T 4
 #    define CARES_PULL_SYS_TYPES_H      1
 #    define CARES_PULL_SYS_SOCKET_H     1
 #  endif
 
 #elif defined(__MVS__)
 #  if defined(__IBMC__) || defined(__IBMCPP__)
-#    if defined(_ILP32)
-#      define CARES_SIZEOF_LONG           4
-#    elif defined(_LP64)
-#      define CARES_SIZEOF_LONG           8
-#    endif
 #    define CARES_TYPEOF_ARES_SOCKLEN_T socklen_t
-#    define CARES_SIZEOF_ARES_SOCKLEN_T 4
 #    define CARES_PULL_SYS_TYPES_H      1
 #    define CARES_PULL_SYS_SOCKET_H     1
 #  endif
 
 #elif defined(__370__)
 #  if defined(__IBMC__) || defined(__IBMCPP__)
-#    if defined(_ILP32)
-#      define CARES_SIZEOF_LONG           4
-#    elif defined(_LP64)
-#      define CARES_SIZEOF_LONG           8
-#    endif
 #    define CARES_TYPEOF_ARES_SOCKLEN_T socklen_t
-#    define CARES_SIZEOF_ARES_SOCKLEN_T 4
 #    define CARES_PULL_SYS_TYPES_H      1
 #    define CARES_PULL_SYS_SOCKET_H     1
 #  endif
 
 #elif defined(TPF)
-#  define CARES_SIZEOF_LONG           8
 #  define CARES_TYPEOF_ARES_SOCKLEN_T int
-#  define CARES_SIZEOF_ARES_SOCKLEN_T 4
 
 /* ===================================== */
 /*    KEEP MSVC THE PENULTIMATE ENTRY    */
 /* ===================================== */
 
 #elif defined(_MSC_VER)
-#  define CARES_SIZEOF_LONG           4
 #  define CARES_TYPEOF_ARES_SOCKLEN_T int
-#  define CARES_SIZEOF_ARES_SOCKLEN_T 4
 
 /* ===================================== */
 /*    KEEP GENERIC GCC THE LAST ENTRY    */
 /* ===================================== */
 
 #elif defined(__GNUC__)
-#  if defined(__LP64__) || \
-        defined(__x86_64__) || defined(__ppc64__)
-#    define CARES_SIZEOF_LONG           8
-#  elif defined(__ILP32__) || \
-      defined(__i386__) || defined(__ppc__) || defined(__arm__)
-#    define CARES_SIZEOF_LONG           4
-#  endif
 #  define CARES_TYPEOF_ARES_SOCKLEN_T socklen_t
-#  define CARES_SIZEOF_ARES_SOCKLEN_T 4
 #  define CARES_PULL_SYS_TYPES_H      1
 #  define CARES_PULL_SYS_SOCKET_H     1
 
@@ -251,14 +191,17 @@
   typedef CARES_TYPEOF_ARES_SOCKLEN_T ares_socklen_t;
 #endif
 
-/* Undefine UNICODE, as c-ares does not use the ANSI version of functions */
-/* explicitly. */
-#ifdef UNICODE
-#  undef UNICODE
+/* Data type definition of ares_ssize_t. */
+#ifdef _WIN32
+#  ifdef _WIN64
+#    define CARES_TYPEOF_ARES_SSIZE_T __int64
+#  else
+#    define CARES_TYPEOF_ARES_SSIZE_T long
+#  endif
+#else
+#  define CARES_TYPEOF_ARES_SSIZE_T ssize_t;
 #endif
 
-#ifdef _UNICODE
-#  undef _UNICODE
-#endif
+typedef CARES_TYPEOF_ARES_SSIZE_T ares_ssize_t;
 
 #endif /* __CARES_BUILD_H */
