@@ -56,14 +56,14 @@ static grpc_wakeup_fd global_wakeup_fd;
 #define MAX_EPOLL_EVENTS 100
 #define MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION 1
 
- /* NOTE ON SYNCHRONIZATION:
-   - Fields in this struct are only modified by the designated poller. Hence
-     there is no need for any locks to protect the struct.
-
-   - num_events and cursor fields have to be of atomic type to provide memory
-     visibility guarantees only. i.e In case of multiple pollers, the designated
-     polling thread keeps changing; the thread that wrote these values may be
-     different from the thread reading the values */
+/* NOTE ON SYNCHRONIZATION:
+ * - Fields in this struct are only modified by the designated poller. Hence
+ *   there is no need for any locks to protect the struct.
+ * - num_events and cursor fields have to be of atomic type to provide memory
+ *   visibility guarantees only. i.e In case of multiple pollers, the designated
+ *   polling thread keeps changing; the thread that wrote these values may be
+ *   different from the thread reading the values
+ */
 typedef struct epoll_set {
   int epfd;
 
