@@ -23,38 +23,6 @@ cd $(dirname $0)
 # Run the tests server.
 
 BINDIR=../../../bins/$CONFIG
-PROTOC=$BINDIR/protobuf/protoc
-PLUGIN=$BINDIR/grpc_objective_c_plugin
-
-rm -rf PluginTest/*pb*
-
-# Verify the output proto filename
-eval $PROTOC \
-    --plugin=protoc-gen-grpc=$PLUGIN \
-    --objc_out=PluginTest \
-    --grpc_out=PluginTest \
-    -I PluginTest \
-    -I ../../../third_party/protobuf/src \
-    PluginTest/*.proto
-
-[ -e ./PluginTest/TestDashFilename.pbrpc.h ] || {
-    echo >&2 "protoc outputs wrong filename."
-    exit 1
-}
-
-# Verify names of the imported protos in generated code
-[ "`cat PluginTest/TestDashFilename.pbrpc.h |
-    egrep '#import ".*\.pb(objc|rpc)\.h"$' |
-    egrep '-'`" ] && {
-    echo >&2 "protoc generated import with wrong filename."
-    exit 1
-}
-[ "`cat PluginTest/TestDashFilename.pbrpc.m |
-    egrep '#import ".*\.pb(objc|rpc)\.m"$' |
-    egrep '-'`" ] && {
-    echo >&2 "protoc generated import with wrong filename."
-    exit 1
-}
 
 [ -f $BINDIR/interop_server ] || {
     echo >&2 "Can't find the test server. Make sure run_tests.py is making" \
@@ -70,7 +38,7 @@ trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 # element of the pipe fails.
 # TODO(jcanizales): Use xctool instead? Issue #2540.
 set -o pipefail
-XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail|\bpassed\b)'
+XCODEBUILD_FILTER='(^CompileC |^Ld |^.*clang |^ *cd |^ *export |^Libtool |^.*libtool |^CpHeader |^ *builtin-copy )'
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
@@ -80,8 +48,8 @@ xcodebuild \
     HOST_PORT_LOCAL=localhost:5050 \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test \
-    | egrep "$XCODEBUILD_FILTER" \
-    | egrep -v "(GPBDictionary|GPBArray)" -
+    | egrep -v "$XCODEBUILD_FILTER" \
+    | egrep -v '^$' -
 
 echo "TIME:  $(date)"
 xcodebuild \
@@ -92,16 +60,12 @@ xcodebuild \
     | egrep "$XCODEBUILD_FILTER" \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
-# Temporarily disabled for (possible) flakiness on Jenkins.
-# Fix or reenable after confirmation/disconfirmation that it is the source of
-# Jenkins problem.
-
-# echo "TIME:  $(date)"
-# xcodebuild \
-#     -workspace Tests.xcworkspace \
-#     -scheme CronetUnitTests \
-#     -destination name="iPhone 6" \
-#     test | xcpretty
+echo "TIME:  $(date)"
+xcodebuild \
+    -workspace Tests.xcworkspace \
+    -scheme CronetUnitTests \
+    -destination name="iPhone 6" \
+    test | xcpretty
 
 echo "TIME:  $(date)"
 xcodebuild \

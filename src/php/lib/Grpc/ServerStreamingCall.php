@@ -40,13 +40,11 @@ class ServerStreamingCall extends AbstractCall
         if (array_key_exists('flags', $options)) {
             $message_array['flags'] = $options['flags'];
         }
-        $event = $this->call->startBatch([
+        $this->call->startBatch([
             OP_SEND_INITIAL_METADATA => $metadata,
-            OP_RECV_INITIAL_METADATA => true,
             OP_SEND_MESSAGE => $message_array,
             OP_SEND_CLOSE_FROM_CLIENT => true,
         ]);
-        $this->metadata = $event->metadata;
     }
 
     /**
@@ -54,9 +52,15 @@ class ServerStreamingCall extends AbstractCall
      */
     public function responses()
     {
-        $response = $this->call->startBatch([
-            OP_RECV_MESSAGE => true,
-        ])->message;
+        $batch = [OP_RECV_MESSAGE => true];
+        if ($this->metadata === null) {
+            $batch[OP_RECV_INITIAL_METADATA] = true;
+        }
+        $read_event = $this->call->startBatch($batch);
+        if ($this->metadata === null) {
+            $this->metadata = $read_event->metadata;
+        }
+        $response = $read_event->message;
         while ($response !== null) {
             yield $this->_deserializeResponse($response);
             $response = $this->call->startBatch([
@@ -80,5 +84,17 @@ class ServerStreamingCall extends AbstractCall
         $this->trailing_metadata = $status_event->status->metadata;
 
         return $status_event->status;
+    }
+
+    /**
+     * @return mixed The metadata sent by the server
+     */
+    public function getMetadata()
+    {
+        if ($this->metadata === null) {
+            $event = $this->call->startBatch([OP_RECV_INITIAL_METADATA => true]);
+            $this->metadata = $event->metadata;
+        }
+        return $this->metadata;
     }
 }

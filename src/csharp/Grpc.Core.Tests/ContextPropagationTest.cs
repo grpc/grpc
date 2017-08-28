@@ -106,11 +106,11 @@ namespace Grpc.Core.Tests
         public async Task PropagateDeadline()
         {
             var deadline = DateTime.UtcNow.AddDays(7);
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 Assert.IsTrue(context.Deadline < deadline.AddMinutes(1));
                 Assert.IsTrue(context.Deadline > deadline.AddMinutes(-1));
-                return "PASS";
+                return Task.FromResult("PASS");
             });
 
             helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
@@ -135,10 +135,10 @@ namespace Grpc.Core.Tests
         [Test]
         public async Task SuppressDeadlinePropagation()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 Assert.AreEqual(DateTime.MaxValue, context.Deadline);
-                return "PASS";
+                return Task.FromResult("PASS");
             });
 
             helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>

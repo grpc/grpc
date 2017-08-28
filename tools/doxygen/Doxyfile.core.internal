@@ -827,6 +827,8 @@ include/grpc/impl/codegen/slice.h \
 include/grpc/impl/codegen/status.h \
 include/grpc/impl/codegen/sync.h \
 include/grpc/impl/codegen/sync.h \
+include/grpc/impl/codegen/sync_custom.h \
+include/grpc/impl/codegen/sync_custom.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
@@ -853,6 +855,7 @@ include/grpc/support/port_platform.h \
 include/grpc/support/string_util.h \
 include/grpc/support/subprocess.h \
 include/grpc/support/sync.h \
+include/grpc/support/sync_custom.h \
 include/grpc/support/sync_generic.h \
 include/grpc/support/sync_posix.h \
 include/grpc/support/sync_windows.h \
@@ -1084,6 +1087,8 @@ src/core/lib/http/httpcli_security_connector.c \
 src/core/lib/http/parser.c \
 src/core/lib/http/parser.h \
 src/core/lib/iomgr/README.md \
+src/core/lib/iomgr/call_combiner.c \
+src/core/lib/iomgr/call_combiner.h \
 src/core/lib/iomgr/closure.c \
 src/core/lib/iomgr/closure.h \
 src/core/lib/iomgr/combiner.c \
@@ -1330,7 +1335,6 @@ src/core/lib/support/sync.c \
 src/core/lib/support/sync_posix.c \
 src/core/lib/support/sync_windows.c \
 src/core/lib/support/thd.c \
-src/core/lib/support/thd_internal.h \
 src/core/lib/support/thd_posix.c \
 src/core/lib/support/thd_windows.c \
 src/core/lib/support/time.c \

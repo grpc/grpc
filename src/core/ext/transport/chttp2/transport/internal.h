@@ -238,7 +238,17 @@ typedef struct {
    * to send WINDOW_UPDATE frames. */
   int64_t announced_window;
 
-  // read only pointer back to transport for certain data
+  /** should we probe bdp? */
+  bool enable_bdp_probe;
+
+  /* bdp estimation */
+  grpc_bdp_estimator bdp_estimator;
+
+  /* pid controller */
+  grpc_pid_controller pid_controller;
+  gpr_timespec last_pid_update;
+
+  // pointer back to transport for tracing
   const grpc_chttp2_transport *t;
 } grpc_chttp2_transport_flowctl;
 
@@ -260,9 +270,6 @@ struct grpc_chttp2_transport {
 
   /** is there a read request to the endpoint outstanding? */
   uint8_t endpoint_reading;
-
-  /** should we probe bdp? */
-  bool enable_bdp_probe;
 
   grpc_chttp2_optimization_target opt_target;
 
@@ -357,13 +364,6 @@ struct grpc_chttp2_transport {
   grpc_chttp2_goaway_parser goaway_parser;
 
   grpc_chttp2_transport_flowctl flow_control;
-
-  /* bdp estimation */
-  grpc_bdp_estimator bdp_estimator;
-
-  /* pid controller */
-  grpc_pid_controller pid_controller;
-  gpr_timespec last_pid_update;
 
   /* deframing */
   grpc_chttp2_deframe_transport_state deframe_state;
@@ -509,6 +509,8 @@ struct grpc_chttp2_stream {
   /** Are we buffering writes on this stream? If yes, we won't become writable
       until there's enough queued up in the flow_controlled_buffer */
   bool write_buffering;
+  /** Has trailing metadata been received. */
+  bool received_trailing_metadata;
 
   /** the error that resulted in this stream being read-closed */
   grpc_error *read_closed_error;
@@ -704,13 +706,19 @@ typedef enum {
 typedef struct {
   grpc_chttp2_flowctl_urgency send_stream_update;
   grpc_chttp2_flowctl_urgency send_transport_update;
+  grpc_chttp2_flowctl_urgency send_setting_update;
+  uint32_t initial_window_size;
+  uint32_t max_frame_size;
+  bool need_ping;
 } grpc_chttp2_flowctl_action;
 
 // Reads the flow control data and returns and actionable struct that will tell
 // chttp2 exactly what it needs to do
 grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
-    const grpc_chttp2_transport_flowctl *tfc,
-    const grpc_chttp2_stream_flowctl *sfc);
+    grpc_chttp2_transport_flowctl *tfc, grpc_chttp2_stream_flowctl *sfc);
+
+grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_bdp_action(
+    grpc_chttp2_transport_flowctl *tfc);
 
 // Takes in a flow control action and performs all the needed operations.
 void grpc_chttp2_act_on_flowctl_action(grpc_exec_ctx *exec_ctx,

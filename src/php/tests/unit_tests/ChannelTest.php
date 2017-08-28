@@ -517,8 +517,6 @@ class ChannelTest extends PHPUnit_Framework_TestCase
         $state = $this->channel2->getConnectivityState();
         $this->assertEquals(GRPC\CHANNEL_IDLE, $state);
 
-        // any dangling old connection to the same host must be
-        // manually closed
         $this->channel1->close();
         $this->channel2->close();
     }
@@ -529,6 +527,7 @@ class ChannelTest extends PHPUnit_Framework_TestCase
         $this->channel1 = new Grpc\Channel('localhost:1', []);
         $this->channel2 = new Grpc\Channel('localhost:1',
                                            ["force_new" => true]);
+        // channel3 shares with channel1
         $this->channel3 = new Grpc\Channel('localhost:1', []);
 
         // try to connect on channel2
@@ -540,29 +539,31 @@ class ChannelTest extends PHPUnit_Framework_TestCase
         $state = $this->channel2->getConnectivityState();
         $this->assertConnecting($state);
         $state = $this->channel3->getConnectivityState();
-        $this->assertConnecting($state);
+        $this->assertEquals(GRPC\CHANNEL_IDLE, $state);
 
         $this->channel1->close();
         $this->channel2->close();
     }
 
+    /**
+     * @expectedException RuntimeException
+     */
     public function testPersistentChannelForceNewOldChannelClose()
     {
 
         $this->channel1 = new Grpc\Channel('localhost:1', []);
         $this->channel2 = new Grpc\Channel('localhost:1',
                                            ["force_new" => true]);
+        // channel3 shares with channel1
         $this->channel3 = new Grpc\Channel('localhost:1', []);
 
         $this->channel1->close();
 
         $state = $this->channel2->getConnectivityState();
         $this->assertEquals(GRPC\CHANNEL_IDLE, $state);
-        $state = $this->channel3->getConnectivityState();
-        $this->assertEquals(GRPC\CHANNEL_IDLE, $state);
 
-        $this->channel2->close();
-        $this->channel3->close();
+        // channel3 already closed
+        $state = $this->channel3->getConnectivityState();
     }
 
     public function testPersistentChannelForceNewNewChannelClose()

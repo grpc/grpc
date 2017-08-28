@@ -109,6 +109,8 @@ static void oauth2_token_fetcher_destruct(grpc_exec_ctx *exec_ctx,
       (grpc_oauth2_token_fetcher_credentials *)creds;
   GRPC_MDELEM_UNREF(exec_ctx, c->access_token_md);
   gpr_mu_destroy(&c->mu);
+  grpc_pollset_set_destroy(exec_ctx,
+                           grpc_polling_entity_pollset_set(&c->pollent));
   grpc_httpcli_context_destroy(exec_ctx, &c->httpcli_context);
 }
 
@@ -238,6 +240,9 @@ static void on_oauth2_token_fetcher_http_response(grpc_exec_ctx *exec_ctx,
           "Error occured when fetching oauth2 token.", &error, 1);
     }
     GRPC_CLOSURE_SCHED(exec_ctx, pending_request->on_request_metadata, error);
+    grpc_polling_entity_del_from_pollset_set(
+        exec_ctx, pending_request->pollent,
+        grpc_polling_entity_pollset_set(&c->pollent));
     grpc_oauth2_pending_get_request_metadata *prev = pending_request;
     pending_request = pending_request->next;
     gpr_free(prev);
@@ -278,6 +283,9 @@ static bool oauth2_token_fetcher_get_request_metadata(
           sizeof(*pending_request));
   pending_request->md_array = md_array;
   pending_request->on_request_metadata = on_request_metadata;
+  pending_request->pollent = pollent;
+  grpc_polling_entity_add_to_pollset_set(
+      exec_ctx, pollent, grpc_polling_entity_pollset_set(&c->pollent));
   pending_request->next = c->pending_requests;
   c->pending_requests = pending_request;
   bool start_fetch = false;
@@ -288,10 +296,10 @@ static bool oauth2_token_fetcher_get_request_metadata(
   gpr_mu_unlock(&c->mu);
   if (start_fetch) {
     grpc_call_credentials_ref(creds);
-    c->fetch_func(exec_ctx, grpc_credentials_metadata_request_create(creds),
-                  &c->httpcli_context, pollent,
-                  on_oauth2_token_fetcher_http_response,
-                  gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), refresh_threshold));
+    c->fetch_func(
+        exec_ctx, grpc_credentials_metadata_request_create(creds),
+        &c->httpcli_context, &c->pollent, on_oauth2_token_fetcher_http_response,
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), refresh_threshold));
   }
   return false;
 }
@@ -334,6 +342,8 @@ static void init_oauth2_token_fetcher(grpc_oauth2_token_fetcher_credentials *c,
   gpr_mu_init(&c->mu);
   c->token_expiration = gpr_inf_past(GPR_CLOCK_REALTIME);
   c->fetch_func = fetch_func;
+  c->pollent =
+      grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create());
   grpc_httpcli_context_init(&c->httpcli_context);
 }
 
