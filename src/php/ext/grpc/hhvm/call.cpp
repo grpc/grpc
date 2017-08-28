@@ -326,11 +326,13 @@ Object HHVM_METHOD(Call, startBatch,
     typedef struct OpsManaged // this structure is managed data for the ops array
     {
         // constructors/destructors
-        OpsManaged(void) : metadata{ true }, trailing_metadata{ true }, recv_metadata{ false },
-            recv_trailing_metadata{ false }, send_message{ nullptr },
-            recv_message{ nullptr }, recv_status_details{}, send_status_details{},
+        OpsManaged(void) : send_metadata{ true }, send_trailing_metadata{ true },
+            recv_metadata{ false }, recv_trailing_metadata{ false },
+            recv_status_details{}, send_status_details{},
             cancelled{ 0 }, status{ GRPC_STATUS_OK }
         {
+            send_messages.fill(nullptr);
+            recv_messages.fill(nullptr);
         }
         ~OpsManaged(void)
         {
@@ -341,28 +343,29 @@ Object HHVM_METHOD(Call, startBatch,
         void recycle(void)
         {
             // free allocated messages
-            if (send_message)
+            auto freeMessage = [](grpc_byte_buffer* pBuffer)
             {
-                grpc_byte_buffer_destroy(send_message);
-                send_message = nullptr;
-            }
-            if (recv_message)
-            {
-                grpc_byte_buffer_destroy(recv_message);
-                recv_message = nullptr;
-            }
+                if (pBuffer)
+                {
+                    grpc_byte_buffer_destroy(pBuffer);
+                    pBuffer = nullptr;
+                }
+
+            };
+            std::for_each(send_messages.begin(), send_messages.end(), freeMessage);
+            std::for_each(recv_messages.begin(), recv_messages.end(), freeMessage);
             cancelled = false;
         }
 
         // managed data
-        MetadataArray metadata;                 // owned by caller
-        MetadataArray trailing_metadata;        // owned by caller
-        MetadataArray recv_metadata;            // owned by call object
-        MetadataArray recv_trailing_metadata;   // owned by call object
-        grpc_byte_buffer* send_message;         // owned by caller
-        grpc_byte_buffer* recv_message;         // owned by caller
-        Slice recv_status_details;              // owned by caller
-        Slice send_status_details;              // owned by caller
+        MetadataArray send_metadata;                             // owned by caller
+        MetadataArray send_trailing_metadata;                    // owned by caller
+        MetadataArray recv_metadata;                             // owned by call object
+        MetadataArray recv_trailing_metadata;                    // owned by call object
+        std::array<grpc_byte_buffer*, maxActions> send_messages; // owned by caller
+        std::array<grpc_byte_buffer*, maxActions> recv_messages; // owned by caller
+        Slice recv_status_details;                               // owned by caller
+        Slice send_status_details;                               // owned by caller
         int cancelled;
         grpc_status_code status;
     } OpsManaged;
@@ -396,13 +399,13 @@ Object HHVM_METHOD(Call, startBatch,
                 SystemLib::throwInvalidArgumentExceptionObject("Expected an array value for the metadata");
             }
 
-            if (!opsManaged.metadata.init(value.toArray(), true))
+            if (!opsManaged.send_metadata.init(value.toArray(), true))
             {
                 SystemLib::throwInvalidArgumentExceptionObject("Bad metadata value given");
             }
 
-            ops[op_num].data.send_initial_metadata.count = opsManaged.metadata.size();
-            ops[op_num].data.send_initial_metadata.metadata = opsManaged.metadata.data();
+            ops[op_num].data.send_initial_metadata.count = opsManaged.send_metadata.size();
+            ops[op_num].data.send_initial_metadata.metadata = opsManaged.send_metadata.data();
             sending_initial_metadata = true;
             break;
         }
@@ -434,8 +437,8 @@ Object HHVM_METHOD(Call, startBatch,
                 // convert string to byte buffer and store message in managed data
                 String messageValueString{ messageValue.toString() };
                 const Slice send_message{ messageValueString };
-                opsManaged.send_message = send_message.byteBuffer();
-                ops[op_num].data.send_message.send_message = opsManaged.send_message;
+                opsManaged.send_messages[op_num] = send_message.byteBuffer();
+                ops[op_num].data.send_message.send_message = opsManaged.send_messages[op_num];
             }
             break;
         }
@@ -457,13 +460,13 @@ Object HHVM_METHOD(Call, startBatch,
                     SystemLib::throwInvalidArgumentExceptionObject("Expected an array for server status metadata value");
                 }
 
-                if (!opsManaged.trailing_metadata.init(innerMetadata.toArray(), true))
+                if (!opsManaged.send_trailing_metadata.init(innerMetadata.toArray(), true))
                 {
                     SystemLib::throwInvalidArgumentExceptionObject("Bad trailing metadata value given");
                 }
 
-                ops[op_num].data.send_status_from_server.trailing_metadata_count = opsManaged.trailing_metadata.size();
-                ops[op_num].data.send_status_from_server.trailing_metadata = opsManaged.trailing_metadata.data();
+                ops[op_num].data.send_status_from_server.trailing_metadata_count = opsManaged.send_trailing_metadata.size();
+                ops[op_num].data.send_status_from_server.trailing_metadata = opsManaged.send_trailing_metadata.data();
             }
 
             if (!statusArr.exists(String{ "code" }, true))
@@ -498,7 +501,7 @@ Object HHVM_METHOD(Call, startBatch,
             ops[op_num].data.recv_initial_metadata.recv_initial_metadata = &opsManaged.recv_metadata.array();
             break;
         case GRPC_OP_RECV_MESSAGE:
-            ops[op_num].data.recv_message.recv_message = &opsManaged.recv_message;
+            ops[op_num].data.recv_message.recv_message = &opsManaged.recv_messages[op_num];
             break;
         case GRPC_OP_RECV_STATUS_ON_CLIENT:
             ops[op_num].data.recv_status_on_client.trailing_metadata = &opsManaged.recv_trailing_metadata.array();
@@ -607,13 +610,13 @@ Object HHVM_METHOD(Call, startBatch,
             break;
         case GRPC_OP_RECV_MESSAGE:
         {
-            if (!opsManaged.recv_message)
+            if (!opsManaged.recv_messages[i])
             {
                 resultObj.o_set("message", Variant());
             }
             else
             {
-                Slice slice{ opsManaged.recv_message };
+                Slice slice{ opsManaged.recv_messages[i] };
                 resultObj.o_set("message",
                                 Variant{ String{ reinterpret_cast<const char*>(slice.data()),
                                                  slice.length(), CopyString } });
