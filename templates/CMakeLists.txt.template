@@ -136,6 +136,8 @@
     add_definitions(/wd4065 /wd4506)
     # TODO(jtattermusch): revisit C4267 occurrences throughout the code
     add_definitions(/wd4267)
+    # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
+    add_definitions(/wd4987 /wd4774 /wd4819 /wd4996 /wd4619)
   endif()
 
   if (gRPC_USE_PROTO_LITE)
