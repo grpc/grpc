@@ -44,8 +44,8 @@ CompletionQueue::~CompletionQueue(void)
     // Wait for confirmation of queue shutdown
     for(;;)
     {
-        grpc_event event { grpc_completion_queue_next(m_pCompletionQueue,
-                                                      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) };
+        grpc_event event ( grpc_completion_queue_next(m_pCompletionQueue,
+                                                      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) );
         if (event.type == GRPC_QUEUE_SHUTDOWN) break;
     }
 

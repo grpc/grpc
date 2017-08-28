@@ -87,8 +87,8 @@ void ServerData::destroy(void)
         // wait for all calls to finish
         for(;;)
         {
-            grpc_event event{ grpc_completion_queue_next(m_pComletionQueue->queue(),
-                                                         gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) };
+            grpc_event event( grpc_completion_queue_next(m_pComletionQueue->queue(),
+                                                         gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) );
             if ((event.type == GRPC_OP_COMPLETE) && (event.tag == m_pServer)) break;
         }
 
