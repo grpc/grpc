@@ -530,6 +530,17 @@ Object HHVM_METHOD(Call, startBatch,
         pluginMetadataInfo.setInfo(pCallData->callCredentials(), std::move(metaDataInfo));
     }
 
+    auto callFailure = [&credentialedCall, &opsManaged, pCallData](void)
+    {
+        // clean up any meta data info
+        if (credentialedCall)
+        {
+            PluginMetadataInfo& pluginMetadataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
+            pluginMetadataInfo.deleteInfo(pCallData->callCredentials());
+        }
+    };
+
+
     static std::mutex s_StartBatchMutex;
     {
         std::unique_lock<std::mutex> lock{ s_StartBatchMutex };
@@ -539,6 +550,7 @@ Object HHVM_METHOD(Call, startBatch,
         if (errorCode != GRPC_CALL_OK)
         {
             lock.unlock();
+            callFailure();
             std::stringstream oSS;
             oSS << "start_batch was called incorrectly: " << errorCode << std::endl;
             SystemLib::throwBadMethodCallExceptionObject(oSS.str());
@@ -550,12 +562,8 @@ Object HHVM_METHOD(Call, startBatch,
                                                   nullptr));
     if (event.type != GRPC_OP_COMPLETE)
     {
-        // failed so remove promise info and return empty object
-        if (credentialedCall)
-        {
-            PluginMetadataInfo& pluginMetadataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
-            pluginMetadataInfo.deleteInfo(pCallData->callCredentials());
-        }
+        // failed so clean up and return empty object
+        callFailure();
         return resultObj;
     }
 
@@ -571,9 +579,8 @@ Object HHVM_METHOD(Call, startBatch,
         std::future_status status{ getPluginMetadataFuture.wait_for(std::chrono::milliseconds{ pCallData->getTimeout() }) };
         if (status == std::future_status::timeout)
         {
-            // failed so remove promise info and return empty object
-            PluginMetadataInfo& pluginMetadataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
-            pluginMetadataInfo.deleteInfo(pCallData->callCredentials());
+            // failed so clean up and return empty object
+            callFailure();
             return resultObj;
         }
         else
