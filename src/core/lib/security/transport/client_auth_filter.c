@@ -53,8 +53,9 @@ typedef struct {
   grpc_credentials_mdelem_array md_array;
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
   grpc_auth_metadata_context auth_md_context;
-  grpc_closure async_cancel_closure;
   grpc_closure async_result_closure;
+  grpc_closure check_call_host_cancel_closure;
+  grpc_closure get_request_metadata_cancel_closure;
 } call_data;
 
 /* We can have a per-channel credentials. */
@@ -208,10 +209,11 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
     GRPC_ERROR_UNREF(error);
   } else {
     // Async return; register cancellation closure with call combiner.
-    GRPC_CLOSURE_INIT(&calld->async_cancel_closure, cancel_get_request_metadata,
-                      elem, grpc_schedule_on_exec_ctx);
-    grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner,
-                                            &calld->async_cancel_closure);
+    grpc_call_combiner_set_notify_on_cancel(
+        exec_ctx, calld->call_combiner,
+        GRPC_CLOSURE_INIT(&calld->get_request_metadata_cancel_closure,
+                          cancel_get_request_metadata, elem,
+                          grpc_schedule_on_exec_ctx));
   }
 }
 
@@ -308,10 +310,11 @@ static void auth_start_transport_stream_op_batch(
         GRPC_ERROR_UNREF(error);
       } else {
         // Async return; register cancellation closure with call combiner.
-        GRPC_CLOSURE_INIT(&calld->async_cancel_closure, cancel_check_call_host,
-                          elem, grpc_schedule_on_exec_ctx);
-        grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner,
-                                                &calld->async_cancel_closure);
+        grpc_call_combiner_set_notify_on_cancel(
+            exec_ctx, calld->call_combiner,
+            GRPC_CLOSURE_INIT(&calld->check_call_host_cancel_closure,
+                              cancel_check_call_host, elem,
+                              grpc_schedule_on_exec_ctx));
       }
       gpr_free(call_host);
       GPR_TIMER_END("auth_start_transport_stream_op_batch", 0);

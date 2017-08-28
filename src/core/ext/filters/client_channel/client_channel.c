@@ -827,7 +827,8 @@ typedef struct client_channel_call_data {
 
   grpc_lb_policy *lb_policy;  // Holds ref while LB pick is pending.
   grpc_closure lb_pick_closure;
-  grpc_closure cancel_closure;
+  grpc_closure lb_pick_cancel_closure;
+  grpc_closure pick_after_resolver_result_cancel_closure;
 
   grpc_connected_subchannel *connected_subchannel;
   grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT];
@@ -1140,7 +1141,7 @@ static void pick_after_resolver_result_start_locked(grpc_exec_ctx *exec_ctx,
                            &args->closure, GRPC_ERROR_NONE);
   grpc_call_combiner_set_notify_on_cancel(
       exec_ctx, calld->call_combiner,
-      GRPC_CLOSURE_INIT(&calld->cancel_closure,
+      GRPC_CLOSURE_INIT(&calld->pick_after_resolver_result_cancel_closure,
                         pick_after_resolver_result_cancel_locked, elem,
                         grpc_combiner_scheduler(chand->combiner)));
 }
@@ -1212,8 +1213,9 @@ static bool pick_callback_start_locked(grpc_exec_ctx *exec_ctx,
   } else {
     grpc_call_combiner_set_notify_on_cancel(
         exec_ctx, calld->call_combiner,
-        GRPC_CLOSURE_INIT(&calld->cancel_closure, pick_callback_cancel_locked,
-                          elem, grpc_combiner_scheduler(chand->combiner)));
+        GRPC_CLOSURE_INIT(&calld->lb_pick_cancel_closure,
+                          pick_callback_cancel_locked, elem,
+                          grpc_combiner_scheduler(chand->combiner)));
   }
   return pick_done;
 }
