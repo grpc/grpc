@@ -235,8 +235,10 @@ class CLanguage(object):
     self.config = config
     self.args = args
     if self.platform == 'windows':
-      _check_compiler(self.args.compiler, ['default', 'cmake'])
+      _check_compiler(self.args.compiler, ['default', 'cmake', 'cmake_vs2015',
+                                           'cmake_vs2017'])
       _check_arch(self.args.arch, ['default', 'x64', 'x86'])
+      self._cmake_generator_option = 'Visual Studio 15 2017' if self.args.compiler == 'cmake_vs2017' else 'Visual Studio 14 2015'
       self._cmake_arch_option = 'x64' if self.args.arch == 'x64' else 'Win32'
       self._use_cmake = True
       self._make_options = []
@@ -363,11 +365,13 @@ class CLanguage(object):
             'check_epollexclusive']
 
   def make_options(self):
-    return self._make_options;
+    return self._make_options
 
   def pre_build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\helper_scripts\\pre_build_cmake.bat', self._cmake_arch_option]]
+      return [['tools\\run_tests\\helper_scripts\\pre_build_cmake.bat',
+               self._cmake_generator_option,
+               self._cmake_arch_option]]
     elif self._use_cmake:
       return [['tools/run_tests/helper_scripts/pre_build_cmake.sh']]
     else:
@@ -1205,7 +1209,7 @@ argp.add_argument('--compiler',
                            'node0.12', 'node4', 'node5', 'node6', 'node7', 'node8',
                            'electron1.3', 'electron1.6',
                            'coreclr',
-                           'cmake'],
+                           'cmake', 'cmake_vs2015', 'cmake_vs2017'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
 argp.add_argument('--iomgr_platform',
@@ -1364,27 +1368,11 @@ _check_arch_option(args.arch)
 
 def make_jobspec(cfg, targets, makefile='Makefile'):
   if platform_string() == 'windows':
-    if makefile.startswith('cmake/build/'):
-      return [jobset.JobSpec(['cmake', '--build', '.',
-                              '--target', '%s' % target,
-                              '--config', _MSBUILD_CONFIG[cfg]],
-                             cwd=os.path.dirname(makefile),
-                             timeout_seconds=None) for target in targets]
-    extra_args = []
-    # better do parallel compilation
-    # empirically /m:2 gives the best performance/price and should prevent
-    # overloading the windows workers.
-    extra_args.extend(['/m:2'])
-    # disable PDB generation: it's broken, and we don't need it during CI
-    extra_args.extend(['/p:Jenkins=true'])
-    return [
-      jobset.JobSpec([_windows_build_bat(args.compiler),
-                      'vsprojects\\%s.sln' % target,
-                      '/p:Configuration=%s' % _MSBUILD_CONFIG[cfg]] +
-                      extra_args +
-                      language_make_options,
-                      shell=True, timeout_seconds=None)
-      for target in targets]
+    return [jobset.JobSpec(['cmake', '--build', '.',
+                            '--target', '%s' % target,
+                            '--config', _MSBUILD_CONFIG[cfg]],
+                           cwd=os.path.dirname(makefile),
+                           timeout_seconds=None) for target in targets]
   else:
     if targets and makefile.startswith('cmake/build/'):
       # With cmake, we've passed all the build configuration in the pre-build step already
