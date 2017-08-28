@@ -42,8 +42,6 @@ DefaultPEMRootCerts::DefaultPEMRootCerts(void) : m_PEMRootCerts{}
 grpc_ssl_roots_override_result DefaultPEMRootCerts::get_ssl_roots_override(char** pPermRootsCerts)
 {
     // The output of this function (the char *) is gpr_free'd by the calling function
-    // so we must std::memcpy it before passing it to pPermRootsCerts
-    // if we also want to manage it ourselves / share it with others
     DefaultPEMRootCerts& singletonCerts{ getDefaultPEMRootCerts() };
 
     {
