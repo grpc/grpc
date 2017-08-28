@@ -889,8 +889,7 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 //   send_message
 //   recv_trailing_metadata
 //   send_trailing_metadata
-// We also add space for one cancel_stream op.
-#define MAX_PENDING_BATCHES 7
+#define MAX_PENDING_BATCHES 6
 
 // FIXME: update comments
 
@@ -1111,8 +1110,11 @@ static void fail_pending_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
+// If yield_call_combiner is true, assumes responsibility for yielding
+// the call combiner.
 static void pending_batches_fail(grpc_exec_ctx *exec_ctx,
-                                 grpc_call_element *elem, grpc_error *error) {
+                                 grpc_call_element *elem, grpc_error *error,
+                                 bool yield_call_combiner) {
   call_data *calld = elem->call_data;
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
     size_t num_batches = 0;
@@ -1128,7 +1130,8 @@ static void pending_batches_fail(grpc_exec_ctx *exec_ctx,
     pending_batch *pending = &calld->pending_batches[i];
     if (pending->batch != NULL && !pending->handler_in_flight) {
       pending->handler_in_flight = true;
-      if (first_batch_idx == GPR_ARRAY_SIZE(calld->pending_batches)) {
+      if (yield_call_combiner &&
+          first_batch_idx == GPR_ARRAY_SIZE(calld->pending_batches)) {
         first_batch_idx = i;
       } else {
         GRPC_CLOSURE_INIT(&pending->handle_in_call_combiner,
@@ -1144,7 +1147,7 @@ static void pending_batches_fail(grpc_exec_ctx *exec_ctx,
     // Manually invoking callback function; does not take ownership of error.
     fail_pending_batch_in_call_combiner(
         exec_ctx, &calld->pending_batches[first_batch_idx], error);
-  } else {
+  } else if (yield_call_combiner) {
     GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
                             "pending_batches_fail");
   }
@@ -1180,6 +1183,9 @@ gpr_log(GPR_INFO, "RETRIES CONFIGURED");
     start_retriable_subchannel_batches(exec_ctx, elem);
   } else {
     // Retries not enabled; send down batches as-is.
+// FIXME: eliminate this branch, since we always need to set up
+// retryable batches to handle the case where the call has not been seen
+// by the server
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       size_t num_batches = 0;
       for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
@@ -2035,7 +2041,6 @@ gpr_log(GPR_INFO, "==> start_retriable_subchannel_batches()");
                        " retriable batches to subchannel_call=%p",
             chand, calld, num_batches, calld->subchannel_call);
   }
-// FIXME: this assertion fails on a cancel_stream op!
   GPR_ASSERT(num_batches > 0);
   grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call,
                                   &batches[0]->batch);
@@ -2111,7 +2116,8 @@ static void create_subchannel_call(grpc_exec_ctx *exec_ctx,
   }
   if (new_error != GRPC_ERROR_NONE) {
     new_error = grpc_error_add_child(new_error, error);
-    pending_batches_fail(exec_ctx, elem, new_error);
+    pending_batches_fail(exec_ctx, elem, new_error,
+                         true /* yield_call_combiner */);
   } else {
     pending_batches_resume(exec_ctx, elem);
   }
@@ -2141,7 +2147,8 @@ static void pick_done(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
                 "chand=%p calld=%p: failed to create subchannel: error=%s",
                 chand, calld, grpc_error_string(new_error));
       }
-      pending_batches_fail(exec_ctx, elem, new_error);
+      pending_batches_fail(exec_ctx, elem, new_error,
+                           true /* yield_call_combiner */);
     }
   } else {
     /* Create call on subchannel. */
@@ -2444,10 +2451,6 @@ static void cc_start_transport_stream_op_batch(
         exec_ctx, batch, GRPC_ERROR_REF(calld->error), calld->call_combiner);
     goto done;
   }
-  // Add the batch to the pending list.
-// FIXME: would ideally like to move this down so that cancel_stream
-// batches are not added to pending_batches
-  pending_batches_add(elem, batch);
   // Handle cancellation.
   if (batch->cancel_stream) {
     // Stash a copy of cancel_error in our call data, so that we can use
@@ -2464,12 +2467,17 @@ static void cc_start_transport_stream_op_batch(
     // been started), fail all pending batches.  Otherwise, send the
     // cancellation down to the subchannel call.
     if (calld->subchannel_call == NULL) {
-      pending_batches_fail(exec_ctx, elem, GRPC_ERROR_REF(calld->error));
+      pending_batches_fail(exec_ctx, elem, GRPC_ERROR_REF(calld->error),
+                           false /* yield_call_combiner */);
+      grpc_transport_stream_op_batch_finish_with_failure(
+          exec_ctx, batch, GRPC_ERROR_REF(calld->error), calld->call_combiner);
     } else {
-      pending_batches_resume(exec_ctx, elem);
+      grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call, batch);
     }
     goto done;
   }
+  // Add the batch to the pending list.
+  pending_batches_add(elem, batch);
   // Check if we've already gotten a subchannel call.
   // Note that once we have completed the pick, we do not need to enter
   // the channel combiner, which is more efficient (especially for
