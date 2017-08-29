@@ -76,9 +76,11 @@ typedef struct {
 } call_state;
 
 static void request_call(void) {
-  grpc_server_request_call(server, &call, &call_details, &request_metadata_recv,
-                           &request_metadata_recv_count, cq, cq,
-                           tag(FLING_SERVER_NEW_REQUEST));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_server_request_call(server, &call, &call_details,
+                                      &request_metadata_recv,
+                                      &request_metadata_recv_count, cq, cq,
+                                      tag(FLING_SERVER_NEW_REQUEST)));
 }
 
 static void handle_unary_method(void) {

@@ -239,6 +239,10 @@ Status TestServiceImpl::ResponseStream(ServerContext* context,
   int server_coalescing_api = GetIntValueFromMetadata(
       kServerUseCoalescingApi, context->client_metadata(), 0);
 
+  int server_responses_to_send = GetIntValueFromMetadata(
+      kServerResponseStreamsToSend, context->client_metadata(),
+      kServerDefaultResponseStreamsToSend);
+
   if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
     ServerTryCancel(context);
     return Status::CANCELLED;
@@ -251,9 +255,9 @@ Status TestServiceImpl::ResponseStream(ServerContext* context,
         new std::thread(&TestServiceImpl::ServerTryCancel, this, context);
   }
 
-  for (int i = 0; i < kNumResponseStreamsMsgs; i++) {
+  for (int i = 0; i < server_responses_to_send; i++) {
     response.set_message(request->message() + grpc::to_string(i));
-    if (i == kNumResponseStreamsMsgs - 1 && server_coalescing_api != 0) {
+    if (i == server_responses_to_send - 1 && server_coalescing_api != 0) {
       writer->WriteLast(response, WriteOptions());
     } else {
       writer->Write(response);

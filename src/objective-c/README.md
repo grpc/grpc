@@ -112,7 +112,7 @@ the sample Podspec above. For example, you could use:
 ```ruby
   s.prepare_command = <<-CMD
     ...
-        #{src}/*.proto #{src}/**/*.proto
+        `find . -name *.proto -print | xargs`
   CMD
   ...
     ms.source_files = "#{dir}/*.pbobjc.{h,m}", "#{dir}/**/*.pbobjc.{h,m}"

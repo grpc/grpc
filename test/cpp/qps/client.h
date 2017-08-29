@@ -31,7 +31,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/payloads.pb.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 
@@ -39,6 +38,7 @@
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/create_test_channel.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 namespace grpc {
 namespace testing {
@@ -88,9 +88,7 @@ class ClientRequestCreator<ByteBuffer> {
     if (payload_config.has_bytebuf_params()) {
       std::unique_ptr<char[]> buf(
           new char[payload_config.bytebuf_params().req_size()]);
-      grpc_slice s = grpc_slice_from_copied_buffer(
-          buf.get(), payload_config.bytebuf_params().req_size());
-      Slice slice(s, Slice::STEAL_REF);
+      Slice slice(buf.get(), payload_config.bytebuf_params().req_size());
       *req = ByteBuffer(&slice, 1);
     } else {
       GPR_ASSERT(false);  // not appropriate for this specialization
@@ -371,12 +369,11 @@ class ClientImpl : public Client {
   ClientImpl(const ClientConfig& config,
              std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
                  create_stub)
-      : cores_(gpr_cpu_num_cores()),
-        channels_(config.client_channels()),
-        create_stub_(create_stub) {
+      : cores_(gpr_cpu_num_cores()), create_stub_(create_stub) {
     for (int i = 0; i < config.client_channels(); i++) {
-      channels_[i].init(config.server_targets(i % config.server_targets_size()),
-                        config, create_stub_, i);
+      channels_.emplace_back(
+          config.server_targets(i % config.server_targets_size()), config,
+          create_stub_, i);
     }
 
     ClientRequestCreator<RequestType> create_req(&request_,
@@ -390,26 +387,26 @@ class ClientImpl : public Client {
 
   class ClientChannelInfo {
    public:
-    ClientChannelInfo() {}
-    ClientChannelInfo(const ClientChannelInfo& i) {
-      // The copy constructor is to satisfy old compilers
-      // that need it for using std::vector . It is only ever
-      // used for empty entries
-      GPR_ASSERT(!i.channel_ && !i.stub_);
-    }
-    void init(const grpc::string& target, const ClientConfig& config,
-              std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
-                  create_stub,
-              int shard) {
-      // We have to use a 2-phase init like this with a default
-      // constructor followed by an initializer function to make
-      // old compilers happy with using this in std::vector
+    ClientChannelInfo(
+        const grpc::string& target, const ClientConfig& config,
+        std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
+            create_stub,
+        int shard) {
       ChannelArguments args;
       args.SetInt("shard_to_ensure_no_subchannel_merges", shard);
       set_channel_args(config, &args);
+
+      grpc::string type;
+      if (config.has_security_params() &&
+          config.security_params().cred_type().empty()) {
+        type = kTlsCredentialsType;
+      } else {
+        type = config.security_params().cred_type();
+      }
+
       channel_ = CreateTestChannel(
-          target, config.security_params().server_host_override(),
-          config.has_security_params(), !config.security_params().use_test_ca(),
+          target, type, config.security_params().server_host_override(),
+          !config.security_params().use_test_ca(),
           std::shared_ptr<CallCredentials>(), args);
       gpr_log(GPR_INFO, "Connecting to %s", target.c_str());
       GPR_ASSERT(channel_->WaitForConnected(

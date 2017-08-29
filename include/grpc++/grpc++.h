@@ -21,7 +21,7 @@
 /// The gRPC C++ API mainly consists of the following classes:
 /// <br>
 /// - grpc::Channel, which represents the connection to an endpoint. See [the
-/// gRPC Concepts page](http://www.grpc.io/docs/guides/concepts.html) for more
+/// gRPC Concepts page](https://grpc.io/docs/guides/concepts.html) for more
 /// details. Channels are created by the factory function grpc::CreateChannel.
 ///
 /// - grpc::CompletionQueue, the producer-consumer queue used for all

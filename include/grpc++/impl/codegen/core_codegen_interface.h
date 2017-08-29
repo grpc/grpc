@@ -89,6 +89,10 @@ class CoreCodegenInterface {
   virtual grpc_slice grpc_slice_new_with_user_data(void* p, size_t len,
                                                    void (*destroy)(void*),
                                                    void* user_data) = 0;
+  virtual grpc_call_error grpc_call_cancel_with_status(grpc_call* call,
+                                                       grpc_status_code status,
+                                                       const char* description,
+                                                       void* reserved) = 0;
   virtual void grpc_call_ref(grpc_call* call) = 0;
   virtual void grpc_call_unref(grpc_call* call) = 0;
   virtual void* grpc_call_arena_alloc(grpc_call* call, size_t length) = 0;

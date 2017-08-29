@@ -37,8 +37,7 @@ class CallTest extends PHPUnit_Framework_TestCase
 
     public function tearDown()
     {
-        unset($this->call);
-        unset($this->channel);
+        $this->channel->close();
     }
 
     public function testConstructor()

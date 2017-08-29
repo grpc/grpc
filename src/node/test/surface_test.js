@@ -1398,13 +1398,25 @@ describe('Client reconnect', function() {
         });
         server.bind('localhost:' + port, server_insecure_creds);
         server.start();
-        client.echo(undefined, function(error, response) {
-          if (error) {
-            console.log(error);
-          }
+
+        /* We create a new client, that will not throw an error if the server
+         * is not immediately available. Instead, it will wait for the server
+         * to be available, then the call will complete. Once this happens, the
+         * original client should be able to make a new call and connect to the
+         * restarted server without having the call fail due to connection
+         * errors. */
+        var client2 = new Client('localhost:' + port,
+                                 grpc.credentials.createInsecure());
+        client2.echo({value: 'test', value2: 3}, function(error, response) {
           assert.ifError(error);
-          assert.deepEqual(response, {value: '', value2: 0});
-          done();
+          client.echo(undefined, function(error, response) {
+            if (error) {
+              console.log(error);
+            }
+            assert.ifError(error);
+            assert.deepEqual(response, {value: '', value2: 0});
+            done();
+          });
         });
       });
     });

@@ -188,6 +188,7 @@ static void subchannel_destroy(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_connector_unref(exec_ctx, c->connector);
   grpc_pollset_set_destroy(exec_ctx, c->pollset_set);
   grpc_subchannel_key_destroy(exec_ctx, c->key);
+  gpr_mu_destroy(&c->mu);
   gpr_free(c);
 }
 
@@ -723,13 +724,6 @@ void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
   GRPC_CALL_STACK_UNREF(exec_ctx, SUBCHANNEL_CALL_TO_CALL_STACK(c), REF_REASON);
 }
 
-char *grpc_subchannel_call_get_peer(grpc_exec_ctx *exec_ctx,
-                                    grpc_subchannel_call *call) {
-  grpc_call_stack *call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(call);
-  grpc_call_element *top_elem = grpc_call_stack_element(call_stack, 0);
-  return top_elem->filter->get_peer(exec_ctx, top_elem);
-}
-
 void grpc_subchannel_call_process_op(grpc_exec_ctx *exec_ctx,
                                      grpc_subchannel_call *call,
                                      grpc_transport_stream_op_batch *op) {
@@ -759,13 +753,15 @@ grpc_error *grpc_connected_subchannel_create_call(
       args->arena, sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
   grpc_call_stack *callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
   (*call)->connection = GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
-  const grpc_call_element_args call_args = {.call_stack = callstk,
-                                            .server_transport_data = NULL,
-                                            .context = args->context,
-                                            .path = args->path,
-                                            .start_time = args->start_time,
-                                            .deadline = args->deadline,
-                                            .arena = args->arena};
+  const grpc_call_element_args call_args = {
+      .call_stack = callstk,
+      .server_transport_data = NULL,
+      .context = args->context,
+      .path = args->path,
+      .start_time = args->start_time,
+      .deadline = args->deadline,
+      .arena = args->arena,
+      .call_combiner = args->call_combiner};
   grpc_error *error = grpc_call_stack_init(
       exec_ctx, chanstk, 1, subchannel_call_destroy, *call, &call_args);
   if (error != GRPC_ERROR_NONE) {

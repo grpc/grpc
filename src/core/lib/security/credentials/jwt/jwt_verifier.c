@@ -442,7 +442,7 @@ static EVP_PKEY *extract_pkey_from_x509(const char *x509_str) {
 
 end:
   BIO_free(bio);
-  if (x509 != NULL) X509_free(x509);
+  X509_free(x509);
   return result;
 }
 
@@ -462,11 +462,42 @@ static BIGNUM *bignum_from_base64(grpc_exec_ctx *exec_ctx, const char *b64) {
   return result;
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+
+// Provide compatibility across OpenSSL 1.02 and 1.1.
+static int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d) {
+  /* If the fields n and e in r are NULL, the corresponding input
+   * parameters MUST be non-NULL for n and e.  d may be
+   * left NULL (in case only the public key is used).
+   */
+  if ((r->n == NULL && n == NULL) || (r->e == NULL && e == NULL)) {
+    return 0;
+  }
+
+  if (n != NULL) {
+    BN_free(r->n);
+    r->n = n;
+  }
+  if (e != NULL) {
+    BN_free(r->e);
+    r->e = e;
+  }
+  if (d != NULL) {
+    BN_free(r->d);
+    r->d = d;
+  }
+
+  return 1;
+}
+#endif  // OPENSSL_VERSION_NUMBER < 0x10100000L
+
 static EVP_PKEY *pkey_from_jwk(grpc_exec_ctx *exec_ctx, const grpc_json *json,
                                const char *kty) {
   const grpc_json *key_prop;
   RSA *rsa = NULL;
   EVP_PKEY *result = NULL;
+  BIGNUM *tmp_n = NULL;
+  BIGNUM *tmp_e = NULL;
 
   GPR_ASSERT(kty != NULL && json != NULL);
   if (strcmp(kty, "RSA") != 0) {
@@ -480,24 +511,33 @@ static EVP_PKEY *pkey_from_jwk(grpc_exec_ctx *exec_ctx, const grpc_json *json,
   }
   for (key_prop = json->child; key_prop != NULL; key_prop = key_prop->next) {
     if (strcmp(key_prop->key, "n") == 0) {
-      rsa->n =
+      tmp_n =
           bignum_from_base64(exec_ctx, validate_string_field(key_prop, "n"));
-      if (rsa->n == NULL) goto end;
+      if (tmp_n == NULL) goto end;
     } else if (strcmp(key_prop->key, "e") == 0) {
-      rsa->e =
+      tmp_e =
           bignum_from_base64(exec_ctx, validate_string_field(key_prop, "e"));
-      if (rsa->e == NULL) goto end;
+      if (tmp_e == NULL) goto end;
     }
   }
-  if (rsa->e == NULL || rsa->n == NULL) {
+  if (tmp_e == NULL || tmp_n == NULL) {
     gpr_log(GPR_ERROR, "Missing RSA public key field.");
     goto end;
   }
+  if (!RSA_set0_key(rsa, tmp_n, tmp_e, NULL)) {
+    gpr_log(GPR_ERROR, "Cannot set RSA key from inputs.");
+    goto end;
+  }
+  /* RSA_set0_key takes ownership on success. */
+  tmp_n = NULL;
+  tmp_e = NULL;
   result = EVP_PKEY_new();
   EVP_PKEY_set1_RSA(result, rsa); /* uprefs rsa. */
 
 end:
-  if (rsa != NULL) RSA_free(rsa);
+  RSA_free(rsa);
+  BN_free(tmp_n);
+  BN_free(tmp_e);
   return result;
 }
 
@@ -583,7 +623,7 @@ static int verify_jwt_signature(EVP_PKEY *key, const char *alg,
   result = 1;
 
 end:
-  if (md_ctx != NULL) EVP_MD_CTX_destroy(md_ctx);
+  EVP_MD_CTX_destroy(md_ctx);
   return result;
 }
 
@@ -623,7 +663,7 @@ static void on_keys_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
 
 end:
   if (json != NULL) grpc_json_destroy(json);
-  if (verification_key != NULL) EVP_PKEY_free(verification_key);
+  EVP_PKEY_free(verification_key);
   ctx->user_cb(exec_ctx, ctx->user_data, status, claims);
   verifier_cb_ctx_destroy(exec_ctx, ctx);
 }

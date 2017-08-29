@@ -26,3 +26,8 @@ git submodule update --init
 # Set up gRPC-Go and gRPC-Java to test
 git clone --recursive https://github.com/grpc/grpc-go ./../grpc-go
 git clone --recursive https://github.com/grpc/grpc-java ./../grpc-java
+
+# Download json file.
+mkdir ~/service_account
+gsutil cp gs://grpc-testing-secrets/interop/service_account/GrpcTesting-726eb1347f15.json ~/service_account
+export GOOGLE_APPLICATION_CREDENTIALS=~/service_account/GrpcTesting-726eb1347f15.json

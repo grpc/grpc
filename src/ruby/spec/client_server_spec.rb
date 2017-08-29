@@ -226,6 +226,62 @@ shared_examples 'basic GRPC message delivery is OK' do
     svr_batch = server_call.run_batch(server_ops)
     expect(svr_batch.send_close).to be true
   end
+
+  def client_cancel_test(cancel_proc, expected_code,
+                         expected_details)
+    call = new_client_call
+    server_call = nil
+
+    server_thread = Thread.new do
+      server_call = server_allows_client_to_proceed
+    end
+
+    client_ops = {
+      CallOps::SEND_INITIAL_METADATA => {},
+      CallOps::RECV_INITIAL_METADATA => nil
+    }
+    batch_result = call.run_batch(client_ops)
+    expect(batch_result.send_metadata).to be true
+    expect(batch_result.metadata).to eq({})
+
+    cancel_proc.call(call)
+
+    server_thread.join
+    server_ops = {
+      CallOps::RECV_CLOSE_ON_SERVER => nil
+    }
+    svr_batch = server_call.run_batch(server_ops)
+    expect(svr_batch.send_close).to be true
+
+    client_ops = {
+      CallOps::RECV_STATUS_ON_CLIENT => {}
+    }
+    batch_result = call.run_batch(client_ops)
+
+    expect(batch_result.status.code).to be expected_code
+    expect(batch_result.status.details).to eq expected_details
+  end
+
+  it 'clients can cancel a call on the server' do
+    expected_code = StatusCodes::CANCELLED
+    expected_details = 'Cancelled'
+    cancel_proc = proc { |call| call.cancel }
+    client_cancel_test(cancel_proc, expected_code, expected_details)
+  end
+
+  it 'cancel_with_status unknown status' do
+    code = StatusCodes::UNKNOWN
+    details = 'test unknown reason'
+    cancel_proc = proc { |call| call.cancel_with_status(code, details) }
+    client_cancel_test(cancel_proc, code, details)
+  end
+
+  it 'cancel_with_status unknown status' do
+    code = StatusCodes::FAILED_PRECONDITION
+    details = 'test failed precondition reason'
+    cancel_proc = proc { |call| call.cancel_with_status(code, details) }
+    client_cancel_test(cancel_proc, code, details)
+  end
 end
 
 shared_examples 'GRPC metadata delivery works OK' do
@@ -448,11 +504,18 @@ describe 'the secure http client/server' do
   it_behaves_like 'GRPC metadata delivery works OK' do
   end
 
-  it 'modifies metadata with CallCredentials' do
-    auth_proc = proc { { 'k1' => 'updated-v1' } }
+  def credentials_update_test(creds_update_md)
+    auth_proc = proc { creds_update_md }
     call_creds = GRPC::Core::CallCredentials.new(auth_proc)
-    md = { 'k2' => 'v2' }
-    expected_md = { 'k1' => 'updated-v1', 'k2' => 'v2' }
+
+    initial_md_key = 'k2'
+    initial_md_val = 'v2'
+    initial_md = {}
+    initial_md[initial_md_key] = initial_md_val
+    expected_md = creds_update_md.clone
+    fail 'bad test param' unless expected_md[initial_md_key].nil?
+    expected_md[initial_md_key] = initial_md_val
+
     recvd_rpc = nil
     rcv_thread = Thread.new do
       recvd_rpc = @server.request_call
@@ -461,7 +524,7 @@ describe 'the secure http client/server' do
     call = new_client_call
     call.set_credentials! call_creds
     client_ops = {
-      CallOps::SEND_INITIAL_METADATA => md
+      CallOps::SEND_INITIAL_METADATA => initial_md
     }
     batch_result = call.run_batch(client_ops)
     expect(batch_result.send_metadata).to be true
@@ -472,5 +535,22 @@ describe 'the secure http client/server' do
     recvd_md = recvd_rpc.metadata
     replace_symbols = Hash[expected_md.each_pair.collect { |x, y| [x.to_s, y] }]
     expect(recvd_md).to eq(recvd_md.merge(replace_symbols))
+  end
+
+  it 'modifies metadata with CallCredentials' do
+    credentials_update_test('k1' => 'updated-v1')
+  end
+
+  it 'modifies large metadata with CallCredentials' do
+    val_array = %w(
+      '00000000000000000000000000000000000000000000000000000000000000',
+      '11111111111111111111111111111111111111111111111111111111111111',
+    )
+    md = {
+      k3: val_array,
+      k4: '0000000000000000000000000000000000000000000000000000000000',
+      keeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeey5: 'v1'
+    }
+    credentials_update_test(md)
   end
 end

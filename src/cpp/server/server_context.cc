@@ -120,7 +120,8 @@ ServerContext::ServerContext()
       call_(nullptr),
       cq_(nullptr),
       sent_initial_metadata_(false),
-      compression_level_set_(false) {}
+      compression_level_set_(false),
+      has_pending_ops_(false) {}
 
 ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
                              size_t metadata_count)
@@ -131,9 +132,15 @@ ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
       call_(nullptr),
       cq_(nullptr),
       sent_initial_metadata_(false),
+<<<<<<< HEAD
       compression_level_set_(false) {
   std::swap(*client_metadata_.pmetadata(), metadata);
   std::swap(*client_metadata_.psize(), metadata_count);
+=======
+      compression_level_set_(false),
+      has_pending_ops_(false) {
+  std::swap(*client_metadata_.arr(), *arr);
+>>>>>>> 9811915ba3fa1ccdf44b6a70fe1b1dd4782cd508
   client_metadata_.FillMap();
 }
 

@@ -48,7 +48,7 @@ module GRPC
     end
 
     def handle_request_response(active_call, mth)
-      req = active_call.remote_read
+      req = active_call.read_unary_request
       resp = mth.call(req, active_call.single_req_view)
       active_call.server_unary_response(
         resp, trailing_metadata: active_call.output_metadata)
@@ -61,7 +61,7 @@ module GRPC
     end
 
     def handle_server_streamer(active_call, mth)
-      req = active_call.remote_read
+      req = active_call.read_unary_request
       replys = mth.call(req, active_call.single_req_view)
       replys.each { |r| active_call.remote_send(r) }
       send_status(active_call, OK, 'OK', active_call.output_metadata)
@@ -99,9 +99,13 @@ module GRPC
       # event.  Send a status of deadline exceeded
       GRPC.logger.warn("late call: #{active_call}")
       send_status(active_call, DEADLINE_EXCEEDED, 'late')
-    rescue StandardError => e
+    rescue StandardError, NotImplementedError => e
       # This will usuaally be an unhandled error in the handling code.
       # Send back a UNKNOWN status to the client
+      #
+      # Note: this intentionally does not map NotImplementedError to
+      # UNIMPLEMENTED because NotImplementedError is intended for low-level
+      # OS interaction (e.g. syscalls) not supported by the current OS.
       GRPC.logger.warn("failed handler: #{active_call}; sending status:UNKNOWN")
       GRPC.logger.warn(e)
       send_status(active_call, UNKNOWN, "#{e.class}: #{e.message}")

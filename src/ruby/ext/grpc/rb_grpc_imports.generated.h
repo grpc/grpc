@@ -167,9 +167,15 @@ extern grpc_compression_algorithm_parse_type grpc_compression_algorithm_parse_im
 typedef int(*grpc_compression_algorithm_name_type)(grpc_compression_algorithm algorithm, char **name);
 extern grpc_compression_algorithm_name_type grpc_compression_algorithm_name_import;
 #define grpc_compression_algorithm_name grpc_compression_algorithm_name_import
+typedef int(*grpc_stream_compression_algorithm_name_type)(grpc_stream_compression_algorithm algorithm, char **name);
+extern grpc_stream_compression_algorithm_name_type grpc_stream_compression_algorithm_name_import;
+#define grpc_stream_compression_algorithm_name grpc_stream_compression_algorithm_name_import
 typedef grpc_compression_algorithm(*grpc_compression_algorithm_for_level_type)(grpc_compression_level level, uint32_t accepted_encodings);
 extern grpc_compression_algorithm_for_level_type grpc_compression_algorithm_for_level_import;
 #define grpc_compression_algorithm_for_level grpc_compression_algorithm_for_level_import
+typedef grpc_stream_compression_algorithm(*grpc_stream_compression_algorithm_for_level_type)(grpc_stream_compression_level level, uint32_t accepted_stream_encodings);
+extern grpc_stream_compression_algorithm_for_level_type grpc_stream_compression_algorithm_for_level_import;
+#define grpc_stream_compression_algorithm_for_level grpc_stream_compression_algorithm_for_level_import
 typedef void(*grpc_compression_options_init_type)(grpc_compression_options *opts);
 extern grpc_compression_options_init_type grpc_compression_options_init_import;
 #define grpc_compression_options_init grpc_compression_options_init_import
@@ -182,6 +188,9 @@ extern grpc_compression_options_disable_algorithm_type grpc_compression_options_
 typedef int(*grpc_compression_options_is_algorithm_enabled_type)(const grpc_compression_options *opts, grpc_compression_algorithm algorithm);
 extern grpc_compression_options_is_algorithm_enabled_type grpc_compression_options_is_algorithm_enabled_import;
 #define grpc_compression_options_is_algorithm_enabled grpc_compression_options_is_algorithm_enabled_import
+typedef int(*grpc_compression_options_is_stream_compression_algorithm_enabled_type)(const grpc_compression_options *opts, grpc_stream_compression_algorithm algorithm);
+extern grpc_compression_options_is_stream_compression_algorithm_enabled_type grpc_compression_options_is_stream_compression_algorithm_enabled_import;
+#define grpc_compression_options_is_stream_compression_algorithm_enabled grpc_compression_options_is_stream_compression_algorithm_enabled_import
 typedef void(*grpc_call_details_init_type)(grpc_call_details *details);
 extern grpc_call_details_init_type grpc_call_details_init_import;
 #define grpc_call_details_init grpc_call_details_init_import
@@ -638,22 +647,22 @@ extern gpr_get_allocation_functions_type gpr_get_allocation_functions_import;
 typedef gpr_avl(*gpr_avl_create_type)(const gpr_avl_vtable *vtable);
 extern gpr_avl_create_type gpr_avl_create_import;
 #define gpr_avl_create gpr_avl_create_import
-typedef gpr_avl(*gpr_avl_ref_type)(gpr_avl avl);
+typedef gpr_avl(*gpr_avl_ref_type)(gpr_avl avl, void *user_data);
 extern gpr_avl_ref_type gpr_avl_ref_import;
 #define gpr_avl_ref gpr_avl_ref_import
-typedef void(*gpr_avl_unref_type)(gpr_avl avl);
+typedef void(*gpr_avl_unref_type)(gpr_avl avl, void *user_data);
 extern gpr_avl_unref_type gpr_avl_unref_import;
 #define gpr_avl_unref gpr_avl_unref_import
-typedef gpr_avl(*gpr_avl_add_type)(gpr_avl avl, void *key, void *value);
+typedef gpr_avl(*gpr_avl_add_type)(gpr_avl avl, void *key, void *value, void *user_data);
 extern gpr_avl_add_type gpr_avl_add_import;
 #define gpr_avl_add gpr_avl_add_import
-typedef gpr_avl(*gpr_avl_remove_type)(gpr_avl avl, void *key);
+typedef gpr_avl(*gpr_avl_remove_type)(gpr_avl avl, void *key, void *user_data);
 extern gpr_avl_remove_type gpr_avl_remove_import;
 #define gpr_avl_remove gpr_avl_remove_import
-typedef void *(*gpr_avl_get_type)(gpr_avl avl, void *key);
+typedef void *(*gpr_avl_get_type)(gpr_avl avl, void *key, void *user_data);
 extern gpr_avl_get_type gpr_avl_get_import;
 #define gpr_avl_get gpr_avl_get_import
-typedef int(*gpr_avl_maybe_get_type)(gpr_avl avl, void *key, void **value);
+typedef int(*gpr_avl_maybe_get_type)(gpr_avl avl, void *key, void **value, void *user_data);
 extern gpr_avl_maybe_get_type gpr_avl_maybe_get_import;
 #define gpr_avl_maybe_get gpr_avl_maybe_get_import
 typedef int(*gpr_avl_is_empty_type)(gpr_avl avl);

@@ -216,6 +216,16 @@
         "name": "serverPollsPerRequest",
         "type": "FLOAT",
         "mode": "NULLABLE"
+      },
+      {
+        "name": "serverQueriesPerCpuSec",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "clientQueriesPerCpuSec",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
       }
     ]
   },

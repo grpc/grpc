@@ -197,7 +197,7 @@ static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg,
                           grpc_error *error) {
   grpc_call_element *elem = arg;
   call_data *calld = elem->call_data;
-  GRPC_CLOSURE_SCHED(
+  GRPC_CLOSURE_RUN(
       exec_ctx, calld->recv_im_ready,
       grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Failure that's not preventable.", &error, 1),
@@ -247,7 +247,6 @@ static const grpc_channel_filter test_filter = {
     sizeof(channel_data),
     init_channel_elem,
     destroy_channel_elem,
-    grpc_call_next_get_peer,
     grpc_channel_next_get_info,
     "filter_causes_close"};
 

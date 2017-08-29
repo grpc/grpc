@@ -25,6 +25,18 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 import reflection_commands
 import grpc_version
 
+CLASSIFIERS = [
+    'Development Status :: 5 - Production/Stable',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 2',
+    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.4',
+    'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.6',
+    'License :: OSI Approved :: Apache Software License',
+],
+
 PACKAGE_DIRECTORIES = {
     '': '.',
 }
@@ -48,7 +60,8 @@ setuptools.setup(
     description='Standard Protobuf Reflection Service for gRPC',
     author='The gRPC Authors',
     author_email='grpc-io@googlegroups.com',
-    url='http://www.grpc.io',
+    classifiers=CLASSIFIERS,
+    url='https://grpc.io',
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages('.'),
     install_requires=INSTALL_REQUIRES,

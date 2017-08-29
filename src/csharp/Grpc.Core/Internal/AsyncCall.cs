@@ -329,7 +329,7 @@ namespace Grpc.Core.Internal
 
         protected override Exception GetRpcExceptionClientOnly()
         {
-            return new RpcException(finishedStatus.Value.Status);
+            return new RpcException(finishedStatus.Value.Status, finishedStatus.Value.Trailers);
         }
 
         protected override Task CheckSendAllowedOrEarlyResult()
@@ -348,7 +348,7 @@ namespace Grpc.Core.Internal
                 // Writing after the call has finished is not a programming error because server can close
                 // the call anytime, so don't throw directly, but let the write task finish with an error.
                 var tcs = new TaskCompletionSource<object>();
-                tcs.SetException(new RpcException(finishedStatus.Value.Status));
+                tcs.SetException(new RpcException(finishedStatus.Value.Status, finishedStatus.Value.Trailers));
                 return tcs.Task;
             }
 
@@ -468,7 +468,7 @@ namespace Grpc.Core.Internal
             var status = receivedStatus.Status;
             if (status.StatusCode != StatusCode.OK)
             {
-                unaryResponseTcs.SetException(new RpcException(status));
+                unaryResponseTcs.SetException(new RpcException(status, receivedStatus.Trailers));
                 return;
             }
 
@@ -506,7 +506,7 @@ namespace Grpc.Core.Internal
             var status = receivedStatus.Status;
             if (status.StatusCode != StatusCode.OK)
             {
-                streamingResponseCallFinishedTcs.SetException(new RpcException(status));
+                streamingResponseCallFinishedTcs.SetException(new RpcException(status, receivedStatus.Trailers));
                 return;
             }
 

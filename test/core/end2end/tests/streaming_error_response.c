@@ -189,6 +189,19 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
   cq_verify(cqv);
 
+  if (!request_status_early) {
+    memset(ops, 0, sizeof(ops));
+    op = ops;
+    op->op = GRPC_OP_RECV_MESSAGE;
+    op->data.recv_message.recv_message = &response_payload2_recv;
+    op++;
+    error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), NULL);
+    GPR_ASSERT(GRPC_CALL_OK == error);
+
+    CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
+    cq_verify(cqv);
+  }
+
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -203,21 +216,9 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  if (!request_status_early) {
-    memset(ops, 0, sizeof(ops));
-    op = ops;
-    op->op = GRPC_OP_RECV_MESSAGE;
-    op->data.recv_message.recv_message = &response_payload2_recv;
-    op++;
-    error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), NULL);
-    GPR_ASSERT(GRPC_CALL_OK == error);
-  }
-
   CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
   if (request_status_early) {
     CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  } else {
-    CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
   }
   cq_verify(cqv);
 

@@ -27,29 +27,30 @@
 
 typedef struct grpc_ares_request grpc_ares_request;
 
-/* Asynchronously resolve addr. Use \a default_port if a port isn't designated
-   in addr, otherwise use the port in addr. grpc_ares_init() must be called at
-   least once before this function. \a on_done may be called directly in this
-   function without being scheduled with \a exec_ctx, it must not try to acquire
-   locks that are being held by the caller. */
+/* Asynchronously resolve \a name. Use \a default_port if a port isn't
+   designated in \a name, otherwise use the port in \a name. grpc_ares_init()
+   must be called at least once before this function. \a on_done may be
+   called directly in this function without being scheduled with \a exec_ctx,
+   so it must not try to acquire locks that are being held by the caller. */
 extern void (*grpc_resolve_address_ares)(grpc_exec_ctx *exec_ctx,
-                                         const char *addr,
+                                         const char *name,
                                          const char *default_port,
                                          grpc_pollset_set *interested_parties,
                                          grpc_closure *on_done,
                                          grpc_resolved_addresses **addresses);
 
-/* Asynchronously resolve addr. It will try to resolve grpclb SRV records in
+/* Asynchronously resolve \a name. It will try to resolve grpclb SRV records in
   addition to the normal address records. For normal address records, it uses
-  \a default_port if a port isn't designated in \a addr, otherwise it uses the
-  port in \a addr. grpc_ares_init() must be called at least once before this
+  \a default_port if a port isn't designated in \a name, otherwise it uses the
+  port in \a name. grpc_ares_init() must be called at least once before this
   function. \a on_done may be called directly in this function without being
-  scheduled with \a exec_ctx, it must not try to acquire locks that are being
-  held by the caller. */
+  scheduled with \a exec_ctx, so it must not try to acquire locks that are
+  being held by the caller. */
 extern grpc_ares_request *(*grpc_dns_lookup_ares)(
-    grpc_exec_ctx *exec_ctx, const char *dns_server, const char *addr,
+    grpc_exec_ctx *exec_ctx, const char *dns_server, const char *name,
     const char *default_port, grpc_pollset_set *interested_parties,
-    grpc_closure *on_done, grpc_lb_addresses **addresses, bool check_grpclb);
+    grpc_closure *on_done, grpc_lb_addresses **addresses, bool check_grpclb,
+    char **service_config_json);
 
 /* Cancel the pending grpc_ares_request \a request */
 void grpc_cancel_ares_request(grpc_exec_ctx *exec_ctx,

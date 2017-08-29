@@ -39,11 +39,14 @@ EXPORTS
     census_record_values
     grpc_compression_algorithm_parse
     grpc_compression_algorithm_name
+    grpc_stream_compression_algorithm_name
     grpc_compression_algorithm_for_level
+    grpc_stream_compression_algorithm_for_level
     grpc_compression_options_init
     grpc_compression_options_enable_algorithm
     grpc_compression_options_disable_algorithm
     grpc_compression_options_is_algorithm_enabled
+    grpc_compression_options_is_stream_compression_algorithm_enabled
     grpc_call_details_init
     grpc_call_details_destroy
     grpc_register_plugin

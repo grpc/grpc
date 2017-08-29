@@ -61,9 +61,9 @@ namespace Grpc.Core.Tests
             var profiler = new BasicProfiler();
             Profilers.SetForCurrentThread(profiler);
 
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
-                return request;
+                return Task.FromResult(request);
             });
 
             var callDetails = helper.CreateUnaryCall();

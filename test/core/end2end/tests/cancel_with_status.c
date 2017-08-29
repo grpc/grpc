@@ -25,6 +25,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 #include "src/core/lib/support/string.h"
@@ -140,7 +141,12 @@ static void simple_request_body(grpc_end2end_test_config config,
   error = grpc_call_start_batch(c, ops, num_ops, tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  grpc_call_cancel_with_status(c, GRPC_STATUS_UNIMPLEMENTED, "xyz", NULL);
+  char *dynamic_string = gpr_strdup("xyz");
+  grpc_call_cancel_with_status(c, GRPC_STATUS_UNIMPLEMENTED,
+                               (const char *)dynamic_string, NULL);
+  // The API of \a description allows for it to be a dynamic/non-const
+  // string, test this guarantee.
+  gpr_free(dynamic_string);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);

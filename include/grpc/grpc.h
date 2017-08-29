@@ -293,7 +293,11 @@ GRPCAPI grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved);
     If a status has not been received for the call, set it to the status code
     and description passed in.
     Importantly, this function does not send status nor description to the
-    remote endpoint. */
+    remote endpoint.
+    Note that \a description doesn't need be a static string.
+    It doesn't need to be alive after the call to
+    grpc_call_cancel_with_status completes.
+    */
 GRPCAPI grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
                                                      grpc_status_code status,
                                                      const char *description,

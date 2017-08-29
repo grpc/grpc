@@ -39,7 +39,7 @@
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
-static gpr_once s_init_max_accept_queue_size;
+static gpr_once s_init_max_accept_queue_size = GPR_ONCE_INIT;
 static int s_max_accept_queue_size;
 
 /* get max listen queue size on linux */

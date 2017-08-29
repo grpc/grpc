@@ -7,3 +7,4 @@ alignment:CRYPTO_cbc128_encrypt
 alignment:CRYPTO_gcm128_encrypt
 nonnull-attribute:google::protobuf::*
 alignment:google::protobuf::*
+nonnull-attribute:_tr_stored_block

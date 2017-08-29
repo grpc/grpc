@@ -20,10 +20,10 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  version = '1.5.0-dev'
+  version = '1.7.0-dev'
   s.version  = version
   s.summary  = 'gRPC client library for iOS/OSX'
-  s.homepage = 'http://www.grpc.io'
+  s.homepage = 'https://grpc.io'
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
@@ -40,12 +40,9 @@ Pod::Spec.new do |s|
   s.header_dir = name
 
   src_dir = 'src/objective-c/GRPCClient'
-  s.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
-  s.private_header_files = "#{src_dir}/private/*.h"
-  s.header_mappings_dir = "#{src_dir}"
 
-  s.dependency 'gRPC-Core', version
   s.dependency 'gRPC-RxLibrary', version
+  s.default_subspec = 'Main'
 
   # Certificates, to be able to establish TLS connections:
   s.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
@@ -54,4 +51,22 @@ Pod::Spec.new do |s|
     # This is needed by all pods that depend on gRPC-RxLibrary:
     'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES' => 'YES',
   }
+
+  s.subspec 'Main' do |ss|
+    ss.header_mappings_dir = "#{src_dir}"
+
+    ss.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
+    ss.exclude_files = "#{src_dir}/GRPCCall+GID.{h,m}"
+    ss.private_header_files = "#{src_dir}/private/*.h"
+
+    ss.dependency 'gRPC-Core', version
+  end
+
+  s.subspec 'GID' do |ss|
+    ss.header_mappings_dir = "#{src_dir}"
+
+    ss.source_files = "#{src_dir}/GRPCCall+GID.{h,m}"
+
+    ss.dependency 'Google/SignIn'
+  end
 end

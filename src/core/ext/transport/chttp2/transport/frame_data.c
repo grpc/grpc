@@ -293,7 +293,6 @@ grpc_error *grpc_chttp2_data_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
                                           grpc_chttp2_transport *t,
                                           grpc_chttp2_stream *s,
                                           grpc_slice slice, int is_last) {
-  /* grpc_error *error = parse_inner_buffer(exec_ctx, p, t, s, slice); */
   if (!s->pending_byte_stream) {
     grpc_slice_ref_internal(slice);
     grpc_slice_buffer_add(&s->frame_storage, slice);
@@ -304,6 +303,7 @@ grpc_error *grpc_chttp2_data_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
     grpc_slice_buffer_add(&s->unprocessed_incoming_frames_buffer, slice);
     GRPC_CLOSURE_SCHED(exec_ctx, s->on_next, GRPC_ERROR_NONE);
     s->on_next = NULL;
+    s->unprocessed_incoming_frames_decompressed = false;
   } else {
     grpc_slice_ref_internal(slice);
     grpc_slice_buffer_add(&s->frame_storage, slice);
