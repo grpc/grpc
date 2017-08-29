@@ -153,7 +153,12 @@ module GRPC
     rescue StandardError => e
       GRPC.logger.warn('bidi-write-loop: failed')
       GRPC.logger.warn(e)
-      raise e
+      if is_client
+        @call.cancel_with_status(GRPC::Core::StatusCodes::UNKNOWN,
+                                 "GRPC bidi call error: #{e.inspect}")
+      else
+        raise e
+      end
     ensure
       set_output_stream_done.call if is_client
     end
@@ -180,8 +185,8 @@ module GRPC
               batch_result = @call.run_batch(RECV_STATUS_ON_CLIENT => nil)
               @call.status = batch_result.status
               @call.trailing_metadata = @call.status.metadata if @call.status
-              batch_result.check_status
               GRPC.logger.debug("bidi-read-loop: done status #{@call.status}")
+              batch_result.check_status
             end
 
             GRPC.logger.debug('bidi-read-loop: done reading!')

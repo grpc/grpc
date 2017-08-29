@@ -55,10 +55,10 @@ namespace Grpc.Core.Tests
         [Test]
         public void WriteOptions_Unary()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 context.WriteOptions = new WriteOptions(WriteFlags.NoCompress);
-                return request;
+                return Task.FromResult(request);
             });
 
             var callOptions = new CallOptions(writeOptions: new WriteOptions(WriteFlags.NoCompress));

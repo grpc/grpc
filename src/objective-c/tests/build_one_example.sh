@@ -37,9 +37,11 @@ rm -f Podfile.lock
 pod install
 
 set -o pipefail
-XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail)'
+XCODEBUILD_FILTER='(^CompileC |^Ld |^.*clang |^ *cd |^ *export |^Libtool |^.*libtool |^CpHeader |^ *builtin-copy )'
 xcodebuild \
     build \
     -workspace *.xcworkspace \
     -scheme $SCHEME \
-    -destination name="iPhone 6" | xcpretty
+    -destination name="iPhone 6" \
+    | egrep -v "$XCODEBUILD_FILTER" \
+    | egrep -v "^$" -

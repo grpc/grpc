@@ -79,7 +79,7 @@ static void chose_port(int port) {
   chosen_ports[num_chosen_ports - 1] = port;
 }
 
-int grpc_pick_unused_port(void) {
+static int grpc_pick_unused_port_impl(void) {
   int port = grpc_pick_port_using_server();
   if (port != 0) {
     chose_port(port);
@@ -88,7 +88,7 @@ int grpc_pick_unused_port(void) {
   return port;
 }
 
-int grpc_pick_unused_port_or_die(void) {
+static int grpc_pick_unused_port_or_die_impl(void) {
   int port = grpc_pick_unused_port();
   if (port == 0) {
     fprintf(stderr,
@@ -101,6 +101,31 @@ int grpc_pick_unused_port_or_die(void) {
   return port;
 }
 
-void grpc_recycle_unused_port(int port) { GPR_ASSERT(free_chosen_port(port)); }
+static void grpc_recycle_unused_port_impl(int port) {
+  GPR_ASSERT(free_chosen_port(port));
+}
+
+static grpc_pick_port_functions g_pick_port_functions = {
+    grpc_pick_unused_port_impl, grpc_pick_unused_port_or_die_impl,
+    grpc_recycle_unused_port_impl};
+
+int grpc_pick_unused_port(void) {
+  return g_pick_port_functions.pick_unused_port_fn();
+}
+
+int grpc_pick_unused_port_or_die(void) {
+  return g_pick_port_functions.pick_unused_port_or_die_fn();
+}
+
+void grpc_recycle_unused_port(int port) {
+  g_pick_port_functions.recycle_unused_port_fn(port);
+}
+
+void grpc_set_pick_port_functions(grpc_pick_port_functions functions) {
+  GPR_ASSERT(functions.pick_unused_port_fn != NULL);
+  GPR_ASSERT(functions.pick_unused_port_or_die_fn != NULL);
+  GPR_ASSERT(functions.recycle_unused_port_fn != NULL);
+  g_pick_port_functions = functions;
+}
 
 #endif /* GRPC_TEST_PICK_PORT */

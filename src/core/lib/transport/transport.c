@@ -197,37 +197,40 @@ void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
                                     then_schedule_closure);
 }
 
-char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
-                              grpc_transport *transport) {
-  return transport->vtable->get_peer(exec_ctx, transport);
-}
-
 grpc_endpoint *grpc_transport_get_endpoint(grpc_exec_ctx *exec_ctx,
                                            grpc_transport *transport) {
   return transport->vtable->get_endpoint(exec_ctx, transport);
 }
 
+// This comment should be sung to the tune of
+// "Supercalifragilisticexpialidocious":
+//
 // grpc_transport_stream_op_batch_finish_with_failure
 // is a function that must always unref cancel_error
 // though it lives in lib, it handles transport stream ops sure
 // it's grpc_transport_stream_op_batch_finish_with_failure
-
 void grpc_transport_stream_op_batch_finish_with_failure(
-    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *op,
-    grpc_error *error) {
-  if (op->recv_message) {
-    GRPC_CLOSURE_SCHED(exec_ctx, op->payload->recv_message.recv_message_ready,
-                       GRPC_ERROR_REF(error));
+    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *batch,
+    grpc_error *error, grpc_call_combiner *call_combiner) {
+  if (batch->send_message) {
+    grpc_byte_stream_destroy(exec_ctx,
+                             batch->payload->send_message.send_message);
   }
-  if (op->recv_initial_metadata) {
-    GRPC_CLOSURE_SCHED(
-        exec_ctx,
-        op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-        GRPC_ERROR_REF(error));
+  if (batch->recv_message) {
+    GRPC_CALL_COMBINER_START(exec_ctx, call_combiner,
+                             batch->payload->recv_message.recv_message_ready,
+                             GRPC_ERROR_REF(error),
+                             "failing recv_message_ready");
   }
-  GRPC_CLOSURE_SCHED(exec_ctx, op->on_complete, error);
-  if (op->cancel_stream) {
-    GRPC_ERROR_UNREF(op->payload->cancel_stream.cancel_error);
+  if (batch->recv_initial_metadata) {
+    GRPC_CALL_COMBINER_START(
+        exec_ctx, call_combiner,
+        batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
+        GRPC_ERROR_REF(error), "failing recv_initial_metadata_ready");
+  }
+  GRPC_CLOSURE_SCHED(exec_ctx, batch->on_complete, error);
+  if (batch->cancel_stream) {
+    GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
   }
 }
 

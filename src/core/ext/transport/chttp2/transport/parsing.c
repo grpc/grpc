@@ -349,93 +349,25 @@ void grpc_chttp2_parsing_become_skip_parser(grpc_exec_ctx *exec_ctx,
                          t->parser == grpc_chttp2_header_parser_parse);
 }
 
-static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
-                                          grpc_chttp2_transport *t,
-                                          grpc_chttp2_stream *s) {
-  uint32_t incoming_frame_size = t->incoming_frame_size;
-  if (incoming_frame_size > t->incoming_window) {
-    char *msg;
-    gpr_asprintf(&msg, "frame of size %d overflows incoming window of %" PRId64,
-                 t->incoming_frame_size, t->incoming_window);
-    grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return err;
-  }
-
-  if (s != NULL) {
-    if (incoming_frame_size >
-        s->incoming_window_delta +
-            t->settings[GRPC_ACKED_SETTINGS]
-                       [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]) {
-      if (incoming_frame_size <=
-          s->incoming_window_delta +
-              t->settings[GRPC_SENT_SETTINGS]
-                         [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]) {
-        gpr_log(
-            GPR_ERROR,
-            "Incoming frame of size %d exceeds incoming window size of %" PRId64
-            ".\n"
-            "The (un-acked, future) window size would be %" PRId64
-            " which is not exceeded.\n"
-            "This would usually cause a disconnection, but allowing it due to "
-            "broken HTTP2 implementations in the wild.\n"
-            "See (for example) https://github.com/netty/netty/issues/6520.",
-            t->incoming_frame_size,
-            s->incoming_window_delta +
-                t->settings[GRPC_ACKED_SETTINGS]
-                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
-            s->incoming_window_delta +
-                t->settings[GRPC_SENT_SETTINGS]
-                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
-      } else {
-        char *msg;
-        gpr_asprintf(&msg,
-                     "frame of size %d overflows incoming window of %" PRId64,
-                     t->incoming_frame_size,
-                     s->incoming_window_delta +
-                         t->settings[GRPC_ACKED_SETTINGS]
-                                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
-        grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-        gpr_free(msg);
-        return err;
-      }
-    }
-
-    GRPC_CHTTP2_FLOW_DEBIT_STREAM_INCOMING_WINDOW_DELTA("parse", t, s,
-                                                        incoming_frame_size);
-    if ((int64_t)s->incoming_window_delta - (int64_t)s->announce_window <=
-        -(int64_t)t->settings[GRPC_SENT_SETTINGS]
-                             [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] /
-            2) {
-      grpc_chttp2_become_writable(exec_ctx, t, s,
-                                  GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
-                                  "window-update-required");
-    }
-    s->received_bytes += incoming_frame_size;
-  }
-
-  uint32_t target_incoming_window = grpc_chttp2_target_incoming_window(t);
-  GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("parse", t, incoming_window,
-                                   incoming_frame_size);
-  if (t->incoming_window <= target_incoming_window / 2) {
-    grpc_chttp2_initiate_write(exec_ctx, t, "flow_control");
-  }
-
-  return GRPC_ERROR_NONE;
-}
-
 static grpc_error *init_data_frame_parser(grpc_exec_ctx *exec_ctx,
                                           grpc_chttp2_transport *t) {
   grpc_chttp2_stream *s =
       grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
   grpc_error *err = GRPC_ERROR_NONE;
-  err = update_incoming_window(exec_ctx, t, s);
+  err = grpc_chttp2_flowctl_recv_data(&t->flow_control,
+                                      s == NULL ? NULL : &s->flow_control,
+                                      t->incoming_frame_size);
+  grpc_chttp2_act_on_flowctl_action(
+      exec_ctx, grpc_chttp2_flowctl_get_action(
+                    &t->flow_control, s == NULL ? NULL : &s->flow_control),
+      t, s);
   if (err != GRPC_ERROR_NONE) {
     goto error_handler;
   }
   if (s == NULL) {
     return init_skip_frame_parser(exec_ctx, t, 0);
   }
+  s->received_bytes += t->incoming_frame_size;
   s->stats.incoming.framing_bytes += 9;
   if (err == GRPC_ERROR_NONE && s->read_closed) {
     return init_skip_frame_parser(exec_ctx, t, 0);
@@ -691,6 +623,7 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
           *s->trailing_metadata_available = true;
         }
         t->hpack_parser.on_header = on_trailing_header;
+        s->received_trailing_metadata = true;
       } else {
         GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing initial_metadata"));
         t->hpack_parser.on_header = on_initial_header;
@@ -699,6 +632,7 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
     case 1:
       GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing trailing_metadata"));
       t->hpack_parser.on_header = on_trailing_header;
+      s->received_trailing_metadata = true;
       break;
     case 2:
       gpr_log(GPR_ERROR, "too many header frames received");

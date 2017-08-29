@@ -286,6 +286,7 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State &state) {
   Stream s(&f);
   grpc_transport_stream_op_batch op;
   grpc_transport_stream_op_batch_payload op_payload;
+  memset(&op_payload, 0, sizeof(op_payload));
   std::unique_ptr<Closure> start;
   std::unique_ptr<Closure> done;
 
@@ -337,6 +338,7 @@ static void BM_TransportEmptyOp(benchmark::State &state) {
   s.Init(state);
   grpc_transport_stream_op_batch op;
   grpc_transport_stream_op_batch_payload op_payload;
+  memset(&op_payload, 0, sizeof(op_payload));
   auto reset_op = [&]() {
     memset(&op, 0, sizeof(op));
     op.payload = &op_payload;
@@ -364,6 +366,7 @@ static void BM_TransportStreamSend(benchmark::State &state) {
   s.Init(state);
   grpc_transport_stream_op_batch op;
   grpc_transport_stream_op_batch_payload op_payload;
+  memset(&op_payload, 0, sizeof(op_payload));
   auto reset_op = [&]() {
     memset(&op, 0, sizeof(op));
     op.payload = &op_payload;
@@ -391,8 +394,9 @@ static void BM_TransportStreamSend(benchmark::State &state) {
       MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
         if (!state.KeepRunning()) return;
         // force outgoing window to be yuge
-        s.chttp2_stream()->outgoing_window_delta = 1024 * 1024 * 1024;
-        f.chttp2_transport()->outgoing_window = 1024 * 1024 * 1024;
+        s.chttp2_stream()->flow_control.remote_window_delta =
+            1024 * 1024 * 1024;
+        f.chttp2_transport()->flow_control.remote_window = 1024 * 1024 * 1024;
         grpc_slice_buffer_stream_init(&send_stream, &send_buffer, 0);
         reset_op();
         op.on_complete = c.get();
@@ -484,6 +488,7 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
   Stream s(&f);
   s.Init(state);
   grpc_transport_stream_op_batch_payload op_payload;
+  memset(&op_payload, 0, sizeof(op_payload));
   grpc_transport_stream_op_batch op;
   grpc_byte_stream *recv_stream;
   grpc_slice incoming_data = CreateIncomingDataSlice(state.range(0), 16384);
@@ -517,21 +522,22 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
   std::unique_ptr<Closure> drain_continue;
   grpc_slice recv_slice;
 
-  std::unique_ptr<Closure> c =
-      MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
-        if (!state.KeepRunning()) return;
-        // force outgoing window to be yuge
-        s.chttp2_stream()->incoming_window_delta = 1024 * 1024 * 1024;
-        f.chttp2_transport()->incoming_window = 1024 * 1024 * 1024;
-        received = 0;
-        reset_op();
-        op.on_complete = do_nothing.get();
-        op.recv_message = true;
-        op.payload->recv_message.recv_message = &recv_stream;
-        op.payload->recv_message.recv_message_ready = drain_start.get();
-        s.Op(&op);
-        f.PushInput(grpc_slice_ref(incoming_data));
-      });
+  std::unique_ptr<Closure> c = MakeClosure([&](grpc_exec_ctx *exec_ctx,
+                                               grpc_error *error) {
+    if (!state.KeepRunning()) return;
+    // force outgoing window to be yuge
+    s.chttp2_stream()->flow_control.local_window_delta = 1024 * 1024 * 1024;
+    s.chttp2_stream()->flow_control.announced_window_delta = 1024 * 1024 * 1024;
+    f.chttp2_transport()->flow_control.announced_window = 1024 * 1024 * 1024;
+    received = 0;
+    reset_op();
+    op.on_complete = do_nothing.get();
+    op.recv_message = true;
+    op.payload->recv_message.recv_message = &recv_stream;
+    op.payload->recv_message.recv_message_ready = drain_start.get();
+    s.Op(&op);
+    f.PushInput(grpc_slice_ref(incoming_data));
+  });
 
   drain_start = MakeClosure([&](grpc_exec_ctx *exec_ctx, grpc_error *error) {
     if (recv_stream == NULL) {

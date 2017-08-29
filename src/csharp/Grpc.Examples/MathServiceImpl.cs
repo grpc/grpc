@@ -52,9 +52,10 @@ namespace Math
         public override async Task<Num> Sum(IAsyncStreamReader<Num> requestStream, ServerCallContext context)
         {
             long sum = 0;
-            await requestStream.ForEachAsync(async num =>
+            await requestStream.ForEachAsync(num =>
             {
                 sum += num.Num_;
+                return TaskUtils.CompletedTask;
             });
             return new Num { Num_ = sum };
         }

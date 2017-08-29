@@ -31,12 +31,14 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/alarm_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -128,6 +130,7 @@ void grpc_init(void) {
     grpc_register_tracer(&grpc_trace_channel_stack_builder);
     grpc_register_tracer(&grpc_http1_trace);
     grpc_register_tracer(&grpc_cq_pluck_trace);  // default on
+    grpc_register_tracer(&grpc_call_combiner_trace);
     grpc_register_tracer(&grpc_combiner_trace);
     grpc_register_tracer(&grpc_server_channel_trace);
     grpc_register_tracer(&grpc_bdp_estimator_trace);
@@ -137,6 +140,7 @@ void grpc_init(void) {
     grpc_register_tracer(&grpc_call_error_trace);
 #ifndef NDEBUG
     grpc_register_tracer(&grpc_trace_pending_tags);
+    grpc_register_tracer(&grpc_trace_alarm_refcount);
     grpc_register_tracer(&grpc_trace_cq_refcount);
     grpc_register_tracer(&grpc_trace_closure);
     grpc_register_tracer(&grpc_trace_error_refcount);

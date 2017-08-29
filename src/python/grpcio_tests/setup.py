@@ -68,6 +68,10 @@ PACKAGE_DATA = {
     'tests.protoc_plugin.protos.invocation_testing.split_services': [
         'services.proto',
     ],
+    'tests.testing.proto': [
+        'requests.proto',
+        'services.proto',
+    ],
     'tests.unit': [
         'credentials/ca.pem',
         'credentials/server1.key',

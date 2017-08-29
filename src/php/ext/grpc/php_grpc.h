@@ -49,14 +49,16 @@ PHP_MINIT_FUNCTION(grpc);
 PHP_MSHUTDOWN_FUNCTION(grpc);
 /* Displays information about the module */
 PHP_MINFO_FUNCTION(grpc);
+/* Code that runs at request start */
+PHP_RINIT_FUNCTION(grpc);
 
 /*
   Declare any global variables you may need between the BEGIN
   and END macros here:
-
-ZEND_BEGIN_MODULE_GLOBALS(grpc)
-ZEND_END_MODULE_GLOBALS(grpc)
 */
+ZEND_BEGIN_MODULE_GLOBALS(grpc)
+  zend_bool initialized;
+ZEND_END_MODULE_GLOBALS(grpc)
 
 /* In every utility function you add that needs to use variables
    in php_grpc_globals, call TSRMLS_FETCH(); after declaring other
@@ -73,5 +75,9 @@ ZEND_END_MODULE_GLOBALS(grpc)
 #else
 #define GRPC_G(v) (grpc_globals.v)
 #endif
+
+#define GRPC_STARTUP_FUNCTION(module)  ZEND_MINIT_FUNCTION(grpc_##module)
+#define GRPC_STARTUP(module)           \
+  ZEND_MODULE_STARTUP_N(grpc_##module)(INIT_FUNC_ARGS_PASSTHRU)
 
 #endif /* PHP_GRPC_H */
