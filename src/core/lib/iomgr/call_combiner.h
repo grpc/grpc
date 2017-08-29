@@ -87,11 +87,20 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
                              const char* reason);
 #endif
 
-/// Tells \a call_combiner to invoke \a closure when
-/// grpc_call_combiner_cancel() is called.  If grpc_call_combiner_cancel()
-/// was previously called, \a closure will be invoked immediately.
+/// Tells \a call_combiner to schedule \a closure when
+/// grpc_call_combiner_cancel() is called.
+///
+/// If grpc_call_combiner_cancel() was previously called, \a closure will be
+/// scheduled immediately.
+///
 /// If \a closure is NULL, then no closure will be invoked on
 /// cancellation; this effectively unregisters the previously set closure.
+///
+/// If a closure was set via a previous call to
+/// grpc_call_combiner_set_notify_on_cancel(), the previous closure will be
+/// scheduled immediately with GRPC_ERROR_NONE.  This ensures that
+/// \a closure will be scheduled exactly once, which allows callers to clean
+/// up resources they may be holding for the callback.
 void grpc_call_combiner_set_notify_on_cancel(grpc_exec_ctx* exec_ctx,
                                              grpc_call_combiner* call_combiner,
                                              grpc_closure* closure);
