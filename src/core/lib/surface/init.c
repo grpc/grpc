@@ -30,7 +30,6 @@
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/http/parser.h"
-#include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -128,7 +127,6 @@ void grpc_init(void) {
     grpc_register_tracer(&grpc_trace_channel_stack_builder);
     grpc_register_tracer(&grpc_http1_trace);
     grpc_register_tracer(&grpc_cq_pluck_trace);  // default on
-    grpc_register_tracer(&grpc_call_combiner_trace);
     grpc_register_tracer(&grpc_combiner_trace);
     grpc_register_tracer(&grpc_server_channel_trace);
     grpc_register_tracer(&grpc_bdp_estimator_trace);

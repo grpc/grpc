@@ -290,6 +290,7 @@ static const grpc_channel_filter test_client_filter = {
     0,
     init_channel_elem,
     destroy_channel_elem,
+    grpc_call_next_get_peer,
     grpc_channel_next_get_info,
     "client_filter_latency"};
 
@@ -303,6 +304,7 @@ static const grpc_channel_filter test_server_filter = {
     0,
     init_channel_elem,
     destroy_channel_elem,
+    grpc_call_next_get_peer,
     grpc_channel_next_get_info,
     "server_filter_latency"};
 
