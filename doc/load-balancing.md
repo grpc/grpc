@@ -113,8 +113,8 @@ works:
    that indicates which client-side load-balancing policy to use (e.g.,
    `round_robin` or `grpclb`).
 2. The client instantiates the load balancing policy.
-   - Note: If all addresses returned by the resolver are balancer
-     addresses, then the client will use the `grpclb` policy, regardless
+   - Note: If any one of the addresses returned by the resolver is a balancer
+     address, then the client will use the `grpclb` policy, regardless
      of what load-balancing policy was requested by the service config.
      Otherwise, the client will use the load-balancing policy requested
      by the service config.  If no load-balancing policy is requested

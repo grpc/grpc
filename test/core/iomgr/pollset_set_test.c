@@ -137,7 +137,8 @@ static void cleanup_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds,
      * grpc_wakeup_fd and we would like to destroy it ourselves (by calling
      * grpc_wakeup_fd_destroy). To prevent grpc_fd from calling close() on the
      * underlying fd, call it with a non-NULL 'release_fd' parameter */
-    grpc_fd_orphan(exec_ctx, tfds[i].fd, NULL, &release_fd, "test_fd_cleanup");
+    grpc_fd_orphan(exec_ctx, tfds[i].fd, NULL, &release_fd,
+                   false /* already_closed */, "test_fd_cleanup");
     grpc_exec_ctx_flush(exec_ctx);
 
     grpc_wakeup_fd_destroy(&tfds[i].wakeup_fd);
@@ -255,8 +256,8 @@ static void pollset_set_test_basic() {
     make_test_fds_readable(tfds, num_fds);
 
     gpr_mu_lock(pollsets[i].mu);
-    deadline =
-        grpc_timespec_to_millis(grpc_timeout_milliseconds_to_deadline(2));
+    deadline = grpc_timespec_to_millis_round_up(
+        grpc_timeout_milliseconds_to_deadline(2));
     GPR_ASSERT(GRPC_ERROR_NONE ==
                grpc_pollset_work(&exec_ctx, pollsets[i].ps, &worker, deadline));
     gpr_mu_unlock(pollsets[i].mu);
@@ -337,7 +338,8 @@ void pollset_set_test_dup_fds() {
   make_test_fds_readable(tfds, num_fds);
 
   gpr_mu_lock(pollset.mu);
-  deadline = grpc_timespec_to_millis(grpc_timeout_milliseconds_to_deadline(2));
+  deadline = grpc_timespec_to_millis_round_up(
+      grpc_timeout_milliseconds_to_deadline(2));
   GPR_ASSERT(GRPC_ERROR_NONE ==
              grpc_pollset_work(&exec_ctx, pollset.ps, &worker, deadline));
   gpr_mu_unlock(pollset.mu);
@@ -405,7 +407,8 @@ void pollset_set_test_empty_pollset() {
   make_test_fds_readable(tfds, num_fds);
 
   gpr_mu_lock(pollsets[0].mu);
-  deadline = grpc_timespec_to_millis(grpc_timeout_milliseconds_to_deadline(2));
+  deadline = grpc_timespec_to_millis_round_up(
+      grpc_timeout_milliseconds_to_deadline(2));
   GPR_ASSERT(GRPC_ERROR_NONE ==
              grpc_pollset_work(&exec_ctx, pollsets[0].ps, &worker, deadline));
   gpr_mu_unlock(pollsets[0].mu);

@@ -147,7 +147,7 @@ static void on_peer_checked(grpc_exec_ctx *exec_ctx, void *arg,
     goto done;
   }
   // Get unused bytes.
-  unsigned char *unused_bytes = NULL;
+  const unsigned char *unused_bytes = NULL;
   size_t unused_bytes_size = 0;
   result = tsi_handshaker_result_get_unused_bytes(
       h->handshaker_result, &unused_bytes, &unused_bytes_size);
@@ -261,7 +261,7 @@ static grpc_error *do_handshaker_next_locked(
     grpc_exec_ctx *exec_ctx, security_handshaker *h,
     const unsigned char *bytes_received, size_t bytes_received_size) {
   // Invoke TSI handshaker.
-  unsigned char *bytes_to_send = NULL;
+  const unsigned char *bytes_to_send = NULL;
   size_t bytes_to_send_size = 0;
   tsi_handshaker_result *handshaker_result = NULL;
   tsi_result result = tsi_handshaker_next(

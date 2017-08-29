@@ -38,7 +38,7 @@ namespace Grpc.Reflection.Tests
         ServerReflection.ServerReflectionClient client;
         ReflectionServiceImpl serviceImpl;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void Init()
         {
             serviceImpl = new ReflectionServiceImpl(ServerReflection.Descriptor);
@@ -55,7 +55,7 @@ namespace Grpc.Reflection.Tests
             client = new ServerReflection.ServerReflectionClient(channel);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void Cleanup()
         {
             channel.ShutdownAsync().Wait();

@@ -71,7 +71,8 @@ void args_finish(grpc_exec_ctx *exec_ctx, args_struct *args) {
 }
 
 static grpc_millis n_sec_deadline(int seconds) {
-  return grpc_timespec_to_millis(grpc_timeout_seconds_to_deadline(seconds));
+  return grpc_timespec_to_millis_round_up(
+      grpc_timeout_seconds_to_deadline(seconds));
 }
 
 static void actually_poll(void *argsp) {

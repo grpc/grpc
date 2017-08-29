@@ -154,14 +154,16 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   cq_verify(cqv);
 
   // Send too many pings to the server to trigger the punishment:
-  // The first ping is sent after data frames, it won't trigger a ping strike.
-  // Each of the following pings will trigger a ping strike, and we need at
-  // least (MAX_PING_STRIKES + 1) strikes to trigger the punishment. So
-  // (MAX_PING_STRIKES + 2) pings are needed here.
+  // Each ping will trigger a ping strike, and we need at least MAX_PING_STRIKES
+  // strikes to trigger the punishment. So (MAX_PING_STRIKES + 1) pings are
+  // needed here.
   int i;
-  for (i = 200; i < 202 + MAX_PING_STRIKES; i++) {
-    grpc_channel_ping(f.client, f.cq, tag(i), NULL);
-    CQ_EXPECT_COMPLETION(cqv, tag(i), 1);
+  for (i = 1; i <= MAX_PING_STRIKES + 1; i++) {
+    grpc_channel_ping(f.client, f.cq, tag(200 + i), NULL);
+    CQ_EXPECT_COMPLETION(cqv, tag(200 + i), 1);
+    if (i == MAX_PING_STRIKES + 1) {
+      CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+    }
     cq_verify(cqv);
   }
 
@@ -189,7 +191,6 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));

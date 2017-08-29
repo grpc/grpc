@@ -162,7 +162,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   struct read_socket_state state;
   size_t written_bytes;
   grpc_millis deadline =
-      grpc_timespec_to_millis(grpc_timeout_seconds_to_deadline(20));
+      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log(GPR_INFO, "Read test of size %" PRIuPTR ", slice size %" PRIuPTR,
@@ -215,7 +215,7 @@ static void large_read_test(size_t slice_size) {
   struct read_socket_state state;
   ssize_t written_bytes;
   grpc_millis deadline =
-      grpc_timespec_to_millis(grpc_timeout_seconds_to_deadline(20));
+      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log(GPR_INFO, "Start large read test, slice size %" PRIuPTR, slice_size);
@@ -318,7 +318,7 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                          grpc_timespec_to_millis(
+                          grpc_timespec_to_millis_round_up(
                               grpc_timeout_milliseconds_to_deadline(10)))));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
@@ -353,7 +353,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
   grpc_slice_buffer outgoing;
   grpc_closure write_done_closure;
   grpc_millis deadline =
-      grpc_timespec_to_millis(grpc_timeout_seconds_to_deadline(20));
+      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log(GPR_INFO,
@@ -419,7 +419,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   size_t written_bytes;
   int fd;
   grpc_millis deadline =
-      grpc_timespec_to_millis(grpc_timeout_seconds_to_deadline(20));
+      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure fd_released_cb;
   int fd_released_done = 0;

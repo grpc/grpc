@@ -51,33 +51,6 @@ bool grpc_exec_ctx_has_work(grpc_exec_ctx *exec_ctx) {
          !grpc_closure_list_empty(exec_ctx->closure_list);
 }
 
-bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
-  bool did_something = 0;
-  GPR_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
-  for (;;) {
-    if (!grpc_closure_list_empty(exec_ctx->closure_list)) {
-      grpc_closure *c = exec_ctx->closure_list.head;
-      exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
-      while (c != NULL) {
-        grpc_closure *next = c->next_data.next;
-        grpc_error *error = c->error_data.error;
-        did_something = true;
-#ifndef NDEBUG
-        c->scheduled = false;
-#endif
-        c->cb(exec_ctx, c->cb_arg, error);
-        GRPC_ERROR_UNREF(error);
-        c = next;
-      }
-    } else if (!grpc_combiner_continue_exec_ctx(exec_ctx)) {
-      break;
-    }
-  }
-  GPR_ASSERT(exec_ctx->active_combiner == NULL);
-  GPR_TIMER_END("grpc_exec_ctx_flush", 0);
-  return did_something;
-}
-
 void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
   exec_ctx->flags |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
   grpc_exec_ctx_flush(exec_ctx);
@@ -103,6 +76,29 @@ static void exec_ctx_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   GRPC_ERROR_UNREF(error);
 }
 
+bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
+  bool did_something = 0;
+  GPR_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
+  for (;;) {
+    if (!grpc_closure_list_empty(exec_ctx->closure_list)) {
+      grpc_closure *c = exec_ctx->closure_list.head;
+      exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
+      while (c != NULL) {
+        grpc_closure *next = c->next_data.next;
+        grpc_error *error = c->error_data.error;
+        did_something = true;
+        exec_ctx_run(exec_ctx, c, error);
+        c = next;
+      }
+    } else if (!grpc_combiner_continue_exec_ctx(exec_ctx)) {
+      break;
+    }
+  }
+  GPR_ASSERT(exec_ctx->active_combiner == NULL);
+  GPR_TIMER_END("grpc_exec_ctx_flush", 0);
+  return did_something;
+}
+
 static void exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                            grpc_error *error) {
   grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
@@ -120,6 +116,16 @@ static gpr_atm timespec_to_atm_round_down(gpr_timespec ts) {
   ts = gpr_time_sub(ts, g_start_time);
   double x =
       GPR_MS_PER_SEC * (double)ts.tv_sec + (double)ts.tv_nsec / GPR_NS_PER_MS;
+  if (x < 0) return 0;
+  if (x > GPR_ATM_MAX) return GPR_ATM_MAX;
+  return (gpr_atm)x;
+}
+
+static gpr_atm timespec_to_atm_round_up(gpr_timespec ts) {
+  ts = gpr_time_sub(ts, g_start_time);
+  double x = GPR_MS_PER_SEC * (double)ts.tv_sec +
+             (double)ts.tv_nsec / GPR_NS_PER_MS +
+             (double)(GPR_NS_PER_SEC - 1) / (double)GPR_NS_PER_SEC;
   if (x < 0) return 0;
   if (x > GPR_ATM_MAX) return GPR_ATM_MAX;
   return (gpr_atm)x;
@@ -143,8 +149,13 @@ gpr_timespec grpc_millis_to_timespec(grpc_millis millis,
                       gpr_time_from_millis(millis, GPR_TIMESPAN));
 }
 
-grpc_millis grpc_timespec_to_millis(gpr_timespec ts) {
+grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec ts) {
   return timespec_to_atm_round_down(
+      gpr_convert_clock_type(ts, g_start_time.clock_type));
+}
+
+grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts) {
+  return timespec_to_atm_round_up(
       gpr_convert_clock_type(ts, g_start_time.clock_type));
 }
 

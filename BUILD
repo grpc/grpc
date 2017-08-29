@@ -34,11 +34,11 @@ load(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gregarious"
+g_stands_for = "gambit"
 
 core_version = "4.0.0-dev"
 
-version = "1.5.0-dev"
+version = "1.7.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -57,6 +57,7 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/string_util.h",
     "include/grpc/support/subprocess.h",
     "include/grpc/support/sync.h",
+    "include/grpc/support/sync_custom.h",
     "include/grpc/support/sync_generic.h",
     "include/grpc/support/sync_posix.h",
     "include/grpc/support/sync_windows.h",
@@ -206,6 +207,7 @@ grpc_cc_library(
     standalone = True,
     deps = [
         "grpc_common",
+        "grpc_lb_policy_grpclb",
     ],
 )
 
@@ -221,7 +223,6 @@ grpc_cc_library(
     deps = [
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
-        "grpc_resolver_dns_ares",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_secure",
@@ -287,6 +288,7 @@ grpc_cc_library(
         "grpc++_base_unsecure",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
+        "grpc++_codegen_proto",
         "grpc_unsecure",
     ],
 )
@@ -465,7 +467,6 @@ grpc_cc_library(
         "src/core/lib/support/arena.c",
         "src/core/lib/support/atm.c",
         "src/core/lib/support/avl.c",
-        "src/core/lib/backoff/backoff.c",
         "src/core/lib/support/cmdline.c",
         "src/core/lib/support/cpu_iphone.c",
         "src/core/lib/support/cpu_linux.c",
@@ -512,7 +513,6 @@ grpc_cc_library(
         "src/core/lib/support/atomic.h",
         "src/core/lib/support/atomic_with_atm.h",
         "src/core/lib/support/atomic_with_std.h",
-        "src/core/lib/backoff/backoff.h",
         "src/core/lib/iomgr/block_annotate.h",
         "src/core/lib/support/env.h",
         "src/core/lib/support/memory.h",
@@ -522,7 +522,6 @@ grpc_cc_library(
         "src/core/lib/support/stack_lockfree.h",
         "src/core/lib/support/string.h",
         "src/core/lib/support/string_windows.h",
-        "src/core/lib/support/thd_internal.h",
         "src/core/lib/support/time_precise.h",
         "src/core/lib/support/tmpfile.h",
     ],
@@ -545,6 +544,7 @@ grpc_cc_library(
         "include/grpc/impl/codegen/gpr_types.h",
         "include/grpc/impl/codegen/port_platform.h",
         "include/grpc/impl/codegen/sync.h",
+        "include/grpc/impl/codegen/sync_custom.h",
         "include/grpc/impl/codegen/sync_generic.h",
         "include/grpc/impl/codegen/sync_posix.h",
         "include/grpc/impl/codegen/sync_windows.h",
@@ -575,6 +575,7 @@ grpc_cc_library(
         "src/core/lib/http/format_request.c",
         "src/core/lib/http/httpcli.c",
         "src/core/lib/http/parser.c",
+        "src/core/lib/iomgr/call_combiner.c",
         "src/core/lib/iomgr/closure.c",
         "src/core/lib/iomgr/combiner.c",
         "src/core/lib/iomgr/endpoint.c",
@@ -592,6 +593,9 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_windows.c",
         "src/core/lib/iomgr/exec_ctx.c",
         "src/core/lib/iomgr/executor.c",
+        "src/core/lib/iomgr/gethostname_fallback.c",
+        "src/core/lib/iomgr/gethostname_host_name_max.c",
+        "src/core/lib/iomgr/gethostname_sysconf.c",
         "src/core/lib/iomgr/iocp_windows.c",
         "src/core/lib/iomgr/iomgr.c",
         "src/core/lib/iomgr/iomgr_posix.c",
@@ -686,6 +690,7 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.c",
         "src/core/lib/transport/transport.c",
         "src/core/lib/transport/transport_op_string.c",
+        "src/core/lib/backoff/backoff.c",
     ],
     hdrs = [
         "src/core/lib/channel/channel_args.h",
@@ -702,6 +707,7 @@ grpc_cc_library(
         "src/core/lib/http/format_request.h",
         "src/core/lib/http/httpcli.h",
         "src/core/lib/http/parser.h",
+        "src/core/lib/iomgr/call_combiner.h",
         "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/combiner.h",
         "src/core/lib/iomgr/endpoint.h",
@@ -717,13 +723,16 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_posix.h",
         "src/core/lib/iomgr/exec_ctx.h",
         "src/core/lib/iomgr/executor.h",
+        "src/core/lib/iomgr/gethostname.h",
         "src/core/lib/iomgr/iocp_windows.h",
         "src/core/lib/iomgr/iomgr.h",
         "src/core/lib/iomgr/iomgr_internal.h",
         "src/core/lib/iomgr/iomgr_posix.h",
+        "src/core/lib/iomgr/iomgr_uv.h",
         "src/core/lib/iomgr/is_epollexclusive_available.h",
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
+        "src/core/lib/iomgr/nameser.h",
         "src/core/lib/iomgr/network_status_tracker.h",
         "src/core/lib/iomgr/polling_entity.h",
         "src/core/lib/iomgr/pollset.h",
@@ -771,6 +780,7 @@ grpc_cc_library(
         "src/core/lib/slice/slice_hash_table.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
+        "src/core/lib/surface/alarm_internal.h",
         "src/core/lib/surface/api_trace.h",
         "src/core/lib/surface/call.h",
         "src/core/lib/surface/call_test_only.h",
@@ -798,6 +808,7 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
+        "src/core/lib/backoff/backoff.h",
     ],
     external_deps = [
         "zlib",
@@ -835,6 +846,8 @@ grpc_cc_library(
         "grpc_load_reporting",
         "grpc_max_age_filter",
         "grpc_message_size_filter",
+        "grpc_resolver_dns_ares",
+        "grpc_resolver_fake",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
         "grpc_transport_chttp2_client_insecure",
@@ -1212,6 +1225,7 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/bin_encoder.c",
         "src/core/ext/transport/chttp2/transport/chttp2_plugin.c",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.c",
+        "src/core/ext/transport/chttp2/transport/flow_control.c",
         "src/core/ext/transport/chttp2/transport/frame_data.c",
         "src/core/ext/transport/chttp2/transport/frame_goaway.c",
         "src/core/ext/transport/chttp2/transport/frame_ping.c",
@@ -1401,31 +1415,45 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "tsi_interface",
+    srcs = [
+        "src/core/tsi/transport_security.c",
+        "src/core/tsi/transport_security_adapter.c",
+    ],
+    hdrs = [
+        "src/core/tsi/transport_security.h",
+        "src/core/tsi/transport_security_adapter.h",
+        "src/core/tsi/transport_security_interface.h",
+    ],
+    language = "c",
+    deps = [
+        "gpr",
+        "grpc_trace",
+    ],
+)
+
+grpc_cc_library(
     name = "tsi",
     srcs = [
         "src/core/tsi/fake_transport_security.c",
         "src/core/tsi/gts_transport_security.c",
         "src/core/tsi/ssl_transport_security.c",
-        "src/core/tsi/transport_security.c",
-        "src/core/tsi/transport_security_adapter.c",
+        "src/core/tsi/transport_security_grpc.c",
     ],
     hdrs = [
         "src/core/tsi/fake_transport_security.h",
         "src/core/tsi/gts_transport_security.h",
         "src/core/tsi/ssl_transport_security.h",
         "src/core/tsi/ssl_types.h",
-        "src/core/tsi/transport_security.h",
-        "src/core/tsi/transport_security_adapter.h",
-        "src/core/tsi/transport_security_interface.h",
+        "src/core/tsi/transport_security_grpc.h",
     ],
     external_deps = [
         "libssl",
     ],
     language = "c",
     deps = [
-        "gpr",
         "grpc_base",
-        "grpc_trace",
+        "tsi_interface",
     ],
 )
 

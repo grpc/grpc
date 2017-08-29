@@ -76,7 +76,33 @@ static void populate_timestamp(gpr_timespec timestamp,
   timestamp_pb->nanos = timestamp.tv_nsec;
 }
 
-grpc_grpclb_request *grpc_grpclb_load_report_request_create(
+static bool encode_string(pb_ostream_t *stream, const pb_field_t *field,
+                          void *const *arg) {
+  char *str = *arg;
+  if (!pb_encode_tag_for_field(stream, field)) return false;
+  return pb_encode_string(stream, (uint8_t *)str, strlen(str));
+}
+
+static bool encode_drops(pb_ostream_t *stream, const pb_field_t *field,
+                         void *const *arg) {
+  grpc_grpclb_dropped_call_counts *drop_entries = *arg;
+  if (drop_entries == NULL) return true;
+  for (size_t i = 0; i < drop_entries->num_entries; ++i) {
+    if (!pb_encode_tag_for_field(stream, field)) return false;
+    grpc_lb_v1_ClientStatsPerToken drop_message;
+    drop_message.load_balance_token.funcs.encode = encode_string;
+    drop_message.load_balance_token.arg = drop_entries->token_counts[i].token;
+    drop_message.has_num_calls = true;
+    drop_message.num_calls = drop_entries->token_counts[i].count;
+    if (!pb_encode_submessage(stream, grpc_lb_v1_ClientStatsPerToken_fields,
+                              &drop_message)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+grpc_grpclb_request *grpc_grpclb_load_report_request_create_locked(
     grpc_grpclb_client_stats *client_stats) {
   grpc_grpclb_request *req = gpr_zalloc(sizeof(grpc_grpclb_request));
   req->has_client_stats = true;
@@ -84,18 +110,17 @@ grpc_grpclb_request *grpc_grpclb_load_report_request_create(
   populate_timestamp(gpr_now(GPR_CLOCK_REALTIME), &req->client_stats.timestamp);
   req->client_stats.has_num_calls_started = true;
   req->client_stats.has_num_calls_finished = true;
-  req->client_stats.has_num_calls_finished_with_drop_for_rate_limiting = true;
-  req->client_stats.has_num_calls_finished_with_drop_for_load_balancing = true;
   req->client_stats.has_num_calls_finished_with_client_failed_to_send = true;
   req->client_stats.has_num_calls_finished_with_client_failed_to_send = true;
   req->client_stats.has_num_calls_finished_known_received = true;
-  grpc_grpclb_client_stats_get(
+  req->client_stats.calls_finished_with_drop.funcs.encode = encode_drops;
+  grpc_grpclb_client_stats_get_locked(
       client_stats, &req->client_stats.num_calls_started,
       &req->client_stats.num_calls_finished,
-      &req->client_stats.num_calls_finished_with_drop_for_rate_limiting,
-      &req->client_stats.num_calls_finished_with_drop_for_load_balancing,
       &req->client_stats.num_calls_finished_with_client_failed_to_send,
-      &req->client_stats.num_calls_finished_known_received);
+      &req->client_stats.num_calls_finished_known_received,
+      (grpc_grpclb_dropped_call_counts **)&req->client_stats
+          .calls_finished_with_drop.arg);
   return req;
 }
 
@@ -117,6 +142,11 @@ grpc_slice grpc_grpclb_request_encode(const grpc_grpclb_request *request) {
 }
 
 void grpc_grpclb_request_destroy(grpc_grpclb_request *request) {
+  if (request->has_client_stats) {
+    grpc_grpclb_dropped_call_counts *drop_entries =
+        request->client_stats.calls_finished_with_drop.arg;
+    grpc_grpclb_dropped_call_counts_destroy(drop_entries);
+  }
   gpr_free(request);
 }
 

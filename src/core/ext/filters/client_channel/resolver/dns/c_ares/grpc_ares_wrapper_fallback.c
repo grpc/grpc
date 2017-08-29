@@ -28,15 +28,16 @@ struct grpc_ares_request {
 static grpc_ares_request *grpc_dns_lookup_ares_impl(
     grpc_exec_ctx *exec_ctx, const char *dns_server, const char *name,
     const char *default_port, grpc_pollset_set *interested_parties,
-    grpc_closure *on_done, grpc_lb_addresses **addrs, bool check_grpclb) {
+    grpc_closure *on_done, grpc_lb_addresses **addrs, bool check_grpclb,
+    char **service_config_json) {
   return NULL;
 }
 
 grpc_ares_request *(*grpc_dns_lookup_ares)(
     grpc_exec_ctx *exec_ctx, const char *dns_server, const char *name,
     const char *default_port, grpc_pollset_set *interested_parties,
-    grpc_closure *on_done, grpc_lb_addresses **addrs,
-    bool check_grpclb) = grpc_dns_lookup_ares_impl;
+    grpc_closure *on_done, grpc_lb_addresses **addrs, bool check_grpclb,
+    char **service_config_json) = grpc_dns_lookup_ares_impl;
 
 void grpc_cancel_ares_request(grpc_exec_ctx *exec_ctx, grpc_ares_request *r) {}
 

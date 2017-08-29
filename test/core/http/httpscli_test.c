@@ -36,7 +36,8 @@ static gpr_mu *g_mu;
 static grpc_polling_entity g_pops;
 
 static grpc_millis n_seconds_time(int seconds) {
-  return grpc_timespec_to_millis(grpc_timeout_seconds_to_deadline(seconds));
+  return grpc_timespec_to_millis_round_up(
+      grpc_timeout_seconds_to_deadline(seconds));
 }
 
 static void on_finish(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {

@@ -111,6 +111,13 @@ char *grpc_transport_stream_op_batch_string(
     gpr_strvec_add(&b, tmp);
   }
 
+  if (op->collect_stats) {
+    gpr_strvec_add(&b, gpr_strdup(" "));
+    gpr_asprintf(&tmp, "COLLECT_STATS:%p",
+                 op->payload->collect_stats.collect_stats);
+    gpr_strvec_add(&b, tmp);
+  }
+
   out = gpr_strvec_flatten(&b, NULL);
   gpr_strvec_destroy(&b);
 

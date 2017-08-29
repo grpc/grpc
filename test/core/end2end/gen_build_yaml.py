@@ -24,9 +24,9 @@ import hashlib
 
 FixtureOptions = collections.namedtuple(
     'FixtureOptions',
-    'fullstack includes_proxy dns_resolver name_resolution secure platforms ci_mac tracing exclude_configs exclude_iomgrs large_writes enables_compression supports_compression is_inproc is_http2')
+    'fullstack includes_proxy dns_resolver name_resolution secure platforms ci_mac tracing exclude_configs exclude_iomgrs large_writes enables_compression supports_compression is_inproc is_http2 supports_proxy_auth')
 default_unsecure_fixture_options = FixtureOptions(
-    True, False, True, True, False, ['windows', 'linux', 'mac', 'posix'], True, False, [], [], True, False, True, False, True)
+    True, False, True, True, False, ['windows', 'linux', 'mac', 'posix'], True, False, [], [], True, False, True, False, True, False)
 socketpair_unsecure_fixture_options = default_unsecure_fixture_options._replace(fullstack=False, dns_resolver=False)
 default_secure_fixture_options = default_unsecure_fixture_options._replace(secure=True)
 uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, platforms=['linux', 'mac', 'posix'], exclude_iomgrs=['uv'])
@@ -47,7 +47,7 @@ END2END_FIXTURES = {
     'h2_full+trace': default_unsecure_fixture_options._replace(tracing=True),
     'h2_full+workarounds': default_unsecure_fixture_options,
     'h2_http_proxy': default_unsecure_fixture_options._replace(
-        ci_mac=False, exclude_iomgrs=['uv']),
+        ci_mac=False, exclude_iomgrs=['uv'], supports_proxy_auth=True),
     'h2_oauth2': default_secure_fixture_options._replace(
         ci_mac=False, exclude_iomgrs=['uv']),
     'h2_proxy': default_unsecure_fixture_options._replace(
@@ -69,8 +69,8 @@ END2END_FIXTURES = {
 
 TestOptions = collections.namedtuple(
     'TestOptions',
-    'needs_fullstack needs_dns needs_names proxyable secure traceable cpu_cost exclude_iomgrs large_writes flaky allows_compression needs_compression exclude_inproc needs_http2')
-default_test_options = TestOptions(False, False, False, True, False, True, 1.0, [], False, False, True, False, False, False)
+    'needs_fullstack needs_dns needs_names proxyable secure traceable cpu_cost exclude_iomgrs large_writes flaky allows_compression needs_compression exclude_inproc needs_http2 needs_proxy_auth')
+default_test_options = TestOptions(False, False, False, True, False, True, 1.0, [], False, False, True, False, False, False, False)
 connectivity_test_options = default_test_options._replace(needs_fullstack=True)
 
 LOWCPU = 0.1
@@ -128,6 +128,7 @@ END2END_TESTS = {
     'load_reporting_hook': default_test_options,
     'ping_pong_streaming': default_test_options._replace(cpu_cost=LOWCPU),
     'ping': connectivity_test_options._replace(proxyable=False, cpu_cost=LOWCPU),
+    'proxy_auth': default_test_options._replace(needs_proxy_auth=True),
     'registered_call': default_test_options,
     'request_with_flags': default_test_options._replace(
         proxyable=False, cpu_cost=LOWCPU),
@@ -136,6 +137,10 @@ END2END_TESTS = {
     'shutdown_finishes_calls': default_test_options._replace(cpu_cost=LOWCPU),
     'shutdown_finishes_tags': default_test_options._replace(cpu_cost=LOWCPU),
     'simple_cacheable_request': default_test_options._replace(cpu_cost=LOWCPU),
+    'stream_compression_compressed_payload': default_test_options._replace(proxyable=False,
+                                                               exclude_inproc=True),
+    'stream_compression_payload': default_test_options._replace(exclude_inproc=True),
+    'stream_compression_ping_pong_streaming': default_test_options._replace(exclude_inproc=True),
     'simple_delayed_request': connectivity_test_options,
     'simple_metadata': default_test_options,
     'simple_request': default_test_options,
@@ -177,6 +182,9 @@ def compatible(f, t):
       return False
   if END2END_TESTS[t].needs_http2:
     if not END2END_FIXTURES[f].is_http2:
+      return False
+  if END2END_TESTS[t].needs_proxy_auth:
+    if not END2END_FIXTURES[f].supports_proxy_auth:
       return False
   return True
 

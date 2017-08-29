@@ -186,7 +186,8 @@ static void watcher_timer_init(grpc_exec_ctx *exec_ctx, void *arg,
   watcher_timer_init_arg *wa = (watcher_timer_init_arg *)arg;
 
   grpc_timer_init(exec_ctx, &wa->w->alarm,
-                  grpc_timespec_to_millis(wa->deadline), &wa->w->on_timeout);
+                  grpc_timespec_to_millis_round_up(wa->deadline),
+                  &wa->w->on_timeout);
   gpr_free(wa);
 }
 
@@ -207,7 +208,7 @@ void grpc_channel_watch_connectivity_state(
       7, (channel, (int)last_observed_state, deadline.tv_sec, deadline.tv_nsec,
           (int)deadline.clock_type, cq, tag));
 
-  grpc_cq_begin_op(cq, tag);
+  GPR_ASSERT(grpc_cq_begin_op(cq, tag));
 
   gpr_mu_init(&w->mu);
   GRPC_CLOSURE_INIT(&w->on_complete, watch_complete, w,

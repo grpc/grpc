@@ -27,11 +27,9 @@ std::unique_ptr<GenericClientAsyncReaderWriter> GenericStub::Call(
     ClientContext* context, const grpc::string& method, CompletionQueue* cq,
     void* tag) {
   return std::unique_ptr<GenericClientAsyncReaderWriter>(
-      GenericClientAsyncReaderWriter::internal::Create(
+      GenericClientAsyncReaderWriter::Create(
           channel_.get(), cq,
-          internal::RpcMethod(method.c_str(),
-                              internal::RpcMethod::BIDI_STREAMING),
-          context, tag));
+          RpcMethod(method.c_str(), RpcMethod::BIDI_STREAMING), context, tag));
 }
 
 }  // namespace grpc

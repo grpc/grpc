@@ -17,6 +17,7 @@
 //
 // Service exported by server reflection
 //
+#pragma warning disable 1591
 #region Designer generated code
 
 using System;

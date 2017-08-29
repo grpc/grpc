@@ -50,7 +50,7 @@
 #include "src/core/lib/support/spinlock.h"
 
 /*******************************************************************************
- * Pollset-set sibling link
+ * Polling object
  */
 
 typedef enum {
@@ -381,8 +381,8 @@ static int fd_wrapped_fd(grpc_fd *fd) {
 
 static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                       grpc_closure *on_done, int *release_fd,
-                      const char *reason) {
-  bool is_fd_closed = false;
+                      bool already_closed, const char *reason) {
+  bool is_fd_closed = already_closed;
   grpc_error *error = GRPC_ERROR_NONE;
 
   gpr_mu_lock(&fd->pollable.po.mu);
@@ -393,7 +393,7 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
      descriptor fd->fd (but we still own the grpc_fd structure). */
   if (release_fd != NULL) {
     *release_fd = fd->fd;
-  } else {
+  } else if (!is_fd_closed) {
     close(fd->fd);
     is_fd_closed = true;
   }
@@ -439,12 +439,12 @@ static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
 
 static void fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                               grpc_closure *closure) {
-  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure);
+  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure, "read");
 }
 
 static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_closure *closure) {
-  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure);
+  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure, "write");
 }
 
 /*******************************************************************************
@@ -698,7 +698,7 @@ static int poll_deadline_to_millis_timeout(grpc_exec_ctx *exec_ctx,
 
 static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_pollset *notifier) {
-  grpc_lfev_set_ready(exec_ctx, &fd->read_closure);
+  grpc_lfev_set_ready(exec_ctx, &fd->read_closure, "read");
 
   /* Note, it is possible that fd_become_readable might be called twice with
      different 'notifier's when an fd becomes readable and it is in two epoll
@@ -710,7 +710,7 @@ static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 }
 
 static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
-  grpc_lfev_set_ready(exec_ctx, &fd->write_closure);
+  grpc_lfev_set_ready(exec_ctx, &fd->write_closure, "write");
 }
 
 static grpc_error *fd_become_pollable_locked(grpc_fd *fd) {
@@ -1037,8 +1037,8 @@ static grpc_error *pollset_add_fd_locked(grpc_exec_ctx *exec_ctx,
     /* Introduce a spurious completion.
        If we do not, then it may be that the fd-specific epoll set consumed
        a completion without being polled, leading to a missed edge going up. */
-    grpc_lfev_set_ready(exec_ctx, &had_fd->read_closure);
-    grpc_lfev_set_ready(exec_ctx, &had_fd->write_closure);
+    grpc_lfev_set_ready(exec_ctx, &had_fd->read_closure, "read");
+    grpc_lfev_set_ready(exec_ctx, &had_fd->write_closure, "write");
     pollset_kick_all(exec_ctx, pollset);
     pollset->current_pollable = &pollset->pollable;
     if (append_error(&error, pollable_materialize(&pollset->pollable),

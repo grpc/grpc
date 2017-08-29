@@ -138,10 +138,10 @@ namespace Grpc.Core.Tests
         [Test]
         public void WriteResponseHeaders_NullNotAllowed()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 Assert.ThrowsAsync(typeof(ArgumentNullException), async () => await context.WriteResponseHeadersAsync(null));
-                return "PASS";
+                return Task.FromResult("PASS");
             });
 
             Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), ""));
@@ -158,7 +158,7 @@ namespace Grpc.Core.Tests
                     await context.WriteResponseHeadersAsync(headers);
                     Assert.Fail();
                 }
-                catch (InvalidOperationException expected)
+                catch (InvalidOperationException)
                 {
                 }
                 return "PASS";
@@ -178,7 +178,7 @@ namespace Grpc.Core.Tests
                     await context.WriteResponseHeadersAsync(headers);
                     Assert.Fail();
                 }
-                catch (InvalidOperationException expected)
+                catch (InvalidOperationException)
                 {
                 }
                 await responseStream.WriteAsync("B");

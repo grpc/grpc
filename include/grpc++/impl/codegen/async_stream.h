@@ -30,7 +30,6 @@ namespace grpc {
 
 class CompletionQueue;
 
-namespace internal {
 /// Common interface for all client side asynchronous streaming.
 class ClientAsyncStreamingInterface {
  public:
@@ -147,41 +146,9 @@ class AsyncWriterInterface {
   }
 };
 
-}  // namespace internal
-
 template <class R>
-class ClientAsyncReaderInterface
-    : public internal::ClientAsyncStreamingInterface,
-      public internal::AsyncReaderInterface<R> {};
-
-/// Common interface for client side asynchronous writing.
-template <class W>
-class ClientAsyncWriterInterface
-    : public internal::ClientAsyncStreamingInterface,
-      public internal::AsyncWriterInterface<W> {
- public:
-  /// Signal the client is done with the writes (half-close the client stream).
-  /// Thread-safe with respect to \a AsyncReaderInterface::Read
-  ///
-  /// \param[in] tag The tag identifying the operation.
-  virtual void WritesDone(void* tag) = 0;
-};
-
-/// Async client-side interface for bi-directional streaming,
-/// where the client-to-server message stream has messages of type \a W,
-/// and the server-to-client message stream has messages of type \a R.
-template <class W, class R>
-class ClientAsyncReaderWriterInterface
-    : public internal::ClientAsyncStreamingInterface,
-      public internal::AsyncWriterInterface<W>,
-      public internal::AsyncReaderInterface<R> {
- public:
-  /// Signal the client is done with the writes (half-close the client stream).
-  /// Thread-safe with respect to \a AsyncReaderInterface::Read
-  ///
-  /// \param[in] tag The tag identifying the operation.
-  virtual void WritesDone(void* tag) = 0;
-};
+class ClientAsyncReaderInterface : public ClientAsyncStreamingInterface,
+                                   public AsyncReaderInterface<R> {};
 
 /// Async client-side API for doing server-streaming RPCs,
 /// where the incoming message stream coming from the server has
@@ -189,24 +156,21 @@ class ClientAsyncReaderWriterInterface
 template <class R>
 class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
  public:
-  struct internal {
-    /// Create a stream and write the first request out.
-    /// \a tag will be notified on \a cq when the call has been started and
-    /// \a request has been written out.
-    /// Note that \a context will be used to fill in custom initial metadata
-    /// used to send to the server when starting the call.
-    template <class W>
-    static ClientAsyncReader* Create(::grpc::ChannelInterface* channel,
-                                     CompletionQueue* cq,
-                                     const ::grpc::internal::RpcMethod& method,
-                                     ClientContext* context, const W& request,
-                                     void* tag) {
-      ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
-      return new (g_core_codegen_interface->grpc_call_arena_alloc(
-          call.call(), sizeof(ClientAsyncReader)))
-          ClientAsyncReader(call, context, request, tag);
-    }
-  };
+  /// Create a stream and write the first request out.
+  /// \a tag will be notified on \a cq when the call has been started and
+  /// \a request has been written out.
+  /// Note that \a context will be used to fill in custom initial metadata
+  /// used to send to the server when starting the call.
+  template <class W>
+  static ClientAsyncReader* Create(ChannelInterface* channel,
+                                   CompletionQueue* cq, const RpcMethod& method,
+                                   ClientContext* context, const W& request,
+                                   void* tag) {
+    Call call = channel->CreateCall(method, context, cq);
+    return new (g_core_codegen_interface->grpc_call_arena_alloc(
+        call.call(), sizeof(ClientAsyncReader)))
+        ClientAsyncReader(call, context, request, tag);
+  }
 
   // always allocated against a call arena, no memory free required
   static void operator delete(void* ptr, std::size_t size) {
@@ -254,8 +218,8 @@ class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
 
  private:
   template <class W>
-  ClientAsyncReader(::grpc::internal::Call call, ClientContext* context,
-                    const W& request, void* tag)
+  ClientAsyncReader(Call call, ClientContext* context, const W& request,
+                    void* tag)
       : context_(context), call_(call) {
     init_ops_.set_output_tag(tag);
     init_ops_.SendInitialMetadata(context->send_initial_metadata_,
@@ -267,19 +231,24 @@ class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
   }
 
   ClientContext* context_;
-  ::grpc::internal::Call call_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpSendMessage,
-                              ::grpc::internal::CallOpClientSendClose>
+  Call call_;
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpClientSendClose>
       init_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
-      meta_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                              ::grpc::internal::CallOpRecvMessage<R>>
-      read_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                              ::grpc::internal::CallOpClientRecvStatus>
-      finish_ops_;
+  CallOpSet<CallOpRecvInitialMetadata> meta_ops_;
+  CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>> read_ops_;
+  CallOpSet<CallOpRecvInitialMetadata, CallOpClientRecvStatus> finish_ops_;
+};
+
+/// Common interface for client side asynchronous writing.
+template <class W>
+class ClientAsyncWriterInterface : public ClientAsyncStreamingInterface,
+                                   public AsyncWriterInterface<W> {
+ public:
+  /// Signal the client is done with the writes (half-close the client stream).
+  /// Thread-safe with respect to \a AsyncReaderInterface::Read
+  ///
+  /// \param[in] tag The tag identifying the operation.
+  virtual void WritesDone(void* tag) = 0;
 };
 
 /// Async API on the client side for doing client-streaming RPCs,
@@ -288,27 +257,24 @@ class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
 template <class W>
 class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
  public:
-  struct internal {
-    /// Create a stream and write the first request out.
-    /// \a tag will be notified on \a cq when the call has been started (i.e.
-    /// intitial metadata sent) and \a request has been written out.
-    /// Note that \a context will be used to fill in custom initial metadata
-    /// used to send to the server when starting the call.
-    /// \a response will be filled in with the single expected response
-    /// message from the server upon a successful call to the \a Finish
-    /// method of this instance.
-    template <class R>
-    static ClientAsyncWriter* Create(::grpc::ChannelInterface* channel,
-                                     CompletionQueue* cq,
-                                     const ::grpc::internal::RpcMethod& method,
-                                     ClientContext* context, R* response,
-                                     void* tag) {
-      ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
-      return new (g_core_codegen_interface->grpc_call_arena_alloc(
-          call.call(), sizeof(ClientAsyncWriter)))
-          ClientAsyncWriter(call, context, response, tag);
-    }
-  };
+  /// Create a stream and write the first request out.
+  /// \a tag will be notified on \a cq when the call has been started (i.e.
+  /// intitial metadata sent) and \a request has been written out.
+  /// Note that \a context will be used to fill in custom initial metadata
+  /// used to send to the server when starting the call.
+  /// \a response will be filled in with the single expected response
+  /// message from the server upon a successful call to the \a Finish
+  /// method of this instance.
+  template <class R>
+  static ClientAsyncWriter* Create(ChannelInterface* channel,
+                                   CompletionQueue* cq, const RpcMethod& method,
+                                   ClientContext* context, R* response,
+                                   void* tag) {
+    Call call = channel->CreateCall(method, context, cq);
+    return new (g_core_codegen_interface->grpc_call_arena_alloc(
+        call.call(), sizeof(ClientAsyncWriter)))
+        ClientAsyncWriter(call, context, response, tag);
+  }
 
   // always allocated against a call arena, no memory free required
   static void operator delete(void* ptr, std::size_t size) {
@@ -372,8 +338,7 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
 
  private:
   template <class R>
-  ClientAsyncWriter(::grpc::internal::Call call, ClientContext* context,
-                    R* response, void* tag)
+  ClientAsyncWriter(Call call, ClientContext* context, R* response, void* tag)
       : context_(context), call_(call) {
     finish_ops_.RecvMessage(response);
     finish_ops_.AllowNoMessage();
@@ -391,17 +356,28 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
   }
 
   ClientContext* context_;
-  ::grpc::internal::Call call_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
-      meta_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpSendMessage,
-                              ::grpc::internal::CallOpClientSendClose>
+  Call call_;
+  CallOpSet<CallOpRecvInitialMetadata> meta_ops_;
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpClientSendClose>
       write_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                              ::grpc::internal::CallOpGenericRecvMessage,
-                              ::grpc::internal::CallOpClientRecvStatus>
+  CallOpSet<CallOpRecvInitialMetadata, CallOpGenericRecvMessage,
+            CallOpClientRecvStatus>
       finish_ops_;
+};
+
+/// Async client-side interface for bi-directional streaming,
+/// where the client-to-server message stream has messages of type \a W,
+/// and the server-to-client message stream has messages of type \a R.
+template <class W, class R>
+class ClientAsyncReaderWriterInterface : public ClientAsyncStreamingInterface,
+                                         public AsyncWriterInterface<W>,
+                                         public AsyncReaderInterface<R> {
+ public:
+  /// Signal the client is done with the writes (half-close the client stream).
+  /// Thread-safe with respect to \a AsyncReaderInterface::Read
+  ///
+  /// \param[in] tag The tag identifying the operation.
+  virtual void WritesDone(void* tag) = 0;
 };
 
 /// Async client-side interface for bi-directional streaming,
@@ -412,23 +388,21 @@ template <class W, class R>
 class ClientAsyncReaderWriter final
     : public ClientAsyncReaderWriterInterface<W, R> {
  public:
-  struct internal {
-    /// Create a stream and write the first request out.
-    /// \a tag will be notified on \a cq when the call has been started (i.e.
-    /// intitial metadata sent).
-    /// Note that \a context will be used to fill in custom initial metadata
-    /// used to send to the server when starting the call.
-    static ClientAsyncReaderWriter* Create(
-        ::grpc::ChannelInterface* channel, CompletionQueue* cq,
-        const ::grpc::internal::RpcMethod& method, ClientContext* context,
-        void* tag) {
-      ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
+  /// Create a stream and write the first request out.
+  /// \a tag will be notified on \a cq when the call has been started (i.e.
+  /// intitial metadata sent).
+  /// Note that \a context will be used to fill in custom initial metadata
+  /// used to send to the server when starting the call.
+  static ClientAsyncReaderWriter* Create(ChannelInterface* channel,
+                                         CompletionQueue* cq,
+                                         const RpcMethod& method,
+                                         ClientContext* context, void* tag) {
+    Call call = channel->CreateCall(method, context, cq);
 
-      return new (g_core_codegen_interface->grpc_call_arena_alloc(
-          call.call(), sizeof(ClientAsyncReaderWriter)))
-          ClientAsyncReaderWriter(call, context, tag);
-    }
-  };
+    return new (g_core_codegen_interface->grpc_call_arena_alloc(
+        call.call(), sizeof(ClientAsyncReaderWriter)))
+        ClientAsyncReaderWriter(call, context, tag);
+  }
 
   // always allocated against a call arena, no memory free required
   static void operator delete(void* ptr, std::size_t size) {
@@ -497,8 +471,7 @@ class ClientAsyncReaderWriter final
   }
 
  private:
-  ClientAsyncReaderWriter(::grpc::internal::Call call, ClientContext* context,
-                          void* tag)
+  ClientAsyncReaderWriter(Call call, ClientContext* context, void* tag)
       : context_(context), call_(call) {
     if (context_->initial_metadata_corked_) {
       // if corked bit is set in context, we buffer up the initial metadata to
@@ -514,25 +487,17 @@ class ClientAsyncReaderWriter final
   }
 
   ClientContext* context_;
-  ::grpc::internal::Call call_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
-      meta_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                              ::grpc::internal::CallOpRecvMessage<R>>
-      read_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpSendMessage,
-                              ::grpc::internal::CallOpClientSendClose>
+  Call call_;
+  CallOpSet<CallOpRecvInitialMetadata> meta_ops_;
+  CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>> read_ops_;
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpClientSendClose>
       write_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                              ::grpc::internal::CallOpClientRecvStatus>
-      finish_ops_;
+  CallOpSet<CallOpRecvInitialMetadata, CallOpClientRecvStatus> finish_ops_;
 };
 
 template <class W, class R>
-class ServerAsyncReaderInterface
-    : public internal::ServerAsyncStreamingInterface,
-      public internal::AsyncReaderInterface<R> {
+class ServerAsyncReaderInterface : public ServerAsyncStreamingInterface,
+                                   public AsyncReaderInterface<R> {
  public:
   /// Indicate that the stream is to be finished with a certain status code
   /// and also send out \a msg response to the client.
@@ -574,89 +539,6 @@ class ServerAsyncReaderInterface
   /// \param[in] status To be sent to the client as the result of this call.
   ///     - Note: \a status must have a non-OK code.
   virtual void FinishWithError(const Status& status, void* tag) = 0;
-};
-
-template <class W>
-class ServerAsyncWriterInterface
-    : public internal::ServerAsyncStreamingInterface,
-      public internal::AsyncWriterInterface<W> {
- public:
-  /// Indicate that the stream is to be finished with a certain status code.
-  /// Request notification for when the server has sent the appropriate
-  /// signals to the client to end the call.
-  /// Should not be used concurrently with other operations.
-  ///
-  /// It is appropriate to call this method when either:
-  ///   * all messages from the client have been received (either known
-  ///     implictly, or explicitly because a previous \a
-  ///     AsyncReaderInterface::Read operation with a non-ok
-  ///     result (e.g., cq->Next(&read_tag, &ok) filled in 'ok' with 'false'.
-  ///   * it is desired to end the call early with some non-OK status code.
-  ///
-  /// This operation will end when the server has finished sending out initial
-  /// metadata (if not sent already), response message, and status, or if
-  /// some failure occurred when trying to do so.
-  ///
-  /// \param[in] tag Tag identifying this request.
-  /// \param[in] status To be sent to the client as the result of this call.
-  virtual void Finish(const Status& status, void* tag) = 0;
-
-  /// Request the writing of \a msg and coalesce it with trailing metadata which
-  /// contains \a status, using WriteOptions options with
-  /// identifying tag \a tag.
-  ///
-  /// WriteAndFinish is equivalent of performing WriteLast and Finish
-  /// in a single step.
-  ///
-  /// \param[in] msg The message to be written.
-  /// \param[in] options The WriteOptions to be used to write this message.
-  /// \param[in] status The Status that server returns to client.
-  /// \param[in] tag The tag identifying the operation.
-  virtual void WriteAndFinish(const W& msg, WriteOptions options,
-                              const Status& status, void* tag) = 0;
-};
-
-/// Server-side interface for asynchronous bi-directional streaming.
-template <class W, class R>
-class ServerAsyncReaderWriterInterface
-    : public internal::ServerAsyncStreamingInterface,
-      public internal::AsyncWriterInterface<W>,
-      public internal::AsyncReaderInterface<R> {
- public:
-  /// Indicate that the stream is to be finished with a certain status code.
-  /// Request notification for when the server has sent the appropriate
-  /// signals to the client to end the call.
-  /// Should not be used concurrently with other operations.
-  ///
-  /// It is appropriate to call this method when either:
-  ///   * all messages from the client have been received (either known
-  ///     implictly, or explicitly because a previous \a
-  ///     AsyncReaderInterface::Read operation
-  ///     with a non-ok result (e.g., cq->Next(&read_tag, &ok) filled in 'ok'
-  ///     with 'false'.
-  ///   * it is desired to end the call early with some non-OK status code.
-  ///
-  /// This operation will end when the server has finished sending out initial
-  /// metadata (if not sent already), response message, and status, or if some
-  /// failure occurred when trying to do so.
-  ///
-  /// \param[in] tag Tag identifying this request.
-  /// \param[in] status To be sent to the client as the result of this call.
-  virtual void Finish(const Status& status, void* tag) = 0;
-
-  /// Request the writing of \a msg and coalesce it with trailing metadata which
-  /// contains \a status, using WriteOptions options with
-  /// identifying tag \a tag.
-  ///
-  /// WriteAndFinish is equivalent of performing WriteLast and Finish in a
-  /// single step.
-  ///
-  /// \param[in] msg The message to be written.
-  /// \param[in] options The WriteOptions to be used to write this message.
-  /// \param[in] status The Status that server returns to client.
-  /// \param[in] tag The tag identifying the operation.
-  virtual void WriteAndFinish(const W& msg, WriteOptions options,
-                              const Status& status, void* tag) = 0;
 };
 
 /// Async server-side API for doing client-streaming RPCs,
@@ -742,17 +624,54 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
   }
 
  private:
-  void BindCall(::grpc::internal::Call* call) override { call_ = *call; }
+  void BindCall(Call* call) override { call_ = *call; }
 
-  ::grpc::internal::Call call_;
+  Call call_;
   ServerContext* ctx_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
-      meta_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvMessage<R>> read_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpSendMessage,
-                              ::grpc::internal::CallOpServerSendStatus>
+  CallOpSet<CallOpSendInitialMetadata> meta_ops_;
+  CallOpSet<CallOpRecvMessage<R>> read_ops_;
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
+            CallOpServerSendStatus>
       finish_ops_;
+};
+
+template <class W>
+class ServerAsyncWriterInterface : public ServerAsyncStreamingInterface,
+                                   public AsyncWriterInterface<W> {
+ public:
+  /// Indicate that the stream is to be finished with a certain status code.
+  /// Request notification for when the server has sent the appropriate
+  /// signals to the client to end the call.
+  /// Should not be used concurrently with other operations.
+  ///
+  /// It is appropriate to call this method when either:
+  ///   * all messages from the client have been received (either known
+  ///     implictly, or explicitly because a previous \a
+  ///     AsyncReaderInterface::Read operation with a non-ok
+  ///     result (e.g., cq->Next(&read_tag, &ok) filled in 'ok' with 'false'.
+  ///   * it is desired to end the call early with some non-OK status code.
+  ///
+  /// This operation will end when the server has finished sending out initial
+  /// metadata (if not sent already), response message, and status, or if
+  /// some failure occurred when trying to do so.
+  ///
+  /// \param[in] tag Tag identifying this request.
+  /// \param[in] status To be sent to the client as the result of this call.
+  virtual void Finish(const Status& status, void* tag) = 0;
+
+  /// Request the writing of \a msg and coalesce it with trailing metadata which
+  /// contains \a status, using WriteOptions options with
+  /// identifying tag \a tag.
+  ///
+  /// WriteAndFinish is equivalent of performing WriteLast and Finish
+  /// in a single step.
+  ///
+  /// \param[in] msg The message to be written.
+  /// \param[in] options The WriteOptions to be used to write this message.
+  /// \param[in] status The Status that server returns to client.
+  /// \param[in] tag The tag identifying the operation.
+  virtual void WriteAndFinish(const W& msg, WriteOptions options,
+                              const Status& status, void* tag) = 0;
 };
 
 /// Async server-side API for doing server streaming RPCs,
@@ -836,7 +755,7 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
   }
 
  private:
-  void BindCall(::grpc::internal::Call* call) override { call_ = *call; }
+  void BindCall(Call* call) override { call_ = *call; }
 
   template <class T>
   void EnsureInitialMetadataSent(T* ops) {
@@ -850,17 +769,55 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
     }
   }
 
-  ::grpc::internal::Call call_;
+  Call call_;
   ServerContext* ctx_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
-      meta_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpSendMessage,
-                              ::grpc::internal::CallOpServerSendStatus>
+  CallOpSet<CallOpSendInitialMetadata> meta_ops_;
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
+            CallOpServerSendStatus>
       write_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpServerSendStatus>
-      finish_ops_;
+  CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> finish_ops_;
+};
+
+/// Server-side interface for asynchronous bi-directional streaming.
+template <class W, class R>
+class ServerAsyncReaderWriterInterface : public ServerAsyncStreamingInterface,
+                                         public AsyncWriterInterface<W>,
+                                         public AsyncReaderInterface<R> {
+ public:
+  /// Indicate that the stream is to be finished with a certain status code.
+  /// Request notification for when the server has sent the appropriate
+  /// signals to the client to end the call.
+  /// Should not be used concurrently with other operations.
+  ///
+  /// It is appropriate to call this method when either:
+  ///   * all messages from the client have been received (either known
+  ///     implictly, or explicitly because a previous \a
+  ///     AsyncReaderInterface::Read operation
+  ///     with a non-ok result (e.g., cq->Next(&read_tag, &ok) filled in 'ok'
+  ///     with 'false'.
+  ///   * it is desired to end the call early with some non-OK status code.
+  ///
+  /// This operation will end when the server has finished sending out initial
+  /// metadata (if not sent already), response message, and status, or if some
+  /// failure occurred when trying to do so.
+  ///
+  /// \param[in] tag Tag identifying this request.
+  /// \param[in] status To be sent to the client as the result of this call.
+  virtual void Finish(const Status& status, void* tag) = 0;
+
+  /// Request the writing of \a msg and coalesce it with trailing metadata which
+  /// contains \a status, using WriteOptions options with
+  /// identifying tag \a tag.
+  ///
+  /// WriteAndFinish is equivalent of performing WriteLast and Finish in a
+  /// single step.
+  ///
+  /// \param[in] msg The message to be written.
+  /// \param[in] options The WriteOptions to be used to write this message.
+  /// \param[in] status The Status that server returns to client.
+  /// \param[in] tag The tag identifying the operation.
+  virtual void WriteAndFinish(const W& msg, WriteOptions options,
+                              const Status& status, void* tag) = 0;
 };
 
 /// Async server-side API for doing bidirectional streaming RPCs,
@@ -955,7 +912,7 @@ class ServerAsyncReaderWriter final
  private:
   friend class ::grpc::Server;
 
-  void BindCall(::grpc::internal::Call* call) override { call_ = *call; }
+  void BindCall(Call* call) override { call_ = *call; }
 
   template <class T>
   void EnsureInitialMetadataSent(T* ops) {
@@ -969,18 +926,14 @@ class ServerAsyncReaderWriter final
     }
   }
 
-  ::grpc::internal::Call call_;
+  Call call_;
   ServerContext* ctx_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
-      meta_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvMessage<R>> read_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpSendMessage,
-                              ::grpc::internal::CallOpServerSendStatus>
+  CallOpSet<CallOpSendInitialMetadata> meta_ops_;
+  CallOpSet<CallOpRecvMessage<R>> read_ops_;
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
+            CallOpServerSendStatus>
       write_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpServerSendStatus>
-      finish_ops_;
+  CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> finish_ops_;
 };
 
 }  // namespace grpc

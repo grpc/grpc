@@ -55,22 +55,24 @@ RUN echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | tee -
   apt-get update && apt-get install -y google-cloud-sdk && apt-get clean && \
   gcloud config set component_manager/disable_update_check true
 
-# Download and install grpc-java
+# Install Android SDK
 WORKDIR /
-RUN git clone https://github.com/grpc/grpc-java.git
-WORKDIR /grpc-java
-RUN ./gradlew install
+RUN mkdir android-sdk
+WORKDIR android-sdk
+RUN wget -q https://dl.google.com/android/repository/tools_r25.2.5-linux.zip && \
+  unzip -qq tools_r25.2.5-linux.zip && \
+  rm tools_r25.2.5-linux.zip && \
+  echo y | tools/bin/sdkmanager "platforms;android-22" && \
+  echo y | tools/bin/sdkmanager "build-tools;25.0.2" && \
+  echo y | tools/bin/sdkmanager "extras;android;m2repository" && \
+  echo y | tools/bin/sdkmanager "extras;google;google_play_services" && \
+  echo y | tools/bin/sdkmanager "extras;google;m2repository" && \
+  echo y | tools/bin/sdkmanager "patcher;v4" && \
+  echo y | tools/bin/sdkmanager "platform-tools"
+ENV ANDROID_HOME "/android-sdk"
 
-# Setup the Android SDK licenses
-ENV ANDROID_HOME "/grpc-java/android-interop-testing/.android"
-RUN mkdir -p "${ANDROID_HOME}/licenses"
-RUN echo -e "\n8933bad161af4178b1185d1a37fbf41ea5269c55" > "${ANDROID_HOME}/licenses/android-sdk-license"
-RUN echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > "${ANDROID_HOME}/licenses/android-sdk-preview-license"
-
-# Build the Android interop apks
-WORKDIR /grpc-java/android-interop-testing
-RUN ../gradlew assembleDebug
-RUN ../gradlew assembleDebugAndroidTest
+# Reset the working directory
+WORKDIR /
 
 # Define the default command.
 CMD ["bash"]

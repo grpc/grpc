@@ -391,7 +391,7 @@ static tsi_result fake_handshaker_result_create_frame_protector(
 }
 
 static tsi_result fake_handshaker_result_get_unused_bytes(
-    const tsi_handshaker_result *self, unsigned char **bytes,
+    const tsi_handshaker_result *self, const unsigned char **bytes,
     size_t *bytes_size) {
   fake_handshaker_result *result = (fake_handshaker_result *)self;
   *bytes_size = result->unused_bytes_size;
@@ -407,8 +407,10 @@ static void fake_handshaker_result_destroy(tsi_handshaker_result *self) {
 
 static const tsi_handshaker_result_vtable handshaker_result_vtable = {
     fake_handshaker_result_extract_peer,
+    NULL, /* create_zero_copy_grpc_protector */
     fake_handshaker_result_create_frame_protector,
-    fake_handshaker_result_get_unused_bytes, fake_handshaker_result_destroy,
+    fake_handshaker_result_get_unused_bytes,
+    fake_handshaker_result_destroy,
 };
 
 static tsi_result fake_handshaker_result_create(
@@ -530,7 +532,7 @@ static void fake_handshaker_destroy(tsi_handshaker *self) {
 
 static tsi_result fake_handshaker_next(
     tsi_handshaker *self, const unsigned char *received_bytes,
-    size_t received_bytes_size, unsigned char **bytes_to_send,
+    size_t received_bytes_size, const unsigned char **bytes_to_send,
     size_t *bytes_to_send_size, tsi_handshaker_result **handshaker_result,
     tsi_handshaker_on_next_done_cb cb, void *user_data) {
   /* Sanity check the arguments. */

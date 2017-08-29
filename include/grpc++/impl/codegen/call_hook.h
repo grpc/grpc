@@ -21,7 +21,6 @@
 
 namespace grpc {
 
-namespace internal {
 class CallOpSetInterface;
 class Call;
 
@@ -32,7 +31,6 @@ class CallHook {
   virtual ~CallHook() {}
   virtual void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) = 0;
 };
-}  // namespace internal
 
 }  // namespace grpc
 

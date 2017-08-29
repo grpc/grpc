@@ -170,8 +170,9 @@ int grpc_fd_wrapped_fd(grpc_fd *fd) {
 }
 
 void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
-                    int *release_fd, const char *reason) {
-  g_event_engine->fd_orphan(exec_ctx, fd, on_done, release_fd, reason);
+                    int *release_fd, bool already_closed, const char *reason) {
+  g_event_engine->fd_orphan(exec_ctx, fd, on_done, release_fd, already_closed,
+                            reason);
 }
 
 void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {

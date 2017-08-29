@@ -5,8 +5,7 @@ gRPC C core based implementations (those contained in this repository) expose
 some configuration as environment variables that can be set.
 
 * http_proxy
-  The URI of the proxy to use for HTTP CONNECT support.  Does not currently
-  support username or password information in the URI.
+  The URI of the proxy to use for HTTP CONNECT support.
 
 * GRPC_ABORT_ON_LEAKS
   A debugging aid to cause a call to abort() when gRPC objects are leaked past
@@ -40,6 +39,7 @@ some configuration as environment variables that can be set.
   gRPC C core is processing requests via debug logs. Available tracers include:
   - api - traces api calls to the C core
   - bdp_estimator - traces behavior of bdp estimation logic
+  - call_combiner - traces call combiner state
   - call_error - traces the possible errors contributing to final call status
   - channel - traces operations on the C core channel stack
   - client_channel - traces client channel activity, including resolver
@@ -70,6 +70,7 @@ some configuration as environment variables that can be set.
 
   The following tracers will only run in binaries built in DEBUG mode. This is
   accomplished by invoking `CONFIG=dbg make <target>`
+  - alarm_refcount - refcounting traces for grpc_alarm structure
   - metadata - tracks creation and mutation of metadata
   - closure - tracks closure creation, scheduling, and completion
   - pending_tags - traces still-in-progress tags on completion queues
@@ -102,6 +103,9 @@ some configuration as environment variables that can be set.
   - DEBUG - log all gRPC messages
   - INFO - log INFO and ERROR message
   - ERROR - log only errors
+
+* GRPC_TRACE_FUZZER
+  if set, the fuzzers will output trace (it is usually supressed).
 
 * GRPC_DNS_RESOLVER
   Declares which DNS resolver to use. The default is ares if gRPC is built with
