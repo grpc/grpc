@@ -25,7 +25,7 @@ namespace grpc_php_generator {
 
 grpc::string GenerateFile(const grpc::protobuf::FileDescriptor *file,
                           const grpc::protobuf::ServiceDescriptor *service,
-                          const grpc::string &parameter);
+                          const grpc::string &class_suffix);
 
 }  // namespace grpc_php_generator
 

@@ -44,7 +44,7 @@ typedef struct {
 
 /** Create a request for a gRPC LB service under \a lb_service_name */
 grpc_grpclb_request *grpc_grpclb_request_create(const char *lb_service_name);
-grpc_grpclb_request *grpc_grpclb_load_report_request_create(
+grpc_grpclb_request *grpc_grpclb_load_report_request_create_locked(
     grpc_grpclb_client_stats *client_stats);
 
 /** Protocol Buffers v3-encode \a request */

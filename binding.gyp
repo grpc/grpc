@@ -175,21 +175,28 @@
       }],
       ['OS == "mac"', {
         'xcode_settings': {
-          'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          'OTHER_CFLAGS': [
+              '-g',
+              '-Wall',
+              '-Wextra',
+              '-Werror',
+              '-Wno-long-long',
+              '-Wno-unused-parameter',
+              '-DOSATOMIC_USE_INLINED=1',
+          ],
+          'OTHER_CPLUSPLUSFLAGS': [
+              '-g',
+              '-Wall',
+              '-Wextra',
+              '-Werror',
+              '-Wno-long-long',
+              '-Wno-unused-parameter',
+              '-DOSATOMIC_USE_INLINED=1',
+            '-stdlib=libc++',
+            '-std=c++11',
+            '-Wno-error=deprecated-declarations'
+          ],
         },
-        'OTHER_CFLAGS': [
-            '-g',
-            '-Wall',
-            '-Wextra',
-            '-Werror',
-            '-Wno-long-long',
-            '-Wno-unused-parameter',
-            '-DOSATOMIC_USE_INLINED=1',
-        ],
-        'OTHER_CPLUSPLUSFLAGS': [
-          '-stdlib=libc++',
-          '-std=c++11'
-        ],
       }]
     ]
   },
@@ -508,6 +515,13 @@
             'third_party/boringssl/ssl/tls_method.c',
             'third_party/boringssl/ssl/tls_record.c',
           ],
+          'conditions': [
+            ['OS == "mac"', {
+              'xcode_settings': {
+                'MACOSX_DEPLOYMENT_TARGET': '10.9'
+              }
+            }]
+          ]
         },
       ],
     }],
@@ -626,6 +640,13 @@
         'src/core/lib/support/tmpfile_windows.c',
         'src/core/lib/support/wrap_memcpy.c',
       ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
     },
     {
       'target_name': 'grpc',
@@ -651,6 +672,7 @@
         'src/core/lib/http/format_request.c',
         'src/core/lib/http/httpcli.c',
         'src/core/lib/http/parser.c',
+        'src/core/lib/iomgr/call_combiner.c',
         'src/core/lib/iomgr/closure.c',
         'src/core/lib/iomgr/combiner.c',
         'src/core/lib/iomgr/endpoint.c',
@@ -668,6 +690,9 @@
         'src/core/lib/iomgr/ev_windows.c',
         'src/core/lib/iomgr/exec_ctx.c',
         'src/core/lib/iomgr/executor.c',
+        'src/core/lib/iomgr/gethostname_fallback.c',
+        'src/core/lib/iomgr/gethostname_host_name_max.c',
+        'src/core/lib/iomgr/gethostname_sysconf.c',
         'src/core/lib/iomgr/iocp_windows.c',
         'src/core/lib/iomgr/iomgr.c',
         'src/core/lib/iomgr/iomgr_posix.c',
@@ -769,6 +794,7 @@
         'src/core/ext/transport/chttp2/transport/bin_encoder.c',
         'src/core/ext/transport/chttp2/transport/chttp2_plugin.c',
         'src/core/ext/transport/chttp2/transport/chttp2_transport.c',
+        'src/core/ext/transport/chttp2/transport/flow_control.c',
         'src/core/ext/transport/chttp2/transport/frame_data.c',
         'src/core/ext/transport/chttp2/transport/frame_goaway.c',
         'src/core/ext/transport/chttp2/transport/frame_ping.c',
@@ -818,6 +844,7 @@
         'src/core/tsi/fake_transport_security.c',
         'src/core/tsi/gts_transport_security.c',
         'src/core/tsi/ssl_transport_security.c',
+        'src/core/tsi/transport_security_grpc.c',
         'src/core/tsi/transport_security.c',
         'src/core/tsi/transport_security_adapter.c',
         'src/core/ext/transport/chttp2/server/chttp2_server.c',
@@ -891,6 +918,13 @@
         'src/core/ext/filters/workarounds/workaround_utils.c',
         'src/core/plugin_registry/grpc_plugin_registry.c',
       ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
     },
     {
       'include_dirs': [
@@ -916,6 +950,11 @@
           'ldflags': [
             '-Wl,-wrap,memcpy'
           ]
+        }],
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
         }]
       ],
       "target_name": "grpc_node",

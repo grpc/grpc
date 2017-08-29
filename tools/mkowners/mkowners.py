@@ -164,7 +164,6 @@ def expand_directives(root, directives):
       if intersect:
         for f in sorted(files_add): # sorted to ensure merge stability
           if f not in intersect:
-            print("X", root, glob_add, glob_have)
             out_globs[os.path.relpath(f, start=root)] = who_add
         for who in who_have:
           if who not in out_globs[glob_add]:
@@ -185,7 +184,6 @@ def add_parent_to_globs(parent, globs, globs_dir):
           if intersect:
             for f in sorted(files_child): # sorted to ensure merge stability
               if f not in intersect:
-                print("Y", full_dir(owners.dir, oglob), full_dir(globs_dir, gglob))
                 who = gglob_who_orig.copy()
                 globs[os.path.relpath(f, start=globs_dir)] = who
             for who in oglob_who:

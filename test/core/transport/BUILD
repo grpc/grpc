@@ -36,6 +36,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "byte_stream_test",
+    srcs = ["byte_stream_test.c"],
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "connectivity_state_test",
     srcs = ["connectivity_state_test.c"],
     language = "C",

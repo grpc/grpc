@@ -18,6 +18,7 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using Grpc.Core;
 using NUnit.Framework;
 
@@ -74,6 +75,20 @@ namespace Grpc.Core.Tests
             var coreVersion = GrpcEnvironment.GetCoreVersionString();
             var parts = coreVersion.Split('.');
             Assert.AreEqual(3, parts.Length);
+        }
+
+        [Test]
+        public void ShuttingDownEventIsFired()
+        {
+            var cts = new CancellationTokenSource();
+            var handler = new EventHandler((sender, args) => { cts.Cancel(); });
+            
+            GrpcEnvironment.ShuttingDown += handler;
+            var env = GrpcEnvironment.AddRef();
+            GrpcEnvironment.ReleaseAsync().Wait();
+            GrpcEnvironment.ShuttingDown -= handler;
+            
+            Assert.IsTrue(cts.Token.IsCancellationRequested);
         }
     }
 }

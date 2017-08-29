@@ -33,6 +33,7 @@ CONFIG = [
     'host',
     'grpc-timeout',
     'grpc-internal-encoding-request',
+    'grpc-internal-stream-encoding-request',
     'grpc-payload-bin',
     ':path',
     'grpc-encoding',
@@ -89,6 +90,8 @@ CONFIG = [
     ('authorization', ''),
     ('cache-control', ''),
     ('content-disposition', ''),
+    ('content-encoding', 'identity'),
+    ('content-encoding', 'gzip'),
     ('content-encoding', ''),
     ('content-language', ''),
     ('content-length', ''),
@@ -145,7 +148,10 @@ METADATA_BATCH_CALLOUTS = [
     'grpc-tags-bin',
     'grpc-trace-bin',
     'content-type',
+    'content-encoding',
+    'accept-encoding',
     'grpc-internal-encoding-request',
+    'grpc-internal-stream-encoding-request',
     'user-agent',
     'host',
     'lb-token',
@@ -157,6 +163,10 @@ COMPRESSION_ALGORITHMS = [
     'gzip',
 ]
 
+STREAM_COMPRESSION_ALGORITHMS = [
+    'identity',
+    'gzip',
+]
 
 # utility: mangle the name of a config
 def mangle(elem, name=None):
@@ -250,6 +260,18 @@ for mask in range(1, 1 << len(COMPRESSION_ALGORITHMS)):
   if elem not in all_elems:
     all_elems.append(elem)
   compression_elems.append(elem)
+  static_userdata[elem] = 1 + (mask | 1)
+stream_compression_elems = []
+for mask in range(1, 1 << len(STREAM_COMPRESSION_ALGORITHMS)):
+  val = ','.join(STREAM_COMPRESSION_ALGORITHMS[alg]
+                 for alg in range(0, len(STREAM_COMPRESSION_ALGORITHMS))
+                 if (1 << alg) & mask)
+  elem = ('accept-encoding', val)
+  if val not in all_strs:
+    all_strs.append(val)
+  if elem not in all_elems:
+    all_elems.append(elem)
+  stream_compression_elems.append(elem)
   static_userdata[elem] = 1 + (mask | 1)
 
 # output configuration
@@ -544,6 +566,16 @@ print >> C, '};'
 print >> C
 
 print >> H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
+print >> H
+
+print >> H, 'extern const uint8_t grpc_static_accept_stream_encoding_metadata[%d];' % (
+    1 << len(STREAM_COMPRESSION_ALGORITHMS))
+print >> C, 'const uint8_t grpc_static_accept_stream_encoding_metadata[%d] = {' % (
+    1 << len(STREAM_COMPRESSION_ALGORITHMS))
+print >> C, '0,%s' % ','.join('%d' % md_idx(elem) for elem in stream_compression_elems)
+print >> C, '};'
+
+print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
 
 print >> H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
 

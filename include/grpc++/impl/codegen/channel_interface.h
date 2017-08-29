@@ -24,8 +24,10 @@
 #include <grpc/impl/codegen/connectivity_state.h>
 
 namespace grpc {
-class ChannelInterface;
+class Call;
 class ClientContext;
+class RpcMethod;
+class CallOpSetInterface;
 class CompletionQueue;
 
 template <class R>
@@ -42,16 +44,6 @@ template <class W, class R>
 class ClientAsyncReaderWriter;
 template <class R>
 class ClientAsyncResponseReader;
-
-namespace internal {
-class Call;
-class CallOpSetInterface;
-class RpcMethod;
-template <class InputMessage, class OutputMessage>
-Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
-                         ClientContext* context, const InputMessage& request,
-                         OutputMessage* result);
-}  // namespace internal
 
 /// Codegen interface for \a grpc::Channel.
 class ChannelInterface {
@@ -104,16 +96,15 @@ class ChannelInterface {
   template <class R>
   friend class ::grpc::ClientAsyncResponseReader;
   template <class InputMessage, class OutputMessage>
-  friend Status(::grpc::internal::BlockingUnaryCall)(
-      ChannelInterface* channel, const internal::RpcMethod& method,
-      ClientContext* context, const InputMessage& request,
-      OutputMessage* result);
-  friend class ::grpc::internal::RpcMethod;
-  virtual internal::Call CreateCall(const internal::RpcMethod& method,
-                                    ClientContext* context,
-                                    CompletionQueue* cq) = 0;
-  virtual void PerformOpsOnCall(internal::CallOpSetInterface* ops,
-                                internal::Call* call) = 0;
+  friend Status BlockingUnaryCall(ChannelInterface* channel,
+                                  const RpcMethod& method,
+                                  ClientContext* context,
+                                  const InputMessage& request,
+                                  OutputMessage* result);
+  friend class ::grpc::RpcMethod;
+  virtual Call CreateCall(const RpcMethod& method, ClientContext* context,
+                          CompletionQueue* cq) = 0;
+  virtual void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) = 0;
   virtual void* RegisterMethod(const char* method) = 0;
   virtual void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
                                        gpr_timespec deadline,
@@ -121,6 +112,7 @@ class ChannelInterface {
   virtual bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                                       gpr_timespec deadline) = 0;
 };
+
 }  // namespace grpc
 
 #endif  // GRPCXX_IMPL_CODEGEN_CHANNEL_INTERFACE_H

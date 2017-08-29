@@ -328,12 +328,10 @@ class ProtocArtifact:
             environ=environ,
             use_workspace=True)
     else:
-      generator = 'Visual Studio 12 Win64' if self.arch == 'x64' else 'Visual Studio 12'
-      vcplatform = 'x64' if self.arch == 'x64' else 'Win32'
+      generator = 'Visual Studio 14 2015 Win64' if self.arch == 'x64' else 'Visual Studio 14 2015'
       return create_jobspec(self.name,
                             ['tools\\run_tests\\artifacts\\build_artifact_protoc.bat'],
-                            environ={'generator': generator,
-                                     'Platform': vcplatform},
+                            environ={'generator': generator},
                             use_workspace=True)
 
   def __str__(self):

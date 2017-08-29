@@ -878,6 +878,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_posix.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_uv.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\is_epollexclusive_available.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>

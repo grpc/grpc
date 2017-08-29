@@ -110,4 +110,12 @@
   self.state = GRXWriterStateFinished;
 }
 
+- (void)dealloc {
+  GRXWriterState state = self.state;
+  if (state == GRXWriterStateNotStarted ||
+      state == GRXWriterStatePaused) {
+    dispatch_resume(_writeQueue);
+  }
+}
+
 @end

@@ -37,6 +37,18 @@ sys.path.insert(0, os.path.abspath('.'))
 import protoc_lib_deps
 import grpc_version
 
+CLASSIFIERS = [
+    'Development Status :: 5 - Production/Stable',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 2',
+    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.4',
+    'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.6',
+    'License :: OSI Approved :: Apache Software License',
+],
+
 PY3 = sys.version_info.major == 3
 
 # Environment variable to determine whether or not the Cython extension should
@@ -193,6 +205,7 @@ setuptools.setup(
   author_email='grpc-io@googlegroups.com',
   url='https://grpc.io',
   license='Apache License 2.0',
+  classifiers=CLASSIFIERS,
   ext_modules=extension_modules(),
   packages=setuptools.find_packages('.'),
   install_requires=[

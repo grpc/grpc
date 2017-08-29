@@ -27,7 +27,7 @@
 
 #include "src/core/lib/support/string.h"
 
-grpc_stats_data *grpc_stats_per_cpu_storage;
+grpc_stats_data *grpc_stats_per_cpu_storage = NULL;
 static size_t g_num_cores;
 
 void grpc_stats_init(void) {

@@ -87,7 +87,7 @@ def create_qpsworker_job(language, shortname=None, port=10000, remote_host=None,
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
     ssh_cmd = ['ssh']
     cmdline = ['timeout', '%s' % (worker_timeout + 30)] + cmdline
-    ssh_cmd.extend([str(user_at_host), 'cd ~/performance_workspace/grpc/ && tools/run_tests/start_port_server.py && %s' % ' '.join(cmdline)])
+    ssh_cmd.extend([str(user_at_host), 'cd ~/performance_workspace/grpc/ && python tools/run_tests/start_port_server.py && %s' % ' '.join(cmdline)])
     cmdline = ssh_cmd
 
   jobspec = jobset.JobSpec(
