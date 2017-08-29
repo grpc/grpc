@@ -205,7 +205,7 @@ static void queue_offload(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
     detach_combiner(exec_ctx);
   }
 
-  grpc_closure_sched(exec_ctx, &lock->offload, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(exec_ctx, &lock->offload, GRPC_ERROR_NONE);
 }
 
 bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
