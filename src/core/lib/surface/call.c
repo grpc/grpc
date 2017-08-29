@@ -145,6 +145,9 @@ typedef struct {
   grpc_call *sibling_prev;
 } child_call;
 
+#define RECV_NONE ((gpr_atm)0)
+#define RECV_INITIAL_METADATA_FIRST ((gpr_atm)1)
+
 struct grpc_call {
   gpr_refcount ext_ref;
   gpr_arena *arena;
@@ -171,9 +174,6 @@ struct grpc_call {
   bool requested_final_op;
   gpr_atm any_ops_sent_atm;
   gpr_atm received_final_op_atm;
-
-  /* have we received initial metadata */
-  bool has_initial_md_been_received;
 
   batch_control *active_batches[MAX_CONCURRENT_BATCHES];
   grpc_transport_stream_op_batch_payload stream_op_payload;
@@ -237,7 +237,23 @@ struct grpc_call {
     } server;
   } final_op;
 
-  void *saved_receiving_stream_ready_bctlp;
+  /* recv_state can contain one of the following values:
+     RECV_NONE :                 :  no initial metadata and messages received
+     RECV_INITIAL_METADATA_FIRST :  received initial metadata first
+     a batch_control*            :  received messages first
+
+                 +------1------RECV_NONE------3-----+
+                 |                                  |
+                 |                                  |
+                 v                                  v
+     RECV_INITIAL_METADATA_FIRST        receiving_stream_ready_bctlp
+           |           ^                      |           ^
+           |           |                      |           |
+           +-----2-----+                      +-----4-----+
+
+    For 1, 4: See receiving_initial_metadata_ready() function
+    For 2, 3: See receiving_stream_ready() function */
+  gpr_atm recv_state;
 };
 
 grpc_tracer_flag grpc_call_error_trace =
@@ -1440,11 +1456,12 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
     cancel_with_error(exec_ctx, call, STATUS_FROM_SURFACE,
                       GRPC_ERROR_REF(error));
   }
-  if (call->has_initial_md_been_received || error != GRPC_ERROR_NONE ||
-      call->receiving_stream == NULL) {
+  /* If recv_state is RECV_NONE, we will save the batch_control
+   * object with rel_cas, and will not use it after the cas. Its corresponding
+   * acq_load is in receiving_initial_metadata_ready() */
+  if (error != GRPC_ERROR_NONE || call->receiving_stream == NULL ||
+      !gpr_atm_rel_cas(&call->recv_state, RECV_NONE, (gpr_atm)bctlp)) {
     process_data_after_md(exec_ctx, bctlp);
-  } else {
-    call->saved_receiving_stream_ready_bctlp = bctlp;
   }
 }
 
@@ -1588,12 +1605,31 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
     }
   }
 
-  call->has_initial_md_been_received = true;
-  if (call->saved_receiving_stream_ready_bctlp != NULL) {
-    grpc_closure *saved_rsr_closure = GRPC_CLOSURE_CREATE(
-        receiving_stream_ready, call->saved_receiving_stream_ready_bctlp,
-        grpc_schedule_on_exec_ctx);
-    call->saved_receiving_stream_ready_bctlp = NULL;
+  grpc_closure *saved_rsr_closure = NULL;
+  while (true) {
+    gpr_atm rsr_bctlp = gpr_atm_acq_load(&call->recv_state);
+    /* Should only receive initial metadata once */
+    GPR_ASSERT(rsr_bctlp != 1);
+    if (rsr_bctlp == 0) {
+      /* We haven't seen initial metadata and messages before, thus initial
+       * metadata is received first.
+       * no_barrier_cas is used, as this function won't access the batch_control
+       * object saved by receiving_stream_ready() if the initial metadata is
+       * received first. */
+      if (gpr_atm_no_barrier_cas(&call->recv_state, RECV_NONE,
+                                 RECV_INITIAL_METADATA_FIRST)) {
+        break;
+      }
+    } else {
+      /* Already received messages */
+      saved_rsr_closure = GRPC_CLOSURE_CREATE(receiving_stream_ready,
+                                              (batch_control *)rsr_bctlp,
+                                              grpc_schedule_on_exec_ctx);
+      /* No need to modify recv_state */
+      break;
+    }
+  }
+  if (saved_rsr_closure != NULL) {
     GRPC_CLOSURE_RUN(exec_ctx, saved_rsr_closure, GRPC_ERROR_REF(error));
   }
 

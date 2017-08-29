@@ -914,7 +914,7 @@ filegroups:
   - third_party/nanopb/pb_common.c
   - third_party/nanopb/pb_decode.c
   - third_party/nanopb/pb_encode.c
-  filegroups:
+  uses:
   - nanopb_headers
 - name: nanopb_headers
   headers:
