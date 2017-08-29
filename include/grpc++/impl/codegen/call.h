@@ -272,7 +272,7 @@ class CallOpSendInitialMetadata {
 
 class CallOpSendMessage {
  public:
-  CallOpSendMessage() : send_buf_(nullptr), own_buf_(false) {}
+  CallOpSendMessage() : send_buf_(nullptr) {}
 
   /// Send \a message using \a options for the write. The \a options are cleared
   /// after use.
@@ -295,20 +295,24 @@ class CallOpSendMessage {
     write_options_.Clear();
   }
   void FinishOp(bool* status) {
-    if (own_buf_) g_core_codegen_interface->grpc_byte_buffer_destroy(send_buf_);
+    g_core_codegen_interface->grpc_byte_buffer_destroy(send_buf_);
     send_buf_ = nullptr;
   }
 
  private:
   grpc_byte_buffer* send_buf_;
   WriteOptions write_options_;
-  bool own_buf_;
 };
 
 template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
-  return SerializationTraits<M>::Serialize(message, &send_buf_, &own_buf_);
+  bool own_buf;
+  Status result = SerializationTraits<M>::Serialize(message, &send_buf_, &own_buf);
+  if (!own_buf) {
+    send_buf_ = g_core_codegen_interface->grpc_byte_buffer_copy(send_buf_);
+  }
+  return result;
 }
 
 template <class M>
