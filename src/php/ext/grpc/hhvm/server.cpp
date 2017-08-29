@@ -149,7 +149,7 @@ Object HHVM_METHOD(Server, requestCall)
 
     typedef struct CallDetails
     {
-        CallDetails(void) : metadata{ true }, method_text{ nullptr }, host_text{ nullptr }
+        CallDetails(void) : metadata{}, method_text{ nullptr }, host_text{ nullptr }
         {
             grpc_call_details_init(&details);
         }

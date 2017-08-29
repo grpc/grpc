@@ -114,8 +114,7 @@ void CallData::destroy(void)
 /*                              Metadata Array                               */
 /*****************************************************************************/
 
-MetadataArray::MetadataArray(const bool ownPHP) : m_OwnPHP{ ownPHP },
-    m_PHPData{}
+MetadataArray::MetadataArray(void) : m_PHPData{}
 {
     grpc_metadata_array_init(&m_Array);
     resizeMetadata(1);
@@ -123,18 +122,16 @@ MetadataArray::MetadataArray(const bool ownPHP) : m_OwnPHP{ ownPHP },
 
 MetadataArray::~MetadataArray(void)
 {
-    m_OwnPHP ? destroyPHP() : freePHP();
+    destroyPHP();
     grpc_metadata_array_destroy(&m_Array);
 }
 
 // Populates a grpc_metadata_array with the data in a PHP array object.
 // Returns true on success and false on failure
-bool MetadataArray::init(const Array& phpArray, const bool ownPHP)
+bool MetadataArray::init(const Array& phpArray)
 {
-    // destroy/free any PHP data
-    m_OwnPHP ? destroyPHP() : freePHP();
-    m_OwnPHP = ownPHP;
-    m_Array.count = 0;
+    // destroy any PHP data
+    destroyPHP();
 
     // precheck validity of data
     size_t count{ 0 };
@@ -227,18 +224,6 @@ void MetadataArray::destroyPHP(void)
     m_Array.count = 0;
 }
 
-void MetadataArray::freePHP(void)
-{
-    // free the PHP data by increasinf ref counts
-    for(std::pair<Slice, Slice>& phpData : m_PHPData)
-    {
-        phpData.first.increaseRef();
-        phpData.second.increaseRef();
-    }
-
-    destroyPHP();
-}
-
 void MetadataArray::resizeMetadata(const size_t capacity)
 {
     if (capacity > m_Array.capacity)
@@ -329,8 +314,8 @@ Object HHVM_METHOD(Call, startBatch,
     typedef struct OpsManaged // this structure is managed data for the ops array
     {
         // constructors/destructors
-        OpsManaged(void) : send_metadata{ true }, send_trailing_metadata{ true },
-            recv_metadata{ false }, recv_trailing_metadata{ false },
+        OpsManaged(void) : send_metadata{}, send_trailing_metadata{},
+            recv_metadata{}, recv_trailing_metadata{},
             recv_status_details{}, send_status_details{},
             cancelled{ 0 }, status{ GRPC_STATUS_OK }
         {
@@ -402,7 +387,7 @@ Object HHVM_METHOD(Call, startBatch,
                 SystemLib::throwInvalidArgumentExceptionObject("Expected an array value for the metadata");
             }
 
-            if (!opsManaged.send_metadata.init(value.toArray(), true))
+            if (!opsManaged.send_metadata.init(value.toArray()))
             {
                 SystemLib::throwInvalidArgumentExceptionObject("Bad metadata value given");
             }
@@ -463,7 +448,7 @@ Object HHVM_METHOD(Call, startBatch,
                     SystemLib::throwInvalidArgumentExceptionObject("Expected an array for server status metadata value");
                 }
 
-                if (!opsManaged.send_trailing_metadata.init(innerMetadata.toArray(), true))
+                if (!opsManaged.send_trailing_metadata.init(innerMetadata.toArray()))
                 {
                     SystemLib::throwInvalidArgumentExceptionObject("Bad trailing metadata value given");
                 }
@@ -561,7 +546,8 @@ Object HHVM_METHOD(Call, startBatch,
     }
 
     grpc_event event (grpc_completion_queue_next(pCallData->queue()->queue(),
-                                                  gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN),
+                                                 gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN)
+                                                 /*gpr_inf_future(GPR_CLOCK_REALTIME) */,
                                                   nullptr));
     if (event.type != GRPC_OP_COMPLETE || event.tag != pCallData->call())
     {

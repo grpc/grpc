@@ -98,7 +98,7 @@ class MetadataArray
 {
 public:
     // constructors/descructors
-    MetadataArray(const bool ownPHP = true);
+    MetadataArray(void);
     ~MetadataArray(void);
 
     // interface functions
@@ -108,17 +108,14 @@ public:
     size_t size(void) const { return m_Array.count; }
     const grpc_metadata_array& array(void) const { return m_Array; } //
     grpc_metadata_array& array(void) { return m_Array; } // several methods need non const &
-    bool init(const Array& phpArray, const bool ownPHP = true);
     Variant phpData(void) const;
 
 private:
     // helper functions
     void destroyPHP(void);
-    void freePHP(void);
     void resizeMetadata(const size_t capacity);
 
     // member variables
-    bool m_OwnPHP;
     grpc_metadata_array m_Array;
     std::vector<std::pair<Slice, Slice>> m_PHPData; // the key, value PHP Data
 };

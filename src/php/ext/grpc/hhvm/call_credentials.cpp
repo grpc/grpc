@@ -256,7 +256,7 @@ void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
 
     grpc_status_code code{ GRPC_STATUS_OK };
     MetadataArray metadata;
-    if (!metadata.init(retval.toArray(), true))
+    if (!metadata.init(retval.toArray()))
     {
         code = GRPC_STATUS_INVALID_ARGUMENT;
     }
