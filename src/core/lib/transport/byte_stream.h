@@ -81,7 +81,9 @@ void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
 
 // grpc_slice_buffer_stream
 //
-// A grpc_byte_stream that wraps a slice buffer.
+// A grpc_byte_stream that wraps a slice buffer.  The stream takes
+// ownership of the slices in the buffer, and on destruction will
+// reset the contents of the buffer.
 
 typedef struct grpc_slice_buffer_stream {
   grpc_byte_stream base;
