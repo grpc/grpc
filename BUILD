@@ -457,7 +457,10 @@ grpc_cc_library(
 grpc_proto_plugin(
     name = "grpc_cpp_plugin",
     srcs = ["src/compiler/cpp_plugin.cc"],
-    deps = [":grpc_cpp_plugin_support"],
+    deps = [
+        ":grpc_cpp_plugin_support",
+        ":grpc_python_plugin_support",
+    ],
 )
 
 grpc_proto_plugin(
