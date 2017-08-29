@@ -432,6 +432,7 @@ grpc_cc_library(
     ],
     deps = [
         ":grpc_plugin_support_utils",
+        ":grpc_cpp_plugin_support",
     ],
 )
 
@@ -441,6 +442,7 @@ grpc_cc_library(
         "src/compiler/ruby_generator.cc",
     ],
     hdrs = [
+        "src/compiler/ruby_generator.h",
         "src/compiler/ruby_generator_helpers-inl.h",
         "src/compiler/ruby_generator_map-inl.h",
         "src/compiler/ruby_generator_string-inl.h",
