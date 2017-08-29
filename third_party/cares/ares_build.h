@@ -204,4 +204,15 @@
 
 typedef CARES_TYPEOF_ARES_SSIZE_T ares_ssize_t;
 
+/* IMPORTANT: gRPC MANUAL EDIT HERE!
+ * Undefine UNICODE, as c-ares does not use the ANSI version of functions
+ * explicitly. */
+#ifdef UNICODE
+#  undef UNICODE
+#endif
+
+#ifdef _UNICODE
+#  undef _UNICODE
+#endif
+
 #endif /* __CARES_BUILD_H */
