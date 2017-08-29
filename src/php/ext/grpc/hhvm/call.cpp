@@ -117,7 +117,8 @@ void CallData::destroy(void)
 MetadataArray::MetadataArray(void) : m_PHPData{}
 {
     grpc_metadata_array_init(&m_Array);
-    resizeMetadata(1);
+    // NOTE: Do not intialize the metadata array here with any members as
+    // some metadata is owned by caller and some by callee
 }
 
 MetadataArray::~MetadataArray(void)
@@ -132,6 +133,7 @@ bool MetadataArray::init(const Array& phpArray)
 {
     // destroy any PHP data
     destroyPHP();
+    m_Array.count = 0;
 
     // precheck validity of data
     size_t count{ 0 };
@@ -221,7 +223,6 @@ void MetadataArray::destroyPHP(void)
 {
     // destroy PHP data
     m_PHPData.clear();
-    m_Array.count = 0;
 }
 
 void MetadataArray::resizeMetadata(const size_t capacity)

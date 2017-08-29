@@ -71,7 +71,7 @@ ChannelData::~ChannelData(void)
     destroy();
 }
 
-void ChannelData::init(grpc_channel* channel, const bool owned, const String& hashKey)
+void ChannelData::init(grpc_channel* channel, const bool owned, String&& hashKey)
 {
     // destroy any existing channel data
     destroy();
@@ -382,7 +382,7 @@ void HHVM_METHOD(Channel, __construct,
 
     if (!force_new && pChannel)
     {
-        pChannelData->init(pChannel, false, fullCacheKey);
+        pChannelData->init(pChannel, false, std::move(fullCacheKey));
     }
     else
     {
@@ -427,8 +427,9 @@ void HHVM_METHOD(Channel, __construct,
             grpc_channel_destroy(pChannel);
             pChannel = addResult.second;
         }
-        pChannelData->init(pChannel, false, fullCacheKey);
+        pChannelData->init(pChannel, false, std::move(fullCacheKey));
     }
+    //std::cout << ChannelsCache::getChannelsCache().numChannels() << std::endl;
 }
 
 /**
@@ -523,7 +524,7 @@ void HHVM_METHOD(Channel, close)
     {
         SystemLib::throwBadMethodCallExceptionObject("Channel already closed.");
     }
-    pChannelData->init(nullptr, false); // mark channel closed
+    pChannelData->init(nullptr, false, String{}); // mark channel closed
 }
 
 } // namespace HPHP

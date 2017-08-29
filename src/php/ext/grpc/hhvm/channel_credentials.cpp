@@ -103,11 +103,18 @@ ChannelCredentialsData::~ChannelCredentialsData(void)
 void ChannelCredentialsData::init(grpc_channel_credentials* const pChannelCredentials,
                                   const String& hashKey)
 {
+    // forward
+    init(pChannelCredentials, std::move(String{ hashKey }));
+}
+
+void ChannelCredentialsData::init(grpc_channel_credentials* const pChannelCredentials,
+                                  String&& hashKey)
+{
     // destroy any existing channel credentials
     destroy();
 
     m_pChannelCredentials = pChannelCredentials;
-    m_HashKey = hashKey;
+    m_HashKey = std::move(hashKey);
 }
 
 void ChannelCredentialsData::destroy(void)
@@ -144,7 +151,7 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault)
         SystemLib::throwBadMethodCallExceptionObject("Failed to create default channel credentials");
     }
 
-    pChannelCredentialsData->init(pChannelCredentials);
+    pChannelCredentialsData->init(pChannelCredentials, String{});
 
     return newChannelCredentialsObj;
 }
@@ -191,7 +198,7 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createSsl,
         SystemLib::throwBadMethodCallExceptionObject("Failed to create SSL channel credentials");
     }
 
-    pChannelCredentialsData->init(pChannelCredentials,  hashKey);
+    pChannelCredentialsData->init(pChannelCredentials, std::move(hashKey));
 
     return newChannelCredentialsObj;
 }

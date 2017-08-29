@@ -91,7 +91,8 @@ public:
     ChannelCredentialsData& operator&(ChannelCredentialsData&& rhsChannelCredentialsData) = delete;
 
     // interface functions
-    void init(grpc_channel_credentials* const pChannelCredentials, const String& hashKey = String{});
+    void init(grpc_channel_credentials* const pChannelCredentials, const String& hashKey);
+    void init(grpc_channel_credentials* const pChannelCredentials, String&& hashKey);
     grpc_channel_credentials* const credentials(void) { return m_pChannelCredentials; }
     const String& hashKey(void) const { return m_HashKey; }
     static Class* const getClass(void);

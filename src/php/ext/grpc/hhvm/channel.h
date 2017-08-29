@@ -52,7 +52,7 @@ public:
     ChannelData& operator=(ChannelData&& rhsChannelData) = delete;
 
     // interface functions
-    void init(grpc_channel* channel, const bool owned, const String& hashKey = String{});
+    void init(grpc_channel* channel, const bool owned, String&& hashKey);
     grpc_channel* const channel(void) { return m_pChannel; }
     const String& hashKey(void) const { return m_HashKey; }
     static Class* const getClass(void);
