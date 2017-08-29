@@ -26,7 +26,6 @@
 #include <grpc/support/log.h>
 #include <vector>
 
-#include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/control.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -80,8 +79,11 @@ class Server {
       return false;
     }
     payload->set_type(type);
-    std::unique_ptr<char[]> body(new char[size]());
-    payload->set_body(body.get(), size);
+    // Don't waste time creating a new payload of identical size.
+    if (payload->body().length() != (size_t)size) {
+      std::unique_ptr<char[]> body(new char[size]());
+      payload->set_body(body.get(), size);
+    }
     return true;
   }
 

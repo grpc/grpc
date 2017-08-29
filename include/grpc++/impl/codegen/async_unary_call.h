@@ -75,40 +75,16 @@ class ClientAsyncResponseReader final
   /// intitial metadata sent) and \a request has been written out.
   /// Note that \a context will be used to fill in custom initial metadata
   /// used to send to the server when starting the call.
-  struct internal {
-    template <class W>
-    static ClientAsyncResponseReader* Create(
-        ::grpc::ChannelInterface* channel, CompletionQueue* cq,
-        const ::grpc::internal::RpcMethod& method, ClientContext* context,
-        const W& request) {
-      ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
-      return new (g_core_codegen_interface->grpc_call_arena_alloc(
-          call.call(), sizeof(ClientAsyncResponseReader)))
-          ClientAsyncResponseReader(call, context, request);
-    }
-  };
-
-  /// TODO(vjpai): Delete the below constructor
-  /// PLEASE DO NOT USE THIS CONSTRUCTOR IN NEW CODE
-  /// This code is only present as a short-term workaround
-  /// for users that bypassed the code-generator and directly
-  /// created this struct rather than properly using a stub.
-  /// This code will not remain a valid public constructor for long.
   template <class W>
-  ClientAsyncResponseReader(::grpc::ChannelInterface* channel,
-                            CompletionQueue* cq,
-                            const ::grpc::internal::RpcMethod& method,
-                            ClientContext* context, const W& request)
-      : context_(context),
-        call_(channel->CreateCall(method, context, cq)),
-        collection_(std::make_shared<Ops>()) {
-    collection_->init_buf.SetCollection(collection_);
-    collection_->init_buf.SendInitialMetadata(
-        context->send_initial_metadata_, context->initial_metadata_flags());
-    // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(collection_->init_buf.SendMessage(request).ok());
-    collection_->init_buf.ClientSendClose();
-    call_.PerformOps(&collection_->init_buf);
+  static ClientAsyncResponseReader* Create(ChannelInterface* channel,
+                                           CompletionQueue* cq,
+                                           const RpcMethod& method,
+                                           ClientContext* context,
+                                           const W& request) {
+    Call call = channel->CreateCall(method, context, cq);
+    return new (g_core_codegen_interface->grpc_call_arena_alloc(
+        call.call(), sizeof(ClientAsyncResponseReader)))
+        ClientAsyncResponseReader(call, context, request);
   }
 
   // always allocated against a call arena, no memory free required
@@ -121,22 +97,13 @@ class ClientAsyncResponseReader final
   ///
   /// Side effect:
   ///   - the \a ClientContext associated with this call is updated with
-  ///     possible initial and trailing metadata sent from the serve.
+  ///     possible initial and trailing metadata sent from the server.
   void ReadInitialMetadata(void* tag) {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
-    Ops* o = &ops_;
-
-    // TODO(vjpai): Remove the collection_ specialization as soon
-    // as the public constructor is deleted
-    if (collection_) {
-      o = collection_.get();
-      collection_->meta_buf.SetCollection(collection_);
-    }
-
-    o->meta_buf.set_output_tag(tag);
-    o->meta_buf.RecvInitialMetadata(context_);
-    call_.PerformOps(&o->meta_buf);
+    meta_buf.set_output_tag(tag);
+    meta_buf.RecvInitialMetadata(context_);
+    call_.PerformOps(&meta_buf);
   }
 
   /// See \a ClientAysncResponseReaderInterface::Finish for semantics.
@@ -145,71 +112,48 @@ class ClientAsyncResponseReader final
   ///   - the \a ClientContext associated with this call is updated with
   ///     possible initial and trailing metadata sent from the server.
   void Finish(R* msg, Status* status, void* tag) {
-    Ops* o = &ops_;
-
-    // TODO(vjpai): Remove the collection_ specialization as soon
-    // as the public constructor is deleted
-    if (collection_) {
-      o = collection_.get();
-      collection_->finish_buf.SetCollection(collection_);
-    }
-
-    o->finish_buf.set_output_tag(tag);
+    finish_buf.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
-      o->finish_buf.RecvInitialMetadata(context_);
+      finish_buf.RecvInitialMetadata(context_);
     }
-    o->finish_buf.RecvMessage(msg);
-    o->finish_buf.AllowNoMessage();
-    o->finish_buf.ClientRecvStatus(context_, status);
-    call_.PerformOps(&o->finish_buf);
+    finish_buf.RecvMessage(msg);
+    finish_buf.AllowNoMessage();
+    finish_buf.ClientRecvStatus(context_, status);
+    call_.PerformOps(&finish_buf);
   }
 
  private:
   ClientContext* const context_;
-  ::grpc::internal::Call call_;
+  Call call_;
 
   template <class W>
-  ClientAsyncResponseReader(::grpc::internal::Call call, ClientContext* context,
-                            const W& request)
+  ClientAsyncResponseReader(Call call, ClientContext* context, const W& request)
       : context_(context), call_(call) {
-    ops_.init_buf.SendInitialMetadata(context->send_initial_metadata_,
-                                      context->initial_metadata_flags());
+    init_buf.SendInitialMetadata(context->send_initial_metadata_,
+                                 context->initial_metadata_flags());
     // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(ops_.init_buf.SendMessage(request).ok());
-    ops_.init_buf.ClientSendClose();
-    call_.PerformOps(&ops_.init_buf);
+    GPR_CODEGEN_ASSERT(init_buf.SendMessage(request).ok());
+    init_buf.ClientSendClose();
+    call_.PerformOps(&init_buf);
   }
 
   // disable operator new
   static void* operator new(std::size_t size);
   static void* operator new(std::size_t size, void* p) { return p; }
 
-  // TODO(vjpai): Remove the reference to CallOpSetCollectionInterface
-  // as soon as the related workaround (public constructor) is deleted
-  struct Ops : public ::grpc::internal::CallOpSetCollectionInterface {
-    ::grpc::internal::SneakyCallOpSet<
-        ::grpc::internal::CallOpSendInitialMetadata,
-        ::grpc::internal::CallOpSendMessage,
-        ::grpc::internal::CallOpClientSendClose>
-        init_buf;
-    ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
-        meta_buf;
-    ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                                ::grpc::internal::CallOpRecvMessage<R>,
-                                ::grpc::internal::CallOpClientRecvStatus>
-        finish_buf;
-  } ops_;
-
-  // TODO(vjpai): Remove the collection_ as soon as the related workaround
-  // (public constructor) is deleted
-  std::shared_ptr<Ops> collection_;
+  SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
+                  CallOpClientSendClose>
+      init_buf;
+  CallOpSet<CallOpRecvInitialMetadata> meta_buf;
+  CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>,
+            CallOpClientRecvStatus>
+      finish_buf;
 };
 
 /// Async server-side API for handling unary calls, where the single
 /// response message sent to the client is of type \a W.
 template <class W>
-class ServerAsyncResponseWriter final
-    : public internal::ServerAsyncStreamingInterface {
+class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
  public:
   explicit ServerAsyncResponseWriter(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
@@ -297,15 +241,13 @@ class ServerAsyncResponseWriter final
   }
 
  private:
-  void BindCall(::grpc::internal::Call* call) override { call_ = *call; }
+  void BindCall(Call* call) override { call_ = *call; }
 
-  ::grpc::internal::Call call_;
+  Call call_;
   ServerContext* ctx_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
-      meta_buf_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpSendMessage,
-                              ::grpc::internal::CallOpServerSendStatus>
+  CallOpSet<CallOpSendInitialMetadata> meta_buf_;
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
+            CallOpServerSendStatus>
       finish_buf_;
 };
 
@@ -314,6 +256,11 @@ class ServerAsyncResponseWriter final
 namespace std {
 template <class R>
 class default_delete<grpc::ClientAsyncResponseReader<R>> {
+ public:
+  void operator()(void* p) {}
+};
+template <class R>
+class default_delete<grpc::ClientAsyncResponseReaderInterface<R>> {
  public:
   void operator()(void* p) {}
 };

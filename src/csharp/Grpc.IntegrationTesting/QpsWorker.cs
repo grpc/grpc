@@ -63,11 +63,6 @@ namespace Grpc.IntegrationTesting
 
         private async Task RunAsync()
         {
-            // (ThreadPoolSize == ProcessorCount) gives best throughput in benchmarks
-            // and doesn't seem to harm performance even when server and client
-            // are running on the same machine.
-            GrpcEnvironment.SetThreadPoolSize(Environment.ProcessorCount);
-
             string host = "0.0.0.0";
             int port = options.DriverPort;
 

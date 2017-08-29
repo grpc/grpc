@@ -791,7 +791,6 @@ static void server_mutate_op(grpc_call_element *elem,
 static void server_start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *op) {
-  GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   server_mutate_op(elem, op);
   grpc_call_next_op(exec_ctx, elem, op);
 }
@@ -964,7 +963,6 @@ const grpc_channel_filter grpc_server_top_filter = {
     sizeof(channel_data),
     init_channel_elem,
     destroy_channel_elem,
-    grpc_call_next_get_peer,
     grpc_channel_next_get_info,
     "server",
 };
@@ -1261,7 +1259,7 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
   }
 
   /* stay locked, and gather up some stuff to do */
-  grpc_cq_begin_op(cq, tag);
+  GPR_ASSERT(grpc_cq_begin_op(cq, tag));
   if (server->shutdown_published) {
     grpc_cq_end_op(&exec_ctx, cq, tag, GRPC_ERROR_NONE, done_published_shutdown,
                    NULL, gpr_malloc(sizeof(grpc_cq_completion)));
@@ -1448,7 +1446,11 @@ grpc_call_error grpc_server_request_call(
     error = GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
     goto done;
   }
-  grpc_cq_begin_op(cq_for_notification, tag);
+  if (grpc_cq_begin_op(cq_for_notification, tag) == false) {
+    gpr_free(rc);
+    error = GRPC_CALL_ERROR_COMPLETION_QUEUE_SHUTDOWN;
+    goto done;
+  }
   details->reserved = NULL;
   rc->cq_idx = cq_idx;
   rc->type = BATCH_CALL;
@@ -1498,7 +1500,11 @@ grpc_call_error grpc_server_request_registered_call(
     error = GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH;
     goto done;
   }
-  grpc_cq_begin_op(cq_for_notification, tag);
+  if (grpc_cq_begin_op(cq_for_notification, tag) == false) {
+    gpr_free(rc);
+    error = GRPC_CALL_ERROR_COMPLETION_QUEUE_SHUTDOWN;
+    goto done;
+  }
   rc->cq_idx = cq_idx;
   rc->type = REGISTERED_CALL;
   rc->server = server;

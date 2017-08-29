@@ -197,7 +197,7 @@ typedef struct cq_vtable {
   void (*init)(void *data);
   void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cq);
   void (*destroy)(void *data);
-  void (*begin_op)(grpc_completion_queue *cq, void *tag);
+  bool (*begin_op)(grpc_completion_queue *cq, void *tag);
   void (*end_op)(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cq, void *tag,
                  grpc_error *error,
                  void (*done)(grpc_exec_ctx *exec_ctx, void *done_arg,
@@ -236,7 +236,8 @@ typedef struct cq_next_data {
   /* Number of outstanding events (+1 if not shut down) */
   gpr_atm pending_events;
 
-  int shutdown_called;
+  /** 0 initially. 1 once we initiated shutdown */
+  bool shutdown_called;
 } cq_next_data;
 
 typedef struct cq_pluck_data {
@@ -245,15 +246,20 @@ typedef struct cq_pluck_data {
   grpc_cq_completion *completed_tail;
 
   /** Number of pending events (+1 if we're not shutdown) */
-  gpr_refcount pending_events;
+  gpr_atm pending_events;
 
   /** Counter of how many things have ever been queued on this completion queue
       useful for avoiding locks to check the queue */
   gpr_atm things_queued_ever;
 
-  /** 0 initially, 1 once we've begun shutting down */
+  /** 0 initially. 1 once we completed shutting */
+  /* TODO: (sreek) This is not needed since (shutdown == 1) if and only if
+   * (pending_events == 0). So consider removing this in future and use
+   * pending_events */
   gpr_atm shutdown;
-  int shutdown_called;
+
+  /** 0 initially. 1 once we initiated shutdown */
+  bool shutdown_called;
 
   int num_pluckers;
   plucker pluckers[GRPC_MAX_COMPLETION_QUEUE_PLUCKERS];
@@ -289,8 +295,8 @@ static void cq_shutdown_next(grpc_exec_ctx *exec_ctx,
 static void cq_shutdown_pluck(grpc_exec_ctx *exec_ctx,
                               grpc_completion_queue *cq);
 
-static void cq_begin_op_for_next(grpc_completion_queue *cq, void *tag);
-static void cq_begin_op_for_pluck(grpc_completion_queue *cq, void *tag);
+static bool cq_begin_op_for_next(grpc_completion_queue *cq, void *tag);
+static bool cq_begin_op_for_pluck(grpc_completion_queue *cq, void *tag);
 
 static void cq_end_op_for_next(grpc_exec_ctx *exec_ctx,
                                grpc_completion_queue *cq, void *tag,
@@ -437,7 +443,7 @@ grpc_completion_queue *grpc_completion_queue_create_internal(
 
 static void cq_init_next(void *ptr) {
   cq_next_data *cqd = ptr;
-  /* Initial ref is dropped by grpc_completion_queue_shutdown */
+  /* Initial count is dropped by grpc_completion_queue_shutdown */
   gpr_atm_no_barrier_store(&cqd->pending_events, 1);
   cqd->shutdown_called = false;
   gpr_atm_no_barrier_store(&cqd->things_queued_ever, 0);
@@ -452,12 +458,12 @@ static void cq_destroy_next(void *ptr) {
 
 static void cq_init_pluck(void *ptr) {
   cq_pluck_data *cqd = ptr;
-  /* Initial ref is dropped by grpc_completion_queue_shutdown */
-  gpr_ref_init(&cqd->pending_events, 1);
+  /* Initial count is dropped by grpc_completion_queue_shutdown */
+  gpr_atm_no_barrier_store(&cqd->pending_events, 1);
   cqd->completed_tail = &cqd->completed_head;
   cqd->completed_head.next = (uintptr_t)cqd->completed_tail;
   gpr_atm_no_barrier_store(&cqd->shutdown, 0);
-  cqd->shutdown_called = 0;
+  cqd->shutdown_called = false;
   cqd->num_pluckers = 0;
   gpr_atm_no_barrier_store(&cqd->things_queued_ever, 0);
 }
@@ -523,33 +529,6 @@ void grpc_cq_internal_unref(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static void cq_begin_op_for_next(grpc_completion_queue *cq, void *tag) {
-  cq_next_data *cqd = DATA_FROM_CQ(cq);
-  GPR_ASSERT(!cqd->shutdown_called);
-  gpr_atm_no_barrier_fetch_add(&cqd->pending_events, 1);
-}
-
-static void cq_begin_op_for_pluck(grpc_completion_queue *cq, void *tag) {
-  cq_pluck_data *cqd = DATA_FROM_CQ(cq);
-  GPR_ASSERT(!cqd->shutdown_called);
-  gpr_ref(&cqd->pending_events);
-}
-
-void grpc_cq_begin_op(grpc_completion_queue *cq, void *tag) {
-#ifndef NDEBUG
-  gpr_mu_lock(cq->mu);
-  if (cq->outstanding_tag_count == cq->outstanding_tag_capacity) {
-    cq->outstanding_tag_capacity = GPR_MAX(4, 2 * cq->outstanding_tag_capacity);
-    cq->outstanding_tags =
-        gpr_realloc(cq->outstanding_tags, sizeof(*cq->outstanding_tags) *
-                                              cq->outstanding_tag_capacity);
-  }
-  cq->outstanding_tags[cq->outstanding_tag_count++] = tag;
-  gpr_mu_unlock(cq->mu);
-#endif
-  cq->vtable->begin_op(cq, tag);
-}
-
 #ifndef NDEBUG
 static void cq_check_tag(grpc_completion_queue *cq, void *tag, bool lock_cq) {
   int found = 0;
@@ -576,6 +555,49 @@ static void cq_check_tag(grpc_completion_queue *cq, void *tag, bool lock_cq) {
 #else
 static void cq_check_tag(grpc_completion_queue *cq, void *tag, bool lock_cq) {}
 #endif
+
+/* Atomically increments a counter only if the counter is not zero. Returns
+ * true if the increment was successful; false if the counter is zero */
+static bool atm_inc_if_nonzero(gpr_atm *counter) {
+  while (true) {
+    gpr_atm count = gpr_atm_no_barrier_load(counter);
+    /* If zero, we are done. If not, we must to a CAS (instead of an atomic
+     * increment) to maintain the contract: do not increment the counter if it
+     * is zero. */
+    if (count == 0) {
+      return false;
+    } else if (gpr_atm_no_barrier_cas(counter, count, count + 1)) {
+      break;
+    }
+  }
+
+  return true;
+}
+
+static bool cq_begin_op_for_next(grpc_completion_queue *cq, void *tag) {
+  cq_next_data *cqd = DATA_FROM_CQ(cq);
+  return atm_inc_if_nonzero(&cqd->pending_events);
+}
+
+static bool cq_begin_op_for_pluck(grpc_completion_queue *cq, void *tag) {
+  cq_pluck_data *cqd = DATA_FROM_CQ(cq);
+  return atm_inc_if_nonzero(&cqd->pending_events);
+}
+
+bool grpc_cq_begin_op(grpc_completion_queue *cq, void *tag) {
+#ifndef NDEBUG
+  gpr_mu_lock(cq->mu);
+  if (cq->outstanding_tag_count == cq->outstanding_tag_capacity) {
+    cq->outstanding_tag_capacity = GPR_MAX(4, 2 * cq->outstanding_tag_capacity);
+    cq->outstanding_tags =
+        gpr_realloc(cq->outstanding_tags, sizeof(*cq->outstanding_tags) *
+                                              cq->outstanding_tag_capacity);
+  }
+  cq->outstanding_tags[cq->outstanding_tag_count++] = tag;
+  gpr_mu_unlock(cq->mu);
+#endif
+  return cq->vtable->begin_op(cq, tag);
+}
 
 /* Queue a GRPC_OP_COMPLETED operation to a completion queue (with a
  * completion
@@ -697,8 +719,10 @@ static void cq_end_op_for_pluck(grpc_exec_ctx *exec_ctx,
       ((uintptr_t)storage) | (1u & (uintptr_t)cqd->completed_tail->next);
   cqd->completed_tail = storage;
 
-  int shutdown = gpr_unref(&cqd->pending_events);
-  if (!shutdown) {
+  if (gpr_atm_full_fetch_add(&cqd->pending_events, -1) == 1) {
+    cq_finish_shutdown_pluck(exec_ctx, cq);
+    gpr_mu_unlock(cq->mu);
+  } else {
     grpc_pollset_worker *pluck_worker = NULL;
     for (int i = 0; i < cqd->num_pluckers; i++) {
       if (cqd->pluckers[i].tag == tag) {
@@ -718,9 +742,6 @@ static void cq_end_op_for_pluck(grpc_exec_ctx *exec_ctx,
 
       GRPC_ERROR_UNREF(kick_error);
     }
-  } else {
-    cq_finish_shutdown_pluck(exec_ctx, cq);
-    gpr_mu_unlock(cq->mu);
   }
 
   GPR_TIMER_END("cq_end_op_for_pluck", 0);
@@ -852,8 +873,7 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
          inconsistent state. If it is the latter, we shold do a 0-timeout poll
          so that the thread comes back quickly from poll to make a second
          attempt at popping. Not doing this can potentially deadlock this
-         thread
-         forever (if the deadline is infinity) */
+         thread forever (if the deadline is infinity) */
       if (cq_event_queue_num_items(&cqd->queue) > 0) {
         iteration_deadline = 0;
       }
@@ -866,10 +886,8 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
       if (cq_event_queue_num_items(&cqd->queue) > 0) {
         /* Go to the beginning of the loop. No point doing a poll because
            (cq->shutdown == true) is only possible when there is no pending
-           work
-           (i.e cq->pending_events == 0) and any outstanding
-           grpc_cq_completion
-           events are already queued on this cq */
+           work (i.e cq->pending_events == 0) and any outstanding completion
+           events should have already been queued on this cq */
         continue;
       }
 
@@ -906,17 +924,17 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
     is_finished_arg.first_loop = false;
   }
 
-  GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, &ret);
-  GRPC_CQ_INTERNAL_UNREF(&exec_ctx, cq, "next");
-  grpc_exec_ctx_finish(&exec_ctx);
-  GPR_ASSERT(is_finished_arg.stolen_completion == NULL);
-
   if (cq_event_queue_num_items(&cqd->queue) > 0 &&
       gpr_atm_no_barrier_load(&cqd->pending_events) > 0) {
     gpr_mu_lock(cq->mu);
     cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), NULL);
     gpr_mu_unlock(cq->mu);
   }
+
+  GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, &ret);
+  GRPC_CQ_INTERNAL_UNREF(&exec_ctx, cq, "next");
+  grpc_exec_ctx_finish(&exec_ctx);
+  GPR_ASSERT(is_finished_arg.stolen_completion == NULL);
 
   GPR_TIMER_END("grpc_completion_queue_next", 0);
 
@@ -944,15 +962,20 @@ static void cq_shutdown_next(grpc_exec_ctx *exec_ctx,
                              grpc_completion_queue *cq) {
   cq_next_data *cqd = DATA_FROM_CQ(cq);
 
+  /* Need an extra ref for cq here because:
+   * We call cq_finish_shutdown_next() below, that would call pollset shutdown.
+   * Pollset shutdown decrements the cq ref count which can potentially destroy
+   * the cq (if that happens to be the last ref).
+   * Creating an extra ref here prevents the cq from getting destroyed while
+   * this function is still active */
   GRPC_CQ_INTERNAL_REF(cq, "shutting_down");
   gpr_mu_lock(cq->mu);
   if (cqd->shutdown_called) {
     gpr_mu_unlock(cq->mu);
     GRPC_CQ_INTERNAL_UNREF(exec_ctx, cq, "shutting_down");
-    GPR_TIMER_END("grpc_completion_queue_shutdown", 0);
     return;
   }
-  cqd->shutdown_called = 1;
+  cqd->shutdown_called = true;
   if (gpr_atm_full_fetch_add(&cqd->pending_events, -1) == 1) {
     cq_finish_shutdown_next(exec_ctx, cq);
   }
@@ -1160,21 +1183,31 @@ static void cq_finish_shutdown_pluck(grpc_exec_ctx *exec_ctx,
                               &cq->pollset_shutdown_done);
 }
 
+/* NOTE: This function is almost exactly identical to cq_shutdown_next() but
+ * merging them is a bit tricky and probably not worth it */
 static void cq_shutdown_pluck(grpc_exec_ctx *exec_ctx,
                               grpc_completion_queue *cq) {
   cq_pluck_data *cqd = DATA_FROM_CQ(cq);
 
+  /* Need an extra ref for cq here because:
+   * We call cq_finish_shutdown_pluck() below, that would call pollset shutdown.
+   * Pollset shutdown decrements the cq ref count which can potentially destroy
+   * the cq (if that happens to be the last ref).
+   * Creating an extra ref here prevents the cq from getting destroyed while
+   * this function is still active */
+  GRPC_CQ_INTERNAL_REF(cq, "shutting_down (pluck cq)");
   gpr_mu_lock(cq->mu);
   if (cqd->shutdown_called) {
     gpr_mu_unlock(cq->mu);
-    GPR_TIMER_END("grpc_completion_queue_shutdown", 0);
+    GRPC_CQ_INTERNAL_UNREF(exec_ctx, cq, "shutting_down (pluck cq)");
     return;
   }
-  cqd->shutdown_called = 1;
-  if (gpr_unref(&cqd->pending_events)) {
+  cqd->shutdown_called = true;
+  if (gpr_atm_full_fetch_add(&cqd->pending_events, -1) == 1) {
     cq_finish_shutdown_pluck(exec_ctx, cq);
   }
   gpr_mu_unlock(cq->mu);
+  GRPC_CQ_INTERNAL_UNREF(exec_ctx, cq, "shutting_down (pluck cq)");
 }
 
 /* Shutdown simply drops a ref that we reserved at creation time; if we drop

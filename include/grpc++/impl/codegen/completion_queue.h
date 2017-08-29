@@ -56,19 +56,7 @@ class ServerWriter;
 namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody;
-}  // namespace internal
-
-class Channel;
-class ChannelInterface;
-class ClientContext;
-class CompletionQueue;
-class Server;
-class ServerBuilder;
-class ServerContext;
-
-namespace internal {
-class CompletionQueueTag;
-class RpcMethod;
+}
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler;
 template <class ServiceType, class RequestType, class ResponseType>
@@ -78,13 +66,16 @@ class ServerStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler;
 class UnknownMethodHandler;
-template <class Streamer, bool WriteNeeded>
-class TemplatedBidiStreamingHandler;
-template <class InputMessage, class OutputMessage>
-Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
-                         ClientContext* context, const InputMessage& request,
-                         OutputMessage* result);
-}  // namespace internal
+
+class Channel;
+class ChannelInterface;
+class ClientContext;
+class CompletionQueueTag;
+class CompletionQueue;
+class RpcMethod;
+class Server;
+class ServerBuilder;
+class ServerContext;
 
 extern CoreCodegenInterface* g_core_codegen_interface;
 
@@ -205,27 +196,28 @@ class CompletionQueue : private GrpcLibraryCodegen {
   template <class W, class R>
   friend class ::grpc::internal::ServerReaderWriterBody;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::RpcMethodHandler;
+  friend class RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::ClientStreamingHandler;
+  friend class ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::ServerStreamingHandler;
+  friend class ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
-  friend class ::grpc::internal::TemplatedBidiStreamingHandler;
-  friend class ::grpc::internal::UnknownMethodHandler;
+  friend class TemplatedBidiStreamingHandler;
+  friend class UnknownMethodHandler;
   friend class ::grpc::Server;
   friend class ::grpc::ServerContext;
   template <class InputMessage, class OutputMessage>
-  friend Status(::grpc::internal::BlockingUnaryCall)(
-      ChannelInterface* channel, const internal::RpcMethod& method,
-      ClientContext* context, const InputMessage& request,
-      OutputMessage* result);
+  friend Status BlockingUnaryCall(ChannelInterface* channel,
+                                  const RpcMethod& method,
+                                  ClientContext* context,
+                                  const InputMessage& request,
+                                  OutputMessage* result);
 
   NextStatus AsyncNextInternal(void** tag, bool* ok, gpr_timespec deadline);
 
   /// Wraps \a grpc_completion_queue_pluck.
   /// \warning Must not be mixed with calls to \a Next.
-  bool Pluck(internal::CompletionQueueTag* tag) {
+  bool Pluck(CompletionQueueTag* tag) {
     auto deadline =
         g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
     auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
@@ -246,7 +238,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// implementation to simple call the other TryPluck function with a zero
   /// timeout. i.e:
   ///      TryPluck(tag, gpr_time_0(GPR_CLOCK_REALTIME))
-  void TryPluck(internal::CompletionQueueTag* tag) {
+  void TryPluck(CompletionQueueTag* tag) {
     auto deadline = g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
     auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
@@ -262,7 +254,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   ///
   /// This exects tag->FinalizeResult (if called) to return 'false' i.e expects
   /// that the tag is internal not something that is returned to the user.
-  void TryPluck(internal::CompletionQueueTag* tag, gpr_timespec deadline) {
+  void TryPluck(CompletionQueueTag* tag, gpr_timespec deadline) {
     auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT || ev.type == GRPC_QUEUE_SHUTDOWN) {

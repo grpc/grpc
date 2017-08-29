@@ -213,4 +213,74 @@
   XCTAssertEqualObjects(handler.errorOrNil, nil);
 }
 
+#define WRITE_ROUNDS (1000)
+- (void)testBufferedPipeResumeWhenDealloc {
+  id anyValue = @7;
+  id<GRXWriteable> writeable = [GRXWriteable  writeableWithSingleHandler:^(id value, NSError *errorOrNil) {
+  }];
+
+  // Release after alloc;
+  GRXBufferedPipe *pipe = [GRXBufferedPipe pipe];
+  pipe = nil;
+
+  // Release after write but before start
+  pipe = [GRXBufferedPipe pipe];
+  for (int i = 0; i < WRITE_ROUNDS; i++) {
+    [pipe writeValue:anyValue];
+  }
+  pipe = nil;
+
+  // Release after start but not write
+  pipe = [GRXBufferedPipe pipe];
+  [pipe startWithWriteable:writeable];
+  pipe = nil;
+
+  // Release after start and write
+  pipe = [GRXBufferedPipe pipe];
+  for (int i = 0; i < WRITE_ROUNDS; i++) {
+    [pipe writeValue:anyValue];
+  }
+  [pipe startWithWriteable:writeable];
+  pipe = nil;
+
+  // Release after start, write and pause
+  pipe = [GRXBufferedPipe pipe];
+  [pipe startWithWriteable:writeable];
+  for (int i = 0; i < WRITE_ROUNDS; i++) {
+    [pipe writeValue:anyValue];
+  }
+  pipe.state = GRXWriterStatePaused;
+  for (int i = 0; i < WRITE_ROUNDS; i++) {
+    [pipe writeValue:anyValue];
+  }
+  pipe = nil;
+
+  // Release after start, write, pause and finish
+  pipe = [GRXBufferedPipe pipe];
+  [pipe startWithWriteable:writeable];
+  for (int i = 0; i < WRITE_ROUNDS; i++) {
+    [pipe writeValue:anyValue];
+  }
+  pipe.state = GRXWriterStatePaused;
+  for (int i = 0; i < WRITE_ROUNDS; i++) {
+    [pipe writeValue:anyValue];
+  }
+  [pipe finishWithError:nil];
+  pipe = nil;
+
+  // Release after start, write, pause, finish and resume
+  pipe = [GRXBufferedPipe pipe];
+  [pipe startWithWriteable:writeable];
+  for (int i = 0; i < WRITE_ROUNDS; i++) {
+    [pipe writeValue:anyValue];
+  }
+  pipe.state = GRXWriterStatePaused;
+  for (int i = 0; i < WRITE_ROUNDS; i++) {
+    [pipe writeValue:anyValue];
+  }
+  [pipe finishWithError:nil];
+  pipe.state = GRXWriterStateStarted;
+  pipe = nil;
+}
+
 @end

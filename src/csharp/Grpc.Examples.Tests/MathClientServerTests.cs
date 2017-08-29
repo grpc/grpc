@@ -37,7 +37,7 @@ namespace Math.Tests
         Channel channel;
         Math.MathClient client;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void Init()
         {
             // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
@@ -51,7 +51,7 @@ namespace Math.Tests
             client = new Math.MathClient(channel);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void Cleanup()
         {
             channel.ShutdownAsync().Wait();
@@ -130,7 +130,7 @@ namespace Math.Tests
         }
 
         [Test]
-        public async Task FibWithDeadline()
+        public void FibWithDeadline()
         {
             using (var call = client.Fib(new FibArgs { Limit = 0 }, 
                 deadline: DateTime.UtcNow.AddMilliseconds(500)))

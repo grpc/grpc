@@ -47,6 +47,8 @@ static void MallocAndCopyByteBufferToCharArray(grpc_byte_buffer *buffer,
   grpc_slice_unref(slice);
   *array = result;
   *length = uncompressed_length;
+
+  grpc_byte_buffer_reader_destroy(&reader);
 }
 
 static grpc_byte_buffer *CopyCharArrayToNewByteBuffer(const char *array,

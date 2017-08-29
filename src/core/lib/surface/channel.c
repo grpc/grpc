@@ -142,6 +142,16 @@ grpc_channel *grpc_channel_create_with_builder(
                                      GRPC_COMPRESS_LEVEL_NONE,
                                      GRPC_COMPRESS_LEVEL_COUNT - 1});
     } else if (0 == strcmp(args->args[i].key,
+                           GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_LEVEL)) {
+      channel->compression_options.default_stream_compression_level.is_set =
+          true;
+      channel->compression_options.default_stream_compression_level.level =
+          (grpc_stream_compression_level)grpc_channel_arg_get_integer(
+              &args->args[i],
+              (grpc_integer_options){GRPC_STREAM_COMPRESS_LEVEL_NONE,
+                                     GRPC_STREAM_COMPRESS_LEVEL_NONE,
+                                     GRPC_STREAM_COMPRESS_LEVEL_COUNT - 1});
+    } else if (0 == strcmp(args->args[i].key,
                            GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM)) {
       channel->compression_options.default_algorithm.is_set = true;
       channel->compression_options.default_algorithm.algorithm =
@@ -149,10 +159,29 @@ grpc_channel *grpc_channel_create_with_builder(
               &args->args[i],
               (grpc_integer_options){GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,
                                      GRPC_COMPRESS_ALGORITHMS_COUNT - 1});
+    } else if (0 == strcmp(args->args[i].key,
+                           GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM)) {
+      channel->compression_options.default_stream_compression_algorithm.is_set =
+          true;
+      channel->compression_options.default_stream_compression_algorithm
+          .algorithm =
+          (grpc_stream_compression_algorithm)grpc_channel_arg_get_integer(
+              &args->args[i],
+              (grpc_integer_options){
+                  GRPC_STREAM_COMPRESS_NONE, GRPC_STREAM_COMPRESS_NONE,
+                  GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT - 1});
     } else if (0 ==
                strcmp(args->args[i].key,
                       GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET)) {
       channel->compression_options.enabled_algorithms_bitset =
+          (uint32_t)args->args[i].value.integer |
+          0x1; /* always support no compression */
+    } else if (0 ==
+               strcmp(
+                   args->args[i].key,
+                   GRPC_STREAM_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET)) {
+      channel->compression_options
+          .enabled_stream_compression_algorithms_bitset =
           (uint32_t)args->args[i].value.integer |
           0x1; /* always support no compression */
     }

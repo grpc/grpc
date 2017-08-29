@@ -73,10 +73,8 @@ static const grpc_closure_scheduler_vtable finally_scheduler = {
 static void offload(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
 
 grpc_combiner *grpc_combiner_create(void) {
-  grpc_combiner *lock = gpr_malloc(sizeof(*lock));
+  grpc_combiner *lock = gpr_zalloc(sizeof(*lock));
   gpr_ref_init(&lock->refs, 1);
-  lock->next_combiner_on_this_exec_ctx = NULL;
-  lock->time_to_execute_final_list = false;
   lock->scheduler.vtable = &scheduler;
   lock->finally_scheduler.vtable = &finally_scheduler;
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);

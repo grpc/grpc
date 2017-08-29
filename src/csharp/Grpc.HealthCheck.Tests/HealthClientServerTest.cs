@@ -37,7 +37,7 @@ namespace Grpc.HealthCheck.Tests
         Grpc.Health.V1.Health.HealthClient client;
         Grpc.HealthCheck.HealthServiceImpl serviceImpl;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void Init()
         {
             serviceImpl = new HealthServiceImpl();
@@ -54,7 +54,7 @@ namespace Grpc.HealthCheck.Tests
             client = new Grpc.Health.V1.Health.HealthClient(channel);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void Cleanup()
         {
             channel.ShutdownAsync().Wait();

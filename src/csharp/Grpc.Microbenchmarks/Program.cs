@@ -27,7 +27,7 @@ namespace Grpc.Microbenchmarks
     {
         public static void Main(string[] args)
         {
-            GrpcEnvironment.SetLogger(new TextWriterLogger(Console.Error));
+            GrpcEnvironment.SetLogger(new ConsoleLogger());
             var benchmark = new SendMessageBenchmark();
             benchmark.Init();
             foreach (int threadCount in new int[] {1, 1, 2, 4, 8, 12})

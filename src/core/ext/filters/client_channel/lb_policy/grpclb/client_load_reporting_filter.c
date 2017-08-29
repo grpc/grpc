@@ -88,7 +88,6 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   // Record call finished, optionally setting client_failed_to_send and
   // received.
   grpc_grpclb_client_stats_add_call_finished(
-      false /* drop_for_rate_limiting */, false /* drop_for_load_balancing */,
       !calld->send_initial_metadata_succeeded /* client_failed_to_send */,
       calld->recv_initial_metadata_succeeded /* known_received */,
       calld->client_stats);
@@ -133,6 +132,5 @@ const grpc_channel_filter grpc_client_load_reporting_filter = {
     0,  // sizeof(channel_data)
     init_channel_elem,
     destroy_channel_elem,
-    grpc_call_next_get_peer,
     grpc_channel_next_get_info,
     "client_load_reporting"};
