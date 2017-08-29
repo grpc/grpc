@@ -20,6 +20,9 @@
 #define GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H
 
 #include <grpc/grpc.h>
+
+#include <stdbool.h>
+
 #include "test/core/util/test_config.h"
 
 #define GRPC_BAD_CLIENT_REGISTERED_METHOD "/registered/bar"
@@ -29,7 +32,8 @@ typedef void (*grpc_bad_client_server_side_validator)(grpc_server *server,
                                                       grpc_completion_queue *cq,
                                                       void *registered_method);
 
-typedef void (*grpc_bad_client_client_stream_validator)(
+// Returns false if we need to read more data.
+typedef bool (*grpc_bad_client_client_stream_validator)(
     grpc_slice_buffer *incoming);
 
 #define GRPC_BAD_CLIENT_DISCONNECT 1

@@ -22,6 +22,7 @@
 #include <stddef.h>
 
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
@@ -152,6 +153,9 @@ struct grpc_transport_stream_op_batch_payload {
     /** Iff send_initial_metadata != NULL, flags associated with
         send_initial_metadata: a bitfield of GRPC_INITIAL_METADATA_xxx */
     uint32_t send_initial_metadata_flags;
+    // If non-NULL, will be set by the transport to the peer string
+    // (a char*, which the caller takes ownership of).
+    gpr_atm *peer_string;
   } send_initial_metadata;
 
   struct {
@@ -159,6 +163,11 @@ struct grpc_transport_stream_op_batch_payload {
   } send_trailing_metadata;
 
   struct {
+    // The transport (or a filter that decides to return a failure before
+    // the op gets down to the transport) is responsible for calling
+    // grpc_byte_stream_destroy() on this.
+    // The batch's on_complete will not be called until after the byte
+    // stream is destroyed.
     grpc_byte_stream *send_message;
   } send_message;
 
@@ -171,9 +180,16 @@ struct grpc_transport_stream_op_batch_payload {
     // immediately available.  This may be a signal that we received a
     // Trailers-Only response.
     bool *trailing_metadata_available;
+    // If non-NULL, will be set by the transport to the peer string
+    // (a char*, which the caller takes ownership of).
+    gpr_atm *peer_string;
   } recv_initial_metadata;
 
   struct {
+    // Will be set by the transport to point to the byte stream
+    // containing a received message.
+    // The caller is responsible for calling grpc_byte_stream_destroy()
+    // on this byte stream.
     grpc_byte_stream **recv_message;
     /** Should be enqueued when one message is ready to be processed. */
     grpc_closure *recv_message_ready;
@@ -284,7 +300,7 @@ void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
 
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *op,
-    grpc_error *error);
+    grpc_error *error, grpc_call_combiner *call_combiner);
 
 char *grpc_transport_stream_op_batch_string(grpc_transport_stream_op_batch *op);
 char *grpc_transport_op_string(grpc_transport_op *op);
@@ -322,10 +338,6 @@ void grpc_transport_close(grpc_transport *transport);
 
 /* Destroy the transport */
 void grpc_transport_destroy(grpc_exec_ctx *exec_ctx, grpc_transport *transport);
-
-/* Get the transports peer */
-char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
-                              grpc_transport *transport);
 
 /* Get the endpoint used by \a transport */
 grpc_endpoint *grpc_transport_get_endpoint(grpc_exec_ctx *exec_ctx,

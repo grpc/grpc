@@ -77,7 +77,7 @@ For developers who are interested to contribute, here is how to compile the
 gRPC C Core library.
 
 ```sh
- $ git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc
+ $ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
  $ cd grpc
  $ git submodule update --init
  $ make
@@ -95,7 +95,7 @@ on experience with the tools involved.
 
 Builds gRPC C and C++ with boringssl.
 - Install [CMake](https://cmake.org/download/).
-- Install [Active State Perl](http://www.activestate.com/activeperl/) (`choco install activeperl`)
+- Install [Active State Perl](https://www.activestate.com/activeperl/) (`choco install activeperl`)
 - Install [Ninja](https://ninja-build.org/) (`choco install ninja`)
 - Install [Go](https://golang.org/dl/) (`choco install golang`)
 - Install [yasm](http://yasm.tortall.net/) and add it to `PATH` (`choco install yasm`)
@@ -141,8 +141,6 @@ MINGW64$ make
 NOTE: While most of the make targets are buildable under Mingw, some haven't been ported to Windows yet
 and may fail to build (mostly trying to include POSIX headers not available on Mingw).
 
-### Pre-generated Visual Studio solution (DEPRECATED)
+### Pre-generated Visual Studio solution (DELETED)
 
-*WARNING: This used to be the recommended way to build on Windows, but because of significant limitations (hard to build dependencies including boringssl, .proto codegen is hard to support, ..), it is no longer recommended. Use cmake to build on Windows instead.*
-
-The pre-generated VS projects & solution are checked into the repository under the [vsprojects](/vsprojects) directory.
+*WARNING: This used to be the recommended way to build on Windows, but because of significant limitations (hard to build dependencies including boringssl, .proto codegen is hard to support, ..) we are no longer providing them. Use cmake to build on Windows instead.*

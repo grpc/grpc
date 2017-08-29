@@ -149,7 +149,7 @@ static void BM_PollAddFd(benchmark::State& state) {
     grpc_pollset_add_fd(&exec_ctx, ps, fd);
     grpc_exec_ctx_flush(&exec_ctx);
   }
-  grpc_fd_orphan(&exec_ctx, fd, NULL, NULL, "xxx");
+  grpc_fd_orphan(&exec_ctx, fd, NULL, NULL, false /* already_closed */, "xxx");
   grpc_closure shutdown_ps_closure;
   GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
                     grpc_schedule_on_exec_ctx);
@@ -247,7 +247,8 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   while (!done) {
     GRPC_ERROR_UNREF(grpc_pollset_work(&exec_ctx, ps, NULL, now, deadline));
   }
-  grpc_fd_orphan(&exec_ctx, wakeup, NULL, NULL, "done");
+  grpc_fd_orphan(&exec_ctx, wakeup, NULL, NULL, false /* already_closed */,
+                 "done");
   wakeup_fd.read_fd = 0;
   grpc_closure shutdown_ps_closure;
   GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,

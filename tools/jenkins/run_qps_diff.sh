@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2015 gRPC authors.
+# Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,4 +20,4 @@ set -ex
 cd $(dirname $0)/../..
 
 tools/run_tests/start_port_server.py
-tools/profiling/qps/qps_diff.py -d origin/$ghprbTargetBranch 
+tools/profiling/qps/qps_diff.py -d origin/$ghprbTargetBranch

@@ -220,6 +220,11 @@ const char *grpc_sockaddr_get_uri_scheme(
   return NULL;
 }
 
+int grpc_sockaddr_get_family(const grpc_resolved_address *resolved_addr) {
+  const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
+  return addr->sa_family;
+}
+
 int grpc_sockaddr_get_port(const grpc_resolved_address *resolved_addr) {
   const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   switch (addr->sa_family) {

@@ -24,7 +24,7 @@
 #include <grpc/support/string_util.h>
 
 grpc_tracer_flag grpc_trace_channel_stack_builder =
-    GRPC_TRACER_INITIALIZER(false);
+    GRPC_TRACER_INITIALIZER(false, "channel_stack_builder");
 
 typedef struct filter_node {
   struct filter_node *next;

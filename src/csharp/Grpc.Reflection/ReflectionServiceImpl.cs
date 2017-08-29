@@ -60,6 +60,9 @@ namespace Grpc.Reflection
         {
         }
 
+        /// <summary>
+        /// Processes a stream of server reflection requests.
+        /// </summary>
         public override async Task ServerReflectionInfo(IAsyncStreamReader<ServerReflectionRequest> requestStream, IServerStreamWriter<ServerReflectionResponse> responseStream, ServerCallContext context)
         {
             while (await requestStream.MoveNext())

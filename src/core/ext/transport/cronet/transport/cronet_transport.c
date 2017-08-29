@@ -637,7 +637,8 @@ static void on_response_trailers_received(
  Utility function that takes the data from s->write_slice_buffer and assembles
  into a contiguous byte stream with 5 byte gRPC header prepended.
 */
-static void create_grpc_frame(grpc_slice_buffer *write_slice_buffer,
+static void create_grpc_frame(grpc_exec_ctx *exec_ctx,
+                              grpc_slice_buffer *write_slice_buffer,
                               char **pp_write_buffer,
                               size_t *p_write_buffer_size, uint32_t flags) {
   grpc_slice slice = grpc_slice_buffer_take_first(write_slice_buffer);
@@ -657,6 +658,7 @@ static void create_grpc_frame(grpc_slice_buffer *write_slice_buffer,
   *p++ = (uint8_t)(length);
   /* append actual data */
   memcpy(p, GRPC_SLICE_START_PTR(slice), length);
+  grpc_slice_unref_internal(exec_ctx, slice);
 }
 
 /*
@@ -968,6 +970,9 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     s->header_array.capacity = s->header_array.count;
     CRONET_LOG(GPR_DEBUG, "bidirectional_stream_start(%p, %s)", s->cbs, url);
     bidirectional_stream_start(s->cbs, url, 0, method, &s->header_array, false);
+    if (url) {
+      gpr_free(url);
+    }
     unsigned int header_index;
     for (header_index = 0; header_index < s->header_array.count;
          header_index++) {
@@ -1014,14 +1019,15 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       }
       if (write_slice_buffer.count > 0) {
         size_t write_buffer_size;
-        create_grpc_frame(&write_slice_buffer, &stream_state->ws.write_buffer,
-                          &write_buffer_size,
+        create_grpc_frame(exec_ctx, &write_slice_buffer,
+                          &stream_state->ws.write_buffer, &write_buffer_size,
                           stream_op->payload->send_message.send_message->flags);
         CRONET_LOG(GPR_DEBUG, "bidirectional_stream_write (%p, %p)", s->cbs,
                    stream_state->ws.write_buffer);
         stream_state->state_callback_received[OP_SEND_MESSAGE] = false;
         bidirectional_stream_write(s->cbs, stream_state->ws.write_buffer,
                                    (int)write_buffer_size, false);
+        grpc_slice_buffer_destroy_internal(exec_ctx, &write_slice_buffer);
         if (t->use_packet_coalescing) {
           if (!stream_op->send_trailing_metadata) {
             CRONET_LOG(GPR_DEBUG, "bidirectional_stream_flush (%p)", s->cbs);
@@ -1150,6 +1156,9 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
         } else {
           stream_state->rs.remaining_bytes = 0;
           CRONET_LOG(GPR_DEBUG, "read operation complete. Empty response.");
+          /* Clean up read_slice_buffer in case there is unread data. */
+          grpc_slice_buffer_destroy_internal(
+              exec_ctx, &stream_state->rs.read_slice_buffer);
           grpc_slice_buffer_init(&stream_state->rs.read_slice_buffer);
           grpc_slice_buffer_stream_init(&stream_state->rs.sbs,
                                         &stream_state->rs.read_slice_buffer, 0);
@@ -1203,6 +1212,9 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
       memcpy(dst_p, stream_state->rs.read_buffer,
              (size_t)stream_state->rs.length_field);
       null_and_maybe_free_read_buffer(s);
+      /* Clean up read_slice_buffer in case there is unread data. */
+      grpc_slice_buffer_destroy_internal(exec_ctx,
+                                         &stream_state->rs.read_slice_buffer);
       grpc_slice_buffer_init(&stream_state->rs.read_slice_buffer);
       grpc_slice_buffer_add(&stream_state->rs.read_slice_buffer,
                             read_data_slice);
@@ -1366,15 +1378,13 @@ static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                            grpc_closure *then_schedule_closure) {
   stream_obj *s = (stream_obj *)gs;
   null_and_maybe_free_read_buffer(s);
+  /* Clean up read_slice_buffer in case there is unread data. */
+  grpc_slice_buffer_destroy_internal(exec_ctx, &s->state.rs.read_slice_buffer);
   GRPC_ERROR_UNREF(s->state.cancel_error);
   GRPC_CLOSURE_SCHED(exec_ctx, then_schedule_closure, GRPC_ERROR_NONE);
 }
 
 static void destroy_transport(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {}
-
-static char *get_peer(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {
-  return NULL;
-}
 
 static grpc_endpoint *get_endpoint(grpc_exec_ctx *exec_ctx,
                                    grpc_transport *gt) {
@@ -1394,7 +1404,6 @@ static const grpc_transport_vtable grpc_cronet_vtable = {
     perform_op,
     destroy_stream,
     destroy_transport,
-    get_peer,
     get_endpoint};
 
 grpc_transport *grpc_create_cronet_transport(void *engine, const char *target,

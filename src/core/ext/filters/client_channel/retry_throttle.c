@@ -130,24 +130,28 @@ static grpc_server_retry_throttle_data* grpc_server_retry_throttle_data_create(
 // avl vtable for string -> server_retry_throttle_data map
 //
 
-static void* copy_server_name(void* key) { return gpr_strdup(key); }
+static void* copy_server_name(void* key, void* unused) {
+  return gpr_strdup(key);
+}
 
-static long compare_server_name(void* key1, void* key2) {
+static long compare_server_name(void* key1, void* key2, void* unused) {
   return strcmp(key1, key2);
 }
 
-static void destroy_server_retry_throttle_data(void* value) {
+static void destroy_server_retry_throttle_data(void* value, void* unused) {
   grpc_server_retry_throttle_data* throttle_data = value;
   grpc_server_retry_throttle_data_unref(throttle_data);
 }
 
-static void* copy_server_retry_throttle_data(void* value) {
+static void* copy_server_retry_throttle_data(void* value, void* unused) {
   grpc_server_retry_throttle_data* throttle_data = value;
   return grpc_server_retry_throttle_data_ref(throttle_data);
 }
 
+static void destroy_server_name(void* key, void* unused) { gpr_free(key); }
+
 static const gpr_avl_vtable avl_vtable = {
-    gpr_free /* destroy_key */, copy_server_name, compare_server_name,
+    destroy_server_name, copy_server_name, compare_server_name,
     destroy_server_retry_throttle_data, copy_server_retry_throttle_data};
 
 //
@@ -164,19 +168,19 @@ void grpc_retry_throttle_map_init() {
 
 void grpc_retry_throttle_map_shutdown() {
   gpr_mu_destroy(&g_mu);
-  gpr_avl_unref(g_avl);
+  gpr_avl_unref(g_avl, NULL);
 }
 
 grpc_server_retry_throttle_data* grpc_retry_throttle_map_get_data_for_server(
     const char* server_name, int max_milli_tokens, int milli_token_ratio) {
   gpr_mu_lock(&g_mu);
   grpc_server_retry_throttle_data* throttle_data =
-      gpr_avl_get(g_avl, (char*)server_name);
+      gpr_avl_get(g_avl, (char*)server_name, NULL);
   if (throttle_data == NULL) {
     // Entry not found.  Create a new one.
     throttle_data = grpc_server_retry_throttle_data_create(
         max_milli_tokens, milli_token_ratio, NULL);
-    g_avl = gpr_avl_add(g_avl, (char*)server_name, throttle_data);
+    g_avl = gpr_avl_add(g_avl, (char*)server_name, throttle_data, NULL);
   } else {
     if (throttle_data->max_milli_tokens != max_milli_tokens ||
         throttle_data->milli_token_ratio != milli_token_ratio) {
@@ -184,7 +188,7 @@ grpc_server_retry_throttle_data* grpc_retry_throttle_map_get_data_for_server(
       // the original one.
       throttle_data = grpc_server_retry_throttle_data_create(
           max_milli_tokens, milli_token_ratio, throttle_data);
-      g_avl = gpr_avl_add(g_avl, (char*)server_name, throttle_data);
+      g_avl = gpr_avl_add(g_avl, (char*)server_name, throttle_data, NULL);
     } else {
       // Entry found.  Increase refcount.
       grpc_server_retry_throttle_data_ref(throttle_data);

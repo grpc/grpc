@@ -253,5 +253,4 @@ for lang in languages:
     # docker image name must be in the format <gcr_path>/<image>:<gcr_tag>
     assert image.startswith(args.gcr_path) and image.find(':') != -1
 
-    # subprocess.call(['gcloud', 'docker', '--', 'push', image])
     subprocess.call(['gcloud', 'docker', '--', 'push', image])

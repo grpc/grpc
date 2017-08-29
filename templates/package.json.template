@@ -5,7 +5,7 @@
     "version": "${settings.node_version}",
     "author": "Google Inc.",
     "description": "gRPC Library for Node",
-    "homepage": "http://www.grpc.io/",
+    "homepage": "https://grpc.io/",
     "repository": {
       "type": "git",
       "url": "https://github.com/grpc/grpc.git"
@@ -58,7 +58,7 @@
     },
     "binary": {
       "module_name": "grpc_node",
-      "module_path": "src/node/extension_binary",
+      "module_path": "src/node/extension_binary/{node_abi}-{platform}-{arch}",
       "host": "https://storage.googleapis.com/",
       "remote_path": "grpc-precompiled-binaries/node/{name}/v{version}",
       "package_name": "{node_abi}-{platform}-{arch}.tar.gz"

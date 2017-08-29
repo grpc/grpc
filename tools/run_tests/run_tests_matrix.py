@@ -126,23 +126,37 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
   test_jobs += _generate_jobs(languages=['sanity', 'php7'],
                              configs=['dbg', 'opt'],
                              platforms=['linux'],
-                             labels=['basictests'],
+                             labels=['basictests', 'multilang'],
                              extra_args=extra_args,
                              inner_jobs=inner_jobs)
 
   # supported on all platforms.
-  test_jobs += _generate_jobs(languages=['c', 'csharp', 'node', 'python'],
+  test_jobs += _generate_jobs(languages=['c'],
                              configs=['dbg', 'opt'],
                              platforms=['linux', 'macos', 'windows'],
-                             labels=['basictests'],
+                             labels=['basictests', 'corelang'],
+                             extra_args=extra_args,
+                             inner_jobs=inner_jobs)
+  
+  test_jobs += _generate_jobs(languages=['csharp', 'node', 'python'],
+                             configs=['dbg', 'opt'],
+                             platforms=['linux', 'macos', 'windows'],
+                             labels=['basictests', 'multilang'],
                              extra_args=extra_args,
                              inner_jobs=inner_jobs)
 
   # supported on linux and mac.
-  test_jobs += _generate_jobs(languages=['c++', 'ruby', 'php'],
+  test_jobs += _generate_jobs(languages=['c++'],
                               configs=['dbg', 'opt'],
                               platforms=['linux', 'macos'],
-                              labels=['basictests'],
+                              labels=['basictests', 'corelang'],
+                              extra_args=extra_args,
+                              inner_jobs=inner_jobs)
+  
+  test_jobs += _generate_jobs(languages=['ruby', 'php'],
+                              configs=['dbg', 'opt'],
+                              platforms=['linux', 'macos'],
+                              labels=['basictests', 'multilang'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
 
@@ -150,7 +164,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
   test_jobs += _generate_jobs(languages=['objc'],
                               configs=['dbg', 'opt'],
                               platforms=['macos'],
-                              labels=['basictests'],
+                              labels=['basictests', 'multilang'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
 
@@ -158,13 +172,13 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
   test_jobs += _generate_jobs(languages=['c'],
                               configs=['msan', 'asan', 'tsan', 'ubsan'],
                               platforms=['linux'],
-                              labels=['sanitizers'],
+                              labels=['sanitizers', 'corelang'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
   test_jobs += _generate_jobs(languages=['c++'],
                               configs=['asan', 'tsan'],
                               platforms=['linux'],
-                              labels=['sanitizers'],
+                              labels=['sanitizers', 'corelang'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
 
@@ -179,7 +193,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               platforms=['linux'],
                               arch='x86',
                               compiler='default',
-                              labels=['portability'],
+                              labels=['portability', 'corelang'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
 
@@ -191,26 +205,46 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                                 platforms=['linux'],
                                 arch='x64',
                                 compiler=compiler,
-                                labels=['portability'],
+                                labels=['portability', 'corelang'],
                                 extra_args=extra_args,
                                 inner_jobs=inner_jobs)
 
-  # portability C on Windows
-  for arch in ['x86', 'x64']:
-    for compiler in ['vs2013', 'vs2015']:
-      test_jobs += _generate_jobs(languages=['c'],
-                                  configs=['dbg'],
-                                  platforms=['windows'],
-                                  arch=arch,
-                                  compiler=compiler,
-                                  labels=['portability'],
-                                  extra_args=extra_args,
-                                  inner_jobs=inner_jobs)
+  # portability C on Windows 64-bit (x86 is the default)
+  test_jobs += _generate_jobs(languages=['c'],
+                              configs=['dbg'],
+                              platforms=['windows'],
+                              arch='x64',
+                              compiler='default',
+                              labels=['portability', 'corelang'],
+                              extra_args=extra_args,
+                              inner_jobs=inner_jobs)
+
+  # portability C++ on Windows
+  # TODO(jtattermusch): some of the tests are failing, so we force --build_only
+  test_jobs += _generate_jobs(languages=['c++'],
+                              configs=['dbg'],
+                              platforms=['windows'],
+                              arch='default',
+                              compiler='default',
+                              labels=['portability', 'corelang'],
+                              extra_args=extra_args + ['--build_only'],
+                              inner_jobs=inner_jobs)
+
+  # portability C and C++ on Windows using VS2017 (build only)
+  # TODO(jtattermusch): some of the tests are failing, so we force --build_only
+  test_jobs += _generate_jobs(languages=['c', 'c++'],
+                              configs=['dbg'],
+                              platforms=['windows'],
+                              arch='x64',
+                              compiler='cmake_vs2017',
+                              labels=['portability', 'corelang'],
+                              extra_args=extra_args + ['--build_only'],
+                              inner_jobs=inner_jobs)
 
   # C and C++ with the c-ares DNS resolver on Linux
   test_jobs += _generate_jobs(languages=['c', 'c++'],
                               configs=['dbg'], platforms=['linux'],
-                              labels=['portability'],
+                              labels=['portability', 'corelang'],
                               extra_args=extra_args,
                               extra_envs={'GRPC_DNS_RESOLVER': 'ares'})
 
@@ -218,19 +252,19 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
   # C with the c-ares DNS resolver on Windonws
   # test_jobs += _generate_jobs(languages=['c'],
   #                             configs=['dbg'], platforms=['windows'],
-  #                             labels=['portability'],
+  #                             labels=['portability', 'corelang'],
   #                             extra_args=extra_args,
   #                             extra_envs={'GRPC_DNS_RESOLVER': 'ares'})
 
-  # cmake build for C and C++
+  # C and C++ build with cmake on Linux
   # TODO(jtattermusch): some of the tests are failing, so we force --build_only
   # to make sure it's buildable at least.
   test_jobs += _generate_jobs(languages=['c', 'c++'],
                               configs=['dbg'],
-                              platforms=['linux', 'windows'],
+                              platforms=['linux'],
                               arch='default',
                               compiler='cmake',
-                              labels=['portability'],
+                              labels=['portability', 'corelang'],
                               extra_args=extra_args + ['--build_only'],
                               inner_jobs=inner_jobs)
 
@@ -239,7 +273,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               platforms=['linux'],
                               arch='default',
                               compiler='python_alpine',
-                              labels=['portability'],
+                              labels=['portability', 'multilang'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
 
@@ -248,7 +282,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               platforms=['linux'],
                               arch='default',
                               compiler='coreclr',
-                              labels=['portability'],
+                              labels=['portability', 'multilang'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
 
@@ -256,7 +290,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               configs=['dbg'],
                               platforms=['linux'],
                               iomgr_platform='uv',
-                              labels=['portability'],
+                              labels=['portability', 'corelang'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
 
@@ -265,7 +299,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               platforms=['linux'],
                               arch='default',
                               compiler='electron1.6',
-                              labels=['portability'],
+                              labels=['portability', 'multilang'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
 
@@ -274,7 +308,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               platforms=['linux'],
                               arch='default',
                               compiler='node4',
-                              labels=['portability'],
+                              labels=['portability', 'multilang'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
 
@@ -283,7 +317,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               platforms=['linux'],
                               arch='default',
                               compiler='node6',
-                              labels=['portability'],
+                              labels=['portability', 'multilang'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
 
@@ -292,7 +326,7 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               platforms=['linux'],
                               arch='default',
                               compiler='node7',
-                              labels=['portability'],
+                              labels=['portability', 'multilang'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs)
 
@@ -397,6 +431,7 @@ if __name__ == "__main__":
     extra_args.append('--bq_result_table')
     extra_args.append('%s' % args.bq_result_table)
     extra_args.append('--measure_cpu_costs')
+    extra_args.append('--disable_auto_set_flakes')
 
   all_jobs = _create_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs) + \
              _create_portability_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs)

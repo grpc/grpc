@@ -34,6 +34,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/support/env.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/metadata.h"
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -415,7 +416,8 @@ void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
 grpc_ares_request *my_dns_lookup_ares(
     grpc_exec_ctx *exec_ctx, const char *dns_server, const char *addr,
     const char *default_port, grpc_pollset_set *interested_parties,
-    grpc_closure *on_done, grpc_lb_addresses **lb_addrs, bool check_grpclb) {
+    grpc_closure *on_done, grpc_lb_addresses **lb_addrs, bool check_grpclb,
+    char **service_config_json) {
   addr_req *r = gpr_malloc(sizeof(*r));
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
@@ -731,7 +733,9 @@ static validator *make_finished_batch_validator(call_state *cs,
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_slice_hash_seed(0);
-  if (squelch) gpr_set_log_function(dont_log);
+  char *grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
+  if (squelch && grpc_trace_fuzzer == NULL) gpr_set_log_function(dont_log);
+  gpr_free(grpc_trace_fuzzer);
   input_stream inp = {data, data + size};
   grpc_tcp_client_connect_impl = my_tcp_client_connect;
   gpr_now_impl = now_impl;

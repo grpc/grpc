@@ -78,8 +78,9 @@ void grpc_client_channel_init(void) {
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, append_filter,
       (void *)&grpc_client_channel_filter);
   grpc_http_connect_register_handshaker_factory();
+  grpc_register_tracer(&grpc_client_channel_trace);
 #ifndef NDEBUG
-  grpc_register_tracer("resolver_refcount", &grpc_trace_resolver_refcount);
+  grpc_register_tracer(&grpc_trace_resolver_refcount);
 #endif
 }
 

@@ -25,6 +25,7 @@
 
 #include <grpc/impl/codegen/compression_types.h>
 
+#include <grpc++/impl/codegen/call.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/create_auth_context.h>
@@ -288,6 +289,9 @@ class ServerContext {
   bool compression_level_set_;
   grpc_compression_level compression_level_;
   grpc_compression_algorithm compression_algorithm_;
+
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> pending_ops_;
+  bool has_pending_ops_;
 };
 
 }  // namespace grpc
