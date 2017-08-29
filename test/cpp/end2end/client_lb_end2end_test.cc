@@ -85,7 +85,8 @@ class MyTestServiceImpl : public TestServiceImpl {
 
 class ClientLbEnd2endTest : public ::testing::Test {
  protected:
-  ClientLbEnd2endTest() : server_host_("localhost") {}
+  ClientLbEnd2endTest()
+      : server_host_("localhost"), kRequestMessage_("Live long and prosper.") {}
 
   void SetUp() override {
     response_generator_ = grpc_fake_resolver_response_generator_create();
@@ -139,6 +140,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }  // else, default to pick first
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_);
+    args.SetInt("grpc.testing.fixed_reconnect_backoff_ms", 2000);
     std::ostringstream uri;
     uri << "fake:///";
     for (size_t i = 0; i < servers_.size() - 1; ++i) {
@@ -150,18 +152,27 @@ class ClientLbEnd2endTest : public ::testing::Test {
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
-  void SendRpc(bool expect_ok = true) {
+  Status SendRpc(EchoResponse* response = nullptr) {
+    const bool local_response = (response == nullptr);
+    if (local_response) response = new EchoResponse;
     EchoRequest request;
-    EchoResponse response;
-    request.set_message("Live long and prosper.");
+    request.set_message(kRequestMessage_);
     ClientContext context;
-    Status status = stub_->Echo(&context, request, &response);
-    if (expect_ok) {
-      EXPECT_TRUE(status.ok());
-      EXPECT_EQ(response.message(), request.message());
-    } else {
-      EXPECT_FALSE(status.ok());
-    }
+    Status status = stub_->Echo(&context, request, response);
+    if (local_response) delete response;
+    return status;
+  }
+
+  void CheckRpcSendOk() {
+    EchoResponse response;
+    const Status status = SendRpc(&response);
+    EXPECT_TRUE(status.ok());
+    EXPECT_EQ(response.message(), kRequestMessage_);
+  }
+
+  void CheckRpcSendFailure() {
+    const Status status = SendRpc();
+    EXPECT_FALSE(status.ok());
   }
 
   struct ServerData {
@@ -207,7 +218,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
   void WaitForServer(size_t server_idx) {
     do {
-      SendRpc();
+      CheckRpcSendOk();
     } while (servers_[server_idx]->service_.request_count() == 0);
     ResetCounters();
   }
@@ -217,6 +228,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::vector<std::unique_ptr<ServerData>> servers_;
   grpc_fake_resolver_response_generator* response_generator_;
+  const grpc::string kRequestMessage_;
 };
 
 TEST_F(ClientLbEnd2endTest, PickFirst) {
@@ -230,7 +242,7 @@ TEST_F(ClientLbEnd2endTest, PickFirst) {
   }
   SetNextResolution(ports);
   for (size_t i = 0; i < servers_.size(); ++i) {
-    SendRpc();
+    CheckRpcSendOk();
   }
   // All requests should have gone to a single server.
   bool found = false;
@@ -258,7 +270,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   ports.emplace_back(servers_[0]->port_);
   SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET [0] *******");
-  SendRpc();
+  CheckRpcSendOk();
   EXPECT_EQ(servers_[0]->service_.request_count(), 1);
 
   // An empty update will result in the channel going into TRANSIENT_FAILURE.
@@ -304,7 +316,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdateSuperset) {
   ports.emplace_back(servers_[0]->port_);
   SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET [0] *******");
-  SendRpc();
+  CheckRpcSendOk();
   EXPECT_EQ(servers_[0]->service_.request_count(), 1);
   servers_[0]->service_.ResetCounters();
 
@@ -314,7 +326,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdateSuperset) {
   ports.emplace_back(servers_[0]->port_);
   SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET superset *******");
-  SendRpc();
+  CheckRpcSendOk();
   // We stick to the previously connected server.
   WaitForServer(0);
   EXPECT_EQ(0, servers_[1]->service_.request_count());
@@ -338,7 +350,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstManyUpdates) {
     for (size_t i = 0; i < 1000; ++i) {
       std::random_shuffle(ports.begin(), ports.end());
       SetNextResolution(ports);
-      if (i % 10 == 0) SendRpc();
+      if (i % 10 == 0) CheckRpcSendOk();
     }
   }
   // Check LB policy name for the channel.
@@ -356,7 +368,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobin) {
   }
   SetNextResolution(ports);
   for (size_t i = 0; i < servers_.size(); ++i) {
-    SendRpc();
+    CheckRpcSendOk();
   }
   // One request should have gone to each server.
   for (size_t i = 0; i < servers_.size(); ++i) {
@@ -378,7 +390,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   SetNextResolution(ports);
   WaitForServer(0);
   // Send RPCs. They should all go servers_[0]
-  for (size_t i = 0; i < 10; ++i) SendRpc();
+  for (size_t i = 0; i < 10; ++i) CheckRpcSendOk();
   EXPECT_EQ(10, servers_[0]->service_.request_count());
   EXPECT_EQ(0, servers_[1]->service_.request_count());
   EXPECT_EQ(0, servers_[2]->service_.request_count());
@@ -394,7 +406,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   EXPECT_EQ(0, servers_[1]->service_.request_count());
   WaitForServer(1);
 
-  for (size_t i = 0; i < 10; ++i) SendRpc();
+  for (size_t i = 0; i < 10; ++i) CheckRpcSendOk();
   EXPECT_EQ(0, servers_[0]->service_.request_count());
   EXPECT_EQ(10, servers_[1]->service_.request_count());
   EXPECT_EQ(0, servers_[2]->service_.request_count());
@@ -406,7 +418,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   SetNextResolution(ports);
   WaitForServer(2);
 
-  for (size_t i = 0; i < 10; ++i) SendRpc();
+  for (size_t i = 0; i < 10; ++i) CheckRpcSendOk();
   EXPECT_EQ(0, servers_[0]->service_.request_count());
   EXPECT_EQ(0, servers_[1]->service_.request_count());
   EXPECT_EQ(10, servers_[2]->service_.request_count());
@@ -423,7 +435,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   WaitForServer(2);
 
   // Send three RPCs, one per server.
-  for (size_t i = 0; i < 3; ++i) SendRpc();
+  for (size_t i = 0; i < 3; ++i) CheckRpcSendOk();
   EXPECT_EQ(1, servers_[0]->service_.request_count());
   EXPECT_EQ(1, servers_[1]->service_.request_count());
   EXPECT_EQ(1, servers_[2]->service_.request_count());
@@ -493,7 +505,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinManyUpdates) {
   for (size_t i = 0; i < 1000; ++i) {
     std::random_shuffle(ports.begin(), ports.end());
     SetNextResolution(ports);
-    if (i % 10 == 0) SendRpc();
+    if (i % 10 == 0) CheckRpcSendOk();
   }
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
@@ -504,11 +516,13 @@ TEST_F(ClientLbEnd2endTest, RoundRobinConcurrentUpdates) {
   // update provisions of RR.
 }
 
-TEST_F(ClientLbEnd2endTest, RoundRobinReconnect) {
+TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
   // Start servers and send one RPC per server.
-  const int kNumServers = 1;
+  const int kNumServers = 3;
   std::vector<int> ports;
-  ports.push_back(grpc_pick_unused_port_or_die());
+  for (int i = 0; i < kNumServers; ++i) {
+    ports.push_back(grpc_pick_unused_port_or_die());
+  }
   StartServers(kNumServers, ports);
   ResetStub("round_robin");
   SetNextResolution(ports);
@@ -517,24 +531,57 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReconnect) {
   // state READY in the order in which the addresses are specified,
   // which is only true because the backends are all local.
   for (size_t i = 0; i < servers_.size(); ++i) {
-    SendRpc();
+    CheckRpcSendOk();
     EXPECT_EQ(1, servers_[i]->service_.request_count()) << "for backend #" << i;
   }
-  // Check LB policy name for the channel.
-  EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
-
   // Kill all servers
   for (size_t i = 0; i < servers_.size(); ++i) {
     servers_[i]->Shutdown(false);
   }
   // Client request should fail.
-  SendRpc(false);
-
+  CheckRpcSendFailure();
   // Bring servers back up on the same port (we aren't recreating the channel).
   StartServers(kNumServers, ports);
-
   // Client request should succeed.
-  SendRpc();
+  CheckRpcSendOk();
+}
+
+TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  ResetStub("round_robin");
+  std::vector<int> ports;
+  for (const auto& server : servers_) {
+    ports.emplace_back(server->port_);
+  }
+  SetNextResolution(ports);
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    CheckRpcSendOk();
+    EXPECT_EQ(1, servers_[i]->service_.request_count()) << "for backend #" << i;
+  }
+  // One request should have gone to each server.
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    EXPECT_EQ(1, servers_[i]->service_.request_count());
+  }
+  const auto pre_death = servers_[0]->service_.request_count();
+  // Kill the first server.
+  servers_[0]->Shutdown(true);
+  // Client request still succeed. May need retrying if RR had returned a pick
+  // before noticing the change in the server's connectivity.
+  while (!SendRpc().ok())
+    ;  // Retry until success.
+  // Send a bunch of RPCs that should succeed.
+  for (int i = 0; i < 10 * kNumServers; ++i) CheckRpcSendOk();
+  const auto post_death = servers_[0]->service_.request_count();
+  // No requests have gone to the deceased server.
+  EXPECT_EQ(pre_death, post_death);
+  // Bring the first server back up.
+  servers_[0].reset(new ServerData(server_host_, ports[0]));
+  // Requests should start arriving at the first server either right away (if
+  // the server managed to start before the RR policy retried the subchannel) or
+  // after the subchannel retry delay otherwise (RR's subchannel retried before
+  // the server was fully back up).
+  WaitForServer(0);
 }
 
 }  // namespace
