@@ -196,7 +196,10 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
   CQ_EXPECT_COMPLETION(cqv, tag(0xdead), 1);
   cq_verify(cqv);
-
+  // make sure op GRPC_OP_RECV_CLOSE_ON_SERVER has finished.
+  while (!grpc_call_recv_close_finalized(s)) {
+    cq_verify_empty(cqv);
+  }
   grpc_call_unref(s);
 
   // The connection should be closed immediately after the misbehaved pings,

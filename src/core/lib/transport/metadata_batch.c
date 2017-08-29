@@ -144,6 +144,7 @@ static void link_head(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
     list->tail = storage;
   }
   list->head = storage;
+  gpr_log(GPR_INFO, "+++++ %p %zu++->%zu", list, list->count, list->count + 1);
   list->count++;
   assert_valid_list(list);
 }
@@ -183,6 +184,7 @@ static void link_tail(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
     list->head = storage;
   }
   list->tail = storage;
+  gpr_log(GPR_INFO, "+++++ %p %zu++->%zu", list, list->count, list->count + 1);
   list->count++;
   assert_valid_list(list);
 }
@@ -214,6 +216,7 @@ static void unlink_storage(grpc_mdelem_list *list,
   } else {
     list->tail = storage->prev;
   }
+  gpr_log(GPR_INFO, "+++++ %p %zu--->%zu", list, list->count, list->count - 1);
   list->count--;
   assert_valid_list(list);
 }

@@ -253,6 +253,10 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   CQ_EXPECT_COMPLETION(cqv, tag(102), 0);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
+  // make sure op GRPC_OP_RECV_CLOSE_ON_SERVER has finished.
+  while (!grpc_call_recv_close_finalized(s)) {
+    cq_verify_empty(cqv);
+  }
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   validate_host_override_string("foo.test.google.fr:1234", call_details.host,
@@ -453,6 +457,10 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   }
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
+  // make sure op GRPC_OP_RECV_CLOSE_ON_SERVER has finished.
+  while (!grpc_call_recv_close_finalized(s)) {
+    cq_verify_empty(cqv);
+  }
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   GPR_ASSERT(0 ==

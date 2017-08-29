@@ -157,6 +157,10 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
+  // make sure op GRPC_OP_RECV_CLOSE_ON_SERVER has finished.
+  while (!grpc_call_recv_close_finalized(s)) {
+    cq_verify_empty(cqv);
+  }
 
   grpc_server_destroy(f.server);
 

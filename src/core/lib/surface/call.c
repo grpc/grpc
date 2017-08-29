@@ -583,8 +583,7 @@ void grpc_call_unref(grpc_call *c) {
 
   GPR_ASSERT(!c->destroy_called);
   c->destroy_called = 1;
-  bool cancel = gpr_atm_acq_load(&c->any_ops_sent_atm) != 0 &&
-                gpr_atm_acq_load(&c->received_final_op_atm) == 0;
+  bool cancel = gpr_atm_acq_load(&c->any_ops_sent_atm) != 0;
   if (cancel) {
     cancel_with_error(&exec_ctx, c, STATUS_FROM_API_OVERRIDE,
                       GRPC_ERROR_CANCELLED);

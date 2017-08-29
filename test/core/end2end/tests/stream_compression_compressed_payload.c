@@ -115,7 +115,7 @@ static void request_for_disabled_algorithm(
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  int was_cancelled = 2;
+  // int was_cancelled = 2;
   cq_verifier *cqv;
   char str[1024];
 
@@ -187,9 +187,9 @@ static void request_for_disabled_algorithm(
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq, tag(101),
+                                   0, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), true);
   cq_verify(cqv);
@@ -210,21 +210,21 @@ static void request_for_disabled_algorithm(
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), false);
 
-  op = ops;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  CQ_EXPECT_COMPLETION(cqv, tag(103), true);
+  // op = ops;
+  // op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  // op->data.recv_close_on_server.cancelled = &was_cancelled;
+  // op->flags = 0;
+  // op->reserved = NULL;
+  // op++;
+  // error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
+  // GPR_ASSERT(GRPC_CALL_OK == error);
+  //
+  // CQ_EXPECT_COMPLETION(cqv, tag(103), true);
   CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
 
   /* call was cancelled (closed) ... */
-  GPR_ASSERT(was_cancelled != 0);
+  GPR_ASSERT(grpc_call_get_cancelled(s));
   /* with a certain error */
   GPR_ASSERT(status == expected_error);
 
@@ -300,7 +300,7 @@ static void request_with_payload_template(
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  int was_cancelled = 2;
+  // int was_cancelled = 2;
   cq_verifier *cqv;
   char request_str[1024];
   char response_str[1024];
@@ -382,9 +382,9 @@ static void request_with_payload_template(
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(100));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq, tag(100),
+                                   0, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(100), true);
   cq_verify(cqv);
@@ -419,13 +419,14 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
+  // op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  // op->data.recv_close_on_server.cancelled = &was_cancelled;
+  // op->flags = 0;
+  // op->reserved = NULL;
+  // op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(101), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
 
   for (int i = 0; i < 2; i++) {
     response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
@@ -520,7 +521,7 @@ static void request_with_payload_template(
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(4), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
+  // CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
   cq_verify(cqv);
 
@@ -529,7 +530,7 @@ static void request_with_payload_template(
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   validate_host_override_string("foo.test.google.fr:1234", call_details.host,
                                 config);
-  GPR_ASSERT(was_cancelled == 0);
+  GPR_ASSERT(!grpc_call_get_cancelled(s));
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

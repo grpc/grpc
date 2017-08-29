@@ -214,6 +214,10 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
+  // make sure op GRPC_OP_RECV_CLOSE_ON_SERVER has finished.
+  while (!grpc_call_recv_close_finalized(s)) {
+    cq_verify_empty(cqv);
+  }
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));

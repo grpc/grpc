@@ -223,6 +223,10 @@ static void request_for_disabled_algorithm(
   CQ_EXPECT_COMPLETION(cqv, tag(103), true);
   CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
+  // make sure op GRPC_OP_RECV_CLOSE_ON_SERVER has finished.
+  while (!grpc_call_recv_close_finalized(s)) {
+    cq_verify_empty(cqv);
+  }
 
   /* call was cancelled (closed) ... */
   GPR_ASSERT(grpc_call_get_cancelled(s));

@@ -140,7 +140,7 @@ static void simple_request_body(grpc_end2end_test_config config,
 
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq, tag(101),
-                                   1, tag(123));
+                                   0, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -170,8 +170,11 @@ static void simple_request_body(grpc_end2end_test_config config,
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(123), 1);
   cq_verify(cqv);
+  // make sure op GRPC_OP_RECV_CLOSE_ON_SERVER has finished.
+  while (!grpc_call_recv_close_finalized(s)) {
+    cq_verify_empty(cqv);
+  }
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));

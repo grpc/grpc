@@ -201,7 +201,10 @@ static void test_cancel_after_accept_and_writes_closed(
   CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
-  cq_verify_empty(cqv);
+  // make sure op GRPC_OP_RECV_CLOSE_ON_SERVER has finished.
+  while (!grpc_call_recv_close_finalized(s)) {
+    cq_verify_empty(cqv);
+  }
 
   GPR_ASSERT(status == mode.expect_status || status == GRPC_STATUS_INTERNAL);
   GPR_ASSERT(grpc_call_get_cancelled(s));

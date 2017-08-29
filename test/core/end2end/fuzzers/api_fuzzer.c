@@ -818,9 +818,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
             break;
           }
           case GRPC_QUEUE_TIMEOUT:
-            if (is_eof(&inp)) {
-              return 0;
-            }
             break;
           case GRPC_QUEUE_SHUTDOWN:
             abort();

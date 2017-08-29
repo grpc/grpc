@@ -110,7 +110,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  int was_cancelled = 2;
+  // int was_cancelled = 2;
   grpc_byte_buffer *request_payload;
   grpc_byte_buffer *request_payload_recv;
   grpc_byte_buffer *response_payload;
@@ -156,9 +156,9 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(100));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq, tag(100),
+                                   0, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(100), 1);
   cq_verify(cqv);
@@ -170,13 +170,14 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
+  // op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  // op->data.recv_close_on_server.cancelled = &was_cancelled;
+  // op->flags = 0;
+  // op->reserved = NULL;
+  // op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(101), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
 
   for (i = 0; i < messages; i++) {
     request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
@@ -255,7 +256,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
+  // CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
   cq_verify(cqv);
 

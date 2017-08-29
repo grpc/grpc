@@ -223,6 +223,11 @@ void test_connect(const char *server_host, const char *client_host, int port,
     gpr_log(GPR_DEBUG, "got peer: '%s'", peer);
     gpr_free(peer);
 
+    // make sure op GRPC_OP_RECV_CLOSE_ON_SERVER has finished.
+    while (!grpc_call_recv_close_finalized(s)) {
+      cq_verify_empty(cqv);
+    }
+
     GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
     GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
     GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
