@@ -21,6 +21,8 @@
 
 #include <poll.h>
 
+#include <grpc/support/histogram.h>
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
@@ -28,6 +30,54 @@
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
 extern grpc_tracer_flag grpc_polling_trace; /* Disabled by default */
+
+#ifdef GRPC_POLL_COUNTERS
+extern gpr_atm g_num_kicks;
+extern gpr_atm g_num_kicks_out_of_poll;
+extern gpr_atm g_num_poller_kicks;
+extern gpr_atm g_num_self_kicks;
+extern gpr_atm g_num_polls;
+extern gpr_atm g_num_kicks_no_poller;
+
+extern gpr_histogram *g_read_events;
+extern gpr_histogram *g_write_events;
+extern gpr_histogram *g_total_events;
+
+void init_poll_counters();
+void shutdown_poll_counters();
+
+#define INC_NUM_KICKS() gpr_atm_no_barrier_fetch_add(&g_num_kicks, 1)
+#define INC_NUM_KICKS_OUT_OF_POLL() \
+  gpr_atm_no_barrier_fetch_add(&g_num_kicks_out_of_poll, 1);
+#define INC_NUM_POLLER_KICKS() \
+  gpr_atm_no_barrier_fetch_add(&g_num_poller_kicks, 1)
+#define INC_NUM_SELF_KICKS() gpr_atm_no_barrier_fetch_add(&g_num_self_kicks, 1)
+#define INC_NUM_POLLS() gpr_atm_no_barrier_fetch_add(&g_num_polls, 1)
+#define INC_NUM_KICKS_NO_POLLER() \
+  gpr_atm_no_barrier_fetch_add(&g_num_kicks_no_poller, 1)
+
+#define INIT_POLL_COUNTERS() init_poll_counters()
+#define SHUTDOWN_POLL_COUNTERS() shutdown_poll_counters()
+
+#define ADD_READ_POLL_EVENTS(c) gpr_histogram_add(g_read_events, (c))
+#define ADD_WRITE_POLL_EVENTS(c) gpr_histogram_add(g_write_events, (c))
+#define ADD_TOTAL_POLL_EVENTS(c) gpr_histogram_add(g_total_events, (c))
+
+#else
+#define INC_NUM_KICKS()
+#define INC_NUM_KICKS_OUT_OF_POLL()
+#define INC_NUM_POLLER_KICKS()
+#define INC_NUM_SELF_KICKS()
+#define INC_NUM_POLLS()
+#define INC_NUM_KICKS_NO_POLLER()
+
+#define INIT_POLL_COUNTERS()
+#define SHUTDOWN_POLL_COUNTERS()
+
+#define ADD_READ_POLL_EVENTS(c)
+#define ADD_WRITE_POLL_EVENTS(c)
+#define ADD_TOTAL_POLL_EVENTS(c)
+#endif
 
 typedef struct grpc_fd grpc_fd;
 

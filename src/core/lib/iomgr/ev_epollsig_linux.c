@@ -981,6 +981,7 @@ static grpc_error *pollset_worker_kick(grpc_pollset_worker *worker) {
     if (err_num != 0) {
       err = GRPC_OS_ERROR(err_num, "pthread_kill");
     }
+    INC_NUM_KICKS();
   }
   return err;
 }
@@ -1033,16 +1034,21 @@ static grpc_error *pollset_kick(grpc_pollset *p,
              worker = worker->next) {
           if (gpr_tls_get(&g_current_thread_worker) != (intptr_t)worker) {
             append_error(&error, pollset_worker_kick(worker), err_desc);
+          } else {
+            INC_NUM_SELF_KICKS();
           }
         }
         GPR_TIMER_END("pollset_kick.broadcast", 0);
       } else {
         p->kicked_without_pollers = true;
+        INC_NUM_KICKS_NO_POLLER();
       }
     } else {
       GPR_TIMER_MARK("kicked_specifically", 0);
       if (gpr_tls_get(&g_current_thread_worker) != (intptr_t)worker) {
         append_error(&error, pollset_worker_kick(worker), err_desc);
+      } else {
+        INC_NUM_SELF_KICKS();
       }
     }
   } else if (gpr_tls_get(&g_current_thread_pollset) != (intptr_t)p) {
@@ -1062,7 +1068,10 @@ static grpc_error *pollset_kick(grpc_pollset *p,
     } else {
       GPR_TIMER_MARK("kicked_no_pollers", 0);
       p->kicked_without_pollers = true;
+      INC_NUM_KICKS_NO_POLLER();
     }
+  } else {
+    INC_NUM_SELF_KICKS();
   }
 
   GPR_TIMER_END("pollset_kick", 0);
@@ -1236,6 +1245,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
   g_current_thread_polling_island = pi;
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
+  INC_NUM_POLLS();
   ep_rv =
       epoll_pwait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms, sig_mask);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
@@ -1250,6 +1260,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
          epoll_wait to see if there are any other events of interest */
       GRPC_POLLING_TRACE("pollset_work: pollset: %p, worker: %p received kick",
                          (void *)pollset, (void *)worker);
+      INC_NUM_POLLS();
       ep_rv = epoll_wait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, 0);
     }
   }
@@ -1259,6 +1270,8 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
   gpr_atm_acq_load(&g_epoll_sync);
 #endif /* defined(GRPC_TSAN) */
 
+  int num_read_ev = 0;
+  int num_write_ev = 0;
   for (int i = 0; i < ep_rv; ++i) {
     void *data_ptr = ep_ev[i].data.ptr;
     if (data_ptr == &polling_island_wakeup_fd) {
@@ -1270,6 +1283,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
          island. We do not have to do anything here since the subsequent call
          to the function pollset_work_and_unlock() will pick up the correct
          epoll_fd */
+      num_read_ev++;
     } else {
       grpc_fd *fd = data_ptr;
       int cancel = ep_ev[i].events & (EPOLLERR | EPOLLHUP);
@@ -1281,9 +1295,15 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
       if (write_ev || cancel) {
         fd_become_writable(exec_ctx, fd);
       }
+
+      if (read_ev) num_read_ev++;
+      if (write_ev) num_write_ev++;
     }
   }
 
+  ADD_READ_POLL_EVENTS(num_read_ev);
+  ADD_WRITE_POLL_EVENTS(num_write_ev);
+  ADD_TOTAL_POLL_EVENTS(num_read_ev + num_write_ev);
   g_current_thread_polling_island = NULL;
   gpr_atm_no_barrier_fetch_add(&pi->poller_count, -1);
 
