@@ -24,9 +24,9 @@
 #
 
 def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
-                    external_deps = [], deps = [], standalone = False,
-                    language = "C++", testonly = False, visibility = None,
-                    alwayslink = 0):
+                    external_deps = [], deps = [], tags = [],
+                    standalone = False, language = "C++", testonly = False,
+                    visibility = None, alwayslink = 0):
   copts = []
   if language.upper() == "C":
     copts = ["-std=c99"]
@@ -35,6 +35,7 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
     srcs = srcs,
     hdrs = hdrs + public_hdrs,
     deps = deps + ["//external:" + dep for dep in external_deps],
+    tags = tags,
     copts = copts,
     visibility = visibility,
     testonly = testonly,
