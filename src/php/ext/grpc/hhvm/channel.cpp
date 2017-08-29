@@ -142,7 +142,7 @@ bool ChannelArgs::init(const Array& argsArray)
                     // convert and store PHP data
                     int32_t valueInt{ value.toInt32() };
                     Slice valueSlice{ std::to_string(valueInt) };
-                    m_PHPData.emplace_back(keySlice, valueSlice);
+                    m_PHPData.emplace_back(std::move(keySlice), std::move(valueSlice));
 
                     m_ChannelArgs.args[count].value.integer = valueInt;
                     m_ChannelArgs.args[count].type = GRPC_ARG_INTEGER;
@@ -152,8 +152,8 @@ bool ChannelArgs::init(const Array& argsArray)
                     // convert and store PHP data
                     String valueStr{ value.toString() };
                     Slice valueSlice{ valueStr };
-                    m_PHPData.emplace_back(keySlice, valueSlice);
-                    m_ChannelArgs.args[count].value.string = m_PHPData[count].second.string().mutableData();
+                    m_PHPData.emplace_back(std::move(keySlice), std::move(valueSlice));
+                    m_ChannelArgs.args[count].value.string = reinterpret_cast<char*>(const_cast<uint8_t*>(m_PHPData[count].second.data()));
                     m_ChannelArgs.args[count].type = GRPC_ARG_STRING;
                 }
                 else
@@ -161,8 +161,9 @@ bool ChannelArgs::init(const Array& argsArray)
                     destroyArgs();
                     return false;
                 }
-                m_ChannelArgs.args[count].key = m_PHPData[count].first.string().mutableData();
-                channelArgs.emplace_back(m_PHPData[count].first.string().c_str(), m_PHPData[count].second.string().c_str());
+                m_ChannelArgs.args[count].key = reinterpret_cast<char*>(const_cast<uint8_t*>(m_PHPData[count].first.data()));
+                channelArgs.emplace_back(reinterpret_cast<const char*>(m_PHPData[count].first.data()),
+                                         reinterpret_cast<const char*>(m_PHPData[count].second.data()));
             }
             else
             {

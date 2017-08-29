@@ -178,7 +178,7 @@ bool MetadataArray::init(const Array& phpArray, const bool ownPHP)
             String value2Str{ value2.toString() };
             Slice keySlice{ key.toString() };
             Slice valueSlice{ value2Str };
-            m_PHPData.emplace_back(keySlice, valueSlice);
+            m_PHPData.emplace_back(std::move(keySlice), std::move(valueSlice));
 
             m_Array.metadata[elem].key = m_PHPData[elem].first.slice();
             m_Array.metadata[elem].value = m_PHPData[elem].second.slice();
