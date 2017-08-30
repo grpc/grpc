@@ -45,7 +45,31 @@ void grpc_stats_collect(grpc_stats_data *output) {
       output->counters[i] += gpr_atm_no_barrier_load(
           &grpc_stats_per_cpu_storage[core].counters[i]);
     }
+    for (size_t i = 0; i < GRPC_STATS_HISTOGRAM_BUCKETS; i++) {
+      output->histograms[i] += gpr_atm_no_barrier_load(
+          &grpc_stats_per_cpu_storage[core].histograms[i]);
+    }
   }
+}
+
+int grpc_stats_histo_find_bucket_slow(grpc_exec_ctx *exec_ctx, double value,
+                                      const double *table, int table_size) {
+  GRPC_STATS_INC_HISTOGRAM_SLOW_LOOKUPS(exec_ctx);
+  if (value < 0.0) return 0;
+  if (value >= table[table_size - 1]) return table_size - 1;
+  int a = 0;
+  int b = table_size - 1;
+  while (a < b) {
+    int c = a + ((b - a) / 2);
+    if (value < table[c]) {
+      b = c - 1;
+    } else if (value > table[c]) {
+      a = c + 1;
+    } else {
+      return c;
+    }
+  }
+  return a;
 }
 
 char *grpc_stats_data_as_json(const grpc_stats_data *data) {
@@ -58,6 +82,25 @@ char *grpc_stats_data_as_json(const grpc_stats_data *data) {
     gpr_asprintf(&tmp, "%s\"%s\": %" PRIdPTR, is_first ? "" : ", ",
                  grpc_stats_counter_name[i], data->counters[i]);
     gpr_strvec_add(&v, tmp);
+    is_first = false;
+  }
+  for (size_t i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
+    gpr_asprintf(&tmp, "%s\"%s\": [", is_first ? "" : ", ",
+                 grpc_stats_histogram_name[i]);
+    gpr_strvec_add(&v, tmp);
+    for (int j = 0; j < grpc_stats_histo_buckets[i]; j++) {
+      gpr_asprintf(&tmp, "%s%" PRIdPTR, j == 0 ? "" : ",",
+                   data->histograms[grpc_stats_histo_start[i] + j]);
+      gpr_strvec_add(&v, tmp);
+    }
+    gpr_asprintf(&tmp, "], \"%s_bkt\": [", grpc_stats_histogram_name[i]);
+    gpr_strvec_add(&v, tmp);
+    for (int j = 0; j < grpc_stats_histo_buckets[i]; j++) {
+      gpr_asprintf(&tmp, "%s%lf", j == 0 ? "" : ",",
+                   grpc_stats_histo_bucket_boundaries[i][j]);
+      gpr_strvec_add(&v, tmp);
+    }
+    gpr_strvec_add(&v, gpr_strdup("]"));
     is_first = false;
   }
   gpr_strvec_add(&v, gpr_strdup("}"));

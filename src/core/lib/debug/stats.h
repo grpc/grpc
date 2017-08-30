@@ -25,6 +25,7 @@
 
 typedef struct grpc_stats_data {
   gpr_atm counters[GRPC_STATS_COUNTER_COUNT];
+  gpr_atm histograms[GRPC_STATS_HISTOGRAM_BUCKETS];
 } grpc_stats_data;
 
 extern grpc_stats_data *grpc_stats_per_cpu_storage;
@@ -36,9 +37,17 @@ extern grpc_stats_data *grpc_stats_per_cpu_storage;
   (gpr_atm_no_barrier_fetch_add(              \
       &GRPC_THREAD_STATS_DATA((exec_ctx))->counters[(ctr)], 1))
 
+#define GRPC_STATS_INC_HISTOGRAM(exec_ctx, histogram, index) \
+  (gpr_atm_no_barrier_fetch_add(                             \
+      &GRPC_THREAD_STATS_DATA((exec_ctx))                    \
+           ->histograms[histogram##_FIRST_SLOT + (index)],   \
+      1))
+
 void grpc_stats_init(void);
 void grpc_stats_shutdown(void);
 void grpc_stats_collect(grpc_stats_data *output);
 char *grpc_stats_data_as_json(const grpc_stats_data *data);
+int grpc_stats_histo_find_bucket_slow(grpc_exec_ctx *exec_ctx, double value,
+                                      const double *table, int table_size);
 
 #endif
