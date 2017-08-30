@@ -45,10 +45,13 @@ struct grpc_combiner {
   grpc_closure_scheduler scheduler;
   grpc_closure_scheduler finally_scheduler;
   gpr_mpscq queue;
-  // either:
-  // a pointer to the initiating exec ctx if that is the only exec_ctx that has
-  // ever queued to this combiner, or NULL. If this is non-null, it's not
-  // dereferencable (since the initiating exec_ctx may have gone out of scope)
+  // Either a pointer to the initiating exec ctx if that is the only exec_ctx
+  // that has ever queued to this combiner or NULL (if other 'exec_ctx's also
+  // queued closures on this combiner). In other words, NULL indicates that this
+  // combiner is has closures that would have otherwise been executed in
+  // different threads.
+  // NOTE: If this is non-null, it's not dereferencable since the initiating
+  // exec_ctx may have gone out of scope
   gpr_atm initiating_exec_ctx_or_null;
   // state is:
   // lower bit - zero if orphaned (STATE_UNORPHANED)
