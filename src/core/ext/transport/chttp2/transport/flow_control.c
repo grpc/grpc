@@ -18,6 +18,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
+#include <math.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -39,6 +40,8 @@ typedef struct {
   int64_t remote_window_delta;
   int64_t local_window_delta;
   int64_t announced_window_delta;
+  uint32_t local_init_window;
+  uint32_t local_max_frame;
 } shadow_flow_control;
 
 static void pretrace(shadow_flow_control* shadow_fc,
@@ -54,14 +57,28 @@ static void pretrace(shadow_flow_control* shadow_fc,
   }
 }
 
-static char* fmt_str(int64_t old, int64_t new) {
+#define TRACE_PADDING 30
+
+static char* fmt_int64_diff_str(int64_t old, int64_t new) {
   char* str;
   if (old != new) {
     gpr_asprintf(&str, "%" PRId64 " -> %" PRId64 "", old, new);
   } else {
     gpr_asprintf(&str, "%" PRId64 "", old);
   }
-  char* str_lp = gpr_leftpad(str, ' ', 30);
+  char* str_lp = gpr_leftpad(str, ' ', TRACE_PADDING);
+  gpr_free(str);
+  return str_lp;
+}
+
+static char* fmt_uint32_diff_str(uint32_t old, uint32_t new) {
+  char* str;
+  if (new > 0 && old != new) {
+    gpr_asprintf(&str, "%" PRIu32 " -> %" PRIu32 "", old, new);
+  } else {
+    gpr_asprintf(&str, "%" PRIu32 "", old);
+  }
+  char* str_lp = gpr_leftpad(str, ' ', TRACE_PADDING);
   gpr_free(str);
   return str_lp;
 }
@@ -75,24 +92,28 @@ static void posttrace(shadow_flow_control* shadow_fc,
   uint32_t remote_window =
       tfc->t->settings[GRPC_PEER_SETTINGS]
                       [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-  char* trw_str = fmt_str(shadow_fc->remote_window, tfc->remote_window);
-  char* tlw_str = fmt_str(shadow_fc->target_window,
-                          grpc_chttp2_target_announced_window(tfc));
-  char* taw_str = fmt_str(shadow_fc->announced_window, tfc->announced_window);
+  char* trw_str =
+      fmt_int64_diff_str(shadow_fc->remote_window, tfc->remote_window);
+  char* tlw_str = fmt_int64_diff_str(shadow_fc->target_window,
+                                     grpc_chttp2_target_announced_window(tfc));
+  char* taw_str =
+      fmt_int64_diff_str(shadow_fc->announced_window, tfc->announced_window);
   char* srw_str;
   char* slw_str;
   char* saw_str;
   if (sfc != NULL) {
-    srw_str = fmt_str(shadow_fc->remote_window_delta + remote_window,
-                      sfc->remote_window_delta + remote_window);
-    slw_str = fmt_str(shadow_fc->local_window_delta + acked_local_window,
-                      sfc->local_window_delta + acked_local_window);
-    saw_str = fmt_str(shadow_fc->announced_window_delta + acked_local_window,
-                      sfc->announced_window_delta + acked_local_window);
+    srw_str = fmt_int64_diff_str(shadow_fc->remote_window_delta + remote_window,
+                                 sfc->remote_window_delta + remote_window);
+    slw_str =
+        fmt_int64_diff_str(shadow_fc->local_window_delta + acked_local_window,
+                           sfc->local_window_delta + acked_local_window);
+    saw_str = fmt_int64_diff_str(
+        shadow_fc->announced_window_delta + acked_local_window,
+        sfc->announced_window_delta + acked_local_window);
   } else {
-    srw_str = gpr_leftpad("", ' ', 30);
-    slw_str = gpr_leftpad("", ' ', 30);
-    saw_str = gpr_leftpad("", ' ', 30);
+    srw_str = gpr_leftpad("", ' ', TRACE_PADDING);
+    slw_str = gpr_leftpad("", ' ', TRACE_PADDING);
+    saw_str = gpr_leftpad("", ' ', TRACE_PADDING);
   }
   gpr_log(GPR_DEBUG,
           "%p[%u][%s] | %s | trw:%s, ttw:%s, taw:%s, srw:%s, slw:%s, saw:%s",
@@ -120,10 +141,21 @@ static char* urgency_to_string(grpc_chttp2_flowctl_urgency urgency) {
   GPR_UNREACHABLE_CODE(return "unknown");
 }
 
-static void trace_action(grpc_chttp2_flowctl_action action) {
-  gpr_log(GPR_DEBUG, "transport: %s,  stream: %s",
+static void trace_action(grpc_chttp2_transport_flowctl* tfc,
+                         grpc_chttp2_flowctl_action action) {
+  char* iw_str = fmt_uint32_diff_str(
+      tfc->t->settings[GRPC_SENT_SETTINGS]
+                      [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
+      action.initial_window_size);
+  char* mf_str = fmt_uint32_diff_str(
+      tfc->t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+      action.max_frame_size);
+  gpr_log(GPR_DEBUG, "t[%s],  s[%s], settings[%s] iw:%s mf:%s",
           urgency_to_string(action.send_transport_update),
-          urgency_to_string(action.send_stream_update));
+          urgency_to_string(action.send_stream_update),
+          urgency_to_string(action.send_setting_update), iw_str, mf_str);
+  gpr_free(iw_str);
+  gpr_free(mf_str);
 }
 
 #define PRETRACE(tfc, sfc)       \
@@ -131,11 +163,12 @@ static void trace_action(grpc_chttp2_flowctl_action action) {
   GRPC_FLOW_CONTROL_IF_TRACING(pretrace(&shadow_fc, tfc, sfc))
 #define POSTTRACE(tfc, sfc, reason) \
   GRPC_FLOW_CONTROL_IF_TRACING(posttrace(&shadow_fc, tfc, sfc, reason))
-#define TRACEACTION(action) GRPC_FLOW_CONTROL_IF_TRACING(trace_action(action))
+#define TRACEACTION(tfc, action) \
+  GRPC_FLOW_CONTROL_IF_TRACING(trace_action(tfc, action))
 #else
 #define PRETRACE(tfc, sfc)
 #define POSTTRACE(tfc, sfc, reason)
-#define TRACEACTION(action)
+#define TRACEACTION(tfc, action)
 #endif
 
 /* How many bytes of incoming flow control would we like to advertise */
@@ -342,15 +375,58 @@ void grpc_chttp2_flowctl_destroy_stream(grpc_chttp2_transport_flowctl* tfc,
   announced_window_delta_preupdate(tfc, sfc);
 }
 
+// Returns an urgency with which to make an update
+static grpc_chttp2_flowctl_urgency delta_is_significant(
+    const grpc_chttp2_transport_flowctl* tfc, int32_t value,
+    grpc_chttp2_setting_id setting_id) {
+  int64_t delta = (int64_t)value -
+                  (int64_t)tfc->t->settings[GRPC_LOCAL_SETTINGS][setting_id];
+  // TODO(ncteisen): tune this
+  if (delta != 0 && (delta <= -value / 5 || delta >= value / 5)) {
+    return GRPC_CHTTP2_FLOWCTL_QUEUE_UPDATE;
+  } else {
+    return GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED;
+  }
+}
+
+// Takes in a target and uses the pid controller to return a stabilized
+// guess at the new bdp.
+static double get_pid_controller_guess(grpc_chttp2_transport_flowctl* tfc,
+                                       double target) {
+  double bdp_error = target - grpc_pid_controller_last(&tfc->pid_controller);
+  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+  gpr_timespec dt_timespec = gpr_time_sub(now, tfc->last_pid_update);
+  double dt = (double)dt_timespec.tv_sec + dt_timespec.tv_nsec * 1e-9;
+  if (dt > 0.1) {
+    dt = 0.1;
+  }
+  double log2_bdp_guess =
+      grpc_pid_controller_update(&tfc->pid_controller, bdp_error, dt);
+  tfc->last_pid_update = now;
+  return pow(2, log2_bdp_guess);
+}
+
+// Take in a target and modifies it based on the memory pressure of the system
+static double get_target_under_memory_pressure(
+    grpc_chttp2_transport_flowctl* tfc, double target) {
+  // do not increase window under heavy memory pressure.
+  double memory_pressure = grpc_resource_quota_get_memory_pressure(
+      grpc_resource_user_quota(grpc_endpoint_get_resource_user(tfc->t->ep)));
+  if (memory_pressure > 0.8) {
+    target *= 1 - GPR_MIN(1, (memory_pressure - 0.8) / 0.1);
+  }
+  return target;
+}
+
 grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
-    const grpc_chttp2_transport_flowctl* tfc,
-    const grpc_chttp2_stream_flowctl* sfc) {
+    grpc_chttp2_transport_flowctl* tfc, grpc_chttp2_stream_flowctl* sfc) {
   grpc_chttp2_flowctl_action action;
   memset(&action, 0, sizeof(action));
   uint32_t target_announced_window = grpc_chttp2_target_announced_window(tfc);
   if (tfc->announced_window < target_announced_window / 2) {
     action.send_transport_update = GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY;
   }
+  // TODO(ncteisen): tune this
   if (sfc != NULL && !sfc->s->read_closed) {
     uint32_t sent_init_window =
         tfc->t->settings[GRPC_SENT_SETTINGS]
@@ -364,6 +440,61 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
       action.send_stream_update = GRPC_CHTTP2_FLOWCTL_QUEUE_UPDATE;
     }
   }
-  TRACEACTION(action);
+  TRACEACTION(tfc, action);
+  return action;
+}
+
+grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_bdp_action(
+    grpc_chttp2_transport_flowctl* tfc) {
+  grpc_chttp2_flowctl_action action;
+  memset(&action, 0, sizeof(action));
+  if (tfc->enable_bdp_probe) {
+    action.need_ping = grpc_bdp_estimator_need_ping(&tfc->bdp_estimator);
+
+    // get bdp estimate and update initial_window accordingly.
+    int64_t estimate = -1;
+    int32_t bdp = -1;
+    if (grpc_bdp_estimator_get_estimate(&tfc->bdp_estimator, &estimate)) {
+      double target = 1 + log2((double)estimate);
+
+      // target might change based on how much memory pressure we are under
+      // TODO(ncteisen): experiment with setting target to be huge under low
+      // memory pressure.
+      target = get_target_under_memory_pressure(tfc, target);
+
+      // run our target through the pid controller to stabilize change.
+      // TODO(ncteisen): experiment with other controllers here.
+      double bdp_guess = get_pid_controller_guess(tfc, target);
+
+      // Though initial window 'could' drop to 0, we keep the floor at 128
+      bdp = GPR_MAX((int32_t)bdp_guess, 128);
+
+      grpc_chttp2_flowctl_urgency init_window_update_urgency =
+          delta_is_significant(tfc, bdp,
+                               GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
+      if (init_window_update_urgency != GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED) {
+        action.send_setting_update = init_window_update_urgency;
+        action.initial_window_size = (uint32_t)bdp;
+      }
+    }
+
+    // get bandwidth estimate and update max_frame accordingly.
+    double bw_dbl = -1;
+    if (grpc_bdp_estimator_get_bw(&tfc->bdp_estimator, &bw_dbl)) {
+      // we target the max of BDP or bandwidth in microseconds.
+      int32_t frame_size = (int32_t)GPR_CLAMP(
+          GPR_MAX((int32_t)bw_dbl / 1000, bdp), 16384, 16777215);
+      grpc_chttp2_flowctl_urgency frame_size_urgency = delta_is_significant(
+          tfc, frame_size, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE);
+      if (frame_size_urgency != GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED) {
+        if (frame_size_urgency > action.send_setting_update) {
+          action.send_setting_update = frame_size_urgency;
+        }
+        action.max_frame_size = (uint32_t)frame_size;
+      }
+    }
+  }
+
+  TRACEACTION(tfc, action);
   return action;
 }

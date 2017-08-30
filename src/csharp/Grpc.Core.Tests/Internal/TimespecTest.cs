@@ -60,7 +60,10 @@ namespace Grpc.Core.Internal.Tests
         [Test]
         public void TimespecSizeIsNativeSize()
         {
+            #pragma warning disable 0618
+            // We need to use the obsolete non-generic version of Marshal.SizeOf because the generic version is not available in net45
             Assert.AreEqual(Timespec.NativeSize, Marshal.SizeOf(typeof(Timespec)));
+            #pragma warning restore 0618
         }
 
         [Test]

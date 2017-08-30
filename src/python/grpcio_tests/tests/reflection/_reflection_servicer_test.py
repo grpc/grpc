@@ -95,9 +95,6 @@ class ReflectionServicerTest(unittest.TestCase):
                 )),)
         self.assertSequenceEqual(expected_responses, responses)
 
-    @unittest.skip(
-        'TODO(mmx): enable when (pure) python protobuf issue is fixed'
-        '(see https://github.com/google/protobuf/issues/2882)')
     def testFileContainingExtension(self):
         requests = (reflection_pb2.ServerReflectionRequest(
             file_containing_extension=reflection_pb2.ExtensionRequest(

@@ -50,13 +50,14 @@ namespace Grpc.Core.Tests
         [Test]
         public void BlockingCallInServerHandlerDoesNotDeadlock()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 int recursionDepth = int.Parse(request);
                 if (recursionDepth <= 0) {
-                    return "SUCCESS";
+                    return Task.FromResult("SUCCESS");
                 }
-                return Calls.BlockingUnaryCall(helper.CreateUnaryCall(), (recursionDepth - 1).ToString());
+                var response = Calls.BlockingUnaryCall(helper.CreateUnaryCall(), (recursionDepth - 1).ToString());
+                return Task.FromResult(response);
             });
 
             int maxRecursionDepth = Environment.ProcessorCount * 2;  // make sure we have more pending blocking calls than threads in GrpcThreadPool
@@ -66,12 +67,12 @@ namespace Grpc.Core.Tests
         [Test]
         public void HandlerDoesNotRunOnGrpcThread()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 if (IsRunningOnGrpcThreadPool()) {
-                    return "Server handler should not run on gRPC threadpool thread.";
+                    return Task.FromResult("Server handler should not run on gRPC threadpool thread.");
                 }
-                return request;
+                return Task.FromResult(request);
             });
 
             Assert.AreEqual("ABC", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "ABC"));
@@ -80,9 +81,9 @@ namespace Grpc.Core.Tests
         [Test]
         public async Task ContinuationDoesNotRunOnGrpcThread()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
-                return request;
+                return Task.FromResult(request);
             });
 
             await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "ABC");

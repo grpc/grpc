@@ -41,7 +41,7 @@ namespace Grpc.IntegrationTesting
         Channel channel;
         TestService.TestServiceClient client;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void Init()
         {
             var rootCert = File.ReadAllText(TestCredentials.ClientCertAuthorityPath);
@@ -69,7 +69,7 @@ namespace Grpc.IntegrationTesting
             client = new TestService.TestServiceClient(channel);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void Cleanup()
         {
             channel.ShutdownAsync().Wait();
@@ -94,15 +94,15 @@ namespace Grpc.IntegrationTesting
 
         private class SslCredentialsTestServiceImpl : TestService.TestServiceBase
         {
-            public override async Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
+            public override Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
             {
-                return new SimpleResponse { Payload = CreateZerosPayload(request.ResponseSize) };
+                return Task.FromResult(new SimpleResponse { Payload = CreateZerosPayload(request.ResponseSize) });
             }
 
             public override async Task<StreamingInputCallResponse> StreamingInputCall(IAsyncStreamReader<StreamingInputCallRequest> requestStream, ServerCallContext context)
             {
                 var authContext = context.AuthContext;
-                await requestStream.ForEachAsync(async request => {});
+                await requestStream.ForEachAsync(request => TaskUtils.CompletedTask);
 
                 Assert.IsTrue(authContext.IsPeerAuthenticated);
                 Assert.AreEqual("x509_subject_alternative_name", authContext.PeerIdentityPropertyName);

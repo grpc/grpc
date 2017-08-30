@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.5.0-dev'
+  version = '1.7.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -118,6 +118,7 @@ Pod::Spec.new do |s|
                       'include/grpc/support/string_util.h',
                       'include/grpc/support/subprocess.h',
                       'include/grpc/support/sync.h',
+                      'include/grpc/support/sync_custom.h',
                       'include/grpc/support/sync_generic.h',
                       'include/grpc/support/sync_posix.h',
                       'include/grpc/support/sync_windows.h',
@@ -136,6 +137,7 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/codegen/gpr_types.h',
                       'include/grpc/impl/codegen/port_platform.h',
                       'include/grpc/impl/codegen/sync.h',
+                      'include/grpc/impl/codegen/sync_custom.h',
                       'include/grpc/impl/codegen/sync_generic.h',
                       'include/grpc/impl/codegen/sync_posix.h',
                       'include/grpc/impl/codegen/sync_windows.h',
@@ -155,6 +157,7 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/codegen/gpr_types.h',
                       'include/grpc/impl/codegen/port_platform.h',
                       'include/grpc/impl/codegen/sync.h',
+                      'include/grpc/impl/codegen/sync_custom.h',
                       'include/grpc/impl/codegen/sync_generic.h',
                       'include/grpc/impl/codegen/sync_posix.h',
                       'include/grpc/impl/codegen/sync_windows.h',
@@ -195,7 +198,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/support/stack_lockfree.h',
                       'src/core/lib/support/string.h',
                       'src/core/lib/support/string_windows.h',
-                      'src/core/lib/support/thd_internal.h',
                       'src/core/lib/support/time_precise.h',
                       'src/core/lib/support/tmpfile.h',
                       'src/core/lib/profiling/basic_timers.c',
@@ -735,7 +737,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/support/stack_lockfree.h',
                               'src/core/lib/support/string.h',
                               'src/core/lib/support/string_windows.h',
-                              'src/core/lib/support/thd_internal.h',
                               'src/core/lib/support/time_precise.h',
                               'src/core/lib/support/tmpfile.h',
                               'src/core/ext/transport/chttp2/transport/bin_decoder.h',
@@ -994,4 +995,9 @@ Pod::Spec.new do |s|
                       'test/core/util/port.c',
                       'test/core/util/port_server_client.{c,h}'
   end
+
+  # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
+  s.prepare_command = <<-END_OF_COMMAND
+    find src/core/ -type f -exec sed -E -i '.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
+  END_OF_COMMAND
 end
