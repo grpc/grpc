@@ -121,6 +121,7 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
 
 - (nullable grpc_call *)unmanagedCallWithPath:(NSString *)path
                                    serverName:(NSString *)serverName
+                                     deadline:(UInt64)deadline
                               completionQueue:(GRPCCompletionQueue *)queue {
   GRPCChannel *channel;
   // This is racing -[GRPCHost disconnect].
@@ -130,7 +131,10 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
     }
     channel = _channel;
   }
-  return [channel unmanagedCallWithPath:path serverName:serverName completionQueue:queue];
+  return [channel unmanagedCallWithPath:path
+                             serverName:serverName
+                               deadline:deadline
+                        completionQueue:queue];
 }
 
 - (BOOL)setTLSPEMRootCerts:(nullable NSString *)pemRootCerts

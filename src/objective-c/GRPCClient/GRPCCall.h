@@ -170,6 +170,11 @@ extern id const kGRPCTrailersKey;
 @property (atomic, copy, readwrite) NSString *serverName;
 
 /**
+ * The deadline for the RPC call in milliseconds. If set to 0, the deadline will be infinity.
+ */
+@property UInt64 deadline;
+
+/**
  * The container of the request headers of an RPC conforms to this protocol, which is a subset of
  * NSMutableDictionary's interface. It will become a NSMutableDictionary later on.
  * The keys of this container are the header names, which per the HTTP standard are case-

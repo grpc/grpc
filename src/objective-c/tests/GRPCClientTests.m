@@ -422,4 +422,25 @@ static GRPCProtoMethod *kUnaryCallMethod;
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
+- (void)testDeadline {
+  __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+                                             path:kEmptyCallMethod.HTTPPath
+                                   requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
+
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    XCTAssert(0, @"Failure: response received; Expect: no response received.");
+  } completionHandler:^(NSError *errorOrNil) {
+    XCTAssertNotNil(errorOrNil, @"Failure: no error received; Expect: receive deadline exceeded.");
+    XCTAssertEqual(errorOrNil.code, GRPCErrorCodeDeadlineExceeded);
+    [completion fulfill];
+  }];
+
+  call.deadline = 1;
+  [call startWithWriteable:responsesWriteable];
+
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
 @end

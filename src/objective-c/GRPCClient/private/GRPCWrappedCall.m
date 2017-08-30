@@ -238,12 +238,13 @@
 }
 
 - (instancetype)init {
-  return [self initWithHost:nil serverName:nil path:nil];
+  return [self initWithHost:nil serverName:nil path:nil deadline:0];
 }
 
 - (instancetype)initWithHost:(NSString *)host
                   serverName:(NSString *)serverName
-                        path:(NSString *)path {
+                        path:(NSString *)path
+                    deadline:(UInt64)deadline {
   if (!path || !host) {
     [NSException raise:NSInvalidArgumentException
                 format:@"path and host cannot be nil."];
@@ -255,7 +256,10 @@
     // queue. Currently we use a singleton queue.
     _queue = [GRPCCompletionQueue completionQueue];
 
-    _call = [[GRPCHost hostWithAddress:host] unmanagedCallWithPath:path serverName:serverName completionQueue:_queue];
+    _call = [[GRPCHost hostWithAddress:host] unmanagedCallWithPath:path
+                                                        serverName:serverName
+                                                          deadline:deadline
+                                                   completionQueue:_queue];
     if (_call == NULL) {
       return nil;
     }
