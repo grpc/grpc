@@ -52,8 +52,8 @@ by the client WILL result in an `INTERNAL` error status on the client side.
 
 Note that a peer MAY choose to not disclose all the encodings it supports.
 However, if it receives a message compressed in an undisclosed but supported
-encoding, it MUST include said encoding in the response's `grpc-accept-encoding
-h`eader.
+encoding, it MUST include said encoding in the response's `grpc-accept-encoding`
+header.
 
 For every message a server is requested to compress using an algorithm it knows
 the client doesn't support (as indicated by the last `grpc-accept-encoding`

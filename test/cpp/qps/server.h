@@ -26,7 +26,6 @@
 #include <grpc/support/log.h>
 #include <vector>
 
-#include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/control.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/end2end/data/ssl_test_data.h"

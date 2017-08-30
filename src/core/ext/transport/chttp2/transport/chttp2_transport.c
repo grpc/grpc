@@ -1298,6 +1298,15 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   if (op->send_initial_metadata) {
     GPR_ASSERT(s->send_initial_metadata_finished == NULL);
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
+
+    /* Identify stream compression */
+    if ((s->stream_compression_send_enabled =
+             (op_payload->send_initial_metadata.send_initial_metadata->idx.named
+                  .content_encoding != NULL)) == true) {
+      s->compressed_data_buffer = gpr_malloc(sizeof(grpc_slice_buffer));
+      grpc_slice_buffer_init(s->compressed_data_buffer);
+    }
+
     s->send_initial_metadata_finished = add_closure_barrier(on_complete);
     s->send_initial_metadata =
         op_payload->send_initial_metadata.send_initial_metadata;
@@ -2702,6 +2711,9 @@ static grpc_error *incoming_byte_stream_pull(grpc_exec_ctx *exec_ctx,
       if (end_of_context) {
         grpc_stream_compression_context_destroy(s->stream_decompression_ctx);
         s->stream_decompression_ctx = NULL;
+      }
+      if (s->unprocessed_incoming_frames_buffer.length == 0) {
+        *slice = grpc_empty_slice();
       }
     }
     error = grpc_deframe_unprocessed_incoming_frames(
