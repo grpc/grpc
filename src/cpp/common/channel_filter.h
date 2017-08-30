@@ -26,9 +26,11 @@
 #include <functional>
 #include <vector>
 
+extern "C" {
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/metadata_batch.h"
+}
 
 /// An interface to define filters.
 ///
