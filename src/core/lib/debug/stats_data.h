@@ -38,7 +38,6 @@ typedef enum {
   GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
   GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
   GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
-  GRPC_STATS_HISTOGRAM_CLIENT_LATENCY,
   GRPC_STATS_HISTOGRAM_COUNT
 } grpc_stats_histograms;
 extern const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT];
@@ -49,9 +48,7 @@ typedef enum {
   GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE_BUCKETS = 64,
   GRPC_STATS_HISTOGRAM_TCP_READ_SIZE_FIRST_SLOT = 128,
   GRPC_STATS_HISTOGRAM_TCP_READ_SIZE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_CLIENT_LATENCY_FIRST_SLOT = 192,
-  GRPC_STATS_HISTOGRAM_CLIENT_LATENCY_BUCKETS = 128,
-  GRPC_STATS_HISTOGRAM_BUCKETS = 320
+  GRPC_STATS_HISTOGRAM_BUCKETS = 192
 } grpc_stats_histogram_constants;
 #define GRPC_STATS_INC_CLIENT_CALLS_CREATED(exec_ctx) \
   GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED)
@@ -137,37 +134,12 @@ typedef enum {
       }                                                                        \
     }                                                                          \
   } while (false)
-#define GRPC_STATS_INC_CLIENT_LATENCY(exec_ctx, value)                         \
-  do {                                                                         \
-    double _hist_val = (double)(value);                                        \
-    if (_hist_val < 0) _hist_val = 0;                                          \
-    uint64_t _hist_idx = *(uint64_t *)&_hist_val;                              \
-    gpr_log(GPR_DEBUG, "client_latency %lf %" PRId64 " %" PRId64, _hist_val,   \
-            _hist_idx, 4767623155525091328ull);                                \
-    if (_hist_val < 6.000000) {                                                \
-      GRPC_STATS_INC_HISTOGRAM(                                                \
-          (exec_ctx), GRPC_STATS_HISTOGRAM_CLIENT_LATENCY, (int)_hist_val);    \
-    } else {                                                                   \
-      if (_hist_idx < 4767623155525091328ull) {                                \
-        GRPC_STATS_INC_HISTOGRAM(                                              \
-            (exec_ctx), GRPC_STATS_HISTOGRAM_CLIENT_LATENCY,                   \
-            grpc_stats_table_5[((_hist_idx - 4618441417868443648ull) >> 49)]); \
-      } else {                                                                 \
-        GRPC_STATS_INC_HISTOGRAM(                                              \
-            (exec_ctx), GRPC_STATS_HISTOGRAM_CLIENT_LATENCY,                   \
-            grpc_stats_histo_find_bucket_slow((exec_ctx), (value),             \
-                                              grpc_stats_table_4, 128));       \
-      }                                                                        \
-    }                                                                          \
-  } while (false)
 extern const double grpc_stats_table_0[64];
 extern const uint8_t grpc_stats_table_1[87];
 extern const double grpc_stats_table_2[64];
 extern const uint8_t grpc_stats_table_3[52];
-extern const double grpc_stats_table_4[128];
-extern const uint16_t grpc_stats_table_5[265];
-extern const int grpc_stats_histo_buckets[4];
-extern const int grpc_stats_histo_start[4];
-extern const double *const grpc_stats_histo_bucket_boundaries[4];
+extern const int grpc_stats_histo_buckets[3];
+extern const int grpc_stats_histo_start[3];
+extern const double *const grpc_stats_histo_bucket_boundaries[3];
 
 #endif /* GRPC_CORE_LIB_DEBUG_STATS_DATA_H */

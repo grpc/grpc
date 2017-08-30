@@ -17,6 +17,3 @@
 - histogram: tcp_read_size
   max: 16777216
   buckets: 64
-- histogram: client_latency
-  max: 60e9
-  buckets: 128
