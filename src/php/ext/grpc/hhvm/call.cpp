@@ -547,8 +547,8 @@ Object HHVM_METHOD(Call, startBatch,
     }
 
     grpc_event event (grpc_completion_queue_next(pCallData->queue()->queue(),
-                                                 gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN)
-                                                 /*gpr_inf_future(GPR_CLOCK_REALTIME) */,
+                                                 /*gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN)*/
+                                                 gpr_inf_future(GPR_CLOCK_REALTIME),
                                                   nullptr));
     if (event.type != GRPC_OP_COMPLETE || event.tag != pCallData->call())
     {
