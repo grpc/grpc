@@ -94,7 +94,7 @@ void CallData::destroy(void)
         if (m_Owned)
         {
             // cancel the call
-            grpc_call_cancel(m_pCall, nullptr);
+            //grpc_call_cancel(m_pCall, nullptr);
             // destroy call
             grpc_call_unref(m_pCall);
             m_Owned = false;
