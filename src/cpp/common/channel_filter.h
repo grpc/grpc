@@ -193,6 +193,15 @@ class TransportStreamOpBatch {
     op_->payload->send_message.send_message = send_message;
   }
 
+  grpc_byte_stream **recv_message() const {
+    return op_->recv_message ? op_->payload->recv_message.recv_message
+                             : nullptr;
+  }
+  void set_recv_message(grpc_byte_stream **recv_message) {
+    op_->recv_message = true;
+    op_->payload->recv_message.recv_message = recv_message;
+  }
+
   census_context *get_census_context() const {
     return (census_context *)op_->payload->context[GRPC_CONTEXT_TRACING].value;
   }
