@@ -36,7 +36,6 @@
 static const size_t kMaxPayloadSizeForGet = 2048;
 
 typedef struct call_data {
-  grpc_call_combiner *call_combiner;
   // State for handling send_initial_metadata ops.
   grpc_linked_mdelem method;
   grpc_linked_mdelem scheme;
@@ -216,13 +215,13 @@ static void on_send_message_next_done(grpc_exec_ctx *exec_ctx, void *arg,
   call_data *calld = (call_data *)elem->call_data;
   if (error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(
-        exec_ctx, calld->send_message_batch, error, calld->call_combiner);
+        exec_ctx, calld->send_message_batch, error);
     return;
   }
   error = pull_slice_from_send_message(exec_ctx, calld);
   if (error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(
-        exec_ctx, calld->send_message_batch, error, calld->call_combiner);
+        exec_ctx, calld->send_message_batch, error);
     return;
   }
   // There may or may not be more to read, but we don't care.  If we got
@@ -415,7 +414,7 @@ static void hc_start_transport_stream_op_batch(
 done:
   if (error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(
-        exec_ctx, calld->send_message_batch, error, calld->call_combiner);
+        exec_ctx, calld->send_message_batch, error);
   } else if (!batch_will_be_handled_asynchronously) {
     grpc_call_next_op(exec_ctx, elem, batch);
   }
@@ -427,7 +426,6 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   const grpc_call_element_args *args) {
   call_data *calld = (call_data *)elem->call_data;
-  calld->call_combiner = args->call_combiner;
   GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
                     recv_initial_metadata_ready, elem,
                     grpc_schedule_on_exec_ctx);
@@ -567,5 +565,6 @@ const grpc_channel_filter grpc_http_client_filter = {
     sizeof(channel_data),
     init_channel_elem,
     destroy_channel_elem,
+    grpc_call_next_get_peer,
     grpc_channel_next_get_info,
     "http-client"};

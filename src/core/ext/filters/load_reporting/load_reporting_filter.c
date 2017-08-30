@@ -223,5 +223,6 @@ const grpc_channel_filter grpc_load_reporting_filter = {
     sizeof(channel_data),
     init_channel_elem,
     destroy_channel_elem,
+    grpc_call_next_get_peer,
     grpc_channel_next_get_info,
     "load_reporting"};

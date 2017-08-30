@@ -66,6 +66,10 @@ void CallData::SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
   grpc_call_stack_ignore_set_pollset_or_pollset_set(exec_ctx, elem, pollent);
 }
 
+char *CallData::GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
+  return grpc_call_next_get_peer(exec_ctx, elem);
+}
+
 // internal code used by RegisterChannelFilter()
 
 namespace internal {

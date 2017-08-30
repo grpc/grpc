@@ -74,9 +74,6 @@ typedef struct round_robin_lb_policy {
   bool started_picking;
   /** are we shutting down? */
   bool shutdown;
-  /** has the policy gotten into the GRPC_CHANNEL_SHUTDOWN? No picks can be
-   * service after this point, the policy will never transition out. */
-  bool in_connectivity_shutdown;
   /** List of picks that are waiting on connectivity */
   pending_pick *pending_picks;
 
@@ -424,7 +421,6 @@ static int rr_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                           grpc_closure *on_complete) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   GPR_ASSERT(!p->shutdown);
-  GPR_ASSERT(!p->in_connectivity_shutdown);
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO, "[RR %p] Trying to pick", (void *)pol);
   }
@@ -537,7 +533,7 @@ static grpc_connectivity_state update_lb_connectivity_status_locked(
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                 GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
                                 "rr_shutdown");
-    p->in_connectivity_shutdown = true;
+    p->shutdown = true;
     new_state = GRPC_CHANNEL_SHUTDOWN;
   } else if (subchannel_list->num_transient_failures ==
              p->subchannel_list->num_subchannels) { /* 4) TRANSIENT_FAILURE */
