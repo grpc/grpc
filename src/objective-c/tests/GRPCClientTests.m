@@ -422,7 +422,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
-- (void)testDeadline {
+- (void)testTimeout {
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
@@ -437,7 +437,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
     [completion fulfill];
   }];
 
-  call.deadline = 1;
+  call.timeout = 1;
   [call startWithWriteable:responsesWriteable];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];

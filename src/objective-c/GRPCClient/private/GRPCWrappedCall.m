@@ -238,13 +238,13 @@
 }
 
 - (instancetype)init {
-  return [self initWithHost:nil serverName:nil path:nil deadline:0];
+  return [self initWithHost:nil serverName:nil path:nil timeout:0];
 }
 
 - (instancetype)initWithHost:(NSString *)host
                   serverName:(NSString *)serverName
                         path:(NSString *)path
-                    deadline:(UInt64)deadline {
+                     timeout:(UInt64)timeout {
   if (!path || !host) {
     [NSException raise:NSInvalidArgumentException
                 format:@"path and host cannot be nil."];
@@ -258,7 +258,7 @@
 
     _call = [[GRPCHost hostWithAddress:host] unmanagedCallWithPath:path
                                                         serverName:serverName
-                                                          deadline:deadline
+                                                           timeout:timeout
                                                    completionQueue:_queue];
     if (_call == NULL) {
       return nil;

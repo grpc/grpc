@@ -170,9 +170,9 @@ extern id const kGRPCTrailersKey;
 @property (atomic, copy, readwrite) NSString *serverName;
 
 /**
- * The deadline for the RPC call in milliseconds. If set to 0, the deadline will be infinity.
+ * The timeout for the RPC call in milliseconds. If set to 0, the call will not timeout.
  */
-@property UInt64 deadline;
+@property UInt64 timeout;
 
 /**
  * The container of the request headers of an RPC conforms to this protocol, which is a subset of

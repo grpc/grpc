@@ -424,7 +424,7 @@ static NSString * const kBearerPrefix = @"Bearer ";
   _wrappedCall = [[GRPCWrappedCall alloc] initWithHost:_host
                                             serverName:_serverName
                                                   path:_path
-                                              deadline:_deadline];
+                                               timeout:_timeout];
   NSAssert(_wrappedCall, @"Error allocating RPC objects. Low memory?");
 
   [self sendHeaders:_requestHeaders];

@@ -121,7 +121,7 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
 
 - (nullable grpc_call *)unmanagedCallWithPath:(NSString *)path
                                    serverName:(NSString *)serverName
-                                     deadline:(UInt64)deadline
+                                      timeout:(UInt64)timeout
                               completionQueue:(GRPCCompletionQueue *)queue {
   GRPCChannel *channel;
   // This is racing -[GRPCHost disconnect].
@@ -133,7 +133,7 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
   }
   return [channel unmanagedCallWithPath:path
                              serverName:serverName
-                               deadline:deadline
+                                timeout:timeout
                         completionQueue:queue];
 }
 
