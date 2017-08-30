@@ -19,16 +19,16 @@
 #ifndef GRPC_CORE_LIB_SURFACE_CALL_H
 #define GRPC_CORE_LIB_SURFACE_CALL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/surface/api_trace.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef void (*grpc_ioreq_completion_func)(grpc_exec_ctx *exec_ctx,
                                            grpc_call *call, int success,

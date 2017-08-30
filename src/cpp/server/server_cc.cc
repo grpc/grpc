@@ -17,6 +17,7 @@
 
 #include <grpc++/server.h>
 
+#include <cstdlib>
 #include <sstream>
 #include <utility>
 
@@ -38,11 +39,15 @@
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/surface/call.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/server/health/default_health_check_service.h"
 #include "src/cpp/thread_manager/thread_manager.h"
 
 namespace grpc {
+namespace {
+constexpr char this_file[] = __FILE__;
+}  // namespace
 
 class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
  public:
@@ -607,7 +612,12 @@ void Server::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
   grpc_op cops[MAX_OPS];
   ops->FillOps(call->call(), cops, &nops);
   auto result = grpc_call_start_batch(call->call(), cops, nops, ops, nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == result);
+  if (result != GRPC_CALL_OK) {
+    gpr_log(GPR_ERROR, "Fatal: grpc_call_start_batch returned %d", result);
+    grpc_call_log_batch(const_cast<char*>(this_file), __LINE__,
+                        GPR_LOG_SEVERITY_ERROR, call->call(), cops, nops, ops);
+    abort();
+  }
 }
 
 ServerInterface::BaseAsyncRequest::BaseAsyncRequest(
