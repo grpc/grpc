@@ -482,7 +482,7 @@ Object HHVM_METHOD(Call, startBatch,
             }
 
             Slice innerDetailsSlice{ innerDetails.toString() };
-            opsManaged.send_status_details = innerDetailsSlice;
+            opsManaged.send_status_details = std::move(innerDetailsSlice);
             ops[op_num].data.send_status_from_server.status_details = &opsManaged.send_status_details.slice();
             break;
         }
