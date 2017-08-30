@@ -34,11 +34,11 @@ load(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gregarious"
+g_stands_for = "gambit"
 
 core_version = "4.0.0-dev"
 
-version = "1.5.0-dev"
+version = "1.7.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -57,6 +57,7 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/string_util.h",
     "include/grpc/support/subprocess.h",
     "include/grpc/support/sync.h",
+    "include/grpc/support/sync_custom.h",
     "include/grpc/support/sync_generic.h",
     "include/grpc/support/sync_posix.h",
     "include/grpc/support/sync_windows.h",
@@ -523,7 +524,6 @@ grpc_cc_library(
         "src/core/lib/support/stack_lockfree.h",
         "src/core/lib/support/string.h",
         "src/core/lib/support/string_windows.h",
-        "src/core/lib/support/thd_internal.h",
         "src/core/lib/support/time_precise.h",
         "src/core/lib/support/tmpfile.h",
     ],
@@ -546,6 +546,7 @@ grpc_cc_library(
         "include/grpc/impl/codegen/gpr_types.h",
         "include/grpc/impl/codegen/port_platform.h",
         "include/grpc/impl/codegen/sync.h",
+        "include/grpc/impl/codegen/sync_custom.h",
         "include/grpc/impl/codegen/sync_generic.h",
         "include/grpc/impl/codegen/sync_posix.h",
         "include/grpc/impl/codegen/sync_windows.h",
@@ -593,9 +594,9 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_windows.c",
         "src/core/lib/iomgr/exec_ctx.c",
         "src/core/lib/iomgr/executor.c",
+        "src/core/lib/iomgr/gethostname_fallback.c",
         "src/core/lib/iomgr/gethostname_host_name_max.c",
         "src/core/lib/iomgr/gethostname_sysconf.c",
-        "src/core/lib/iomgr/gethostname_fallback.c",
         "src/core/lib/iomgr/iocp_windows.c",
         "src/core/lib/iomgr/iomgr.c",
         "src/core/lib/iomgr/iomgr_posix.c",

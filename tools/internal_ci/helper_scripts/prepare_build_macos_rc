@@ -28,8 +28,7 @@ ulimit -n 10000
 ulimit -a
 
 # Add GCP credentials for BQ access
-# pip does not install google-api-python-client properly, so use easy_install
-sudo easy_install --upgrade google-api-python-client
+pip install google-api-python-client --user python
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
 
 # required to build protobuf
@@ -53,8 +52,10 @@ pod repo update  # needed by python
 
 # python
 brew install coreutils  # we need grealpath
-sudo pip install virtualenv
-sudo pip install -U six tox setuptools
+pip install virtualenv --user python
+pip install -U six tox setuptools --user python
+export PYTHONPATH=/Library/Python/2.7/site-packages
+source ~/.bashrc
 
 # python 3.4
 wget -q https://www.python.org/ftp/python/3.4.4/python-3.4.4-macosx10.6.pkg

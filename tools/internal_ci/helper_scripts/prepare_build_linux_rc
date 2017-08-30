@@ -31,4 +31,11 @@ PYTHONWARNINGS=ignore XDG_CACHE_HOME=/tmp/xdg-cache-home sudo -E pip install cov
 # Download Docker images from DockerHub
 export DOCKERHUB_ORGANIZATION=grpctesting
 
+# If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
+if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ] && [ -n "$RUN_TESTS_FLAGS" ]; then
+  sudo apt-get install -y jq
+  ghprbTargetBranch=$(curl -s https://api.github.com/repos/grpc/grpc/pulls/$KOKORO_GITHUB_PULL_REQUEST_NUMBER | jq -r .base.ref)
+  export RUN_TESTS_FLAGS="$RUN_TESTS_FLAGS --filter_pr_tests --base_branch origin/$ghprbTargetBranch"	
+fi
+
 git submodule update --init

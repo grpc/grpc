@@ -47,13 +47,15 @@ typedef struct grpc_bdp_estimator {
 void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator, const char *name);
 
 // Returns true if a reasonable estimate could be obtained
-bool grpc_bdp_estimator_get_estimate(grpc_bdp_estimator *estimator,
+bool grpc_bdp_estimator_get_estimate(const grpc_bdp_estimator *estimator,
                                      int64_t *estimate);
-// Returns true if a reasonable estimate could be obtained
-bool grpc_bdp_estimator_get_bw(grpc_bdp_estimator *estimator, double *bw);
+// Tracks new bytes read.
+bool grpc_bdp_estimator_get_bw(const grpc_bdp_estimator *estimator, double *bw);
 // Returns true if the user should schedule a ping
-bool grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
+void grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
                                            int64_t num_bytes);
+// Returns true if the user should schedule a ping
+bool grpc_bdp_estimator_need_ping(const grpc_bdp_estimator *estimator);
 // Schedule a ping: call in response to receiving a true from
 // grpc_bdp_estimator_add_incoming_bytes once a ping has been scheduled by a
 // transport (but not necessarily started)

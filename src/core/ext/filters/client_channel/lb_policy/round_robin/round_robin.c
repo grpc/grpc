@@ -74,9 +74,6 @@ typedef struct round_robin_lb_policy {
   bool started_picking;
   /** are we shutting down? */
   bool shutdown;
-  /** has the policy gotten into the GRPC_CHANNEL_SHUTDOWN? No picks can be
-   * service after this point, the policy will never transition out. */
-  bool in_connectivity_shutdown;
   /** List of picks that are waiting on connectivity */
   pending_pick *pending_picks;
 
@@ -424,7 +421,6 @@ static int rr_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                           grpc_closure *on_complete) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   GPR_ASSERT(!p->shutdown);
-  GPR_ASSERT(!p->in_connectivity_shutdown);
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO, "[RR %p] Trying to pick", (void *)pol);
   }
@@ -537,7 +533,7 @@ static grpc_connectivity_state update_lb_connectivity_status_locked(
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                 GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
                                 "rr_shutdown");
-    p->in_connectivity_shutdown = true;
+    p->shutdown = true;
     new_state = GRPC_CHANNEL_SHUTDOWN;
   } else if (subchannel_list->num_transient_failures ==
              p->subchannel_list->num_subchannels) { /* 4) TRANSIENT_FAILURE */
@@ -811,19 +807,30 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     sc_args.args = new_args;
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args);
+    grpc_channel_args_destroy(exec_ctx, new_args);
+    grpc_error *error;
+    // Get the connectivity state of the subchannel. Already existing ones may
+    // be in a state other than INIT.
+    const grpc_connectivity_state subchannel_connectivity_state =
+        grpc_subchannel_check_connectivity(subchannel, &error);
+    if (error != GRPC_ERROR_NONE) {
+      // The subchannel is in error (e.g. shutting down). Ignore it.
+      GRPC_SUBCHANNEL_UNREF(exec_ctx, subchannel, "new_sc_connectivity_error");
+      GRPC_ERROR_UNREF(error);
+      continue;
+    }
     if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
       char *address_uri =
           grpc_sockaddr_to_uri(&addresses->addresses[i].address);
       gpr_log(
           GPR_DEBUG,
           "[RR %p] index %lu: Created subchannel %p for address uri %s into "
-          "subchannel_list %p",
+          "subchannel_list %p. Connectivity state %s",
           (void *)p, (unsigned long)subchannel_index, (void *)subchannel,
-          address_uri, (void *)subchannel_list);
+          address_uri, (void *)subchannel_list,
+          grpc_connectivity_state_name(subchannel_connectivity_state));
       gpr_free(address_uri);
     }
-    grpc_channel_args_destroy(exec_ctx, new_args);
-
     subchannel_data *sd = &subchannel_list->subchannels[subchannel_index++];
     sd->subchannel_list = subchannel_list;
     sd->subchannel = subchannel;
@@ -835,7 +842,7 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
      * won't be referring to this value again and it'll be overwritten after
      * the first call to rr_connectivity_changed_locked */
     sd->prev_connectivity_state = GRPC_CHANNEL_INIT;
-    sd->curr_connectivity_state = GRPC_CHANNEL_IDLE;
+    sd->curr_connectivity_state = subchannel_connectivity_state;
     sd->user_data_vtable = addresses->user_data_vtable;
     if (sd->user_data_vtable != NULL) {
       sd->user_data =

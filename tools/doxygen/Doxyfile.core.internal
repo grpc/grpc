@@ -827,6 +827,8 @@ include/grpc/impl/codegen/slice.h \
 include/grpc/impl/codegen/status.h \
 include/grpc/impl/codegen/sync.h \
 include/grpc/impl/codegen/sync.h \
+include/grpc/impl/codegen/sync_custom.h \
+include/grpc/impl/codegen/sync_custom.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
@@ -853,6 +855,7 @@ include/grpc/support/port_platform.h \
 include/grpc/support/string_util.h \
 include/grpc/support/subprocess.h \
 include/grpc/support/sync.h \
+include/grpc/support/sync_custom.h \
 include/grpc/support/sync_generic.h \
 include/grpc/support/sync_posix.h \
 include/grpc/support/sync_windows.h \
@@ -1330,7 +1333,6 @@ src/core/lib/support/sync.c \
 src/core/lib/support/sync_posix.c \
 src/core/lib/support/sync_windows.c \
 src/core/lib/support/thd.c \
-src/core/lib/support/thd_internal.h \
 src/core/lib/support/thd_posix.c \
 src/core/lib/support/thd_windows.c \
 src/core/lib/support/time.c \
@@ -1424,9 +1426,13 @@ src/core/tsi/transport_security_adapter.h \
 src/core/tsi/transport_security_grpc.c \
 src/core/tsi/transport_security_grpc.h \
 src/core/tsi/transport_security_interface.h \
+third_party/nanopb/pb.h \
 third_party/nanopb/pb_common.c \
+third_party/nanopb/pb_common.h \
 third_party/nanopb/pb_decode.c \
-third_party/nanopb/pb_encode.c
+third_party/nanopb/pb_decode.h \
+third_party/nanopb/pb_encode.c \
+third_party/nanopb/pb_encode.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

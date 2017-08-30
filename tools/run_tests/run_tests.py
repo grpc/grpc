@@ -63,8 +63,8 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 }
 
 _POLLING_STRATEGIES = {
-  'linux': ['epollsig', 'poll', 'poll-cv'],
-# TODO(ctiller, sreecha): enable epoll1, epollex, epoll-thread-pool
+  'linux': ['epollsig', 'epoll1', 'poll', 'poll-cv'],
+# TODO(ctiller, sreecha): enable epollex, epoll-thread-pool
   'mac': ['poll'],
 }
 
@@ -84,6 +84,7 @@ SELECT
     [grpc-testing:jenkins_test_results.aggregate_results]
   WHERE
     timestamp >= DATE_ADD(CURRENT_DATE(), -1, "WEEK")
+    AND platform = '"""+platform_string()+"""'
     AND NOT REGEXP_MATCH(job_name, '.*portability.*') )
 GROUP BY
   filtered_test_name
@@ -233,15 +234,19 @@ class CLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    if self.args.compiler == 'cmake':
+    if self.platform == 'windows':
+      _check_compiler(self.args.compiler, ['default', 'cmake', 'cmake_vs2015',
+                                           'cmake_vs2017'])
+      _check_arch(self.args.arch, ['default', 'x64', 'x86'])
+      self._cmake_generator_option = 'Visual Studio 15 2017' if self.args.compiler == 'cmake_vs2017' else 'Visual Studio 14 2015'
+      self._cmake_arch_option = 'x64' if self.args.arch == 'x64' else 'Win32'
+      self._use_cmake = True
+      self._make_options = []
+    elif self.args.compiler == 'cmake':
       _check_arch(self.args.arch, ['default'])
       self._use_cmake = True
       self._docker_distro = 'jessie'
       self._make_options = []
-    elif self.platform == 'windows':
-      self._use_cmake = False
-      self._make_options = [_windows_toolset_option(self.args.compiler),
-                            _windows_arch_option(self.args.arch)]
     else:
       self._use_cmake = False
       self._docker_distro, self._make_options = self._compiler_options(self.args.use_docker,
@@ -302,13 +307,7 @@ class CLanguage(object):
         if self.args.iomgr_platform in target.get('exclude_iomgrs', []):
           continue
         if self.platform == 'windows':
-          if self._use_cmake:
-            binary = 'cmake/build/%s/%s.exe' % (_MSBUILD_CONFIG[self.config.build_config], target['name'])
-          else:
-            binary = 'vsprojects/%s%s/%s.exe' % (
-                'x64/' if self.args.arch == 'x64' else '',
-                _MSBUILD_CONFIG[self.config.build_config],
-                target['name'])
+          binary = 'cmake/build/%s/%s.exe' % (_MSBUILD_CONFIG[self.config.build_config], target['name'])
         else:
           if self._use_cmake:
             binary = 'cmake/build/%s' % target['name']
@@ -366,19 +365,17 @@ class CLanguage(object):
             'check_epollexclusive']
 
   def make_options(self):
-    return self._make_options;
+    return self._make_options
 
   def pre_build_steps(self):
-    if self._use_cmake:
-      if self.platform == 'windows':
-        return [['tools\\run_tests\\helper_scripts\\pre_build_cmake.bat']]
-      else:
-        return [['tools/run_tests/helper_scripts/pre_build_cmake.sh']]
+    if self.platform == 'windows':
+      return [['tools\\run_tests\\helper_scripts\\pre_build_cmake.bat',
+               self._cmake_generator_option,
+               self._cmake_arch_option]]
+    elif self._use_cmake:
+      return [['tools/run_tests/helper_scripts/pre_build_cmake.sh']]
     else:
-      if self.platform == 'windows':
-        return [['tools\\run_tests\\helper_scripts\\pre_build_c.bat']]
-      else:
-        return []
+      return []
 
   def build_steps(self):
     return []
@@ -1110,30 +1107,6 @@ def _check_arch_option(arch):
       sys.exit(1)
 
 
-def _windows_build_bat(compiler):
-  """Returns name of build.bat for selected compiler."""
-  # For CoreCLR, fall back to the default compiler for C core
-  if compiler == 'default' or compiler == 'vs2013':
-    return 'vsprojects\\build_vs2013.bat'
-  elif compiler == 'vs2015':
-    return 'vsprojects\\build_vs2015.bat'
-  else:
-    print('Compiler %s not supported.' % compiler)
-    sys.exit(1)
-
-
-def _windows_toolset_option(compiler):
-  """Returns msbuild PlatformToolset for selected compiler."""
-  # For CoreCLR, fall back to the default compiler for C core
-  if compiler == 'default' or compiler == 'vs2013' or compiler == 'coreclr':
-    return '/p:PlatformToolset=v120'
-  elif compiler == 'vs2015':
-    return '/p:PlatformToolset=v140'
-  else:
-    print('Compiler %s not supported.' % compiler)
-    sys.exit(1)
-
-
 def _docker_arch_suffix(arch):
   """Returns suffix to dockerfile dir to use."""
   if arch == 'default' or arch == 'x64':
@@ -1232,12 +1205,11 @@ argp.add_argument('--compiler',
                   choices=['default',
                            'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc_musl',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
-                           'vs2013', 'vs2015',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3', 'python_alpine',
                            'node0.12', 'node4', 'node5', 'node6', 'node7', 'node8',
                            'electron1.3', 'electron1.6',
                            'coreclr',
-                           'cmake'],
+                           'cmake', 'cmake_vs2015', 'cmake_vs2017'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
 argp.add_argument('--iomgr_platform',
@@ -1267,18 +1239,22 @@ argp.add_argument('--quiet_success',
                        'Useful when running many iterations of each test (argument -n).')
 argp.add_argument('--force_default_poller', default=False, action='store_const', const=True,
                   help='Don\'t try to iterate over many polling strategies when they exist')
+argp.add_argument('--force_use_pollers', default=None, type=str,
+                  help='Only use the specified comma-delimited list of polling engines. '
+                  'Example: --force_use_pollers epollsig,poll '
+                  ' (This flag has no effect if --force_default_poller flag is also used)')
 argp.add_argument('--max_time', default=-1, type=int, help='Maximum test runtime in seconds')
 argp.add_argument('--bq_result_table',
                   default='',
                   type=str,
                   nargs='?',
                   help='Upload test results to a specified BQ table.')
-argp.add_argument('--auto_set_flakes', default=True, type=bool,
-                  help='Set flakiness data from historic data')
+argp.add_argument('--disable_auto_set_flakes', default=False, const=True, action='store_const',
+                  help='Disable rerunning historically flaky tests')
 args = argp.parse_args()
 
 flaky_tests = set()
-if args.auto_set_flakes:
+if not args.disable_auto_set_flakes:
   try:
     flaky_tests = set(get_flaky_tests())
   except:
@@ -1286,6 +1262,8 @@ if args.auto_set_flakes:
 
 if args.force_default_poller:
   _POLLING_STRATEGIES = {}
+elif args.force_use_pollers:
+  _POLLING_STRATEGIES[platform_string()] = args.force_use_pollers.split(',')
 
 jobset.measure_cpu_costs = args.measure_cpu_costs
 
@@ -1390,27 +1368,11 @@ _check_arch_option(args.arch)
 
 def make_jobspec(cfg, targets, makefile='Makefile'):
   if platform_string() == 'windows':
-    if makefile.startswith('cmake/build/'):
-      return [jobset.JobSpec(['cmake', '--build', '.',
-                              '--target', '%s' % target,
-                              '--config', _MSBUILD_CONFIG[cfg]],
-                             cwd=os.path.dirname(makefile),
-                             timeout_seconds=None) for target in targets]
-    extra_args = []
-    # better do parallel compilation
-    # empirically /m:2 gives the best performance/price and should prevent
-    # overloading the windows workers.
-    extra_args.extend(['/m:2'])
-    # disable PDB generation: it's broken, and we don't need it during CI
-    extra_args.extend(['/p:Jenkins=true'])
-    return [
-      jobset.JobSpec([_windows_build_bat(args.compiler),
-                      'vsprojects\\%s.sln' % target,
-                      '/p:Configuration=%s' % _MSBUILD_CONFIG[cfg]] +
-                      extra_args +
-                      language_make_options,
-                      shell=True, timeout_seconds=None)
-      for target in targets]
+    return [jobset.JobSpec(['cmake', '--build', '.',
+                            '--target', '%s' % target,
+                            '--config', _MSBUILD_CONFIG[cfg]],
+                           cwd=os.path.dirname(makefile),
+                           timeout_seconds=None) for target in targets]
   else:
     if targets and makefile.startswith('cmake/build/'):
       # With cmake, we've passed all the build configuration in the pre-build step already
