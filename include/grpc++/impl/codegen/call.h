@@ -308,7 +308,8 @@ template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
   bool own_buf;
-  Status result = SerializationTraits<M>::Serialize(message, &send_buf_, &own_buf);
+  Status result =
+      SerializationTraits<M>::Serialize(message, &send_buf_, &own_buf);
   if (!own_buf) {
     send_buf_ = g_core_codegen_interface->grpc_byte_buffer_copy(send_buf_);
   }

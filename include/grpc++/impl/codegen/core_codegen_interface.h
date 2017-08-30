@@ -74,7 +74,7 @@ class CoreCodegenInterface {
   virtual void gpr_cv_signal(gpr_cv* cv) = 0;
   virtual void gpr_cv_broadcast(gpr_cv* cv) = 0;
 
-  virtual grpc_byte_buffer *grpc_byte_buffer_copy(grpc_byte_buffer *bb) = 0;
+  virtual grpc_byte_buffer* grpc_byte_buffer_copy(grpc_byte_buffer* bb) = 0;
   virtual void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) = 0;
 
   virtual int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
