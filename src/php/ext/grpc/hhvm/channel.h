@@ -99,7 +99,7 @@ private:
     String m_HashKey;
     String m_ConcatenatedArgs;
     grpc_channel_args m_ChannelArgs;
-    std::vector<std::pair<Slice, Slice>> m_PHPData; // the key, value PHP Data
+    std::vector<std::pair<std::string, std::string>> m_PHPData; // the key, value PHP Data
 };
 
 /*****************************************************************************/
