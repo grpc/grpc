@@ -47,7 +47,53 @@
   } while (0)
 
 /* TODO (makdharma): Hook up into the wider tracing mechanism */
-int grpc_cronet_trace = 0;
+static int grpc_cronet_trace = 0;
+
+/* Debug Cronet callback */
+/* TODO (mxyan): Remove after crash is resolved */
+#define MAX_STREAM_COUNT 4096
+gpr_atm callback_count_lock = 0;
+gpr_mu callback_count_mu;
+static int stream_count = 0;
+static void *stream_pointers[MAX_STREAM_COUNT];
+static int stream_end_callback_count[MAX_STREAM_COUNT] = {0};
+static void insert_stream_count(void *s, int count) {
+  int idx = stream_count < MAX_STREAM_COUNT ? stream_count : stream_count - MAX_STREAM_COUNT;
+  stream_pointers[idx] = s;
+  stream_end_callback_count[idx] = count;
+  if (++stream_count >= (MAX_STREAM_COUNT << 1)) {
+    stream_count -= MAX_STREAM_COUNT;
+  }
+}
+static void reset_stream_end_callback(void *s) {
+  gpr_mu_lock(&callback_count_mu);
+  for (int i = 0; i < GPR_MIN(stream_count, MAX_STREAM_COUNT); i++) {
+    if (stream_pointers[i] == s) {
+      stream_end_callback_count[i] = 0;
+      gpr_mu_unlock(&callback_count_mu);
+      return;
+    }
+  }
+  insert_stream_count(s, 0);
+  gpr_mu_unlock(&callback_count_mu);
+}
+static bool add_stream_end_callback(void *s) {
+  gpr_mu_lock(&callback_count_mu);
+  for (int i = 0; i < GPR_MIN(stream_count, MAX_STREAM_COUNT); i++) {
+    if (stream_pointers[i] == s) {
+      if (stream_end_callback_count[i]++ == 0) {
+        gpr_mu_unlock(&callback_count_mu);
+        return true;
+      } else {
+        gpr_mu_unlock(&callback_count_mu);
+        return false;
+      }
+    }
+  }
+  insert_stream_count(s, 1);
+  gpr_mu_unlock(&callback_count_mu);
+  return true;
+}
 
 enum e_op_result {
   ACTION_TAKEN_WITH_CALLBACK,
@@ -376,6 +422,7 @@ static void execute_from_storage(stream_obj *s) {
   Cronet callback
 */
 static void on_failed(bidirectional_stream *stream, int net_error) {
+  GPR_ASSERT(add_stream_end_callback((void *)stream));
   CRONET_LOG(GPR_DEBUG, "on_failed(%p, %d)", stream, net_error);
   stream_obj *s = (stream_obj *)stream->annotation;
   gpr_mu_lock(&s->mu);
@@ -399,6 +446,7 @@ static void on_failed(bidirectional_stream *stream, int net_error) {
   Cronet callback
 */
 static void on_canceled(bidirectional_stream *stream) {
+  GPR_ASSERT(add_stream_end_callback((void *)stream));
   CRONET_LOG(GPR_DEBUG, "on_canceled(%p)", stream);
   stream_obj *s = (stream_obj *)stream->annotation;
   gpr_mu_lock(&s->mu);
@@ -422,6 +470,7 @@ static void on_canceled(bidirectional_stream *stream) {
   Cronet callback
 */
 static void on_succeeded(bidirectional_stream *stream) {
+  GPR_ASSERT(add_stream_end_callback((void *)stream));
   CRONET_LOG(GPR_DEBUG, "on_succeeded(%p)", stream);
   stream_obj *s = (stream_obj *)stream->annotation;
   gpr_mu_lock(&s->mu);
@@ -970,6 +1019,7 @@ static enum e_op_result execute_stream_op(grpc_exec_ctx *exec_ctx,
     s->header_array.capacity = s->header_array.count;
     CRONET_LOG(GPR_DEBUG, "bidirectional_stream_start(%p, %s)", s->cbs, url);
     bidirectional_stream_start(s->cbs, url, 0, method, &s->header_array, false);
+    reset_stream_end_callback((void *)s->cbs);
     if (url) {
       gpr_free(url);
     }
@@ -1439,6 +1489,9 @@ grpc_transport *grpc_create_cronet_transport(void *engine, const char *target,
         }
       }
     }
+  }
+  if (gpr_atm_full_cas(&callback_count_lock, 0, 1)) {
+    gpr_mu_init(&callback_count_mu);
   }
 
   return &ct->base;
