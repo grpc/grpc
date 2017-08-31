@@ -20,6 +20,7 @@
 #define NET_GRPC_HHVM_GRPC_CHANNEL_CREDENTIALS_H_
 
 #include <shared_mutex>
+#include <string>
 
 #ifdef HAVE_CONFIG_H
     #include "config.h"
@@ -71,7 +72,7 @@ private:
     DefaultPEMRootCerts(void);
 
     // member variables
-    Slice m_PEMRootCerts;
+    std::string m_PEMRootCerts;
     lock_type m_CertsLock;
 };
 

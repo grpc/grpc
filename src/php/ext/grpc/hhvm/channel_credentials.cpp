@@ -47,14 +47,21 @@ grpc_ssl_roots_override_result DefaultPEMRootCerts::get_ssl_roots_override(char*
     {
         ReadLock lock{ singletonCerts.m_CertsLock };
 
-        *pPermRootsCerts = singletonCerts.m_PEMRootCerts.c_str();
-        if (!(*pPermRootsCerts))
+        // allocate and copy string with null
+        size_t strLength{ singletonCerts.m_PEMRootCerts.size() };
+        char* const pStr{ reinterpret_cast<char *>(gpr_zalloc(strLength+ 1)) };
+        if (pStr)
         {
-            return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
+            std::memcpy(reinterpret_cast<void*>(pStr),
+                        reinterpret_cast<const void*>(singletonCerts.m_PEMRootCerts.c_str()), strLength);
+            pStr[strLength] = 0;
+            *pPermRootsCerts = pStr;
+            return GRPC_SSL_ROOTS_OVERRIDE_OK;
         }
         else
         {
-            return GRPC_SSL_ROOTS_OVERRIDE_OK;
+
+            return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
         }
     }
 }
@@ -64,7 +71,7 @@ void DefaultPEMRootCerts::setCerts(const String& pemRootsCerts)
     WriteLock lock{ m_CertsLock };
 
     // copy new certs
-    m_PEMRootCerts = Slice{ pemRootsCerts };
+    m_PEMRootCerts= pemRootsCerts.toCppString();
 }
 
 DefaultPEMRootCerts& DefaultPEMRootCerts::getDefaultPEMRootCerts(void)
