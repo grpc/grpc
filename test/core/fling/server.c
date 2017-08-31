@@ -53,8 +53,8 @@ static grpc_byte_buffer *terminal_buffer = NULL;
 static grpc_op read_op;
 static grpc_op metadata_send_op;
 static grpc_op write_op;
-static grpc_op status_op[2];
-static int was_cancelled = 2;
+static grpc_op status_op[1];
+// // static int was_cancelled = 2;
 static grpc_op unary_ops[6];
 static int got_sigint = 0;
 
@@ -80,7 +80,7 @@ static void request_call(void) {
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_server_request_call(server, &call, &call_details,
                                       &request_metadata_recv, cq, cq,
-                                      tag(FLING_SERVER_NEW_REQUEST)));
+                                      tag(FLING_SERVER_NEW_REQUEST), 0, NULL));
 }
 
 static void handle_unary_method(void) {
@@ -107,10 +107,10 @@ static void handle_unary_method(void) {
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status_details = NULL;
   op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op++;
-
+  //   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  //   op->data.recv_close_on_server.cancelled = &was_cancelled;
+  //   op++;
+  //
   error = grpc_call_start_batch(call, unary_ops, (size_t)(op - unary_ops),
                                 tag(FLING_SERVER_BATCH_OPS_FOR_UNARY), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
@@ -156,10 +156,10 @@ static void start_send_status(void) {
   status_op[0].data.send_status_from_server.status = GRPC_STATUS_OK;
   status_op[0].data.send_status_from_server.trailing_metadata_count = 0;
   status_op[0].data.send_status_from_server.status_details = NULL;
-  status_op[1].op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  status_op[1].data.recv_close_on_server.cancelled = &was_cancelled;
+  // status_op[1].op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  // status_op[1].data.recv_close_on_server.cancelled = &was_cancelled;
 
-  error = grpc_call_start_batch(call, status_op, 2, tagarg, NULL);
+  error = grpc_call_start_batch(call, status_op, 1, tagarg, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 }
 

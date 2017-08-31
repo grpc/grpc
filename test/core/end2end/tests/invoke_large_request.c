@@ -24,6 +24,7 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/lib/surface/call.h"
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
@@ -127,7 +128,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  int was_cancelled = 2;
+// //   int was_cancelled = 2;
 
   gpr_timespec deadline = n_seconds_from_now(30);
   c = grpc_channel_create_call(
@@ -180,7 +181,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
 
   error =
       grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+                               &request_metadata_recv, f.cq, f.cq, tag(101), 0, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -205,11 +206,11 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
 
   memset(ops, 0, sizeof(ops));
   op = ops;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
+//   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+//   op->data.recv_close_on_server.cancelled = &was_cancelled;
+//   op->flags = 0;
+//   op->reserved = NULL;
+//   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = response_payload;
   op->flags = 0;
@@ -229,13 +230,17 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
   CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
+  // make sure op GRPC_OP_RECV_CLOSE_ON_SERVER has finished.
+  while (!grpc_call_recv_close_finalized(s)) {
+    cq_verify_empty(cqv);
+  }
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   validate_host_override_string("foo.test.google.fr:1234", call_details.host,
                                 config);
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(grpc_call_get_cancelled(s));
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

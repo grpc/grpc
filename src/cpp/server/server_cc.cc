@@ -155,7 +155,7 @@ class Server::SyncRequest final : public CompletionQueueTag {
           grpc_server_request_registered_call(
               server, tag_, &call_, &deadline_, &request_metadata_,
               has_request_payload_ ? &request_payload_ : nullptr, cq_,
-              notify_cq, this)) {
+              notify_cq, this, 0, nullptr)) {
         TeardownRequest();
         return;
       }
@@ -165,8 +165,8 @@ class Server::SyncRequest final : public CompletionQueueTag {
         grpc_call_details_init(call_details_);
       }
       if (grpc_server_request_call(server, &call_, call_details_,
-                                   &request_metadata_, cq_, notify_cq,
-                                   this) != GRPC_CALL_OK) {
+                                   &request_metadata_, cq_, notify_cq, this, 0,
+                                   nullptr) != GRPC_CALL_OK) {
         TeardownRequest();
         return;
       }
@@ -208,7 +208,6 @@ class Server::SyncRequest final : public CompletionQueueTag {
     }
 
     void Run(std::shared_ptr<GlobalCallbacks> global_callbacks) {
-      ctx_.BeginCompletionOp(&call_);
       global_callbacks->PreSynchronousRequest(&ctx_);
       method_->handler()->RunHandler(
           MethodHandler::HandlerParameter(&call_, &ctx_, request_payload_));
@@ -636,9 +635,6 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
   context_->set_call(call_);
   context_->cq_ = call_cq_;
   Call call(call_, server_, call_cq_, server_->max_receive_message_size());
-  if (*status && call_) {
-    context_->BeginCompletionOp(&call);
-  }
   // just the pointers inside call are copied here
   stream_->BindCall(&call);
   *tag = tag_;
@@ -656,11 +652,21 @@ ServerInterface::RegisteredAsyncRequest::RegisteredAsyncRequest(
 void ServerInterface::RegisteredAsyncRequest::IssueRequest(
     void* registered_method, grpc_byte_buffer** payload,
     ServerCompletionQueue* notification_cq) {
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_registered_call(
-                                 server_->server(), registered_method, &call_,
-                                 &context_->deadline_,
-                                 context_->client_metadata_.arr(), payload,
-                                 call_cq_->cq(), notification_cq->cq(), this));
+  if (context_->has_notify_when_done_tag_) {
+    GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_registered_call(
+                                   server_->server(), registered_method, &call_,
+                                   &context_->deadline_,
+                                   context_->client_metadata_.arr(), payload,
+                                   call_cq_->cq(), notification_cq->cq(), this,
+                                   1, context_->completion_op_));
+  } else {
+    GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_registered_call(
+                                   server_->server(), registered_method, &call_,
+                                   &context_->deadline_,
+                                   context_->client_metadata_.arr(), payload,
+                                   call_cq_->cq(), notification_cq->cq(), this,
+                                   0, nullptr));
+  }
 }
 
 ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
@@ -672,10 +678,19 @@ ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
   grpc_call_details_init(&call_details_);
   GPR_ASSERT(notification_cq);
   GPR_ASSERT(call_cq);
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                 server->server(), &call_, &call_details_,
-                                 context->client_metadata_.arr(), call_cq->cq(),
-                                 notification_cq->cq(), this));
+  if (context_->has_notify_when_done_tag_) {
+    GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                   server->server(), &call_, &call_details_,
+                                   context->client_metadata_.arr(),
+                                   call_cq->cq(), notification_cq->cq(), this,
+                                   1, context->completion_op_));
+  } else {
+    GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                   server->server(), &call_, &call_details_,
+                                   context->client_metadata_.arr(),
+                                   call_cq->cq(), notification_cq->cq(), this,
+                                   0, nullptr));
+  }
 }
 
 bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,

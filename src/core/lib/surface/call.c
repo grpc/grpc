@@ -57,7 +57,7 @@
       - initial metadata recv
       - message recv
       - status/close recv (depending on client/server) */
-#define MAX_CONCURRENT_BATCHES 6
+#define MAX_CONCURRENT_BATCHES 7
 
 #define MAX_SEND_EXTRA_METADATA_COUNT 3
 
@@ -226,7 +226,7 @@ struct grpc_call {
       grpc_slice *status_details;
     } client;
     struct {
-      int *cancelled;
+      int cancelled;
     } server;
   } final_op;
 
@@ -310,6 +310,10 @@ static parent_call *get_or_create_parent_call(grpc_call *call) {
 
 static parent_call *get_parent_call(grpc_call *call) {
   return (parent_call *)gpr_atm_acq_load(&call->parent_call_atm);
+}
+
+bool grpc_call_recv_close_finalized(grpc_call *call) {
+  return (bool)gpr_atm_acq_load(&call->received_final_op_atm);
 }
 
 grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
@@ -464,6 +468,14 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
   return error;
 }
 
+bool grpc_call_get_cancelled(grpc_call *call) {
+  return call->final_op.server.cancelled != 0;
+}
+
+int *grpc_call_get_cancelled_ptr(grpc_call *call) {
+  return &call->final_op.server.cancelled;
+}
+
 void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                     grpc_completion_queue *cq) {
   GPR_ASSERT(cq);
@@ -575,8 +587,7 @@ void grpc_call_unref(grpc_call *c) {
 
   GPR_ASSERT(!c->destroy_called);
   c->destroy_called = 1;
-  bool cancel = gpr_atm_acq_load(&c->any_ops_sent_atm) != 0 &&
-                gpr_atm_acq_load(&c->received_final_op_atm) == 0;
+  bool cancel = gpr_atm_acq_load(&c->any_ops_sent_atm) != 0;
   if (cancel) {
     cancel_with_error(&exec_ctx, c, STATUS_FROM_API_OVERRIDE,
                       GRPC_ERROR_CANCELLED);
@@ -1177,8 +1188,9 @@ static int batch_slot_for_op(grpc_op_type type) {
     case GRPC_OP_RECV_MESSAGE:
       return 4;
     case GRPC_OP_RECV_CLOSE_ON_SERVER:
-    case GRPC_OP_RECV_STATUS_ON_CLIENT:
       return 5;
+    case GRPC_OP_RECV_STATUS_ON_CLIENT:
+      return 6;
   }
   GPR_UNREACHABLE_CODE(return 123456789);
 }
@@ -1282,7 +1294,7 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
                        call->final_op.client.status_details);
     } else {
       get_final_status(call, set_cancelled_value,
-                       call->final_op.server.cancelled, NULL);
+                       &call->final_op.server.cancelled, NULL);
     }
 
     GRPC_ERROR_UNREF(error);
@@ -1926,8 +1938,6 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         call->requested_final_op = true;
-        call->final_op.server.cancelled =
-            op->data.recv_close_on_server.cancelled;
         stream_op->recv_trailing_metadata = true;
         stream_op->collect_stats = true;
         stream_op_payload->recv_trailing_metadata.recv_trailing_metadata =

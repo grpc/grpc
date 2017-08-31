@@ -131,7 +131,7 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  int was_cancelled = 2;
+  // int was_cancelled = 2;
 
   gpr_timespec deadline = n_seconds_from_now(60);
   c = grpc_channel_create_call(
@@ -182,9 +182,9 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq, tag(101),
+                                   0, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -209,11 +209,11 @@ static void request_response_with_payload(grpc_end2end_test_config config,
 
   memset(ops, 0, sizeof(ops));
   op = ops;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
+  // op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  // op->data.recv_close_on_server.cancelled = &was_cancelled;
+  // op->flags = 0;
+  // op->reserved = NULL;
+  // op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = response_payload;
   op->flags = 0;
@@ -239,7 +239,7 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   validate_host_override_string("foo.test.google.fr:1234", call_details.host,
                                 config);
-  GPR_ASSERT(was_cancelled == 0);
+  GPR_ASSERT(!grpc_call_get_cancelled(s));
   GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
   GPR_ASSERT(
       byte_buffer_eq_slice(response_payload_recv, response_payload_slice));

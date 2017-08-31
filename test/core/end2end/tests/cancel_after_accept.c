@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/surface/call.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -116,7 +117,7 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  int was_cancelled = 2;
+  // //   int was_cancelled = 2;
 
   grpc_channel_args *args = NULL;
   if (use_service_config) {
@@ -187,7 +188,8 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq, tag(2));
+                                   &request_metadata_recv, f.cq, f.cq, tag(2),
+                                   0, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
   cq_verify(cqv);
@@ -209,11 +211,11 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
+  //   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  //   op->data.recv_close_on_server.cancelled = &was_cancelled;
+  //   op->flags = 0;
+  //   op->reserved = NULL;
+  //   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(3), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
@@ -222,9 +224,13 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
+  // make sure op GRPC_OP_RECV_CLOSE_ON_SERVER has finished.
+  while (!grpc_call_recv_close_finalized(s)) {
+    cq_verify_empty(cqv);
+  }
 
   GPR_ASSERT(status == mode.expect_status || status == GRPC_STATUS_INTERNAL);
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(grpc_call_get_cancelled(s));
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);

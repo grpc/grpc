@@ -80,6 +80,10 @@ void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *call);
 
 grpc_call_stack *grpc_call_get_call_stack(grpc_call *call);
 
+int *grpc_call_get_cancelled_ptr(grpc_call *call);
+bool grpc_call_get_cancelled(grpc_call *call);
+bool grpc_call_recv_close_finalized(grpc_call *call);
+
 grpc_call_error grpc_call_start_batch_and_execute(grpc_exec_ctx *exec_ctx,
                                                   grpc_call *call,
                                                   const grpc_op *ops,

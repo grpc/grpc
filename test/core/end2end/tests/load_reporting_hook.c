@@ -136,7 +136,7 @@ static void request_response_with_payload(
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  int was_cancelled = 2;
+// //   int was_cancelled = 2;
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(
@@ -191,7 +191,7 @@ static void request_response_with_payload(
 
   error =
       grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+                               &request_metadata_recv, f.cq, f.cq, tag(101), 0, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -216,11 +216,11 @@ static void request_response_with_payload(
 
   memset(ops, 0, sizeof(ops));
   op = ops;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
+//   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+//   op->data.recv_close_on_server.cancelled = &was_cancelled;
+//   op->flags = 0;
+//   op->reserved = NULL;
+//   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = response_payload;
   op->flags = 0;

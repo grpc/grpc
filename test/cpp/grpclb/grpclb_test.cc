@@ -177,7 +177,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
   grpc_call_error error;
-  int was_cancelled = 2;
+  // int was_cancelled = 2;
   grpc_byte_buffer *request_payload_recv;
   grpc_byte_buffer *response_payload;
 
@@ -187,7 +187,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
 
   error = grpc_server_request_call(sf->server, &s, &call_details,
                                    &request_metadata_recv, sf->cq, sf->cq,
-                                   tag(200));
+                                   tag(200), 0, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   gpr_log(GPR_INFO, "LB Server[%s](%s) up", sf->servers_hostport,
           sf->balancer_name);
@@ -234,11 +234,11 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
+  // op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  // op->data.recv_close_on_server.cancelled = &was_cancelled;
+  // op->flags = 0;
+  // op->reserved = NULL;
+  // op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(201), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   gpr_log(GPR_INFO, "LB Server[%s](%s) after tag 201", sf->servers_hostport,
@@ -311,7 +311,7 @@ static void start_backend_server(server_fixture *sf) {
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
   grpc_call_error error;
-  int was_cancelled;
+  // int was_cancelled;
   grpc_byte_buffer *request_payload_recv;
   grpc_byte_buffer *response_payload;
   grpc_event ev;
@@ -319,13 +319,13 @@ static void start_backend_server(server_fixture *sf) {
   while (true) {
     memset(ops, 0, sizeof(ops));
     cqv = cq_verifier_create(sf->cq);
-    was_cancelled = 2;
+    // was_cancelled = 2;
     grpc_metadata_array_init(&request_metadata_recv);
     grpc_call_details_init(&call_details);
 
     error = grpc_server_request_call(sf->server, &s, &call_details,
                                      &request_metadata_recv, sf->cq, sf->cq,
-                                     tag(100));
+                                     tag(100), 0, NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
     gpr_log(GPR_INFO, "Server[%s] up", sf->servers_hostport);
     ev = grpc_completion_queue_next(sf->cq,
@@ -352,11 +352,11 @@ static void start_backend_server(server_fixture *sf) {
     op->flags = 0;
     op->reserved = NULL;
     op++;
-    op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-    op->data.recv_close_on_server.cancelled = &was_cancelled;
-    op->flags = 0;
-    op->reserved = NULL;
-    op++;
+    // op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+    // op->data.recv_close_on_server.cancelled = &was_cancelled;
+    // op->flags = 0;
+    // op->reserved = NULL;
+    // op++;
     error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(101), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
     gpr_log(GPR_INFO, "Server[%s] after tag 101", sf->servers_hostport);

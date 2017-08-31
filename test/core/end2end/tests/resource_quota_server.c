@@ -174,7 +174,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
   for (int i = 0; i < NUM_CALLS; i++) {
     error = grpc_server_request_call(
         f.server, &server_calls[i], &call_details[i], &request_metadata_recv[i],
-        f.cq, f.cq, tag(SERVER_START_BASE_TAG + i));
+        f.cq, f.cq, tag(SERVER_START_BASE_TAG + i), 0, NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     pending_server_start_calls++;
@@ -309,11 +309,11 @@ void resource_quota_server(grpc_end2end_test_config config) {
 
       memset(ops, 0, sizeof(ops));
       op = ops;
-      op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-      op->data.recv_close_on_server.cancelled = &was_cancelled[call_id];
-      op->flags = 0;
-      op->reserved = NULL;
-      op++;
+//       op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+//       op->data.recv_close_on_server.cancelled = &was_cancelled[call_id];
+//       op->flags = 0;
+//       op->reserved = NULL;
+//       op++;
       op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
       op->data.send_status_from_server.trailing_metadata_count = 0;
       op->data.send_status_from_server.status = GRPC_STATUS_OK;

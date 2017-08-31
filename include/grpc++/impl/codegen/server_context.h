@@ -218,10 +218,7 @@ class ServerContext {
   /// Async only. Has to be called before the rpc starts.
   /// Returns the tag in completion queue when the rpc finishes.
   /// IsCancelled() can then be called to check whether the rpc was cancelled.
-  void AsyncNotifyWhenDone(void* tag) {
-    has_notify_when_done_tag_ = true;
-    async_notify_when_done_tag_ = tag;
-  }
+  void AsyncNotifyWhenDone(void* tag);
 
   /// Should be used for framework-level extensions only.
   /// Applications never need to call this method.
@@ -275,7 +272,6 @@ class ServerContext {
 
   CompletionOp* completion_op_;
   bool has_notify_when_done_tag_;
-  void* async_notify_when_done_tag_;
 
   gpr_timespec deadline_;
   grpc_call* call_;

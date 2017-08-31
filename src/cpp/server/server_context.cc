@@ -40,41 +40,23 @@ namespace grpc {
 class ServerContext::CompletionOp final : public CallOpSetInterface {
  public:
   // initial refs: one in the server context, one in the cq
-  CompletionOp()
-      : has_tag_(false),
-        tag_(nullptr),
-        refs_(2),
-        finalized_(false),
-        cancelled_(0) {}
+  CompletionOp(void* tag) : tag_(tag), refs_(2), finalized_(false) {}
 
-  void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override;
+  void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override{};
   bool FinalizeResult(void** tag, bool* status) override;
 
-  bool CheckCancelled(CompletionQueue* cq) {
-    cq->TryPluck(this);
-    return CheckCancelledNoPluck();
-  }
-  bool CheckCancelledAsync() { return CheckCancelledNoPluck(); }
-
-  void set_tag(void* tag) {
-    has_tag_ = true;
-    tag_ = tag;
+  bool IsFinalized() {
+    std::lock_guard<std::mutex> g(mu_);
+    return finalized_;
   }
 
   void Unref();
 
  private:
-  bool CheckCancelledNoPluck() {
-    std::lock_guard<std::mutex> g(mu_);
-    return finalized_ ? (cancelled_ != 0) : false;
-  }
-
-  bool has_tag_;
   void* tag_;
   std::mutex mu_;
   int refs_;
   bool finalized_;
-  int cancelled_;
 };
 
 void ServerContext::CompletionOp::Unref() {
@@ -85,29 +67,15 @@ void ServerContext::CompletionOp::Unref() {
   }
 }
 
-void ServerContext::CompletionOp::FillOps(grpc_call* call, grpc_op* ops,
-                                          size_t* nops) {
-  ops->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  ops->data.recv_close_on_server.cancelled = &cancelled_;
-  ops->flags = 0;
-  ops->reserved = NULL;
-  *nops = 1;
-}
-
 bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
   std::unique_lock<std::mutex> lock(mu_);
   finalized_ = true;
-  bool ret = false;
-  if (has_tag_) {
-    *tag = tag_;
-    ret = true;
-  }
-  if (!*status) cancelled_ = 1;
+  *tag = tag_;
   if (--refs_ == 0) {
     lock.unlock();
     delete this;
   }
-  return ret;
+  return true;
 }
 
 // ServerContext body
@@ -115,7 +83,6 @@ bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
 ServerContext::ServerContext()
     : completion_op_(nullptr),
       has_notify_when_done_tag_(false),
-      async_notify_when_done_tag_(nullptr),
       deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),
       call_(nullptr),
       cq_(nullptr),
@@ -126,7 +93,6 @@ ServerContext::ServerContext()
 ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
     : completion_op_(nullptr),
       has_notify_when_done_tag_(false),
-      async_notify_when_done_tag_(nullptr),
       deadline_(deadline),
       call_(nullptr),
       cq_(nullptr),
@@ -144,15 +110,6 @@ ServerContext::~ServerContext() {
   if (completion_op_) {
     completion_op_->Unref();
   }
-}
-
-void ServerContext::BeginCompletionOp(Call* call) {
-  GPR_ASSERT(!completion_op_);
-  completion_op_ = new CompletionOp();
-  if (has_notify_when_done_tag_) {
-    completion_op_->set_tag(async_notify_when_done_tag_);
-  }
-  call->PerformOps(completion_op_);
 }
 
 CompletionQueueTag* ServerContext::GetCompletionOpTag() {
@@ -179,13 +136,21 @@ void ServerContext::TryCancel() const {
 
 bool ServerContext::IsCancelled() const {
   if (has_notify_when_done_tag_) {
-    // when using async API, but the result is only valid
-    // if the tag has already been delivered at the completion queue
-    return completion_op_ && completion_op_->CheckCancelledAsync();
+    return completion_op_->IsFinalized()
+               ? (call_ ? grpc_call_get_cancelled(call_) : true)
+               : false;
   } else {
-    // when using sync API
-    return completion_op_ && completion_op_->CheckCancelled(cq_);
+    // For Sync case. call_ will always be set when ServerContext is
+    // initialized.
+    return grpc_call_recv_close_finalized(call_)
+               ? grpc_call_get_cancelled(call_)
+               : false;
   }
+}
+
+void ServerContext::AsyncNotifyWhenDone(void* tag) {
+  has_notify_when_done_tag_ = true;
+  completion_op_ = new CompletionOp(tag);
 }
 
 void ServerContext::set_compression_algorithm(

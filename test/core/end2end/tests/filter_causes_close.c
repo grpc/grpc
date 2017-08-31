@@ -158,7 +158,7 @@ static void test_request(grpc_end2end_test_config config) {
 
   error =
       grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+                               &request_metadata_recv, f.cq, f.cq, tag(101), 0, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);

@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+#include "src/core/lib/surface/call.h"
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
@@ -166,7 +167,7 @@ static void revive_server(const servers_fixture *f, request_data *rdata,
              grpc_server_request_call(f->servers[i], &f->server_calls[i],
                                       &rdata->call_details[i],
                                       &f->request_metadata_recv[i], f->cq,
-                                      f->cq, tag(1000 + (int)i)));
+                                      f->cq, tag(1000 + (int)i), 0, NULL));
 }
 
 static servers_fixture *setup_servers(const char *server_host,
@@ -248,7 +249,7 @@ static request_sequences perform_request(servers_fixture *f,
   int *s_valid;
   grpc_op ops[6];
   grpc_op *op;
-  int was_cancelled;
+  // //   int was_cancelled;
   size_t i, iter_num;
   grpc_event ev;
   int read_tag;
@@ -259,7 +260,7 @@ static request_sequences perform_request(servers_fixture *f,
 
   for (iter_num = 0; iter_num < spec->num_iters; iter_num++) {
     cq_verifier *cqv = cq_verifier_create(f->cq);
-    was_cancelled = 2;
+    // was_cancelled = 2;
 
     for (i = 0; i < f->num_servers; i++) {
       if (spec->kill_at[iter_num][i] != 0) {
@@ -356,11 +357,11 @@ static request_sequences perform_request(servers_fixture *f,
       op->flags = 0;
       op->reserved = NULL;
       op++;
-      op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-      op->data.recv_close_on_server.cancelled = &was_cancelled;
-      op->flags = 0;
-      op->reserved = NULL;
-      op++;
+      //       op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+      //       op->data.recv_close_on_server.cancelled = &was_cancelled;
+      //       op->flags = 0;
+      //       op->reserved = NULL;
+      //       op++;
       GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(f->server_calls[s_idx],
                                                        ops, (size_t)(op - ops),
                                                        tag(102), NULL));
@@ -377,7 +378,7 @@ static request_sequences perform_request(servers_fixture *f,
                  grpc_slice_str_cmp(rdata->call_details[s_idx].method, "/foo"));
       GPR_ASSERT(0 == grpc_slice_str_cmp(rdata->call_details[s_idx].host,
                                          "foo.test.google.fr"));
-      GPR_ASSERT(was_cancelled == 1);
+      GPR_ASSERT(grpc_call_get_cancelled(f->server_calls[s_idx]));
 
       grpc_call_unref(f->server_calls[s_idx]);
 
@@ -386,7 +387,7 @@ static request_sequences perform_request(servers_fixture *f,
                                      f->servers[s_idx], &f->server_calls[s_idx],
                                      &rdata->call_details[s_idx],
                                      &f->request_metadata_recv[s_idx], f->cq,
-                                     f->cq, tag(1000 + (int)s_idx)));
+                                     f->cq, tag(1000 + (int)s_idx), 0, NULL));
     } else { /* no response from server */
       grpc_call_cancel(c, NULL);
       if (!completed_client) {
