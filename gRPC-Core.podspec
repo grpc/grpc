@@ -988,6 +988,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/end2end_tests.{c,h}',
                       'test/core/end2end/end2end_test_utils.c',
                       'test/core/end2end/tests/*.{c,h}',
+                      'test/core/end2end/fixtures/*.h',
                       'test/core/end2end/data/*.{c,h}',
                       'test/core/util/debugger_macros.{c,h}',
                       'test/core/util/test_config.{c,h}',
