@@ -737,8 +737,6 @@ static void rr_ping_one_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                              const grpc_lb_policy_args *args) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)policy;
-  /* Find the number of backend addresses. We ignore balancer addresses, since
-   * we don't know how to handle them. */
   const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
@@ -757,12 +755,9 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     return;
   }
   grpc_lb_addresses *addresses = arg->value.pointer.p;
-  size_t num_addrs = 0;
-  for (size_t i = 0; i < addresses->num_addresses; i++) {
-    if (!addresses->addresses[i].is_balancer) ++num_addrs;
-  }
-  rr_subchannel_list *subchannel_list = rr_subchannel_list_create(p, num_addrs);
-  if (num_addrs == 0) {
+  rr_subchannel_list *subchannel_list =
+      rr_subchannel_list_create(p, addresses->num_addresses);
+  if (addresses->num_addresses == 0) {
     grpc_connectivity_state_set(
         exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
@@ -794,9 +789,8 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                                          GRPC_ARG_LB_ADDRESSES};
   /* Create subchannels for addresses in the update. */
   for (size_t i = 0; i < addresses->num_addresses; i++) {
-    /* Skip balancer addresses, since we only know how to handle backends. */
-    if (addresses->addresses[i].is_balancer) continue;
-    GPR_ASSERT(i < num_addrs);
+    // If there were any balancer, we would have chosen grpclb policy instead.
+    GPR_ASSERT(!addresses->addresses[i].is_balancer);
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
     grpc_arg addr_arg =
         grpc_create_subchannel_address_arg(&addresses->addresses[i].address);
