@@ -854,7 +854,7 @@ static int fd_wrapped_fd(grpc_fd *fd) {
 
 static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                       grpc_closure *on_done, int *release_fd,
-                      const char *reason) {
+                      bool already_closed, const char *reason) {
   grpc_error *error = GRPC_ERROR_NONE;
   polling_island *unref_pi = NULL;
 
@@ -875,8 +875,7 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
        before doing this.) */
   if (fd->po.pi != NULL) {
     polling_island *pi_latest = polling_island_lock(fd->po.pi);
-    polling_island_remove_fd_locked(pi_latest, fd, false /* is_fd_closed */,
-                                    &error);
+    polling_island_remove_fd_locked(pi_latest, fd, already_closed, &error);
     gpr_mu_unlock(&pi_latest->mu);
 
     unref_pi = fd->po.pi;
@@ -1731,7 +1730,7 @@ const grpc_event_engine_vtable *grpc_init_epollsig_linux(
   if (!is_grpc_wakeup_signal_initialized) {
     /* TODO(ctiller): when other epoll engines are ready, remove the true || to
      * force this to be explitly chosen if needed */
-    if (explicit_request) {
+    if (true || explicit_request) {
       grpc_use_signal(SIGRTMIN + 6);
     } else {
       return NULL;

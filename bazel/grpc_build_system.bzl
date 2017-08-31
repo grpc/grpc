@@ -80,7 +80,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     linkopts = ["-pthread"],
   )
 
-def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False):
+def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = []):
   copts = []
   if language.upper() == "C":
     copts = ["-std=c99"]
@@ -93,7 +93,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     linkshared = linkshared,
     deps = deps + ["//external:" + dep for dep in external_deps],
     copts = copts,
-    linkopts = ["-pthread"],
+    linkopts = ["-pthread"] + linkopts,
   )
 
 def grpc_generate_one_off_targets():
@@ -105,3 +105,19 @@ def grpc_sh_test(name, srcs, args = [], data = []):
     srcs = srcs,
     args = args,
     data = data)
+
+def grpc_package(name, visibility = "private", features = []):
+  if visibility == "tests":
+    visibility = ["//test:__subpackages__"]
+  elif visibility == "public":
+    visibility = ["//visibility:public"]
+  elif visibility == "private":
+    visibility = []
+  else:
+    fail("Unknown visibility " + visibility)
+
+  if len(visibility) != 0:
+    native.package(
+      default_visibility = visibility,
+      features = features
+    )

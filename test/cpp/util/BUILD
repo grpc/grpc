@@ -14,24 +14,9 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_binary", "grpc_cc_test")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_binary", "grpc_cc_test", "grpc_package")
 
-package(
-    default_visibility = ["//visibility:public"],
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
-)
-
-# The following builds a shared-object to confirm that grpc++_unsecure
-# builds properly. Build-only is sufficient here
-grpc_cc_binary(
-    name = "testso.so",
-    srcs = [],
-    linkshared = 1,
-    deps = ["//:grpc++_unsecure"],
-)
+grpc_package(name = "test/cpp/util", visibility = "public")
 
 grpc_cc_library(
     name = "test_config",
@@ -63,26 +48,43 @@ grpc_cc_library(
     ],
 )
 
+GRPCXX_TESTUTIL_SRCS  = [
+    "byte_buffer_proto_helper.cc",
+    "string_ref_helper.cc",
+    "subprocess.cc",
+]
+
+GRPCXX_TESTUTIL_HDRS = [
+    "byte_buffer_proto_helper.h",
+    "string_ref_helper.h",
+    "subprocess.h",
+]
+
 grpc_cc_library(
     name = "test_util",
-    srcs = [
-        "byte_buffer_proto_helper.cc",
+    srcs = GRPCXX_TESTUTIL_SRCS + [
         "create_test_channel.cc",
-        "string_ref_helper.cc",
-        "subprocess.cc",
         "test_credentials_provider.cc",
     ],
-    hdrs = [
-        "byte_buffer_proto_helper.h",
+    hdrs = GRPCXX_TESTUTIL_HDRS + [
         "create_test_channel.h",
-        "string_ref_helper.h",
-        "subprocess.h",
         "test_credentials_provider.h",
     ],
     deps = [
         "//:grpc++",
         "//test/core/end2end:ssl_test_data",
-        "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "protobuf",
+    ],
+)
+
+grpc_cc_library(
+    name = "test_util_unsecure",
+    srcs = GRPCXX_TESTUTIL_SRCS,
+    hdrs = GRPCXX_TESTUTIL_HDRS,
+    deps = [
+        "//:grpc++_unsecure",
     ],
     external_deps = [
         "protobuf",

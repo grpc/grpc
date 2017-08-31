@@ -37,7 +37,7 @@ typedef struct grpc_event_engine_vtable {
   grpc_fd *(*fd_create)(int fd, const char *name);
   int (*fd_wrapped_fd)(grpc_fd *fd);
   void (*fd_orphan)(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
-                    int *release_fd, const char *reason);
+                    int *release_fd, bool already_closed, const char *reason);
   void (*fd_shutdown)(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why);
   void (*fd_notify_on_read)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                             grpc_closure *closure);
@@ -104,7 +104,7 @@ int grpc_fd_wrapped_fd(grpc_fd *fd);
    notify_on_write.
    MUST NOT be called with a pollset lock taken */
 void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
-                    int *release_fd, const char *reason);
+                    int *release_fd, bool already_closed, const char *reason);
 
 /* Has grpc_fd_shutdown been called on an fd? */
 bool grpc_fd_is_shutdown(grpc_fd *fd);

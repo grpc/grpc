@@ -54,7 +54,7 @@ static gpr_atm ref_mutate(grpc_lb_policy *c, gpr_atm delta,
 #ifndef NDEBUG
   if (GRPC_TRACER_ON(grpc_trace_lb_policy_refcount)) {
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "LB_POLICY: 0x%p %12s 0x%" PRIxPTR " -> 0x%" PRIxPTR " [%s]", c,
+            "LB_POLICY: %p %12s 0x%" PRIxPTR " -> 0x%" PRIxPTR " [%s]", c,
             purpose, old_val, old_val + delta, reason);
   }
 #endif

@@ -73,6 +73,21 @@ static void test_alarm(void) {
     GPR_ASSERT(ev.success == 0);
     grpc_alarm_destroy(alarm);
   }
+  {
+    /* alarm_destroy before cq_next */
+    grpc_event ev;
+    void *tag = create_test_tag();
+    grpc_alarm *alarm =
+        grpc_alarm_create(cc, grpc_timeout_seconds_to_deadline(2), tag);
+
+    grpc_alarm_destroy(alarm);
+    ev = grpc_completion_queue_next(cc, grpc_timeout_seconds_to_deadline(1),
+                                    NULL);
+    GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+    GPR_ASSERT(ev.tag == tag);
+    GPR_ASSERT(ev.success == 0);
+  }
+
   shutdown_and_destroy(cc);
 }
 

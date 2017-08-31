@@ -14,18 +14,25 @@
 
 mkdir -p %ARTIFACTS_OUT%
 
-setlocal
-cd third_party/protobuf/cmake
+@rem enter repo root
+cd /d %~dp0\..\..\..
 
-mkdir build & cd build
-mkdir solution & cd solution
-cmake -G "%generator%" -Dprotobuf_BUILD_TESTS=OFF ../.. || goto :error
-endlocal
+mkdir cmake
+cd cmake
+mkdir build
+cd build
 
-call vsprojects/build_plugins.bat || goto :error
+@rem TODO(jtattermusch): Stop hardcoding path to yasm once Jenkins workers can locate yasm correctly
+@rem If yasm is not on the path, use hardcoded path instead.
+yasm --version || set USE_HARDCODED_YASM_PATH_MAYBE=-DCMAKE_ASM_NASM_COMPILER="C:/Program Files (x86)/yasm/yasm.exe"
 
-xcopy /Y third_party\protobuf\cmake\build\solution\Release\protoc.exe %ARTIFACTS_OUT%\ || goto :error
-xcopy /Y vsprojects\Release\*_plugin.exe %ARTIFACTS_OUT%\ || xcopy /Y vsprojects\x64\Release\*_plugin.exe %ARTIFACTS_OUT%\ || goto :error
+cmake -G "%generator%" -DgRPC_BUILD_TESTS=OFF -DgRPC_MSVC_STATIC_RUNTIME=ON %USE_HARDCODED_YASM_PATH_MAYBE% ../.. || goto :error
+cmake --build . --target protoc --config Release || goto :error
+cmake --build . --target plugins --config Release || goto :error
+cd ..\..
+
+xcopy /Y cmake\build\third_party\protobuf\Release\protoc.exe %ARTIFACTS_OUT%\ || goto :error
+xcopy /Y cmake\build\Release\*_plugin.exe %ARTIFACTS_OUT%\ || goto :error
 
 goto :EOF
 

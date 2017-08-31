@@ -25,6 +25,7 @@ EXCLUSIONS=(
     'grpcio/grpc_*.py'
     'grpcio_health_checking/grpc_*.py'
     'grpcio_reflection/grpc_*.py'
+    'grpcio_testing/grpc_*.py'
     'grpcio_tests/grpc_*.py'
 )
 
