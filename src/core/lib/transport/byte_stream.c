@@ -85,6 +85,7 @@ static void slice_buffer_stream_shutdown(grpc_exec_ctx *exec_ctx,
 static void slice_buffer_stream_destroy(grpc_exec_ctx *exec_ctx,
                                         grpc_byte_stream *byte_stream) {
   grpc_slice_buffer_stream *stream = (grpc_slice_buffer_stream *)byte_stream;
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, stream->backing_buffer);
   GRPC_ERROR_UNREF(stream->shutdown_error);
 }
 

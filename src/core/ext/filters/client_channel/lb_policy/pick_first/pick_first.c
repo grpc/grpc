@@ -296,8 +296,6 @@ static void stop_connectivity_watchers(grpc_exec_ctx *exec_ctx,
 static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                              const grpc_lb_policy_args *args) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)policy;
-  /* Find the number of backend addresses. We ignore balancer
-   * addresses, since we don't know how to handle them. */
   const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
@@ -317,11 +315,7 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     return;
   }
   const grpc_lb_addresses *addresses = arg->value.pointer.p;
-  size_t num_addrs = 0;
-  for (size_t i = 0; i < addresses->num_addresses; i++) {
-    if (!addresses->addresses[i].is_balancer) ++num_addrs;
-  }
-  if (num_addrs == 0) {
+  if (addresses->num_addresses == 0) {
     // Empty update. Unsubscribe from all current subchannels and put the
     // channel in TRANSIENT_FAILURE.
     grpc_connectivity_state_set(
@@ -333,9 +327,10 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
   }
   if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO, "Pick First %p received update with %lu addresses",
-            (void *)p, (unsigned long)num_addrs);
+            (void *)p, (unsigned long)addresses->num_addresses);
   }
-  grpc_subchannel_args *sc_args = gpr_zalloc(sizeof(*sc_args) * num_addrs);
+  grpc_subchannel_args *sc_args =
+      gpr_zalloc(sizeof(*sc_args) * addresses->num_addresses);
   /* We remove the following keys in order for subchannel keys belonging to
    * subchannels point to the same address to match. */
   static const char *keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS,
@@ -344,7 +339,8 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
 
   /* Create list of subchannel args for new addresses in \a args. */
   for (size_t i = 0; i < addresses->num_addresses; i++) {
-    if (addresses->addresses[i].is_balancer) continue;
+    // If there were any balancer, we would have chosen grpclb policy instead.
+    GPR_ASSERT(!addresses->addresses[i].is_balancer);
     if (addresses->addresses[i].user_data != NULL) {
       gpr_log(GPR_ERROR,
               "This LB policy doesn't support user data. It will be ignored");
