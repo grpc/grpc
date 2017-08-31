@@ -69,8 +69,6 @@ typedef enum {
     double _hist_val = (double)(value);                                        \
     if (_hist_val < 0) _hist_val = 0;                                          \
     uint64_t _hist_idx = *(uint64_t *)&_hist_val;                              \
-    gpr_log(GPR_DEBUG, "tcp_write_size %lf %" PRId64 " %" PRId64, _hist_val,   \
-            _hist_idx, 4715268809856909312ull);                                \
     if (_hist_val < 5.000000) {                                                \
       GRPC_STATS_INC_HISTOGRAM(                                                \
           (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE, (int)_hist_val);    \
@@ -92,8 +90,6 @@ typedef enum {
     double _hist_val = (double)(value);                                        \
     if (_hist_val < 0) _hist_val = 0;                                          \
     uint64_t _hist_idx = *(uint64_t *)&_hist_val;                              \
-    gpr_log(GPR_DEBUG, "tcp_write_iov_size %lf %" PRId64 " %" PRId64,          \
-            _hist_val, _hist_idx, 4652218415073722368ull);                     \
     if (_hist_val < 12.000000) {                                               \
       GRPC_STATS_INC_HISTOGRAM((exec_ctx),                                     \
                                GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,        \
@@ -116,8 +112,6 @@ typedef enum {
     double _hist_val = (double)(value);                                        \
     if (_hist_val < 0) _hist_val = 0;                                          \
     uint64_t _hist_idx = *(uint64_t *)&_hist_val;                              \
-    gpr_log(GPR_DEBUG, "tcp_read_size %lf %" PRId64 " %" PRId64, _hist_val,    \
-            _hist_idx, 4715268809856909312ull);                                \
     if (_hist_val < 5.000000) {                                                \
       GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE, \
                                (int)_hist_val);                                \

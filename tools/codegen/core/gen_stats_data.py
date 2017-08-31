@@ -130,7 +130,6 @@ def gen_bucket_code(histogram):
   code += 'if (_hist_val < 0) _hist_val = 0;\\\n'
   code += 'uint64_t _hist_idx = *(uint64_t*)&_hist_val;\\\n'
   map_table = gen_map_table(code_bounds[first_nontrivial:], shift_data)
-  code += 'gpr_log(GPR_DEBUG, "' + histogram.name + ' %lf %"PRId64 " %"PRId64, _hist_val, _hist_idx, ' + str((map_table[-1] << shift_data[0]) + first_nontrivial_code) + 'ull);\\\n'
   if first_nontrivial is None:
     code += ('GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_%s, (int)_hist_val);\\\n'
              % histogram.name.upper())
