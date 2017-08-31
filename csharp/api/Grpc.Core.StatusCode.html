@@ -1,0 +1,247 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Enum StatusCode
+   | gRPC C# </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Enum StatusCode
+   | gRPC C# ">
+    <meta name="generator" content="docfx 2.23.1.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    <meta property="docfx:rel" content="../">
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div class="container body-content">
+        
+        <div id="search-results">
+          <div class="search-list"></div>
+          <div class="sr-items"></div>
+          <ul id="pagination"></ul>
+        </div>
+      </div>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="Grpc.Core.StatusCode">
+  
+  
+  <h1 id="Grpc_Core_StatusCode" data-uid="Grpc.Core.StatusCode" class="text-break">Enum StatusCode
+  </h1>
+  <div class="markdown level0 summary"><p>Result of a remote procedure call.
+Based on grpc_status_code from grpc/status.h</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="Grpc.Core.html">Grpc.Core</a></h6>
+  <h6><strong>Assembly</strong>: Grpc.Core.dll</h6>
+  <h5 id="Grpc_Core_StatusCode_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public enum StatusCode</code></pre>
+  </div>
+  <h3 id="fields">Fields
+  </h3>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    <thead>
+    <tbody>
+      <tr>
+        <td id="Grpc_Core_StatusCode_Aborted">Aborted</td>
+        <td><p>The operation was aborted, typically due to a concurrency issue
+like sequencer check failures, transaction aborts, etc.</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_StatusCode_AlreadyExists">AlreadyExists</td>
+        <td><p>Some entity that we attempted to create (e.g., file or directory) already exists.</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_StatusCode_Cancelled">Cancelled</td>
+        <td><p>The operation was cancelled (typically by the caller).</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_StatusCode_DataLoss">DataLoss</td>
+        <td><p>Unrecoverable data loss or corruption.</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_StatusCode_DeadlineExceeded">DeadlineExceeded</td>
+        <td><p>Deadline expired before operation could complete.  For operations
+that change the state of the system, this error may be returned
+even if the operation has completed successfully.  For example, a
+successful response from a server could have been delayed long
+enough for the deadline to expire.</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_StatusCode_FailedPrecondition">FailedPrecondition</td>
+        <td><p>Operation was rejected because the system is not in a state
+required for the operation&apos;s execution.  For example, directory
+to be deleted may be non-empty, an rmdir operation is applied to
+a non-directory, etc.</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_StatusCode_Internal">Internal</td>
+        <td><p>Internal errors.  Means some invariants expected by underlying
+system has been broken.  If you see one of these errors,
+something is very broken.</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_StatusCode_InvalidArgument">InvalidArgument</td>
+        <td><p>Client specified an invalid argument.  Note that this differs
+from FAILED_PRECONDITION.  INVALID_ARGUMENT indicates arguments
+that are problematic regardless of the state of the system
+(e.g., a malformed file name).</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_StatusCode_NotFound">NotFound</td>
+        <td><p>Some requested entity (e.g., file or directory) was not found.</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_StatusCode_OK">OK</td>
+        <td><p>Not an error; returned on success.</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_StatusCode_OutOfRange">OutOfRange</td>
+        <td><p>Operation was attempted past the valid range.  E.g., seeking or
+reading past end of file.</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_StatusCode_PermissionDenied">PermissionDenied</td>
+        <td><p>The caller does not have permission to execute the specified
+operation.  PERMISSION_DENIED must not be used for rejections
+caused by exhausting some resource (use RESOURCE_EXHAUSTED
+instead for those errors).  PERMISSION_DENIED must not be
+used if the caller can not be identified (use UNAUTHENTICATED
+instead for those errors).</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_StatusCode_ResourceExhausted">ResourceExhausted</td>
+        <td><p>Some resource has been exhausted, perhaps a per-user quota, or
+perhaps the entire file system is out of space.</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_StatusCode_Unauthenticated">Unauthenticated</td>
+        <td><p>The request does not have valid authentication credentials for the operation.</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_StatusCode_Unavailable">Unavailable</td>
+        <td><p>The service is currently unavailable.  This is a most likely a
+transient condition and may be corrected by retrying with
+a backoff.</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_StatusCode_Unimplemented">Unimplemented</td>
+        <td><p>Operation is not implemented or not supported/enabled in this service.</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_StatusCode_Unknown">Unknown</td>
+        <td><p>Unknown error.  An example of where this error may be returned is
+if a Status value received from another address space belongs to
+an error-space that is not known in this address space.  Also
+errors raised by APIs that do not return enough error information
+may be converted to this error.</p>
+</td>
+      </tr>
+    </tbody>
+  </thead></thead></table>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Copyright © 2015-2017 Microsoft<br>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

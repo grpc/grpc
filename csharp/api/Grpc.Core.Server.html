@@ -1,0 +1,360 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class Server
+   | gRPC C# </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class Server
+   | gRPC C# ">
+    <meta name="generator" content="docfx 2.23.1.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    <meta property="docfx:rel" content="../">
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div class="container body-content">
+        
+        <div id="search-results">
+          <div class="search-list"></div>
+          <div class="sr-items"></div>
+          <ul id="pagination"></ul>
+        </div>
+      </div>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="Grpc.Core.Server">
+  
+  
+  <h1 id="Grpc_Core_Server" data-uid="Grpc.Core.Server" class="text-break">Class Server
+  </h1>
+  <div class="markdown level0 summary"><p>gRPC server. A single server can server arbitrary number of services and can listen on more than one ports.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">Server</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="Grpc.Core.html">Grpc.Core</a></h6>
+  <h6><strong>Assembly</strong>: Grpc.Core.dll</h6>
+  <h5 id="Grpc_Core_Server_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class Server</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <a id="Grpc_Core_Server__ctor_" data-uid="Grpc.Core.Server.#ctor*"></a>
+  <h4 id="Grpc_Core_Server__ctor" data-uid="Grpc.Core.Server.#ctor">Server()</h4>
+  <div class="markdown level1 summary"><p>Creates a new server.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Server()</code></pre>
+  </div>
+  <a id="Grpc_Core_Server__ctor_" data-uid="Grpc.Core.Server.#ctor*"></a>
+  <h4 id="Grpc_Core_Server__ctor_System_Collections_Generic_IEnumerable_Grpc_Core_ChannelOption__" data-uid="Grpc.Core.Server.#ctor(System.Collections.Generic.IEnumerable{Grpc.Core.ChannelOption})">Server(IEnumerable&lt;ChannelOption&gt;)</h4>
+  <div class="markdown level1 summary"><p>Creates a new server.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Server(IEnumerable&lt;ChannelOption&gt; options)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<a class="xref" href="Grpc.Core.ChannelOption.html">ChannelOption</a>&gt;</td>
+        <td><span class="parametername">options</span></td>
+        <td><p>Channel options.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <a id="Grpc_Core_Server_Ports_" data-uid="Grpc.Core.Server.Ports*"></a>
+  <h4 id="Grpc_Core_Server_Ports" data-uid="Grpc.Core.Server.Ports">Ports</h4>
+  <div class="markdown level1 summary"><p>Ports on which the server will listen once started. Register a port with this
+server by adding its definition to this collection.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Server.ServerPortCollection Ports { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.Server.ServerPortCollection.html">Server.ServerPortCollection</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Server_RequestCallTokensPerCompletionQueue_" data-uid="Grpc.Core.Server.RequestCallTokensPerCompletionQueue*"></a>
+  <h4 id="Grpc_Core_Server_RequestCallTokensPerCompletionQueue" data-uid="Grpc.Core.Server.RequestCallTokensPerCompletionQueue">RequestCallTokensPerCompletionQueue</h4>
+  <div class="markdown level1 summary"><p>Experimental API. Might anytime change without prior notice.
+Number or calls requested via grpc_server_request_call at any given time for each completion queue.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int RequestCallTokensPerCompletionQueue { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Server_Services_" data-uid="Grpc.Core.Server.Services*"></a>
+  <h4 id="Grpc_Core_Server_Services" data-uid="Grpc.Core.Server.Services">Services</h4>
+  <div class="markdown level1 summary"><p>Services that will be exported by the server once started. Register a service with this
+server by adding its definition to this collection.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Server.ServiceDefinitionCollection Services { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.Server.ServiceDefinitionCollection.html">Server.ServiceDefinitionCollection</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Server_ShutdownTask_" data-uid="Grpc.Core.Server.ShutdownTask*"></a>
+  <h4 id="Grpc_Core_Server_ShutdownTask" data-uid="Grpc.Core.Server.ShutdownTask">ShutdownTask</h4>
+  <div class="markdown level1 summary"><p>To allow awaiting termination of the server.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task ShutdownTask { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <a id="Grpc_Core_Server_KillAsync_" data-uid="Grpc.Core.Server.KillAsync*"></a>
+  <h4 id="Grpc_Core_Server_KillAsync" data-uid="Grpc.Core.Server.KillAsync">KillAsync()</h4>
+  <div class="markdown level1 summary"><p>Requests server shutdown while cancelling all the in-progress calls.
+The returned task finishes when shutdown procedure is complete.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task KillAsync()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 id="Grpc_Core_Server_KillAsync_remarks">Remarks</h5>
+  <div class="markdown level1 remarks"><p>It is strongly recommended to shutdown all previously created servers before exiting from the process.</p>
+</div>
+  <a id="Grpc_Core_Server_ShutdownAsync_" data-uid="Grpc.Core.Server.ShutdownAsync*"></a>
+  <h4 id="Grpc_Core_Server_ShutdownAsync" data-uid="Grpc.Core.Server.ShutdownAsync">ShutdownAsync()</h4>
+  <div class="markdown level1 summary"><p>Requests server shutdown and when there are no more calls being serviced,
+cleans up used resources. The returned task finishes when shutdown procedure
+is complete.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task ShutdownAsync()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 id="Grpc_Core_Server_ShutdownAsync_remarks">Remarks</h5>
+  <div class="markdown level1 remarks"><p>It is strongly recommended to shutdown all previously created servers before exiting from the process.</p>
+</div>
+  <a id="Grpc_Core_Server_Start_" data-uid="Grpc.Core.Server.Start*"></a>
+  <h4 id="Grpc_Core_Server_Start" data-uid="Grpc.Core.Server.Start">Start()</h4>
+  <div class="markdown level1 summary"><p>Starts the server.
+Throws <code>IOException</code> if not successful.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Start()</code></pre>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Copyright © 2015-2017 Microsoft<br>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

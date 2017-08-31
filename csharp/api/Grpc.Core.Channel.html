@@ -1,0 +1,541 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class Channel
+   | gRPC C# </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class Channel
+   | gRPC C# ">
+    <meta name="generator" content="docfx 2.23.1.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    <meta property="docfx:rel" content="../">
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div class="container body-content">
+        
+        <div id="search-results">
+          <div class="search-list"></div>
+          <div class="sr-items"></div>
+          <ul id="pagination"></ul>
+        </div>
+      </div>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="Grpc.Core.Channel">
+  
+  
+  <h1 id="Grpc_Core_Channel" data-uid="Grpc.Core.Channel" class="text-break">Class Channel
+  </h1>
+  <div class="markdown level0 summary"><p>Represents a gRPC channel. Channels are an abstraction of long-lived connections to remote servers.
+More client objects can reuse the same channel. Creating a channel is an expensive operation compared to invoking
+a remote call so in general you should reuse a single channel for as many calls as possible.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">Channel</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="Grpc.Core.html">Grpc.Core</a></h6>
+  <h6><strong>Assembly</strong>: Grpc.Core.dll</h6>
+  <h5 id="Grpc_Core_Channel_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class Channel</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <a id="Grpc_Core_Channel__ctor_" data-uid="Grpc.Core.Channel.#ctor*"></a>
+  <h4 id="Grpc_Core_Channel__ctor_System_String_Grpc_Core_ChannelCredentials_" data-uid="Grpc.Core.Channel.#ctor(System.String,Grpc.Core.ChannelCredentials)">Channel(String, ChannelCredentials)</h4>
+  <div class="markdown level1 summary"><p>Creates a channel that connects to a specific host.
+Port will default to 80 for an unsecure channel and to 443 for a secure channel.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Channel(string target, ChannelCredentials credentials)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">target</span></td>
+        <td><p>Target of the channel.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ChannelCredentials.html">ChannelCredentials</a></td>
+        <td><span class="parametername">credentials</span></td>
+        <td><p>Credentials to secure the channel.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Channel__ctor_" data-uid="Grpc.Core.Channel.#ctor*"></a>
+  <h4 id="Grpc_Core_Channel__ctor_System_String_Grpc_Core_ChannelCredentials_System_Collections_Generic_IEnumerable_Grpc_Core_ChannelOption__" data-uid="Grpc.Core.Channel.#ctor(System.String,Grpc.Core.ChannelCredentials,System.Collections.Generic.IEnumerable{Grpc.Core.ChannelOption})">Channel(String, ChannelCredentials, IEnumerable&lt;ChannelOption&gt;)</h4>
+  <div class="markdown level1 summary"><p>Creates a channel that connects to a specific host.
+Port will default to 80 for an unsecure channel and to 443 for a secure channel.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Channel(string target, ChannelCredentials credentials, IEnumerable&lt;ChannelOption&gt; options)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">target</span></td>
+        <td><p>Target of the channel.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ChannelCredentials.html">ChannelCredentials</a></td>
+        <td><span class="parametername">credentials</span></td>
+        <td><p>Credentials to secure the channel.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<a class="xref" href="Grpc.Core.ChannelOption.html">ChannelOption</a>&gt;</td>
+        <td><span class="parametername">options</span></td>
+        <td><p>Channel options.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Channel__ctor_" data-uid="Grpc.Core.Channel.#ctor*"></a>
+  <h4 id="Grpc_Core_Channel__ctor_System_String_System_Int32_Grpc_Core_ChannelCredentials_" data-uid="Grpc.Core.Channel.#ctor(System.String,System.Int32,Grpc.Core.ChannelCredentials)">Channel(String, Int32, ChannelCredentials)</h4>
+  <div class="markdown level1 summary"><p>Creates a channel that connects to a specific host and port.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Channel(string host, int port, ChannelCredentials credentials)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">host</span></td>
+        <td><p>The name or IP address of the host.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">port</span></td>
+        <td><p>The port.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ChannelCredentials.html">ChannelCredentials</a></td>
+        <td><span class="parametername">credentials</span></td>
+        <td><p>Credentials to secure the channel.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Channel__ctor_" data-uid="Grpc.Core.Channel.#ctor*"></a>
+  <h4 id="Grpc_Core_Channel__ctor_System_String_System_Int32_Grpc_Core_ChannelCredentials_System_Collections_Generic_IEnumerable_Grpc_Core_ChannelOption__" data-uid="Grpc.Core.Channel.#ctor(System.String,System.Int32,Grpc.Core.ChannelCredentials,System.Collections.Generic.IEnumerable{Grpc.Core.ChannelOption})">Channel(String, Int32, ChannelCredentials, IEnumerable&lt;ChannelOption&gt;)</h4>
+  <div class="markdown level1 summary"><p>Creates a channel that connects to a specific host and port.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Channel(string host, int port, ChannelCredentials credentials, IEnumerable&lt;ChannelOption&gt; options)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">host</span></td>
+        <td><p>The name or IP address of the host.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">port</span></td>
+        <td><p>The port.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ChannelCredentials.html">ChannelCredentials</a></td>
+        <td><span class="parametername">credentials</span></td>
+        <td><p>Credentials to secure the channel.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<a class="xref" href="Grpc.Core.ChannelOption.html">ChannelOption</a>&gt;</td>
+        <td><span class="parametername">options</span></td>
+        <td><p>Channel options.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <a id="Grpc_Core_Channel_ResolvedTarget_" data-uid="Grpc.Core.Channel.ResolvedTarget*"></a>
+  <h4 id="Grpc_Core_Channel_ResolvedTarget" data-uid="Grpc.Core.Channel.ResolvedTarget">ResolvedTarget</h4>
+  <div class="markdown level1 summary"><p>Resolved address of the remote endpoint in URI format.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string ResolvedTarget { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Channel_ShutdownToken_" data-uid="Grpc.Core.Channel.ShutdownToken*"></a>
+  <h4 id="Grpc_Core_Channel_ShutdownToken" data-uid="Grpc.Core.Channel.ShutdownToken">ShutdownToken</h4>
+  <div class="markdown level1 summary"><p>Returns a token that gets cancelled once <code>ShutdownAsync</code> is invoked.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public CancellationToken ShutdownToken { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Channel_State_" data-uid="Grpc.Core.Channel.State*"></a>
+  <h4 id="Grpc_Core_Channel_State" data-uid="Grpc.Core.Channel.State">State</h4>
+  <div class="markdown level1 summary"><p>Gets current connectivity state of this channel.
+After channel is has been shutdown, <code>ChannelState.Shutdown</code> will be returned.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ChannelState State { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ChannelState.html">ChannelState</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Channel_Target_" data-uid="Grpc.Core.Channel.Target*"></a>
+  <h4 id="Grpc_Core_Channel_Target" data-uid="Grpc.Core.Channel.Target">Target</h4>
+  <div class="markdown level1 summary"><p>The original target used to create the channel.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string Target { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <a id="Grpc_Core_Channel_ConnectAsync_" data-uid="Grpc.Core.Channel.ConnectAsync*"></a>
+  <h4 id="Grpc_Core_Channel_ConnectAsync_System_Nullable_System_DateTime__" data-uid="Grpc.Core.Channel.ConnectAsync(System.Nullable{System.DateTime})">ConnectAsync(Nullable&lt;DateTime&gt;)</h4>
+  <div class="markdown level1 summary"><p>Allows explicitly requesting channel to connect without starting an RPC.
+Returned task completes once state Ready was seen. If the deadline is reached,
+or channel enters the Shutdown state, the task is cancelled.
+There is no need to call this explicitly unless your use case requires that.
+Starting an RPC on a new channel will request connection implicitly.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task ConnectAsync(DateTime? deadline = null)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Nullable</span>&lt;<span class="xref">System.DateTime</span>&gt;</td>
+        <td><span class="parametername">deadline</span></td>
+        <td><p>The deadline. <code>null</code> indicates no deadline.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Channel_ShutdownAsync_" data-uid="Grpc.Core.Channel.ShutdownAsync*"></a>
+  <h4 id="Grpc_Core_Channel_ShutdownAsync" data-uid="Grpc.Core.Channel.ShutdownAsync">ShutdownAsync()</h4>
+  <div class="markdown level1 summary"><p>Shuts down the channel cleanly. It is strongly recommended to shutdown
+all previously created channels before exiting from the process.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task ShutdownAsync()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 id="Grpc_Core_Channel_ShutdownAsync_remarks">Remarks</h5>
+  <div class="markdown level1 remarks"><p>This method doesn&apos;t wait for all calls on this channel to finish (nor does
+it explicitly cancel all outstanding calls). It is user&apos;s responsibility to make sure
+all the calls on this channel have finished (successfully or with an error)
+before shutting down the channel to ensure channel shutdown won&apos;t impact
+the outcome of those remote calls.</p>
+</div>
+  <a id="Grpc_Core_Channel_WaitForStateChangedAsync_" data-uid="Grpc.Core.Channel.WaitForStateChangedAsync*"></a>
+  <h4 id="Grpc_Core_Channel_WaitForStateChangedAsync_Grpc_Core_ChannelState_System_Nullable_System_DateTime__" data-uid="Grpc.Core.Channel.WaitForStateChangedAsync(Grpc.Core.ChannelState,System.Nullable{System.DateTime})">WaitForStateChangedAsync(ChannelState, Nullable&lt;DateTime&gt;)</h4>
+  <div class="markdown level1 summary"><p>Returned tasks completes once channel state has become different from 
+given lastObservedState. 
+If deadline is reached or and error occurs, returned task is cancelled.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task WaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ChannelState.html">ChannelState</a></td>
+        <td><span class="parametername">lastObservedState</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Nullable</span>&lt;<span class="xref">System.DateTime</span>&gt;</td>
+        <td><span class="parametername">deadline</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Copyright © 2015-2017 Microsoft<br>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>
