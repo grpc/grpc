@@ -56,6 +56,7 @@ typedef enum {
   GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
   GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
   GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
+  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,
   GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
   GRPC_STATS_HISTOGRAM_COUNT
@@ -68,11 +69,13 @@ typedef enum {
   GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE_BUCKETS = 64,
   GRPC_STATS_HISTOGRAM_TCP_READ_SIZE_FIRST_SLOT = 128,
   GRPC_STATS_HISTOGRAM_TCP_READ_SIZE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE_FIRST_SLOT = 192,
+  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_FIRST_SLOT = 192,
+  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_BUCKETS = 64,
+  GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE_FIRST_SLOT = 256,
   GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE_FIRST_SLOT = 256,
+  GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE_FIRST_SLOT = 320,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_BUCKETS = 320
+  GRPC_STATS_HISTOGRAM_BUCKETS = 384
 } grpc_stats_histogram_constants;
 #define GRPC_STATS_INC_CLIENT_CALLS_CREATED(exec_ctx) \
   GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED)
@@ -207,6 +210,30 @@ typedef enum {
       }                                                                        \
     }                                                                          \
   } while (false)
+#define GRPC_STATS_INC_TCP_READ_OFFER(exec_ctx, value)                         \
+  do {                                                                         \
+    union {                                                                    \
+      double dbl;                                                              \
+      uint64_t uint;                                                           \
+    } _val;                                                                    \
+    _val.dbl = (double)(value);                                                \
+    if (_val.dbl < 0) _val.dbl = 0;                                            \
+    if (_val.dbl < 5.000000) {                                                 \
+      GRPC_STATS_INC_HISTOGRAM(                                                \
+          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER, (int)_val.dbl);     \
+    } else {                                                                   \
+      if (_val.uint < 4715268809856909312ull) {                                \
+        GRPC_STATS_INC_HISTOGRAM(                                              \
+            (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,                   \
+            grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)]); \
+      } else {                                                                 \
+        GRPC_STATS_INC_HISTOGRAM(                                              \
+            (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,                   \
+            grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,            \
+                                              grpc_stats_table_0, 64));        \
+      }                                                                        \
+    }                                                                          \
+  } while (false)
 #define GRPC_STATS_INC_TCP_READ_IOV_SIZE(exec_ctx, value)                      \
   do {                                                                         \
     union {                                                                    \
@@ -260,8 +287,8 @@ extern const double grpc_stats_table_0[64];
 extern const uint8_t grpc_stats_table_1[87];
 extern const double grpc_stats_table_2[64];
 extern const uint8_t grpc_stats_table_3[52];
-extern const int grpc_stats_histo_buckets[5];
-extern const int grpc_stats_histo_start[5];
-extern const double *const grpc_stats_histo_bucket_boundaries[5];
+extern const int grpc_stats_histo_buckets[6];
+extern const int grpc_stats_histo_start[6];
+extern const double *const grpc_stats_histo_bucket_boundaries[6];
 
 #endif /* GRPC_CORE_LIB_DEBUG_STATS_DATA_H */

@@ -47,8 +47,8 @@ const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "executor_queue_drained",
 };
 const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
-    "tcp_write_size",    "tcp_write_iov_size",      "tcp_read_size",
-    "tcp_read_iov_size", "http2_send_message_size",
+    "tcp_write_size", "tcp_write_iov_size", "tcp_read_size",
+    "tcp_read_offer", "tcp_read_iov_size",  "http2_send_message_size",
 };
 const double grpc_stats_table_0[64] = {0,
                                        1,
@@ -188,8 +188,8 @@ const uint8_t grpc_stats_table_3[52] = {
     0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17,
     18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
     36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 52};
-const int grpc_stats_histo_buckets[5] = {64, 64, 64, 64, 64};
-const int grpc_stats_histo_start[5] = {0, 64, 128, 192, 256};
-const double *const grpc_stats_histo_bucket_boundaries[5] = {
+const int grpc_stats_histo_buckets[6] = {64, 64, 64, 64, 64, 64};
+const int grpc_stats_histo_start[6] = {0, 64, 128, 192, 256, 320};
+const double *const grpc_stats_histo_bucket_boundaries[6] = {
     grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_0,
-    grpc_stats_table_2, grpc_stats_table_0};
+    grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_0};

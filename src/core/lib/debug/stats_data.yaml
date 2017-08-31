@@ -21,6 +21,9 @@
 - histogram: tcp_read_size
   max: 16777216
   buckets: 64
+- histogram: tcp_read_offer
+  max: 16777216
+  buckets: 64
 - histogram: tcp_read_iov_size
   max: 1024
   buckets: 64
