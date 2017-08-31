@@ -20,12 +20,35 @@
 
 #include "src/core/lib/debug/stats_data.h"
 const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
-    "client_calls_created",   "server_calls_created", "syscall_write",
-    "syscall_read",           "syscall_poll",         "syscall_wait",
+    "client_calls_created",
+    "server_calls_created",
+    "syscall_poll",
+    "syscall_wait",
     "histogram_slow_lookups",
+    "syscall_write",
+    "syscall_read",
+    "http2_op_batches",
+    "http2_op_cancel",
+    "http2_op_send_initial_metadata",
+    "http2_op_send_message",
+    "http2_op_send_trailing_metadata",
+    "http2_op_recv_initial_metadata",
+    "http2_op_recv_message",
+    "http2_op_recv_trailing_metadata",
+    "http2_pings_sent",
+    "http2_writes_begun",
+    "combiner_locks_initiated",
+    "combiner_locks_scheduled_items",
+    "combiner_locks_scheduled_final_items",
+    "combiner_locks_offloaded",
+    "executor_scheduled_items",
+    "executor_scheduled_to_self",
+    "executor_wakeup_initiated",
+    "executor_queue_drained",
 };
 const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
-    "tcp_write_size", "tcp_write_iov_size", "tcp_read_size",
+    "tcp_write_size",    "tcp_write_iov_size",      "tcp_read_size",
+    "tcp_read_iov_size", "http2_send_message_size",
 };
 const double grpc_stats_table_0[64] = {0,
                                        1,
@@ -165,7 +188,8 @@ const uint8_t grpc_stats_table_3[52] = {
     0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17,
     18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
     36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 52};
-const int grpc_stats_histo_buckets[3] = {64, 64, 64};
-const int grpc_stats_histo_start[3] = {0, 64, 128};
-const double *const grpc_stats_histo_bucket_boundaries[3] = {
-    grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_0};
+const int grpc_stats_histo_buckets[5] = {64, 64, 64, 64, 64};
+const int grpc_stats_histo_start[5] = {0, 64, 128, 192, 256};
+const double *const grpc_stats_histo_bucket_boundaries[5] = {
+    grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_0,
+    grpc_stats_table_2, grpc_stats_table_0};
