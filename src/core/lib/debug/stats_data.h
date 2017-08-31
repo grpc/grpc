@@ -66,64 +66,72 @@ typedef enum {
   GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_HISTOGRAM_SLOW_LOOKUPS)
 #define GRPC_STATS_INC_TCP_WRITE_SIZE(exec_ctx, value)                         \
   do {                                                                         \
-    double _hist_val = (double)(value);                                        \
-    if (_hist_val < 0) _hist_val = 0;                                          \
-    uint64_t _hist_idx = *(uint64_t *)&_hist_val;                              \
-    if (_hist_val < 5.000000) {                                                \
+    union {                                                                    \
+      double dbl;                                                              \
+      uint64_t uint;                                                           \
+    } _val;                                                                    \
+    _val.dbl = (double)(value);                                                \
+    if (_val.dbl < 0) _val.dbl = 0;                                            \
+    if (_val.dbl < 5.000000) {                                                 \
       GRPC_STATS_INC_HISTOGRAM(                                                \
-          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE, (int)_hist_val);    \
+          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE, (int)_val.dbl);     \
     } else {                                                                   \
-      if (_hist_idx < 4715268809856909312ull) {                                \
+      if (_val.uint < 4715268809856909312ull) {                                \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,                   \
-            grpc_stats_table_1[((_hist_idx - 4617315517961601024ull) >> 50)]); \
+            grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)]); \
       } else {                                                                 \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,                   \
-            grpc_stats_histo_find_bucket_slow((exec_ctx), (value),             \
+            grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,            \
                                               grpc_stats_table_0, 64));        \
       }                                                                        \
     }                                                                          \
   } while (false)
 #define GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(exec_ctx, value)                     \
   do {                                                                         \
-    double _hist_val = (double)(value);                                        \
-    if (_hist_val < 0) _hist_val = 0;                                          \
-    uint64_t _hist_idx = *(uint64_t *)&_hist_val;                              \
-    if (_hist_val < 12.000000) {                                               \
-      GRPC_STATS_INC_HISTOGRAM((exec_ctx),                                     \
-                               GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,        \
-                               (int)_hist_val);                                \
+    union {                                                                    \
+      double dbl;                                                              \
+      uint64_t uint;                                                           \
+    } _val;                                                                    \
+    _val.dbl = (double)(value);                                                \
+    if (_val.dbl < 0) _val.dbl = 0;                                            \
+    if (_val.dbl < 12.000000) {                                                \
+      GRPC_STATS_INC_HISTOGRAM(                                                \
+          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE, (int)_val.dbl); \
     } else {                                                                   \
-      if (_hist_idx < 4652218415073722368ull) {                                \
+      if (_val.uint < 4652218415073722368ull) {                                \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,               \
-            grpc_stats_table_3[((_hist_idx - 4622945017495814144ull) >> 49)]); \
+            grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 49)]); \
       } else {                                                                 \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,               \
-            grpc_stats_histo_find_bucket_slow((exec_ctx), (value),             \
+            grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,            \
                                               grpc_stats_table_2, 64));        \
       }                                                                        \
     }                                                                          \
   } while (false)
 #define GRPC_STATS_INC_TCP_READ_SIZE(exec_ctx, value)                          \
   do {                                                                         \
-    double _hist_val = (double)(value);                                        \
-    if (_hist_val < 0) _hist_val = 0;                                          \
-    uint64_t _hist_idx = *(uint64_t *)&_hist_val;                              \
-    if (_hist_val < 5.000000) {                                                \
+    union {                                                                    \
+      double dbl;                                                              \
+      uint64_t uint;                                                           \
+    } _val;                                                                    \
+    _val.dbl = (double)(value);                                                \
+    if (_val.dbl < 0) _val.dbl = 0;                                            \
+    if (_val.dbl < 5.000000) {                                                 \
       GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE, \
-                               (int)_hist_val);                                \
+                               (int)_val.dbl);                                 \
     } else {                                                                   \
-      if (_hist_idx < 4715268809856909312ull) {                                \
+      if (_val.uint < 4715268809856909312ull) {                                \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,                    \
-            grpc_stats_table_1[((_hist_idx - 4617315517961601024ull) >> 50)]); \
+            grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)]); \
       } else {                                                                 \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,                    \
-            grpc_stats_histo_find_bucket_slow((exec_ctx), (value),             \
+            grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,            \
                                               grpc_stats_table_0, 64));        \
       }                                                                        \
     }                                                                          \

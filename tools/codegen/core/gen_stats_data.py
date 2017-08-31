@@ -126,27 +126,27 @@ def gen_bucket_code(histogram):
   print first_nontrivial, shift_data, bounds
   if shift_data is not None: print [hex(x >> shift_data[0]) for x in code_bounds[first_nontrivial:]]
   code = 'do {\\\n'
-  code += 'double _hist_val = (double)(value);\\\n'
-  code += 'if (_hist_val < 0) _hist_val = 0;\\\n'
-  code += 'uint64_t _hist_idx = *(uint64_t*)&_hist_val;\\\n'
+  code += '  union { double dbl; uint64_t uint; } _val;\\\n'
+  code += '_val.dbl = (double)(value);\\\n'
+  code += 'if (_val.dbl < 0) _val.dbl = 0;\\\n'
   map_table = gen_map_table(code_bounds[first_nontrivial:], shift_data)
   if first_nontrivial is None:
-    code += ('GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_%s, (int)_hist_val);\\\n'
+    code += ('GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_%s, (int)_val.dbl);\\\n'
              % histogram.name.upper())
   else:
-    code += 'if (_hist_val < %f) {\\\n' % first_nontrivial
-    code += ('GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_%s, (int)_hist_val);\\\n'
+    code += 'if (_val.dbl < %f) {\\\n' % first_nontrivial
+    code += ('GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_%s, (int)_val.dbl);\\\n'
              % histogram.name.upper())
     code += '} else {'
     first_nontrivial_code = dbl2u64(first_nontrivial)
     if shift_data is not None:
       map_table_idx = decl_static_table(map_table, type_for_uint_table(map_table))
-      code += 'if (_hist_idx < %dull) {\\\n' % ((map_table[-1] << shift_data[0]) + first_nontrivial_code)
+      code += 'if (_val.uint < %dull) {\\\n' % ((map_table[-1] << shift_data[0]) + first_nontrivial_code)
       code += 'GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_%s, ' % histogram.name.upper()
-      code += 'grpc_stats_table_%d[((_hist_idx - %dull) >> %d)]);\\\n' % (map_table_idx, first_nontrivial_code, shift_data[0])
+      code += 'grpc_stats_table_%d[((_val.uint - %dull) >> %d)]);\\\n' % (map_table_idx, first_nontrivial_code, shift_data[0])
       code += '} else {\\\n'
     code += 'GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_%s, '% histogram.name.upper()
-    code += 'grpc_stats_histo_find_bucket_slow((exec_ctx), (value), grpc_stats_table_%d, %d));\\\n' % (bounds_idx, len(bounds))
+    code += 'grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl, grpc_stats_table_%d, %d));\\\n' % (bounds_idx, len(bounds))
     if shift_data is not None:
       code += '}'
     code += '}'
