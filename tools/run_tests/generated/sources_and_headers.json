@@ -2969,7 +2969,8 @@
       "gpr", 
       "grpc", 
       "grpc++", 
-      "grpc++_codegen_base"
+      "grpc++_codegen_base", 
+      "grpc++_core_stats"
     ], 
     "headers": [
       "src/proto/grpc/testing/control.grpc.pb.h", 
@@ -3002,7 +3003,8 @@
       "gpr", 
       "grpc", 
       "grpc++_codegen_base", 
-      "grpc++_codegen_base_src"
+      "grpc++_codegen_base_src", 
+      "grpc++_core_stats"
     ], 
     "headers": [
       "src/proto/grpc/testing/control.grpc.pb.h", 
@@ -3702,6 +3704,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_core_stats", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
@@ -6024,6 +6027,26 @@
   }, 
   {
     "deps": [
+      "grpc++"
+    ], 
+    "headers": [
+      "src/cpp/util/core_stats.h", 
+      "src/proto/grpc/core/stats.grpc.pb.h", 
+      "src/proto/grpc/core/stats.pb.h", 
+      "src/proto/grpc/core/stats_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc++_core_stats", 
+    "src": [
+      "src/cpp/util/core_stats.cc", 
+      "src/cpp/util/core_stats.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
       "census", 
       "gpr", 
       "grpc", 
@@ -6518,6 +6541,7 @@
     "deps": [
       "grpc", 
       "grpc++", 
+      "grpc++_core_stats", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
