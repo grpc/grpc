@@ -106,7 +106,7 @@ def grpc_sh_test(name, srcs, args = [], data = []):
     args = args,
     data = data)
 
-def grpc_package(name, visibility = "private"):
+def grpc_package(name, visibility = "private", features = []):
   if visibility == "tests":
     visibility = ["//test:__subpackages__"]
   elif visibility == "public":
@@ -118,5 +118,6 @@ def grpc_package(name, visibility = "private"):
 
   if len(visibility) != 0:
     native.package(
-      default_visibility = visibility
+      default_visibility = visibility,
+      features = features
     )
