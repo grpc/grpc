@@ -183,9 +183,7 @@ Pod::Spec.new do |s|
     ss.dependency 'nanopb', '~> 0.3'
 
     # To save you from scrolling, this is the last part of the podspec.
-    ss.source_files = 'src/core/lib/debug/stats.h',
-                      'src/core/lib/debug/stats_data.h',
-                      'src/core/lib/profiling/timers.h',
+    ss.source_files = 'src/core/lib/profiling/timers.h',
                       'src/core/lib/support/arena.h',
                       'src/core/lib/support/atomic.h',
                       'src/core/lib/support/atomic_with_atm.h',
@@ -331,6 +329,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/compression/algorithm_metadata.h',
                       'src/core/lib/compression/message_compress.h',
                       'src/core/lib/compression/stream_compression.h',
+                      'src/core/lib/debug/stats.h',
+                      'src/core/lib/debug/stats_data.h',
                       'src/core/lib/http/format_request.h',
                       'src/core/lib/http/httpcli.h',
                       'src/core/lib/http/parser.h',
@@ -728,9 +728,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/workarounds/workaround_utils.c',
                       'src/core/plugin_registry/grpc_plugin_registry.c'
 
-    ss.private_header_files = 'src/core/lib/debug/stats.h',
-                              'src/core/lib/debug/stats_data.h',
-                              'src/core/lib/profiling/timers.h',
+    ss.private_header_files = 'src/core/lib/profiling/timers.h',
                               'src/core/lib/support/arena.h',
                               'src/core/lib/support/atomic.h',
                               'src/core/lib/support/atomic_with_atm.h',
@@ -830,6 +828,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/compression/algorithm_metadata.h',
                               'src/core/lib/compression/message_compress.h',
                               'src/core/lib/compression/stream_compression.h',
+                              'src/core/lib/debug/stats.h',
+                              'src/core/lib/debug/stats_data.h',
                               'src/core/lib/http/format_request.h',
                               'src/core/lib/http/httpcli.h',
                               'src/core/lib/http/parser.h',
