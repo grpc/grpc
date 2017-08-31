@@ -46,6 +46,59 @@ grpc_tracer_flag grpc_trace_fd_refcount =
     GRPC_TRACER_INITIALIZER(false, "fd_refcount");
 #endif
 
+#ifdef GRPC_POLL_COUNTERS
+/* Number of kicks (excluding g_num_kicks_out_of_poll, g_num_poller_kicks
+ * and g_num_self_kicks) */
+gpr_atm g_num_kicks = 0;
+
+/* (Relevant to epoll1 only) Number of kicks to designated poller i.e the kicks
+ * that made the thread come out of an active epoll() call. For epollsig, this
+ * is zero (and g_num_kicks */
+gpr_atm g_num_kicks_out_of_poll = 0;
+
+/* (Relevant to epoll1 only) Number of kicks sent to select a new designated
+ * poller */
+gpr_atm g_num_poller_kicks = 0;
+
+/* Number of times the worker (implicitly) kicked itself */
+gpr_atm g_num_self_kicks = 0;
+
+/* Number of calls to the poll/epoll functions */
+gpr_atm g_num_polls = 0;
+
+/* Number of kicks to pollset with no poller */
+gpr_atm g_num_kicks_no_poller = 0;
+
+gpr_histogram *g_read_events = NULL;
+gpr_histogram *g_write_events = NULL;
+gpr_histogram *g_total_events = NULL;
+
+static void init_hist(gpr_histogram **h) {
+  if (!*h) {
+    *h = gpr_histogram_create(0.01, 60e9);
+  }
+}
+
+static void shutdown_hist(gpr_histogram **h) {
+  if (*h) {
+    gpr_histogram_destroy(*h);
+    *h = NULL;
+  }
+}
+
+void init_poll_counters() {
+  init_hist(&g_read_events);
+  init_hist(&g_write_events);
+  init_hist(&g_total_events);
+}
+
+void shutdown_poll_counters() {
+  shutdown_hist(&g_read_events);
+  shutdown_hist(&g_write_events);
+  shutdown_hist(&g_total_events);
+}
+#endif
+
 /** Default poll() function - a pointer so that it can be overridden by some
  *  tests */
 grpc_poll_function_type grpc_poll_function = poll;
@@ -154,11 +207,15 @@ void grpc_event_engine_init(void) {
     gpr_log(GPR_ERROR, "No event engine could be initialized");
     abort();
   }
+
+  INIT_POLL_COUNTERS();
 }
 
 void grpc_event_engine_shutdown(void) {
   g_event_engine->shutdown_engine();
   g_event_engine = NULL;
+
+  SHUTDOWN_POLL_COUNTERS();
 }
 
 grpc_fd *grpc_fd_create(int fd, const char *name) {
