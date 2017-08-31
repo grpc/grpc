@@ -16,7 +16,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_c
 
 licenses(["notice"])  # Apache v2
 
-grpc_package(name = "core_test_util", visibility = "public")
+grpc_package(name = "test/core/util", visibility = "public")
 
 grpc_cc_library(
     name = "gpr_test_util",

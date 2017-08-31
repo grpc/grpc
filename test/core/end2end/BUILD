@@ -16,7 +16,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_c
 
 licenses(["notice"])  # Apache v2
 
-grpc_package(name = "core_end2end", visibility = "private")
+grpc_package(name = "test/core/end2end")
 
 load(":generate_tests.bzl", "grpc_end2end_tests")
 
