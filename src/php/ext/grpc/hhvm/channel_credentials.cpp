@@ -48,13 +48,12 @@ grpc_ssl_roots_override_result DefaultPEMRootCerts::get_ssl_roots_override(char*
         ReadLock lock{ singletonCerts.m_CertsLock };
 
         // allocate and copy string with null
-        size_t strLength{ singletonCerts.m_PEMRootCerts.size() };
-        char* const pStr{ reinterpret_cast<char *>(gpr_zalloc(strLength+ 1)) };
+        size_t strLength{ singletonCerts.m_PEMRootCerts.size() + 1};
+        char* const pStr{ reinterpret_cast<char *>(gpr_zalloc(strLength)) };
         if (pStr)
         {
             std::memcpy(reinterpret_cast<void*>(pStr),
                         reinterpret_cast<const void*>(singletonCerts.m_PEMRootCerts.c_str()), strLength);
-            pStr[strLength] = 0;
             *pPermRootsCerts = pStr;
             return GRPC_SSL_ROOTS_OVERRIDE_OK;
         }
@@ -71,7 +70,7 @@ void DefaultPEMRootCerts::setCerts(const String& pemRootsCerts)
     WriteLock lock{ m_CertsLock };
 
     // copy new certs
-    m_PEMRootCerts= pemRootsCerts.toCppString();
+    m_PEMRootCerts = pemRootsCerts.toCppString();
 }
 
 DefaultPEMRootCerts& DefaultPEMRootCerts::getDefaultPEMRootCerts(void)
@@ -138,11 +137,11 @@ void ChannelCredentialsData::destroy(void)
 /*****************************************************************************/
 
 void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,
-                        const String& perm_root_certs)
+                        const String& pem_root_certs)
 {
     HHVM_TRACE_SCOPE("ChannelCredentials setDefaultRootsPem") // Degug Trace
 
-    DefaultPEMRootCerts::getDefaultPEMRootCerts().setCerts(perm_root_certs);
+    DefaultPEMRootCerts::getDefaultPEMRootCerts().setCerts(pem_root_certs);
 }
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault)

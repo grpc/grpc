@@ -116,7 +116,7 @@ private:
 /*****************************************************************************/
 
 void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,
-                        const String& perm_root_certs);
+                        const String& pem_root_certs);
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault);
 
