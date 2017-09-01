@@ -1010,7 +1010,9 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
         }
       } else {
         if (pfds[0].revents & POLLIN_CHECK) {
-          if (GRPC_TRACER_ON(grpc_polling_trace)){gpr_log(GPR_DEBUG, "%p: got_wakeup", pollset);}
+          if (GRPC_TRACER_ON(grpc_polling_trace)) {
+            gpr_log(GPR_DEBUG, "%p: got_wakeup", pollset);
+          }
           work_combine_error(
               &error, grpc_wakeup_fd_consume_wakeup(&worker.wakeup_fd->fd));
         }
