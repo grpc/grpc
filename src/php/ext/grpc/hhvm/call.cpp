@@ -519,7 +519,9 @@ Object HHVM_METHOD(Call, startBatch,
         pluginMetadataInfo.setInfo(pCallData->callCredentials(), std::move(metaDataInfo));
     }
 
-    auto callFailure = [&credentialedCall, &opsManaged, pCallData](void)
+    bool callFailed{ false };
+    grpc_status_code failCode{ GRPC_STATUS_OK };
+    auto callFailure = [&callFailed, &credentialedCall, &opsManaged, pCallData](void)
     {
         // clean up any meta data info
         if (credentialedCall)
@@ -527,6 +529,7 @@ Object HHVM_METHOD(Call, startBatch,
             PluginMetadataInfo& pluginMetadataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
             pluginMetadataInfo.deleteInfo(pCallData->callCredentials());
         }
+        callFailed = true;
     };
 
 
@@ -554,7 +557,7 @@ Object HHVM_METHOD(Call, startBatch,
     {
         // failed so clean up and return empty object
         callFailure();
-        return resultObj;
+        failCode = GRPC_STATUS_DEADLINE_EXCEEDED;
     }
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
@@ -562,7 +565,7 @@ Object HHVM_METHOD(Call, startBatch,
     // one thread. However gRPC calls call_credentials.cpp:plugin_get_metadata in a different thread
     // in many cases and that violates the thread safety within a request in HHVM and causes segfaults
     // at any reasonable concurrency.
-    if (credentialedCall)
+    if (credentialedCall && !callFailed)
     {
         // wait on the plugin_get_metadata to complete
         auto getPluginMetadataFuture = pCallData->getPromise().get_future();
@@ -571,7 +574,7 @@ Object HHVM_METHOD(Call, startBatch,
         {
             // failed so clean up and return empty object
             callFailure();
-            return resultObj;
+            failCode = GRPC_STATUS_UNAUTHENTICATED;
         }
         else
         {
@@ -607,7 +610,8 @@ Object HHVM_METHOD(Call, startBatch,
             break;
         case GRPC_OP_RECV_MESSAGE:
         {
-            if (!opsManaged.recv_messages[i])
+            // TODO: Modify this for multiple receive messages most likely an array assoicated with "message"
+            if (!opsManaged.recv_messages[i] || callFailed)
             {
                 resultObj.o_set("message", Variant());
             }
@@ -623,16 +627,26 @@ Object HHVM_METHOD(Call, startBatch,
         case GRPC_OP_RECV_STATUS_ON_CLIENT:
         {
             Object recvStatusObj{ SystemLib::AllocStdClassObject() };
-            recvStatusObj.o_set("metadata", opsManaged.recv_trailing_metadata.phpData());
-            recvStatusObj.o_set("code", Variant{ static_cast<int64_t>(opsManaged.status) });
-            recvStatusObj.o_set("details",
-                                Variant{ String{ reinterpret_cast<const char*>(opsManaged.recv_status_details.data()),
-                                                 opsManaged.recv_status_details.length(), CopyString } });
-            resultObj.o_set("status", Variant{ recvStatusObj });
+            if (callFailed)
+            {
+                recvStatusObj.o_set("metadata", Variant{});
+                recvStatusObj.o_set("code", Variant{ static_cast<int64_t>(failCode) });
+                recvStatusObj.o_set("details",Variant{ String{ "Error occured" } });
+                resultObj.o_set("status", std::move(Variant{ recvStatusObj }));
+            }
+            else
+            {
+                recvStatusObj.o_set("metadata", opsManaged.recv_trailing_metadata.phpData());
+                recvStatusObj.o_set("code", Variant{ static_cast<int64_t>(opsManaged.status) });
+                recvStatusObj.o_set("details",
+                                    Variant{ String{ reinterpret_cast<const char*>(opsManaged.recv_status_details.data()),
+                                                     opsManaged.recv_status_details.length(), CopyString } });
+                resultObj.o_set("status", std::move(Variant{ recvStatusObj }));
+            }
             break;
         }
         case GRPC_OP_RECV_CLOSE_ON_SERVER:
-            resultObj.o_set("cancelled", opsManaged.cancelled != 0);
+            resultObj.o_set("cancelled", callFailed ? true : (opsManaged.cancelled != 0));
             break;
         default:
             break;

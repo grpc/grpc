@@ -61,6 +61,7 @@ Slice::Slice(const grpc_byte_buffer* const buffer)
     else
     {
         m_Slice = grpc_byte_buffer_reader_readall(&reader);
+        grpc_byte_buffer_reader_destroy(&reader);
     }
 }
 
