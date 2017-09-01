@@ -14,6 +14,7 @@
 
 cimport cpython
 
+import threading
 import traceback
 
 
@@ -128,7 +129,6 @@ cdef int plugin_get_metadata(
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
     size_t *num_creds_md, grpc_status_code *status,
     const char **error_details) with gil:
-# FIXME: force the python code to run in a separate thread
   called_flag = [False]
   def python_callback(
       Metadata metadata, grpc_status_code status,
@@ -139,12 +139,14 @@ cdef int plugin_get_metadata(
   cdef CredentialsMetadataPlugin self = <CredentialsMetadataPlugin>state
   cdef AuthMetadataContext cy_context = AuthMetadataContext()
   cy_context.context = context
-  try:
-    self.plugin_callback(cy_context, python_callback)
-  except Exception as error:
-    if not called_flag[0]:
-      cb(user_data, Metadata([]).c_metadata_array.metadata,
-         0, StatusCode.unknown, traceback.format_exc().encode())
+  def async_callback():
+    try:
+      self.plugin_callback(cy_context, python_callback)
+    except Exception as error:
+      if not called_flag[0]:
+        cb(user_data, Metadata([]).c_metadata_array.metadata,
+          0, StatusCode.unknown, traceback.format_exc().encode())
+  threading.Thread(group=None, target=async_callback).start()
   return 0  # Asynchronous return
 
 cdef void plugin_destroy_c_plugin_state(void *state) with gil:
