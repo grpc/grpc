@@ -43,6 +43,7 @@ DEFINE_bool(use_tls, false, "Whether to use tls.");
 DEFINE_string(custom_credentials_type, "", "User provided credentials type.");
 DEFINE_int32(port, 0, "Server port.");
 DEFINE_int32(max_send_message_size, -1, "The maximum send message size.");
+DEFINE_bool(stream_compression, false, "Whether to enable stream compression.");
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -330,6 +331,9 @@ void grpc::testing::interop::RunServer(
   builder.AddListeningPort(server_address.str(), creds);
   if (FLAGS_max_send_message_size >= 0) {
     builder.SetMaxSendMessageSize(FLAGS_max_send_message_size);
+  }
+  if (FLAGS_stream_compression) {
+    builder.SetDefaultStreamCompressionAlgorithm(GRPC_STREAM_COMPRESS_GZIP);
   }
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
