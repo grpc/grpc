@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -39,11 +24,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
-static void channel_init_func(grpc_exec_ctx *exec_ctx,
-                              grpc_channel_element *elem,
-                              grpc_channel_element_args *args) {
+static grpc_error *channel_init_func(grpc_exec_ctx *exec_ctx,
+                                     grpc_channel_element *elem,
+                                     grpc_channel_element_args *args) {
   GPR_ASSERT(args->channel_args->num_args == 1);
   GPR_ASSERT(args->channel_args->args[0].type == GRPC_ARG_INTEGER);
   GPR_ASSERT(0 == strcmp(args->channel_args->args[0].key, "test_key"));
@@ -51,11 +37,12 @@ static void channel_init_func(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(args->is_first);
   GPR_ASSERT(args->is_last);
   *(int *)(elem->channel_data) = 0;
+  return GRPC_ERROR_NONE;
 }
 
 static grpc_error *call_init_func(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
-                                  grpc_call_element_args *args) {
+                                  const grpc_call_element_args *args) {
   ++*(int *)(elem->channel_data);
   *(int *)(elem->call_data) = 0;
   return GRPC_ERROR_NONE;
@@ -66,12 +53,12 @@ static void channel_destroy_func(grpc_exec_ctx *exec_ctx,
 
 static void call_destroy_func(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
-                              void *ignored) {
+                              grpc_closure *ignored) {
   ++*(int *)(elem->channel_data);
 }
 
 static void call_func(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                      grpc_transport_stream_op *op) {
+                      grpc_transport_stream_op_batch *op) {
   ++*(int *)(elem->call_data);
 }
 
@@ -107,6 +94,7 @@ static void test_create_channel_stack(void) {
       channel_init_func,
       channel_destroy_func,
       get_peer,
+      grpc_channel_next_get_info,
       "some_test_filter"};
   const grpc_channel_filter *filters = &filter;
   grpc_channel_stack *channel_stack;
@@ -118,6 +106,7 @@ static void test_create_channel_stack(void) {
   int *channel_data;
   int *call_data;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_slice path = grpc_slice_from_static_string("/service/method");
 
   arg.type = GRPC_ARG_INTEGER;
   arg.key = "test_key";
@@ -135,9 +124,16 @@ static void test_create_channel_stack(void) {
   GPR_ASSERT(*channel_data == 0);
 
   call_stack = gpr_malloc(channel_stack->call_stack_size);
-  grpc_error *error =
-      grpc_call_stack_init(&exec_ctx, channel_stack, 1, free_call, call_stack,
-                           NULL, NULL, call_stack);
+  const grpc_call_element_args args = {
+      .call_stack = call_stack,
+      .server_transport_data = NULL,
+      .context = NULL,
+      .path = path,
+      .start_time = gpr_now(GPR_CLOCK_MONOTONIC),
+      .deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC),
+      .arena = NULL};
+  grpc_error *error = grpc_call_stack_init(&exec_ctx, channel_stack, 1,
+                                           free_call, call_stack, &args);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(call_stack->count == 1);
   call_elem = grpc_call_stack_element(call_stack, 0);
@@ -153,6 +149,7 @@ static void test_create_channel_stack(void) {
 
   GRPC_CHANNEL_STACK_UNREF(&exec_ctx, channel_stack, "done");
 
+  grpc_slice_unref_internal(&exec_ctx, path);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 

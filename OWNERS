@@ -1,0 +1,17 @@
+# Top level ownership
+
+# nothing listed here until GitHub CODEOWNERS gets better
+# we need:
+# 1. owners to be able to self-approve
+# 2. authors to be able to select approvers
+
+# OWNERS file approvers
+# POLICY: at least three owners are needed before adding any OWNERS
+# REASON: GitHub does not recognize an author as able to give approval
+#         for a change; without this policy authors that are owners would
+#         be forced to rely on one reviewer, which would consequently
+#         lead to a bus factor of one to changes to that code
+@markdroth **/OWNERS
+@nicolasnoble **/OWNERS
+@ctiller **/OWNERS
+

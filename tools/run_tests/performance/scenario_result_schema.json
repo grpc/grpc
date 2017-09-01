@@ -107,6 +107,11 @@
         "name": "timeSystem",
         "type": "FLOAT",
         "mode": "NULLABLE"
+      },
+      {
+        "name": "cqPollCount",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
       }
     ]
   },
@@ -128,6 +133,11 @@
       {
         "name": "timeSystem",
         "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "cqPollCount",
+        "type": "INTEGER",
         "mode": "NULLABLE"
       }
     ]
@@ -196,6 +206,26 @@
         "name": "latency999",
         "type": "FLOAT",
         "mode": "NULLABLE"
+      },
+      {
+        "name": "clientPollsPerRequest",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "serverPollsPerRequest",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "serverQueriesPerCpuSec",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "clientQueriesPerCpuSec",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
       }
     ]
   },
@@ -207,6 +237,33 @@
   {
     "name": "serverSuccess",
     "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "requestResults",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "serverCpuStats",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+      {
+        "name": "totalCpuTime",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "idleCpuTime",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "serverCpuUsage",
+    "type": "FLOAT",
     "mode": "NULLABLE"
   }
 ]

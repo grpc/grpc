@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -41,53 +26,54 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
 static int all_ok = 1;
 
-static void expect_slice_eq(gpr_slice expected, gpr_slice slice, char *debug,
+static void expect_slice_eq(grpc_slice expected, grpc_slice slice, char *debug,
                             int line) {
-  if (0 != gpr_slice_cmp(slice, expected)) {
-    char *hs = gpr_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    char *he = gpr_dump_slice(expected, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+  if (!grpc_slice_eq(slice, expected)) {
+    char *hs = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char *he = grpc_dump_slice(expected, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "FAILED:%d: %s\ngot:  %s\nwant: %s", line, debug, hs,
             he);
     gpr_free(hs);
     gpr_free(he);
     all_ok = 0;
   }
-  gpr_slice_unref(expected);
-  gpr_slice_unref(slice);
+  grpc_slice_unref(expected);
+  grpc_slice_unref(slice);
 }
 
-static gpr_slice B64(const char *s) {
-  gpr_slice ss = gpr_slice_from_copied_string(s);
-  gpr_slice out = grpc_chttp2_base64_encode(ss);
-  gpr_slice_unref(ss);
+static grpc_slice B64(const char *s) {
+  grpc_slice ss = grpc_slice_from_copied_string(s);
+  grpc_slice out = grpc_chttp2_base64_encode(ss);
+  grpc_slice_unref(ss);
   return out;
 }
 
-static gpr_slice HUFF(const char *s) {
-  gpr_slice ss = gpr_slice_from_copied_string(s);
-  gpr_slice out = grpc_chttp2_huffman_compress(ss);
-  gpr_slice_unref(ss);
+static grpc_slice HUFF(const char *s) {
+  grpc_slice ss = grpc_slice_from_copied_string(s);
+  grpc_slice out = grpc_chttp2_huffman_compress(ss);
+  grpc_slice_unref(ss);
   return out;
 }
 
-#define EXPECT_SLICE_EQ(expected, slice)                                   \
-  expect_slice_eq(                                                         \
-      gpr_slice_from_copied_buffer(expected, sizeof(expected) - 1), slice, \
+#define EXPECT_SLICE_EQ(expected, slice)                                    \
+  expect_slice_eq(                                                          \
+      grpc_slice_from_copied_buffer(expected, sizeof(expected) - 1), slice, \
       #slice, __LINE__);
 
 static void expect_combined_equiv(const char *s, size_t len, int line) {
-  gpr_slice input = gpr_slice_from_copied_buffer(s, len);
-  gpr_slice base64 = grpc_chttp2_base64_encode(input);
-  gpr_slice expect = grpc_chttp2_huffman_compress(base64);
-  gpr_slice got = grpc_chttp2_base64_encode_and_huffman_compress_impl(input);
-  if (0 != gpr_slice_cmp(expect, got)) {
-    char *t = gpr_dump_slice(input, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    char *e = gpr_dump_slice(expect, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    char *g = gpr_dump_slice(got, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+  grpc_slice input = grpc_slice_from_copied_buffer(s, len);
+  grpc_slice base64 = grpc_chttp2_base64_encode(input);
+  grpc_slice expect = grpc_chttp2_huffman_compress(base64);
+  grpc_slice got = grpc_chttp2_base64_encode_and_huffman_compress(input);
+  if (!grpc_slice_eq(expect, got)) {
+    char *t = grpc_dump_slice(input, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char *e = grpc_dump_slice(expect, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char *g = grpc_dump_slice(got, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "FAILED:%d:\ntest: %s\ngot:  %s\nwant: %s", line, t, g,
             e);
     gpr_free(t);
@@ -95,17 +81,17 @@ static void expect_combined_equiv(const char *s, size_t len, int line) {
     gpr_free(g);
     all_ok = 0;
   }
-  gpr_slice_unref(input);
-  gpr_slice_unref(base64);
-  gpr_slice_unref(expect);
-  gpr_slice_unref(got);
+  grpc_slice_unref(input);
+  grpc_slice_unref(base64);
+  grpc_slice_unref(expect);
+  grpc_slice_unref(got);
 }
 
 #define EXPECT_COMBINED_EQUIV(x) \
   expect_combined_equiv(x, sizeof(x) - 1, __LINE__)
 
 static void expect_binary_header(const char *hdr, int binary) {
-  if (grpc_is_binary_header(hdr, strlen(hdr)) != binary) {
+  if (grpc_is_binary_header(grpc_slice_from_static_string(hdr)) != binary) {
     gpr_log(GPR_ERROR, "FAILED: expected header '%s' to be %s", hdr,
             binary ? "binary" : "not binary");
     all_ok = 0;

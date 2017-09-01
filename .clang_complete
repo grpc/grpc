@@ -1,8 +1,11 @@
+-Wall
+-Wc++-compat
 -Ithird_party/googletest/include
 -Ithird_party/googletest
 -Iinclude
 -Igens
 -I.
 -Ithird_party/boringssl/include
+-Ithird_party/benchmark/include
 -Ithird_party/zlib
 -Ithird_party/protobuf/src

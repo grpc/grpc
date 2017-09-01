@@ -7,20 +7,23 @@
     dnl Write more examples of tests here...
 
     dnl # --with-grpc -> add include path
-    PHP_ADD_INCLUDE(../../grpc/include)
-    PHP_ADD_INCLUDE(../../grpc/src/php/ext/grpc)
-    PHP_ADD_INCLUDE(../../grpc/third_party/boringssl/include)
+    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/include)
+    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/php/ext/grpc)
+    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/boringssl/include)
 
     LIBS="-lpthread $LIBS"
 
+    CFLAGS="-Wall -Werror -Wno-parentheses-equality -Wno-unused-value -std=c11"
+    CXXFLAGS="-std=c++11"
     GRPC_SHARED_LIBADD="-lpthread $GRPC_SHARED_LIBADD"
+    PHP_REQUIRE_CXX()
     PHP_ADD_LIBRARY(pthread)
-
     PHP_ADD_LIBRARY(dl,,GRPC_SHARED_LIBADD)
     PHP_ADD_LIBRARY(dl)
 
     case $host in
-      *darwin*) ;;
+      *darwin*)
+        ;;
       *)
         PHP_ADD_LIBRARY(rt,,GRPC_SHARED_LIBADD)
         PHP_ADD_LIBRARY(rt)
@@ -32,22 +35,21 @@
       ${source} ${"\\"}
       % endfor
       % for lib in libs:
-      % if lib.name in php_config_m4.get('deps', []):
+      % if lib.name in php_config_m4.get('deps', []) and lib.name != 'z':
       % for source in lib.src:
       ${source} ${"\\"}
       % endfor
       % endif
       % endfor
-      , $ext_shared, , -Wall -Werror ${"\\"}
-      -Wno-parentheses-equality -Wno-unused-value -std=c11 ${"\\"}
-      -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN ${"\\"}
-      -D_HAS_EXCEPTIONS=0 -DNOMINMAX)
+      , $ext_shared, , -fvisibility=hidden ${"\\"}
+      -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN ${"\\"}
+      -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0)
 
     PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
   <%
     dirs = {}
     for lib in libs:
-      if lib.name in php_config_m4.get('deps', []):
+      if lib.name in php_config_m4.get('deps', []) and lib.name != 'z':
         for source in lib.src:
           dirs[source[:source.rfind('/')]] = 1
     dirs = dirs.keys()

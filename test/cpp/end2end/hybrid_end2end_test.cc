@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -42,7 +27,6 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
-#include <gtest/gtest.h>
 
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -50,6 +34,8 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
+
+#include <gtest/gtest.h>
 
 namespace grpc {
 namespace testing {
@@ -188,7 +174,7 @@ class TestServiceImplDupPkg
     : public ::grpc::testing::duplicate::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) GRPC_OVERRIDE {
+              EchoResponse* response) override {
     response->set_message(request->message() + "_dup");
     return Status::OK;
   }
@@ -199,7 +185,8 @@ class HybridEnd2endTest : public ::testing::Test {
   HybridEnd2endTest() {}
 
   void SetUpServer(::grpc::Service* service1, ::grpc::Service* service2,
-                   AsyncGenericService* generic_service) {
+                   AsyncGenericService* generic_service,
+                   int max_message_size = 0) {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
 
@@ -217,6 +204,11 @@ class HybridEnd2endTest : public ::testing::Test {
     if (generic_service) {
       builder.RegisterAsyncGenericService(generic_service);
     }
+
+    if (max_message_size != 0) {
+      builder.SetMaxMessageSize(max_message_size);
+    }
+
     // Create a separate cq for each potential handler.
     for (int i = 0; i < 5; i++) {
       cqs_.push_back(builder.AddCompletionQueue(false));
@@ -224,7 +216,7 @@ class HybridEnd2endTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  void TearDown() GRPC_OVERRIDE {
+  void TearDown() override {
     if (server_) {
       server_->Shutdown();
     }
@@ -255,7 +247,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoRequest send_request;
     EchoResponse recv_response;
     ClientContext cli_ctx;
-    cli_ctx.set_fail_fast(false);
+    cli_ctx.set_wait_for_ready(true);
     send_request.set_message("Hello");
     Status recv_status = stub_->Echo(&cli_ctx, send_request, &recv_response);
     EXPECT_EQ(send_request.message(), recv_response.message());
@@ -269,7 +261,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoRequest send_request;
     EchoResponse recv_response;
     ClientContext cli_ctx;
-    cli_ctx.set_fail_fast(false);
+    cli_ctx.set_wait_for_ready(true);
     send_request.set_message("Hello");
     Status recv_status = stub->Echo(&cli_ctx, send_request, &recv_response);
     EXPECT_EQ(send_request.message() + "_dup", recv_response.message());
@@ -281,7 +273,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoResponse recv_response;
     grpc::string expected_message;
     ClientContext cli_ctx;
-    cli_ctx.set_fail_fast(false);
+    cli_ctx.set_wait_for_ready(true);
     send_request.set_message("Hello");
     auto stream = stub_->RequestStream(&cli_ctx, &recv_response);
     for (int i = 0; i < 5; i++) {
@@ -298,7 +290,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoRequest request;
     EchoResponse response;
     ClientContext context;
-    context.set_fail_fast(false);
+    context.set_wait_for_ready(true);
     request.set_message("hello");
 
     auto stream = stub_->ResponseStream(&context, request);
@@ -314,11 +306,34 @@ class HybridEnd2endTest : public ::testing::Test {
     EXPECT_TRUE(s.ok());
   }
 
+  void SendSimpleServerStreamingToDupService() {
+    std::shared_ptr<Channel> channel =
+        CreateChannel(server_address_.str(), InsecureChannelCredentials());
+    auto stub = grpc::testing::duplicate::EchoTestService::NewStub(channel);
+    EchoRequest request;
+    EchoResponse response;
+    ClientContext context;
+    context.set_wait_for_ready(true);
+    request.set_message("hello");
+
+    auto stream = stub->ResponseStream(&context, request);
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), request.message() + "0_dup");
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), request.message() + "1_dup");
+    EXPECT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), request.message() + "2_dup");
+    EXPECT_FALSE(stream->Read(&response));
+
+    Status s = stream->Finish();
+    EXPECT_TRUE(s.ok());
+  }
+
   void SendBidiStreaming() {
     EchoRequest request;
     EchoResponse response;
     ClientContext context;
-    context.set_fail_fast(false);
+    context.set_wait_for_ready(true);
     grpc::string msg("hello");
 
     auto stream = stub_->BidiStream(&context);
@@ -346,7 +361,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EXPECT_TRUE(s.ok());
   }
 
-  grpc::testing::UnimplementedService::Service unimplemented_service_;
+  grpc::testing::UnimplementedEchoService::Service unimplemented_service_;
   std::vector<std::unique_ptr<ServerCompletionQueue>> cqs_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
@@ -411,6 +426,217 @@ TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream_SyncDupService) {
                                             &service, cqs_[1].get());
   TestAllMethods();
   SendEchoToDupService();
+  response_stream_handler_thread.join();
+  request_stream_handler_thread.join();
+}
+
+// Add a second service with one sync streamed unary method.
+class StreamedUnaryDupPkg
+    : public duplicate::EchoTestService::WithStreamedUnaryMethod_Echo<
+          TestServiceImplDupPkg> {
+ public:
+  Status StreamedEcho(
+      ServerContext* context,
+      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream) override {
+    EchoRequest req;
+    EchoResponse resp;
+    uint32_t next_msg_sz;
+    stream->NextMessageSize(&next_msg_sz);
+    gpr_log(GPR_INFO, "Streamed Unary Next Message Size is %u", next_msg_sz);
+    GPR_ASSERT(stream->Read(&req));
+    resp.set_message(req.message() + "_dup");
+    GPR_ASSERT(stream->Write(resp));
+    return Status::OK;
+  }
+};
+
+TEST_F(HybridEnd2endTest,
+       AsyncRequestStreamResponseStream_SyncStreamedUnaryDupService) {
+  typedef EchoTestService::WithAsyncMethod_RequestStream<
+      EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
+      SType;
+  SType service;
+  StreamedUnaryDupPkg dup_service;
+  SetUpServer(&service, &dup_service, nullptr, 8192);
+  ResetStub();
+  std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
+                                             &service, cqs_[0].get());
+  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
+                                            &service, cqs_[1].get());
+  TestAllMethods();
+  SendEchoToDupService();
+  response_stream_handler_thread.join();
+  request_stream_handler_thread.join();
+}
+
+// Add a second service that is fully Streamed Unary
+class FullyStreamedUnaryDupPkg
+    : public duplicate::EchoTestService::StreamedUnaryService {
+ public:
+  Status StreamedEcho(
+      ServerContext* context,
+      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream) override {
+    EchoRequest req;
+    EchoResponse resp;
+    uint32_t next_msg_sz;
+    stream->NextMessageSize(&next_msg_sz);
+    gpr_log(GPR_INFO, "Streamed Unary Next Message Size is %u", next_msg_sz);
+    GPR_ASSERT(stream->Read(&req));
+    resp.set_message(req.message() + "_dup");
+    GPR_ASSERT(stream->Write(resp));
+    return Status::OK;
+  }
+};
+
+TEST_F(HybridEnd2endTest,
+       AsyncRequestStreamResponseStream_SyncFullyStreamedUnaryDupService) {
+  typedef EchoTestService::WithAsyncMethod_RequestStream<
+      EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
+      SType;
+  SType service;
+  FullyStreamedUnaryDupPkg dup_service;
+  SetUpServer(&service, &dup_service, nullptr, 8192);
+  ResetStub();
+  std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
+                                             &service, cqs_[0].get());
+  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
+                                            &service, cqs_[1].get());
+  TestAllMethods();
+  SendEchoToDupService();
+  response_stream_handler_thread.join();
+  request_stream_handler_thread.join();
+}
+
+// Add a second service with one sync split server streaming method.
+class SplitResponseStreamDupPkg
+    : public duplicate::EchoTestService::
+          WithSplitStreamingMethod_ResponseStream<TestServiceImplDupPkg> {
+ public:
+  Status StreamedResponseStream(
+      ServerContext* context,
+      ServerSplitStreamer<EchoRequest, EchoResponse>* stream) override {
+    EchoRequest req;
+    EchoResponse resp;
+    uint32_t next_msg_sz;
+    stream->NextMessageSize(&next_msg_sz);
+    gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u", next_msg_sz);
+    GPR_ASSERT(stream->Read(&req));
+    for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
+      resp.set_message(req.message() + grpc::to_string(i) + "_dup");
+      GPR_ASSERT(stream->Write(resp));
+    }
+    return Status::OK;
+  }
+};
+
+TEST_F(HybridEnd2endTest,
+       AsyncRequestStreamResponseStream_SyncSplitStreamedDupService) {
+  typedef EchoTestService::WithAsyncMethod_RequestStream<
+      EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
+      SType;
+  SType service;
+  SplitResponseStreamDupPkg dup_service;
+  SetUpServer(&service, &dup_service, nullptr, 8192);
+  ResetStub();
+  std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
+                                             &service, cqs_[0].get());
+  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
+                                            &service, cqs_[1].get());
+  TestAllMethods();
+  SendSimpleServerStreamingToDupService();
+  response_stream_handler_thread.join();
+  request_stream_handler_thread.join();
+}
+
+// Add a second service that is fully split server streamed
+class FullySplitStreamedDupPkg
+    : public duplicate::EchoTestService::SplitStreamedService {
+ public:
+  Status StreamedResponseStream(
+      ServerContext* context,
+      ServerSplitStreamer<EchoRequest, EchoResponse>* stream) override {
+    EchoRequest req;
+    EchoResponse resp;
+    uint32_t next_msg_sz;
+    stream->NextMessageSize(&next_msg_sz);
+    gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u", next_msg_sz);
+    GPR_ASSERT(stream->Read(&req));
+    for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
+      resp.set_message(req.message() + grpc::to_string(i) + "_dup");
+      GPR_ASSERT(stream->Write(resp));
+    }
+    return Status::OK;
+  }
+};
+
+TEST_F(HybridEnd2endTest,
+       AsyncRequestStreamResponseStream_FullySplitStreamedDupService) {
+  typedef EchoTestService::WithAsyncMethod_RequestStream<
+      EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
+      SType;
+  SType service;
+  FullySplitStreamedDupPkg dup_service;
+  SetUpServer(&service, &dup_service, nullptr, 8192);
+  ResetStub();
+  std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
+                                             &service, cqs_[0].get());
+  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
+                                            &service, cqs_[1].get());
+  TestAllMethods();
+  SendSimpleServerStreamingToDupService();
+  response_stream_handler_thread.join();
+  request_stream_handler_thread.join();
+}
+
+// Add a second service that is fully server streamed
+class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
+ public:
+  Status StreamedEcho(
+      ServerContext* context,
+      ServerUnaryStreamer<EchoRequest, EchoResponse>* stream) override {
+    EchoRequest req;
+    EchoResponse resp;
+    uint32_t next_msg_sz;
+    stream->NextMessageSize(&next_msg_sz);
+    gpr_log(GPR_INFO, "Streamed Unary Next Message Size is %u", next_msg_sz);
+    GPR_ASSERT(stream->Read(&req));
+    resp.set_message(req.message() + "_dup");
+    GPR_ASSERT(stream->Write(resp));
+    return Status::OK;
+  }
+  Status StreamedResponseStream(
+      ServerContext* context,
+      ServerSplitStreamer<EchoRequest, EchoResponse>* stream) override {
+    EchoRequest req;
+    EchoResponse resp;
+    uint32_t next_msg_sz;
+    stream->NextMessageSize(&next_msg_sz);
+    gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u", next_msg_sz);
+    GPR_ASSERT(stream->Read(&req));
+    for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
+      resp.set_message(req.message() + grpc::to_string(i) + "_dup");
+      GPR_ASSERT(stream->Write(resp));
+    }
+    return Status::OK;
+  }
+};
+
+TEST_F(HybridEnd2endTest,
+       AsyncRequestStreamResponseStream_FullyStreamedDupService) {
+  typedef EchoTestService::WithAsyncMethod_RequestStream<
+      EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
+      SType;
+  SType service;
+  FullyStreamedDupPkg dup_service;
+  SetUpServer(&service, &dup_service, nullptr, 8192);
+  ResetStub();
+  std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
+                                             &service, cqs_[0].get());
+  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
+                                            &service, cqs_[1].get());
+  TestAllMethods();
+  SendEchoToDupService();
+  SendSimpleServerStreamingToDupService();
   response_stream_handler_thread.join();
   request_stream_handler_thread.join();
 }

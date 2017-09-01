@@ -1,48 +1,41 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 /// \mainpage gRPC C++ API
 ///
 /// The gRPC C++ API mainly consists of the following classes:
+/// <br>
 /// - grpc::Channel, which represents the connection to an endpoint. See [the
-/// gRPC Concepts page](http://www.grpc.io/docs/guides/concepts.html) for more
+/// gRPC Concepts page](https://grpc.io/docs/guides/concepts.html) for more
 /// details. Channels are created by the factory function grpc::CreateChannel.
+///
 /// - grpc::CompletionQueue, the producer-consumer queue used for all
 /// asynchronous communication with the gRPC runtime.
+///
 /// - grpc::ClientContext and grpc::ServerContext, where optional configuration
 /// for an RPC can be set, such as setting custom metadata to be conveyed to the
 /// peer, compression settings, authentication, etc.
+///
 /// - grpc::Server, representing a gRPC server, created by grpc::ServerBuilder.
+///
+/// Streaming calls are handled with the streaming classes in
+/// \ref sync_stream.h and
+/// \ref async_stream.h.
 ///
 /// Refer to the
 /// [examples](https://github.com/grpc/grpc/blob/master/examples/cpp)
@@ -51,6 +44,9 @@
 #ifndef GRPCXX_GRPCXX_H
 #define GRPCXX_GRPCXX_H
 
+// Pragma for http://include-what-you-use.org/ tool, tells that following
+// headers are not private for grpc++.h and are part of its interface.
+// IWYU pragma: begin_exports
 #include <grpc/grpc.h>
 
 #include <grpc++/channel.h>
@@ -62,5 +58,11 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc++/server_posix.h>
+// IWYU pragma: end_exports
+
+namespace grpc {
+/// Return gRPC library version.
+grpc::string Version();
+}  // namespace grpc
 
 #endif  // GRPCXX_GRPCXX_H

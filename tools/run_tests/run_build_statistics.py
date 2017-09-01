@@ -1,34 +1,21 @@
-#!/usr/bin/env python2.7
-# Copyright 2016, Google Inc.
-# All rights reserved.
+#!/usr/bin/env python
+# Copyright 2016 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Tool to get build statistics from Jenkins and upload to BigQuery."""
+
+from __future__ import print_function
 
 import argparse
 import jenkinsapi
@@ -47,39 +34,84 @@ sys.path.append(gcp_utils_dir)
 import big_query_utils
 
 
-_HAS_MATRIX=True
 _PROJECT_ID = 'grpc-testing'
 _HAS_MATRIX = True
-_BUILDS = {'gRPC_master': _HAS_MATRIX, 
-           'gRPC_interop_master': not _HAS_MATRIX, 
-           'gRPC_pull_requests': _HAS_MATRIX, 
+_BUILDS = {'gRPC_interop_master': not _HAS_MATRIX,
+           'gRPC_master_linux': not _HAS_MATRIX,
+           'gRPC_master_macos': not _HAS_MATRIX,
+           'gRPC_master_windows': not _HAS_MATRIX,
+           'gRPC_performance_master': not _HAS_MATRIX,
+           'gRPC_portability_master_linux': not _HAS_MATRIX,
+           'gRPC_portability_master_windows': not _HAS_MATRIX,
+           'gRPC_master_asanitizer_c': not _HAS_MATRIX,
+           'gRPC_master_asanitizer_cpp': not _HAS_MATRIX,
+           'gRPC_master_msan_c': not _HAS_MATRIX,
+           'gRPC_master_tsanitizer_c': not _HAS_MATRIX,
+           'gRPC_master_tsan_cpp': not _HAS_MATRIX,
            'gRPC_interop_pull_requests': not _HAS_MATRIX,
+           'gRPC_performance_pull_requests': not _HAS_MATRIX,
+           'gRPC_portability_pull_requests_linux': not _HAS_MATRIX,
+           'gRPC_portability_pr_win': not _HAS_MATRIX,
+           'gRPC_pull_requests_linux': not _HAS_MATRIX,
+           'gRPC_pull_requests_macos': not _HAS_MATRIX,
+           'gRPC_pr_win': not _HAS_MATRIX,
+           'gRPC_pull_requests_asan_c': not _HAS_MATRIX,
+           'gRPC_pull_requests_asan_cpp': not _HAS_MATRIX,
+           'gRPC_pull_requests_msan_c': not _HAS_MATRIX,
+           'gRPC_pull_requests_tsan_c': not _HAS_MATRIX,
+           'gRPC_pull_requests_tsan_cpp': not _HAS_MATRIX,
 }
 _URL_BASE = 'https://grpc-testing.appspot.com/job'
+
+# This is a dynamic list where known and active issues should be added. 
+# Fixed ones should be removed.
+# Also try not to add multiple messages from the same failure.
 _KNOWN_ERRORS = [
     'Failed to build workspace Tests with scheme AllTests',
     'Build timed out',
+    'TIMEOUT: tools/run_tests/pre_build_node.sh',
+    'TIMEOUT: tools/run_tests/pre_build_ruby.sh',
     'FATAL: Unable to produce a script file',
-    'FAILED: Failed to build interop docker images',
+    'FAILED: build_docker_c\+\+',
+    'cannot find package \"cloud.google.com/go/compute/metadata\"',
     'LLVM ERROR: IO failure on output stream.',
     'MSBUILD : error MSB1009: Project file does not exist.',
+    'fatal: git fetch_pack: expected ACK/NAK',
+    'Failed to fetch from http://github.com/grpc/grpc.git',
+    ('hudson.remoting.RemotingSystemException: java.io.IOException: '
+     'Backing channel is disconnected.'),
+    'hudson.remoting.ChannelClosedException',
+    'Could not initialize class hudson.Util',
+    'Too many open files in system',
+    'FAILED: bins/tsan/qps_openloop_test GRPC_POLL_STRATEGY=epoll',
+    'FAILED: bins/tsan/qps_openloop_test GRPC_POLL_STRATEGY=legacy',
+    'FAILED: bins/tsan/qps_openloop_test GRPC_POLL_STRATEGY=poll',
+    ('tests.bins/asan/h2_proxy_test streaming_error_response '
+     'GRPC_POLL_STRATEGY=legacy'),
+    'hudson.plugins.git.GitException',
+    'Couldn\'t find any revision to build',
+    'org.jenkinsci.plugin.Diskcheck.preCheckout',
+    'Something went wrong while deleting Files',
 ]
+_NO_REPORT_FILES_FOUND_ERROR = 'No test report files were found.'
 _UNKNOWN_ERROR = 'Unknown error'
 _DATASET_ID = 'build_statistics'
 
 
 def _scrape_for_known_errors(html):
   error_list = []
-  known_error_count = 0
   for known_error in _KNOWN_ERRORS:
     errors = re.findall(known_error, html)
     this_error_count = len(errors)
     if this_error_count > 0: 
-      known_error_count += this_error_count
       error_list.append({'description': known_error,
                          'count': this_error_count})
       print('====> %d failures due to %s' % (this_error_count, known_error))
-  return error_list, known_error_count
+  return error_list
+
+
+def _no_report_files_found(html):
+  return _NO_REPORT_FILES_FOUND_ERROR in html
 
 
 def _get_last_processed_buildnumber(build_name):
@@ -122,29 +154,29 @@ def _process_build(json_url, console_url):
     failure_count = test_result['failCount']
     build_result['pass_count'] = test_result['passCount']
     build_result['failure_count'] = failure_count
-    if failure_count > 0:
-      error_list, known_error_count = _scrape_for_known_errors(html)
-      unknown_error_count = failure_count - known_error_count
-      # This can happen if the same error occurs multiple times in one test.
-      if failure_count < known_error_count:
-        print('====> Some errors are duplicates.')
-        unknown_error_count = 0
-      error_list.append({'description': _UNKNOWN_ERROR, 
-                         'count': unknown_error_count})
+    # This means Jenkins failure occurred.
+    build_result['no_report_files_found'] = _no_report_files_found(html)
+    # Only check errors if Jenkins failure occurred.
+    if build_result['no_report_files_found']:
+      error_list = _scrape_for_known_errors(html)
   except Exception as e:
     print('====> Got exception for %s: %s.' % (json_url, str(e)))   
     print('====> Parsing errors from %s.' % console_url)
     html = urllib.urlopen(console_url).read()
     build_result['pass_count'] = 0  
     build_result['failure_count'] = 1
-    error_list, _ = _scrape_for_known_errors(html)
-    if error_list:
-      error_list.append({'description': _UNKNOWN_ERROR, 'count': 0})
-    else:
-      error_list.append({'description': _UNKNOWN_ERROR, 'count': 1})
- 
+    # In this case, the string doesn't exist in the result html but the fact 
+    # that we fail to parse the result html indicates Jenkins failure and hence 
+    # no report files were generated.
+    build_result['no_report_files_found'] = True
+    error_list = _scrape_for_known_errors(html)
+
   if error_list:
     build_result['error'] = error_list
+  elif build_result['no_report_files_found']:
+    build_result['error'] = [{'description': _UNKNOWN_ERROR, 'count': 1}]
+  else:
+    build_result['error'] = [{'description': '', 'count': 0}]
 
   return build_result 
 
@@ -183,6 +215,15 @@ for build_name in _BUILDS.keys() if 'all' in args.builds else args.builds:
     build = None
     try:
       build = job.get_build_metadata(build_number)
+      print('====> Build status: %s.' % build.get_status())
+      if build.get_status() == 'ABORTED':
+        continue
+      # If any build is still running, stop processing this job. Next time, we
+      # start from where it was left so that all builds are processed 
+      # sequentially.
+      if build.is_running():
+        print('====> Build %d is still running.' % build_number)
+        break
     except KeyError:
       print('====> Build %s is missing. Skip.' % build_number)
       continue
@@ -195,10 +236,10 @@ for build_name in _BUILDS.keys() if 'all' in args.builds else args.builds:
       json_url = '%s/testReport/api/json' % url_base
       console_url = '%s/consoleFull' % url_base
       build_result['duration'] = build.get_duration().total_seconds()
-      build_result.update(_process_build(json_url, console_url))
+      build_stat = _process_build(json_url, console_url)
+      build_result.update(build_stat)
     rows = [big_query_utils.make_row(build_number, build_result)]
     if not big_query_utils.insert_rows(bq, _PROJECT_ID, _DATASET_ID, build_name, 
                                        rows):
-      print '====> Error uploading result to bigquery.'
+      print('====> Error uploading result to bigquery.')
       sys.exit(1)
-

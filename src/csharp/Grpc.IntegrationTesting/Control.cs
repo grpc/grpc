@@ -10,7 +10,6 @@ using scg = global::System.Collections.Generic;
 namespace Grpc.Testing {
 
   /// <summary>Holder for reflection information generated from src/proto/grpc/testing/control.proto</summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public static partial class ControlReflection {
 
     #region Descriptor
@@ -29,72 +28,89 @@ namespace Grpc.Testing {
             "c29uUGFyYW1zEhQKDG9mZmVyZWRfbG9hZBgBIAEoASISChBDbG9zZWRMb29w",
             "UGFyYW1zInsKCkxvYWRQYXJhbXMSNQoLY2xvc2VkX2xvb3AYASABKAsyHi5n",
             "cnBjLnRlc3RpbmcuQ2xvc2VkTG9vcFBhcmFtc0gAEi4KB3BvaXNzb24YAiAB",
-            "KAsyGy5ncnBjLnRlc3RpbmcuUG9pc3NvblBhcmFtc0gAQgYKBGxvYWQiQwoO",
+            "KAsyGy5ncnBjLnRlc3RpbmcuUG9pc3NvblBhcmFtc0gAQgYKBGxvYWQiVgoO",
             "U2VjdXJpdHlQYXJhbXMSEwoLdXNlX3Rlc3RfY2EYASABKAgSHAoUc2VydmVy",
-            "X2hvc3Rfb3ZlcnJpZGUYAiABKAki8AMKDENsaWVudENvbmZpZxIWCg5zZXJ2",
-            "ZXJfdGFyZ2V0cxgBIAMoCRItCgtjbGllbnRfdHlwZRgCIAEoDjIYLmdycGMu",
-            "dGVzdGluZy5DbGllbnRUeXBlEjUKD3NlY3VyaXR5X3BhcmFtcxgDIAEoCzIc",
-            "LmdycGMudGVzdGluZy5TZWN1cml0eVBhcmFtcxIkChxvdXRzdGFuZGluZ19y",
-            "cGNzX3Blcl9jaGFubmVsGAQgASgFEhcKD2NsaWVudF9jaGFubmVscxgFIAEo",
-            "BRIcChRhc3luY19jbGllbnRfdGhyZWFkcxgHIAEoBRInCghycGNfdHlwZRgI",
-            "IAEoDjIVLmdycGMudGVzdGluZy5ScGNUeXBlEi0KC2xvYWRfcGFyYW1zGAog",
-            "ASgLMhguZ3JwYy50ZXN0aW5nLkxvYWRQYXJhbXMSMwoOcGF5bG9hZF9jb25m",
-            "aWcYCyABKAsyGy5ncnBjLnRlc3RpbmcuUGF5bG9hZENvbmZpZxI3ChBoaXN0",
-            "b2dyYW1fcGFyYW1zGAwgASgLMh0uZ3JwYy50ZXN0aW5nLkhpc3RvZ3JhbVBh",
-            "cmFtcxIRCgljb3JlX2xpc3QYDSADKAUSEgoKY29yZV9saW1pdBgOIAEoBRIY",
-            "ChBvdGhlcl9jbGllbnRfYXBpGA8gASgJIjgKDENsaWVudFN0YXR1cxIoCgVz",
-            "dGF0cxgBIAEoCzIZLmdycGMudGVzdGluZy5DbGllbnRTdGF0cyIVCgRNYXJr",
-            "Eg0KBXJlc2V0GAEgASgIImgKCkNsaWVudEFyZ3MSKwoFc2V0dXAYASABKAsy",
-            "Gi5ncnBjLnRlc3RpbmcuQ2xpZW50Q29uZmlnSAASIgoEbWFyaxgCIAEoCzIS",
-            "LmdycGMudGVzdGluZy5NYXJrSABCCQoHYXJndHlwZSKWAgoMU2VydmVyQ29u",
-            "ZmlnEi0KC3NlcnZlcl90eXBlGAEgASgOMhguZ3JwYy50ZXN0aW5nLlNlcnZl",
-            "clR5cGUSNQoPc2VjdXJpdHlfcGFyYW1zGAIgASgLMhwuZ3JwYy50ZXN0aW5n",
-            "LlNlY3VyaXR5UGFyYW1zEgwKBHBvcnQYBCABKAUSHAoUYXN5bmNfc2VydmVy",
-            "X3RocmVhZHMYByABKAUSEgoKY29yZV9saW1pdBgIIAEoBRIzCg5wYXlsb2Fk",
-            "X2NvbmZpZxgJIAEoCzIbLmdycGMudGVzdGluZy5QYXlsb2FkQ29uZmlnEhEK",
-            "CWNvcmVfbGlzdBgKIAMoBRIYChBvdGhlcl9zZXJ2ZXJfYXBpGAsgASgJImgK",
-            "ClNlcnZlckFyZ3MSKwoFc2V0dXAYASABKAsyGi5ncnBjLnRlc3RpbmcuU2Vy",
-            "dmVyQ29uZmlnSAASIgoEbWFyaxgCIAEoCzISLmdycGMudGVzdGluZy5NYXJr",
-            "SABCCQoHYXJndHlwZSJVCgxTZXJ2ZXJTdGF0dXMSKAoFc3RhdHMYASABKAsy",
-            "GS5ncnBjLnRlc3RpbmcuU2VydmVyU3RhdHMSDAoEcG9ydBgCIAEoBRINCgVj",
-            "b3JlcxgDIAEoBSINCgtDb3JlUmVxdWVzdCIdCgxDb3JlUmVzcG9uc2USDQoF",
-            "Y29yZXMYASABKAUiBgoEVm9pZCL9AQoIU2NlbmFyaW8SDAoEbmFtZRgBIAEo",
-            "CRIxCg1jbGllbnRfY29uZmlnGAIgASgLMhouZ3JwYy50ZXN0aW5nLkNsaWVu",
-            "dENvbmZpZxITCgtudW1fY2xpZW50cxgDIAEoBRIxCg1zZXJ2ZXJfY29uZmln",
-            "GAQgASgLMhouZ3JwYy50ZXN0aW5nLlNlcnZlckNvbmZpZxITCgtudW1fc2Vy",
-            "dmVycxgFIAEoBRIWCg53YXJtdXBfc2Vjb25kcxgGIAEoBRIZChFiZW5jaG1h",
-            "cmtfc2Vjb25kcxgHIAEoBRIgChhzcGF3bl9sb2NhbF93b3JrZXJfY291bnQY",
-            "CCABKAUiNgoJU2NlbmFyaW9zEikKCXNjZW5hcmlvcxgBIAMoCzIWLmdycGMu",
-            "dGVzdGluZy5TY2VuYXJpbyKSAgoVU2NlbmFyaW9SZXN1bHRTdW1tYXJ5EgsK",
-            "A3FwcxgBIAEoARIbChNxcHNfcGVyX3NlcnZlcl9jb3JlGAIgASgBEhoKEnNl",
-            "cnZlcl9zeXN0ZW1fdGltZRgDIAEoARIYChBzZXJ2ZXJfdXNlcl90aW1lGAQg",
-            "ASgBEhoKEmNsaWVudF9zeXN0ZW1fdGltZRgFIAEoARIYChBjbGllbnRfdXNl",
-            "cl90aW1lGAYgASgBEhIKCmxhdGVuY3lfNTAYByABKAESEgoKbGF0ZW5jeV85",
-            "MBgIIAEoARISCgpsYXRlbmN5Xzk1GAkgASgBEhIKCmxhdGVuY3lfOTkYCiAB",
-            "KAESEwoLbGF0ZW5jeV85OTkYCyABKAEimAIKDlNjZW5hcmlvUmVzdWx0EigK",
-            "CHNjZW5hcmlvGAEgASgLMhYuZ3JwYy50ZXN0aW5nLlNjZW5hcmlvEi4KCWxh",
-            "dGVuY2llcxgCIAEoCzIbLmdycGMudGVzdGluZy5IaXN0b2dyYW1EYXRhEi8K",
-            "DGNsaWVudF9zdGF0cxgDIAMoCzIZLmdycGMudGVzdGluZy5DbGllbnRTdGF0",
-            "cxIvCgxzZXJ2ZXJfc3RhdHMYBCADKAsyGS5ncnBjLnRlc3RpbmcuU2VydmVy",
-            "U3RhdHMSFAoMc2VydmVyX2NvcmVzGAUgAygFEjQKB3N1bW1hcnkYBiABKAsy",
-            "Iy5ncnBjLnRlc3RpbmcuU2NlbmFyaW9SZXN1bHRTdW1tYXJ5KkEKCkNsaWVu",
-            "dFR5cGUSDwoLU1lOQ19DTElFTlQQABIQCgxBU1lOQ19DTElFTlQQARIQCgxP",
-            "VEhFUl9DTElFTlQQAipbCgpTZXJ2ZXJUeXBlEg8KC1NZTkNfU0VSVkVSEAAS",
-            "EAoMQVNZTkNfU0VSVkVSEAESGAoUQVNZTkNfR0VORVJJQ19TRVJWRVIQAhIQ",
-            "CgxPVEhFUl9TRVJWRVIQAyojCgdScGNUeXBlEgkKBVVOQVJZEAASDQoJU1RS",
-            "RUFNSU5HEAFiBnByb3RvMw=="));
+            "X2hvc3Rfb3ZlcnJpZGUYAiABKAkSEQoJY3JlZF90eXBlGAMgASgJIk0KCkNo",
+            "YW5uZWxBcmcSDAoEbmFtZRgBIAEoCRITCglzdHJfdmFsdWUYAiABKAlIABIT",
+            "CglpbnRfdmFsdWUYAyABKAVIAEIHCgV2YWx1ZSLVBAoMQ2xpZW50Q29uZmln",
+            "EhYKDnNlcnZlcl90YXJnZXRzGAEgAygJEi0KC2NsaWVudF90eXBlGAIgASgO",
+            "MhguZ3JwYy50ZXN0aW5nLkNsaWVudFR5cGUSNQoPc2VjdXJpdHlfcGFyYW1z",
+            "GAMgASgLMhwuZ3JwYy50ZXN0aW5nLlNlY3VyaXR5UGFyYW1zEiQKHG91dHN0",
+            "YW5kaW5nX3JwY3NfcGVyX2NoYW5uZWwYBCABKAUSFwoPY2xpZW50X2NoYW5u",
+            "ZWxzGAUgASgFEhwKFGFzeW5jX2NsaWVudF90aHJlYWRzGAcgASgFEicKCHJw",
+            "Y190eXBlGAggASgOMhUuZ3JwYy50ZXN0aW5nLlJwY1R5cGUSLQoLbG9hZF9w",
+            "YXJhbXMYCiABKAsyGC5ncnBjLnRlc3RpbmcuTG9hZFBhcmFtcxIzCg5wYXls",
+            "b2FkX2NvbmZpZxgLIAEoCzIbLmdycGMudGVzdGluZy5QYXlsb2FkQ29uZmln",
+            "EjcKEGhpc3RvZ3JhbV9wYXJhbXMYDCABKAsyHS5ncnBjLnRlc3RpbmcuSGlz",
+            "dG9ncmFtUGFyYW1zEhEKCWNvcmVfbGlzdBgNIAMoBRISCgpjb3JlX2xpbWl0",
+            "GA4gASgFEhgKEG90aGVyX2NsaWVudF9hcGkYDyABKAkSLgoMY2hhbm5lbF9h",
+            "cmdzGBAgAygLMhguZ3JwYy50ZXN0aW5nLkNoYW5uZWxBcmcSFgoOdGhyZWFk",
+            "c19wZXJfY3EYESABKAUSGwoTbWVzc2FnZXNfcGVyX3N0cmVhbRgSIAEoBSI4",
+            "CgxDbGllbnRTdGF0dXMSKAoFc3RhdHMYASABKAsyGS5ncnBjLnRlc3Rpbmcu",
+            "Q2xpZW50U3RhdHMiFQoETWFyaxINCgVyZXNldBgBIAEoCCJoCgpDbGllbnRB",
+            "cmdzEisKBXNldHVwGAEgASgLMhouZ3JwYy50ZXN0aW5nLkNsaWVudENvbmZp",
+            "Z0gAEiIKBG1hcmsYAiABKAsyEi5ncnBjLnRlc3RpbmcuTWFya0gAQgkKB2Fy",
+            "Z3R5cGUi/QIKDFNlcnZlckNvbmZpZxItCgtzZXJ2ZXJfdHlwZRgBIAEoDjIY",
+            "LmdycGMudGVzdGluZy5TZXJ2ZXJUeXBlEjUKD3NlY3VyaXR5X3BhcmFtcxgC",
+            "IAEoCzIcLmdycGMudGVzdGluZy5TZWN1cml0eVBhcmFtcxIMCgRwb3J0GAQg",
+            "ASgFEhwKFGFzeW5jX3NlcnZlcl90aHJlYWRzGAcgASgFEhIKCmNvcmVfbGlt",
+            "aXQYCCABKAUSMwoOcGF5bG9hZF9jb25maWcYCSABKAsyGy5ncnBjLnRlc3Rp",
+            "bmcuUGF5bG9hZENvbmZpZxIRCgljb3JlX2xpc3QYCiADKAUSGAoQb3RoZXJf",
+            "c2VydmVyX2FwaRgLIAEoCRIWCg50aHJlYWRzX3Blcl9jcRgMIAEoBRIcChNy",
+            "ZXNvdXJjZV9xdW90YV9zaXplGOkHIAEoBRIvCgxjaGFubmVsX2FyZ3MY6gcg",
+            "AygLMhguZ3JwYy50ZXN0aW5nLkNoYW5uZWxBcmciaAoKU2VydmVyQXJncxIr",
+            "CgVzZXR1cBgBIAEoCzIaLmdycGMudGVzdGluZy5TZXJ2ZXJDb25maWdIABIi",
+            "CgRtYXJrGAIgASgLMhIuZ3JwYy50ZXN0aW5nLk1hcmtIAEIJCgdhcmd0eXBl",
+            "IlUKDFNlcnZlclN0YXR1cxIoCgVzdGF0cxgBIAEoCzIZLmdycGMudGVzdGlu",
+            "Zy5TZXJ2ZXJTdGF0cxIMCgRwb3J0GAIgASgFEg0KBWNvcmVzGAMgASgFIg0K",
+            "C0NvcmVSZXF1ZXN0Ih0KDENvcmVSZXNwb25zZRINCgVjb3JlcxgBIAEoBSIG",
+            "CgRWb2lkIv0BCghTY2VuYXJpbxIMCgRuYW1lGAEgASgJEjEKDWNsaWVudF9j",
+            "b25maWcYAiABKAsyGi5ncnBjLnRlc3RpbmcuQ2xpZW50Q29uZmlnEhMKC251",
+            "bV9jbGllbnRzGAMgASgFEjEKDXNlcnZlcl9jb25maWcYBCABKAsyGi5ncnBj",
+            "LnRlc3RpbmcuU2VydmVyQ29uZmlnEhMKC251bV9zZXJ2ZXJzGAUgASgFEhYK",
+            "Dndhcm11cF9zZWNvbmRzGAYgASgFEhkKEWJlbmNobWFya19zZWNvbmRzGAcg",
+            "ASgFEiAKGHNwYXduX2xvY2FsX3dvcmtlcl9jb3VudBgIIAEoBSI2CglTY2Vu",
+            "YXJpb3MSKQoJc2NlbmFyaW9zGAEgAygLMhYuZ3JwYy50ZXN0aW5nLlNjZW5h",
+            "cmlvIoQEChVTY2VuYXJpb1Jlc3VsdFN1bW1hcnkSCwoDcXBzGAEgASgBEhsK",
+            "E3Fwc19wZXJfc2VydmVyX2NvcmUYAiABKAESGgoSc2VydmVyX3N5c3RlbV90",
+            "aW1lGAMgASgBEhgKEHNlcnZlcl91c2VyX3RpbWUYBCABKAESGgoSY2xpZW50",
+            "X3N5c3RlbV90aW1lGAUgASgBEhgKEGNsaWVudF91c2VyX3RpbWUYBiABKAES",
+            "EgoKbGF0ZW5jeV81MBgHIAEoARISCgpsYXRlbmN5XzkwGAggASgBEhIKCmxh",
+            "dGVuY3lfOTUYCSABKAESEgoKbGF0ZW5jeV85ORgKIAEoARITCgtsYXRlbmN5",
+            "Xzk5ORgLIAEoARIYChBzZXJ2ZXJfY3B1X3VzYWdlGAwgASgBEiYKHnN1Y2Nl",
+            "c3NmdWxfcmVxdWVzdHNfcGVyX3NlY29uZBgNIAEoARIiChpmYWlsZWRfcmVx",
+            "dWVzdHNfcGVyX3NlY29uZBgOIAEoARIgChhjbGllbnRfcG9sbHNfcGVyX3Jl",
+            "cXVlc3QYDyABKAESIAoYc2VydmVyX3BvbGxzX3Blcl9yZXF1ZXN0GBAgASgB",
+            "EiIKGnNlcnZlcl9xdWVyaWVzX3Blcl9jcHVfc2VjGBEgASgBEiIKGmNsaWVu",
+            "dF9xdWVyaWVzX3Blcl9jcHVfc2VjGBIgASgBIoMDCg5TY2VuYXJpb1Jlc3Vs",
+            "dBIoCghzY2VuYXJpbxgBIAEoCzIWLmdycGMudGVzdGluZy5TY2VuYXJpbxIu",
+            "CglsYXRlbmNpZXMYAiABKAsyGy5ncnBjLnRlc3RpbmcuSGlzdG9ncmFtRGF0",
+            "YRIvCgxjbGllbnRfc3RhdHMYAyADKAsyGS5ncnBjLnRlc3RpbmcuQ2xpZW50",
+            "U3RhdHMSLwoMc2VydmVyX3N0YXRzGAQgAygLMhkuZ3JwYy50ZXN0aW5nLlNl",
+            "cnZlclN0YXRzEhQKDHNlcnZlcl9jb3JlcxgFIAMoBRI0CgdzdW1tYXJ5GAYg",
+            "ASgLMiMuZ3JwYy50ZXN0aW5nLlNjZW5hcmlvUmVzdWx0U3VtbWFyeRIWCg5j",
+            "bGllbnRfc3VjY2VzcxgHIAMoCBIWCg5zZXJ2ZXJfc3VjY2VzcxgIIAMoCBI5",
+            "Cg9yZXF1ZXN0X3Jlc3VsdHMYCSADKAsyIC5ncnBjLnRlc3RpbmcuUmVxdWVz",
+            "dFJlc3VsdENvdW50KkEKCkNsaWVudFR5cGUSDwoLU1lOQ19DTElFTlQQABIQ",
+            "CgxBU1lOQ19DTElFTlQQARIQCgxPVEhFUl9DTElFTlQQAipbCgpTZXJ2ZXJU",
+            "eXBlEg8KC1NZTkNfU0VSVkVSEAASEAoMQVNZTkNfU0VSVkVSEAESGAoUQVNZ",
+            "TkNfR0VORVJJQ19TRVJWRVIQAhIQCgxPVEhFUl9TRVJWRVIQAypyCgdScGNU",
+            "eXBlEgkKBVVOQVJZEAASDQoJU1RSRUFNSU5HEAESGQoVU1RSRUFNSU5HX0ZS",
+            "T01fQ0xJRU5UEAISGQoVU1RSRUFNSU5HX0ZST01fU0VSVkVSEAMSFwoTU1RS",
+            "RUFNSU5HX0JPVEhfV0FZUxAEYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Grpc.Testing.PayloadsReflection.Descriptor, global::Grpc.Testing.StatsReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Grpc.Testing.ClientType), typeof(global::Grpc.Testing.ServerType), typeof(global::Grpc.Testing.RpcType), }, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.PoissonParams), global::Grpc.Testing.PoissonParams.Parser, new[]{ "OfferedLoad" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClosedLoopParams), global::Grpc.Testing.ClosedLoopParams.Parser, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.LoadParams), global::Grpc.Testing.LoadParams.Parser, new[]{ "ClosedLoop", "Poisson" }, new[]{ "Load" }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SecurityParams), global::Grpc.Testing.SecurityParams.Parser, new[]{ "UseTestCa", "ServerHostOverride" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientConfig), global::Grpc.Testing.ClientConfig.Parser, new[]{ "ServerTargets", "ClientType", "SecurityParams", "OutstandingRpcsPerChannel", "ClientChannels", "AsyncClientThreads", "RpcType", "LoadParams", "PayloadConfig", "HistogramParams", "CoreList", "CoreLimit", "OtherClientApi" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SecurityParams), global::Grpc.Testing.SecurityParams.Parser, new[]{ "UseTestCa", "ServerHostOverride", "CredType" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ChannelArg), global::Grpc.Testing.ChannelArg.Parser, new[]{ "Name", "StrValue", "IntValue" }, new[]{ "Value" }, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientConfig), global::Grpc.Testing.ClientConfig.Parser, new[]{ "ServerTargets", "ClientType", "SecurityParams", "OutstandingRpcsPerChannel", "ClientChannels", "AsyncClientThreads", "RpcType", "LoadParams", "PayloadConfig", "HistogramParams", "CoreList", "CoreLimit", "OtherClientApi", "ChannelArgs", "ThreadsPerCq", "MessagesPerStream" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientStatus), global::Grpc.Testing.ClientStatus.Parser, new[]{ "Stats" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Mark), global::Grpc.Testing.Mark.Parser, new[]{ "Reset" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientArgs), global::Grpc.Testing.ClientArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerConfig), global::Grpc.Testing.ServerConfig.Parser, new[]{ "ServerType", "SecurityParams", "Port", "AsyncServerThreads", "CoreLimit", "PayloadConfig", "CoreList", "OtherServerApi" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerConfig), global::Grpc.Testing.ServerConfig.Parser, new[]{ "ServerType", "SecurityParams", "Port", "AsyncServerThreads", "CoreLimit", "PayloadConfig", "CoreList", "OtherServerApi", "ThreadsPerCq", "ResourceQuotaSize", "ChannelArgs" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerArgs), global::Grpc.Testing.ServerArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerStatus), global::Grpc.Testing.ServerStatus.Parser, new[]{ "Stats", "Port", "Cores" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.CoreRequest), global::Grpc.Testing.CoreRequest.Parser, null, null, null, null),
@@ -102,8 +118,8 @@ namespace Grpc.Testing {
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Void), global::Grpc.Testing.Void.Parser, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Scenario), global::Grpc.Testing.Scenario.Parser, new[]{ "Name", "ClientConfig", "NumClients", "ServerConfig", "NumServers", "WarmupSeconds", "BenchmarkSeconds", "SpawnLocalWorkerCount" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Scenarios), global::Grpc.Testing.Scenarios.Parser, new[]{ "Scenarios_" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ScenarioResultSummary), global::Grpc.Testing.ScenarioResultSummary.Parser, new[]{ "Qps", "QpsPerServerCore", "ServerSystemTime", "ServerUserTime", "ClientSystemTime", "ClientUserTime", "Latency50", "Latency90", "Latency95", "Latency99", "Latency999" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ScenarioResult), global::Grpc.Testing.ScenarioResult.Parser, new[]{ "Scenario", "Latencies", "ClientStats", "ServerStats", "ServerCores", "Summary" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ScenarioResultSummary), global::Grpc.Testing.ScenarioResultSummary.Parser, new[]{ "Qps", "QpsPerServerCore", "ServerSystemTime", "ServerUserTime", "ClientSystemTime", "ClientUserTime", "Latency50", "Latency90", "Latency95", "Latency99", "Latency999", "ServerCpuUsage", "SuccessfulRequestsPerSecond", "FailedRequestsPerSecond", "ClientPollsPerRequest", "ServerPollsPerRequest", "ServerQueriesPerCpuSec", "ClientQueriesPerCpuSec" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ScenarioResult), global::Grpc.Testing.ScenarioResult.Parser, new[]{ "Scenario", "Latencies", "ClientStats", "ServerStats", "ServerCores", "Summary", "ClientSuccess", "ServerSuccess", "RequestResults" }, null, null, null)
           }));
     }
     #endregion
@@ -112,13 +128,13 @@ namespace Grpc.Testing {
   #region Enums
   public enum ClientType {
     /// <summary>
-    ///  Many languages support a basic distinction between using
-    ///  sync or async client, and this allows the specification
+    /// Many languages support a basic distinction between using
+    /// sync or async client, and this allows the specification
     /// </summary>
     [pbr::OriginalName("SYNC_CLIENT")] SyncClient = 0,
     [pbr::OriginalName("ASYNC_CLIENT")] AsyncClient = 1,
     /// <summary>
-    ///  used for some language-specific variants
+    /// used for some language-specific variants
     /// </summary>
     [pbr::OriginalName("OTHER_CLIENT")] OtherClient = 2,
   }
@@ -128,7 +144,7 @@ namespace Grpc.Testing {
     [pbr::OriginalName("ASYNC_SERVER")] AsyncServer = 1,
     [pbr::OriginalName("ASYNC_GENERIC_SERVER")] AsyncGenericServer = 2,
     /// <summary>
-    ///  used for some language-specific variants
+    /// used for some language-specific variants
     /// </summary>
     [pbr::OriginalName("OTHER_SERVER")] OtherServer = 3,
   }
@@ -136,38 +152,46 @@ namespace Grpc.Testing {
   public enum RpcType {
     [pbr::OriginalName("UNARY")] Unary = 0,
     [pbr::OriginalName("STREAMING")] Streaming = 1,
+    [pbr::OriginalName("STREAMING_FROM_CLIENT")] StreamingFromClient = 2,
+    [pbr::OriginalName("STREAMING_FROM_SERVER")] StreamingFromServer = 3,
+    [pbr::OriginalName("STREAMING_BOTH_WAYS")] StreamingBothWays = 4,
   }
 
   #endregion
 
   #region Messages
   /// <summary>
-  ///  Parameters of poisson process distribution, which is a good representation
-  ///  of activity coming in from independent identical stationary sources.
+  /// Parameters of poisson process distribution, which is a good representation
+  /// of activity coming in from independent identical stationary sources.
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class PoissonParams : pb::IMessage<PoissonParams> {
     private static readonly pb::MessageParser<PoissonParams> _parser = new pb::MessageParser<PoissonParams>(() => new PoissonParams());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<PoissonParams> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[0]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public PoissonParams() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public PoissonParams(PoissonParams other) : this() {
       offeredLoad_ = other.offeredLoad_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public PoissonParams Clone() {
       return new PoissonParams(this);
     }
@@ -176,8 +200,9 @@ namespace Grpc.Testing {
     public const int OfferedLoadFieldNumber = 1;
     private double offeredLoad_;
     /// <summary>
-    ///  The rate of arrivals (a.k.a. lambda parameter of the exp distribution).
+    /// The rate of arrivals (a.k.a. lambda parameter of the exp distribution).
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double OfferedLoad {
       get { return offeredLoad_; }
       set {
@@ -185,10 +210,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as PoissonParams);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(PoissonParams other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -200,16 +227,19 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (OfferedLoad != 0D) hash ^= OfferedLoad.GetHashCode();
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (OfferedLoad != 0D) {
         output.WriteRawTag(9);
@@ -217,6 +247,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (OfferedLoad != 0D) {
@@ -225,6 +256,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(PoissonParams other) {
       if (other == null) {
         return;
@@ -234,6 +266,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -252,39 +285,46 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  Once an RPC finishes, immediately start a new one.
-  ///  No configuration parameters needed.
+  /// Once an RPC finishes, immediately start a new one.
+  /// No configuration parameters needed.
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class ClosedLoopParams : pb::IMessage<ClosedLoopParams> {
     private static readonly pb::MessageParser<ClosedLoopParams> _parser = new pb::MessageParser<ClosedLoopParams>(() => new ClosedLoopParams());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<ClosedLoopParams> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[1]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClosedLoopParams() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClosedLoopParams(ClosedLoopParams other) : this() {
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClosedLoopParams Clone() {
       return new ClosedLoopParams(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ClosedLoopParams);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(ClosedLoopParams other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -295,29 +335,35 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(ClosedLoopParams other) {
       if (other == null) {
         return;
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -331,25 +377,29 @@ namespace Grpc.Testing {
 
   }
 
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class LoadParams : pb::IMessage<LoadParams> {
     private static readonly pb::MessageParser<LoadParams> _parser = new pb::MessageParser<LoadParams>(() => new LoadParams());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<LoadParams> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[2]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public LoadParams() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public LoadParams(LoadParams other) : this() {
       switch (other.LoadCase) {
         case LoadOneofCase.ClosedLoop:
@@ -362,12 +412,14 @@ namespace Grpc.Testing {
 
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public LoadParams Clone() {
       return new LoadParams(this);
     }
 
     /// <summary>Field number for the "closed_loop" field.</summary>
     public const int ClosedLoopFieldNumber = 1;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.ClosedLoopParams ClosedLoop {
       get { return loadCase_ == LoadOneofCase.ClosedLoop ? (global::Grpc.Testing.ClosedLoopParams) load_ : null; }
       set {
@@ -378,6 +430,7 @@ namespace Grpc.Testing {
 
     /// <summary>Field number for the "poisson" field.</summary>
     public const int PoissonFieldNumber = 2;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.PoissonParams Poisson {
       get { return loadCase_ == LoadOneofCase.Poisson ? (global::Grpc.Testing.PoissonParams) load_ : null; }
       set {
@@ -394,19 +447,23 @@ namespace Grpc.Testing {
       Poisson = 2,
     }
     private LoadOneofCase loadCase_ = LoadOneofCase.None;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public LoadOneofCase LoadCase {
       get { return loadCase_; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void ClearLoad() {
       loadCase_ = LoadOneofCase.None;
       load_ = null;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as LoadParams);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(LoadParams other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -420,6 +477,7 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (loadCase_ == LoadOneofCase.ClosedLoop) hash ^= ClosedLoop.GetHashCode();
@@ -428,10 +486,12 @@ namespace Grpc.Testing {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (loadCase_ == LoadOneofCase.ClosedLoop) {
         output.WriteRawTag(10);
@@ -443,6 +503,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (loadCase_ == LoadOneofCase.ClosedLoop) {
@@ -454,6 +515,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(LoadParams other) {
       if (other == null) {
         return;
@@ -469,6 +531,7 @@ namespace Grpc.Testing {
 
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -501,32 +564,38 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  presence of SecurityParams implies use of TLS
+  /// presence of SecurityParams implies use of TLS
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class SecurityParams : pb::IMessage<SecurityParams> {
     private static readonly pb::MessageParser<SecurityParams> _parser = new pb::MessageParser<SecurityParams>(() => new SecurityParams());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<SecurityParams> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[3]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public SecurityParams() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public SecurityParams(SecurityParams other) : this() {
       useTestCa_ = other.useTestCa_;
       serverHostOverride_ = other.serverHostOverride_;
+      credType_ = other.credType_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public SecurityParams Clone() {
       return new SecurityParams(this);
     }
@@ -534,6 +603,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "use_test_ca" field.</summary>
     public const int UseTestCaFieldNumber = 1;
     private bool useTestCa_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool UseTestCa {
       get { return useTestCa_; }
       set {
@@ -544,6 +614,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "server_host_override" field.</summary>
     public const int ServerHostOverrideFieldNumber = 2;
     private string serverHostOverride_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string ServerHostOverride {
       get { return serverHostOverride_; }
       set {
@@ -551,10 +622,23 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "cred_type" field.</summary>
+    public const int CredTypeFieldNumber = 3;
+    private string credType_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string CredType {
+      get { return credType_; }
+      set {
+        credType_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as SecurityParams);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(SecurityParams other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -564,20 +648,25 @@ namespace Grpc.Testing {
       }
       if (UseTestCa != other.UseTestCa) return false;
       if (ServerHostOverride != other.ServerHostOverride) return false;
+      if (CredType != other.CredType) return false;
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (UseTestCa != false) hash ^= UseTestCa.GetHashCode();
       if (ServerHostOverride.Length != 0) hash ^= ServerHostOverride.GetHashCode();
+      if (CredType.Length != 0) hash ^= CredType.GetHashCode();
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (UseTestCa != false) {
         output.WriteRawTag(8);
@@ -587,8 +676,13 @@ namespace Grpc.Testing {
         output.WriteRawTag(18);
         output.WriteString(ServerHostOverride);
       }
+      if (CredType.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(CredType);
+      }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (UseTestCa != false) {
@@ -597,9 +691,13 @@ namespace Grpc.Testing {
       if (ServerHostOverride.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(ServerHostOverride);
       }
+      if (CredType.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(CredType);
+      }
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(SecurityParams other) {
       if (other == null) {
         return;
@@ -610,8 +708,12 @@ namespace Grpc.Testing {
       if (other.ServerHostOverride.Length != 0) {
         ServerHostOverride = other.ServerHostOverride;
       }
+      if (other.CredType.Length != 0) {
+        CredType = other.CredType;
+      }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -627,31 +729,243 @@ namespace Grpc.Testing {
             ServerHostOverride = input.ReadString();
             break;
           }
+          case 26: {
+            CredType = input.ReadString();
+            break;
+          }
         }
       }
     }
 
   }
 
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-  public sealed partial class ClientConfig : pb::IMessage<ClientConfig> {
-    private static readonly pb::MessageParser<ClientConfig> _parser = new pb::MessageParser<ClientConfig>(() => new ClientConfig());
-    public static pb::MessageParser<ClientConfig> Parser { get { return _parser; } }
+  public sealed partial class ChannelArg : pb::IMessage<ChannelArg> {
+    private static readonly pb::MessageParser<ChannelArg> _parser = new pb::MessageParser<ChannelArg>(() => new ChannelArg());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<ChannelArg> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[4]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ChannelArg() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ChannelArg(ChannelArg other) : this() {
+      name_ = other.name_;
+      switch (other.ValueCase) {
+        case ValueOneofCase.StrValue:
+          StrValue = other.StrValue;
+          break;
+        case ValueOneofCase.IntValue:
+          IntValue = other.IntValue;
+          break;
+      }
+
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ChannelArg Clone() {
+      return new ChannelArg(this);
+    }
+
+    /// <summary>Field number for the "name" field.</summary>
+    public const int NameFieldNumber = 1;
+    private string name_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string Name {
+      get { return name_; }
+      set {
+        name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "str_value" field.</summary>
+    public const int StrValueFieldNumber = 2;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string StrValue {
+      get { return valueCase_ == ValueOneofCase.StrValue ? (string) value_ : ""; }
+      set {
+        value_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        valueCase_ = ValueOneofCase.StrValue;
+      }
+    }
+
+    /// <summary>Field number for the "int_value" field.</summary>
+    public const int IntValueFieldNumber = 3;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int IntValue {
+      get { return valueCase_ == ValueOneofCase.IntValue ? (int) value_ : 0; }
+      set {
+        value_ = value;
+        valueCase_ = ValueOneofCase.IntValue;
+      }
+    }
+
+    private object value_;
+    /// <summary>Enum of possible cases for the "value" oneof.</summary>
+    public enum ValueOneofCase {
+      None = 0,
+      StrValue = 2,
+      IntValue = 3,
+    }
+    private ValueOneofCase valueCase_ = ValueOneofCase.None;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public ValueOneofCase ValueCase {
+      get { return valueCase_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void ClearValue() {
+      valueCase_ = ValueOneofCase.None;
+      value_ = null;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as ChannelArg);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(ChannelArg other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Name != other.Name) return false;
+      if (StrValue != other.StrValue) return false;
+      if (IntValue != other.IntValue) return false;
+      if (ValueCase != other.ValueCase) return false;
+      return true;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Name.Length != 0) hash ^= Name.GetHashCode();
+      if (valueCase_ == ValueOneofCase.StrValue) hash ^= StrValue.GetHashCode();
+      if (valueCase_ == ValueOneofCase.IntValue) hash ^= IntValue.GetHashCode();
+      hash ^= (int) valueCase_;
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (Name.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Name);
+      }
+      if (valueCase_ == ValueOneofCase.StrValue) {
+        output.WriteRawTag(18);
+        output.WriteString(StrValue);
+      }
+      if (valueCase_ == ValueOneofCase.IntValue) {
+        output.WriteRawTag(24);
+        output.WriteInt32(IntValue);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (Name.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
+      }
+      if (valueCase_ == ValueOneofCase.StrValue) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(StrValue);
+      }
+      if (valueCase_ == ValueOneofCase.IntValue) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(IntValue);
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(ChannelArg other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Name.Length != 0) {
+        Name = other.Name;
+      }
+      switch (other.ValueCase) {
+        case ValueOneofCase.StrValue:
+          StrValue = other.StrValue;
+          break;
+        case ValueOneofCase.IntValue:
+          IntValue = other.IntValue;
+          break;
+      }
+
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+          case 10: {
+            Name = input.ReadString();
+            break;
+          }
+          case 18: {
+            StrValue = input.ReadString();
+            break;
+          }
+          case 24: {
+            IntValue = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class ClientConfig : pb::IMessage<ClientConfig> {
+    private static readonly pb::MessageParser<ClientConfig> _parser = new pb::MessageParser<ClientConfig>(() => new ClientConfig());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<ClientConfig> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[5]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClientConfig() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClientConfig(ClientConfig other) : this() {
       serverTargets_ = other.serverTargets_.Clone();
       clientType_ = other.clientType_;
@@ -666,8 +980,12 @@ namespace Grpc.Testing {
       coreList_ = other.coreList_.Clone();
       coreLimit_ = other.coreLimit_;
       otherClientApi_ = other.otherClientApi_;
+      channelArgs_ = other.channelArgs_.Clone();
+      threadsPerCq_ = other.threadsPerCq_;
+      messagesPerStream_ = other.messagesPerStream_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClientConfig Clone() {
       return new ClientConfig(this);
     }
@@ -678,8 +996,9 @@ namespace Grpc.Testing {
         = pb::FieldCodec.ForString(10);
     private readonly pbc::RepeatedField<string> serverTargets_ = new pbc::RepeatedField<string>();
     /// <summary>
-    ///  List of targets to connect to. At least one target needs to be specified.
+    /// List of targets to connect to. At least one target needs to be specified.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<string> ServerTargets {
       get { return serverTargets_; }
     }
@@ -687,6 +1006,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "client_type" field.</summary>
     public const int ClientTypeFieldNumber = 2;
     private global::Grpc.Testing.ClientType clientType_ = 0;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.ClientType ClientType {
       get { return clientType_; }
       set {
@@ -697,6 +1017,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "security_params" field.</summary>
     public const int SecurityParamsFieldNumber = 3;
     private global::Grpc.Testing.SecurityParams securityParams_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.SecurityParams SecurityParams {
       get { return securityParams_; }
       set {
@@ -708,9 +1029,10 @@ namespace Grpc.Testing {
     public const int OutstandingRpcsPerChannelFieldNumber = 4;
     private int outstandingRpcsPerChannel_;
     /// <summary>
-    ///  How many concurrent RPCs to start for each channel.
-    ///  For synchronous client, use a separate thread for each outstanding RPC.
+    /// How many concurrent RPCs to start for each channel.
+    /// For synchronous client, use a separate thread for each outstanding RPC.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int OutstandingRpcsPerChannel {
       get { return outstandingRpcsPerChannel_; }
       set {
@@ -722,9 +1044,10 @@ namespace Grpc.Testing {
     public const int ClientChannelsFieldNumber = 5;
     private int clientChannels_;
     /// <summary>
-    ///  Number of independent client channels to create.
-    ///  i-th channel will connect to server_target[i % server_targets.size()]
+    /// Number of independent client channels to create.
+    /// i-th channel will connect to server_target[i % server_targets.size()]
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int ClientChannels {
       get { return clientChannels_; }
       set {
@@ -736,8 +1059,9 @@ namespace Grpc.Testing {
     public const int AsyncClientThreadsFieldNumber = 7;
     private int asyncClientThreads_;
     /// <summary>
-    ///  Only for async client. Number of threads to use to start/manage RPCs.
+    /// Only for async client. Number of threads to use to start/manage RPCs.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int AsyncClientThreads {
       get { return asyncClientThreads_; }
       set {
@@ -748,6 +1072,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "rpc_type" field.</summary>
     public const int RpcTypeFieldNumber = 8;
     private global::Grpc.Testing.RpcType rpcType_ = 0;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.RpcType RpcType {
       get { return rpcType_; }
       set {
@@ -759,8 +1084,9 @@ namespace Grpc.Testing {
     public const int LoadParamsFieldNumber = 10;
     private global::Grpc.Testing.LoadParams loadParams_;
     /// <summary>
-    ///  The requested load for the entire client (aggregated over all the threads).
+    /// The requested load for the entire client (aggregated over all the threads).
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.LoadParams LoadParams {
       get { return loadParams_; }
       set {
@@ -771,6 +1097,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "payload_config" field.</summary>
     public const int PayloadConfigFieldNumber = 11;
     private global::Grpc.Testing.PayloadConfig payloadConfig_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.PayloadConfig PayloadConfig {
       get { return payloadConfig_; }
       set {
@@ -781,6 +1108,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "histogram_params" field.</summary>
     public const int HistogramParamsFieldNumber = 12;
     private global::Grpc.Testing.HistogramParams histogramParams_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.HistogramParams HistogramParams {
       get { return histogramParams_; }
       set {
@@ -794,8 +1122,9 @@ namespace Grpc.Testing {
         = pb::FieldCodec.ForInt32(106);
     private readonly pbc::RepeatedField<int> coreList_ = new pbc::RepeatedField<int>();
     /// <summary>
-    ///  Specify the cores we should run the client on, if desired
+    /// Specify the cores we should run the client on, if desired
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<int> CoreList {
       get { return coreList_; }
     }
@@ -803,6 +1132,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "core_limit" field.</summary>
     public const int CoreLimitFieldNumber = 14;
     private int coreLimit_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CoreLimit {
       get { return coreLimit_; }
       set {
@@ -814,8 +1144,9 @@ namespace Grpc.Testing {
     public const int OtherClientApiFieldNumber = 15;
     private string otherClientApi_ = "";
     /// <summary>
-    ///  If we use an OTHER_CLIENT client_type, this string gives more detail
+    /// If we use an OTHER_CLIENT client_type, this string gives more detail
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string OtherClientApi {
       get { return otherClientApi_; }
       set {
@@ -823,10 +1154,50 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "channel_args" field.</summary>
+    public const int ChannelArgsFieldNumber = 16;
+    private static readonly pb::FieldCodec<global::Grpc.Testing.ChannelArg> _repeated_channelArgs_codec
+        = pb::FieldCodec.ForMessage(130, global::Grpc.Testing.ChannelArg.Parser);
+    private readonly pbc::RepeatedField<global::Grpc.Testing.ChannelArg> channelArgs_ = new pbc::RepeatedField<global::Grpc.Testing.ChannelArg>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::RepeatedField<global::Grpc.Testing.ChannelArg> ChannelArgs {
+      get { return channelArgs_; }
+    }
+
+    /// <summary>Field number for the "threads_per_cq" field.</summary>
+    public const int ThreadsPerCqFieldNumber = 17;
+    private int threadsPerCq_;
+    /// <summary>
+    /// Number of threads that share each completion queue
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int ThreadsPerCq {
+      get { return threadsPerCq_; }
+      set {
+        threadsPerCq_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "messages_per_stream" field.</summary>
+    public const int MessagesPerStreamFieldNumber = 18;
+    private int messagesPerStream_;
+    /// <summary>
+    /// Number of messages on a stream before it gets finished/restarted
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int MessagesPerStream {
+      get { return messagesPerStream_; }
+      set {
+        messagesPerStream_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ClientConfig);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(ClientConfig other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -847,9 +1218,13 @@ namespace Grpc.Testing {
       if(!coreList_.Equals(other.coreList_)) return false;
       if (CoreLimit != other.CoreLimit) return false;
       if (OtherClientApi != other.OtherClientApi) return false;
+      if(!channelArgs_.Equals(other.channelArgs_)) return false;
+      if (ThreadsPerCq != other.ThreadsPerCq) return false;
+      if (MessagesPerStream != other.MessagesPerStream) return false;
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       hash ^= serverTargets_.GetHashCode();
@@ -865,13 +1240,18 @@ namespace Grpc.Testing {
       hash ^= coreList_.GetHashCode();
       if (CoreLimit != 0) hash ^= CoreLimit.GetHashCode();
       if (OtherClientApi.Length != 0) hash ^= OtherClientApi.GetHashCode();
+      hash ^= channelArgs_.GetHashCode();
+      if (ThreadsPerCq != 0) hash ^= ThreadsPerCq.GetHashCode();
+      if (MessagesPerStream != 0) hash ^= MessagesPerStream.GetHashCode();
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       serverTargets_.WriteTo(output, _repeated_serverTargets_codec);
       if (ClientType != 0) {
@@ -919,8 +1299,18 @@ namespace Grpc.Testing {
         output.WriteRawTag(122);
         output.WriteString(OtherClientApi);
       }
+      channelArgs_.WriteTo(output, _repeated_channelArgs_codec);
+      if (ThreadsPerCq != 0) {
+        output.WriteRawTag(136, 1);
+        output.WriteInt32(ThreadsPerCq);
+      }
+      if (MessagesPerStream != 0) {
+        output.WriteRawTag(144, 1);
+        output.WriteInt32(MessagesPerStream);
+      }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       size += serverTargets_.CalculateSize(_repeated_serverTargets_codec);
@@ -958,9 +1348,17 @@ namespace Grpc.Testing {
       if (OtherClientApi.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(OtherClientApi);
       }
+      size += channelArgs_.CalculateSize(_repeated_channelArgs_codec);
+      if (ThreadsPerCq != 0) {
+        size += 2 + pb::CodedOutputStream.ComputeInt32Size(ThreadsPerCq);
+      }
+      if (MessagesPerStream != 0) {
+        size += 2 + pb::CodedOutputStream.ComputeInt32Size(MessagesPerStream);
+      }
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(ClientConfig other) {
       if (other == null) {
         return;
@@ -1012,8 +1410,16 @@ namespace Grpc.Testing {
       if (other.OtherClientApi.Length != 0) {
         OtherClientApi = other.OtherClientApi;
       }
+      channelArgs_.Add(other.channelArgs_);
+      if (other.ThreadsPerCq != 0) {
+        ThreadsPerCq = other.ThreadsPerCq;
+      }
+      if (other.MessagesPerStream != 0) {
+        MessagesPerStream = other.MessagesPerStream;
+      }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -1086,35 +1492,52 @@ namespace Grpc.Testing {
             OtherClientApi = input.ReadString();
             break;
           }
+          case 130: {
+            channelArgs_.AddEntriesFrom(input, _repeated_channelArgs_codec);
+            break;
+          }
+          case 136: {
+            ThreadsPerCq = input.ReadInt32();
+            break;
+          }
+          case 144: {
+            MessagesPerStream = input.ReadInt32();
+            break;
+          }
         }
       }
     }
 
   }
 
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class ClientStatus : pb::IMessage<ClientStatus> {
     private static readonly pb::MessageParser<ClientStatus> _parser = new pb::MessageParser<ClientStatus>(() => new ClientStatus());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<ClientStatus> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[6]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClientStatus() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClientStatus(ClientStatus other) : this() {
       Stats = other.stats_ != null ? other.Stats.Clone() : null;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClientStatus Clone() {
       return new ClientStatus(this);
     }
@@ -1122,6 +1545,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "stats" field.</summary>
     public const int StatsFieldNumber = 1;
     private global::Grpc.Testing.ClientStats stats_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.ClientStats Stats {
       get { return stats_; }
       set {
@@ -1129,10 +1553,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ClientStatus);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(ClientStatus other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -1144,16 +1570,19 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (stats_ != null) hash ^= Stats.GetHashCode();
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (stats_ != null) {
         output.WriteRawTag(10);
@@ -1161,6 +1590,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (stats_ != null) {
@@ -1169,6 +1599,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(ClientStatus other) {
       if (other == null) {
         return;
@@ -1181,6 +1612,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -1202,31 +1634,36 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  Request current stats
+  /// Request current stats
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class Mark : pb::IMessage<Mark> {
     private static readonly pb::MessageParser<Mark> _parser = new pb::MessageParser<Mark>(() => new Mark());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<Mark> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[6]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[7]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Mark() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Mark(Mark other) : this() {
       reset_ = other.reset_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Mark Clone() {
       return new Mark(this);
     }
@@ -1235,8 +1672,9 @@ namespace Grpc.Testing {
     public const int ResetFieldNumber = 1;
     private bool reset_;
     /// <summary>
-    ///  if true, the stats will be reset after taking their snapshot.
+    /// if true, the stats will be reset after taking their snapshot.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Reset {
       get { return reset_; }
       set {
@@ -1244,10 +1682,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as Mark);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(Mark other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -1259,16 +1699,19 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (Reset != false) hash ^= Reset.GetHashCode();
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (Reset != false) {
         output.WriteRawTag(8);
@@ -1276,6 +1719,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (Reset != false) {
@@ -1284,6 +1728,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(Mark other) {
       if (other == null) {
         return;
@@ -1293,6 +1738,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -1310,25 +1756,29 @@ namespace Grpc.Testing {
 
   }
 
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class ClientArgs : pb::IMessage<ClientArgs> {
     private static readonly pb::MessageParser<ClientArgs> _parser = new pb::MessageParser<ClientArgs>(() => new ClientArgs());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<ClientArgs> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[7]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[8]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClientArgs() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClientArgs(ClientArgs other) : this() {
       switch (other.ArgtypeCase) {
         case ArgtypeOneofCase.Setup:
@@ -1341,12 +1791,14 @@ namespace Grpc.Testing {
 
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClientArgs Clone() {
       return new ClientArgs(this);
     }
 
     /// <summary>Field number for the "setup" field.</summary>
     public const int SetupFieldNumber = 1;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.ClientConfig Setup {
       get { return argtypeCase_ == ArgtypeOneofCase.Setup ? (global::Grpc.Testing.ClientConfig) argtype_ : null; }
       set {
@@ -1357,6 +1809,7 @@ namespace Grpc.Testing {
 
     /// <summary>Field number for the "mark" field.</summary>
     public const int MarkFieldNumber = 2;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.Mark Mark {
       get { return argtypeCase_ == ArgtypeOneofCase.Mark ? (global::Grpc.Testing.Mark) argtype_ : null; }
       set {
@@ -1373,19 +1826,23 @@ namespace Grpc.Testing {
       Mark = 2,
     }
     private ArgtypeOneofCase argtypeCase_ = ArgtypeOneofCase.None;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ArgtypeOneofCase ArgtypeCase {
       get { return argtypeCase_; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void ClearArgtype() {
       argtypeCase_ = ArgtypeOneofCase.None;
       argtype_ = null;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ClientArgs);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(ClientArgs other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -1399,6 +1856,7 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (argtypeCase_ == ArgtypeOneofCase.Setup) hash ^= Setup.GetHashCode();
@@ -1407,10 +1865,12 @@ namespace Grpc.Testing {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (argtypeCase_ == ArgtypeOneofCase.Setup) {
         output.WriteRawTag(10);
@@ -1422,6 +1882,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (argtypeCase_ == ArgtypeOneofCase.Setup) {
@@ -1433,6 +1894,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(ClientArgs other) {
       if (other == null) {
         return;
@@ -1448,6 +1910,7 @@ namespace Grpc.Testing {
 
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -1479,25 +1942,29 @@ namespace Grpc.Testing {
 
   }
 
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class ServerConfig : pb::IMessage<ServerConfig> {
     private static readonly pb::MessageParser<ServerConfig> _parser = new pb::MessageParser<ServerConfig>(() => new ServerConfig());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<ServerConfig> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[8]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[9]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ServerConfig() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ServerConfig(ServerConfig other) : this() {
       serverType_ = other.serverType_;
       SecurityParams = other.securityParams_ != null ? other.SecurityParams.Clone() : null;
@@ -1507,8 +1974,12 @@ namespace Grpc.Testing {
       PayloadConfig = other.payloadConfig_ != null ? other.PayloadConfig.Clone() : null;
       coreList_ = other.coreList_.Clone();
       otherServerApi_ = other.otherServerApi_;
+      threadsPerCq_ = other.threadsPerCq_;
+      resourceQuotaSize_ = other.resourceQuotaSize_;
+      channelArgs_ = other.channelArgs_.Clone();
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ServerConfig Clone() {
       return new ServerConfig(this);
     }
@@ -1516,6 +1987,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "server_type" field.</summary>
     public const int ServerTypeFieldNumber = 1;
     private global::Grpc.Testing.ServerType serverType_ = 0;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.ServerType ServerType {
       get { return serverType_; }
       set {
@@ -1526,6 +1998,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "security_params" field.</summary>
     public const int SecurityParamsFieldNumber = 2;
     private global::Grpc.Testing.SecurityParams securityParams_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.SecurityParams SecurityParams {
       get { return securityParams_; }
       set {
@@ -1537,8 +2010,9 @@ namespace Grpc.Testing {
     public const int PortFieldNumber = 4;
     private int port_;
     /// <summary>
-    ///  Port on which to listen. Zero means pick unused port.
+    /// Port on which to listen. Zero means pick unused port.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int Port {
       get { return port_; }
       set {
@@ -1550,8 +2024,9 @@ namespace Grpc.Testing {
     public const int AsyncServerThreadsFieldNumber = 7;
     private int asyncServerThreads_;
     /// <summary>
-    ///  Only for async server. Number of threads used to serve the requests.
+    /// Only for async server. Number of threads used to serve the requests.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int AsyncServerThreads {
       get { return asyncServerThreads_; }
       set {
@@ -1563,8 +2038,9 @@ namespace Grpc.Testing {
     public const int CoreLimitFieldNumber = 8;
     private int coreLimit_;
     /// <summary>
-    ///  Specify the number of cores to limit server to, if desired
+    /// Specify the number of cores to limit server to, if desired
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CoreLimit {
       get { return coreLimit_; }
       set {
@@ -1576,8 +2052,12 @@ namespace Grpc.Testing {
     public const int PayloadConfigFieldNumber = 9;
     private global::Grpc.Testing.PayloadConfig payloadConfig_;
     /// <summary>
-    ///  payload config, used in generic server
+    /// payload config, used in generic server.
+    /// Note this must NOT be used in proto (non-generic) servers. For proto servers,
+    /// 'response sizes' must be configured from the 'response_size' field of the
+    /// 'SimpleRequest' objects in RPC requests.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.PayloadConfig PayloadConfig {
       get { return payloadConfig_; }
       set {
@@ -1591,8 +2071,9 @@ namespace Grpc.Testing {
         = pb::FieldCodec.ForInt32(82);
     private readonly pbc::RepeatedField<int> coreList_ = new pbc::RepeatedField<int>();
     /// <summary>
-    ///  Specify the cores we should run the server on, if desired
+    /// Specify the cores we should run the server on, if desired
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<int> CoreList {
       get { return coreList_; }
     }
@@ -1601,8 +2082,9 @@ namespace Grpc.Testing {
     public const int OtherServerApiFieldNumber = 11;
     private string otherServerApi_ = "";
     /// <summary>
-    ///  If we use an OTHER_SERVER client_type, this string gives more detail
+    /// If we use an OTHER_SERVER client_type, this string gives more detail
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string OtherServerApi {
       get { return otherServerApi_; }
       set {
@@ -1610,10 +2092,50 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "threads_per_cq" field.</summary>
+    public const int ThreadsPerCqFieldNumber = 12;
+    private int threadsPerCq_;
+    /// <summary>
+    /// Number of threads that share each completion queue
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int ThreadsPerCq {
+      get { return threadsPerCq_; }
+      set {
+        threadsPerCq_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "resource_quota_size" field.</summary>
+    public const int ResourceQuotaSizeFieldNumber = 1001;
+    private int resourceQuotaSize_;
+    /// <summary>
+    /// Buffer pool size (no buffer pool specified if unset)
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int ResourceQuotaSize {
+      get { return resourceQuotaSize_; }
+      set {
+        resourceQuotaSize_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "channel_args" field.</summary>
+    public const int ChannelArgsFieldNumber = 1002;
+    private static readonly pb::FieldCodec<global::Grpc.Testing.ChannelArg> _repeated_channelArgs_codec
+        = pb::FieldCodec.ForMessage(8018, global::Grpc.Testing.ChannelArg.Parser);
+    private readonly pbc::RepeatedField<global::Grpc.Testing.ChannelArg> channelArgs_ = new pbc::RepeatedField<global::Grpc.Testing.ChannelArg>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::RepeatedField<global::Grpc.Testing.ChannelArg> ChannelArgs {
+      get { return channelArgs_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ServerConfig);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(ServerConfig other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -1629,9 +2151,13 @@ namespace Grpc.Testing {
       if (!object.Equals(PayloadConfig, other.PayloadConfig)) return false;
       if(!coreList_.Equals(other.coreList_)) return false;
       if (OtherServerApi != other.OtherServerApi) return false;
+      if (ThreadsPerCq != other.ThreadsPerCq) return false;
+      if (ResourceQuotaSize != other.ResourceQuotaSize) return false;
+      if(!channelArgs_.Equals(other.channelArgs_)) return false;
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (ServerType != 0) hash ^= ServerType.GetHashCode();
@@ -1642,13 +2168,18 @@ namespace Grpc.Testing {
       if (payloadConfig_ != null) hash ^= PayloadConfig.GetHashCode();
       hash ^= coreList_.GetHashCode();
       if (OtherServerApi.Length != 0) hash ^= OtherServerApi.GetHashCode();
+      if (ThreadsPerCq != 0) hash ^= ThreadsPerCq.GetHashCode();
+      if (ResourceQuotaSize != 0) hash ^= ResourceQuotaSize.GetHashCode();
+      hash ^= channelArgs_.GetHashCode();
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (ServerType != 0) {
         output.WriteRawTag(8);
@@ -1679,8 +2210,18 @@ namespace Grpc.Testing {
         output.WriteRawTag(90);
         output.WriteString(OtherServerApi);
       }
+      if (ThreadsPerCq != 0) {
+        output.WriteRawTag(96);
+        output.WriteInt32(ThreadsPerCq);
+      }
+      if (ResourceQuotaSize != 0) {
+        output.WriteRawTag(200, 62);
+        output.WriteInt32(ResourceQuotaSize);
+      }
+      channelArgs_.WriteTo(output, _repeated_channelArgs_codec);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (ServerType != 0) {
@@ -1705,9 +2246,17 @@ namespace Grpc.Testing {
       if (OtherServerApi.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(OtherServerApi);
       }
+      if (ThreadsPerCq != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(ThreadsPerCq);
+      }
+      if (ResourceQuotaSize != 0) {
+        size += 2 + pb::CodedOutputStream.ComputeInt32Size(ResourceQuotaSize);
+      }
+      size += channelArgs_.CalculateSize(_repeated_channelArgs_codec);
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(ServerConfig other) {
       if (other == null) {
         return;
@@ -1740,8 +2289,16 @@ namespace Grpc.Testing {
       if (other.OtherServerApi.Length != 0) {
         OtherServerApi = other.OtherServerApi;
       }
+      if (other.ThreadsPerCq != 0) {
+        ThreadsPerCq = other.ThreadsPerCq;
+      }
+      if (other.ResourceQuotaSize != 0) {
+        ResourceQuotaSize = other.ResourceQuotaSize;
+      }
+      channelArgs_.Add(other.channelArgs_);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -1788,31 +2345,47 @@ namespace Grpc.Testing {
             OtherServerApi = input.ReadString();
             break;
           }
+          case 96: {
+            ThreadsPerCq = input.ReadInt32();
+            break;
+          }
+          case 8008: {
+            ResourceQuotaSize = input.ReadInt32();
+            break;
+          }
+          case 8018: {
+            channelArgs_.AddEntriesFrom(input, _repeated_channelArgs_codec);
+            break;
+          }
         }
       }
     }
 
   }
 
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class ServerArgs : pb::IMessage<ServerArgs> {
     private static readonly pb::MessageParser<ServerArgs> _parser = new pb::MessageParser<ServerArgs>(() => new ServerArgs());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<ServerArgs> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[9]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[10]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ServerArgs() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ServerArgs(ServerArgs other) : this() {
       switch (other.ArgtypeCase) {
         case ArgtypeOneofCase.Setup:
@@ -1825,12 +2398,14 @@ namespace Grpc.Testing {
 
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ServerArgs Clone() {
       return new ServerArgs(this);
     }
 
     /// <summary>Field number for the "setup" field.</summary>
     public const int SetupFieldNumber = 1;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.ServerConfig Setup {
       get { return argtypeCase_ == ArgtypeOneofCase.Setup ? (global::Grpc.Testing.ServerConfig) argtype_ : null; }
       set {
@@ -1841,6 +2416,7 @@ namespace Grpc.Testing {
 
     /// <summary>Field number for the "mark" field.</summary>
     public const int MarkFieldNumber = 2;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.Mark Mark {
       get { return argtypeCase_ == ArgtypeOneofCase.Mark ? (global::Grpc.Testing.Mark) argtype_ : null; }
       set {
@@ -1857,19 +2433,23 @@ namespace Grpc.Testing {
       Mark = 2,
     }
     private ArgtypeOneofCase argtypeCase_ = ArgtypeOneofCase.None;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ArgtypeOneofCase ArgtypeCase {
       get { return argtypeCase_; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void ClearArgtype() {
       argtypeCase_ = ArgtypeOneofCase.None;
       argtype_ = null;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ServerArgs);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(ServerArgs other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -1883,6 +2463,7 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (argtypeCase_ == ArgtypeOneofCase.Setup) hash ^= Setup.GetHashCode();
@@ -1891,10 +2472,12 @@ namespace Grpc.Testing {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (argtypeCase_ == ArgtypeOneofCase.Setup) {
         output.WriteRawTag(10);
@@ -1906,6 +2489,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (argtypeCase_ == ArgtypeOneofCase.Setup) {
@@ -1917,6 +2501,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(ServerArgs other) {
       if (other == null) {
         return;
@@ -1932,6 +2517,7 @@ namespace Grpc.Testing {
 
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -1963,31 +2549,36 @@ namespace Grpc.Testing {
 
   }
 
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class ServerStatus : pb::IMessage<ServerStatus> {
     private static readonly pb::MessageParser<ServerStatus> _parser = new pb::MessageParser<ServerStatus>(() => new ServerStatus());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<ServerStatus> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[10]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[11]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ServerStatus() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ServerStatus(ServerStatus other) : this() {
       Stats = other.stats_ != null ? other.Stats.Clone() : null;
       port_ = other.port_;
       cores_ = other.cores_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ServerStatus Clone() {
       return new ServerStatus(this);
     }
@@ -1995,6 +2586,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "stats" field.</summary>
     public const int StatsFieldNumber = 1;
     private global::Grpc.Testing.ServerStats stats_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.ServerStats Stats {
       get { return stats_; }
       set {
@@ -2006,8 +2598,9 @@ namespace Grpc.Testing {
     public const int PortFieldNumber = 2;
     private int port_;
     /// <summary>
-    ///  the port bound by the server
+    /// the port bound by the server
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int Port {
       get { return port_; }
       set {
@@ -2019,8 +2612,9 @@ namespace Grpc.Testing {
     public const int CoresFieldNumber = 3;
     private int cores_;
     /// <summary>
-    ///  Number of cores available to the server
+    /// Number of cores available to the server
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int Cores {
       get { return cores_; }
       set {
@@ -2028,10 +2622,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ServerStatus);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(ServerStatus other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -2045,6 +2641,7 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (stats_ != null) hash ^= Stats.GetHashCode();
@@ -2053,10 +2650,12 @@ namespace Grpc.Testing {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (stats_ != null) {
         output.WriteRawTag(10);
@@ -2072,6 +2671,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (stats_ != null) {
@@ -2086,6 +2686,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(ServerStatus other) {
       if (other == null) {
         return;
@@ -2104,6 +2705,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -2132,36 +2734,43 @@ namespace Grpc.Testing {
 
   }
 
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class CoreRequest : pb::IMessage<CoreRequest> {
     private static readonly pb::MessageParser<CoreRequest> _parser = new pb::MessageParser<CoreRequest>(() => new CoreRequest());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<CoreRequest> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[11]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[12]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public CoreRequest() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public CoreRequest(CoreRequest other) : this() {
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public CoreRequest Clone() {
       return new CoreRequest(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as CoreRequest);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(CoreRequest other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -2172,29 +2781,35 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(CoreRequest other) {
       if (other == null) {
         return;
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -2208,29 +2823,34 @@ namespace Grpc.Testing {
 
   }
 
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class CoreResponse : pb::IMessage<CoreResponse> {
     private static readonly pb::MessageParser<CoreResponse> _parser = new pb::MessageParser<CoreResponse>(() => new CoreResponse());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<CoreResponse> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[12]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[13]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public CoreResponse() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public CoreResponse(CoreResponse other) : this() {
       cores_ = other.cores_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public CoreResponse Clone() {
       return new CoreResponse(this);
     }
@@ -2239,8 +2859,9 @@ namespace Grpc.Testing {
     public const int CoresFieldNumber = 1;
     private int cores_;
     /// <summary>
-    ///  Number of cores available on the server
+    /// Number of cores available on the server
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int Cores {
       get { return cores_; }
       set {
@@ -2248,10 +2869,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as CoreResponse);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(CoreResponse other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -2263,16 +2886,19 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (Cores != 0) hash ^= Cores.GetHashCode();
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (Cores != 0) {
         output.WriteRawTag(8);
@@ -2280,6 +2906,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (Cores != 0) {
@@ -2288,6 +2915,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(CoreResponse other) {
       if (other == null) {
         return;
@@ -2297,6 +2925,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -2314,36 +2943,43 @@ namespace Grpc.Testing {
 
   }
 
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class Void : pb::IMessage<Void> {
     private static readonly pb::MessageParser<Void> _parser = new pb::MessageParser<Void>(() => new Void());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<Void> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[13]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[14]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Void() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Void(Void other) : this() {
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Void Clone() {
       return new Void(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as Void);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(Void other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -2354,29 +2990,35 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(Void other) {
       if (other == null) {
         return;
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -2391,27 +3033,31 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  A single performance scenario: input to qps_json_driver
+  /// A single performance scenario: input to qps_json_driver
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class Scenario : pb::IMessage<Scenario> {
     private static readonly pb::MessageParser<Scenario> _parser = new pb::MessageParser<Scenario>(() => new Scenario());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<Scenario> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[14]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[15]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Scenario() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Scenario(Scenario other) : this() {
       name_ = other.name_;
       ClientConfig = other.clientConfig_ != null ? other.ClientConfig.Clone() : null;
@@ -2423,6 +3069,7 @@ namespace Grpc.Testing {
       spawnLocalWorkerCount_ = other.spawnLocalWorkerCount_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Scenario Clone() {
       return new Scenario(this);
     }
@@ -2431,8 +3078,9 @@ namespace Grpc.Testing {
     public const int NameFieldNumber = 1;
     private string name_ = "";
     /// <summary>
-    ///  Human readable name for this scenario
+    /// Human readable name for this scenario
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string Name {
       get { return name_; }
       set {
@@ -2444,8 +3092,9 @@ namespace Grpc.Testing {
     public const int ClientConfigFieldNumber = 2;
     private global::Grpc.Testing.ClientConfig clientConfig_;
     /// <summary>
-    ///  Client configuration
+    /// Client configuration
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.ClientConfig ClientConfig {
       get { return clientConfig_; }
       set {
@@ -2457,8 +3106,9 @@ namespace Grpc.Testing {
     public const int NumClientsFieldNumber = 3;
     private int numClients_;
     /// <summary>
-    ///  Number of clients to start for the test
+    /// Number of clients to start for the test
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int NumClients {
       get { return numClients_; }
       set {
@@ -2470,8 +3120,9 @@ namespace Grpc.Testing {
     public const int ServerConfigFieldNumber = 4;
     private global::Grpc.Testing.ServerConfig serverConfig_;
     /// <summary>
-    ///  Server configuration
+    /// Server configuration
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.ServerConfig ServerConfig {
       get { return serverConfig_; }
       set {
@@ -2483,8 +3134,9 @@ namespace Grpc.Testing {
     public const int NumServersFieldNumber = 5;
     private int numServers_;
     /// <summary>
-    ///  Number of servers to start for the test
+    /// Number of servers to start for the test
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int NumServers {
       get { return numServers_; }
       set {
@@ -2496,8 +3148,9 @@ namespace Grpc.Testing {
     public const int WarmupSecondsFieldNumber = 6;
     private int warmupSeconds_;
     /// <summary>
-    ///  Warmup period, in seconds
+    /// Warmup period, in seconds
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int WarmupSeconds {
       get { return warmupSeconds_; }
       set {
@@ -2509,8 +3162,9 @@ namespace Grpc.Testing {
     public const int BenchmarkSecondsFieldNumber = 7;
     private int benchmarkSeconds_;
     /// <summary>
-    ///  Benchmark time, in seconds
+    /// Benchmark time, in seconds
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int BenchmarkSeconds {
       get { return benchmarkSeconds_; }
       set {
@@ -2522,8 +3176,9 @@ namespace Grpc.Testing {
     public const int SpawnLocalWorkerCountFieldNumber = 8;
     private int spawnLocalWorkerCount_;
     /// <summary>
-    ///  Number of workers to spawn locally (usually zero)
+    /// Number of workers to spawn locally (usually zero)
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int SpawnLocalWorkerCount {
       get { return spawnLocalWorkerCount_; }
       set {
@@ -2531,10 +3186,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as Scenario);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(Scenario other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -2553,6 +3210,7 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (Name.Length != 0) hash ^= Name.GetHashCode();
@@ -2566,10 +3224,12 @@ namespace Grpc.Testing {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (Name.Length != 0) {
         output.WriteRawTag(10);
@@ -2605,6 +3265,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (Name.Length != 0) {
@@ -2634,6 +3295,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(Scenario other) {
       if (other == null) {
         return;
@@ -2670,6 +3332,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -2722,31 +3385,36 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  A set of scenarios to be run with qps_json_driver
+  /// A set of scenarios to be run with qps_json_driver
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class Scenarios : pb::IMessage<Scenarios> {
     private static readonly pb::MessageParser<Scenarios> _parser = new pb::MessageParser<Scenarios>(() => new Scenarios());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<Scenarios> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[15]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[16]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Scenarios() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Scenarios(Scenarios other) : this() {
       scenarios_ = other.scenarios_.Clone();
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Scenarios Clone() {
       return new Scenarios(this);
     }
@@ -2756,14 +3424,17 @@ namespace Grpc.Testing {
     private static readonly pb::FieldCodec<global::Grpc.Testing.Scenario> _repeated_scenarios_codec
         = pb::FieldCodec.ForMessage(10, global::Grpc.Testing.Scenario.Parser);
     private readonly pbc::RepeatedField<global::Grpc.Testing.Scenario> scenarios_ = new pbc::RepeatedField<global::Grpc.Testing.Scenario>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<global::Grpc.Testing.Scenario> Scenarios_ {
       get { return scenarios_; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as Scenarios);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(Scenarios other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -2775,26 +3446,31 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       hash ^= scenarios_.GetHashCode();
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       scenarios_.WriteTo(output, _repeated_scenarios_codec);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       size += scenarios_.CalculateSize(_repeated_scenarios_codec);
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(Scenarios other) {
       if (other == null) {
         return;
@@ -2802,6 +3478,7 @@ namespace Grpc.Testing {
       scenarios_.Add(other.scenarios_);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -2820,28 +3497,32 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  Basic summary that can be computed from ClientStats and ServerStats
-  ///  once the scenario has finished.
+  /// Basic summary that can be computed from ClientStats and ServerStats
+  /// once the scenario has finished.
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class ScenarioResultSummary : pb::IMessage<ScenarioResultSummary> {
     private static readonly pb::MessageParser<ScenarioResultSummary> _parser = new pb::MessageParser<ScenarioResultSummary>(() => new ScenarioResultSummary());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<ScenarioResultSummary> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[16]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[17]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ScenarioResultSummary() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ScenarioResultSummary(ScenarioResultSummary other) : this() {
       qps_ = other.qps_;
       qpsPerServerCore_ = other.qpsPerServerCore_;
@@ -2854,8 +3535,16 @@ namespace Grpc.Testing {
       latency95_ = other.latency95_;
       latency99_ = other.latency99_;
       latency999_ = other.latency999_;
+      serverCpuUsage_ = other.serverCpuUsage_;
+      successfulRequestsPerSecond_ = other.successfulRequestsPerSecond_;
+      failedRequestsPerSecond_ = other.failedRequestsPerSecond_;
+      clientPollsPerRequest_ = other.clientPollsPerRequest_;
+      serverPollsPerRequest_ = other.serverPollsPerRequest_;
+      serverQueriesPerCpuSec_ = other.serverQueriesPerCpuSec_;
+      clientQueriesPerCpuSec_ = other.clientQueriesPerCpuSec_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ScenarioResultSummary Clone() {
       return new ScenarioResultSummary(this);
     }
@@ -2864,8 +3553,9 @@ namespace Grpc.Testing {
     public const int QpsFieldNumber = 1;
     private double qps_;
     /// <summary>
-    ///  Total number of operations per second over all clients.
+    /// Total number of operations per second over all clients.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double Qps {
       get { return qps_; }
       set {
@@ -2877,8 +3567,9 @@ namespace Grpc.Testing {
     public const int QpsPerServerCoreFieldNumber = 2;
     private double qpsPerServerCore_;
     /// <summary>
-    ///  QPS per one server core.
+    /// QPS per one server core.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double QpsPerServerCore {
       get { return qpsPerServerCore_; }
       set {
@@ -2890,8 +3581,9 @@ namespace Grpc.Testing {
     public const int ServerSystemTimeFieldNumber = 3;
     private double serverSystemTime_;
     /// <summary>
-    ///  server load based on system_time (0.85 => 85%)
+    /// server load based on system_time (0.85 => 85%)
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double ServerSystemTime {
       get { return serverSystemTime_; }
       set {
@@ -2903,8 +3595,9 @@ namespace Grpc.Testing {
     public const int ServerUserTimeFieldNumber = 4;
     private double serverUserTime_;
     /// <summary>
-    ///  server load based on user_time (0.85 => 85%)
+    /// server load based on user_time (0.85 => 85%)
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double ServerUserTime {
       get { return serverUserTime_; }
       set {
@@ -2916,8 +3609,9 @@ namespace Grpc.Testing {
     public const int ClientSystemTimeFieldNumber = 5;
     private double clientSystemTime_;
     /// <summary>
-    ///  client load based on system_time (0.85 => 85%)
+    /// client load based on system_time (0.85 => 85%)
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double ClientSystemTime {
       get { return clientSystemTime_; }
       set {
@@ -2929,8 +3623,9 @@ namespace Grpc.Testing {
     public const int ClientUserTimeFieldNumber = 6;
     private double clientUserTime_;
     /// <summary>
-    ///  client load based on user_time (0.85 => 85%)
+    /// client load based on user_time (0.85 => 85%)
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double ClientUserTime {
       get { return clientUserTime_; }
       set {
@@ -2942,8 +3637,9 @@ namespace Grpc.Testing {
     public const int Latency50FieldNumber = 7;
     private double latency50_;
     /// <summary>
-    ///  X% latency percentiles (in nanoseconds)
+    /// X% latency percentiles (in nanoseconds)
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double Latency50 {
       get { return latency50_; }
       set {
@@ -2954,6 +3650,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "latency_90" field.</summary>
     public const int Latency90FieldNumber = 8;
     private double latency90_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double Latency90 {
       get { return latency90_; }
       set {
@@ -2964,6 +3661,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "latency_95" field.</summary>
     public const int Latency95FieldNumber = 9;
     private double latency95_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double Latency95 {
       get { return latency95_; }
       set {
@@ -2974,6 +3672,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "latency_99" field.</summary>
     public const int Latency99FieldNumber = 10;
     private double latency99_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double Latency99 {
       get { return latency99_; }
       set {
@@ -2984,6 +3683,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "latency_999" field.</summary>
     public const int Latency999FieldNumber = 11;
     private double latency999_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public double Latency999 {
       get { return latency999_; }
       set {
@@ -2991,10 +3691,101 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "server_cpu_usage" field.</summary>
+    public const int ServerCpuUsageFieldNumber = 12;
+    private double serverCpuUsage_;
+    /// <summary>
+    /// server cpu usage percentage
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public double ServerCpuUsage {
+      get { return serverCpuUsage_; }
+      set {
+        serverCpuUsage_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "successful_requests_per_second" field.</summary>
+    public const int SuccessfulRequestsPerSecondFieldNumber = 13;
+    private double successfulRequestsPerSecond_;
+    /// <summary>
+    /// Number of requests that succeeded/failed
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public double SuccessfulRequestsPerSecond {
+      get { return successfulRequestsPerSecond_; }
+      set {
+        successfulRequestsPerSecond_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "failed_requests_per_second" field.</summary>
+    public const int FailedRequestsPerSecondFieldNumber = 14;
+    private double failedRequestsPerSecond_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public double FailedRequestsPerSecond {
+      get { return failedRequestsPerSecond_; }
+      set {
+        failedRequestsPerSecond_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "client_polls_per_request" field.</summary>
+    public const int ClientPollsPerRequestFieldNumber = 15;
+    private double clientPollsPerRequest_;
+    /// <summary>
+    /// Number of polls called inside completion queue per request
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public double ClientPollsPerRequest {
+      get { return clientPollsPerRequest_; }
+      set {
+        clientPollsPerRequest_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "server_polls_per_request" field.</summary>
+    public const int ServerPollsPerRequestFieldNumber = 16;
+    private double serverPollsPerRequest_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public double ServerPollsPerRequest {
+      get { return serverPollsPerRequest_; }
+      set {
+        serverPollsPerRequest_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "server_queries_per_cpu_sec" field.</summary>
+    public const int ServerQueriesPerCpuSecFieldNumber = 17;
+    private double serverQueriesPerCpuSec_;
+    /// <summary>
+    /// Queries per CPU-sec over all servers or clients
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public double ServerQueriesPerCpuSec {
+      get { return serverQueriesPerCpuSec_; }
+      set {
+        serverQueriesPerCpuSec_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "client_queries_per_cpu_sec" field.</summary>
+    public const int ClientQueriesPerCpuSecFieldNumber = 18;
+    private double clientQueriesPerCpuSec_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public double ClientQueriesPerCpuSec {
+      get { return clientQueriesPerCpuSec_; }
+      set {
+        clientQueriesPerCpuSec_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ScenarioResultSummary);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(ScenarioResultSummary other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -3013,9 +3804,17 @@ namespace Grpc.Testing {
       if (Latency95 != other.Latency95) return false;
       if (Latency99 != other.Latency99) return false;
       if (Latency999 != other.Latency999) return false;
+      if (ServerCpuUsage != other.ServerCpuUsage) return false;
+      if (SuccessfulRequestsPerSecond != other.SuccessfulRequestsPerSecond) return false;
+      if (FailedRequestsPerSecond != other.FailedRequestsPerSecond) return false;
+      if (ClientPollsPerRequest != other.ClientPollsPerRequest) return false;
+      if (ServerPollsPerRequest != other.ServerPollsPerRequest) return false;
+      if (ServerQueriesPerCpuSec != other.ServerQueriesPerCpuSec) return false;
+      if (ClientQueriesPerCpuSec != other.ClientQueriesPerCpuSec) return false;
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (Qps != 0D) hash ^= Qps.GetHashCode();
@@ -3029,13 +3828,22 @@ namespace Grpc.Testing {
       if (Latency95 != 0D) hash ^= Latency95.GetHashCode();
       if (Latency99 != 0D) hash ^= Latency99.GetHashCode();
       if (Latency999 != 0D) hash ^= Latency999.GetHashCode();
+      if (ServerCpuUsage != 0D) hash ^= ServerCpuUsage.GetHashCode();
+      if (SuccessfulRequestsPerSecond != 0D) hash ^= SuccessfulRequestsPerSecond.GetHashCode();
+      if (FailedRequestsPerSecond != 0D) hash ^= FailedRequestsPerSecond.GetHashCode();
+      if (ClientPollsPerRequest != 0D) hash ^= ClientPollsPerRequest.GetHashCode();
+      if (ServerPollsPerRequest != 0D) hash ^= ServerPollsPerRequest.GetHashCode();
+      if (ServerQueriesPerCpuSec != 0D) hash ^= ServerQueriesPerCpuSec.GetHashCode();
+      if (ClientQueriesPerCpuSec != 0D) hash ^= ClientQueriesPerCpuSec.GetHashCode();
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (Qps != 0D) {
         output.WriteRawTag(9);
@@ -3081,8 +3889,37 @@ namespace Grpc.Testing {
         output.WriteRawTag(89);
         output.WriteDouble(Latency999);
       }
+      if (ServerCpuUsage != 0D) {
+        output.WriteRawTag(97);
+        output.WriteDouble(ServerCpuUsage);
+      }
+      if (SuccessfulRequestsPerSecond != 0D) {
+        output.WriteRawTag(105);
+        output.WriteDouble(SuccessfulRequestsPerSecond);
+      }
+      if (FailedRequestsPerSecond != 0D) {
+        output.WriteRawTag(113);
+        output.WriteDouble(FailedRequestsPerSecond);
+      }
+      if (ClientPollsPerRequest != 0D) {
+        output.WriteRawTag(121);
+        output.WriteDouble(ClientPollsPerRequest);
+      }
+      if (ServerPollsPerRequest != 0D) {
+        output.WriteRawTag(129, 1);
+        output.WriteDouble(ServerPollsPerRequest);
+      }
+      if (ServerQueriesPerCpuSec != 0D) {
+        output.WriteRawTag(137, 1);
+        output.WriteDouble(ServerQueriesPerCpuSec);
+      }
+      if (ClientQueriesPerCpuSec != 0D) {
+        output.WriteRawTag(145, 1);
+        output.WriteDouble(ClientQueriesPerCpuSec);
+      }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (Qps != 0D) {
@@ -3118,9 +3955,31 @@ namespace Grpc.Testing {
       if (Latency999 != 0D) {
         size += 1 + 8;
       }
+      if (ServerCpuUsage != 0D) {
+        size += 1 + 8;
+      }
+      if (SuccessfulRequestsPerSecond != 0D) {
+        size += 1 + 8;
+      }
+      if (FailedRequestsPerSecond != 0D) {
+        size += 1 + 8;
+      }
+      if (ClientPollsPerRequest != 0D) {
+        size += 1 + 8;
+      }
+      if (ServerPollsPerRequest != 0D) {
+        size += 2 + 8;
+      }
+      if (ServerQueriesPerCpuSec != 0D) {
+        size += 2 + 8;
+      }
+      if (ClientQueriesPerCpuSec != 0D) {
+        size += 2 + 8;
+      }
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(ScenarioResultSummary other) {
       if (other == null) {
         return;
@@ -3158,8 +4017,30 @@ namespace Grpc.Testing {
       if (other.Latency999 != 0D) {
         Latency999 = other.Latency999;
       }
+      if (other.ServerCpuUsage != 0D) {
+        ServerCpuUsage = other.ServerCpuUsage;
+      }
+      if (other.SuccessfulRequestsPerSecond != 0D) {
+        SuccessfulRequestsPerSecond = other.SuccessfulRequestsPerSecond;
+      }
+      if (other.FailedRequestsPerSecond != 0D) {
+        FailedRequestsPerSecond = other.FailedRequestsPerSecond;
+      }
+      if (other.ClientPollsPerRequest != 0D) {
+        ClientPollsPerRequest = other.ClientPollsPerRequest;
+      }
+      if (other.ServerPollsPerRequest != 0D) {
+        ServerPollsPerRequest = other.ServerPollsPerRequest;
+      }
+      if (other.ServerQueriesPerCpuSec != 0D) {
+        ServerQueriesPerCpuSec = other.ServerQueriesPerCpuSec;
+      }
+      if (other.ClientQueriesPerCpuSec != 0D) {
+        ClientQueriesPerCpuSec = other.ClientQueriesPerCpuSec;
+      }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -3211,6 +4092,34 @@ namespace Grpc.Testing {
             Latency999 = input.ReadDouble();
             break;
           }
+          case 97: {
+            ServerCpuUsage = input.ReadDouble();
+            break;
+          }
+          case 105: {
+            SuccessfulRequestsPerSecond = input.ReadDouble();
+            break;
+          }
+          case 113: {
+            FailedRequestsPerSecond = input.ReadDouble();
+            break;
+          }
+          case 121: {
+            ClientPollsPerRequest = input.ReadDouble();
+            break;
+          }
+          case 129: {
+            ServerPollsPerRequest = input.ReadDouble();
+            break;
+          }
+          case 137: {
+            ServerQueriesPerCpuSec = input.ReadDouble();
+            break;
+          }
+          case 145: {
+            ClientQueriesPerCpuSec = input.ReadDouble();
+            break;
+          }
         }
       }
     }
@@ -3218,27 +4127,31 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  Results of a single benchmark scenario.
+  /// Results of a single benchmark scenario.
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class ScenarioResult : pb::IMessage<ScenarioResult> {
     private static readonly pb::MessageParser<ScenarioResult> _parser = new pb::MessageParser<ScenarioResult>(() => new ScenarioResult());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<ScenarioResult> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[17]; }
+      get { return global::Grpc.Testing.ControlReflection.Descriptor.MessageTypes[18]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ScenarioResult() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ScenarioResult(ScenarioResult other) : this() {
       Scenario = other.scenario_ != null ? other.Scenario.Clone() : null;
       Latencies = other.latencies_ != null ? other.Latencies.Clone() : null;
@@ -3246,8 +4159,12 @@ namespace Grpc.Testing {
       serverStats_ = other.serverStats_.Clone();
       serverCores_ = other.serverCores_.Clone();
       Summary = other.summary_ != null ? other.Summary.Clone() : null;
+      clientSuccess_ = other.clientSuccess_.Clone();
+      serverSuccess_ = other.serverSuccess_.Clone();
+      requestResults_ = other.requestResults_.Clone();
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ScenarioResult Clone() {
       return new ScenarioResult(this);
     }
@@ -3256,8 +4173,9 @@ namespace Grpc.Testing {
     public const int ScenarioFieldNumber = 1;
     private global::Grpc.Testing.Scenario scenario_;
     /// <summary>
-    ///  Inputs used to run the scenario.
+    /// Inputs used to run the scenario.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.Scenario Scenario {
       get { return scenario_; }
       set {
@@ -3269,8 +4187,9 @@ namespace Grpc.Testing {
     public const int LatenciesFieldNumber = 2;
     private global::Grpc.Testing.HistogramData latencies_;
     /// <summary>
-    ///  Histograms from all clients merged into one histogram.
+    /// Histograms from all clients merged into one histogram.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.HistogramData Latencies {
       get { return latencies_; }
       set {
@@ -3284,8 +4203,9 @@ namespace Grpc.Testing {
         = pb::FieldCodec.ForMessage(26, global::Grpc.Testing.ClientStats.Parser);
     private readonly pbc::RepeatedField<global::Grpc.Testing.ClientStats> clientStats_ = new pbc::RepeatedField<global::Grpc.Testing.ClientStats>();
     /// <summary>
-    ///  Client stats for each client
+    /// Client stats for each client
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<global::Grpc.Testing.ClientStats> ClientStats {
       get { return clientStats_; }
     }
@@ -3296,8 +4216,9 @@ namespace Grpc.Testing {
         = pb::FieldCodec.ForMessage(34, global::Grpc.Testing.ServerStats.Parser);
     private readonly pbc::RepeatedField<global::Grpc.Testing.ServerStats> serverStats_ = new pbc::RepeatedField<global::Grpc.Testing.ServerStats>();
     /// <summary>
-    ///  Server stats for each server
+    /// Server stats for each server
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<global::Grpc.Testing.ServerStats> ServerStats {
       get { return serverStats_; }
     }
@@ -3308,8 +4229,9 @@ namespace Grpc.Testing {
         = pb::FieldCodec.ForInt32(42);
     private readonly pbc::RepeatedField<int> serverCores_ = new pbc::RepeatedField<int>();
     /// <summary>
-    ///  Number of cores available to each server
+    /// Number of cores available to each server
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<int> ServerCores {
       get { return serverCores_; }
     }
@@ -3318,8 +4240,9 @@ namespace Grpc.Testing {
     public const int SummaryFieldNumber = 6;
     private global::Grpc.Testing.ScenarioResultSummary summary_;
     /// <summary>
-    ///  An after-the-fact computed summary
+    /// An after-the-fact computed summary
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.ScenarioResultSummary Summary {
       get { return summary_; }
       set {
@@ -3327,10 +4250,48 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "client_success" field.</summary>
+    public const int ClientSuccessFieldNumber = 7;
+    private static readonly pb::FieldCodec<bool> _repeated_clientSuccess_codec
+        = pb::FieldCodec.ForBool(58);
+    private readonly pbc::RepeatedField<bool> clientSuccess_ = new pbc::RepeatedField<bool>();
+    /// <summary>
+    /// Information on success or failure of each worker
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::RepeatedField<bool> ClientSuccess {
+      get { return clientSuccess_; }
+    }
+
+    /// <summary>Field number for the "server_success" field.</summary>
+    public const int ServerSuccessFieldNumber = 8;
+    private static readonly pb::FieldCodec<bool> _repeated_serverSuccess_codec
+        = pb::FieldCodec.ForBool(66);
+    private readonly pbc::RepeatedField<bool> serverSuccess_ = new pbc::RepeatedField<bool>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::RepeatedField<bool> ServerSuccess {
+      get { return serverSuccess_; }
+    }
+
+    /// <summary>Field number for the "request_results" field.</summary>
+    public const int RequestResultsFieldNumber = 9;
+    private static readonly pb::FieldCodec<global::Grpc.Testing.RequestResultCount> _repeated_requestResults_codec
+        = pb::FieldCodec.ForMessage(74, global::Grpc.Testing.RequestResultCount.Parser);
+    private readonly pbc::RepeatedField<global::Grpc.Testing.RequestResultCount> requestResults_ = new pbc::RepeatedField<global::Grpc.Testing.RequestResultCount>();
+    /// <summary>
+    /// Number of failed requests (one row per status code seen)
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::RepeatedField<global::Grpc.Testing.RequestResultCount> RequestResults {
+      get { return requestResults_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ScenarioResult);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(ScenarioResult other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -3344,9 +4305,13 @@ namespace Grpc.Testing {
       if(!serverStats_.Equals(other.serverStats_)) return false;
       if(!serverCores_.Equals(other.serverCores_)) return false;
       if (!object.Equals(Summary, other.Summary)) return false;
+      if(!clientSuccess_.Equals(other.clientSuccess_)) return false;
+      if(!serverSuccess_.Equals(other.serverSuccess_)) return false;
+      if(!requestResults_.Equals(other.requestResults_)) return false;
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (scenario_ != null) hash ^= Scenario.GetHashCode();
@@ -3355,13 +4320,18 @@ namespace Grpc.Testing {
       hash ^= serverStats_.GetHashCode();
       hash ^= serverCores_.GetHashCode();
       if (summary_ != null) hash ^= Summary.GetHashCode();
+      hash ^= clientSuccess_.GetHashCode();
+      hash ^= serverSuccess_.GetHashCode();
+      hash ^= requestResults_.GetHashCode();
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (scenario_ != null) {
         output.WriteRawTag(10);
@@ -3378,8 +4348,12 @@ namespace Grpc.Testing {
         output.WriteRawTag(50);
         output.WriteMessage(Summary);
       }
+      clientSuccess_.WriteTo(output, _repeated_clientSuccess_codec);
+      serverSuccess_.WriteTo(output, _repeated_serverSuccess_codec);
+      requestResults_.WriteTo(output, _repeated_requestResults_codec);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (scenario_ != null) {
@@ -3394,9 +4368,13 @@ namespace Grpc.Testing {
       if (summary_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Summary);
       }
+      size += clientSuccess_.CalculateSize(_repeated_clientSuccess_codec);
+      size += serverSuccess_.CalculateSize(_repeated_serverSuccess_codec);
+      size += requestResults_.CalculateSize(_repeated_requestResults_codec);
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(ScenarioResult other) {
       if (other == null) {
         return;
@@ -3422,8 +4400,12 @@ namespace Grpc.Testing {
         }
         Summary.MergeFrom(other.Summary);
       }
+      clientSuccess_.Add(other.clientSuccess_);
+      serverSuccess_.Add(other.serverSuccess_);
+      requestResults_.Add(other.requestResults_);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -3463,6 +4445,20 @@ namespace Grpc.Testing {
               summary_ = new global::Grpc.Testing.ScenarioResultSummary();
             }
             input.ReadMessage(summary_);
+            break;
+          }
+          case 58:
+          case 56: {
+            clientSuccess_.AddEntriesFrom(input, _repeated_clientSuccess_codec);
+            break;
+          }
+          case 66:
+          case 64: {
+            serverSuccess_.AddEntriesFrom(input, _repeated_serverSuccess_codec);
+            break;
+          }
+          case 74: {
+            requestResults_.AddEntriesFrom(input, _repeated_requestResults_codec);
             break;
           }
         }

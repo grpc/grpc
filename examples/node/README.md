@@ -12,7 +12,7 @@ INSTALL
    ```sh
    $ # Get the gRPC repository
    $ export REPO_ROOT=grpc # REPO root can be any directory of your choice
-   $ git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc $REPO_ROOT
+   $ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc $REPO_ROOT
    $ cd $REPO_ROOT
 
    $ cd examples/node
@@ -39,7 +39,7 @@ There are two ways to generate the code needed to work with protocol buffers in 
    $ # from this directory
    $ node ./dynamic_codegen/greeter_client.js
    $ # OR
-   $ node ./dynamic_codegen/greeter_client.js
+   $ node ./static_codegen/greeter_client.js
    ```
 
 TUTORIAL
@@ -47,4 +47,4 @@ TUTORIAL
 You can find a more detailed tutorial in [gRPC Basics: Node.js][]
 
 [Install gRPC Node]:../../src/node
-[gRPC Basics: Node.js]:http://www.grpc.io/docs/tutorials/basic/node.html
+[gRPC Basics: Node.js]:https://grpc.io/docs/tutorials/basic/node.html

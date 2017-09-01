@@ -1,51 +1,38 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #include <string.h>
 
-#include <node.h>
 #include <nan.h>
-#include "grpc/grpc.h"
+#include <node.h>
 #include "grpc/byte_buffer_reader.h"
-#include "grpc/support/slice.h"
+#include "grpc/grpc.h"
+#include "grpc/slice.h"
 
 #include "byte_buffer.h"
+#include "slice.h"
 
 namespace grpc {
 namespace node {
 
+using Nan::Callback;
+using Nan::MaybeLocal;
 
-using v8::Context;
 using v8::Function;
 using v8::Local;
 using v8::Object;
@@ -54,17 +41,18 @@ using v8::Value;
 
 grpc_byte_buffer *BufferToByteBuffer(Local<Value> buffer) {
   Nan::HandleScope scope;
-  int length = ::node::Buffer::Length(buffer);
-  char *data = ::node::Buffer::Data(buffer);
-  gpr_slice slice = gpr_slice_malloc(length);
-  memcpy(GPR_SLICE_START_PTR(slice), data, length);
+  grpc_slice slice = CreateSliceFromBuffer(buffer);
   grpc_byte_buffer *byte_buffer(grpc_raw_byte_buffer_create(&slice, 1));
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
   return byte_buffer;
 }
 
 namespace {
-void delete_buffer(char *data, void *hint) { delete[] data; }
+void delete_buffer(char *data, void *hint) {
+  grpc_slice *slice = static_cast<grpc_slice *>(hint);
+  grpc_slice_unref(*slice);
+  delete slice;
+}
 }
 
 Local<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
@@ -77,27 +65,15 @@ Local<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
     Nan::ThrowError("Error initializing byte buffer reader.");
     return scope.Escape(Nan::Undefined());
   }
-  gpr_slice slice = grpc_byte_buffer_reader_readall(&reader);
-  size_t length = GPR_SLICE_LENGTH(slice);
-  char *result = new char[length];
-  memcpy(result, GPR_SLICE_START_PTR(slice), length);
-  gpr_slice_unref(slice);
-  return scope.Escape(MakeFastBuffer(
-      Nan::NewBuffer(result, length, delete_buffer, NULL).ToLocalChecked()));
+  grpc_slice *slice = new grpc_slice;
+  *slice = grpc_byte_buffer_reader_readall(&reader);
+  grpc_byte_buffer_reader_destroy(&reader);
+  char *result = reinterpret_cast<char *>(GRPC_SLICE_START_PTR(*slice));
+  size_t length = GRPC_SLICE_LENGTH(*slice);
+  Local<Value> buf =
+      Nan::NewBuffer(result, length, delete_buffer, slice).ToLocalChecked();
+  return scope.Escape(buf);
 }
 
-Local<Value> MakeFastBuffer(Local<Value> slowBuffer) {
-  Nan::EscapableHandleScope scope;
-  Local<Object> globalObj = Nan::GetCurrentContext()->Global();
-  Local<Function> bufferConstructor = Local<Function>::Cast(
-      globalObj->Get(Nan::New("Buffer").ToLocalChecked()));
-  Local<Value> consArgs[3] = {
-    slowBuffer,
-    Nan::New<Number>(::node::Buffer::Length(slowBuffer)),
-    Nan::New<Number>(0)
-  };
-  Local<Object> fastBuffer = bufferConstructor->NewInstance(3, consArgs);
-  return scope.Escape(fastBuffer);
-}
 }  // namespace node
 }  // namespace grpc

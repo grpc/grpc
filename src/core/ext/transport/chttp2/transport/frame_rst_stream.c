@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -39,13 +24,14 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/lib/transport/http2_errors.h"
 
-gpr_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
-                                        grpc_transport_one_way_stats *stats) {
+grpc_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
+                                         grpc_transport_one_way_stats *stats) {
   static const size_t frame_size = 13;
-  gpr_slice slice = gpr_slice_malloc(frame_size);
+  grpc_slice slice = GRPC_SLICE_MALLOC(frame_size);
   stats->framing_bytes += frame_size;
-  uint8_t *p = GPR_SLICE_START_PTR(slice);
+  uint8_t *p = GRPC_SLICE_START_PTR(slice);
 
   // Frame size.
   *p++ = 0;
@@ -75,7 +61,7 @@ grpc_error *grpc_chttp2_rst_stream_parser_begin_frame(
     char *msg;
     gpr_asprintf(&msg, "invalid rst_stream: length=%d, flags=%02x", length,
                  flags);
-    grpc_error *err = GRPC_ERROR_CREATE(msg);
+    grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return err;
   }
@@ -83,12 +69,13 @@ grpc_error *grpc_chttp2_rst_stream_parser_begin_frame(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error *grpc_chttp2_rst_stream_parser_parse(
-    grpc_exec_ctx *exec_ctx, void *parser,
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
-  uint8_t *const beg = GPR_SLICE_START_PTR(slice);
-  uint8_t *const end = GPR_SLICE_END_PTR(slice);
+grpc_error *grpc_chttp2_rst_stream_parser_parse(grpc_exec_ctx *exec_ctx,
+                                                void *parser,
+                                                grpc_chttp2_transport *t,
+                                                grpc_chttp2_stream *s,
+                                                grpc_slice slice, int is_last) {
+  uint8_t *const beg = GRPC_SLICE_START_PTR(slice);
+  uint8_t *const end = GRPC_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
   grpc_chttp2_rst_stream_parser *p = parser;
 
@@ -97,19 +84,26 @@ grpc_error *grpc_chttp2_rst_stream_parser_parse(
     cur++;
     p->byte++;
   }
-  stream_parsing->stats.incoming.framing_bytes += (uint64_t)(end - cur);
+  s->stats.incoming.framing_bytes += (uint64_t)(end - cur);
 
   if (p->byte == 4) {
     GPR_ASSERT(is_last);
-    stream_parsing->received_close = 1;
-    if (stream_parsing->forced_close_error == GRPC_ERROR_NONE) {
-      stream_parsing->forced_close_error = grpc_error_set_int(
-          GRPC_ERROR_CREATE("RST_STREAM"), GRPC_ERROR_INT_HTTP2_ERROR,
-          (intptr_t)((((uint32_t)p->reason_bytes[0]) << 24) |
-                     (((uint32_t)p->reason_bytes[1]) << 16) |
-                     (((uint32_t)p->reason_bytes[2]) << 8) |
-                     (((uint32_t)p->reason_bytes[3]))));
+    uint32_t reason = (((uint32_t)p->reason_bytes[0]) << 24) |
+                      (((uint32_t)p->reason_bytes[1]) << 16) |
+                      (((uint32_t)p->reason_bytes[2]) << 8) |
+                      (((uint32_t)p->reason_bytes[3]));
+    grpc_error *error = GRPC_ERROR_NONE;
+    if (reason != GRPC_HTTP2_NO_ERROR || s->metadata_buffer[1].size == 0) {
+      char *message;
+      gpr_asprintf(&message, "Received RST_STREAM with error code %d", reason);
+      error = grpc_error_set_int(
+          grpc_error_set_str(GRPC_ERROR_CREATE_FROM_STATIC_STRING("RST_STREAM"),
+                             GRPC_ERROR_STR_GRPC_MESSAGE,
+                             grpc_slice_from_copied_string(message)),
+          GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)reason);
+      gpr_free(message);
     }
+    grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, true, error);
   }
 
   return GRPC_ERROR_NONE;

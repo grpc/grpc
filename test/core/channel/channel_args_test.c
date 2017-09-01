@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -37,10 +22,12 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/channel/channel_args.h"
-
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 static void test_create(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
   grpc_arg arg_int;
   grpc_arg arg_string;
   grpc_arg to_add[2];
@@ -68,10 +55,12 @@ static void test_create(void) {
   GPR_ASSERT(strcmp(ch_args->args[1].value.string, arg_string.value.string) ==
              0);
 
-  grpc_channel_args_destroy(ch_args);
+  grpc_channel_args_destroy(&exec_ctx, ch_args);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_set_compression_algorithm(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_channel_args *ch_args;
 
   ch_args =
@@ -81,10 +70,12 @@ static void test_set_compression_algorithm(void) {
                     GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM) == 0);
   GPR_ASSERT(ch_args->args[0].type == GRPC_ARG_INTEGER);
 
-  grpc_channel_args_destroy(ch_args);
+  grpc_channel_args_destroy(&exec_ctx, ch_args);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_compression_algorithm_states(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_channel_args *ch_args, *ch_args_wo_gzip, *ch_args_wo_gzip_deflate;
   unsigned states_bitset;
   size_t i;
@@ -100,10 +91,10 @@ static void test_compression_algorithm_states(void) {
 
   /* disable gzip and deflate */
   ch_args_wo_gzip = grpc_channel_args_compression_algorithm_set_state(
-      &ch_args, GRPC_COMPRESS_GZIP, 0);
+      &exec_ctx, &ch_args, GRPC_COMPRESS_GZIP, 0);
   GPR_ASSERT(ch_args == ch_args_wo_gzip);
   ch_args_wo_gzip_deflate = grpc_channel_args_compression_algorithm_set_state(
-      &ch_args_wo_gzip, GRPC_COMPRESS_DEFLATE, 0);
+      &exec_ctx, &ch_args_wo_gzip, GRPC_COMPRESS_DEFLATE, 0);
   GPR_ASSERT(ch_args_wo_gzip == ch_args_wo_gzip_deflate);
 
   states_bitset = (unsigned)grpc_channel_args_compression_algorithm_get_states(
@@ -118,7 +109,7 @@ static void test_compression_algorithm_states(void) {
 
   /* re-enabled gzip only */
   ch_args_wo_gzip = grpc_channel_args_compression_algorithm_set_state(
-      &ch_args_wo_gzip_deflate, GRPC_COMPRESS_GZIP, 1);
+      &exec_ctx, &ch_args_wo_gzip_deflate, GRPC_COMPRESS_GZIP, 1);
   GPR_ASSERT(ch_args_wo_gzip == ch_args_wo_gzip_deflate);
 
   states_bitset = (unsigned)grpc_channel_args_compression_algorithm_get_states(
@@ -131,7 +122,25 @@ static void test_compression_algorithm_states(void) {
     }
   }
 
-  grpc_channel_args_destroy(ch_args);
+  grpc_channel_args_destroy(&exec_ctx, ch_args);
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+
+static void test_set_socket_mutator(void) {
+  grpc_channel_args *ch_args;
+  grpc_socket_mutator mutator;
+  grpc_socket_mutator_init(&mutator, NULL);
+
+  ch_args = grpc_channel_args_set_socket_mutator(NULL, &mutator);
+  GPR_ASSERT(ch_args->num_args == 1);
+  GPR_ASSERT(strcmp(ch_args->args[0].key, GRPC_ARG_SOCKET_MUTATOR) == 0);
+  GPR_ASSERT(ch_args->args[0].type == GRPC_ARG_POINTER);
+
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, ch_args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
 }
 
 int main(int argc, char **argv) {
@@ -140,6 +149,7 @@ int main(int argc, char **argv) {
   test_create();
   test_set_compression_algorithm();
   test_compression_algorithm_states();
+  test_set_socket_mutator();
   grpc_shutdown();
   return 0;
 }

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -38,11 +23,12 @@
 
 #include <grpc++/security/credentials.h>
 #include <grpc++/server_context.h>
-#include <grpc/grpc.h>
-#include <gtest/gtest.h>
+#include <grpc/support/log.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
+
+#include <gtest/gtest.h>
 
 using std::chrono::system_clock;
 
@@ -87,6 +73,15 @@ void CheckServerAuthContext(
 
 Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
                              EchoResponse* response) {
+  if (request->has_param() && request->param().server_die()) {
+    gpr_log(GPR_ERROR, "The request should not reach application handler.");
+    GPR_ASSERT(0);
+  }
+  if (request->has_param() && request->param().has_expected_error()) {
+    const auto& error = request->param().expected_error();
+    return Status(static_cast<StatusCode>(error.code()), error.error_message(),
+                  error.binary_error_details());
+  }
   int server_try_cancel = GetIntValueFromMetadata(
       kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
   if (server_try_cancel > DO_NOT_CANCEL) {
@@ -193,7 +188,7 @@ Status TestServiceImpl::RequestStream(ServerContext* context,
     return Status::CANCELLED;
   }
 
-  std::thread* server_try_cancel_thd = NULL;
+  std::thread* server_try_cancel_thd = nullptr;
   if (server_try_cancel == CANCEL_DURING_PROCESSING) {
     server_try_cancel_thd =
         new std::thread(&TestServiceImpl::ServerTryCancel, this, context);
@@ -211,7 +206,7 @@ Status TestServiceImpl::RequestStream(ServerContext* context,
   }
   gpr_log(GPR_INFO, "Read: %d messages", num_msgs_read);
 
-  if (server_try_cancel_thd != NULL) {
+  if (server_try_cancel_thd != nullptr) {
     server_try_cancel_thd->join();
     delete server_try_cancel_thd;
     return Status::CANCELLED;
@@ -241,24 +236,35 @@ Status TestServiceImpl::ResponseStream(ServerContext* context,
   int server_try_cancel = GetIntValueFromMetadata(
       kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
 
+  int server_coalescing_api = GetIntValueFromMetadata(
+      kServerUseCoalescingApi, context->client_metadata(), 0);
+
+  int server_responses_to_send = GetIntValueFromMetadata(
+      kServerResponseStreamsToSend, context->client_metadata(),
+      kServerDefaultResponseStreamsToSend);
+
   if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
     ServerTryCancel(context);
     return Status::CANCELLED;
   }
 
   EchoResponse response;
-  std::thread* server_try_cancel_thd = NULL;
+  std::thread* server_try_cancel_thd = nullptr;
   if (server_try_cancel == CANCEL_DURING_PROCESSING) {
     server_try_cancel_thd =
         new std::thread(&TestServiceImpl::ServerTryCancel, this, context);
   }
 
-  for (int i = 0; i < kNumResponseStreamsMsgs; i++) {
+  for (int i = 0; i < server_responses_to_send; i++) {
     response.set_message(request->message() + grpc::to_string(i));
-    writer->Write(response);
+    if (i == server_responses_to_send - 1 && server_coalescing_api != 0) {
+      writer->WriteLast(response, WriteOptions());
+    } else {
+      writer->Write(response);
+    }
   }
 
-  if (server_try_cancel_thd != NULL) {
+  if (server_try_cancel_thd != nullptr) {
     server_try_cancel_thd->join();
     delete server_try_cancel_thd;
     return Status::CANCELLED;
@@ -294,19 +300,30 @@ Status TestServiceImpl::BidiStream(
     return Status::CANCELLED;
   }
 
-  std::thread* server_try_cancel_thd = NULL;
+  std::thread* server_try_cancel_thd = nullptr;
   if (server_try_cancel == CANCEL_DURING_PROCESSING) {
     server_try_cancel_thd =
         new std::thread(&TestServiceImpl::ServerTryCancel, this, context);
   }
 
+  // kServerFinishAfterNReads suggests after how many reads, the server should
+  // write the last message and send status (coalesced using WriteLast)
+  int server_write_last = GetIntValueFromMetadata(
+      kServerFinishAfterNReads, context->client_metadata(), 0);
+
+  int read_counts = 0;
   while (stream->Read(&request)) {
+    read_counts++;
     gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
     response.set_message(request.message());
-    stream->Write(response);
+    if (read_counts == server_write_last) {
+      stream->WriteLast(response, WriteOptions());
+    } else {
+      stream->Write(response);
+    }
   }
 
-  if (server_try_cancel_thd != NULL) {
+  if (server_try_cancel_thd != nullptr) {
     server_try_cancel_thd->join();
     delete server_try_cancel_thd;
     return Status::CANCELLED;

@@ -1,46 +1,40 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
-#include "src/core/lib/security/transport/secure_endpoint.h"
+/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
+   using that endpoint. Because of various transitive includes in uv.h,
+   including windows.h on Windows, uv.h must be included before other system
+   headers. Therefore, sockaddr.h must always be included first */
+#include "src/core/lib/iomgr/sockaddr.h"
+
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
 #include <grpc/support/sync.h>
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/tsi/transport_security_interface.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 #define STAGING_BUFFER_SIZE 8192
 
@@ -53,46 +47,49 @@ typedef struct {
   grpc_closure *read_cb;
   grpc_closure *write_cb;
   grpc_closure on_read;
-  gpr_slice_buffer *read_buffer;
-  gpr_slice_buffer source_buffer;
+  grpc_slice_buffer *read_buffer;
+  grpc_slice_buffer source_buffer;
   /* saved handshaker leftover data to unprotect. */
-  gpr_slice_buffer leftover_bytes;
+  grpc_slice_buffer leftover_bytes;
   /* buffers for read and write */
-  gpr_slice read_staging_buffer;
+  grpc_slice read_staging_buffer;
 
-  gpr_slice write_staging_buffer;
-  gpr_slice_buffer output_buffer;
+  grpc_slice write_staging_buffer;
+  grpc_slice_buffer output_buffer;
 
   gpr_refcount ref;
 } secure_endpoint;
 
-int grpc_trace_secure_endpoint = 0;
+grpc_tracer_flag grpc_trace_secure_endpoint =
+    GRPC_TRACER_INITIALIZER(false, "secure_endpoint");
 
 static void destroy(grpc_exec_ctx *exec_ctx, secure_endpoint *secure_ep) {
   secure_endpoint *ep = secure_ep;
   grpc_endpoint_destroy(exec_ctx, ep->wrapped_ep);
   tsi_frame_protector_destroy(ep->protector);
-  gpr_slice_buffer_destroy(&ep->leftover_bytes);
-  gpr_slice_unref(ep->read_staging_buffer);
-  gpr_slice_unref(ep->write_staging_buffer);
-  gpr_slice_buffer_destroy(&ep->output_buffer);
-  gpr_slice_buffer_destroy(&ep->source_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &ep->leftover_bytes);
+  grpc_slice_unref_internal(exec_ctx, ep->read_staging_buffer);
+  grpc_slice_unref_internal(exec_ctx, ep->write_staging_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &ep->output_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &ep->source_buffer);
   gpr_mu_destroy(&ep->protector_mu);
   gpr_free(ep);
 }
 
-/*#define GRPC_SECURE_ENDPOINT_REFCOUNT_DEBUG*/
-#ifdef GRPC_SECURE_ENDPOINT_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define SECURE_ENDPOINT_UNREF(exec_ctx, ep, reason) \
   secure_endpoint_unref((exec_ctx), (ep), (reason), __FILE__, __LINE__)
 #define SECURE_ENDPOINT_REF(ep, reason) \
   secure_endpoint_ref((ep), (reason), __FILE__, __LINE__)
-static void secure_endpoint_unref(secure_endpoint *ep,
-                                  grpc_closure_list *closure_list,
+static void secure_endpoint_unref(grpc_exec_ctx *exec_ctx, secure_endpoint *ep,
                                   const char *reason, const char *file,
                                   int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "SECENDP unref %p : %s %d -> %d",
-          ep, reason, ep->ref.count, ep->ref.count - 1);
+  if (GRPC_TRACER_ON(grpc_trace_secure_endpoint)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "SECENDP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
+            val - 1);
+  }
   if (gpr_unref(&ep->ref)) {
     destroy(exec_ctx, ep);
   }
@@ -100,8 +97,12 @@ static void secure_endpoint_unref(secure_endpoint *ep,
 
 static void secure_endpoint_ref(secure_endpoint *ep, const char *reason,
                                 const char *file, int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "SECENDP   ref %p : %s %d -> %d",
-          ep, reason, ep->ref.count, ep->ref.count + 1);
+  if (GRPC_TRACER_ON(grpc_trace_secure_endpoint)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "SECENDP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
+            val + 1);
+  }
   gpr_ref(&ep->ref);
 }
 #else
@@ -120,25 +121,25 @@ static void secure_endpoint_ref(secure_endpoint *ep) { gpr_ref(&ep->ref); }
 
 static void flush_read_staging_buffer(secure_endpoint *ep, uint8_t **cur,
                                       uint8_t **end) {
-  gpr_slice_buffer_add(ep->read_buffer, ep->read_staging_buffer);
-  ep->read_staging_buffer = gpr_slice_malloc(STAGING_BUFFER_SIZE);
-  *cur = GPR_SLICE_START_PTR(ep->read_staging_buffer);
-  *end = GPR_SLICE_END_PTR(ep->read_staging_buffer);
+  grpc_slice_buffer_add(ep->read_buffer, ep->read_staging_buffer);
+  ep->read_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
+  *cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
+  *end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
 }
 
 static void call_read_cb(grpc_exec_ctx *exec_ctx, secure_endpoint *ep,
                          grpc_error *error) {
-  if (grpc_trace_secure_endpoint) {
+  if (GRPC_TRACER_ON(grpc_trace_secure_endpoint)) {
     size_t i;
     for (i = 0; i < ep->read_buffer->count; i++) {
-      char *data = gpr_dump_slice(ep->read_buffer->slices[i],
-                                  GPR_DUMP_HEX | GPR_DUMP_ASCII);
+      char *data = grpc_dump_slice(ep->read_buffer->slices[i],
+                                   GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "READ %p: %s", ep, data);
       gpr_free(data);
     }
   }
   ep->read_buffer = NULL;
-  grpc_exec_ctx_sched(exec_ctx, ep->read_cb, error, NULL);
+  GRPC_CLOSURE_SCHED(exec_ctx, ep->read_cb, error);
   SECURE_ENDPOINT_UNREF(exec_ctx, ep, "read");
 }
 
@@ -148,21 +149,21 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
   uint8_t keep_looping = 0;
   tsi_result result = TSI_OK;
   secure_endpoint *ep = (secure_endpoint *)user_data;
-  uint8_t *cur = GPR_SLICE_START_PTR(ep->read_staging_buffer);
-  uint8_t *end = GPR_SLICE_END_PTR(ep->read_staging_buffer);
+  uint8_t *cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
+  uint8_t *end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
 
   if (error != GRPC_ERROR_NONE) {
-    gpr_slice_buffer_reset_and_unref(ep->read_buffer);
-    call_read_cb(exec_ctx, ep, GRPC_ERROR_CREATE_REFERENCING(
+    grpc_slice_buffer_reset_and_unref_internal(exec_ctx, ep->read_buffer);
+    call_read_cb(exec_ctx, ep, GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                    "Secure read failed", &error, 1));
     return;
   }
 
   /* TODO(yangg) check error, maybe bail out early */
   for (i = 0; i < ep->source_buffer.count; i++) {
-    gpr_slice encrypted = ep->source_buffer.slices[i];
-    uint8_t *message_bytes = GPR_SLICE_START_PTR(encrypted);
-    size_t message_size = GPR_SLICE_LENGTH(encrypted);
+    grpc_slice encrypted = ep->source_buffer.slices[i];
+    uint8_t *message_bytes = GRPC_SLICE_START_PTR(encrypted);
+    size_t message_size = GRPC_SLICE_LENGTH(encrypted);
 
     while (message_size > 0 || keep_looping) {
       size_t unprotected_buffer_size_written = (size_t)(end - cur);
@@ -197,22 +198,24 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
     if (result != TSI_OK) break;
   }
 
-  if (cur != GPR_SLICE_START_PTR(ep->read_staging_buffer)) {
-    gpr_slice_buffer_add(
+  if (cur != GRPC_SLICE_START_PTR(ep->read_staging_buffer)) {
+    grpc_slice_buffer_add(
         ep->read_buffer,
-        gpr_slice_split_head(
+        grpc_slice_split_head(
             &ep->read_staging_buffer,
-            (size_t)(cur - GPR_SLICE_START_PTR(ep->read_staging_buffer))));
+            (size_t)(cur - GRPC_SLICE_START_PTR(ep->read_staging_buffer))));
   }
 
   /* TODO(yangg) experiment with moving this block after read_cb to see if it
      helps latency */
-  gpr_slice_buffer_reset_and_unref(&ep->source_buffer);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &ep->source_buffer);
 
   if (result != TSI_OK) {
-    gpr_slice_buffer_reset_and_unref(ep->read_buffer);
-    call_read_cb(exec_ctx, ep, grpc_set_tsi_error_result(
-                                   GRPC_ERROR_CREATE("Unwrap failed"), result));
+    grpc_slice_buffer_reset_and_unref_internal(exec_ctx, ep->read_buffer);
+    call_read_cb(
+        exec_ctx, ep,
+        grpc_set_tsi_error_result(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unwrap failed"), result));
     return;
   }
 
@@ -220,15 +223,15 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
 }
 
 static void endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
-                          gpr_slice_buffer *slices, grpc_closure *cb) {
+                          grpc_slice_buffer *slices, grpc_closure *cb) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
   ep->read_cb = cb;
   ep->read_buffer = slices;
-  gpr_slice_buffer_reset_and_unref(ep->read_buffer);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, ep->read_buffer);
 
   SECURE_ENDPOINT_REF(ep, "read");
   if (ep->leftover_bytes.count) {
-    gpr_slice_buffer_swap(&ep->leftover_bytes, &ep->source_buffer);
+    grpc_slice_buffer_swap(&ep->leftover_bytes, &ep->source_buffer);
     GPR_ASSERT(ep->leftover_bytes.count == 0);
     on_read(exec_ctx, ep, GRPC_ERROR_NONE);
     return;
@@ -240,35 +243,37 @@ static void endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
 
 static void flush_write_staging_buffer(secure_endpoint *ep, uint8_t **cur,
                                        uint8_t **end) {
-  gpr_slice_buffer_add(&ep->output_buffer, ep->write_staging_buffer);
-  ep->write_staging_buffer = gpr_slice_malloc(STAGING_BUFFER_SIZE);
-  *cur = GPR_SLICE_START_PTR(ep->write_staging_buffer);
-  *end = GPR_SLICE_END_PTR(ep->write_staging_buffer);
+  grpc_slice_buffer_add(&ep->output_buffer, ep->write_staging_buffer);
+  ep->write_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
+  *cur = GRPC_SLICE_START_PTR(ep->write_staging_buffer);
+  *end = GRPC_SLICE_END_PTR(ep->write_staging_buffer);
 }
 
 static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
-                           gpr_slice_buffer *slices, grpc_closure *cb) {
+                           grpc_slice_buffer *slices, grpc_closure *cb) {
+  GPR_TIMER_BEGIN("secure_endpoint.endpoint_write", 0);
+
   unsigned i;
   tsi_result result = TSI_OK;
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
-  uint8_t *cur = GPR_SLICE_START_PTR(ep->write_staging_buffer);
-  uint8_t *end = GPR_SLICE_END_PTR(ep->write_staging_buffer);
+  uint8_t *cur = GRPC_SLICE_START_PTR(ep->write_staging_buffer);
+  uint8_t *end = GRPC_SLICE_END_PTR(ep->write_staging_buffer);
 
-  gpr_slice_buffer_reset_and_unref(&ep->output_buffer);
+  grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &ep->output_buffer);
 
-  if (grpc_trace_secure_endpoint) {
+  if (GRPC_TRACER_ON(grpc_trace_secure_endpoint)) {
     for (i = 0; i < slices->count; i++) {
       char *data =
-          gpr_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
+          grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "WRITE %p: %s", ep, data);
       gpr_free(data);
     }
   }
 
   for (i = 0; i < slices->count; i++) {
-    gpr_slice plain = slices->slices[i];
-    uint8_t *message_bytes = GPR_SLICE_START_PTR(plain);
-    size_t message_size = GPR_SLICE_LENGTH(plain);
+    grpc_slice plain = slices->slices[i];
+    uint8_t *message_bytes = GRPC_SLICE_START_PTR(plain);
+    size_t message_size = GRPC_SLICE_LENGTH(plain);
     while (message_size > 0) {
       size_t protected_buffer_size_to_send = (size_t)(end - cur);
       size_t processed_message_size = message_size;
@@ -307,32 +312,34 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
         flush_write_staging_buffer(ep, &cur, &end);
       }
     } while (still_pending_size > 0);
-    if (cur != GPR_SLICE_START_PTR(ep->write_staging_buffer)) {
-      gpr_slice_buffer_add(
+    if (cur != GRPC_SLICE_START_PTR(ep->write_staging_buffer)) {
+      grpc_slice_buffer_add(
           &ep->output_buffer,
-          gpr_slice_split_head(
+          grpc_slice_split_head(
               &ep->write_staging_buffer,
-              (size_t)(cur - GPR_SLICE_START_PTR(ep->write_staging_buffer))));
+              (size_t)(cur - GRPC_SLICE_START_PTR(ep->write_staging_buffer))));
     }
   }
 
   if (result != TSI_OK) {
     /* TODO(yangg) do different things according to the error type? */
-    gpr_slice_buffer_reset_and_unref(&ep->output_buffer);
-    grpc_exec_ctx_sched(
+    grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &ep->output_buffer);
+    GRPC_CLOSURE_SCHED(
         exec_ctx, cb,
-        grpc_set_tsi_error_result(GRPC_ERROR_CREATE("Wrap failed"), result),
-        NULL);
+        grpc_set_tsi_error_result(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Wrap failed"), result));
+    GPR_TIMER_END("secure_endpoint.endpoint_write", 0);
     return;
   }
 
   grpc_endpoint_write(exec_ctx, ep->wrapped_ep, &ep->output_buffer, cb);
+  GPR_TIMER_END("secure_endpoint.endpoint_write", 0);
 }
 
-static void endpoint_shutdown(grpc_exec_ctx *exec_ctx,
-                              grpc_endpoint *secure_ep) {
+static void endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
+                              grpc_error *why) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
-  grpc_endpoint_shutdown(exec_ctx, ep->wrapped_ep);
+  grpc_endpoint_shutdown(exec_ctx, ep->wrapped_ep, why);
 }
 
 static void endpoint_destroy(grpc_exec_ctx *exec_ctx,
@@ -360,39 +367,46 @@ static char *endpoint_get_peer(grpc_endpoint *secure_ep) {
   return grpc_endpoint_get_peer(ep->wrapped_ep);
 }
 
-static grpc_workqueue *endpoint_get_workqueue(grpc_endpoint *secure_ep) {
+static int endpoint_get_fd(grpc_endpoint *secure_ep) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
-  return grpc_endpoint_get_workqueue(ep->wrapped_ep);
+  return grpc_endpoint_get_fd(ep->wrapped_ep);
+}
+
+static grpc_resource_user *endpoint_get_resource_user(
+    grpc_endpoint *secure_ep) {
+  secure_endpoint *ep = (secure_endpoint *)secure_ep;
+  return grpc_endpoint_get_resource_user(ep->wrapped_ep);
 }
 
 static const grpc_endpoint_vtable vtable = {endpoint_read,
                                             endpoint_write,
-                                            endpoint_get_workqueue,
                                             endpoint_add_to_pollset,
                                             endpoint_add_to_pollset_set,
                                             endpoint_shutdown,
                                             endpoint_destroy,
-                                            endpoint_get_peer};
+                                            endpoint_get_resource_user,
+                                            endpoint_get_peer,
+                                            endpoint_get_fd};
 
 grpc_endpoint *grpc_secure_endpoint_create(
     struct tsi_frame_protector *protector, grpc_endpoint *transport,
-    gpr_slice *leftover_slices, size_t leftover_nslices) {
+    grpc_slice *leftover_slices, size_t leftover_nslices) {
   size_t i;
   secure_endpoint *ep = (secure_endpoint *)gpr_malloc(sizeof(secure_endpoint));
   ep->base.vtable = &vtable;
   ep->wrapped_ep = transport;
   ep->protector = protector;
-  gpr_slice_buffer_init(&ep->leftover_bytes);
+  grpc_slice_buffer_init(&ep->leftover_bytes);
   for (i = 0; i < leftover_nslices; i++) {
-    gpr_slice_buffer_add(&ep->leftover_bytes,
-                         gpr_slice_ref(leftover_slices[i]));
+    grpc_slice_buffer_add(&ep->leftover_bytes,
+                          grpc_slice_ref_internal(leftover_slices[i]));
   }
-  ep->write_staging_buffer = gpr_slice_malloc(STAGING_BUFFER_SIZE);
-  ep->read_staging_buffer = gpr_slice_malloc(STAGING_BUFFER_SIZE);
-  gpr_slice_buffer_init(&ep->output_buffer);
-  gpr_slice_buffer_init(&ep->source_buffer);
+  ep->write_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
+  ep->read_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
+  grpc_slice_buffer_init(&ep->output_buffer);
+  grpc_slice_buffer_init(&ep->source_buffer);
   ep->read_buffer = NULL;
-  grpc_closure_init(&ep->on_read, on_read, ep);
+  GRPC_CLOSURE_INIT(&ep->on_read, on_read, ep, grpc_schedule_on_exec_ctx);
   gpr_mu_init(&ep->protector_mu);
   gpr_ref_init(&ep->ref, 1);
   return &ep->base;

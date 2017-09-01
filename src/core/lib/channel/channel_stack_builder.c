@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -38,7 +23,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-int grpc_trace_channel_stack_builder = 0;
+grpc_tracer_flag grpc_trace_channel_stack_builder =
+    GRPC_TRACER_INITIALIZER(false, "channel_stack_builder");
 
 typedef struct filter_node {
   struct filter_node *next;
@@ -65,8 +51,7 @@ struct grpc_channel_stack_builder_iterator {
 };
 
 grpc_channel_stack_builder *grpc_channel_stack_builder_create(void) {
-  grpc_channel_stack_builder *b = gpr_malloc(sizeof(*b));
-  memset(b, 0, sizeof(*b));
+  grpc_channel_stack_builder *b = gpr_zalloc(sizeof(*b));
 
   b->begin.filter = NULL;
   b->end.filter = NULL;
@@ -114,6 +99,17 @@ grpc_channel_stack_builder_create_iterator_at_last(
   return create_iterator_at_filter_node(builder, &builder->end);
 }
 
+bool grpc_channel_stack_builder_iterator_is_end(
+    grpc_channel_stack_builder_iterator *iterator) {
+  return iterator->node == &iterator->builder->end;
+}
+
+const char *grpc_channel_stack_builder_iterator_filter_name(
+    grpc_channel_stack_builder_iterator *iterator) {
+  if (iterator->node->filter == NULL) return NULL;
+  return iterator->node->filter->name;
+}
+
 bool grpc_channel_stack_builder_move_next(
     grpc_channel_stack_builder_iterator *iterator) {
   if (iterator->node == &iterator->builder->end) return false;
@@ -138,9 +134,10 @@ void grpc_channel_stack_builder_set_name(grpc_channel_stack_builder *builder,
 }
 
 void grpc_channel_stack_builder_set_channel_arguments(
-    grpc_channel_stack_builder *builder, const grpc_channel_args *args) {
+    grpc_exec_ctx *exec_ctx, grpc_channel_stack_builder *builder,
+    const grpc_channel_args *args) {
   if (builder->args != NULL) {
-    grpc_channel_args_destroy(builder->args);
+    grpc_channel_args_destroy(exec_ctx, builder->args);
   }
   builder->args = grpc_channel_args_copy(args);
 }
@@ -213,7 +210,8 @@ bool grpc_channel_stack_builder_add_filter_after(
   return true;
 }
 
-void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder *builder) {
+void grpc_channel_stack_builder_destroy(grpc_exec_ctx *exec_ctx,
+                                        grpc_channel_stack_builder *builder) {
   filter_node *p = builder->begin.next;
   while (p != &builder->end) {
     filter_node *next = p->next;
@@ -221,17 +219,16 @@ void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder *builder) {
     p = next;
   }
   if (builder->args != NULL) {
-    grpc_channel_args_destroy(builder->args);
+    grpc_channel_args_destroy(exec_ctx, builder->args);
   }
   gpr_free(builder->target);
   gpr_free(builder);
 }
 
-void *grpc_channel_stack_builder_finish(grpc_exec_ctx *exec_ctx,
-                                        grpc_channel_stack_builder *builder,
-                                        size_t prefix_bytes, int initial_refs,
-                                        grpc_iomgr_cb_func destroy,
-                                        void *destroy_arg) {
+grpc_error *grpc_channel_stack_builder_finish(
+    grpc_exec_ctx *exec_ctx, grpc_channel_stack_builder *builder,
+    size_t prefix_bytes, int initial_refs, grpc_iomgr_cb_func destroy,
+    void *destroy_arg, void **result) {
   // count the number of filters
   size_t num_filters = 0;
   for (filter_node *p = builder->begin.next; p != &builder->end; p = p->next) {
@@ -250,28 +247,35 @@ void *grpc_channel_stack_builder_finish(grpc_exec_ctx *exec_ctx,
   size_t channel_stack_size = grpc_channel_stack_size(filters, num_filters);
 
   // allocate memory, with prefix_bytes followed by channel_stack_size
-  char *result = gpr_malloc(prefix_bytes + channel_stack_size);
+  *result = gpr_zalloc(prefix_bytes + channel_stack_size);
   // fetch a pointer to the channel stack
   grpc_channel_stack *channel_stack =
-      (grpc_channel_stack *)(result + prefix_bytes);
+      (grpc_channel_stack *)((char *)(*result) + prefix_bytes);
   // and initialize it
-  grpc_channel_stack_init(exec_ctx, initial_refs, destroy,
-                          destroy_arg == NULL ? result : destroy_arg, filters,
-                          num_filters, builder->args, builder->transport,
-                          builder->name, channel_stack);
+  grpc_error *error = grpc_channel_stack_init(
+      exec_ctx, initial_refs, destroy,
+      destroy_arg == NULL ? *result : destroy_arg, filters, num_filters,
+      builder->args, builder->transport, builder->name, channel_stack);
 
-  // run post-initialization functions
-  i = 0;
-  for (filter_node *p = builder->begin.next; p != &builder->end; p = p->next) {
-    if (p->init != NULL) {
-      p->init(channel_stack, grpc_channel_stack_element(channel_stack, i),
-              p->init_arg);
+  if (error != GRPC_ERROR_NONE) {
+    grpc_channel_stack_destroy(exec_ctx, channel_stack);
+    gpr_free(*result);
+    *result = NULL;
+  } else {
+    // run post-initialization functions
+    i = 0;
+    for (filter_node *p = builder->begin.next; p != &builder->end;
+         p = p->next) {
+      if (p->init != NULL) {
+        p->init(channel_stack, grpc_channel_stack_element(channel_stack, i),
+                p->init_arg);
+      }
+      i++;
     }
-    i++;
   }
 
-  grpc_channel_stack_builder_destroy(builder);
+  grpc_channel_stack_builder_destroy(exec_ctx, builder);
   gpr_free((grpc_channel_filter **)filters);
 
-  return result;
+  return error;
 }

@@ -1,4 +1,4 @@
-## **gRPC Compression**
+## gRPC Compression
 
 The keywords "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this document are to be
@@ -52,8 +52,8 @@ by the client WILL result in an `INTERNAL` error status on the client side.
 
 Note that a peer MAY choose to not disclose all the encodings it supports.
 However, if it receives a message compressed in an undisclosed but supported
-encoding, it MUST include said encoding in the response's `grpc-accept-encoding
-h`eader.
+encoding, it MUST include said encoding in the response's `grpc-accept-encoding`
+header.
 
 For every message a server is requested to compress using an algorithm it knows
 the client doesn't support (as indicated by the last `grpc-accept-encoding`
@@ -112,7 +112,7 @@ unsupported condition as well as the supported ones. The returned
 1. An ill-constructed message with its [Compressed-Flag
 bit](PROTOCOL-HTTP2.md#compressed-flag)
 set but lacking a
-"[grpc-encoding](PROTOCOL-HTTP2.md#message-encoding)"
+[grpc-encoding](PROTOCOL-HTTP2.md#message-encoding)
 entry different from _identity_ in its metadata MUST fail with `INTERNAL`
 status, its associated description indicating the invalid Compressed-Flag
 condition.

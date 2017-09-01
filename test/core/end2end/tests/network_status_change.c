@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -46,8 +31,6 @@
 /* this is a private API but exposed here for testing*/
 extern void grpc_network_status_shutdown_all_endpoints();
 
-enum { TIMEOUT = 200000 };
-
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -55,31 +38,34 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args *client_args,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
   return f;
 }
 
-static gpr_timespec n_seconds_time(int n) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
+static gpr_timespec n_seconds_from_now(int n) {
+  return grpc_timeout_seconds_to_deadline(n);
 }
 
-static gpr_timespec five_seconds_time(void) { return n_seconds_time(500); }
+static gpr_timespec five_seconds_from_now(void) {
+  return n_seconds_from_now(500);
+}
 
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time(), NULL);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
+                                         grpc_timeout_seconds_to_deadline(5),
+                                         NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -98,16 +84,17 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
+  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 /* Client sends a request with payload, server reads then returns status. */
 static void test_invoke_network_status_change(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
-  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
+  grpc_slice request_payload_slice =
+      grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  gpr_timespec deadline = five_seconds_time();
   grpc_end2end_test_fixture f =
       begin_test(config, "test_invoke_request_with_payload", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
@@ -120,12 +107,15 @@ static void test_invoke_network_status_change(grpc_end2end_test_config config) {
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
+  gpr_timespec deadline = five_seconds_from_now();
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/foo"),
+      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -141,7 +131,7 @@ static void test_invoke_network_status_change(grpc_end2end_test_config config) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = request_payload;
+  op->data.send_message.send_message = request_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -150,7 +140,7 @@ static void test_invoke_network_status_change(grpc_end2end_test_config config) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -158,7 +148,6 @@ static void test_invoke_network_status_change(grpc_end2end_test_config config) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -168,7 +157,7 @@ static void test_invoke_network_status_change(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
                                  f.server, &s, &call_details,
                                  &request_metadata_recv, f.cq, f.cq, tag(101)));
-  cq_expect_completion(cqv, tag(101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
   op = ops;
@@ -178,14 +167,14 @@ static void test_invoke_network_status_change(grpc_end2end_test_config config) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &request_payload_recv;
+  op->data.recv_message.recv_message = &request_payload_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(102), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
   cq_verify(cqv);
 
   // Simulate the network loss event
@@ -200,31 +189,35 @@ static void test_invoke_network_status_change(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  op->data.send_status_from_server.status_details = "xyz";
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(103), 1);
-  cq_expect_completion(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
+  // TODO(makdharma) Update this when the shutdown_all_endpoints is implemented.
   // Expected behavior of a RPC when network is lost.
-  GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
-  GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
-  GPR_ASSERT(was_cancelled == 0);
+  // GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
+  GPR_ASSERT(status == GRPC_STATUS_OK);
 
-  gpr_free(details);
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
+
+  grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
-  grpc_call_destroy(c);
-  grpc_call_destroy(s);
+  grpc_call_unref(c);
+  grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
 
@@ -236,6 +229,10 @@ static void test_invoke_network_status_change(grpc_end2end_test_config config) {
 }
 
 void network_status_change(grpc_end2end_test_config config) {
+  if (config.feature_mask &
+      FEATURE_MASK_DOES_NOT_SUPPORT_NETWORK_STATUS_CHANGE) {
+    return;
+  }
   test_invoke_network_status_change(config);
 }
 

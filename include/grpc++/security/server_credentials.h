@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -46,13 +31,13 @@ struct grpc_server;
 namespace grpc {
 class Server;
 
-// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
+/// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
 class ServerCredentials {
  public:
   virtual ~ServerCredentials();
 
-  // This method is not thread-safe and has to be called before the server is
-  // started. The last call to this function wins.
+  /// This method is not thread-safe and has to be called before the server is
+  /// started. The last call to this function wins.
   virtual void SetAuthMetadataProcessor(
       const std::shared_ptr<AuthMetadataProcessor>& processor) = 0;
 
@@ -70,7 +55,7 @@ class ServerCredentials {
 
 /// Options to create ServerCredentials with SSL
 struct SslServerCredentialsOptions {
-  // Deprecated
+  /// \warning Deprecated
   SslServerCredentialsOptions()
       : force_client_auth(false),
         client_certificate_request(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {}
@@ -84,12 +69,13 @@ struct SslServerCredentialsOptions {
   };
   grpc::string pem_root_certs;
   std::vector<PemKeyCertPair> pem_key_cert_pairs;
-  // Deprecated
+  /// \warning Deprecated
   bool force_client_auth;
 
-  // If both force_client_auth and client_certificate_request fields are set,
-  // force_client_auth takes effect i.e
-  // REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY will be enforced.
+  /// If both \a force_client_auth and \a client_certificate_request
+  /// fields are set, \a force_client_auth takes effect, i.e.
+  /// \a REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+  /// will be enforced.
   grpc_ssl_client_certificate_request_type client_certificate_request;
 };
 

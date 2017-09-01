@@ -7,39 +7,32 @@
   # This file can be regenerated from the template by running
   # tools/buildgen/generate_projects.sh
   #
-  # Additionally, this is currently very experimental, and unsupported.
-  # Further work will happen on that file.
+  # Copyright 2015 gRPC authors.
   #
-  # Copyright 2015, Google Inc.
-  # All rights reserved.
+  # Licensed under the Apache License, Version 2.0 (the "License");
+  # you may not use this file except in compliance with the License.
+  # You may obtain a copy of the License at
   #
-  # Redistribution and use in source and binary forms, with or without
-  # modification, are permitted provided that the following conditions are
-  # met:
+  #     http://www.apache.org/licenses/LICENSE-2.0
   #
-  #     * Redistributions of source code must retain the above copyright
-  # notice, this list of conditions and the following disclaimer.
-  #     * Redistributions in binary form must reproduce the above
-  # copyright notice, this list of conditions and the following disclaimer
-  # in the documentation and/or other materials provided with the
-  # distribution.
-  #     * Neither the name of Google Inc. nor the names of its
-  # contributors may be used to endorse or promote products derived from
-  # this software without specific prior written permission.
-  #
-  # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-  # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-  # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-  # A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-  # OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-  # SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-  # LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-  # DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-  # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  # Unless required by applicable law or agreed to in writing, software
+  # distributed under the License is distributed on an "AS IS" BASIS,
+  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  # See the License for the specific language governing permissions and
+  # limitations under the License.
 
   <%!
+
+  import re
+
+  proto_re = re.compile('(.*)\\.proto')
+
+  def proto_replace_ext(filename, ext):
+      m = proto_re.match(filename)
+      if not m:
+        return filename
+      return '${_gRPC_PROTO_GENS_DIR}/' + m.group(1) + ext
+
   def get_deps(target_dict):
     deps = []
     if target_dict.get('baselib', False):
@@ -48,32 +41,60 @@
       deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
     if target_dict.get('secure', False):
       deps.append("${_gRPC_SSL_LIBRARIES}")
-    if target_dict['name'] in ['grpc++', 'grpc++_unsecure', 'grpc++_codegen_lib']:
+    if target_dict.language == 'c++':
       deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
-    elif target_dict['name'] in ['grpc']:
+    if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
       deps.append("${_gRPC_ZLIB_LIBRARIES}")
+      deps.append("${_gRPC_CARES_LIBRARIES}")
+    deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
       deps.append(d)
+    if target_dict.build == 'test' and target_dict.language == 'c++':
+      deps.append("${_gRPC_GFLAGS_LIBRARIES}")
     return deps
+
+  def get_platforms_condition_begin(platforms):
+    if all(platform in platforms for platform in ['linux', 'mac', 'posix', 'windows']):
+      return ''
+    cond = ' OR '.join(['_gRPC_PLATFORM_%s' % platform.upper() for platform in platforms])
+    return 'if(%s)\n' % cond
+
+  def get_platforms_condition_end(platforms):
+    if not get_platforms_condition_begin(platforms):
+      return ''
+    return 'endif()\n'
   %>
 
   cmake_minimum_required(VERSION 2.8)
 
   set(PACKAGE_NAME      "grpc")
-  set(PACKAGE_VERSION   "${settings.core_version}")
+  set(PACKAGE_VERSION   "${settings.cpp_version}")
   set(PACKAGE_STRING    "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
   set(PACKAGE_TARNAME   "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
   set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
   project(<%text>${PACKAGE_NAME}</%text> C CXX)
+  
+  set(gRPC_INSTALL_BINDIR "<%text>${CMAKE_INSTALL_PREFIX}</%text>/bin" CACHE PATH "Installation directory for executables")
+  set(gRPC_INSTALL_LIBDIR "<%text>${CMAKE_INSTALL_PREFIX}</%text>/lib" CACHE PATH "Installation directory for libraries")
+  set(gRPC_INSTALL_INCLUDEDIR "<%text>${CMAKE_INSTALL_PREFIX}</%text>/include" CACHE PATH "Installation directory for headers")
+  set(gRPC_INSTALL_CMAKEDIR "<%text>${CMAKE_INSTALL_PREFIX}/lib/cmake/${PACKAGE_NAME}</%text>" CACHE PATH "Installation directory for cmake config files")
 
-  if (NOT MSVC)
-    set(gRPC_INSTALL ON CACHE BOOL "Generate installation target")
-  else()
-    set(gRPC_INSTALL OFF CACHE BOOL "Generate installation target")
+  # Options
+  option(gRPC_BUILD_TESTS "Build tests" OFF)
+
+  set(gRPC_INSTALL_default ON)
+  if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    # Disable gRPC_INSTALL by default if building as a submodule
+    set(gRPC_INSTALL_default OFF)
   endif()
+  set(gRPC_INSTALL <%text>${gRPC_INSTALL_default}</%text> CACHE BOOL
+      "Generate installation target: gRPC_ZLIB_PROVIDER, gRPC_CARES_PROVIDER, gRPC_SSL_PROVIDER and gRPC_PROTOBUF_PROVIDER must all be \"package\"")
 
   set(gRPC_ZLIB_PROVIDER "module" CACHE STRING "Provider of zlib library")
   set_property(CACHE gRPC_ZLIB_PROVIDER PROPERTY STRINGS "module" "package")
+
+  set(gRPC_CARES_PROVIDER "module" CACHE STRING "Provider of c-ares library")
+  set_property(CACHE gRPC_CARES_PROVIDER PROPERTY STRINGS "module" "package")
 
   set(gRPC_SSL_PROVIDER "module" CACHE STRING "Provider of ssl library")
   set_property(CACHE gRPC_SSL_PROVIDER PROPERTY STRINGS "module" "package")
@@ -81,10 +102,42 @@
   set(gRPC_PROTOBUF_PROVIDER "module" CACHE STRING "Provider of protobuf library")
   set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
 
+  set(gRPC_PROTOBUF_PACKAGE_TYPE "" CACHE STRING "Algorithm for searching protobuf package")
+  set_property(CACHE gRPC_PROTOBUF_PACKAGE_TYPE PROPERTY STRINGS "CONFIG" "MODULE")
+
+  set(gRPC_GFLAGS_PROVIDER "module" CACHE STRING "Provider of gflags library")
+  set_property(CACHE gRPC_GFLAGS_PROVIDER PROPERTY STRINGS "module" "package")
+
+  set(gRPC_BENCHMARK_PROVIDER "module" CACHE STRING "Provider of benchmark library")
+  set_property(CACHE gRPC_BENCHMARK_PROVIDER PROPERTY STRINGS "module" "package")
+
   set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
+  if(UNIX)
+    if(<%text>${CMAKE_SYSTEM_NAME}</%text> MATCHES "Linux")
+      set(_gRPC_PLATFORM_LINUX ON)
+    elseif(<%text>${CMAKE_SYSTEM_NAME}</%text> MATCHES "Darwin")
+      set(_gRPC_PLATFORM_MAC ON)
+    else()
+      set(_gRPC_PLATFORM_POSIX ON)
+    endif()
+  endif()
+  if(WIN32)
+    set(_gRPC_PLATFORM_WINDOWS ON)
+  endif()
+
+  ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
+  set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+
   if (MSVC)
-    add_definitions( -D_WIN32_WINNT=0x600 )
+    include(cmake/msvc_static_runtime.cmake)
+    add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
+    # needed to compile protobuf
+    add_definitions(/wd4065 /wd4506)
+    # TODO(jtattermusch): revisit C4267 occurrences throughout the code
+    add_definitions(/wd4267)
+    # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
+    add_definitions(/wd4987 /wd4774 /wd4819 /wd4996 /wd4619)
   endif()
 
   if (gRPC_USE_PROTO_LITE)
@@ -100,12 +153,19 @@
     endif()
     set(ZLIB_INCLUDE_DIR "<%text>${ZLIB_ROOT_DIR}</%text>")
     if(EXISTS "<%text>${ZLIB_ROOT_DIR}</%text>/CMakeLists.txt")
+        # TODO(jtattermusch): workaround for https://github.com/madler/zlib/issues/218
+        include_directories(<%text>${ZLIB_INCLUDE_DIR}</%text>)
+
         add_subdirectory(<%text>${ZLIB_ROOT_DIR}</%text> third_party/zlib)
         if(TARGET zlibstatic)
             set(_gRPC_ZLIB_LIBRARIES zlibstatic)
         endif()
     else()
         message(WARNING "gRPC_ZLIB_PROVIDER is \"module\" but ZLIB_ROOT_DIR is wrong")
+    endif()
+    if(gRPC_INSTALL)
+      message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_ZLIB_PROVIDER is \"module\"")
+      set(gRPC_INSTALL FALSE)
     endif()
   elseif("<%text>${gRPC_ZLIB_PROVIDER}</%text>" STREQUAL "package")
     find_package(ZLIB)
@@ -115,6 +175,41 @@
     set(_gRPC_FIND_ZLIB "if(NOT ZLIB_FOUND)\n  find_package(ZLIB)\nendif()")
   endif()
 
+  if("<%text>${gRPC_CARES_PROVIDER}</%text>" STREQUAL "module")
+    if(NOT CARES_ROOT_DIR)
+      set(CARES_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/src/c-ares)
+    endif()
+    string(TOLOWER <%text>${CMAKE_SYSTEM_NAME}</%text> CARES_SYSTEM_NAME)
+    set(CARES_INCLUDE_DIR "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/cares/cares")
+    set(CARES_BUILD_INCLUDE_DIR "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/cares")
+    set(CARES_PLATFORM_INCLUDE_DIR "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/cares/config_<%text>${CARES_SYSTEM_NAME}</%text>")
+    if(EXISTS "<%text>${CARES_ROOT_DIR}</%text>/CMakeLists.txt")
+      if("<%text>${CARES_SYSTEM_NAME}</%text>" MATCHES "windows")
+        add_definitions(-DCARES_STATICLIB=1)
+        add_definitions(-DWIN32_LEAN_AND_MEAN=1)
+      else()
+        add_definitions(-DHAVE_CONFIG_H=1)
+        add_definitions(-D_GNU_SOURCE=1)
+      endif()
+      add_subdirectory(src/c-ares third_party/cares)
+      if(TARGET cares)
+          set(_gRPC_CARES_LIBRARIES cares)
+      endif()
+    else()
+      message(WARNING "gRPC_CARES_PROVIDER is \"module\" but CARES_ROOT_DIR is wrong")
+    endif()
+    if(gRPC_INSTALL)
+      message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_CARES_PROVIDER is \"module\"")
+      set(gRPC_INSTALL FALSE)
+    endif()
+  elseif("<%text>${gRPC_CARES_PROVIDER}</%text>" STREQUAL "package")
+    find_package(c-ares CONFIG)
+    if(TARGET c-ares::cares)
+      set(_gRPC_CARES_LIBRARIES c-ares::cares)
+    endif()
+    set(_gRPC_FIND_CARES "if(NOT c-ares_FOUND)\n  find_package(c-ares CONFIG)\nendif()")
+  endif()
+
   if("<%text>${gRPC_PROTOBUF_PROVIDER}</%text>" STREQUAL "module")
     # Building the protobuf tests require gmock what is not part of a standard protobuf checkout.
     # Disable them unless they are explicitly requested from the cmake command line (when we assume
@@ -122,9 +217,15 @@
     if(NOT protobuf_BUILD_TESTS)
       set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests")
     endif()
+    # Disable building protobuf with zlib. Building protobuf with zlib breaks
+    # the build if zlib is not installed on the system.
+    if(NOT protobuf_WITH_ZLIB)
+      set(protobuf_WITH_ZLIB OFF CACHE BOOL "Build protobuf with zlib.")
+    endif()
     if(NOT PROTOBUF_ROOT_DIR)
       set(PROTOBUF_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/protobuf)
     endif()
+    set(PROTOBUF_WELLKNOWN_IMPORT_DIR <%text>${PROTOBUF_ROOT_DIR}</%text>/src)
     if(EXISTS "<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake/CMakeLists.txt")
       set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link static runtime libraries")
       add_subdirectory(<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake third_party/protobuf)
@@ -134,23 +235,40 @@
       if(TARGET libprotoc)
         set(_gRPC_PROTOBUF_PROTOC_LIBRARIES libprotoc)
       endif()
+      if(TARGET protoc)
+        set(_gRPC_PROTOBUF_PROTOC protoc)
+      endif()
     else()
         message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
     endif()
+    if(gRPC_INSTALL)
+      message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_PROTOBUF_PROVIDER is \"module\"")
+      set(gRPC_INSTALL FALSE)
+    endif()
   elseif("<%text>${gRPC_PROTOBUF_PROVIDER}</%text>" STREQUAL "package")
-    find_package(protobuf CONFIG)
-    if(protobuf_FOUND)
+    find_package(Protobuf <%text>${gRPC_PROTOBUF_PACKAGE_TYPE}</%text>)
+    if(Protobuf_FOUND OR PROTOBUF_FOUND)
       if(TARGET protobuf::<%text>${_gRPC_PROTOBUF_LIBRARY_NAME}</%text>)
         set(_gRPC_PROTOBUF_LIBRARIES protobuf::<%text>${_gRPC_PROTOBUF_LIBRARY_NAME}</%text>)
+      else()
+        set(_gRPC_PROTOBUF_LIBRARIES <%text>${PROTOBUF_LIBRARIES}</%text>)
       endif()
       if(TARGET protobuf::libprotoc)
         set(_gRPC_PROTOBUF_PROTOC_LIBRARIES protobuf::libprotoc)
+      else()
+        set(_gRPC_PROTOBUF_PROTOC_LIBRARIES <%text>${PROTOBUF_PROTOC_LIBRARIES}</%text>)
       endif()
-      set(_gRPC_FIND_PROTOBUF "if(NOT protobuf_FOUND)\n  find_package(protobuf CONFIG)\nendif()")
-    else()
-      find_package(Protobuf MODULE)
-      set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND)\n  find_package(Protobuf)\nendif()")
+      if(TARGET protobuf::protoc)
+        set(_gRPC_PROTOBUF_PROTOC protobuf::protoc)
+      else()
+        set(_gRPC_PROTOBUF_PROTOC <%text>${PROTOBUF_PROTOC_EXECUTABLE}</%text>)
+      endif()
+      set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND AND NOT PROTOBUF_FOUND)\n  find_package(Protobuf <%text>${gRPC_PROTOBUF_PACKAGE_TYPE}</%text>)\nendif()")
     endif()
+    if(PROTOBUF_FOUND)
+      include_directories(<%text>${PROTOBUF_INCLUDE_DIRS}</%text>)
+    endif()
+    set(PROTOBUF_WELLKNOWN_IMPORT_DIR /usr/local/include)
   endif()
 
   if("<%text>${gRPC_SSL_PROVIDER}</%text>" STREQUAL "module")
@@ -158,12 +276,17 @@
       set(BORINGSSL_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/boringssl)
     endif()
     if(EXISTS "<%text>${BORINGSSL_ROOT_DIR}</%text>/CMakeLists.txt")
+      set(OPENSSL_NO_ASM ON)  # make boringssl buildable with Visual Studio
       add_subdirectory(<%text>${BORINGSSL_ROOT_DIR}</%text> third_party/boringssl)
       if(TARGET ssl)
         set(_gRPC_SSL_LIBRARIES ssl)
       endif()
     else()
         message(WARNING "gRPC_SSL_PROVIDER is \"module\" but BORINGSSL_ROOT_DIR is wrong")
+    endif()
+    if(gRPC_INSTALL)
+      message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_SSL_PROVIDER is \"module\"")
+      set(gRPC_INSTALL FALSE)
     endif()
   elseif("<%text>${gRPC_SSL_PROVIDER}</%text>" STREQUAL "package")
     find_package(OpenSSL)
@@ -173,48 +296,256 @@
     set(_gRPC_FIND_SSL "if(NOT OpenSSL_FOUND)\n  find_package(OpenSSL)\nendif()")
   endif()
 
+  if("<%text>${gRPC_GFLAGS_PROVIDER}</%text>" STREQUAL "module")
+    if(NOT GFLAGS_ROOT_DIR)
+      set(GFLAGS_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/gflags)
+    endif()
+    if(EXISTS "<%text>${GFLAGS_ROOT_DIR}</%text>/CMakeLists.txt")
+        add_subdirectory(<%text>${GFLAGS_ROOT_DIR}</%text> third_party/gflags)
+        if(TARGET gflags_static)
+            set(_gRPC_GFLAGS_LIBRARIES gflags_static)
+        endif()
+    else()
+        message(WARNING "gRPC_GFLAGS_PROVIDER is \"module\" but GFLAGS_ROOT_DIR is wrong")
+    endif()
+  elseif("<%text>${gRPC_GFLAGS_PROVIDER}</%text>" STREQUAL "package")
+    find_package(gflags)
+    if(TARGET gflags::gflags)
+      set(_gRPC_GFLAGS_LIBRARIES gflags::gflags)
+    endif()
+    set(_gRPC_FIND_GFLAGS "if(NOT gflags_FOUND)\n  find_package(gflags)\nendif()")
+  endif()
+
+  if("<%text>${gRPC_BENCHMARK_PROVIDER}</%text>" STREQUAL "module")
+    if(NOT BENCHMARK_ROOT_DIR)
+      set(BENCHMARK_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/benchmark)
+    endif()
+    if(EXISTS "<%text>${BENCHMARK_ROOT_DIR}</%text>/CMakeLists.txt")
+        add_subdirectory(<%text>${BENCHMARK_ROOT_DIR}</%text> third_party/benchmark)
+        if(TARGET benchmark)
+            set(_gRPC_BENCHMARK_LIBRARIES benchmark)
+        endif()
+    else()
+        message(WARNING "gRPC_BENCHMARK_PROVIDER is \"module\" but BENCHMARK_ROOT_DIR is wrong")
+    endif()
+  elseif("<%text>${gRPC_BENCHMARK_PROVIDER}</%text>" STREQUAL "package")
+    find_package(benchmark)
+    if(TARGET benchmark::benchmark)
+      set(_gRPC_BENCHMARK_LIBRARIES benchmark::benchmark)
+    endif()
+    set(_gRPC_FIND_BENCHMARK "if(NOT benchmark_FOUND)\n  find_package(benchmark)\nendif()")
+  endif()
+
   if(NOT MSVC)
-    set(CMAKE_C_FLAGS   "<%text>${CMAKE_C_FLAGS}</%text>   -std=c11")
+    set(CMAKE_C_FLAGS   "<%text>${CMAKE_C_FLAGS}</%text> -std=c99")
     set(CMAKE_CXX_FLAGS "<%text>${CMAKE_CXX_FLAGS}</%text> -std=c++11")
+  endif()
+
+  if(_gRPC_PLATFORM_MAC)
+    set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> m pthread)
+  elseif(UNIX)
+    set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> rt m pthread)
   endif()
 
   if(WIN32 AND MSVC)
     set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32)
   endif()
 
-  include(GNUInstallDirs)
-  if(NOT DEFINED CMAKE_INSTALL_CMAKEDIR)
-    set(CMAKE_INSTALL_CMAKEDIR "<%text>${CMAKE_INSTALL_LIBDIR}</%text>/cmake/gRPC")
-  endif()
+  # Create directory for generated .proto files
+  set(_gRPC_PROTO_GENS_DIR <%text>${CMAKE_BINARY_DIR}/gens</%text>)
+  file(MAKE_DIRECTORY <%text>${_gRPC_PROTO_GENS_DIR}</%text>)
+
+  #  protobuf_generate_grpc_cpp
+  #  --------------------------
+  #
+  #   Add custom commands to process ``.proto`` files to C++ using protoc and
+  #   GRPC plugin::
+  #
+  #     protobuf_generate_grpc_cpp [<ARGN>...]
+  #
+  #   ``ARGN``
+  #     ``.proto`` files
+  #
+  function(protobuf_generate_grpc_cpp)
+    if(NOT ARGN)
+      message(SEND_ERROR "Error: PROTOBUF_GENERATE_GRPC_CPP() called without any proto files")
+      return()
+    endif()
+
+    set(_protobuf_include_path -I . -I <%text>${PROTOBUF_WELLKNOWN_IMPORT_DIR}</%text>)
+    foreach(FIL <%text>${ARGN}</%text>)
+      get_filename_component(ABS_FIL <%text>${FIL}</%text> ABSOLUTE)
+      get_filename_component(FIL_WE <%text>${FIL}</%text> NAME_WE)
+      file(RELATIVE_PATH REL_FIL <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text> <%text>${ABS_FIL}</%text>)
+      get_filename_component(REL_DIR <%text>${REL_FIL}</%text> DIRECTORY)
+      set(RELFIL_WE "<%text>${REL_DIR}/${FIL_WE}</%text>")
+
+      add_custom_command(
+        OUTPUT <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc"</%text>
+               <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"</%text>
+               <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h"</%text>
+               <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc"</%text>
+               <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h"</%text>
+        COMMAND <%text>$<TARGET_FILE:${_gRPC_PROTOBUF_PROTOC}></%text>
+        ARGS --grpc_out=<%text>generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}</%text>
+             --cpp_out=<%text>${_gRPC_PROTO_GENS_DIR}</%text>
+             --plugin=protoc-gen-grpc=$<TARGET_FILE:grpc_cpp_plugin>
+             <%text>${_protobuf_include_path}</%text>
+             <%text>${REL_FIL}</%text>
+        DEPENDS <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC}</%text> grpc_cpp_plugin
+        WORKING_DIRECTORY <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
+        COMMENT "Running gRPC C++ protocol buffer compiler on <%text>${FIL}</%text>"
+        VERBATIM)
+
+        <%text>set_source_files_properties("${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"  "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc" "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h" PROPERTIES GENERATED TRUE)</%text>
+    endforeach()
+  endfunction()
+
+  add_custom_target(plugins
+    DEPENDS
+  % for tgt in targets:
+  % if tgt.build == 'protoc':
+    ${tgt.name}
+  % endif
+  % endfor
+  )
+
+  add_custom_target(tools_c
+    DEPENDS
+  % for tgt in targets:
+  % if tgt.build == 'tool' and not tgt.language == 'c++':
+    ${tgt.name}
+  % endif
+  % endfor
+  )
+
+  add_custom_target(tools_cxx
+    DEPENDS
+  % for tgt in targets:
+  % if tgt.build == 'tool' and tgt.language == 'c++':
+    ${tgt.name}
+  % endif
+  % endfor
+  )
+
+  add_custom_target(tools
+    DEPENDS tools_c tools_cxx)
+
+  if (gRPC_BUILD_TESTS)
+  add_custom_target(buildtests_c)
+  % for tgt in targets:
+  % if tgt.build == 'test' and not tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl:
+  ${get_platforms_condition_begin(tgt.platforms)}\
+  add_dependencies(buildtests_c ${tgt.name})
+  ${get_platforms_condition_end(tgt.platforms)}\
+  % endif
+  % endfor
+
+  add_custom_target(buildtests_cxx)
+  % for tgt in targets:
+  % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl:
+  ${get_platforms_condition_begin(tgt.platforms)}\
+  add_dependencies(buildtests_cxx ${tgt.name})
+  ${get_platforms_condition_end(tgt.platforms)}\
+  % endif
+  % endfor
+
+  add_custom_target(buildtests
+    DEPENDS buildtests_c buildtests_cxx)
+  endif (gRPC_BUILD_TESTS)
 
   % for lib in libs:
-  % if lib.build in ["all", "protoc", "tool"]:
-    ${cc_library(lib)}
-    ${cc_install(lib)}
+  % if lib.build in ["all", "protoc", "tool", "test", "private"] and not lib.boringssl:
+  % if not lib.get('build_system', []) or 'cmake' in lib.get('build_system', []):
+  % if not lib.name in ['benchmark', 'z']:  # we build these using CMake instead
+  % if lib.build in ["test", "private"]:
+  if (gRPC_BUILD_TESTS)
+  ${cc_library(lib)}
+  endif (gRPC_BUILD_TESTS)
+  % else:
+  ${cc_library(lib)}
+  ${cc_install(lib)}
+  % endif
+  % endif
+  % endif
   % endif
   % endfor
 
   % for tgt in targets:
-  % if tgt.build in ["all", "protoc", "tool"]:
+  % if tgt.build in ["all", "protoc", "tool", "test", "private"] and not tgt.boringssl:
+  % if tgt.build in ["test", "private"]:
+  if (gRPC_BUILD_TESTS)
+  ${get_platforms_condition_begin(tgt.platforms)}\
+  ${cc_binary(tgt)}
+  ${get_platforms_condition_end(tgt.platforms)}\
+  endif (gRPC_BUILD_TESTS)
+  % else:
+  ${get_platforms_condition_begin(tgt.platforms)}\
   ${cc_binary(tgt)}
   ${cc_install(tgt)}
+  ${get_platforms_condition_end(tgt.platforms)}\
+  % endif
   % endif
   % endfor
 
   <%def name="cc_library(lib)">
-  add_library(${lib.name}
+  add_library(${lib.name}${' SHARED' if lib.get('dll', None) == 'only' else ''}
   % for src in lib.src:
+  % if not proto_re.match(src):
     ${src}
+  % else:
+    ${proto_replace_ext(src, '.pb.cc')}
+    ${proto_replace_ext(src, '.grpc.pb.cc')}
+    ${proto_replace_ext(src, '.pb.h')}
+    ${proto_replace_ext(src, '.grpc.pb.h')}
+    % if src in ["src/proto/grpc/testing/compiler_test.proto", "src/proto/grpc/testing/echo.proto"]:
+    ${proto_replace_ext(src, '_mock.grpc.pb.h')}
+    % endif
+  % endif
   % endfor
   )
 
+  if(WIN32 AND MSVC)
+    set_target_properties(${lib.name} PROPERTIES COMPILE_PDB_NAME "${lib.name}"
+      COMPILE_PDB_OUTPUT_DIRECTORY <%text>"${CMAKE_BINARY_DIR}</%text>"
+    )
+    if (gRPC_INSTALL)
+      install(FILES <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>${lib.name}.pdb
+        DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text> OPTIONAL
+      )
+    endif()
+  endif()
+
+  % for src in lib.src:
+  % if proto_re.match(src):
+  protobuf_generate_grpc_cpp(
+    ${src}
+  )
+  % endif
+  % endfor
+
   target_include_directories(${lib.name}
+    PUBLIC <%text>$<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include></%text>
     PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
-    PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/include
     PRIVATE <%text>${BORINGSSL_ROOT_DIR}</%text>/include
     PRIVATE <%text>${PROTOBUF_ROOT_DIR}</%text>/src
     PRIVATE <%text>${ZLIB_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${BENCHMARK}</%text>/include
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/zlib
+    PRIVATE <%text>${CARES_BUILD_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${CARES_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${CARES_PLATFORM_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
+    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
+  % if lib.build in ['test', 'private'] and lib.language == 'c++':
+    PRIVATE third_party/googletest/googletest/include
+    PRIVATE third_party/googletest/googletest
+    PRIVATE third_party/googletest/googlemock/include
+    PRIVATE third_party/googletest/googlemock
+  % endif
+  % if lib.language == 'c++':
+    PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>
+  % endif
   )
 
   % if len(get_deps(lib)) > 0:
@@ -234,7 +565,7 @@
     string(REPLACE "include/" "" _path <%text>${_hdr}</%text>)
     get_filename_component(_path <%text>${_path}</%text> PATH)
     install(FILES <%text>${_hdr}</%text>
-      DESTINATION "<%text>${CMAKE_INSTALL_INCLUDEDIR}/${_path}</%text>"
+      DESTINATION "<%text>${gRPC_INSTALL_INCLUDEDIR}/${_path}</%text>"
     )
   endforeach()
   % endif
@@ -243,17 +574,51 @@
   <%def name="cc_binary(tgt)">
   add_executable(${tgt.name}
   % for src in tgt.src:
+  % if not proto_re.match(src):
     ${src}
+  % else:
+    ${proto_replace_ext(src, '.pb.cc')}
+    ${proto_replace_ext(src, '.grpc.pb.cc')}
+    ${proto_replace_ext(src, '.pb.h')}
+    ${proto_replace_ext(src, '.grpc.pb.h')}
+  % endif
   % endfor
+  % if tgt.build == 'test' and tgt.language == 'c++':
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  % endif
   )
+
+  % for src in tgt.src:
+  % if proto_re.match(src):
+  protobuf_generate_grpc_cpp(
+    ${src}
+  )
+  % endif
+  % endfor
 
   target_include_directories(${tgt.name}
     PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
     PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/include
     PRIVATE <%text>${BORINGSSL_ROOT_DIR}</%text>/include
     PRIVATE <%text>${PROTOBUF_ROOT_DIR}</%text>/src
+    PRIVATE <%text>${BENCHMARK_ROOT_DIR}</%text>/include
     PRIVATE <%text>${ZLIB_ROOT_DIR}</%text>
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/zlib
+    PRIVATE <%text>${CARES_BUILD_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${CARES_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${CARES_PLATFORM_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
+    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
+  % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
+    PRIVATE third_party/googletest/googletest/include
+    PRIVATE third_party/googletest/googletest
+    PRIVATE third_party/googletest/googlemock/include
+    PRIVATE third_party/googletest/googlemock
+  % endif
+  % if tgt.language == 'c++':
+    PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>
+  % endif
   )
 
   % if len(get_deps(tgt)) > 0:
@@ -268,16 +633,16 @@
   <%def name="cc_install(tgt)">
   if (gRPC_INSTALL)
     install(TARGETS ${tgt.name} EXPORT gRPCTargets
-      RUNTIME DESTINATION <%text>${CMAKE_INSTALL_BINDIR}</%text>
-      LIBRARY DESTINATION <%text>${CMAKE_INSTALL_LIBDIR}</%text>
-      ARCHIVE DESTINATION <%text>${CMAKE_INSTALL_LIBDIR}</%text>
+      RUNTIME DESTINATION <%text>${gRPC_INSTALL_BINDIR}</%text>
+      LIBRARY DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text>
+      ARCHIVE DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text>
     )
   endif()
   </%def>
 
   if (gRPC_INSTALL)
     install(EXPORT gRPCTargets
-      DESTINATION <%text>${CMAKE_INSTALL_CMAKEDIR}</%text>
+      DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
       NAMESPACE gRPC::
     )
   endif()
@@ -286,6 +651,6 @@
     configure_file(tools/cmake/<%text>${_config}</%text>.cmake.in
       <%text>${_config}</%text>.cmake @ONLY)
     install(FILES <%text>${CMAKE_CURRENT_BINARY_DIR}/${_config}</%text>.cmake
-      DESTINATION <%text>${CMAKE_INSTALL_CMAKEDIR}</%text>
+      DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
     )
   endforeach()

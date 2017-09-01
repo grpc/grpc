@@ -1,71 +1,117 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #include "src/core/lib/transport/transport.h"
+
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+
+#include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/transport_impl.h"
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
+grpc_tracer_flag grpc_trace_stream_refcount =
+    GRPC_TRACER_INITIALIZER(false, "stream_refcount");
+#endif
+
+#ifndef NDEBUG
 void grpc_stream_ref(grpc_stream_refcount *refcount, const char *reason) {
-  gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
-  gpr_log(GPR_DEBUG, "%s %p:%p   REF %d->%d %s", refcount->object_type,
-          refcount, refcount->destroy.cb_arg, val, val + 1, reason);
+  if (GRPC_TRACER_ON(grpc_trace_stream_refcount)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
+    gpr_log(GPR_DEBUG, "%s %p:%p   REF %" PRIdPTR "->%" PRIdPTR " %s",
+            refcount->object_type, refcount, refcount->destroy.cb_arg, val,
+            val + 1, reason);
+  }
 #else
 void grpc_stream_ref(grpc_stream_refcount *refcount) {
 #endif
   gpr_ref_non_zero(&refcount->refs);
 }
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 void grpc_stream_unref(grpc_exec_ctx *exec_ctx, grpc_stream_refcount *refcount,
                        const char *reason) {
-  gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
-  gpr_log(GPR_DEBUG, "%s %p:%p UNREF %d->%d %s", refcount->object_type,
-          refcount, refcount->destroy.cb_arg, val, val - 1, reason);
+  if (GRPC_TRACER_ON(grpc_trace_stream_refcount)) {
+    gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
+    gpr_log(GPR_DEBUG, "%s %p:%p UNREF %" PRIdPTR "->%" PRIdPTR " %s",
+            refcount->object_type, refcount, refcount->destroy.cb_arg, val,
+            val - 1, reason);
+  }
 #else
 void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
                        grpc_stream_refcount *refcount) {
 #endif
   if (gpr_unref(&refcount->refs)) {
-    grpc_exec_ctx_sched(exec_ctx, &refcount->destroy, GRPC_ERROR_NONE, NULL);
+    if (exec_ctx->flags & GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP) {
+      /* Ick.
+         The thread we're running on MAY be owned (indirectly) by a call-stack.
+         If that's the case, destroying the call-stack MAY try to destroy the
+         thread, which is a tangled mess that we just don't want to ever have to
+         cope with.
+         Throw this over to the executor (on a core-owned thread) and process it
+         there. */
+      refcount->destroy.scheduler = grpc_executor_scheduler;
+    }
+    GRPC_CLOSURE_SCHED(exec_ctx, &refcount->destroy, GRPC_ERROR_NONE);
   }
 }
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#define STREAM_REF_FROM_SLICE_REF(p)         \
+  ((grpc_stream_refcount *)(((uint8_t *)p) - \
+                            offsetof(grpc_stream_refcount, slice_refcount)))
+
+static void slice_stream_ref(void *p) {
+#ifndef NDEBUG
+  grpc_stream_ref(STREAM_REF_FROM_SLICE_REF(p), "slice");
+#else
+  grpc_stream_ref(STREAM_REF_FROM_SLICE_REF(p));
+#endif
+}
+
+static void slice_stream_unref(grpc_exec_ctx *exec_ctx, void *p) {
+#ifndef NDEBUG
+  grpc_stream_unref(exec_ctx, STREAM_REF_FROM_SLICE_REF(p), "slice");
+#else
+  grpc_stream_unref(exec_ctx, STREAM_REF_FROM_SLICE_REF(p));
+#endif
+}
+
+grpc_slice grpc_slice_from_stream_owned_buffer(grpc_stream_refcount *refcount,
+                                               void *buffer, size_t length) {
+  slice_stream_ref(&refcount->slice_refcount);
+  return (grpc_slice){.refcount = &refcount->slice_refcount,
+                      .data.refcounted = {.bytes = buffer, .length = length}};
+}
+
+static const grpc_slice_refcount_vtable stream_ref_slice_vtable = {
+    .ref = slice_stream_ref,
+    .unref = slice_stream_unref,
+    .eq = grpc_slice_default_eq_impl,
+    .hash = grpc_slice_default_hash_impl};
+
+#ifndef NDEBUG
 void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void *cb_arg,
                           const char *object_type) {
@@ -75,7 +121,9 @@ void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void *cb_arg) {
 #endif
   gpr_ref_init(&refcount->refs, initial_refs);
-  grpc_closure_init(&refcount->destroy, cb, cb_arg);
+  GRPC_CLOSURE_INIT(&refcount->destroy, cb, cb_arg, grpc_schedule_on_exec_ctx);
+  refcount->slice_refcount.vtable = &stream_ref_slice_vtable;
+  refcount->slice_refcount.sub_refcount = &refcount->slice_refcount;
 }
 
 static void move64(uint64_t *from, uint64_t *to) {
@@ -108,15 +156,15 @@ void grpc_transport_destroy(grpc_exec_ctx *exec_ctx,
 int grpc_transport_init_stream(grpc_exec_ctx *exec_ctx,
                                grpc_transport *transport, grpc_stream *stream,
                                grpc_stream_refcount *refcount,
-                               const void *server_data) {
+                               const void *server_data, gpr_arena *arena) {
   return transport->vtable->init_stream(exec_ctx, transport, stream, refcount,
-                                        server_data);
+                                        server_data, arena);
 }
 
 void grpc_transport_perform_stream_op(grpc_exec_ctx *exec_ctx,
                                       grpc_transport *transport,
                                       grpc_stream *stream,
-                                      grpc_transport_stream_op *op) {
+                                      grpc_transport_stream_op_batch *op) {
   transport->vtable->perform_stream_op(exec_ctx, transport, stream, op);
 }
 
@@ -143,9 +191,10 @@ void grpc_transport_set_pops(grpc_exec_ctx *exec_ctx, grpc_transport *transport,
 
 void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
                                    grpc_transport *transport,
-                                   grpc_stream *stream, void *and_free_memory) {
+                                   grpc_stream *stream,
+                                   grpc_closure *then_schedule_closure) {
   transport->vtable->destroy_stream(exec_ctx, transport, stream,
-                                    and_free_memory);
+                                    then_schedule_closure);
 }
 
 char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
@@ -153,97 +202,88 @@ char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
   return transport->vtable->get_peer(exec_ctx, transport);
 }
 
-void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
-                                                  grpc_transport_stream_op *op,
-                                                  grpc_error *error) {
-  grpc_exec_ctx_sched(exec_ctx, op->recv_message_ready, GRPC_ERROR_REF(error),
-                      NULL);
-  grpc_exec_ctx_sched(exec_ctx, op->recv_initial_metadata_ready,
-                      GRPC_ERROR_REF(error), NULL);
-  grpc_exec_ctx_sched(exec_ctx, op->on_complete, error, NULL);
+grpc_endpoint *grpc_transport_get_endpoint(grpc_exec_ctx *exec_ctx,
+                                           grpc_transport *transport) {
+  return transport->vtable->get_endpoint(exec_ctx, transport);
+}
+
+// This comment should be sung to the tune of
+// "Supercalifragilisticexpialidocious":
+//
+// grpc_transport_stream_op_batch_finish_with_failure
+// is a function that must always unref cancel_error
+// though it lives in lib, it handles transport stream ops sure
+// it's grpc_transport_stream_op_batch_finish_with_failure
+
+void grpc_transport_stream_op_batch_finish_with_failure(
+    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *batch,
+    grpc_error *error) {
+  if (batch->send_message) {
+    grpc_byte_stream_destroy(exec_ctx,
+                             batch->payload->send_message.send_message);
+  }
+  if (batch->recv_message) {
+    GRPC_CLOSURE_SCHED(exec_ctx,
+                       batch->payload->recv_message.recv_message_ready,
+                       GRPC_ERROR_REF(error));
+  }
+  if (batch->recv_initial_metadata) {
+    GRPC_CLOSURE_SCHED(
+        exec_ctx,
+        batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
+        GRPC_ERROR_REF(error));
+  }
+  GRPC_CLOSURE_SCHED(exec_ctx, batch->on_complete, error);
+  if (batch->cancel_stream) {
+    GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
+  }
 }
 
 typedef struct {
-  grpc_error *error;
-  grpc_closure *then_call;
-  grpc_closure closure;
-} close_message_data;
+  grpc_closure outer_on_complete;
+  grpc_closure *inner_on_complete;
+  grpc_transport_op op;
+} made_transport_op;
 
-static void free_message(grpc_exec_ctx *exec_ctx, void *p, grpc_error *error) {
-  close_message_data *cmd = p;
-  GRPC_ERROR_UNREF(cmd->error);
-  if (cmd->then_call != NULL) {
-    cmd->then_call->cb(exec_ctx, cmd->then_call->cb_arg, error);
-  }
-  gpr_free(cmd);
+static void destroy_made_transport_op(grpc_exec_ctx *exec_ctx, void *arg,
+                                      grpc_error *error) {
+  made_transport_op *op = arg;
+  GRPC_CLOSURE_SCHED(exec_ctx, op->inner_on_complete, GRPC_ERROR_REF(error));
+  gpr_free(op);
 }
 
-static void add_error(grpc_transport_stream_op *op, grpc_error **which,
-                      grpc_error *error) {
-  close_message_data *cmd;
-  cmd = gpr_malloc(sizeof(*cmd));
-  cmd->error = error;
-  cmd->then_call = op->on_complete;
-  grpc_closure_init(&cmd->closure, free_message, cmd);
-  op->on_complete = &cmd->closure;
-  *which = error;
+grpc_transport_op *grpc_make_transport_op(grpc_closure *on_complete) {
+  made_transport_op *op = gpr_malloc(sizeof(*op));
+  GRPC_CLOSURE_INIT(&op->outer_on_complete, destroy_made_transport_op, op,
+                    grpc_schedule_on_exec_ctx);
+  op->inner_on_complete = on_complete;
+  memset(&op->op, 0, sizeof(op->op));
+  op->op.on_consumed = &op->outer_on_complete;
+  return &op->op;
 }
 
-void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
-                                               grpc_status_code status) {
-  GPR_ASSERT(status != GRPC_STATUS_OK);
-  if (op->cancel_error == GRPC_ERROR_NONE) {
-    op->cancel_error = grpc_error_set_int(GRPC_ERROR_CANCELLED,
-                                          GRPC_ERROR_INT_GRPC_STATUS, status);
-    op->close_error = GRPC_ERROR_NONE;
-  }
+typedef struct {
+  grpc_closure outer_on_complete;
+  grpc_closure *inner_on_complete;
+  grpc_transport_stream_op_batch op;
+  grpc_transport_stream_op_batch_payload payload;
+} made_transport_stream_op;
+
+static void destroy_made_transport_stream_op(grpc_exec_ctx *exec_ctx, void *arg,
+                                             grpc_error *error) {
+  made_transport_stream_op *op = arg;
+  grpc_closure *c = op->inner_on_complete;
+  gpr_free(op);
+  GRPC_CLOSURE_RUN(exec_ctx, c, GRPC_ERROR_REF(error));
 }
 
-void grpc_transport_stream_op_add_cancellation_with_message(
-    grpc_transport_stream_op *op, grpc_status_code status,
-    gpr_slice *optional_message) {
-  GPR_ASSERT(status != GRPC_STATUS_OK);
-  if (op->cancel_error != GRPC_ERROR_NONE) {
-    if (optional_message) {
-      gpr_slice_unref(*optional_message);
-    }
-    return;
-  }
-  grpc_error *error;
-  if (optional_message != NULL) {
-    char *msg = gpr_dump_slice(*optional_message, GPR_DUMP_ASCII);
-    error = grpc_error_set_str(GRPC_ERROR_CREATE(msg),
-                               GRPC_ERROR_STR_GRPC_MESSAGE, msg);
-    gpr_free(msg);
-    gpr_slice_unref(*optional_message);
-  } else {
-    error = GRPC_ERROR_CREATE("Call cancelled");
-  }
-  error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, status);
-  add_error(op, &op->close_error, error);
-}
-
-void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
-                                        grpc_status_code status,
-                                        gpr_slice *optional_message) {
-  GPR_ASSERT(status != GRPC_STATUS_OK);
-  if (op->cancel_error != GRPC_ERROR_NONE ||
-      op->close_error != GRPC_ERROR_NONE) {
-    if (optional_message) {
-      gpr_slice_unref(*optional_message);
-    }
-    return;
-  }
-  grpc_error *error;
-  if (optional_message != NULL) {
-    char *msg = gpr_dump_slice(*optional_message, GPR_DUMP_ASCII);
-    error = grpc_error_set_str(GRPC_ERROR_CREATE(msg),
-                               GRPC_ERROR_STR_GRPC_MESSAGE, msg);
-    gpr_free(msg);
-    gpr_slice_unref(*optional_message);
-  } else {
-    error = GRPC_ERROR_CREATE("Call force closed");
-  }
-  error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, status);
-  add_error(op, &op->close_error, error);
+grpc_transport_stream_op_batch *grpc_make_transport_stream_op(
+    grpc_closure *on_complete) {
+  made_transport_stream_op *op = gpr_zalloc(sizeof(*op));
+  op->op.payload = &op->payload;
+  GRPC_CLOSURE_INIT(&op->outer_on_complete, destroy_made_transport_stream_op,
+                    op, grpc_schedule_on_exec_ctx);
+  op->inner_on_complete = on_complete;
+  op->op.on_complete = &op->outer_on_complete;
+  return &op->op;
 }

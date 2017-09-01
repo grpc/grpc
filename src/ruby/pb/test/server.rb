@@ -1,33 +1,18 @@
 #!/usr/bin/env ruby
 
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 # interop_server is a Testing app that runs a gRPC interop testing server.
 #
@@ -129,27 +114,58 @@ def nulls(l)
   [].pack('x' * l).force_encoding('ascii-8bit')
 end
 
-# A EnumeratorQueue wraps a Queue yielding the items added to it via each_item.
-class EnumeratorQueue
-  extend Forwardable
-  def_delegators :@q, :push
+def maybe_echo_metadata(_call)
+  
+  # these are consistent for all interop tests
+  initial_metadata_key = "x-grpc-test-echo-initial"
+  trailing_metadata_key = "x-grpc-test-echo-trailing-bin"
 
-  def initialize(sentinel)
-    @q = Queue.new
-    @sentinel = sentinel
+  if _call.metadata.has_key?(initial_metadata_key)
+    _call.metadata_to_send[initial_metadata_key] = _call.metadata[initial_metadata_key]
   end
-
-  def each_item
-    return enum_for(:each_item) unless block_given?
-    loop do
-      r = @q.pop
-      break if r.equal?(@sentinel)
-      fail r if r.is_a? Exception
-      yield r
-    end
+  if _call.metadata.has_key?(trailing_metadata_key)
+    _call.output_metadata[trailing_metadata_key] = _call.metadata[trailing_metadata_key]
   end
 end
 
+def maybe_echo_status_and_message(req)
+  unless req.response_status.nil?
+    fail GRPC::BadStatus.new_status_exception(
+        req.response_status.code, req.response_status.message)
+  end
+end
+
+# A FullDuplexEnumerator passes requests to a block and yields generated responses
+class FullDuplexEnumerator
+  include Grpc::Testing
+  include Grpc::Testing::PayloadType
+
+  def initialize(requests)
+    @requests = requests
+  end
+  def each_item
+    return enum_for(:each_item) unless block_given?
+    GRPC.logger.info('interop-server: started receiving')
+    begin
+      cls = StreamingOutputCallResponse
+      @requests.each do |req|
+        maybe_echo_status_and_message(req)
+        req.response_parameters.each do |params|
+          resp_size = params.size
+          GRPC.logger.info("read a req, response size is #{resp_size}")
+          yield cls.new(payload: Payload.new(type: req.response_type,
+                                              body: nulls(resp_size)))
+        end
+      end
+      GRPC.logger.info('interop-server: finished receiving')
+    rescue StandardError => e
+      GRPC.logger.info('interop-server: failed')
+      GRPC.logger.warn(e)
+      fail e
+    end
+  end
+end
+    
 # A runnable implementation of the schema-specified testing service, with each
 # service method implemented as required by the interop testing spec.
 class TestTarget < Grpc::Testing::TestService::Service
@@ -161,6 +177,8 @@ class TestTarget < Grpc::Testing::TestService::Service
   end
 
   def unary_call(simple_req, _call)
+    maybe_echo_metadata(_call)
+    maybe_echo_status_and_message(simple_req)
     req_size = simple_req.response_size
     SimpleResponse.new(payload: Payload.new(type: :COMPRESSABLE,
                                             body: nulls(req_size)))
@@ -180,33 +198,12 @@ class TestTarget < Grpc::Testing::TestService::Service
     end
   end
 
-  def full_duplex_call(reqs)
+  def full_duplex_call(reqs, _call)
+    maybe_echo_metadata(_call)
     # reqs is a lazy Enumerator of the requests sent by the client.
-    q = EnumeratorQueue.new(self)
-    cls = StreamingOutputCallResponse
-    Thread.new do
-      begin
-        GRPC.logger.info('interop-server: started receiving')
-        reqs.each do |req|
-          req.response_parameters.each do |params|
-            resp_size = params.size
-            GRPC.logger.info("read a req, response size is #{resp_size}")
-            resp = cls.new(payload: Payload.new(type: req.response_type,
-                                                body: nulls(resp_size)))
-            q.push(resp)
-          end
-        end
-        GRPC.logger.info('interop-server: finished receiving')
-        q.push(self)
-      rescue StandardError => e
-        GRPC.logger.info('interop-server: failed')
-        GRPC.logger.warn(e)
-        q.push(e)  # share the exception with the enumerator
-      end
-    end
-    q.each_item
+    FullDuplexEnumerator.new(reqs).each_item
   end
-
+        
   def half_duplex_call(reqs)
     # TODO: update with unique behaviour of the half_duplex_call if that's
     # ever required by any of the tests.

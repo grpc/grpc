@@ -1,43 +1,26 @@
 #region Copyright notice and license
-// Copyright 2015, Google Inc.
-// All rights reserved.
+// Copyright 2015 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 #endregion
 
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Globalization;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
+using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core
@@ -95,11 +78,18 @@ namespace Grpc.Core
 
         #region IList members
 
+
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public int IndexOf(Metadata.Entry item)
         {
             return entries.IndexOf(item);
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public void Insert(int index, Metadata.Entry item)
         {
             GrpcPreconditions.CheckNotNull(item);
@@ -107,12 +97,18 @@ namespace Grpc.Core
             entries.Insert(index, item);
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public void RemoveAt(int index)
         {
             CheckWriteable();
             entries.RemoveAt(index);
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public Metadata.Entry this[int index]
         {
             get
@@ -128,6 +124,9 @@ namespace Grpc.Core
             }
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public void Add(Metadata.Entry item)
         {
             GrpcPreconditions.CheckNotNull(item);
@@ -135,48 +134,75 @@ namespace Grpc.Core
             entries.Add(item);
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public void Add(string key, string value)
         {
             Add(new Entry(key, value));
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public void Add(string key, byte[] valueBytes)
         {
             Add(new Entry(key, valueBytes));
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public void Clear()
         {
             CheckWriteable();
             entries.Clear();
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public bool Contains(Metadata.Entry item)
         {
             return entries.Contains(item);
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public void CopyTo(Metadata.Entry[] array, int arrayIndex)
         {
             entries.CopyTo(array, arrayIndex);
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public int Count
         {
             get { return entries.Count; }
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public bool IsReadOnly
         {
             get { return readOnly; }
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public bool Remove(Metadata.Entry item)
         {
             CheckWriteable();
             return entries.Remove(item);
         }
 
+        /// <summary>
+        /// <see cref="T:IList`1"/>
+        /// </summary>
         public IEnumerator<Metadata.Entry> GetEnumerator()
         {
             return entries.GetEnumerator();
@@ -199,7 +225,6 @@ namespace Grpc.Core
         /// </summary>
         public class Entry
         {
-            private static readonly Encoding Encoding = Encoding.ASCII;
             private static readonly Regex ValidKeyRegex = new Regex("^[a-z0-9_-]+$");
 
             readonly string key;
@@ -221,7 +246,7 @@ namespace Grpc.Core
             public Entry(string key, byte[] valueBytes)
             {
                 this.key = NormalizeKey(key);
-                GrpcPreconditions.CheckArgument(this.key.EndsWith(BinaryHeaderSuffix),
+                GrpcPreconditions.CheckArgument(HasBinaryHeaderSuffix(this.key),
                     "Key for binary valued metadata entry needs to have suffix indicating binary value.");
                 this.value = null;
                 GrpcPreconditions.CheckNotNull(valueBytes, "valueBytes");
@@ -237,7 +262,7 @@ namespace Grpc.Core
             public Entry(string key, string value)
             {
                 this.key = NormalizeKey(key);
-                GrpcPreconditions.CheckArgument(!this.key.EndsWith(BinaryHeaderSuffix),
+                GrpcPreconditions.CheckArgument(!HasBinaryHeaderSuffix(this.key),
                     "Key for ASCII valued metadata entry cannot have suffix indicating binary value.");
                 this.value = GrpcPreconditions.CheckNotNull(value, "value");
                 this.valueBytes = null;
@@ -263,7 +288,7 @@ namespace Grpc.Core
                 {
                     if (valueBytes == null)
                     {
-                        return Encoding.GetBytes(value);
+                        return MarshalUtils.GetBytesASCII(value);
                     }
 
                     // defensive copy to guarantee immutability
@@ -281,7 +306,7 @@ namespace Grpc.Core
                 get
                 {
                     GrpcPreconditions.CheckState(!IsBinary, "Cannot access string value of a binary metadata entry");
-                    return value ?? Encoding.GetString(valueBytes);
+                    return value ?? MarshalUtils.GetStringASCII(valueBytes);
                 }
             }
 
@@ -315,7 +340,7 @@ namespace Grpc.Core
             /// </summary>
             internal byte[] GetSerializedValueUnsafe()
             {
-                return valueBytes ?? Encoding.GetBytes(value);
+                return valueBytes ?? MarshalUtils.GetBytesASCII(value);
             }
 
             /// <summary>
@@ -324,11 +349,11 @@ namespace Grpc.Core
             /// </summary>
             internal static Entry CreateUnsafe(string key, byte[] valueBytes)
             {
-                if (key.EndsWith(BinaryHeaderSuffix))
+                if (HasBinaryHeaderSuffix(key))
                 {
                     return new Entry(key, null, valueBytes);
                 }
-                return new Entry(key, Encoding.GetString(valueBytes), null);
+                return new Entry(key, MarshalUtils.GetStringASCII(valueBytes), null);
             }
 
             private static string NormalizeKey(string key)
@@ -337,6 +362,27 @@ namespace Grpc.Core
                 GrpcPreconditions.CheckArgument(ValidKeyRegex.IsMatch(normalized), 
                     "Metadata entry key not valid. Keys can only contain lowercase alphanumeric characters, underscores and hyphens.");
                 return normalized;
+            }
+
+            /// <summary>
+            /// Returns <c>true</c> if the key has "-bin" binary header suffix.
+            /// </summary>
+            private static bool HasBinaryHeaderSuffix(string key)
+            {
+                // We don't use just string.EndsWith because its implementation is extremely slow
+                // on CoreCLR and we've seen significant differences in gRPC benchmarks caused by it.
+                // See https://github.com/dotnet/coreclr/issues/5612
+
+                int len = key.Length;
+                if (len >= 4 &&
+                    key[len - 4] == '-' &&
+                    key[len - 3] == 'b' &&
+                    key[len - 2] == 'i' &&
+                    key[len - 1] == 'n')
+                {
+                    return true;
+                }
+                return false;
             }
         }
     }

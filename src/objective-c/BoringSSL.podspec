@@ -31,7 +31,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'BoringSSL'
-  version = '6.0'
+  version = '9.0'
   s.version  = version
   s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google’s needs.'
   # Adapted from the homepage:
@@ -70,7 +70,6 @@ Pod::Spec.new do |s|
   s.source = {
     :git => 'https://boringssl.googlesource.com/boringssl',
     :tag => "version_for_cocoapods_#{version}",
-    # :commit => '4ac2dc4c0d48ca45da4f66c40e60d6b425fa94a3',
   }
 
   name = 'openssl'
@@ -95,7 +94,7 @@ Pod::Spec.new do |s|
   # The module map and umbrella header created automatically by Cocoapods don't work for C libraries
   # like this one. The following file, and a correct umbrella header, are created on the fly by the
   # `prepare_command` of this pod.
-  s.module_map = 'include/openssl/module.modulemap'
+  s.module_map = 'include/openssl/BoringSSL.modulemap'
 
   # We don't need to inhibit all warnings; only -Wno-shorten-64-to-32. But Cocoapods' linter doesn't
   # want that for some reason.
@@ -148,10 +147,10 @@ Pod::Spec.new do |s|
       #include "ssl.h"
       #include "crypto.h"
       #include "aes.h"
-      /* The following macros are defined by base.h. The latter is the first file included by the
-         other headers. */
-      #if defined(OPENSSL_ARM) || defined(OPENSSL_AARCH64)
-      #  include "arm_arch.h"
+      /* The following macros are defined by base.h. The latter is the first file included by the    
+         other headers. */    
+      #if defined(OPENSSL_ARM) || defined(OPENSSL_AARCH64)    
+      #  include "arm_arch.h"   
       #endif
       #include "asn1.h"
       #include "asn1_mac.h"
@@ -168,7 +167,6 @@ Pod::Spec.new do |s|
       #include "hkdf.h"
       #include "md4.h"
       #include "md5.h"
-      #include "newhope.h"
       #include "obj_mac.h"
       #include "objects.h"
       #include "opensslv.h"
@@ -182,11 +180,10 @@ Pod::Spec.new do |s|
       #include "ripemd.h"
       #include "safestack.h"
       #include "srtp.h"
-      #include "time_support.h"
       #include "x509.h"
       #include "x509v3.h"
     EOF
-    cat > include/openssl/module.modulemap <<EOF
+    cat > include/openssl/BoringSSL.modulemap <<EOF
       framework module openssl {
         umbrella header "umbrella.h"
         export *
@@ -388,42 +385,42 @@ Pod::Spec.new do |s|
           0x28340c19,
           0x283480ac,
           0x283500ea,
-          0x2c322843,
-          0x2c32a851,
-          0x2c332863,
-          0x2c33a875,
-          0x2c342889,
-          0x2c34a89b,
-          0x2c3528b6,
-          0x2c35a8c8,
-          0x2c3628db,
+          0x2c3229b1,
+          0x2c32a9bf,
+          0x2c3329d1,
+          0x2c33a9e3,
+          0x2c3429f7,
+          0x2c34aa09,
+          0x2c352a24,
+          0x2c35aa36,
+          0x2c362a49,
           0x2c36832d,
-          0x2c3728e8,
-          0x2c37a8fa,
-          0x2c38290d,
-          0x2c38a924,
-          0x2c392932,
-          0x2c39a942,
-          0x2c3a2954,
-          0x2c3aa968,
-          0x2c3b2979,
-          0x2c3ba998,
-          0x2c3c29ac,
-          0x2c3ca9c2,
-          0x2c3d29db,
-          0x2c3da9f8,
-          0x2c3e2a09,
-          0x2c3eaa17,
-          0x2c3f2a2f,
-          0x2c3faa47,
-          0x2c402a54,
+          0x2c372a56,
+          0x2c37aa68,
+          0x2c382a7b,
+          0x2c38aa92,
+          0x2c392aa0,
+          0x2c39aab0,
+          0x2c3a2ac2,
+          0x2c3aaad6,
+          0x2c3b2ae7,
+          0x2c3bab06,
+          0x2c3c2b1a,
+          0x2c3cab30,
+          0x2c3d2b49,
+          0x2c3dab66,
+          0x2c3e2b77,
+          0x2c3eab85,
+          0x2c3f2b9d,
+          0x2c3fabb5,
+          0x2c402bc2,
           0x2c4090e7,
-          0x2c412a65,
-          0x2c41aa78,
+          0x2c412bd3,
+          0x2c41abe6,
           0x2c4210c0,
-          0x2c42aa89,
+          0x2c42abf7,
           0x2c430720,
-          0x2c43a98a,
+          0x2c43aaf8,
           0x30320000,
           0x30328015,
           0x3033001f,
@@ -576,174 +573,189 @@ Pod::Spec.new do |s|
           0x403b9861,
           0x403c0064,
           0x403c8083,
-          0x403d1890,
-          0x403d98a6,
-          0x403e18b5,
-          0x403e98c8,
-          0x403f18e2,
-          0x403f98f0,
-          0x40401905,
-          0x40409919,
-          0x40411936,
-          0x40419951,
-          0x4042196a,
-          0x4042997d,
-          0x40431991,
-          0x404399a9,
-          0x404419c0,
+          0x403d18c1,
+          0x403d98d7,
+          0x403e18e6,
+          0x403e98f9,
+          0x403f1913,
+          0x403f9921,
+          0x40401936,
+          0x4040994a,
+          0x40411967,
+          0x40419982,
+          0x4042199b,
+          0x404299ae,
+          0x404319c2,
+          0x404399da,
+          0x404419f1,
           0x404480ac,
-          0x404519d5,
-          0x404599e7,
-          0x40461a0b,
-          0x40469a2b,
-          0x40471a39,
-          0x40479a60,
-          0x40481a89,
-          0x40489aa2,
-          0x40491ab9,
-          0x40499ad3,
-          0x404a1aea,
-          0x404a9b08,
-          0x404b1b20,
-          0x404b9b37,
-          0x404c1b4d,
-          0x404c9b5f,
-          0x404d1b80,
-          0x404d9ba2,
-          0x404e1bb6,
-          0x404e9bc3,
-          0x404f1bf0,
-          0x404f9c19,
-          0x40501c43,
-          0x40509c57,
-          0x40511c72,
-          0x40519c82,
-          0x40521c99,
-          0x40529cbd,
-          0x40531cd5,
-          0x40539ce8,
-          0x40541cfd,
-          0x40549d20,
-          0x40551d2e,
-          0x40559d4b,
-          0x40561d58,
-          0x40569d71,
-          0x40571d89,
-          0x40579d9c,
-          0x40581db1,
-          0x40589dc3,
-          0x40591df2,
-          0x40599e0b,
-          0x405a1e1f,
-          0x405a9e2f,
-          0x405b1e47,
-          0x405b9e58,
-          0x405c1e6b,
-          0x405c9e7c,
-          0x405d1e89,
-          0x405d9ea0,
-          0x405e1ec0,
+          0x40451a06,
+          0x40459a18,
+          0x40461a3c,
+          0x40469a5c,
+          0x40471a6a,
+          0x40479a91,
+          0x40481ace,
+          0x40489ae7,
+          0x40491afe,
+          0x40499b18,
+          0x404a1b2f,
+          0x404a9b4d,
+          0x404b1b65,
+          0x404b9b7c,
+          0x404c1b92,
+          0x404c9ba4,
+          0x404d1bc5,
+          0x404d9be7,
+          0x404e1bfb,
+          0x404e9c08,
+          0x404f1c35,
+          0x404f9c5e,
+          0x40501c99,
+          0x40509cad,
+          0x40511cc8,
+          0x40519cd8,
+          0x40521cef,
+          0x40529d13,
+          0x40531d2b,
+          0x40539d3e,
+          0x40541d53,
+          0x40549d76,
+          0x40551d84,
+          0x40559da1,
+          0x40561dae,
+          0x40569dc7,
+          0x40571ddf,
+          0x40579df2,
+          0x40581e07,
+          0x40589e2e,
+          0x40591e5d,
+          0x40599e8a,
+          0x405a1e9e,
+          0x405a9eae,
+          0x405b1ec6,
+          0x405b9ed7,
+          0x405c1eea,
+          0x405c9f0b,
+          0x405d1f18,
+          0x405d9f2f,
+          0x405e1f6d,
           0x405e8a95,
-          0x405f1ee1,
-          0x405f9eee,
-          0x40601efc,
-          0x40609f1e,
-          0x40611f46,
-          0x40619f5b,
-          0x40621f72,
-          0x40629f83,
-          0x40631f94,
-          0x40639fa9,
-          0x40641fc0,
-          0x40649fd1,
-          0x40651fec,
-          0x4065a003,
-          0x4066201b,
-          0x4066a045,
-          0x40672070,
-          0x4067a091,
-          0x406820a4,
-          0x4068a0c5,
-          0x406920f7,
-          0x4069a125,
-          0x406a2146,
-          0x406aa166,
-          0x406b22ee,
-          0x406ba311,
-          0x406c2327,
-          0x406ca553,
-          0x406d2582,
-          0x406da5aa,
-          0x406e25c3,
-          0x406ea5db,
-          0x406f25fa,
-          0x406fa60f,
-          0x40702622,
-          0x4070a63f,
+          0x405f1f8e,
+          0x405f9f9b,
+          0x40601fa9,
+          0x40609fcb,
+          0x4061200f,
+          0x4061a047,
+          0x4062205e,
+          0x4062a06f,
+          0x40632080,
+          0x4063a095,
+          0x406420ac,
+          0x4064a0d8,
+          0x406520f3,
+          0x4065a10a,
+          0x40662122,
+          0x4066a14c,
+          0x40672177,
+          0x4067a198,
+          0x406821ab,
+          0x4068a1cc,
+          0x406921fe,
+          0x4069a22c,
+          0x406a224d,
+          0x406aa26d,
+          0x406b23f5,
+          0x406ba418,
+          0x406c242e,
+          0x406ca690,
+          0x406d26bf,
+          0x406da6e7,
+          0x406e2715,
+          0x406ea749,
+          0x406f2768,
+          0x406fa77d,
+          0x40702790,
+          0x4070a7ad,
           0x40710800,
-          0x4071a651,
-          0x40722664,
-          0x4072a67d,
-          0x40732695,
+          0x4071a7bf,
+          0x407227d2,
+          0x4072a7eb,
+          0x40732803,
           0x4073936d,
-          0x407426a9,
-          0x4074a6c3,
-          0x407526d4,
-          0x4075a6e8,
-          0x407626f6,
+          0x40742817,
+          0x4074a831,
+          0x40752842,
+          0x4075a856,
+          0x40762864,
           0x407691aa,
-          0x4077271b,
-          0x4077a73d,
-          0x40782758,
-          0x4078a791,
-          0x407927a8,
-          0x4079a7be,
-          0x407a27ca,
-          0x407aa7dd,
-          0x407b27f2,
-          0x407ba804,
-          0x407c2819,
-          0x407ca822,
-          0x407d20e0,
-          0x407d9c29,
-          0x407e276d,
-          0x407e9dd3,
-          0x407f1a4d,
-          0x407f986d,
-          0x40801c00,
-          0x40809a75,
-          0x40811cab,
-          0x40819bda,
-          0x41f42219,
-          0x41f922ab,
-          0x41fe219e,
-          0x41fea37a,
-          0x41ff246b,
-          0x42032232,
-          0x42082254,
-          0x4208a290,
-          0x42092182,
-          0x4209a2ca,
-          0x420a21d9,
-          0x420aa1b9,
-          0x420b21f9,
-          0x420ba272,
-          0x420c2487,
-          0x420ca347,
-          0x420d2361,
-          0x420da398,
-          0x421223b2,
-          0x4217244e,
-          0x4217a3f4,
-          0x421c2416,
-          0x421f23d1,
-          0x4221249e,
-          0x42262431,
-          0x422b2537,
-          0x422ba500,
-          0x422c251f,
-          0x422ca4da,
-          0x422d24b9,
+          0x40772889,
+          0x4077a8ab,
+          0x407828c6,
+          0x4078a8ff,
+          0x40792916,
+          0x4079a92c,
+          0x407a2938,
+          0x407aa94b,
+          0x407b2960,
+          0x407ba972,
+          0x407c2987,
+          0x407ca990,
+          0x407d21e7,
+          0x407d9c6e,
+          0x407e28db,
+          0x407e9e3e,
+          0x407f1a7e,
+          0x407f9887,
+          0x40801c45,
+          0x40809aa6,
+          0x40811d01,
+          0x40819c1f,
+          0x40822700,
+          0x4082986d,
+          0x40831e19,
+          0x4083a0bd,
+          0x40841aba,
+          0x40849e76,
+          0x40851efb,
+          0x40859ff3,
+          0x40861f4f,
+          0x40869c88,
+          0x4087272d,
+          0x4087a024,
+          0x408818aa,
+          0x41f42320,
+          0x41f923b2,
+          0x41fe22a5,
+          0x41fea481,
+          0x41ff2572,
+          0x42032339,
+          0x4208235b,
+          0x4208a397,
+          0x42092289,
+          0x4209a3d1,
+          0x420a22e0,
+          0x420aa2c0,
+          0x420b2300,
+          0x420ba379,
+          0x420c258e,
+          0x420ca44e,
+          0x420d2468,
+          0x420da49f,
+          0x421224b9,
+          0x42172555,
+          0x4217a4fb,
+          0x421c251d,
+          0x421f24d8,
+          0x422125a5,
+          0x42262538,
+          0x422b2674,
+          0x422ba622,
+          0x422c265c,
+          0x422ca5e1,
+          0x422d25c0,
+          0x422da641,
+          0x422e2607,
           0x4432072b,
           0x4432873a,
           0x44330746,
@@ -786,69 +798,69 @@ Pod::Spec.new do |s|
           0x4c3d136d,
           0x4c3d937c,
           0x4c3e1389,
-          0x50322a9b,
-          0x5032aaaa,
-          0x50332ab5,
-          0x5033aac5,
-          0x50342ade,
-          0x5034aaf8,
-          0x50352b06,
-          0x5035ab1c,
-          0x50362b2e,
-          0x5036ab44,
-          0x50372b5d,
-          0x5037ab70,
-          0x50382b88,
-          0x5038ab99,
-          0x50392bae,
-          0x5039abc2,
-          0x503a2be2,
-          0x503aabf8,
-          0x503b2c10,
-          0x503bac22,
-          0x503c2c3e,
-          0x503cac55,
-          0x503d2c6e,
-          0x503dac84,
-          0x503e2c91,
-          0x503eaca7,
-          0x503f2cb9,
+          0x50322c09,
+          0x5032ac18,
+          0x50332c23,
+          0x5033ac33,
+          0x50342c4c,
+          0x5034ac66,
+          0x50352c74,
+          0x5035ac8a,
+          0x50362c9c,
+          0x5036acb2,
+          0x50372ccb,
+          0x5037acde,
+          0x50382cf6,
+          0x5038ad07,
+          0x50392d1c,
+          0x5039ad30,
+          0x503a2d50,
+          0x503aad66,
+          0x503b2d7e,
+          0x503bad90,
+          0x503c2dac,
+          0x503cadc3,
+          0x503d2ddc,
+          0x503dadf2,
+          0x503e2dff,
+          0x503eae15,
+          0x503f2e27,
           0x503f8382,
-          0x50402ccc,
-          0x5040acdc,
-          0x50412cf6,
-          0x5041ad05,
-          0x50422d1f,
-          0x5042ad3c,
-          0x50432d4c,
-          0x5043ad5c,
-          0x50442d6b,
+          0x50402e3a,
+          0x5040ae4a,
+          0x50412e64,
+          0x5041ae73,
+          0x50422e8d,
+          0x5042aeaa,
+          0x50432eba,
+          0x5043aeca,
+          0x50442ed9,
           0x5044843f,
-          0x50452d7f,
-          0x5045ad9d,
-          0x50462db0,
-          0x5046adc6,
-          0x50472dd8,
-          0x5047aded,
-          0x50482e13,
-          0x5048ae21,
-          0x50492e34,
-          0x5049ae49,
-          0x504a2e5f,
-          0x504aae6f,
-          0x504b2e8f,
-          0x504baea2,
-          0x504c2ec5,
-          0x504caef3,
-          0x504d2f05,
-          0x504daf22,
-          0x504e2f3d,
-          0x504eaf59,
-          0x504f2f6b,
-          0x504faf82,
-          0x50502f91,
+          0x50452eed,
+          0x5045af0b,
+          0x50462f1e,
+          0x5046af34,
+          0x50472f46,
+          0x5047af5b,
+          0x50482f81,
+          0x5048af8f,
+          0x50492fa2,
+          0x5049afb7,
+          0x504a2fcd,
+          0x504aafdd,
+          0x504b2ffd,
+          0x504bb010,
+          0x504c3033,
+          0x504cb061,
+          0x504d3073,
+          0x504db090,
+          0x504e30ab,
+          0x504eb0c7,
+          0x504f30d9,
+          0x504fb0f0,
+          0x505030ff,
           0x505086ef,
-          0x50512fa4,
+          0x50513112,
           0x58320ec9,
           0x68320e8b,
           0x68328c25,
@@ -1209,7 +1221,9 @@ Pod::Spec.new do |s|
           "BAD_SSL_FILETYPE\\0"
           "BAD_WRITE_RETRY\\0"
           "BIO_NOT_SET\\0"
+          "BLOCK_CIPHER_PAD_IS_WRONG\\0"
           "BUFFERED_MESSAGES_ON_CIPHER_CHANGE\\0"
+          "CANNOT_PARSE_LEAF_CERT\\0"
           "CA_DN_LENGTH_MISMATCH\\0"
           "CA_DN_TOO_LONG\\0"
           "CCS_RECEIVED_EARLY\\0"
@@ -1233,6 +1247,7 @@ Pod::Spec.new do |s|
           "DOWNGRADE_DETECTED\\0"
           "DTLS_MESSAGE_TOO_BIG\\0"
           "DUPLICATE_EXTENSION\\0"
+          "DUPLICATE_KEY_SHARE\\0"
           "ECC_CERT_NOT_FOR_SIGNING\\0"
           "EMS_STATE_INCONSISTENT\\0"
           "ENCRYPTED_LENGTH_TOO_LONG\\0"
@@ -1252,6 +1267,7 @@ Pod::Spec.new do |s|
           "INVALID_COMPRESSION_LIST\\0"
           "INVALID_MESSAGE\\0"
           "INVALID_OUTER_RECORD_TYPE\\0"
+          "INVALID_SCT_LIST\\0"
           "INVALID_SSL_SESSION\\0"
           "INVALID_TICKET_KEYS_LENGTH\\0"
           "LENGTH_MISMATCH\\0"
@@ -1270,30 +1286,37 @@ Pod::Spec.new do |s|
           "NO_CERTIFICATE_SET\\0"
           "NO_CIPHERS_AVAILABLE\\0"
           "NO_CIPHERS_PASSED\\0"
+          "NO_CIPHERS_SPECIFIED\\0"
           "NO_CIPHER_MATCH\\0"
           "NO_COMMON_SIGNATURE_ALGORITHMS\\0"
           "NO_COMPRESSION_SPECIFIED\\0"
+          "NO_GROUPS_SPECIFIED\\0"
           "NO_METHOD_SPECIFIED\\0"
           "NO_P256_SUPPORT\\0"
           "NO_PRIVATE_KEY_ASSIGNED\\0"
           "NO_RENEGOTIATION\\0"
           "NO_REQUIRED_DIGEST\\0"
           "NO_SHARED_CIPHER\\0"
+          "NO_SHARED_GROUP\\0"
           "NULL_SSL_CTX\\0"
           "NULL_SSL_METHOD_PASSED\\0"
           "OLD_SESSION_CIPHER_NOT_RETURNED\\0"
+          "OLD_SESSION_PRF_HASH_MISMATCH\\0"
           "OLD_SESSION_VERSION_NOT_RETURNED\\0"
           "PARSE_TLSEXT\\0"
           "PATH_TOO_LONG\\0"
           "PEER_DID_NOT_RETURN_A_CERTIFICATE\\0"
           "PEER_ERROR_UNSUPPORTED_CERTIFICATE_TYPE\\0"
+          "PRE_SHARED_KEY_MUST_BE_LAST\\0"
           "PROTOCOL_IS_SHUTDOWN\\0"
+          "PSK_IDENTITY_BINDER_COUNT_MISMATCH\\0"
           "PSK_IDENTITY_NOT_FOUND\\0"
           "PSK_NO_CLIENT_CB\\0"
           "PSK_NO_SERVER_CB\\0"
           "READ_TIMEOUT_EXPIRED\\0"
           "RECORD_LENGTH_MISMATCH\\0"
           "RECORD_TOO_LARGE\\0"
+          "RENEGOTIATION_EMS_MISMATCH\\0"
           "RENEGOTIATION_ENCODING_ERR\\0"
           "RENEGOTIATION_MISMATCH\\0"
           "REQUIRED_CIPHER_MISSING\\0"
@@ -1338,13 +1361,17 @@ Pod::Spec.new do |s|
           "TLSV1_ALERT_USER_CANCELLED\\0"
           "TLSV1_BAD_CERTIFICATE_HASH_VALUE\\0"
           "TLSV1_BAD_CERTIFICATE_STATUS_RESPONSE\\0"
+          "TLSV1_CERTIFICATE_REQUIRED\\0"
           "TLSV1_CERTIFICATE_UNOBTAINABLE\\0"
+          "TLSV1_UNKNOWN_PSK_IDENTITY\\0"
           "TLSV1_UNRECOGNIZED_NAME\\0"
           "TLSV1_UNSUPPORTED_EXTENSION\\0"
           "TLS_PEER_DID_NOT_RESPOND_WITH_CERTIFICATE_LIST\\0"
           "TLS_RSA_ENCRYPTED_VALUE_LENGTH_IS_WRONG\\0"
           "TOO_MANY_EMPTY_FRAGMENTS\\0"
+          "TOO_MANY_KEY_UPDATES\\0"
           "TOO_MANY_WARNING_ALERTS\\0"
+          "TOO_MUCH_SKIPPED_EARLY_DATA\\0"
           "UNABLE_TO_FIND_ECDH_PARAMETERS\\0"
           "UNEXPECTED_EXTENSION\\0"
           "UNEXPECTED_MESSAGE\\0"

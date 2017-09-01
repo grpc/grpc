@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -80,7 +65,7 @@ zval *grpc_php_wrap_timeval(gpr_timespec wrapped TSRMLS_DC) {
 
 /**
  * Constructs a new instance of the Timeval class
- * @param long $usec The number of microseconds in the interval
+ * @param long $microseconds The number of microseconds in the interval
  */
 PHP_METHOD(Timeval, __construct) {
   wrapped_grpc_timeval *timeval = Z_WRAPPED_GRPC_TIMEVAL_P(getThis());
@@ -100,7 +85,7 @@ PHP_METHOD(Timeval, __construct) {
 /**
  * Adds another Timeval to this one and returns the sum. Calculations saturate
  * at infinities.
- * @param Timeval $other The other Timeval object to add
+ * @param Timeval $other_obj The other Timeval object to add
  * @return Timeval A new Timeval object containing the sum
  */
 PHP_METHOD(Timeval, add) {
@@ -115,19 +100,17 @@ PHP_METHOD(Timeval, add) {
   }
   wrapped_grpc_timeval *self = Z_WRAPPED_GRPC_TIMEVAL_P(getThis());
   wrapped_grpc_timeval *other = Z_WRAPPED_GRPC_TIMEVAL_P(other_obj);
-  zval *sum;
-  PHP_GRPC_MAKE_STD_ZVAL(sum);
-  sum =
-      grpc_php_wrap_timeval(gpr_time_add(self->wrapped, other->wrapped)
-                            TSRMLS_CC);
+  zval *sum =
+    grpc_php_wrap_timeval(gpr_time_add(self->wrapped, other->wrapped)
+                          TSRMLS_CC);
   RETURN_DESTROY_ZVAL(sum);
 }
 
 /**
  * Subtracts another Timeval from this one and returns the difference.
  * Calculations saturate at infinities.
- * @param Timeval $other The other Timeval object to subtract
- * @param Timeval A new Timeval object containing the sum
+ * @param Timeval $other_obj The other Timeval object to subtract
+ * @return Timeval A new Timeval object containing the diff 
  */
 PHP_METHOD(Timeval, subtract) {
   zval *other_obj;
@@ -141,19 +124,17 @@ PHP_METHOD(Timeval, subtract) {
   }
   wrapped_grpc_timeval *self = Z_WRAPPED_GRPC_TIMEVAL_P(getThis());
   wrapped_grpc_timeval *other = Z_WRAPPED_GRPC_TIMEVAL_P(other_obj);
-  zval *diff;
-  PHP_GRPC_MAKE_STD_ZVAL(diff);
-  diff =
-      grpc_php_wrap_timeval(gpr_time_sub(self->wrapped, other->wrapped)
-                            TSRMLS_CC);
+  zval *diff =
+    grpc_php_wrap_timeval(gpr_time_sub(self->wrapped, other->wrapped)
+                          TSRMLS_CC);
   RETURN_DESTROY_ZVAL(diff);
 }
 
 /**
- * Return negative, 0, or positive according to whether a < b, a == b, or a > b
- * respectively.
- * @param Timeval $a The first time to compare
- * @param Timeval $b The second time to compare
+ * Return negative, 0, or positive according to whether a < b, a == b,
+ * or a > b respectively.
+ * @param Timeval $a_obj The first time to compare
+ * @param Timeval $b_obj The second time to compare
  * @return long
  */
 PHP_METHOD(Timeval, compare) {
@@ -176,9 +157,9 @@ PHP_METHOD(Timeval, compare) {
 
 /**
  * Checks whether the two times are within $threshold of each other
- * @param Timeval $a The first time to compare
- * @param Timeval $b The second time to compare
- * @param Timeval $threshold The threshold to check against
+ * @param Timeval $a_obj The first time to compare
+ * @param Timeval $b_obj The second time to compare
+ * @param Timeval $thresh_obj The threshold to check against
  * @return bool True if $a and $b are within $threshold, False otherwise
  */
 PHP_METHOD(Timeval, similar) {
@@ -206,9 +187,7 @@ PHP_METHOD(Timeval, similar) {
  * @return Timeval The current time
  */
 PHP_METHOD(Timeval, now) {
-  zval *now;
-  PHP_GRPC_MAKE_STD_ZVAL(now);
-  now = grpc_php_wrap_timeval(gpr_now(GPR_CLOCK_REALTIME) TSRMLS_CC);
+  zval *now = grpc_php_wrap_timeval(gpr_now(GPR_CLOCK_REALTIME) TSRMLS_CC);
   RETURN_DESTROY_ZVAL(now);
 }
 
@@ -217,13 +196,9 @@ PHP_METHOD(Timeval, now) {
  * @return Timeval Zero length time interval
  */
 PHP_METHOD(Timeval, zero) {
-  zval *grpc_php_timeval_zero;
-  PHP_GRPC_MAKE_STD_ZVAL(grpc_php_timeval_zero);
-  grpc_php_timeval_zero =
-      grpc_php_wrap_timeval(gpr_time_0(GPR_CLOCK_REALTIME) TSRMLS_CC);
-  RETURN_ZVAL(grpc_php_timeval_zero,
-              false, /* Copy original before returning? */
-              true /* Destroy original before returning */);
+  zval *grpc_php_timeval_zero =
+    grpc_php_wrap_timeval(gpr_time_0(GPR_CLOCK_REALTIME) TSRMLS_CC);
+  RETURN_DESTROY_ZVAL(grpc_php_timeval_zero);
 }
 
 /**
@@ -231,10 +206,8 @@ PHP_METHOD(Timeval, zero) {
  * @return Timeval Infinite future time value
  */
 PHP_METHOD(Timeval, infFuture) {
-  zval *grpc_php_timeval_inf_future;
-  PHP_GRPC_MAKE_STD_ZVAL(grpc_php_timeval_inf_future);
-  grpc_php_timeval_inf_future =
-      grpc_php_wrap_timeval(gpr_inf_future(GPR_CLOCK_REALTIME) TSRMLS_CC);
+  zval *grpc_php_timeval_inf_future =
+    grpc_php_wrap_timeval(gpr_inf_future(GPR_CLOCK_REALTIME) TSRMLS_CC);
   RETURN_DESTROY_ZVAL(grpc_php_timeval_inf_future);
 }
 
@@ -243,10 +216,8 @@ PHP_METHOD(Timeval, infFuture) {
  * @return Timeval Infinite past time value
  */
 PHP_METHOD(Timeval, infPast) {
-  zval *grpc_php_timeval_inf_past;
-  PHP_GRPC_MAKE_STD_ZVAL(grpc_php_timeval_inf_past);
-  grpc_php_timeval_inf_past =
-      grpc_php_wrap_timeval(gpr_inf_past(GPR_CLOCK_REALTIME) TSRMLS_CC);
+  zval *grpc_php_timeval_inf_past =
+    grpc_php_wrap_timeval(gpr_inf_past(GPR_CLOCK_REALTIME) TSRMLS_CC);
   RETURN_DESTROY_ZVAL(grpc_php_timeval_inf_past);
 }
 
@@ -259,17 +230,65 @@ PHP_METHOD(Timeval, sleepUntil) {
   gpr_sleep_until(this->wrapped);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_construct, 0, 0, 1)
+  ZEND_ARG_INFO(0, microseconds)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_add, 0, 0, 1)
+  ZEND_ARG_INFO(0, timeval)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_compare, 0, 0, 2)
+  ZEND_ARG_INFO(0, a_timeval)
+  ZEND_ARG_INFO(0, b_timeval)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_infFuture, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_infPast, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_now, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_similar, 0, 0, 3)
+  ZEND_ARG_INFO(0, a_timeval)
+  ZEND_ARG_INFO(0, b_timeval)
+  ZEND_ARG_INFO(0, threshold_timeval)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_sleepUntil, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_subtract, 0, 0, 1)
+  ZEND_ARG_INFO(0, timeval)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_zero, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry timeval_methods[] = {
-  PHP_ME(Timeval, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-  PHP_ME(Timeval, add, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Timeval, compare, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-  PHP_ME(Timeval, infFuture, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-  PHP_ME(Timeval, infPast, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-  PHP_ME(Timeval, now, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-  PHP_ME(Timeval, similar, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-  PHP_ME(Timeval, sleepUntil, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Timeval, subtract, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Timeval, zero, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+  PHP_ME(Timeval, __construct, arginfo_construct,
+         ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
+  PHP_ME(Timeval, add, arginfo_add,
+         ZEND_ACC_PUBLIC)
+  PHP_ME(Timeval, compare, arginfo_compare,
+         ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+  PHP_ME(Timeval, infFuture, arginfo_infFuture,
+         ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+  PHP_ME(Timeval, infPast, arginfo_infPast,
+         ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+  PHP_ME(Timeval, now, arginfo_now,
+         ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+  PHP_ME(Timeval, similar, arginfo_similar,
+         ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+  PHP_ME(Timeval, sleepUntil, arginfo_sleepUntil,
+         ZEND_ACC_PUBLIC)
+  PHP_ME(Timeval, subtract, arginfo_subtract,
+         ZEND_ACC_PUBLIC)
+  PHP_ME(Timeval, zero, arginfo_zero,
+         ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
   PHP_FE_END
 };
 

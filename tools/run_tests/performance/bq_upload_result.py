@@ -1,34 +1,21 @@
-#!/usr/bin/env python2.7
-# Copyright 2016, Google Inc.
-# All rights reserved.
+#!/usr/bin/env python
+# Copyright 2016 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 # Uploads performance benchmark result file to bigquery.
+
+from __future__ import print_function
 
 import argparse
 import calendar
@@ -70,7 +57,7 @@ def _upload_netperf_latency_csv_to_bigquery(dataset_id, table_id, result_file):
   _create_results_table(bq, dataset_id, table_id)
 
   if not _insert_result(bq, dataset_id, table_id, scenario_result, flatten=False):
-    print 'Error uploading result to bigquery.'
+    print('Error uploading result to bigquery.')
     sys.exit(1)
 
 
@@ -82,7 +69,7 @@ def _upload_scenario_result_to_bigquery(dataset_id, table_id, result_file):
   _create_results_table(bq, dataset_id, table_id)
 
   if not _insert_result(bq, dataset_id, table_id, scenario_result):
-    print 'Error uploading result to bigquery.'
+    print('Error uploading result to bigquery.')
     sys.exit(1)
 
 
@@ -115,11 +102,21 @@ def _flatten_result_inplace(scenario_result):
   scenario_result['scenario']['clientConfig'] = json.dumps(scenario_result['scenario']['clientConfig'])
   scenario_result['scenario']['serverConfig'] = json.dumps(scenario_result['scenario']['serverConfig'])
   scenario_result['latencies'] = json.dumps(scenario_result['latencies'])
+  scenario_result['serverCpuStats'] = []
+  for stats in scenario_result['serverStats']:
+    scenario_result['serverCpuStats'].append(dict())
+    scenario_result['serverCpuStats'][-1]['totalCpuTime'] = stats.pop('totalCpuTime', None)
+    scenario_result['serverCpuStats'][-1]['idleCpuTime'] = stats.pop('idleCpuTime', None)
   for stats in scenario_result['clientStats']:
     stats['latencies'] = json.dumps(stats['latencies'])
+    stats.pop('requestResults', None)
   scenario_result['serverCores'] = json.dumps(scenario_result['serverCores'])
   scenario_result['clientSuccess'] = json.dumps(scenario_result['clientSuccess'])
   scenario_result['serverSuccess'] = json.dumps(scenario_result['serverSuccess'])
+  scenario_result['requestResults'] = json.dumps(scenario_result.get('requestResults', []))
+  scenario_result['serverCpuUsage'] = scenario_result['summary'].pop('serverCpuUsage', None)
+  scenario_result['summary'].pop('successfulRequestsPerSecond', None)
+  scenario_result['summary'].pop('failedRequestsPerSecond', None)
 
 
 def _populate_metadata_inplace(scenario_result):
@@ -169,4 +166,4 @@ if args.file_format == 'netperf_latency_csv':
   _upload_netperf_latency_csv_to_bigquery(dataset_id, table_id, args.file_to_upload)
 else:
   _upload_scenario_result_to_bigquery(dataset_id, table_id, args.file_to_upload)
-print 'Successfully uploaded %s to BigQuery.\n' % args.file_to_upload
+print('Successfully uploaded %s to BigQuery.\n' % args.file_to_upload)

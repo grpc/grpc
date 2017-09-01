@@ -1,35 +1,24 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
+
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_TIMER_USE_GENERIC
 
 #include "src/core/lib/iomgr/timer_heap.h"
 
@@ -46,7 +35,7 @@
 static void adjust_upwards(grpc_timer **first, uint32_t i, grpc_timer *t) {
   while (i > 0) {
     uint32_t parent = (uint32_t)(((int)i - 1) / 2);
-    if (gpr_time_cmp(first[parent]->deadline, t->deadline) <= 0) break;
+    if (first[parent]->deadline <= t->deadline) break;
     first[i] = first[parent];
     first[i]->heap_index = i;
     i = parent;
@@ -64,12 +53,12 @@ static void adjust_downwards(grpc_timer **first, uint32_t i, uint32_t length,
     uint32_t left_child = 1u + 2u * i;
     if (left_child >= length) break;
     uint32_t right_child = left_child + 1;
-    uint32_t next_i = right_child < length &&
-                              gpr_time_cmp(first[left_child]->deadline,
-                                           first[right_child]->deadline) > 0
-                          ? right_child
-                          : left_child;
-    if (gpr_time_cmp(t->deadline, first[next_i]->deadline) <= 0) break;
+    uint32_t next_i =
+        right_child < length &&
+                first[left_child]->deadline > first[right_child]->deadline
+            ? right_child
+            : left_child;
+    if (t->deadline <= first[next_i]->deadline) break;
     first[i] = first[next_i];
     first[i]->heap_index = i;
     i = next_i;
@@ -93,7 +82,7 @@ static void maybe_shrink(grpc_timer_heap *heap) {
 static void note_changed_priority(grpc_timer_heap *heap, grpc_timer *timer) {
   uint32_t i = timer->heap_index;
   uint32_t parent = (uint32_t)(((int)i - 1) / 2);
-  if (gpr_time_cmp(heap->timers[parent]->deadline, timer->deadline) > 0) {
+  if (heap->timers[parent]->deadline > timer->deadline) {
     adjust_upwards(heap->timers, i, timer);
   } else {
     adjust_downwards(heap->timers, i, heap->timer_count, timer);
@@ -144,3 +133,5 @@ grpc_timer *grpc_timer_heap_top(grpc_timer_heap *heap) {
 void grpc_timer_heap_pop(grpc_timer_heap *heap) {
   grpc_timer_heap_remove(heap, grpc_timer_heap_top(heap));
 }
+
+#endif /* GRPC_TIMER_USE_GENERIC */

@@ -1,35 +1,22 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
+
+#include <thread>
 
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
@@ -37,19 +24,19 @@
 #include <grpc++/impl/server_builder_option.h>
 #include <grpc++/impl/server_builder_plugin.h>
 #include <grpc++/impl/server_initializer.h>
-#include <grpc++/impl/thd.h>
 #include <grpc++/security/credentials.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
-#include <gtest/gtest.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
+
+#include <gtest/gtest.h>
 
 #define PLUGIN_NAME "TestServerBuilderPlugin"
 
@@ -65,29 +52,29 @@ class TestServerBuilderPlugin : public ServerBuilderPlugin {
     register_service_ = false;
   }
 
-  grpc::string name() GRPC_OVERRIDE { return PLUGIN_NAME; }
+  grpc::string name() override { return PLUGIN_NAME; }
 
-  void InitServer(ServerInitializer* si) GRPC_OVERRIDE {
+  void InitServer(ServerInitializer* si) override {
     init_server_is_called_ = true;
     if (register_service_) {
       si->RegisterService(service_);
     }
   }
 
-  void Finish(ServerInitializer* si) GRPC_OVERRIDE { finish_is_called_ = true; }
+  void Finish(ServerInitializer* si) override { finish_is_called_ = true; }
 
-  void ChangeArguments(const grpc::string& name, void* value) GRPC_OVERRIDE {
+  void ChangeArguments(const grpc::string& name, void* value) override {
     change_arguments_is_called_ = true;
   }
 
-  bool has_async_methods() const GRPC_OVERRIDE {
+  bool has_async_methods() const override {
     if (register_service_) {
       return service_->has_async_methods();
     }
     return false;
   }
 
-  bool has_sync_methods() const GRPC_OVERRIDE {
+  bool has_sync_methods() const override {
     if (register_service_) {
       return service_->has_synchronous_methods();
     }
@@ -112,10 +99,10 @@ class InsertPluginServerBuilderOption : public ServerBuilderOption {
  public:
   InsertPluginServerBuilderOption() { register_service_ = false; }
 
-  void UpdateArguments(ChannelArguments* arg) GRPC_OVERRIDE {}
+  void UpdateArguments(ChannelArguments* arg) override {}
 
-  void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins)
-      GRPC_OVERRIDE {
+  void UpdatePlugins(
+      std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {
     plugins->clear();
 
     std::unique_ptr<TestServerBuilderPlugin> plugin(
@@ -154,7 +141,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
  public:
   ServerBuilderPluginTest() {}
 
-  void SetUp() GRPC_OVERRIDE {
+  void SetUp() override {
     port_ = grpc_pick_unused_port_or_die();
     builder_.reset(new ServerBuilder());
   }
@@ -191,7 +178,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
     // we run some tests without a service, and for those we need to supply a
     // frequently polled completion queue
     cq_ = builder_->AddCompletionQueue();
-    cq_thread_ = new grpc::thread(&ServerBuilderPluginTest::RunCQ, this);
+    cq_thread_ = new std::thread(&ServerBuilderPluginTest::RunCQ, this);
     server_ = builder_->BuildAndStart();
     EXPECT_TRUE(CheckPresent());
   }
@@ -202,7 +189,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
-  void TearDown() GRPC_OVERRIDE {
+  void TearDown() override {
     auto plugin = CheckPresent();
     EXPECT_TRUE(plugin);
     EXPECT_TRUE(plugin->init_server_is_called());
@@ -225,7 +212,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<ServerCompletionQueue> cq_;
   std::unique_ptr<Server> server_;
-  grpc::thread* cq_thread_;
+  std::thread* cq_thread_;
   TestServiceImpl service_;
   int port_;
 

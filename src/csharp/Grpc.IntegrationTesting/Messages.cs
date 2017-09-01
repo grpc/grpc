@@ -10,7 +10,6 @@ using scg = global::System.Collections.Generic;
 namespace Grpc.Testing {
 
   /// <summary>Holder for reflection information generated from src/proto/grpc/testing/messages.proto</summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public static partial class MessagesReflection {
 
     #region Descriptor
@@ -76,12 +75,12 @@ namespace Grpc.Testing {
   }
   #region Enums
   /// <summary>
-  ///  DEPRECATED, don't use. To be removed shortly.
-  ///  The type of payload that should be returned.
+  /// DEPRECATED, don't use. To be removed shortly.
+  /// The type of payload that should be returned.
   /// </summary>
   public enum PayloadType {
     /// <summary>
-    ///  Compressable text format.
+    /// Compressable text format.
     /// </summary>
     [pbr::OriginalName("COMPRESSABLE")] Compressable = 0,
   }
@@ -90,33 +89,38 @@ namespace Grpc.Testing {
 
   #region Messages
   /// <summary>
-  ///  TODO(dgq): Go back to using well-known types once
-  ///  https://github.com/grpc/grpc/issues/6980 has been fixed.
-  ///  import "google/protobuf/wrappers.proto";
+  /// TODO(dgq): Go back to using well-known types once
+  /// https://github.com/grpc/grpc/issues/6980 has been fixed.
+  /// import "google/protobuf/wrappers.proto";
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class BoolValue : pb::IMessage<BoolValue> {
     private static readonly pb::MessageParser<BoolValue> _parser = new pb::MessageParser<BoolValue>(() => new BoolValue());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<BoolValue> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.MessagesReflection.Descriptor.MessageTypes[0]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public BoolValue() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public BoolValue(BoolValue other) : this() {
       value_ = other.value_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public BoolValue Clone() {
       return new BoolValue(this);
     }
@@ -125,8 +129,9 @@ namespace Grpc.Testing {
     public const int ValueFieldNumber = 1;
     private bool value_;
     /// <summary>
-    ///  The bool value.
+    /// The bool value.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Value {
       get { return value_; }
       set {
@@ -134,10 +139,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as BoolValue);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(BoolValue other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -149,16 +156,19 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (Value != false) hash ^= Value.GetHashCode();
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (Value != false) {
         output.WriteRawTag(8);
@@ -166,6 +176,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (Value != false) {
@@ -174,6 +185,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(BoolValue other) {
       if (other == null) {
         return;
@@ -183,6 +195,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -201,32 +214,37 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  A block of data, to simply increase gRPC message size.
+  /// A block of data, to simply increase gRPC message size.
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class Payload : pb::IMessage<Payload> {
     private static readonly pb::MessageParser<Payload> _parser = new pb::MessageParser<Payload>(() => new Payload());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<Payload> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.MessagesReflection.Descriptor.MessageTypes[1]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Payload() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Payload(Payload other) : this() {
       type_ = other.type_;
       body_ = other.body_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Payload Clone() {
       return new Payload(this);
     }
@@ -235,9 +253,10 @@ namespace Grpc.Testing {
     public const int TypeFieldNumber = 1;
     private global::Grpc.Testing.PayloadType type_ = 0;
     /// <summary>
-    ///  DEPRECATED, don't use. To be removed shortly.
-    ///  The type of data in body.
+    /// DEPRECATED, don't use. To be removed shortly.
+    /// The type of data in body.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.PayloadType Type {
       get { return type_; }
       set {
@@ -249,8 +268,9 @@ namespace Grpc.Testing {
     public const int BodyFieldNumber = 2;
     private pb::ByteString body_ = pb::ByteString.Empty;
     /// <summary>
-    ///  Primary contents of payload.
+    /// Primary contents of payload.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pb::ByteString Body {
       get { return body_; }
       set {
@@ -258,10 +278,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as Payload);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(Payload other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -274,6 +296,7 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (Type != 0) hash ^= Type.GetHashCode();
@@ -281,10 +304,12 @@ namespace Grpc.Testing {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (Type != 0) {
         output.WriteRawTag(8);
@@ -296,6 +321,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (Type != 0) {
@@ -307,6 +333,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(Payload other) {
       if (other == null) {
         return;
@@ -319,6 +346,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -341,33 +369,38 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  A protobuf representation for grpc status. This is used by test
-  ///  clients to specify a status that the server should attempt to return.
+  /// A protobuf representation for grpc status. This is used by test
+  /// clients to specify a status that the server should attempt to return.
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class EchoStatus : pb::IMessage<EchoStatus> {
     private static readonly pb::MessageParser<EchoStatus> _parser = new pb::MessageParser<EchoStatus>(() => new EchoStatus());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<EchoStatus> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.MessagesReflection.Descriptor.MessageTypes[2]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public EchoStatus() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public EchoStatus(EchoStatus other) : this() {
       code_ = other.code_;
       message_ = other.message_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public EchoStatus Clone() {
       return new EchoStatus(this);
     }
@@ -375,6 +408,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "code" field.</summary>
     public const int CodeFieldNumber = 1;
     private int code_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int Code {
       get { return code_; }
       set {
@@ -385,6 +419,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "message" field.</summary>
     public const int MessageFieldNumber = 2;
     private string message_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string Message {
       get { return message_; }
       set {
@@ -392,10 +427,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as EchoStatus);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(EchoStatus other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -408,6 +445,7 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (Code != 0) hash ^= Code.GetHashCode();
@@ -415,10 +453,12 @@ namespace Grpc.Testing {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (Code != 0) {
         output.WriteRawTag(8);
@@ -430,6 +470,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (Code != 0) {
@@ -441,6 +482,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(EchoStatus other) {
       if (other == null) {
         return;
@@ -453,6 +495,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -475,27 +518,31 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  Unary request.
+  /// Unary request.
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class SimpleRequest : pb::IMessage<SimpleRequest> {
     private static readonly pb::MessageParser<SimpleRequest> _parser = new pb::MessageParser<SimpleRequest>(() => new SimpleRequest());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<SimpleRequest> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.MessagesReflection.Descriptor.MessageTypes[3]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public SimpleRequest() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public SimpleRequest(SimpleRequest other) : this() {
       responseType_ = other.responseType_;
       responseSize_ = other.responseSize_;
@@ -507,6 +554,7 @@ namespace Grpc.Testing {
       ExpectCompressed = other.expectCompressed_ != null ? other.ExpectCompressed.Clone() : null;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public SimpleRequest Clone() {
       return new SimpleRequest(this);
     }
@@ -515,10 +563,11 @@ namespace Grpc.Testing {
     public const int ResponseTypeFieldNumber = 1;
     private global::Grpc.Testing.PayloadType responseType_ = 0;
     /// <summary>
-    ///  DEPRECATED, don't use. To be removed shortly.
-    ///  Desired payload type in the response from the server.
-    ///  If response_type is RANDOM, server randomly chooses one from other formats.
+    /// DEPRECATED, don't use. To be removed shortly.
+    /// Desired payload type in the response from the server.
+    /// If response_type is RANDOM, server randomly chooses one from other formats.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.PayloadType ResponseType {
       get { return responseType_; }
       set {
@@ -530,8 +579,9 @@ namespace Grpc.Testing {
     public const int ResponseSizeFieldNumber = 2;
     private int responseSize_;
     /// <summary>
-    ///  Desired payload size in the response from the server.
+    /// Desired payload size in the response from the server.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int ResponseSize {
       get { return responseSize_; }
       set {
@@ -543,8 +593,9 @@ namespace Grpc.Testing {
     public const int PayloadFieldNumber = 3;
     private global::Grpc.Testing.Payload payload_;
     /// <summary>
-    ///  Optional input payload sent along with the request.
+    /// Optional input payload sent along with the request.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.Payload Payload {
       get { return payload_; }
       set {
@@ -556,8 +607,9 @@ namespace Grpc.Testing {
     public const int FillUsernameFieldNumber = 4;
     private bool fillUsername_;
     /// <summary>
-    ///  Whether SimpleResponse should include username.
+    /// Whether SimpleResponse should include username.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool FillUsername {
       get { return fillUsername_; }
       set {
@@ -569,8 +621,9 @@ namespace Grpc.Testing {
     public const int FillOauthScopeFieldNumber = 5;
     private bool fillOauthScope_;
     /// <summary>
-    ///  Whether SimpleResponse should include OAuth scope.
+    /// Whether SimpleResponse should include OAuth scope.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool FillOauthScope {
       get { return fillOauthScope_; }
       set {
@@ -582,11 +635,12 @@ namespace Grpc.Testing {
     public const int ResponseCompressedFieldNumber = 6;
     private global::Grpc.Testing.BoolValue responseCompressed_;
     /// <summary>
-    ///  Whether to request the server to compress the response. This field is
-    ///  "nullable" in order to interoperate seamlessly with clients not able to
-    ///  implement the full compression tests by introspecting the call to verify
-    ///  the response's compression status.
+    /// Whether to request the server to compress the response. This field is
+    /// "nullable" in order to interoperate seamlessly with clients not able to
+    /// implement the full compression tests by introspecting the call to verify
+    /// the response's compression status.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.BoolValue ResponseCompressed {
       get { return responseCompressed_; }
       set {
@@ -598,8 +652,9 @@ namespace Grpc.Testing {
     public const int ResponseStatusFieldNumber = 7;
     private global::Grpc.Testing.EchoStatus responseStatus_;
     /// <summary>
-    ///  Whether server should return a given status
+    /// Whether server should return a given status
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.EchoStatus ResponseStatus {
       get { return responseStatus_; }
       set {
@@ -611,8 +666,9 @@ namespace Grpc.Testing {
     public const int ExpectCompressedFieldNumber = 8;
     private global::Grpc.Testing.BoolValue expectCompressed_;
     /// <summary>
-    ///  Whether the server should expect this request to be compressed.
+    /// Whether the server should expect this request to be compressed.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.BoolValue ExpectCompressed {
       get { return expectCompressed_; }
       set {
@@ -620,10 +676,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as SimpleRequest);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(SimpleRequest other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -642,6 +700,7 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (ResponseType != 0) hash ^= ResponseType.GetHashCode();
@@ -655,10 +714,12 @@ namespace Grpc.Testing {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (ResponseType != 0) {
         output.WriteRawTag(8);
@@ -694,6 +755,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (ResponseType != 0) {
@@ -723,6 +785,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(SimpleRequest other) {
       if (other == null) {
         return;
@@ -765,6 +828,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -823,33 +887,38 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  Unary response, as configured by the request.
+  /// Unary response, as configured by the request.
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class SimpleResponse : pb::IMessage<SimpleResponse> {
     private static readonly pb::MessageParser<SimpleResponse> _parser = new pb::MessageParser<SimpleResponse>(() => new SimpleResponse());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<SimpleResponse> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.MessagesReflection.Descriptor.MessageTypes[4]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public SimpleResponse() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public SimpleResponse(SimpleResponse other) : this() {
       Payload = other.payload_ != null ? other.Payload.Clone() : null;
       username_ = other.username_;
       oauthScope_ = other.oauthScope_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public SimpleResponse Clone() {
       return new SimpleResponse(this);
     }
@@ -858,8 +927,9 @@ namespace Grpc.Testing {
     public const int PayloadFieldNumber = 1;
     private global::Grpc.Testing.Payload payload_;
     /// <summary>
-    ///  Payload to increase message size.
+    /// Payload to increase message size.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.Payload Payload {
       get { return payload_; }
       set {
@@ -871,9 +941,10 @@ namespace Grpc.Testing {
     public const int UsernameFieldNumber = 2;
     private string username_ = "";
     /// <summary>
-    ///  The user the request came from, for verifying authentication was
-    ///  successful when the client expected it.
+    /// The user the request came from, for verifying authentication was
+    /// successful when the client expected it.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string Username {
       get { return username_; }
       set {
@@ -885,8 +956,9 @@ namespace Grpc.Testing {
     public const int OauthScopeFieldNumber = 3;
     private string oauthScope_ = "";
     /// <summary>
-    ///  OAuth scope.
+    /// OAuth scope.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public string OauthScope {
       get { return oauthScope_; }
       set {
@@ -894,10 +966,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as SimpleResponse);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(SimpleResponse other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -911,6 +985,7 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (payload_ != null) hash ^= Payload.GetHashCode();
@@ -919,10 +994,12 @@ namespace Grpc.Testing {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (payload_ != null) {
         output.WriteRawTag(10);
@@ -938,6 +1015,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (payload_ != null) {
@@ -952,6 +1030,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(SimpleResponse other) {
       if (other == null) {
         return;
@@ -970,6 +1049,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -999,32 +1079,37 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  Client-streaming request.
+  /// Client-streaming request.
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class StreamingInputCallRequest : pb::IMessage<StreamingInputCallRequest> {
     private static readonly pb::MessageParser<StreamingInputCallRequest> _parser = new pb::MessageParser<StreamingInputCallRequest>(() => new StreamingInputCallRequest());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<StreamingInputCallRequest> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.MessagesReflection.Descriptor.MessageTypes[5]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public StreamingInputCallRequest() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public StreamingInputCallRequest(StreamingInputCallRequest other) : this() {
       Payload = other.payload_ != null ? other.Payload.Clone() : null;
       ExpectCompressed = other.expectCompressed_ != null ? other.ExpectCompressed.Clone() : null;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public StreamingInputCallRequest Clone() {
       return new StreamingInputCallRequest(this);
     }
@@ -1033,8 +1118,9 @@ namespace Grpc.Testing {
     public const int PayloadFieldNumber = 1;
     private global::Grpc.Testing.Payload payload_;
     /// <summary>
-    ///  Optional input payload sent along with the request.
+    /// Optional input payload sent along with the request.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.Payload Payload {
       get { return payload_; }
       set {
@@ -1046,11 +1132,12 @@ namespace Grpc.Testing {
     public const int ExpectCompressedFieldNumber = 2;
     private global::Grpc.Testing.BoolValue expectCompressed_;
     /// <summary>
-    ///  Whether the server should expect this request to be compressed. This field
-    ///  is "nullable" in order to interoperate seamlessly with servers not able to
-    ///  implement the full compression tests by introspecting the call to verify
-    ///  the request's compression status.
+    /// Whether the server should expect this request to be compressed. This field
+    /// is "nullable" in order to interoperate seamlessly with servers not able to
+    /// implement the full compression tests by introspecting the call to verify
+    /// the request's compression status.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.BoolValue ExpectCompressed {
       get { return expectCompressed_; }
       set {
@@ -1058,10 +1145,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as StreamingInputCallRequest);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(StreamingInputCallRequest other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -1074,6 +1163,7 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (payload_ != null) hash ^= Payload.GetHashCode();
@@ -1081,10 +1171,12 @@ namespace Grpc.Testing {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (payload_ != null) {
         output.WriteRawTag(10);
@@ -1096,6 +1188,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (payload_ != null) {
@@ -1107,6 +1200,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(StreamingInputCallRequest other) {
       if (other == null) {
         return;
@@ -1125,6 +1219,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -1153,31 +1248,36 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  Client-streaming response.
+  /// Client-streaming response.
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class StreamingInputCallResponse : pb::IMessage<StreamingInputCallResponse> {
     private static readonly pb::MessageParser<StreamingInputCallResponse> _parser = new pb::MessageParser<StreamingInputCallResponse>(() => new StreamingInputCallResponse());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<StreamingInputCallResponse> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.MessagesReflection.Descriptor.MessageTypes[6]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public StreamingInputCallResponse() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public StreamingInputCallResponse(StreamingInputCallResponse other) : this() {
       aggregatedPayloadSize_ = other.aggregatedPayloadSize_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public StreamingInputCallResponse Clone() {
       return new StreamingInputCallResponse(this);
     }
@@ -1186,8 +1286,9 @@ namespace Grpc.Testing {
     public const int AggregatedPayloadSizeFieldNumber = 1;
     private int aggregatedPayloadSize_;
     /// <summary>
-    ///  Aggregated size of payloads received from the client.
+    /// Aggregated size of payloads received from the client.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int AggregatedPayloadSize {
       get { return aggregatedPayloadSize_; }
       set {
@@ -1195,10 +1296,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as StreamingInputCallResponse);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(StreamingInputCallResponse other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -1210,16 +1313,19 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (AggregatedPayloadSize != 0) hash ^= AggregatedPayloadSize.GetHashCode();
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (AggregatedPayloadSize != 0) {
         output.WriteRawTag(8);
@@ -1227,6 +1333,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (AggregatedPayloadSize != 0) {
@@ -1235,6 +1342,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(StreamingInputCallResponse other) {
       if (other == null) {
         return;
@@ -1244,6 +1352,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -1262,33 +1371,38 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  Configuration for a particular response.
+  /// Configuration for a particular response.
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class ResponseParameters : pb::IMessage<ResponseParameters> {
     private static readonly pb::MessageParser<ResponseParameters> _parser = new pb::MessageParser<ResponseParameters>(() => new ResponseParameters());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<ResponseParameters> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.MessagesReflection.Descriptor.MessageTypes[7]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ResponseParameters() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ResponseParameters(ResponseParameters other) : this() {
       size_ = other.size_;
       intervalUs_ = other.intervalUs_;
       Compressed = other.compressed_ != null ? other.Compressed.Clone() : null;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ResponseParameters Clone() {
       return new ResponseParameters(this);
     }
@@ -1297,8 +1411,9 @@ namespace Grpc.Testing {
     public const int SizeFieldNumber = 1;
     private int size_;
     /// <summary>
-    ///  Desired payload sizes in responses from the server.
+    /// Desired payload sizes in responses from the server.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int Size {
       get { return size_; }
       set {
@@ -1310,9 +1425,10 @@ namespace Grpc.Testing {
     public const int IntervalUsFieldNumber = 2;
     private int intervalUs_;
     /// <summary>
-    ///  Desired interval between consecutive responses in the response stream in
-    ///  microseconds.
+    /// Desired interval between consecutive responses in the response stream in
+    /// microseconds.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int IntervalUs {
       get { return intervalUs_; }
       set {
@@ -1324,11 +1440,12 @@ namespace Grpc.Testing {
     public const int CompressedFieldNumber = 3;
     private global::Grpc.Testing.BoolValue compressed_;
     /// <summary>
-    ///  Whether to request the server to compress the response. This field is
-    ///  "nullable" in order to interoperate seamlessly with clients not able to
-    ///  implement the full compression tests by introspecting the call to verify
-    ///  the response's compression status.
+    /// Whether to request the server to compress the response. This field is
+    /// "nullable" in order to interoperate seamlessly with clients not able to
+    /// implement the full compression tests by introspecting the call to verify
+    /// the response's compression status.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.BoolValue Compressed {
       get { return compressed_; }
       set {
@@ -1336,10 +1453,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ResponseParameters);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(ResponseParameters other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -1353,6 +1472,7 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (Size != 0) hash ^= Size.GetHashCode();
@@ -1361,10 +1481,12 @@ namespace Grpc.Testing {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (Size != 0) {
         output.WriteRawTag(8);
@@ -1380,6 +1502,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (Size != 0) {
@@ -1394,6 +1517,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(ResponseParameters other) {
       if (other == null) {
         return;
@@ -1412,6 +1536,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -1441,27 +1566,31 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  Server-streaming request.
+  /// Server-streaming request.
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class StreamingOutputCallRequest : pb::IMessage<StreamingOutputCallRequest> {
     private static readonly pb::MessageParser<StreamingOutputCallRequest> _parser = new pb::MessageParser<StreamingOutputCallRequest>(() => new StreamingOutputCallRequest());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<StreamingOutputCallRequest> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.MessagesReflection.Descriptor.MessageTypes[8]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public StreamingOutputCallRequest() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public StreamingOutputCallRequest(StreamingOutputCallRequest other) : this() {
       responseType_ = other.responseType_;
       responseParameters_ = other.responseParameters_.Clone();
@@ -1469,6 +1598,7 @@ namespace Grpc.Testing {
       ResponseStatus = other.responseStatus_ != null ? other.ResponseStatus.Clone() : null;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public StreamingOutputCallRequest Clone() {
       return new StreamingOutputCallRequest(this);
     }
@@ -1477,12 +1607,13 @@ namespace Grpc.Testing {
     public const int ResponseTypeFieldNumber = 1;
     private global::Grpc.Testing.PayloadType responseType_ = 0;
     /// <summary>
-    ///  DEPRECATED, don't use. To be removed shortly.
-    ///  Desired payload type in the response from the server.
-    ///  If response_type is RANDOM, the payload from each response in the stream
-    ///  might be of different types. This is to simulate a mixed type of payload
-    ///  stream.
+    /// DEPRECATED, don't use. To be removed shortly.
+    /// Desired payload type in the response from the server.
+    /// If response_type is RANDOM, the payload from each response in the stream
+    /// might be of different types. This is to simulate a mixed type of payload
+    /// stream.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.PayloadType ResponseType {
       get { return responseType_; }
       set {
@@ -1496,8 +1627,9 @@ namespace Grpc.Testing {
         = pb::FieldCodec.ForMessage(18, global::Grpc.Testing.ResponseParameters.Parser);
     private readonly pbc::RepeatedField<global::Grpc.Testing.ResponseParameters> responseParameters_ = new pbc::RepeatedField<global::Grpc.Testing.ResponseParameters>();
     /// <summary>
-    ///  Configuration for each expected response message.
+    /// Configuration for each expected response message.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<global::Grpc.Testing.ResponseParameters> ResponseParameters {
       get { return responseParameters_; }
     }
@@ -1506,8 +1638,9 @@ namespace Grpc.Testing {
     public const int PayloadFieldNumber = 3;
     private global::Grpc.Testing.Payload payload_;
     /// <summary>
-    ///  Optional input payload sent along with the request.
+    /// Optional input payload sent along with the request.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.Payload Payload {
       get { return payload_; }
       set {
@@ -1519,8 +1652,9 @@ namespace Grpc.Testing {
     public const int ResponseStatusFieldNumber = 7;
     private global::Grpc.Testing.EchoStatus responseStatus_;
     /// <summary>
-    ///  Whether server should return a given status
+    /// Whether server should return a given status
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.EchoStatus ResponseStatus {
       get { return responseStatus_; }
       set {
@@ -1528,10 +1662,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as StreamingOutputCallRequest);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(StreamingOutputCallRequest other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -1546,6 +1682,7 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (ResponseType != 0) hash ^= ResponseType.GetHashCode();
@@ -1555,10 +1692,12 @@ namespace Grpc.Testing {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (ResponseType != 0) {
         output.WriteRawTag(8);
@@ -1575,6 +1714,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (ResponseType != 0) {
@@ -1590,6 +1730,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(StreamingOutputCallRequest other) {
       if (other == null) {
         return;
@@ -1612,6 +1753,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -1648,31 +1790,36 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  Server-streaming response, as configured by the request and parameters.
+  /// Server-streaming response, as configured by the request and parameters.
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class StreamingOutputCallResponse : pb::IMessage<StreamingOutputCallResponse> {
     private static readonly pb::MessageParser<StreamingOutputCallResponse> _parser = new pb::MessageParser<StreamingOutputCallResponse>(() => new StreamingOutputCallResponse());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<StreamingOutputCallResponse> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.MessagesReflection.Descriptor.MessageTypes[9]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public StreamingOutputCallResponse() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public StreamingOutputCallResponse(StreamingOutputCallResponse other) : this() {
       Payload = other.payload_ != null ? other.Payload.Clone() : null;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public StreamingOutputCallResponse Clone() {
       return new StreamingOutputCallResponse(this);
     }
@@ -1681,8 +1828,9 @@ namespace Grpc.Testing {
     public const int PayloadFieldNumber = 1;
     private global::Grpc.Testing.Payload payload_;
     /// <summary>
-    ///  Payload to increase response size.
+    /// Payload to increase response size.
     /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public global::Grpc.Testing.Payload Payload {
       get { return payload_; }
       set {
@@ -1690,10 +1838,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as StreamingOutputCallResponse);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(StreamingOutputCallResponse other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -1705,16 +1855,19 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (payload_ != null) hash ^= Payload.GetHashCode();
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (payload_ != null) {
         output.WriteRawTag(10);
@@ -1722,6 +1875,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (payload_ != null) {
@@ -1730,6 +1884,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(StreamingOutputCallResponse other) {
       if (other == null) {
         return;
@@ -1742,6 +1897,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -1763,32 +1919,37 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  For reconnect interop test only.
-  ///  Client tells server what reconnection parameters it used.
+  /// For reconnect interop test only.
+  /// Client tells server what reconnection parameters it used.
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class ReconnectParams : pb::IMessage<ReconnectParams> {
     private static readonly pb::MessageParser<ReconnectParams> _parser = new pb::MessageParser<ReconnectParams>(() => new ReconnectParams());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<ReconnectParams> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.MessagesReflection.Descriptor.MessageTypes[10]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ReconnectParams() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ReconnectParams(ReconnectParams other) : this() {
       maxReconnectBackoffMs_ = other.maxReconnectBackoffMs_;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ReconnectParams Clone() {
       return new ReconnectParams(this);
     }
@@ -1796,6 +1957,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "max_reconnect_backoff_ms" field.</summary>
     public const int MaxReconnectBackoffMsFieldNumber = 1;
     private int maxReconnectBackoffMs_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int MaxReconnectBackoffMs {
       get { return maxReconnectBackoffMs_; }
       set {
@@ -1803,10 +1965,12 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ReconnectParams);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(ReconnectParams other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -1818,16 +1982,19 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (MaxReconnectBackoffMs != 0) hash ^= MaxReconnectBackoffMs.GetHashCode();
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (MaxReconnectBackoffMs != 0) {
         output.WriteRawTag(8);
@@ -1835,6 +2002,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (MaxReconnectBackoffMs != 0) {
@@ -1843,6 +2011,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(ReconnectParams other) {
       if (other == null) {
         return;
@@ -1852,6 +2021,7 @@ namespace Grpc.Testing {
       }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
@@ -1870,34 +2040,39 @@ namespace Grpc.Testing {
   }
 
   /// <summary>
-  ///  For reconnect interop test only.
-  ///  Server tells client whether its reconnects are following the spec and the
-  ///  reconnect backoffs it saw.
+  /// For reconnect interop test only.
+  /// Server tells client whether its reconnects are following the spec and the
+  /// reconnect backoffs it saw.
   /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class ReconnectInfo : pb::IMessage<ReconnectInfo> {
     private static readonly pb::MessageParser<ReconnectInfo> _parser = new pb::MessageParser<ReconnectInfo>(() => new ReconnectInfo());
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pb::MessageParser<ReconnectInfo> Parser { get { return _parser; } }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
       get { return global::Grpc.Testing.MessagesReflection.Descriptor.MessageTypes[11]; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     pbr::MessageDescriptor pb::IMessage.Descriptor {
       get { return Descriptor; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ReconnectInfo() {
       OnConstruction();
     }
 
     partial void OnConstruction();
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ReconnectInfo(ReconnectInfo other) : this() {
       passed_ = other.passed_;
       backoffMs_ = other.backoffMs_.Clone();
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ReconnectInfo Clone() {
       return new ReconnectInfo(this);
     }
@@ -1905,6 +2080,7 @@ namespace Grpc.Testing {
     /// <summary>Field number for the "passed" field.</summary>
     public const int PassedFieldNumber = 1;
     private bool passed_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Passed {
       get { return passed_; }
       set {
@@ -1917,14 +2093,17 @@ namespace Grpc.Testing {
     private static readonly pb::FieldCodec<int> _repeated_backoffMs_codec
         = pb::FieldCodec.ForInt32(18);
     private readonly pbc::RepeatedField<int> backoffMs_ = new pbc::RepeatedField<int>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public pbc::RepeatedField<int> BackoffMs {
       get { return backoffMs_; }
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ReconnectInfo);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public bool Equals(ReconnectInfo other) {
       if (ReferenceEquals(other, null)) {
         return false;
@@ -1937,6 +2116,7 @@ namespace Grpc.Testing {
       return true;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
       if (Passed != false) hash ^= Passed.GetHashCode();
@@ -1944,10 +2124,12 @@ namespace Grpc.Testing {
       return hash;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override string ToString() {
       return pb::JsonFormatter.ToDiagnosticString(this);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       if (Passed != false) {
         output.WriteRawTag(8);
@@ -1956,6 +2138,7 @@ namespace Grpc.Testing {
       backoffMs_.WriteTo(output, _repeated_backoffMs_codec);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
       if (Passed != false) {
@@ -1965,6 +2148,7 @@ namespace Grpc.Testing {
       return size;
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(ReconnectInfo other) {
       if (other == null) {
         return;
@@ -1975,6 +2159,7 @@ namespace Grpc.Testing {
       backoffMs_.Add(other.backoffMs_);
     }
 
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {

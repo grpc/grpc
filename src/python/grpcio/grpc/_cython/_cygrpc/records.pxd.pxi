@@ -1,31 +1,21 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+cdef bytes _slice_bytes(grpc_slice slice)
+cdef grpc_slice _copy_slice(grpc_slice slice) nogil
+cdef grpc_slice _slice_from_bytes(bytes value) nogil
 
 
 cdef class Timespec:
@@ -84,6 +74,7 @@ cdef class SslPemKeyCertPair:
 cdef class ChannelArg:
 
   cdef grpc_arg c_arg
+  cdef grpc_arg_pointer_vtable ptr_vtable
   cdef readonly object key, value
 
 
@@ -96,13 +87,13 @@ cdef class ChannelArgs:
 cdef class Metadatum:
 
   cdef grpc_metadata c_metadata
-  cdef object _key, _value
+  cdef void _copy_metadatum(self, grpc_metadata *destination) nogil
 
 
 cdef class Metadata:
 
   cdef grpc_metadata_array c_metadata_array
-  cdef object metadata
+  cdef void _claim_slice_ownership(self)
 
 
 cdef class Operation:
@@ -111,8 +102,7 @@ cdef class Operation:
   cdef ByteBuffer _received_message
   cdef Metadata _received_metadata
   cdef grpc_status_code _received_status_code
-  cdef char *_received_status_details
-  cdef size_t _received_status_details_capacity
+  cdef grpc_slice _status_details
   cdef int _received_cancelled
   cdef readonly bint is_valid
   cdef object references

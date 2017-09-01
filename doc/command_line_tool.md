@@ -2,8 +2,8 @@
 
 ## Overview
 
-This document describes the command line tool that comes with gRPC repository. It is desireable to have command line
-tools written in other languages to roughly follow the same syntax and flags.
+This document describes the command line tool that comes with gRPC repository. It is desirable to have command line
+tools written in other languages roughly follow the same syntax and flags.
 
 At this point, the tool needs to be built from source, and it should be moved out to grpc-tools repository as a stand
 alone application once it is mature enough.
@@ -30,7 +30,26 @@ The command line tool should support the following things:
 
 ## Code location
 
-To use the tool, you need to get the grpc repository and in the grpc directory execute
+To use the tool, you need to get the grpc repository and make sure your system
+has the prerequisites for building grpc from source, given in the [installation
+instructions](https://github.com/grpc/grpc/blob/master/INSTALL.md).
+
+In order to build the grpc command line tool from a fresh clone of the grpc
+repository, you need to run the following command to update submodules:
+
+```
+git submodule update --init
+```
+
+You also need to have the gflags library installed on your system. On Linux
+systems, gflags can be installed with the following command:
+
+```
+sudo apt-get install libgflags-dev
+```
+
+Once the prerequisites are satisfied, you can build the command line tool with
+the command:
 
 ```
 $ make grpc_cli

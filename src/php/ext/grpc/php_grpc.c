@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -49,7 +34,8 @@
 #include <ext/standard/info.h>
 #include "php_grpc.h"
 
-// ZEND_DECLARE_MODULE_GLOBALS(grpc)
+ZEND_DECLARE_MODULE_GLOBALS(grpc)
+static PHP_GINIT_FUNCTION(grpc);
 
 /* {{{ grpc_functions[]
  *
@@ -70,13 +56,17 @@ zend_module_entry grpc_module_entry = {
   grpc_functions,
   PHP_MINIT(grpc),
   PHP_MSHUTDOWN(grpc),
-  NULL,
+  PHP_RINIT(grpc),
   NULL,
   PHP_MINFO(grpc),
 #if ZEND_MODULE_API_NO >= 20010901
   PHP_GRPC_VERSION,
 #endif
-  STANDARD_MODULE_PROPERTIES};
+  PHP_MODULE_GLOBALS(grpc),
+  PHP_GINIT(grpc),
+  NULL,
+  NULL,
+  STANDARD_MODULE_PROPERTIES_EX};
 /* }}} */
 
 #ifdef COMPILE_DL_GRPC
@@ -114,7 +104,6 @@ PHP_MINIT_FUNCTION(grpc) {
      REGISTER_INI_ENTRIES();
   */
   /* Register call error constants */
-  grpc_init();
   REGISTER_LONG_CONSTANT("Grpc\\CALL_OK", GRPC_CALL_OK,
                          CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR", GRPC_CALL_ERROR,
@@ -236,13 +225,12 @@ PHP_MINIT_FUNCTION(grpc) {
                          CONST_CS | CONST_PERSISTENT);
 
   grpc_init_call(TSRMLS_C);
-  grpc_init_channel(TSRMLS_C);
+  GRPC_STARTUP(channel);
   grpc_init_server(TSRMLS_C);
   grpc_init_timeval(TSRMLS_C);
   grpc_init_channel_credentials(TSRMLS_C);
   grpc_init_call_credentials(TSRMLS_C);
   grpc_init_server_credentials(TSRMLS_C);
-  grpc_php_init_completion_queue(TSRMLS_C);
   return SUCCESS;
 }
 /* }}} */
@@ -255,9 +243,12 @@ PHP_MSHUTDOWN_FUNCTION(grpc) {
   */
   // WARNING: This function IS being called by PHP when the extension
   // is unloaded but the logs were somehow suppressed.
-  grpc_shutdown_timeval(TSRMLS_C);
-  grpc_php_shutdown_completion_queue(TSRMLS_C);
-  grpc_shutdown();
+  if (GRPC_G(initialized)) {
+    grpc_shutdown_timeval(TSRMLS_C);
+    grpc_php_shutdown_completion_queue(TSRMLS_C);
+    grpc_shutdown();
+    GRPC_G(initialized) = 0;
+  }
   return SUCCESS;
 }
 /* }}} */
@@ -274,6 +265,26 @@ PHP_MINFO_FUNCTION(grpc) {
   */
 }
 /* }}} */
+
+/* {{{ PHP_RINIT_FUNCTION
+ */
+PHP_RINIT_FUNCTION(grpc) {
+  if (!GRPC_G(initialized)) {
+    grpc_init();
+    grpc_php_init_completion_queue(TSRMLS_C);
+    GRPC_G(initialized) = 1;
+  }
+  return SUCCESS;
+}
+/* }}} */
+
+/* {{{ PHP_GINIT_FUNCTION
+ */
+static PHP_GINIT_FUNCTION(grpc) {
+  grpc_globals->initialized = 0;
+}
+/* }}} */
+
 /* The previous line is meant for vim and emacs, so it can correctly fold and
    unfold functions in source code. See the corresponding marks just before
    function definition, where the functions purpose is also documented. Please

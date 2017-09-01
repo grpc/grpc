@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -50,7 +35,10 @@ void gpr_timer_end(const char *tagstr, int important, const char *file,
 
 void gpr_timers_set_log_filename(const char *filename);
 
-#if !(defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER))
+void gpr_timer_set_enabled(int enabled);
+
+#if !(defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER) + \
+      defined(GRPC_CUSTOM_PROFILER))
 /* No profiling. No-op all the things. */
 #define GPR_TIMER_MARK(tag, important) \
   do {                                 \
@@ -68,6 +56,12 @@ void gpr_timers_set_log_filename(const char *filename);
 /* ... hopefully only one. */
 #if defined(GRPC_STAP_PROFILER) && defined(GRPC_BASIC_PROFILER)
 #error "GRPC_STAP_PROFILER and GRPC_BASIC_PROFILER are mutually exclusive."
+#endif
+#if defined(GRPC_STAP_PROFILER) && defined(GRPC_CUSTOM_PROFILER)
+#error "GRPC_STAP_PROFILER and GRPC_CUSTOM_PROFILER are mutually exclusive."
+#endif
+#if defined(GRPC_CUSTOM_PROFILER) && defined(GRPC_BASIC_PROFILER)
+#error "GRPC_CUSTOM_PROFILER and GRPC_BASIC_PROFILER are mutually exclusive."
 #endif
 
 /* Generic profiling interface. */
@@ -93,22 +87,25 @@ void gpr_timers_set_log_filename(const char *filename);
 #ifdef __cplusplus
 }
 
-#if (defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER))
+#if (defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER) + \
+     defined(GRPC_CUSTOM_PROFILER))
 namespace grpc {
 class ProfileScope {
  public:
-  ProfileScope(const char *desc, bool important) : desc_(desc) {
-    GPR_TIMER_BEGIN(desc_, important ? 1 : 0);
+  ProfileScope(const char *desc, bool important, const char *file, int line)
+      : desc_(desc) {
+    gpr_timer_begin(desc_, important ? 1 : 0, file, line);
   }
-  ~ProfileScope() { GPR_TIMER_END(desc_, 0); }
+  ~ProfileScope() { gpr_timer_end(desc_, 0, "n/a", 0); }
 
  private:
   const char *const desc_;
 };
-}
+}  // namespace grpc
 
-#define GPR_TIMER_SCOPE(tag, important) \
-  ::grpc::ProfileScope _profile_scope_##__LINE__((tag), (important))
+#define GPR_TIMER_SCOPE(tag, important)                                        \
+  ::grpc::ProfileScope _profile_scope_##__LINE__((tag), (important), __FILE__, \
+                                                 __LINE__)
 #else
 #define GPR_TIMER_SCOPE(tag, important) \
   do {                                  \

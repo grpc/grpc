@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -46,13 +31,15 @@ namespace testing {
 class ChannelArgumentsTest;
 }  // namespace testing
 
+class ResourceQuota;
+
 /// Options for channel creation. The user can use generic setters to pass
-/// key value pairs down to c channel creation code. For grpc related options,
+/// key value pairs down to C channel creation code. For gRPC related options,
 /// concrete setters are provided.
 class ChannelArguments {
  public:
   ChannelArguments();
-  ~ChannelArguments() {}
+  ~ChannelArguments();
 
   ChannelArguments(const ChannelArguments& other);
   ChannelArguments& operator=(ChannelArguments other) {
@@ -77,8 +64,27 @@ class ChannelArguments {
   /// Set the compression algorithm for the channel.
   void SetCompressionAlgorithm(grpc_compression_algorithm algorithm);
 
-  /// The given string will be sent at the front of the user agent string.
+  /// Set the socket mutator for the channel.
+  void SetSocketMutator(grpc_socket_mutator* mutator);
+
+  /// Set the string to prepend to the user agent.
   void SetUserAgentPrefix(const grpc::string& user_agent_prefix);
+
+  /// Set the buffer pool to be attached to the constructed channel.
+  void SetResourceQuota(const ResourceQuota& resource_quota);
+
+  /// Set the max receive and send message sizes.
+  void SetMaxReceiveMessageSize(int size);
+  void SetMaxSendMessageSize(int size);
+
+  /// Set LB policy name.
+  /// Note that if the name resolver returns only balancer addresses, the
+  /// grpclb LB policy will be used, regardless of what is specified here.
+  void SetLoadBalancingPolicyName(const grpc::string& lb_policy_name);
+
+  /// Set service config in JSON form.
+  /// Primarily meant for use in unit tests.
+  void SetServiceConfigJSON(const grpc::string& service_config_json);
 
   // Generic channel argument setters. Only for advanced use cases.
   /// Set an integer argument \a value under \a key.
@@ -88,8 +94,20 @@ class ChannelArguments {
   /// Set a pointer argument \a value under \a key. Owership is not transferred.
   void SetPointer(const grpc::string& key, void* value);
 
+  void SetPointerWithVtable(const grpc::string& key, void* value,
+                            const grpc_arg_pointer_vtable* vtable);
+
   /// Set a textual argument \a value under \a key.
   void SetString(const grpc::string& key, const grpc::string& value);
+
+  /// Return (by value) a C \a grpc_channel_args structure which points to
+  /// arguments owned by this \a ChannelArguments instance
+  grpc_channel_args c_channel_args() const {
+    grpc_channel_args out;
+    out.num_args = args_.size();
+    out.args = args_.empty() ? NULL : const_cast<grpc_arg*>(&args_[0]);
+    return out;
+  }
 
  private:
   friend class SecureChannelCredentials;
@@ -98,7 +116,7 @@ class ChannelArguments {
   /// Default pointer argument operations.
   struct PointerVtableMembers {
     static void* Copy(void* in) { return in; }
-    static void Destroy(void* in) {}
+    static void Destroy(grpc_exec_ctx* exec_ctx, void* in) {}
     static int Compare(void* a, void* b) {
       if (a < b) return -1;
       if (a > b) return 1;

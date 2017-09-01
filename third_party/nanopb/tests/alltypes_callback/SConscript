@@ -1,0 +1,23 @@
+# Test the AllTypes encoding & decoding using callbacks for all fields.
+
+Import("env")
+
+c = Copy("$TARGET", "$SOURCE")
+env.Command("alltypes.proto", "#alltypes/alltypes.proto", c)
+
+env.NanopbProto(["alltypes", "alltypes.options"])
+enc = env.Program(["encode_alltypes_callback.c", "alltypes.pb.c", "$COMMON/pb_encode.o", "$COMMON/pb_common.o"])
+dec = env.Program(["decode_alltypes_callback.c", "alltypes.pb.c", "$COMMON/pb_decode.o", "$COMMON/pb_common.o"])
+
+refdec = "$BUILD/alltypes/decode_alltypes$PROGSUFFIX"
+
+# Encode and compare results
+env.RunTest(enc)
+env.RunTest("decode_alltypes.output", [refdec, "encode_alltypes_callback.output"])
+env.RunTest("decode_alltypes_callback.output", [dec, "encode_alltypes_callback.output"])
+
+# Do the same thing with the optional fields present
+env.RunTest("optionals.output", enc, ARGS = ['1'])
+env.RunTest("optionals.refdecout", [refdec, "optionals.output"], ARGS = ['1'])
+env.RunTest("optionals.decout", [dec, "optionals.output"], ARGS = ['1'])
+

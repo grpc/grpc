@@ -1,43 +1,78 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #include <grpc++/support/channel_arguments.h>
 
+#include <grpc++/grpc++.h>
 #include <grpc/grpc.h>
+#include <grpc/support/useful.h>
 #include <gtest/gtest.h>
+
+extern "C" {
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/socket_mutator.h"
+}
 
 namespace grpc {
 namespace testing {
+
+namespace {
+
+// A simple grpc_socket_mutator to be used to test SetSocketMutator
+class TestSocketMutator : public grpc_socket_mutator {
+ public:
+  TestSocketMutator();
+
+  bool MutateFd(int fd) {
+    // Do nothing on the fd
+    return true;
+  }
+};
+
+//
+// C API for TestSocketMutator
+//
+
+bool test_mutator_mutate_fd(int fd, grpc_socket_mutator* mutator) {
+  TestSocketMutator* tsm = (TestSocketMutator*)mutator;
+  return tsm->MutateFd(fd);
+}
+
+int test_mutator_compare(grpc_socket_mutator* a, grpc_socket_mutator* b) {
+  return GPR_ICMP(a, b);
+}
+
+void test_mutator_destroy(grpc_socket_mutator* mutator) {
+  TestSocketMutator* tsm = (TestSocketMutator*)mutator;
+  delete tsm;
+}
+
+grpc_socket_mutator_vtable test_mutator_vtable = {
+    test_mutator_mutate_fd, test_mutator_compare, test_mutator_destroy};
+
+//
+// TestSocketMutator implementation
+//
+
+TestSocketMutator::TestSocketMutator() {
+  grpc_socket_mutator_init(this, &test_mutator_vtable);
+}
+}
 
 class ChannelArgumentsTest : public ::testing::Test {
  protected:
@@ -53,7 +88,7 @@ class ChannelArgumentsTest : public ::testing::Test {
 
   grpc::string GetDefaultUserAgentPrefix() {
     std::ostringstream user_agent_prefix;
-    user_agent_prefix << "grpc-c++/" << grpc_version_string();
+    user_agent_prefix << "grpc-c++/" << Version();
     return user_agent_prefix.str();
   }
 
@@ -165,6 +200,23 @@ TEST_F(ChannelArgumentsTest, SetPointer) {
   EXPECT_TRUE(HasArg(arg0));
 }
 
+TEST_F(ChannelArgumentsTest, SetSocketMutator) {
+  VerifyDefaultChannelArgs();
+  grpc_arg arg0, arg1;
+  TestSocketMutator* mutator0 = new TestSocketMutator();
+  TestSocketMutator* mutator1 = new TestSocketMutator();
+  arg0 = grpc_socket_mutator_to_arg(mutator0);
+  arg1 = grpc_socket_mutator_to_arg(mutator1);
+
+  channel_args_.SetSocketMutator(mutator0);
+  EXPECT_TRUE(HasArg(arg0));
+
+  channel_args_.SetSocketMutator(mutator1);
+  EXPECT_TRUE(HasArg(arg1));
+  // arg0 is replaced by arg1
+  EXPECT_FALSE(HasArg(arg0));
+}
+
 TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {
   VerifyDefaultChannelArgs();
   grpc::string prefix("prefix");
@@ -176,6 +228,22 @@ TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {
 
   channel_args_.SetUserAgentPrefix(prefix);
   EXPECT_TRUE(HasArg(arg0));
+
+  // Test if the user agent string is copied correctly
+  ChannelArguments new_channel_args(channel_args_);
+  grpc_channel_args args;
+  SetChannelArgs(new_channel_args, &args);
+  bool found = false;
+  for (size_t i = 0; i < args.num_args; i++) {
+    const grpc_arg& arg = args.args[i];
+    if (arg.type == GRPC_ARG_STRING &&
+        grpc::string(arg.key) == GRPC_ARG_PRIMARY_USER_AGENT_STRING) {
+      EXPECT_FALSE(found);
+      EXPECT_EQ(0, strcmp(arg.value.string, arg0.value.string));
+      found = true;
+    }
+  }
+  EXPECT_TRUE(found);
 }
 
 }  // namespace testing

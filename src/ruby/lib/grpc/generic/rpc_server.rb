@@ -1,31 +1,16 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 require_relative '../grpc'
 require_relative 'active_call'
@@ -48,11 +33,22 @@ module GRPC
       @stop_cond = ConditionVariable.new
       @workers = []
       @keep_alive = keep_alive
+
+      # Each worker thread has its own queue to push and pull jobs
+      # these queues are put into @ready_queues when that worker is idle
+      @ready_workers = Queue.new
     end
 
     # Returns the number of jobs waiting
     def jobs_waiting
       @jobs.size
+    end
+
+    def ready_for_work?
+      # Busy worker threads are either doing work, or have a single job
+      # waiting on them. Workers that are idle with no jobs waiting
+      # have their "queues" in @ready_workers
+      !@ready_workers.empty?
     end
 
     # Runs the given block on the queue with the provided args.
@@ -67,7 +63,11 @@ module GRPC
           return
         end
         GRPC.logger.info('schedule another job')
-        @jobs << [blk, args]
+        fail 'No worker threads available' if @ready_workers.empty?
+        worker_queue = @ready_workers.pop
+
+        fail 'worker already has a task waiting' unless worker_queue.empty?
+        worker_queue << [blk, args]
       end
     end
 
@@ -77,9 +77,11 @@ module GRPC
         fail 'already stopped' if @stopped
       end
       until @workers.size == @size.to_i
-        next_thread = Thread.new do
+        new_worker_queue = Queue.new
+        @ready_workers << new_worker_queue
+        next_thread = Thread.new(new_worker_queue) do |jobs|
           catch(:exit) do  # allows { throw :exit } to kill a thread
-            loop_execute_jobs
+            loop_execute_jobs(jobs)
           end
           remove_current_thread
         end
@@ -90,7 +92,7 @@ module GRPC
     # Stops the jobs in the pool
     def stop
       GRPC.logger.info('stopping, will wait for all the workers to exit')
-      @workers.size.times { schedule { throw :exit } }
+      schedule { throw :exit } while ready_for_work?
       @stop_mutex.synchronize do  # wait @keep_alive for works to stop
         @stopped = true
         @stop_cond.wait(@stop_mutex, @keep_alive) if @workers.size > 0
@@ -125,15 +127,18 @@ module GRPC
       end
     end
 
-    def loop_execute_jobs
+    def loop_execute_jobs(worker_queue)
       loop do
         begin
-          blk, args = @jobs.pop
+          blk, args = worker_queue.pop
           blk.call(*args)
         rescue StandardError => e
           GRPC.logger.warn('Error in worker thread')
           GRPC.logger.warn(e)
         end
+        # there shouldn't be any work given to this thread while its busy
+        fail('received a task while busy') unless worker_queue.empty?
+        @ready_workers << worker_queue
       end
     end
   end
@@ -147,10 +152,10 @@ module GRPC
 
     def_delegators :@server, :add_http2_port
 
-    # Default thread pool size is 3
-    DEFAULT_POOL_SIZE = 3
+    # Default thread pool size is 30
+    DEFAULT_POOL_SIZE = 30
 
-    # Default max_waiting_requests size is 20
+    # Deprecated due to internal changes to the thread pool
     DEFAULT_MAX_WAITING_REQUESTS = 20
 
     # Default poll period is 1s
@@ -175,11 +180,11 @@ module GRPC
     # instance.
     #
     # * pool_size: the size of the thread pool the server uses to run its
-    # threads
+    # threads. No more concurrent requests can be made than the size
+    # of the thread pool
     #
-    # * max_waiting_requests: the maximum number of requests that are not
-    # being handled to allow. When this limit is exceeded, the server responds
-    # with not available to new requests
+    # * max_waiting_requests: Deprecated due to internal changes to the thread
+    # pool. This is still an argument for compatibility but is ignored.
     #
     # * poll_period: when present, the server polls for new events with this
     # period
@@ -330,10 +335,8 @@ module GRPC
 
     # Sends RESOURCE_EXHAUSTED if there are too many unprocessed jobs
     def available?(an_rpc)
-      jobs_count, max = @pool.jobs_waiting, @max_waiting_requests
-      GRPC.logger.info("waiting: #{jobs_count}, max: #{max}")
-      return an_rpc if @pool.jobs_waiting <= @max_waiting_requests
-      GRPC.logger.warn("NOT AVAILABLE: too many jobs_waiting: #{an_rpc}")
+      return an_rpc if @pool.ready_for_work?
+      GRPC.logger.warn('no free worker threads currently')
       noop = proc { |x| x }
 
       # Create a new active call that knows that metadata hasn't been
@@ -397,7 +400,6 @@ module GRPC
 
       # allow the metadata to be accessed from the call
       an_rpc.call.metadata = an_rpc.metadata  # attaches md to call for handlers
-      GRPC.logger.debug("call md is #{an_rpc.metadata}")
       connect_md = nil
       unless @connect_md_proc.nil?
         connect_md = @connect_md_proc.call(an_rpc.method, an_rpc.metadata)
@@ -416,6 +418,7 @@ module GRPC
                          metadata_received: true,
                          started: false,
                          metadata_to_send: connect_md)
+      c.attach_peer_cert(an_rpc.call.peer_cert)
       mth = an_rpc.method.to_sym
       [c, mth]
     end

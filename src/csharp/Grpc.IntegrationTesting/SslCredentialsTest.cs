@@ -1,33 +1,18 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
-// All rights reserved.
+// Copyright 2015-2016 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #endregion
 
@@ -37,6 +22,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using Grpc.Testing;
@@ -55,7 +41,7 @@ namespace Grpc.IntegrationTesting
         Channel channel;
         TestService.TestServiceClient client;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void Init()
         {
             var rootCert = File.ReadAllText(TestCredentials.ClientCertAuthorityPath);
@@ -66,9 +52,10 @@ namespace Grpc.IntegrationTesting
             var serverCredentials = new SslServerCredentials(new[] { keyCertPair }, rootCert, true);
             var clientCredentials = new SslCredentials(rootCert, keyCertPair);
 
-            server = new Server
+            // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
+            server = new Server(new[] { new ChannelOption(ChannelOptions.SoReuseport, 0) })
             {
-                Services = { TestService.BindService(new TestServiceImpl()) },
+                Services = { TestService.BindService(new SslCredentialsTestServiceImpl()) },
                 Ports = { { Host, ServerPort.PickUnused, serverCredentials } }
             };
             server.Start();
@@ -82,7 +69,7 @@ namespace Grpc.IntegrationTesting
             client = new TestService.TestServiceClient(channel);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void Cleanup()
         {
             channel.ShutdownAsync().Wait();
@@ -94,6 +81,41 @@ namespace Grpc.IntegrationTesting
         {
             var response = client.UnaryCall(new SimpleRequest { ResponseSize = 10 });
             Assert.AreEqual(10, response.Payload.Body.Length);
+        }
+
+        [Test]
+        public async Task AuthContextIsPopulated()
+        {
+            var call = client.StreamingInputCall();
+            await call.RequestStream.CompleteAsync();
+            var response = await call.ResponseAsync;
+            Assert.AreEqual(12345, response.AggregatedPayloadSize);
+        }
+
+        private class SslCredentialsTestServiceImpl : TestService.TestServiceBase
+        {
+            public override Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
+            {
+                return Task.FromResult(new SimpleResponse { Payload = CreateZerosPayload(request.ResponseSize) });
+            }
+
+            public override async Task<StreamingInputCallResponse> StreamingInputCall(IAsyncStreamReader<StreamingInputCallRequest> requestStream, ServerCallContext context)
+            {
+                var authContext = context.AuthContext;
+                await requestStream.ForEachAsync(request => TaskUtils.CompletedTask);
+
+                Assert.IsTrue(authContext.IsPeerAuthenticated);
+                Assert.AreEqual("x509_subject_alternative_name", authContext.PeerIdentityPropertyName);
+                Assert.IsTrue(authContext.PeerIdentity.Count() > 0);
+                Assert.AreEqual("ssl", authContext.FindPropertiesByName("transport_security_type").First().Value);
+
+                return new StreamingInputCallResponse { AggregatedPayloadSize = 12345 };
+            }
+
+            private static Payload CreateZerosPayload(int size)
+            {
+                return new Payload { Body = ByteString.CopyFrom(new byte[size]) };
+            }
         }
     }
 }

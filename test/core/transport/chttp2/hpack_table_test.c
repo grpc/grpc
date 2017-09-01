@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -46,22 +31,23 @@
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 
-static void assert_str(const grpc_chttp2_hptbl *tbl, grpc_mdstr *mdstr,
+static void assert_str(const grpc_chttp2_hptbl *tbl, grpc_slice mdstr,
                        const char *str) {
-  GPR_ASSERT(gpr_slice_str_cmp(mdstr->slice, str) == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(mdstr, str) == 0);
 }
 
 static void assert_index(const grpc_chttp2_hptbl *tbl, uint32_t idx,
                          const char *key, const char *value) {
-  grpc_mdelem *md = grpc_chttp2_hptbl_lookup(tbl, idx);
-  assert_str(tbl, md->key, key);
-  assert_str(tbl, md->value, value);
+  grpc_mdelem md = grpc_chttp2_hptbl_lookup(tbl, idx);
+  assert_str(tbl, GRPC_MDKEY(md), key);
+  assert_str(tbl, GRPC_MDVALUE(md), value);
 }
 
 static void test_static_lookup(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_chttp2_hptbl tbl;
 
-  grpc_chttp2_hptbl_init(&tbl);
+  grpc_chttp2_hptbl_init(&exec_ctx, &tbl);
 
   LOG_TEST("test_static_lookup");
   assert_index(&tbl, 1, ":authority", "");
@@ -126,7 +112,8 @@ static void test_static_lookup(void) {
   assert_index(&tbl, 60, "via", "");
   assert_index(&tbl, 61, "www-authenticate", "");
 
-  grpc_chttp2_hptbl_destroy(&tbl);
+  grpc_chttp2_hptbl_destroy(&exec_ctx, &tbl);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_many_additions(void) {
@@ -137,15 +124,18 @@ static void test_many_additions(void) {
 
   LOG_TEST("test_many_additions");
 
-  grpc_chttp2_hptbl_init(&tbl);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_chttp2_hptbl_init(&exec_ctx, &tbl);
 
   for (i = 0; i < 100000; i++) {
-    grpc_mdelem *elem;
+    grpc_mdelem elem;
     gpr_asprintf(&key, "K:%d", i);
     gpr_asprintf(&value, "VALUE:%d", i);
-    elem = grpc_mdelem_from_strings(key, value);
-    GPR_ASSERT(grpc_chttp2_hptbl_add(&tbl, elem) == GRPC_ERROR_NONE);
-    GRPC_MDELEM_UNREF(elem);
+    elem =
+        grpc_mdelem_from_slices(&exec_ctx, grpc_slice_from_copied_string(key),
+                                grpc_slice_from_copied_string(value));
+    GPR_ASSERT(grpc_chttp2_hptbl_add(&exec_ctx, &tbl, elem) == GRPC_ERROR_NONE);
+    GRPC_MDELEM_UNREF(&exec_ctx, elem);
     assert_index(&tbl, 1 + GRPC_CHTTP2_LAST_STATIC_ENTRY, key, value);
     gpr_free(key);
     gpr_free(value);
@@ -158,37 +148,48 @@ static void test_many_additions(void) {
     }
   }
 
-  grpc_chttp2_hptbl_destroy(&tbl);
+  grpc_chttp2_hptbl_destroy(&exec_ctx, &tbl);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static grpc_chttp2_hptbl_find_result find_simple(grpc_chttp2_hptbl *tbl,
                                                  const char *key,
                                                  const char *value) {
-  grpc_mdelem *md = grpc_mdelem_from_strings(key, value);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_mdelem md =
+      grpc_mdelem_from_slices(&exec_ctx, grpc_slice_from_copied_string(key),
+                              grpc_slice_from_copied_string(value));
   grpc_chttp2_hptbl_find_result r = grpc_chttp2_hptbl_find(tbl, md);
-  GRPC_MDELEM_UNREF(md);
+  GRPC_MDELEM_UNREF(&exec_ctx, md);
+  grpc_exec_ctx_finish(&exec_ctx);
   return r;
 }
 
 static void test_find(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_chttp2_hptbl tbl;
   uint32_t i;
   char buffer[32];
-  grpc_mdelem *elem;
+  grpc_mdelem elem;
   grpc_chttp2_hptbl_find_result r;
 
   LOG_TEST("test_find");
 
-  grpc_chttp2_hptbl_init(&tbl);
-  elem = grpc_mdelem_from_strings("abc", "xyz");
-  GPR_ASSERT(grpc_chttp2_hptbl_add(&tbl, elem) == GRPC_ERROR_NONE);
-  GRPC_MDELEM_UNREF(elem);
-  elem = grpc_mdelem_from_strings("abc", "123");
-  GPR_ASSERT(grpc_chttp2_hptbl_add(&tbl, elem) == GRPC_ERROR_NONE);
-  GRPC_MDELEM_UNREF(elem);
-  elem = grpc_mdelem_from_strings("x", "1");
-  GPR_ASSERT(grpc_chttp2_hptbl_add(&tbl, elem) == GRPC_ERROR_NONE);
-  GRPC_MDELEM_UNREF(elem);
+  grpc_chttp2_hptbl_init(&exec_ctx, &tbl);
+  elem =
+      grpc_mdelem_from_slices(&exec_ctx, grpc_slice_from_static_string("abc"),
+                              grpc_slice_from_static_string("xyz"));
+  GPR_ASSERT(grpc_chttp2_hptbl_add(&exec_ctx, &tbl, elem) == GRPC_ERROR_NONE);
+  GRPC_MDELEM_UNREF(&exec_ctx, elem);
+  elem =
+      grpc_mdelem_from_slices(&exec_ctx, grpc_slice_from_static_string("abc"),
+                              grpc_slice_from_static_string("123"));
+  GPR_ASSERT(grpc_chttp2_hptbl_add(&exec_ctx, &tbl, elem) == GRPC_ERROR_NONE);
+  GRPC_MDELEM_UNREF(&exec_ctx, elem);
+  elem = grpc_mdelem_from_slices(&exec_ctx, grpc_slice_from_static_string("x"),
+                                 grpc_slice_from_static_string("1"));
+  GPR_ASSERT(grpc_chttp2_hptbl_add(&exec_ctx, &tbl, elem) == GRPC_ERROR_NONE);
+  GRPC_MDELEM_UNREF(&exec_ctx, elem);
 
   r = find_simple(&tbl, "abc", "123");
   GPR_ASSERT(r.index == 2 + GRPC_CHTTP2_LAST_STATIC_ENTRY);
@@ -237,9 +238,11 @@ static void test_find(void) {
   /* overflow the string buffer, check find still works */
   for (i = 0; i < 10000; i++) {
     int64_ttoa(i, buffer);
-    elem = grpc_mdelem_from_strings("test", buffer);
-    GPR_ASSERT(grpc_chttp2_hptbl_add(&tbl, elem) == GRPC_ERROR_NONE);
-    GRPC_MDELEM_UNREF(elem);
+    elem = grpc_mdelem_from_slices(&exec_ctx,
+                                   grpc_slice_from_static_string("test"),
+                                   grpc_slice_from_copied_string(buffer));
+    GPR_ASSERT(grpc_chttp2_hptbl_add(&exec_ctx, &tbl, elem) == GRPC_ERROR_NONE);
+    GRPC_MDELEM_UNREF(&exec_ctx, elem);
   }
 
   r = find_simple(&tbl, "abc", "123");
@@ -267,7 +270,8 @@ static void test_find(void) {
   GPR_ASSERT(r.index != 0);
   GPR_ASSERT(r.has_value == 0);
 
-  grpc_chttp2_hptbl_destroy(&tbl);
+  grpc_chttp2_hptbl_destroy(&exec_ctx, &tbl);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int main(int argc, char **argv) {

@@ -1,32 +1,19 @@
-#!/usr/bin/env python2.7
-# Copyright 2015, Google Inc.
-# All rights reserved.
+#!/usr/bin/env python
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from __future__ import print_function
 
 import json
 import os
@@ -34,7 +21,7 @@ import re
 import sys
 
 root = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
-with open(os.path.join(root, 'tools', 'run_tests', 'sources_and_headers.json')) as f:
+with open(os.path.join(root, 'tools', 'run_tests', 'generated', 'sources_and_headers.json')) as f:
   js = json.loads(f.read())
 
 re_inc1 = re.compile(r'^#\s*include\s*"([^"]*)"')
@@ -63,7 +50,8 @@ def target_has_header(target, name):
 def produces_object(name):
   return os.path.splitext(name)[1] in ['.c', '.cc']
 
-obj_producer_to_source = {'c': {}, 'c++': {}, 'csharp': {}}
+c_ish = {}
+obj_producer_to_source = {'c': c_ish, 'c++': c_ish, 'csharp': {}}
 
 errors = 0
 for target in js:
@@ -86,7 +74,7 @@ for target in js:
               'target %s (%s) does not name header %s as a dependency' % (
                 target['name'], fn, m.group(1)))
             errors += 1
-  if target['type'] == 'lib':
+  if target['type'] in ['lib', 'filegroup']:
     for fn in target['src']:
       language = target['language']
       if produces_object(fn):

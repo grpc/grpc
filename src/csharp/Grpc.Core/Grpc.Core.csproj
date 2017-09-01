@@ -1,155 +1,73 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="Version.csproj.include" />
+  <Import Project="Common.csproj.include" />
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>Grpc.Core</RootNamespace>
+    <Copyright>Copyright 2015, Google Inc.</Copyright>
+    <AssemblyTitle>gRPC C# Core</AssemblyTitle>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+    <Authors>Google Inc.</Authors>
+    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
     <AssemblyName>Grpc.Core</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <NuGetPackageImportStamp>c0512805</NuGetPackageImportStamp>
-    <DocumentationFile>bin\$(Configuration)\Grpc.Core.Xml</DocumentationFile>
+    <PackageId>Grpc.Core</PackageId>
+    <PackageTags>gRPC RPC Protocol HTTP/2</PackageTags>
+    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
+    <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.5' ">1.6.0</NetStandardImplicitPackageVersion>
+    <IncludeSymbols>true</IncludeSymbols>
+    <IncludeSource>true</IncludeSource>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug</OutputPath>
-    <DefineConstants>DEBUG;</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'ReleaseSigned|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\ReleaseSigned</OutputPath>
-    <DefineConstants>SIGNED</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <SignAssembly>True</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\keys\Grpc.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
+
   <ItemGroup>
+    <EmbeddedResource Include="..\..\..\etc\roots.pem" />
+    <Content Include="..\nativelibs\csharp_ext_macos_x64\libgrpc_csharp_ext.dylib">
+      <PackagePath>runtimes/osx/native/libgrpc_csharp_ext.x64.dylib</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="..\nativelibs\csharp_ext_macos_x86\libgrpc_csharp_ext.dylib">
+      <PackagePath>runtimes/osx/native/libgrpc_csharp_ext.x86.dylib</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="..\nativelibs\csharp_ext_linux_x64\libgrpc_csharp_ext.so">
+      <PackagePath>runtimes/linux/native/libgrpc_csharp_ext.x64.so</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="..\nativelibs\csharp_ext_linux_x86\libgrpc_csharp_ext.so">
+      <PackagePath>runtimes/linux/native/libgrpc_csharp_ext.x86.so</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="..\nativelibs\csharp_ext_windows_x64\grpc_csharp_ext.dll">
+      <PackagePath>runtimes/win/native/grpc_csharp_ext.x64.dll</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="..\nativelibs\csharp_ext_windows_x86\grpc_csharp_ext.dll">
+      <PackagePath>runtimes/win/native/grpc_csharp_ext.x86.dll</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="Grpc.Core.targets">
+      <PackagePath>build/net45/</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Interactive.Async" Version="3.1.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <Reference Include="System" />
-    <Reference Include="System.Interactive.Async">
-      <HintPath>..\packages\System.Interactive.Async.3.0.0\lib\net45\System.Interactive.Async.dll</HintPath>
-    </Reference>
+    <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="AsyncDuplexStreamingCall.cs" />
-    <Compile Include="AsyncServerStreamingCall.cs" />
-    <Compile Include="AsyncAuthInterceptor.cs" />
-    <Compile Include="CallCredentials.cs" />
-    <Compile Include="IClientStreamWriter.cs" />
-    <Compile Include="Internal\NativeMethods.cs" />
-    <Compile Include="Internal\PlatformApis.cs" />
-    <Compile Include="Internal\NativeExtension.cs" />
-    <Compile Include="Internal\UnmanagedLibrary.cs" />
-    <Compile Include="Internal\NativeMetadataCredentialsPlugin.cs" />
-    <Compile Include="Internal\INativeCall.cs" />
-    <Compile Include="IServerStreamWriter.cs" />
-    <Compile Include="IAsyncStreamWriter.cs" />
-    <Compile Include="IAsyncStreamReader.cs" />
-    <Compile Include="Logging\TextWriterLogger.cs" />
-    <Compile Include="Logging\NullLogger.cs" />
-    <Compile Include="ServerPort.cs" />
-    <Compile Include="Version.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RpcException.cs" />
-    <Compile Include="Calls.cs" />
-    <Compile Include="AsyncClientStreamingCall.cs" />
-    <Compile Include="GrpcEnvironment.cs" />
-    <Compile Include="Status.cs" />
-    <Compile Include="StatusCode.cs" />
-    <Compile Include="Server.cs" />
-    <Compile Include="Channel.cs" />
-    <Compile Include="Internal\CallSafeHandle.cs" />
-    <Compile Include="Internal\ChannelSafeHandle.cs" />
-    <Compile Include="Internal\CompletionQueueSafeHandle.cs" />
-    <Compile Include="Internal\SafeHandleZeroIsInvalid.cs" />
-    <Compile Include="Internal\Timespec.cs" />
-    <Compile Include="Internal\GrpcThreadPool.cs" />
-    <Compile Include="Internal\ServerSafeHandle.cs" />
-    <Compile Include="Method.cs" />
-    <Compile Include="Internal\ServerCallHandler.cs" />
-    <Compile Include="Marshaller.cs" />
-    <Compile Include="ServerServiceDefinition.cs" />
-    <Compile Include="Utils\AsyncStreamExtensions.cs" />
-    <Compile Include="Utils\BenchmarkUtil.cs" />
-    <Compile Include="ChannelCredentials.cs" />
-    <Compile Include="Internal\ChannelArgsSafeHandle.cs" />
-    <Compile Include="Internal\AsyncCallBase.cs" />
-    <Compile Include="Internal\AsyncCallServer.cs" />
-    <Compile Include="Internal\AsyncCall.cs" />
-    <Compile Include="Internal\ServerCredentialsSafeHandle.cs" />
-    <Compile Include="ServerCredentials.cs" />
-    <Compile Include="Metadata.cs" />
-    <Compile Include="Internal\MetadataArraySafeHandle.cs" />
-    <Compile Include="ClientBase.cs" />
-    <Compile Include="Internal\ServerCalls.cs" />
-    <Compile Include="ServerMethods.cs" />
-    <Compile Include="Internal\ClientRequestStream.cs" />
-    <Compile Include="Internal\ClientResponseStream.cs" />
-    <Compile Include="Internal\ServerRequestStream.cs" />
-    <Compile Include="Internal\ServerResponseStream.cs" />
-    <Compile Include="Internal\AtomicCounter.cs" />
-    <Compile Include="Internal\DebugStats.cs" />
-    <Compile Include="ServerCallContext.cs" />
-    <Compile Include="Internal\CompletionQueueEvent.cs" />
-    <Compile Include="Internal\CompletionRegistry.cs" />
-    <Compile Include="Internal\BatchContextSafeHandle.cs" />
-    <Compile Include="ChannelOptions.cs" />
-    <Compile Include="AsyncUnaryCall.cs" />
-    <Compile Include="VersionInfo.cs" />
-    <Compile Include="Internal\CStringSafeHandle.cs" />
-    <Compile Include="KeyCertificatePair.cs" />
-    <Compile Include="Logging\ILogger.cs" />
-    <Compile Include="Logging\ConsoleLogger.cs" />
-    <Compile Include="Internal\NativeLogRedirector.cs" />
-    <Compile Include="ChannelState.cs" />
-    <Compile Include="CallInvocationDetails.cs" />
-    <Compile Include="CallOptions.cs" />
-    <Compile Include="CompressionLevel.cs" />
-    <Compile Include="WriteOptions.cs" />
-    <Compile Include="ContextPropagationToken.cs" />
-    <Compile Include="Internal\CallCredentialsSafeHandle.cs" />
-    <Compile Include="Internal\ChannelCredentialsSafeHandle.cs" />
-    <Compile Include="Profiling\ProfilerEntry.cs" />
-    <Compile Include="Profiling\ProfilerScope.cs" />
-    <Compile Include="Profiling\IProfiler.cs" />
-    <Compile Include="Profiling\Profilers.cs" />
-    <Compile Include="Internal\DefaultSslRootsOverride.cs" />
-    <Compile Include="Utils\GrpcPreconditions.cs" />
-    <Compile Include="CallInvoker.cs" />
-    <Compile Include="DefaultCallInvoker.cs" />
-    <Compile Include="Internal\UnimplementedCallInvoker.cs" />
-    <Compile Include="Internal\InterceptingCallInvoker.cs" />
-    <Compile Include="Internal\ServerRpcNew.cs" />
-    <Compile Include="Internal\ClientSideStatus.cs" />
-    <Compile Include="Internal\ClockType.cs" />
-    <Compile Include="Internal\CallError.cs" />
-    <Compile Include="Logging\LogLevel.cs" />
-    <Compile Include="Logging\LogLevelFilterLogger.cs" />
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.5' ">
+    <PackageReference Include="System.Runtime.Loader" Version="4.0.0" />
+    <PackageReference Include="System.Threading.Thread" Version="4.0.0" />
+    <PackageReference Include="System.Threading.ThreadPool" Version="4.0.0" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="Grpc.Core.nuspec" />
-    <None Include="Grpc.Core.project.json" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <Import Project="NativeDeps.targets" />
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup />
-  <ItemGroup>
-    <EmbeddedResource Include="..\..\..\etc\roots.pem">
-      <Link>roots.pem</Link>
-    </EmbeddedResource>
-  </ItemGroup>
+
+  <Import Project="NativeDeps.csproj.include" />
+
 </Project>

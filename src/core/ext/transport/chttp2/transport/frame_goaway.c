@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -54,7 +39,7 @@ grpc_error *grpc_chttp2_goaway_parser_begin_frame(grpc_chttp2_goaway_parser *p,
   if (length < 8) {
     char *msg;
     gpr_asprintf(&msg, "goaway frame too short (%d bytes)", length);
-    grpc_error *err = GRPC_ERROR_CREATE(msg);
+    grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return err;
   }
@@ -67,12 +52,13 @@ grpc_error *grpc_chttp2_goaway_parser_begin_frame(grpc_chttp2_goaway_parser *p,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error *grpc_chttp2_goaway_parser_parse(
-    grpc_exec_ctx *exec_ctx, void *parser,
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
-  uint8_t *const beg = GPR_SLICE_START_PTR(slice);
-  uint8_t *const end = GPR_SLICE_END_PTR(slice);
+grpc_error *grpc_chttp2_goaway_parser_parse(grpc_exec_ctx *exec_ctx,
+                                            void *parser,
+                                            grpc_chttp2_transport *t,
+                                            grpc_chttp2_stream *s,
+                                            grpc_slice slice, int is_last) {
+  uint8_t *const beg = GRPC_SLICE_START_PTR(slice);
+  uint8_t *const end = GRPC_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
   grpc_chttp2_goaway_parser *p = parser;
 
@@ -148,27 +134,25 @@ grpc_error *grpc_chttp2_goaway_parser_parse(
       p->debug_pos += (uint32_t)(end - cur);
       p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
       if (is_last) {
-        transport_parsing->goaway_received = 1;
-        transport_parsing->goaway_last_stream_index = p->last_stream_id;
-        gpr_slice_unref(transport_parsing->goaway_text);
-        transport_parsing->goaway_error = (grpc_status_code)p->error_code;
-        transport_parsing->goaway_text =
-            gpr_slice_new(p->debug_data, p->debug_length, gpr_free);
+        grpc_chttp2_add_incoming_goaway(
+            exec_ctx, t, (uint32_t)p->error_code,
+            grpc_slice_new(p->debug_data, p->debug_length, gpr_free));
         p->debug_data = NULL;
       }
       return GRPC_ERROR_NONE;
   }
-  GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE("Should never reach here"));
+  GPR_UNREACHABLE_CODE(
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Should never reach here"));
 }
 
 void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
-                               gpr_slice debug_data,
-                               gpr_slice_buffer *slice_buffer) {
-  gpr_slice header = gpr_slice_malloc(9 + 4 + 4);
-  uint8_t *p = GPR_SLICE_START_PTR(header);
+                               grpc_slice debug_data,
+                               grpc_slice_buffer *slice_buffer) {
+  grpc_slice header = GRPC_SLICE_MALLOC(9 + 4 + 4);
+  uint8_t *p = GRPC_SLICE_START_PTR(header);
   uint32_t frame_length;
-  GPR_ASSERT(GPR_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);
-  frame_length = 4 + 4 + (uint32_t)GPR_SLICE_LENGTH(debug_data);
+  GPR_ASSERT(GRPC_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);
+  frame_length = 4 + 4 + (uint32_t)GRPC_SLICE_LENGTH(debug_data);
 
   /* frame header: length */
   *p++ = (uint8_t)(frame_length >> 16);
@@ -193,7 +177,7 @@ void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
   *p++ = (uint8_t)(error_code >> 16);
   *p++ = (uint8_t)(error_code >> 8);
   *p++ = (uint8_t)(error_code);
-  GPR_ASSERT(p == GPR_SLICE_END_PTR(header));
-  gpr_slice_buffer_add(slice_buffer, header);
-  gpr_slice_buffer_add(slice_buffer, debug_data);
+  GPR_ASSERT(p == GRPC_SLICE_END_PTR(header));
+  grpc_slice_buffer_add(slice_buffer, header);
+  grpc_slice_buffer_add(slice_buffer, debug_data);
 }

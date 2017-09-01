@@ -1,46 +1,39 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
+
+/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
+   using that endpoint. Because of various transitive includes in uv.h,
+   including windows.h on Windows, uv.h must be included before other system
+   headers. Therefore, sockaddr.h must always be included first */
+#include "src/core/lib/iomgr/sockaddr.h"
+
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 #include <grpc/support/thd.h>
 
-// #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
@@ -74,7 +67,9 @@
 #define HTTP1_DETAIL_MSG "Trying to connect an http1.x server"
 
 /* TODO(zyc) Check the content of incomming data instead of using this length */
-#define EXPECTED_INCOMING_DATA_LENGTH (size_t)310
+/* The 'bad' server will start sending responses after reading this amount of
+ * data from the client. */
+#define SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD (size_t)200
 
 struct rpc_state {
   char *target;
@@ -82,8 +77,8 @@ struct rpc_state {
   grpc_channel *channel;
   grpc_call *call;
   size_t incoming_data_length;
-  gpr_slice_buffer temp_incoming_buffer;
-  gpr_slice_buffer outgoing_buffer;
+  grpc_slice_buffer temp_incoming_buffer;
+  grpc_slice_buffer outgoing_buffer;
   grpc_endpoint *tcp;
   gpr_atm done_atm;
   bool write_done;
@@ -105,11 +100,11 @@ static void done_write(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 }
 
 static void handle_write(grpc_exec_ctx *exec_ctx) {
-  gpr_slice slice = gpr_slice_from_copied_buffer(state.response_payload,
-                                                 state.response_payload_length);
+  grpc_slice slice = grpc_slice_from_copied_buffer(
+      state.response_payload, state.response_payload_length);
 
-  gpr_slice_buffer_reset_and_unref(&state.outgoing_buffer);
-  gpr_slice_buffer_add(&state.outgoing_buffer, slice);
+  grpc_slice_buffer_reset_and_unref(&state.outgoing_buffer);
+  grpc_slice_buffer_add(&state.outgoing_buffer, slice);
   grpc_endpoint_write(exec_ctx, state.tcp, &state.outgoing_buffer, &on_write);
 }
 
@@ -119,15 +114,17 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
   size_t i;
   for (i = 0; i < state.temp_incoming_buffer.count; i++) {
-    char *dump = gpr_dump_slice(state.temp_incoming_buffer.slices[i],
-                                GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char *dump = grpc_dump_slice(state.temp_incoming_buffer.slices[i],
+                                 GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_DEBUG, "Server received: %s", dump);
     gpr_free(dump);
   }
 
   gpr_log(GPR_DEBUG, "got %" PRIuPTR " bytes, expected %" PRIuPTR " bytes",
-          state.incoming_data_length, EXPECTED_INCOMING_DATA_LENGTH);
-  if (state.incoming_data_length > EXPECTED_INCOMING_DATA_LENGTH) {
+          state.incoming_data_length,
+          SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD);
+  if (state.incoming_data_length >=
+      SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD) {
     handle_write(exec_ctx);
   } else {
     grpc_endpoint_read(exec_ctx, state.tcp, &state.temp_incoming_buffer,
@@ -138,11 +135,12 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
                        grpc_pollset *accepting_pollset,
                        grpc_tcp_server_acceptor *acceptor) {
+  gpr_free(acceptor);
   test_tcp_server *server = arg;
-  grpc_closure_init(&on_read, handle_read, NULL);
-  grpc_closure_init(&on_write, done_write, NULL);
-  gpr_slice_buffer_init(&state.temp_incoming_buffer);
-  gpr_slice_buffer_init(&state.outgoing_buffer);
+  GRPC_CLOSURE_INIT(&on_read, handle_read, NULL, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&on_write, done_write, NULL, grpc_schedule_on_exec_ctx);
+  grpc_slice_buffer_init(&state.temp_incoming_buffer);
+  grpc_slice_buffer_init(&state.outgoing_buffer);
   state.tcp = tcp;
   state.incoming_data_length = 0;
   grpc_endpoint_add_to_pollset(exec_ctx, tcp, server->pollset);
@@ -163,16 +161,17 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   grpc_status_code status;
   grpc_call_error error;
   cq_verifier *cqv;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
 
-  state.cq = grpc_completion_queue_create(NULL);
+  state.cq = grpc_completion_queue_create_for_next(NULL);
   cqv = cq_verifier_create(state.cq);
   gpr_join_host_port(&state.target, "127.0.0.1", target_port);
   state.channel = grpc_insecure_channel_create(state.target, NULL, NULL);
+  grpc_slice host = grpc_slice_from_static_string("localhost");
   state.call = grpc_channel_create_call(
-      state.channel, NULL, GRPC_PROPAGATE_DEFAULTS, state.cq, "/Service/Method",
-      "localhost", gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+      state.channel, NULL, GRPC_PROPAGATE_DEFAULTS, state.cq,
+      grpc_slice_from_static_string("/Service/Method"), &host,
+      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -189,7 +188,7 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -197,7 +196,6 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -206,24 +204,24 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
 
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  gpr_log(GPR_DEBUG, "Rpc status: %d, details: %s", status, details);
   GPR_ASSERT(status == expected_status);
-  GPR_ASSERT(NULL != strstr(details, expected_detail));
+  GPR_ASSERT(-1 != grpc_slice_slice(details, grpc_slice_from_static_string(
+                                                 expected_detail)));
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
-  gpr_free(details);
+  grpc_slice_unref(details);
   cq_verifier_destroy(cqv);
 }
 
-static void cleanup_rpc(void) {
+static void cleanup_rpc(grpc_exec_ctx *exec_ctx) {
   grpc_event ev;
-  gpr_slice_buffer_destroy(&state.temp_incoming_buffer);
-  gpr_slice_buffer_destroy(&state.outgoing_buffer);
-  grpc_call_destroy(state.call);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &state.temp_incoming_buffer);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &state.outgoing_buffer);
+  grpc_call_unref(state.call);
   grpc_completion_queue_shutdown(state.cq);
   do {
     ev = grpc_completion_queue_next(state.cq, n_sec_deadline(1), NULL);
@@ -289,10 +287,11 @@ static void run_test(const char *response_payload,
   gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
 
   /* clean up */
-  grpc_endpoint_shutdown(&exec_ctx, state.tcp);
+  grpc_endpoint_shutdown(&exec_ctx, state.tcp,
+                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
   grpc_endpoint_destroy(&exec_ctx, state.tcp);
+  cleanup_rpc(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
-  cleanup_rpc();
   test_tcp_server_destroy(&test_server);
 
   grpc_shutdown();

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -43,8 +28,6 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-enum { TIMEOUT = 200000 };
-
 static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -52,31 +35,34 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args *client_args,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
   return f;
 }
 
-static gpr_timespec n_seconds_time(int n) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
+static gpr_timespec n_seconds_from_now(int n) {
+  return grpc_timeout_seconds_to_deadline(n);
 }
 
-static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
+static gpr_timespec five_seconds_from_now(void) {
+  return n_seconds_from_now(5);
+}
 
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time(), NULL);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
+                                         grpc_timeout_seconds_to_deadline(5),
+                                         NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -95,12 +81,13 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
+  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void simple_request_body(grpc_end2end_test_fixture f) {
+static void simple_request_body(grpc_end2end_test_config config,
+                                grpc_end2end_test_fixture f) {
   grpc_call *c;
   grpc_call *s;
-  gpr_timespec deadline = five_seconds_time();
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
@@ -110,13 +97,15 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
-  char *details = NULL;
-  size_t details_capacity = 0;
+  grpc_slice details;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr:1234", deadline,
-                               NULL);
+  gpr_timespec deadline = five_seconds_from_now();
+  c = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/foo"),
+      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -136,7 +125,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -144,7 +133,6 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -155,7 +143,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_expect_completion(cqv, tag(101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
   memset(ops, 0, sizeof(ops));
@@ -168,7 +156,8 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  op->data.send_status_from_server.status_details = "xyz";
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -180,24 +169,25 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(102), 1);
-  cq_expect_completion(cqv, tag(1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
-  GPR_ASSERT(0 == strcmp(details, "xyz"));
-  GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr:1234"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
   GPR_ASSERT(was_cancelled == 1);
 
-  gpr_free(details);
+  grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
-  grpc_call_destroy(c);
-  grpc_call_destroy(s);
+  grpc_call_unref(c);
+  grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
 }
@@ -222,11 +212,9 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   grpc_metadata_array trailing_metadata_recv2;
   grpc_status_code status1;
   grpc_call_error error;
-  char *details1 = NULL;
-  size_t details_capacity1 = 0;
+  grpc_slice details1;
   grpc_status_code status2;
-  char *details2 = NULL;
-  size_t details_capacity2 = 0;
+  grpc_slice details2;
   grpc_op ops[6];
   grpc_op *op;
   int was_cancelled;
@@ -252,20 +240,24 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
 
   /* perform a ping-pong to ensure that settings have had a chance to round
      trip */
-  simple_request_body(f);
+  simple_request_body(config, f);
   /* perform another one to make sure that the one stream case still works */
-  simple_request_body(f);
+  simple_request_body(config, f);
 
   /* start two requests - ensuring that the second is not accepted until
      the first completes */
-  deadline = n_seconds_time(1000);
-  c1 = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                                "/alpha", "foo.test.google.fr:1234", deadline,
-                                NULL);
+  deadline = n_seconds_from_now(1000);
+  c1 = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/alpha"),
+      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c1);
-  c2 = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                                "/beta", "foo.test.google.fr:1234", deadline,
-                                NULL);
+  c2 = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/beta"),
+      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
+      NULL);
   GPR_ASSERT(c2);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
@@ -292,12 +284,12 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv1;
   op->data.recv_status_on_client.status = &status1;
   op->data.recv_status_on_client.status_details = &details1;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity1;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv1;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv1;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -324,12 +316,12 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv2;
   op->data.recv_status_on_client.status = &status2;
   op->data.recv_status_on_client.status_details = &details2;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity2;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv1;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv1;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -340,7 +332,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   got_server_start = 0;
   live_call = -1;
   while (!got_client_start || !got_server_start) {
-    ev = grpc_completion_queue_next(f.cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3),
+    ev = grpc_completion_queue_next(f.cq, grpc_timeout_seconds_to_deadline(3),
                                     NULL);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     GPR_ASSERT(ev.success);
@@ -375,24 +367,27 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  op->data.send_status_from_server.status_details = "xyz";
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   error = grpc_call_start_batch(s1, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(102), 1);
-  cq_expect_completion(cqv, tag(live_call + 2), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(live_call + 2), 1);
   /* first request is finished, we should be able to start the second */
   live_call = (live_call == 300) ? 400 : 300;
-  cq_expect_completion(cqv, tag(live_call + 1), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(live_call + 1), 1);
   cq_verify(cqv);
+
+  grpc_call_details_destroy(&call_details);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
                                  f.server, &s2, &call_details,
                                  &request_metadata_recv, f.cq, f.cq, tag(201)));
-  cq_expect_completion(cqv, tag(201), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(201), 1);
   cq_verify(cqv);
 
   memset(ops, 0, sizeof(ops));
@@ -410,26 +405,412 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  op->data.send_status_from_server.status_details = "xyz";
+  op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   error = grpc_call_start_batch(s2, ops, (size_t)(op - ops), tag(202), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(live_call + 2), 1);
-  cq_expect_completion(cqv, tag(202), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(live_call + 2), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(202), 1);
   cq_verify(cqv);
 
   cq_verifier_destroy(cqv);
 
-  grpc_call_destroy(c1);
-  grpc_call_destroy(s1);
-  grpc_call_destroy(c2);
-  grpc_call_destroy(s2);
+  grpc_call_unref(c1);
+  grpc_call_unref(s1);
+  grpc_call_unref(c2);
+  grpc_call_unref(s2);
 
-  gpr_free(details1);
-  gpr_free(details2);
+  grpc_slice_unref(details1);
+  grpc_slice_unref(details2);
+  grpc_metadata_array_destroy(&initial_metadata_recv1);
+  grpc_metadata_array_destroy(&trailing_metadata_recv1);
+  grpc_metadata_array_destroy(&initial_metadata_recv2);
+  grpc_metadata_array_destroy(&trailing_metadata_recv2);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
+
+  end_test(&f);
+  config.tear_down_data(&f);
+}
+
+static void test_max_concurrent_streams_with_timeout_on_first(
+    grpc_end2end_test_config config) {
+  grpc_end2end_test_fixture f;
+  grpc_arg server_arg;
+  grpc_channel_args server_args;
+  grpc_call *c1;
+  grpc_call *c2;
+  grpc_call *s1;
+  grpc_call *s2;
+  cq_verifier *cqv;
+  grpc_call_details call_details;
+  grpc_metadata_array request_metadata_recv;
+  grpc_metadata_array initial_metadata_recv1;
+  grpc_metadata_array trailing_metadata_recv1;
+  grpc_metadata_array initial_metadata_recv2;
+  grpc_metadata_array trailing_metadata_recv2;
+  grpc_status_code status1;
+  grpc_call_error error;
+  grpc_slice details1 = grpc_empty_slice();
+  grpc_status_code status2;
+  grpc_slice details2 = grpc_empty_slice();
+  grpc_op ops[6];
+  grpc_op *op;
+  int was_cancelled;
+
+  server_arg.key = GRPC_ARG_MAX_CONCURRENT_STREAMS;
+  server_arg.type = GRPC_ARG_INTEGER;
+  server_arg.value.integer = 1;
+
+  server_args.num_args = 1;
+  server_args.args = &server_arg;
+
+  f = begin_test(config, "test_max_concurrent_streams_with_timeout_on_first",
+                 NULL, &server_args);
+  cqv = cq_verifier_create(f.cq);
+
+  grpc_metadata_array_init(&request_metadata_recv);
+  grpc_metadata_array_init(&initial_metadata_recv1);
+  grpc_metadata_array_init(&trailing_metadata_recv1);
+  grpc_metadata_array_init(&initial_metadata_recv2);
+  grpc_metadata_array_init(&trailing_metadata_recv2);
+  grpc_call_details_init(&call_details);
+
+  /* perform a ping-pong to ensure that settings have had a chance to round
+     trip */
+  simple_request_body(config, f);
+  /* perform another one to make sure that the one stream case still works */
+  simple_request_body(config, f);
+
+  /* start two requests - ensuring that the second is not accepted until
+     the first completes */
+  c1 = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/alpha"),
+      get_host_override_slice("foo.test.google.fr:1234", config),
+      n_seconds_from_now(3), NULL);
+  GPR_ASSERT(c1);
+  c2 = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/beta"),
+      get_host_override_slice("foo.test.google.fr:1234", config),
+      n_seconds_from_now(1000), NULL);
+  GPR_ASSERT(c2);
+
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                 f.server, &s1, &call_details,
+                                 &request_metadata_recv, f.cq, f.cq, tag(101)));
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(c1, ops, (size_t)(op - ops), tag(301), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv1;
+  op->data.recv_status_on_client.status = &status1;
+  op->data.recv_status_on_client.status_details = &details1;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv1;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(c1, ops, (size_t)(op - ops), tag(302), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(301), 1);
+  cq_verify(cqv);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(c2, ops, (size_t)(op - ops), tag(401), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv2;
+  op->data.recv_status_on_client.status = &status2;
+  op->data.recv_status_on_client.status_details = &details2;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv2;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(c2, ops, (size_t)(op - ops), tag(402), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  grpc_call_details_destroy(&call_details);
+  grpc_call_details_init(&call_details);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                 f.server, &s2, &call_details,
+                                 &request_metadata_recv, f.cq, f.cq, tag(201)));
+
+  CQ_EXPECT_COMPLETION(cqv, tag(302), 1);
+  /* first request is finished, we should be able to start the second */
+  CQ_EXPECT_COMPLETION(cqv, tag(401), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(201), 1);
+  cq_verify(cqv);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+  op->data.send_status_from_server.trailing_metadata_count = 0;
+  op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  op->data.send_status_from_server.status_details = &status_details;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(s2, ops, (size_t)(op - ops), tag(202), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  CQ_EXPECT_COMPLETION(cqv, tag(402), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(202), 1);
+  cq_verify(cqv);
+
+  cq_verifier_destroy(cqv);
+
+  grpc_call_unref(c1);
+  grpc_call_unref(s1);
+  grpc_call_unref(c2);
+  grpc_call_unref(s2);
+
+  grpc_slice_unref(details1);
+  grpc_slice_unref(details2);
+  grpc_metadata_array_destroy(&initial_metadata_recv1);
+  grpc_metadata_array_destroy(&trailing_metadata_recv1);
+  grpc_metadata_array_destroy(&initial_metadata_recv2);
+  grpc_metadata_array_destroy(&trailing_metadata_recv2);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
+
+  end_test(&f);
+  config.tear_down_data(&f);
+}
+
+static void test_max_concurrent_streams_with_timeout_on_second(
+    grpc_end2end_test_config config) {
+  grpc_end2end_test_fixture f;
+  grpc_arg server_arg;
+  grpc_channel_args server_args;
+  grpc_call *c1;
+  grpc_call *c2;
+  grpc_call *s1;
+  cq_verifier *cqv;
+  grpc_call_details call_details;
+  grpc_metadata_array request_metadata_recv;
+  grpc_metadata_array initial_metadata_recv1;
+  grpc_metadata_array trailing_metadata_recv1;
+  grpc_metadata_array initial_metadata_recv2;
+  grpc_metadata_array trailing_metadata_recv2;
+  grpc_status_code status1;
+  grpc_call_error error;
+  grpc_slice details1 = grpc_empty_slice();
+  grpc_status_code status2;
+  grpc_slice details2 = grpc_empty_slice();
+  grpc_op ops[6];
+  grpc_op *op;
+  int was_cancelled;
+
+  server_arg.key = GRPC_ARG_MAX_CONCURRENT_STREAMS;
+  server_arg.type = GRPC_ARG_INTEGER;
+  server_arg.value.integer = 1;
+
+  server_args.num_args = 1;
+  server_args.args = &server_arg;
+
+  f = begin_test(config, "test_max_concurrent_streams_with_timeout_on_second",
+                 NULL, &server_args);
+  cqv = cq_verifier_create(f.cq);
+
+  grpc_metadata_array_init(&request_metadata_recv);
+  grpc_metadata_array_init(&initial_metadata_recv1);
+  grpc_metadata_array_init(&trailing_metadata_recv1);
+  grpc_metadata_array_init(&initial_metadata_recv2);
+  grpc_metadata_array_init(&trailing_metadata_recv2);
+  grpc_call_details_init(&call_details);
+
+  /* perform a ping-pong to ensure that settings have had a chance to round
+     trip */
+  simple_request_body(config, f);
+  /* perform another one to make sure that the one stream case still works */
+  simple_request_body(config, f);
+
+  /* start two requests - ensuring that the second is not accepted until
+     the first completes , and the second request will timeout in the
+     concurrent_list */
+  c1 = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/alpha"),
+      get_host_override_slice("foo.test.google.fr:1234", config),
+      n_seconds_from_now(1000), NULL);
+  GPR_ASSERT(c1);
+  c2 = grpc_channel_create_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/beta"),
+      get_host_override_slice("foo.test.google.fr:1234", config),
+      n_seconds_from_now(3), NULL);
+  GPR_ASSERT(c2);
+
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                 f.server, &s1, &call_details,
+                                 &request_metadata_recv, f.cq, f.cq, tag(101)));
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(c1, ops, (size_t)(op - ops), tag(301), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv1;
+  op->data.recv_status_on_client.status = &status1;
+  op->data.recv_status_on_client.status_details = &details1;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv1;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(c1, ops, (size_t)(op - ops), tag(302), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(301), 1);
+  cq_verify(cqv);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(c2, ops, (size_t)(op - ops), tag(401), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv2;
+  op->data.recv_status_on_client.status = &status2;
+  op->data.recv_status_on_client.status_details = &details2;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv2;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(c2, ops, (size_t)(op - ops), tag(402), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  /* the second request is time out*/
+  CQ_EXPECT_COMPLETION(cqv, tag(401), 0);
+  CQ_EXPECT_COMPLETION(cqv, tag(402), 1);
+  cq_verify(cqv);
+
+  /* second request is finished because of time out, so destroy the second call
+   */
+  grpc_call_unref(c2);
+
+  /* now reply the first call */
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+  op->data.send_status_from_server.trailing_metadata_count = 0;
+  op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  op->data.send_status_from_server.status_details = &status_details;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(s1, ops, (size_t)(op - ops), tag(102), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  CQ_EXPECT_COMPLETION(cqv, tag(302), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
+  cq_verify(cqv);
+
+  cq_verifier_destroy(cqv);
+
+  grpc_call_unref(c1);
+  grpc_call_unref(s1);
+
+  grpc_slice_unref(details1);
+  grpc_slice_unref(details2);
   grpc_metadata_array_destroy(&initial_metadata_recv1);
   grpc_metadata_array_destroy(&trailing_metadata_recv1);
   grpc_metadata_array_destroy(&initial_metadata_recv2);
@@ -442,6 +823,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
 }
 
 void max_concurrent_streams(grpc_end2end_test_config config) {
+  test_max_concurrent_streams_with_timeout_on_first(config);
+  test_max_concurrent_streams_with_timeout_on_second(config);
   test_max_concurrent_streams(config);
 }
 

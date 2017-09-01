@@ -1,39 +1,24 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #include <grpc++/support/slice.h>
 
-#include <grpc/support/slice.h>
+#include <grpc/slice.h>
 #include <gtest/gtest.h>
 
 namespace grpc {
@@ -43,6 +28,9 @@ const char* kContent = "hello xxxxxxxxxxxxxxxxxxxx world";
 
 class SliceTest : public ::testing::Test {
  protected:
+  void CheckSliceSize(const Slice& s, const grpc::string& content) {
+    EXPECT_EQ(content.size(), s.size());
+  }
   void CheckSlice(const Slice& s, const grpc::string& content) {
     EXPECT_EQ(content.size(), s.size());
     EXPECT_EQ(content,
@@ -50,32 +38,88 @@ class SliceTest : public ::testing::Test {
   }
 };
 
-TEST_F(SliceTest, Steal) {
-  gpr_slice s = gpr_slice_from_copied_string(kContent);
-  Slice spp(s, Slice::STEAL_REF);
-  CheckSlice(spp, kContent);
-}
-
-TEST_F(SliceTest, Add) {
-  gpr_slice s = gpr_slice_from_copied_string(kContent);
-  Slice spp(s, Slice::ADD_REF);
-  gpr_slice_unref(s);
-  CheckSlice(spp, kContent);
-}
-
 TEST_F(SliceTest, Empty) {
   Slice empty_slice;
   CheckSlice(empty_slice, "");
 }
 
-TEST_F(SliceTest, Cslice) {
-  gpr_slice s = gpr_slice_from_copied_string(kContent);
+TEST_F(SliceTest, Sized) {
+  Slice sized_slice(strlen(kContent));
+  CheckSliceSize(sized_slice, kContent);
+}
+
+TEST_F(SliceTest, String) {
+  Slice spp(kContent);
+  CheckSlice(spp, kContent);
+}
+
+TEST_F(SliceTest, Buf) {
+  Slice spp(kContent, strlen(kContent));
+  CheckSlice(spp, kContent);
+}
+
+TEST_F(SliceTest, StaticBuf) {
+  Slice spp(kContent, strlen(kContent), Slice::STATIC_SLICE);
+  CheckSlice(spp, kContent);
+}
+
+TEST_F(SliceTest, SliceNew) {
+  char* x = new char[strlen(kContent) + 1];
+  strcpy(x, kContent);
+  Slice spp(x, strlen(x), [](void* p) { delete[] reinterpret_cast<char*>(p); });
+  CheckSlice(spp, kContent);
+}
+
+TEST_F(SliceTest, SliceNewDoNothing) {
+  Slice spp(const_cast<char*>(kContent), strlen(kContent), [](void* p) {});
+  CheckSlice(spp, kContent);
+}
+
+TEST_F(SliceTest, SliceNewWithUserData) {
+  struct stest {
+    char* x;
+    int y;
+  };
+  auto* t = new stest;
+  t->x = new char[strlen(kContent) + 1];
+  strcpy(t->x, kContent);
+  Slice spp(t->x, strlen(t->x),
+            [](void* p) {
+              auto* t = reinterpret_cast<stest*>(p);
+              delete[] t->x;
+              delete t;
+            },
+            t);
+  CheckSlice(spp, kContent);
+}
+
+TEST_F(SliceTest, SliceNewLen) {
+  Slice spp(const_cast<char*>(kContent), strlen(kContent),
+            [](void* p, size_t l) { EXPECT_EQ(l, strlen(kContent)); });
+  CheckSlice(spp, kContent);
+}
+
+TEST_F(SliceTest, Steal) {
+  grpc_slice s = grpc_slice_from_copied_string(kContent);
   Slice spp(s, Slice::STEAL_REF);
   CheckSlice(spp, kContent);
-  gpr_slice c_slice = spp.c_slice();
-  EXPECT_EQ(GPR_SLICE_START_PTR(s), GPR_SLICE_START_PTR(c_slice));
-  EXPECT_EQ(GPR_SLICE_END_PTR(s), GPR_SLICE_END_PTR(c_slice));
-  gpr_slice_unref(c_slice);
+}
+
+TEST_F(SliceTest, Add) {
+  grpc_slice s = grpc_slice_from_copied_string(kContent);
+  Slice spp(s, Slice::ADD_REF);
+  grpc_slice_unref(s);
+  CheckSlice(spp, kContent);
+}
+
+TEST_F(SliceTest, Cslice) {
+  grpc_slice s = grpc_slice_from_copied_string(kContent);
+  Slice spp(s, Slice::STEAL_REF);
+  CheckSlice(spp, kContent);
+  grpc_slice c_slice = spp.c_slice();
+  EXPECT_EQ(GRPC_SLICE_START_PTR(s), GRPC_SLICE_START_PTR(c_slice));
+  EXPECT_EQ(GRPC_SLICE_END_PTR(s), GRPC_SLICE_END_PTR(c_slice));
+  grpc_slice_unref(c_slice);
 }
 
 }  // namespace

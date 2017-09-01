@@ -1,0 +1,3 @@
+# Generate all fields as pointers.
+* type:FT_POINTER
+
