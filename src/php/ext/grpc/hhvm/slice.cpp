@@ -117,10 +117,13 @@ const uint8_t* const Slice::data(void) const
                       GRPC_SLICE_START_PTR(m_Slice));
 }
 
+// byte buffer increases ref count on slice which is cleaned up when
+// grpc_byte_buffer_destroy is called
 grpc_byte_buffer* const Slice::byteBuffer(void) const
 {
     grpc_slice* const pSlice{ const_cast<grpc_slice*>(&m_Slice) };
-    return const_cast<grpc_byte_buffer* const>(grpc_raw_byte_buffer_create(pSlice, 1));
+    grpc_byte_buffer* const pBuffer{ const_cast<grpc_byte_buffer* const>(grpc_raw_byte_buffer_create(pSlice, 1)) };
+    return pBuffer;
 }
 
 HPHP::String Slice::string(void)
@@ -151,6 +154,11 @@ char* const Slice::c_str(void) const
 }
 
 void Slice::destroy(void)
+{
+    decreaseRef();
+}
+
+void Slice::decreaseRef(void)
 {
     gpr_slice_unref(m_Slice);
 }
