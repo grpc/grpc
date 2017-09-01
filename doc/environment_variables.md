@@ -47,6 +47,7 @@ some configuration as environment variables that can be set.
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
   - channel_stack_builder - traces information about channel stacks being built
+  - executor - traces grpc's internal thread pool ('the executor')
   - http - traces state in the http2 transport engine
   - http1 - traces HTTP/1.x operations performed by gRPC
   - inproc - traces the in-process transport
