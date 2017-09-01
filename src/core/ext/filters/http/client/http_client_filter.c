@@ -303,7 +303,6 @@ static void hc_start_transport_stream_op_batch(
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
   GPR_TIMER_BEGIN("hc_start_transport_stream_op_batch", 0);
-  GRPC_CALL_LOG_OP(GPR_INFO, elem, batch);
 
   if (batch->recv_initial_metadata) {
     /* substitute our callback for the higher callback */

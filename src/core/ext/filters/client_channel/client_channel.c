@@ -808,15 +808,16 @@ typedef struct client_channel_call_data {
   // State for handling deadlines.
   // The code in deadline_filter.c requires this to be the first field.
   // TODO(roth): This is slightly sub-optimal in that grpc_deadline_state
-  // and this struct both independently store a pointer to the call
-  // combiner.  If/when we have time, find a way to avoid this without
-  // breaking the grpc_deadline_state abstraction.
+  // and this struct both independently store pointers to the call stack
+  // and call combiner.  If/when we have time, find a way to avoid this
+  // without breaking the grpc_deadline_state abstraction.
   grpc_deadline_state deadline_state;
 
   grpc_slice path;  // Request path.
   gpr_timespec call_start_time;
   gpr_timespec deadline;
   gpr_arena *arena;
+  grpc_call_stack *owning_call;
   grpc_call_combiner *call_combiner;
 
   grpc_server_retry_throttle_data *retry_throttle_data;
@@ -827,7 +828,7 @@ typedef struct client_channel_call_data {
 
   grpc_lb_policy *lb_policy;  // Holds ref while LB pick is pending.
   grpc_closure lb_pick_closure;
-  grpc_closure cancel_closure;
+  grpc_closure lb_pick_cancel_closure;
 
   grpc_connected_subchannel *connected_subchannel;
   grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT];
@@ -1046,8 +1047,9 @@ static bool pick_subchannel_locked(grpc_exec_ctx *exec_ctx,
 
 typedef struct {
   grpc_call_element *elem;
-  bool cancelled;
+  bool finished;
   grpc_closure closure;
+  grpc_closure cancel_closure;
 } pick_after_resolver_result_args;
 
 // Note: This runs under the client_channel combiner, but will NOT be
@@ -1055,36 +1057,36 @@ typedef struct {
 static void pick_after_resolver_result_cancel_locked(grpc_exec_ctx *exec_ctx,
                                                      void *arg,
                                                      grpc_error *error) {
-  grpc_call_element *elem = arg;
-  channel_data *chand = elem->channel_data;
-  call_data *calld = elem->call_data;
-  // If we don't yet have a resolver result, then a closure for
-  // pick_after_resolver_result_done_locked() will have been added to
-  // chand->waiting_for_resolver_result_closures, and it may not be invoked
-  // until after this call has been destroyed.  We mark the operation as
-  // cancelled, so that when pick_after_resolver_result_done_locked()
-  // is called, it will be a no-op.  We also immediately invoke
-  // subchannel_ready_locked() to propagate the error back to the caller.
-  for (grpc_closure *closure = chand->waiting_for_resolver_result_closures.head;
-       closure != NULL; closure = closure->next_data.next) {
-    pick_after_resolver_result_args *args = closure->cb_arg;
-    if (!args->cancelled && args->elem == elem) {
-      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-        gpr_log(GPR_DEBUG,
-                "chand=%p calld=%p: "
-                "cancelling pick waiting for resolver result",
-                chand, calld);
-      }
-      args->cancelled = true;
-      // Note: Although we are not in the call combiner here, we are
-      // basically stealing the call combiner from the pending pick, so
-      // it's safe to call subchannel_ready_locked() here -- we are
-      // essentially calling it here instead of calling it in
-      // pick_after_resolver_result_done_locked().
-      subchannel_ready_locked(exec_ctx, elem,
-                              GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                                  "Pick cancelled", &error, 1));
+  pick_after_resolver_result_args *args = arg;
+  if (args->finished) {
+    gpr_free(args);
+  } else {
+    grpc_call_element *elem = args->elem;
+    channel_data *chand = elem->channel_data;
+    call_data *calld = elem->call_data;
+    // If we don't yet have a resolver result, then a closure for
+    // pick_after_resolver_result_done_locked() will have been added to
+    // chand->waiting_for_resolver_result_closures, and it may not be invoked
+    // until after this call has been destroyed.  We mark the operation as
+    // finished, so that when pick_after_resolver_result_done_locked()
+    // is called, it will be a no-op.  We also immediately invoke
+    // subchannel_ready_locked() to propagate the error back to the caller.
+    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      gpr_log(GPR_DEBUG,
+              "chand=%p calld=%p: "
+              "cancelling pick waiting for resolver result",
+              chand, calld);
     }
+    args->finished = true;
+    // Note: Although we are not in the call combiner here, we are
+    // basically stealing the call combiner from the pending pick, so
+    // it's safe to call subchannel_ready_locked() here -- we are
+    // essentially calling it here instead of calling it in
+    // pick_after_resolver_result_done_locked().
+    subchannel_ready_locked(
+        exec_ctx, elem,
+        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Pick cancelled",
+                                                         &error, 1));
   }
 }
 
@@ -1092,12 +1094,14 @@ static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
                                                    void *arg,
                                                    grpc_error *error) {
   pick_after_resolver_result_args *args = arg;
-  if (args->cancelled) {
+  if (args->finished) {
     /* cancelled, do nothing */
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "call cancelled before resolver result");
     }
+    gpr_free(args);
   } else {
+    args->finished = true;
     grpc_call_element *elem = args->elem;
     channel_data *chand = elem->channel_data;
     call_data *calld = elem->call_data;
@@ -1119,7 +1123,6 @@ static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
       }
     }
   }
-  gpr_free(args);
 }
 
 static void pick_after_resolver_result_start_locked(grpc_exec_ctx *exec_ctx,
@@ -1140,8 +1143,8 @@ static void pick_after_resolver_result_start_locked(grpc_exec_ctx *exec_ctx,
                            &args->closure, GRPC_ERROR_NONE);
   grpc_call_combiner_set_notify_on_cancel(
       exec_ctx, calld->call_combiner,
-      GRPC_CLOSURE_INIT(&calld->cancel_closure,
-                        pick_after_resolver_result_cancel_locked, elem,
+      GRPC_CLOSURE_INIT(&args->cancel_closure,
+                        pick_after_resolver_result_cancel_locked, args,
                         grpc_combiner_scheduler(chand->combiner)));
 }
 
@@ -1152,7 +1155,7 @@ static void pick_callback_cancel_locked(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_call_element *elem = arg;
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
-  if (calld->lb_policy != NULL) {
+  if (error != GRPC_ERROR_NONE && calld->lb_policy != NULL) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: cancelling pick from LB policy %p",
               chand, calld, calld->lb_policy);
@@ -1161,6 +1164,7 @@ static void pick_callback_cancel_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                       &calld->connected_subchannel,
                                       GRPC_ERROR_REF(error));
   }
+  GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "pick_callback_cancel");
 }
 
 // Callback invoked by grpc_lb_policy_pick_locked() for async picks.
@@ -1210,10 +1214,12 @@ static bool pick_callback_start_locked(grpc_exec_ctx *exec_ctx,
     GRPC_LB_POLICY_UNREF(exec_ctx, calld->lb_policy, "pick_subchannel");
     calld->lb_policy = NULL;
   } else {
+    GRPC_CALL_STACK_REF(calld->owning_call, "pick_callback_cancel");
     grpc_call_combiner_set_notify_on_cancel(
         exec_ctx, calld->call_combiner,
-        GRPC_CLOSURE_INIT(&calld->cancel_closure, pick_callback_cancel_locked,
-                          elem, grpc_combiner_scheduler(chand->combiner)));
+        GRPC_CLOSURE_INIT(&calld->lb_pick_cancel_closure,
+                          pick_callback_cancel_locked, elem,
+                          grpc_combiner_scheduler(chand->combiner)));
   }
   return pick_done;
 }
@@ -1417,6 +1423,7 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
   calld->call_start_time = args->start_time;
   calld->deadline = gpr_convert_clock_type(args->deadline, GPR_CLOCK_MONOTONIC);
   calld->arena = args->arena;
+  calld->owning_call = args->call_stack;
   calld->call_combiner = args->call_combiner;
   if (chand->deadline_checking_enabled) {
     grpc_deadline_state_init(exec_ctx, elem, args->call_stack,
