@@ -505,8 +505,8 @@ _LANGUAGES = {
     'java' : JavaLanguage(),
     'javaokhttp' : JavaOkHttpClient(),
     'node' : NodeLanguage(),
-    'php' :  PHPLanguage(),
-    'php7' :  PHP7Language(),
+    'php' : PHPLanguage(),
+    'php7' : PHP7Language(),
     'objc' : ObjcLanguage(),
     'ruby' : RubyLanguage(),
     'python' : PythonLanguage(),
@@ -526,6 +526,13 @@ _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
 
 _AUTH_TEST_CASES = ['compute_engine_creds', 'jwt_token_creds',
                     'oauth2_auth_token', 'per_rpc_creds']
+
+_STREAM_COMPRESSION_TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
+                                  'server_streaming']
+
+_STREAM_COMPRESSION_SERVERS = ['c++']
+
+_STREAM_COMPRESSION_CLIENTS = ['java', 'javaokhttp']
 
 _HTTP2_TEST_CASES = ['tls', 'framing']
 
@@ -685,13 +692,15 @@ def cloud_to_prod_jobspec(language, test_case, server_host_name,
 
 def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
                            server_port, docker_image=None, insecure=False,
-                           manual_cmd_log=None):
+                           manual_cmd_log=None, additional_args=None):
   """Creates jobspec for cloud-to-cloud interop test"""
   interop_only_options = [
       '--server_host_override=foo.test.google.fr',
       '--use_tls=%s' % ('false' if insecure else 'true'),
       '--use_test_ca=true',
   ]
+  if additional_args is not None:
+    interop_only_options += additional_args
 
   client_test_case = test_case
   if test_case in _HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS:
@@ -749,12 +758,15 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
   return test_job
 
 
-def server_jobspec(language, docker_image, insecure=False, manual_cmd_log=None):
+def server_jobspec(language, docker_image, insecure=False, manual_cmd_log=None,
+                  additional_args=None):
   """Create jobspec for running a server"""
   container_name = dockerjob.random_name('interop_server_%s' % language.safename)
-  cmdline = bash_cmdline(
-      language.server_cmd(['--port=%s' % _DEFAULT_SERVER_PORT,
-                           '--use_tls=%s' % ('false' if insecure else 'true')]))
+  cmd_args = ['--port=%s' % _DEFAULT_SERVER_PORT,
+              '--use_tls=%s' % ('false' if insecure else 'true')]
+  if additional_args is not None:
+    cmd_args += additional_args
+  cmdline = bash_cmdline(language.server_cmd(cmd_args))
   environ = language.global_env()
   docker_args = ['--name=%s' % container_name]
   if language.safename == 'http2':
@@ -791,9 +803,9 @@ def server_jobspec(language, docker_image, insecure=False, manual_cmd_log=None):
                                       environ=environ,
                                       docker_args=docker_args)
   if manual_cmd_log is not None:
-      if manual_cmd_log == []:
-        manual_cmd_log.append('echo "Testing ${docker_image:=%s}"' % docker_image)
-      manual_cmd_log.append(manual_cmdline(docker_cmdline, docker_image))
+    if manual_cmd_log == []:
+      manual_cmd_log.append('echo "Testing ${docker_image:=%s}"' % docker_image)
+    manual_cmd_log.append(manual_cmdline(docker_cmdline, docker_image))
   server_job = jobset.JobSpec(
           cmdline=docker_cmdline,
           environ=environ,
@@ -945,6 +957,11 @@ argp.add_argument('--http2_server_interop',
                   action='store_const',
                   const=True,
                   help='Enable HTTP/2 server edge case testing. (Includes positive and negative tests')
+argp.add_argument('--stream_compression',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Enable full-stream compression test cases.')
 argp.add_argument('--insecure',
                   default=False,
                   action='store_const',
@@ -1054,6 +1071,22 @@ try:
     else:
       # don't run the server, set server port to a placeholder value
       server_addresses[lang] = ('localhost', '${SERVER_PORT}')
+    if args.stream_compression and lang in _STREAM_COMPRESSION_SERVERS:
+      spec = server_jobspec(
+          _LANGUAGES[lang],
+          docker_images.get(lang),
+          args.insecure,
+          manual_cmd_log=server_manual_cmd_log,
+          additional_args=['--stream_compression'])
+      if not args.manual_run:
+        job = dockerjob.DockerJob(spec)
+        server_jobs[lang + '_stream_compression'] = job
+        server_addresses[lang + '_stream_compression'] = (
+            'localhost', job.mapped_port(_DEFAULT_SERVER_PORT))
+      else:
+        # don't run the server, set server port to a placeholder value
+        server_addresses[lang + '_stream_compression'] = ('localhost',
+                                                          '${SERVER_PORT}')
 
   http2_server_job = None
   if args.http2_server_interop:
@@ -1114,23 +1147,38 @@ try:
 
   for server_name, server_address in server_addresses.items():
     (server_host, server_port) = server_address
-    server_language = _LANGUAGES.get(server_name, None)
-    skip_server = []  # test cases unimplemented by server
-    if server_language:
-      skip_server = server_language.unimplemented_test_cases_server()
-    for language in languages:
-      for test_case in _TEST_CASES:
-        if not test_case in language.unimplemented_test_cases():
-          if not test_case in skip_server:
-            test_job = cloud_to_cloud_jobspec(language,
-                                              test_case,
-                                              server_name,
-                                              server_host,
-                                              server_port,
-                                              docker_image=docker_images.get(str(language)),
-                                              insecure=args.insecure,
-                                              manual_cmd_log=client_manual_cmd_log)
-            jobs.append(test_job)
+    if args.stream_compression and server_name.endswith("_stream_compression"):
+      for language_name in _STREAM_COMPRESSION_CLIENTS:
+        for test_case in _STREAM_COMPRESSION_TEST_CASES:
+          client_language = _LANGUAGES[language_name]
+          test_job = cloud_to_cloud_jobspec(client_language,
+                                    test_case,
+                                    server_name,
+                                    server_host,
+                                    server_port,
+                                    docker_image=docker_images.get(str(client_language)),
+                                    insecure=args.insecure,
+                                    manual_cmd_log=client_manual_cmd_log,
+                                    additional_args=["--full_stream_decompression=true"])
+          jobs.append(test_job)
+    else:
+      server_language = _LANGUAGES.get(server_name, None)
+      skip_server = []  # test cases unimplemented by server
+      if server_language:
+        skip_server = server_language.unimplemented_test_cases_server()
+      for language in languages:
+        for test_case in _TEST_CASES:
+          if not test_case in language.unimplemented_test_cases():
+            if not test_case in skip_server:
+              test_job = cloud_to_cloud_jobspec(language,
+                                                test_case,
+                                                server_name,
+                                                server_host,
+                                                server_port,
+                                                docker_image=docker_images.get(str(language)),
+                                                insecure=args.insecure,
+                                                manual_cmd_log=client_manual_cmd_log)
+              jobs.append(test_job)
 
     if args.http2_interop:
       for test_case in _HTTP2_TEST_CASES:
@@ -1230,7 +1278,7 @@ try:
       _HTTP2_TEST_CASES, http2_server_test_cases, resultset, num_failures,
       args.cloud_to_prod_auth or args.cloud_to_prod, args.prod_servers,
       args.http2_interop)
-  
+
   if num_failures:
     sys.exit(1)
   else:
