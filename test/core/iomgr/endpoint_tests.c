@@ -125,7 +125,8 @@ static void read_and_write_test_read_handler(grpc_exec_ctx *exec_ctx,
     gpr_log(GPR_INFO, "Read handler done");
     gpr_mu_lock(g_mu);
     state->read_done = 1 + (error == GRPC_ERROR_NONE);
-    GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL));
+    GRPC_LOG_IF_ERROR("pollset_kick",
+                      grpc_pollset_kick(exec_ctx, g_pollset, NULL));
     gpr_mu_unlock(g_mu);
   } else if (error == GRPC_ERROR_NONE) {
     grpc_endpoint_read(exec_ctx, state->read_ep, &state->incoming,
@@ -160,7 +161,8 @@ static void read_and_write_test_write_handler(grpc_exec_ctx *exec_ctx,
   gpr_log(GPR_INFO, "Write handler done");
   gpr_mu_lock(g_mu);
   state->write_done = 1 + (error == GRPC_ERROR_NONE);
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL));
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(exec_ctx, g_pollset, NULL));
   gpr_mu_unlock(g_mu);
 }
 
@@ -252,7 +254,8 @@ static void inc_on_failure(grpc_exec_ctx *exec_ctx, void *arg,
                            grpc_error *error) {
   gpr_mu_lock(g_mu);
   *(int *)arg += (error != GRPC_ERROR_NONE);
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, NULL)));
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(exec_ctx, g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 

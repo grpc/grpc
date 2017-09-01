@@ -18,9 +18,21 @@
 # overall
 - counter: client_calls_created
 - counter: server_calls_created
+- histogram: call_initial_size
+  max: 262144
+  buckets: 64
 # polling
 - counter: syscall_poll
 - counter: syscall_wait
+- histogram: poll_events_returned
+  max: 1024
+  buckets: 128
+- counter: pollset_kick
+- counter: pollset_kicked_without_poller
+- counter: pollset_kicked_again
+- counter: pollset_kick_wakeup_fd
+- counter: pollset_kick_wakeup_cv
+- counter: pollset_kick_own_thread
 # stats system
 - counter: histogram_slow_lookups
 # tcp

@@ -214,9 +214,9 @@ grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   return g_event_engine->pollset_work(exec_ctx, pollset, worker, now, deadline);
 }
 
-grpc_error *grpc_pollset_kick(grpc_pollset *pollset,
+grpc_error *grpc_pollset_kick(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               grpc_pollset_worker *specific_worker) {
-  return g_event_engine->pollset_kick(pollset, specific_worker);
+  return g_event_engine->pollset_kick(exec_ctx, pollset, specific_worker);
 }
 
 void grpc_pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,

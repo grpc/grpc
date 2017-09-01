@@ -632,9 +632,10 @@ static void push_front_worker(grpc_pollset *p, grpc_pollset_worker *worker) {
 }
 
 /* p->mu must be held before calling this function */
-static grpc_error *pollset_kick(grpc_pollset *p,
+static grpc_error *pollset_kick(grpc_exec_ctx *exec_ctx, grpc_pollset *p,
                                 grpc_pollset_worker *specific_worker) {
   GPR_TIMER_BEGIN("pollset_kick", 0);
+  GRPC_STATS_INC_POLLSET_KICK(exec_ctx);
   grpc_error *error = GRPC_ERROR_NONE;
   const char *err_desc = "Kick Failure";
   grpc_pollset_worker *worker = specific_worker;
@@ -731,7 +732,7 @@ static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   GPR_ASSERT(!pollset->shutting_down);
   pollset->shutting_down = true;
   pollset->shutdown_done = closure;
-  pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
+  pollset_kick(exec_ctx, pollset, GRPC_POLLSET_KICK_BROADCAST);
 
   /* If the pollset has any workers, we cannot call finish_shutdown_locked()
      because it would release the underlying epoll set. In such a case, we

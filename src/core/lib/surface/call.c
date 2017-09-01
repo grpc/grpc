@@ -322,8 +322,9 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
       grpc_channel_get_channel_stack(args->channel);
   grpc_call *call;
   GPR_TIMER_BEGIN("grpc_call_create", 0);
-  gpr_arena *arena =
-      gpr_arena_create(grpc_channel_get_call_size_estimate(args->channel));
+  size_t initial_size = grpc_channel_get_call_size_estimate(args->channel);
+  GRPC_STATS_INC_CALL_INITIAL_SIZE(exec_ctx, initial_size);
+  gpr_arena *arena = gpr_arena_create(initial_size);
   call = gpr_arena_alloc(arena,
                          sizeof(grpc_call) + channel_stack->call_stack_size);
   gpr_ref_init(&call->ext_ref, 1);

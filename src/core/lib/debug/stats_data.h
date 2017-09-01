@@ -28,6 +28,12 @@ typedef enum {
   GRPC_STATS_COUNTER_SERVER_CALLS_CREATED,
   GRPC_STATS_COUNTER_SYSCALL_POLL,
   GRPC_STATS_COUNTER_SYSCALL_WAIT,
+  GRPC_STATS_COUNTER_POLLSET_KICK,
+  GRPC_STATS_COUNTER_POLLSET_KICKED_WITHOUT_POLLER,
+  GRPC_STATS_COUNTER_POLLSET_KICKED_AGAIN,
+  GRPC_STATS_COUNTER_POLLSET_KICK_WAKEUP_FD,
+  GRPC_STATS_COUNTER_POLLSET_KICK_WAKEUP_CV,
+  GRPC_STATS_COUNTER_POLLSET_KICK_OWN_THREAD,
   GRPC_STATS_COUNTER_HISTOGRAM_SLOW_LOOKUPS,
   GRPC_STATS_COUNTER_SYSCALL_WRITE,
   GRPC_STATS_COUNTER_SYSCALL_READ,
@@ -53,6 +59,8 @@ typedef enum {
 } grpc_stats_counters;
 extern const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT];
 typedef enum {
+  GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE,
+  GRPC_STATS_HISTOGRAM_POLL_EVENTS_RETURNED,
   GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
   GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
   GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
@@ -63,19 +71,23 @@ typedef enum {
 } grpc_stats_histograms;
 extern const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT];
 typedef enum {
-  GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE_FIRST_SLOT = 0,
+  GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE_FIRST_SLOT = 0,
+  GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE_BUCKETS = 64,
+  GRPC_STATS_HISTOGRAM_POLL_EVENTS_RETURNED_FIRST_SLOT = 64,
+  GRPC_STATS_HISTOGRAM_POLL_EVENTS_RETURNED_BUCKETS = 128,
+  GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE_FIRST_SLOT = 192,
   GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE_FIRST_SLOT = 64,
+  GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE_FIRST_SLOT = 256,
   GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_TCP_READ_SIZE_FIRST_SLOT = 128,
+  GRPC_STATS_HISTOGRAM_TCP_READ_SIZE_FIRST_SLOT = 320,
   GRPC_STATS_HISTOGRAM_TCP_READ_SIZE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_FIRST_SLOT = 192,
+  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_FIRST_SLOT = 384,
   GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE_FIRST_SLOT = 256,
+  GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE_FIRST_SLOT = 448,
   GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE_FIRST_SLOT = 320,
+  GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE_FIRST_SLOT = 512,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_BUCKETS = 384
+  GRPC_STATS_HISTOGRAM_BUCKETS = 576
 } grpc_stats_histogram_constants;
 #define GRPC_STATS_INC_CLIENT_CALLS_CREATED(exec_ctx) \
   GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED)
@@ -85,6 +97,19 @@ typedef enum {
   GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_SYSCALL_POLL)
 #define GRPC_STATS_INC_SYSCALL_WAIT(exec_ctx) \
   GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_SYSCALL_WAIT)
+#define GRPC_STATS_INC_POLLSET_KICK(exec_ctx) \
+  GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_POLLSET_KICK)
+#define GRPC_STATS_INC_POLLSET_KICKED_WITHOUT_POLLER(exec_ctx) \
+  GRPC_STATS_INC_COUNTER((exec_ctx),                           \
+                         GRPC_STATS_COUNTER_POLLSET_KICKED_WITHOUT_POLLER)
+#define GRPC_STATS_INC_POLLSET_KICKED_AGAIN(exec_ctx) \
+  GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_POLLSET_KICKED_AGAIN)
+#define GRPC_STATS_INC_POLLSET_KICK_WAKEUP_FD(exec_ctx) \
+  GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_POLLSET_KICK_WAKEUP_FD)
+#define GRPC_STATS_INC_POLLSET_KICK_WAKEUP_CV(exec_ctx) \
+  GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_POLLSET_KICK_WAKEUP_CV)
+#define GRPC_STATS_INC_POLLSET_KICK_OWN_THREAD(exec_ctx) \
+  GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_POLLSET_KICK_OWN_THREAD)
 #define GRPC_STATS_INC_HISTOGRAM_SLOW_LOOKUPS(exec_ctx) \
   GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_HISTOGRAM_SLOW_LOOKUPS)
 #define GRPC_STATS_INC_SYSCALL_WRITE(exec_ctx) \
@@ -138,6 +163,55 @@ typedef enum {
                          GRPC_STATS_COUNTER_EXECUTOR_WAKEUP_INITIATED)
 #define GRPC_STATS_INC_EXECUTOR_QUEUE_DRAINED(exec_ctx) \
   GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_EXECUTOR_QUEUE_DRAINED)
+#define GRPC_STATS_INC_CALL_INITIAL_SIZE(exec_ctx, value)                      \
+  do {                                                                         \
+    union {                                                                    \
+      double dbl;                                                              \
+      uint64_t uint;                                                           \
+    } _val;                                                                    \
+    _val.dbl = (double)(value);                                                \
+    if (_val.dbl < 0) _val.dbl = 0;                                            \
+    if (_val.dbl < 6.000000) {                                                 \
+      GRPC_STATS_INC_HISTOGRAM(                                                \
+          (exec_ctx), GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE, (int)_val.dbl);  \
+    } else {                                                                   \
+      if (_val.uint < 4688247212092686336ull) {                                \
+        GRPC_STATS_INC_HISTOGRAM(                                              \
+            (exec_ctx), GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE,                \
+            grpc_stats_table_1[((_val.uint - 4618441417868443648ull) >> 49)]); \
+      } else {                                                                 \
+        GRPC_STATS_INC_HISTOGRAM(                                              \
+            (exec_ctx), GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE,                \
+            grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,            \
+                                              grpc_stats_table_0, 64));        \
+      }                                                                        \
+    }                                                                          \
+  } while (false)
+#define GRPC_STATS_INC_POLL_EVENTS_RETURNED(exec_ctx, value)                   \
+  do {                                                                         \
+    union {                                                                    \
+      double dbl;                                                              \
+      uint64_t uint;                                                           \
+    } _val;                                                                    \
+    _val.dbl = (double)(value);                                                \
+    if (_val.dbl < 0) _val.dbl = 0;                                            \
+    if (_val.dbl < 29.000000) {                                                \
+      GRPC_STATS_INC_HISTOGRAM((exec_ctx),                                     \
+                               GRPC_STATS_HISTOGRAM_POLL_EVENTS_RETURNED,      \
+                               (int)_val.dbl);                                 \
+    } else {                                                                   \
+      if (_val.uint < 4652218415073722368ull) {                                \
+        GRPC_STATS_INC_HISTOGRAM(                                              \
+            (exec_ctx), GRPC_STATS_HISTOGRAM_POLL_EVENTS_RETURNED,             \
+            grpc_stats_table_3[((_val.uint - 4628855992006737920ull) >> 47)]); \
+      } else {                                                                 \
+        GRPC_STATS_INC_HISTOGRAM(                                              \
+            (exec_ctx), GRPC_STATS_HISTOGRAM_POLL_EVENTS_RETURNED,             \
+            grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,            \
+                                              grpc_stats_table_2, 128));       \
+      }                                                                        \
+    }                                                                          \
+  } while (false)
 #define GRPC_STATS_INC_TCP_WRITE_SIZE(exec_ctx, value)                         \
   do {                                                                         \
     union {                                                                    \
@@ -153,12 +227,12 @@ typedef enum {
       if (_val.uint < 4715268809856909312ull) {                                \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,                   \
-            grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)]); \
+            grpc_stats_table_5[((_val.uint - 4617315517961601024ull) >> 50)]); \
       } else {                                                                 \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,                   \
             grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,            \
-                                              grpc_stats_table_0, 64));        \
+                                              grpc_stats_table_4, 64));        \
       }                                                                        \
     }                                                                          \
   } while (false)
@@ -177,12 +251,12 @@ typedef enum {
       if (_val.uint < 4652218415073722368ull) {                                \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,               \
-            grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 49)]); \
+            grpc_stats_table_7[((_val.uint - 4622945017495814144ull) >> 49)]); \
       } else {                                                                 \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,               \
             grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,            \
-                                              grpc_stats_table_2, 64));        \
+                                              grpc_stats_table_6, 64));        \
       }                                                                        \
     }                                                                          \
   } while (false)
@@ -201,12 +275,12 @@ typedef enum {
       if (_val.uint < 4715268809856909312ull) {                                \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,                    \
-            grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)]); \
+            grpc_stats_table_5[((_val.uint - 4617315517961601024ull) >> 50)]); \
       } else {                                                                 \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,                    \
             grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,            \
-                                              grpc_stats_table_0, 64));        \
+                                              grpc_stats_table_4, 64));        \
       }                                                                        \
     }                                                                          \
   } while (false)
@@ -225,12 +299,12 @@ typedef enum {
       if (_val.uint < 4715268809856909312ull) {                                \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,                   \
-            grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)]); \
+            grpc_stats_table_5[((_val.uint - 4617315517961601024ull) >> 50)]); \
       } else {                                                                 \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,                   \
             grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,            \
-                                              grpc_stats_table_0, 64));        \
+                                              grpc_stats_table_4, 64));        \
       }                                                                        \
     }                                                                          \
   } while (false)
@@ -249,12 +323,12 @@ typedef enum {
       if (_val.uint < 4652218415073722368ull) {                                \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,                \
-            grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 49)]); \
+            grpc_stats_table_7[((_val.uint - 4622945017495814144ull) >> 49)]); \
       } else {                                                                 \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,                \
             grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,            \
-                                              grpc_stats_table_2, 64));        \
+                                              grpc_stats_table_6, 64));        \
       }                                                                        \
     }                                                                          \
   } while (false)
@@ -274,21 +348,25 @@ typedef enum {
       if (_val.uint < 4715268809856909312ull) {                                \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,          \
-            grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)]); \
+            grpc_stats_table_5[((_val.uint - 4617315517961601024ull) >> 50)]); \
       } else {                                                                 \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,          \
             grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,            \
-                                              grpc_stats_table_0, 64));        \
+                                              grpc_stats_table_4, 64));        \
       }                                                                        \
     }                                                                          \
   } while (false)
 extern const double grpc_stats_table_0[64];
-extern const uint8_t grpc_stats_table_1[87];
-extern const double grpc_stats_table_2[64];
-extern const uint8_t grpc_stats_table_3[52];
-extern const int grpc_stats_histo_buckets[6];
-extern const int grpc_stats_histo_start[6];
-extern const double *const grpc_stats_histo_bucket_boundaries[6];
+extern const uint8_t grpc_stats_table_1[124];
+extern const double grpc_stats_table_2[128];
+extern const uint8_t grpc_stats_table_3[166];
+extern const double grpc_stats_table_4[64];
+extern const uint8_t grpc_stats_table_5[87];
+extern const double grpc_stats_table_6[64];
+extern const uint8_t grpc_stats_table_7[52];
+extern const int grpc_stats_histo_buckets[8];
+extern const int grpc_stats_histo_start[8];
+extern const double *const grpc_stats_histo_bucket_boundaries[8];
 
 #endif /* GRPC_CORE_LIB_DEBUG_STATS_DATA_H */

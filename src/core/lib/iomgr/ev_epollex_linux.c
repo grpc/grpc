@@ -561,6 +561,7 @@ static void do_kick_all(grpc_exec_ctx *exec_ctx, void *arg,
   if (pollset->root_worker != NULL) {
     grpc_pollset_worker *worker = pollset->root_worker;
     do {
+      GRPC_STATS_INC_POLLSET_KICK(exec_ctx);
       if (worker->pollable != &pollset->pollable) {
         gpr_mu_lock(&worker->pollable->po.mu);
       }
@@ -599,7 +600,8 @@ static void pollset_kick_all(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
                      GRPC_ERROR_NONE);
 }
 
-static grpc_error *pollset_kick_inner(grpc_pollset *pollset, pollable *p,
+static grpc_error *pollset_kick_inner(grpc_exec_ctx *exec_ctx,
+                                      grpc_pollset *pollset, pollable *p,
                                       grpc_pollset_worker *specific_worker) {
   if (GRPC_TRACER_ON(grpc_polling_trace)) {
     gpr_log(GPR_DEBUG,
@@ -662,13 +664,14 @@ static grpc_error *pollset_kick_inner(grpc_pollset *pollset, pollable *p,
 }
 
 /* p->po.mu must be held before calling this function */
-static grpc_error *pollset_kick(grpc_pollset *pollset,
+static grpc_error *pollset_kick(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                                 grpc_pollset_worker *specific_worker) {
   pollable *p = pollset->current_pollable;
+  GRPC_STATS_INC_POLLSET_KICK(exec_ctx);
   if (p != &pollset->pollable) {
     gpr_mu_lock(&p->po.mu);
   }
-  grpc_error *error = pollset_kick_inner(pollset, p, specific_worker);
+  grpc_error *error = pollset_kick_inner(exec_ctx, pollset, p, specific_worker);
   if (p != &pollset->pollable) {
     gpr_mu_unlock(&p->po.mu);
   }

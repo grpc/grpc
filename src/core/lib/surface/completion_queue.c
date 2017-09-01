@@ -54,7 +54,7 @@ typedef struct {
   bool can_listen;
   size_t (*size)(void);
   void (*init)(grpc_pollset *pollset, gpr_mu **mu);
-  grpc_error *(*kick)(grpc_pollset *pollset,
+  grpc_error *(*kick)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                       grpc_pollset_worker *specific_worker);
   grpc_error *(*work)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                       grpc_pollset_worker **worker, gpr_timespec now,
@@ -130,7 +130,8 @@ static grpc_error *non_polling_poller_work(grpc_exec_ctx *exec_ctx,
 }
 
 static grpc_error *non_polling_poller_kick(
-    grpc_pollset *pollset, grpc_pollset_worker *specific_worker) {
+    grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+    grpc_pollset_worker *specific_worker) {
   non_polling_poller *p = (non_polling_poller *)pollset;
   if (specific_worker == NULL) specific_worker = (grpc_pollset_worker *)p->root;
   if (specific_worker != NULL) {
@@ -645,7 +646,7 @@ static void cq_end_op_for_next(grpc_exec_ctx *exec_ctx,
     if (is_first) {
       gpr_mu_lock(cq->mu);
       grpc_error *kick_error =
-          cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), NULL);
+          cq->poller_vtable->kick(exec_ctx, POLLSET_FROM_CQ(cq), NULL);
       gpr_mu_unlock(cq->mu);
 
       if (kick_error != GRPC_ERROR_NONE) {
@@ -731,7 +732,7 @@ static void cq_end_op_for_pluck(grpc_exec_ctx *exec_ctx,
     }
 
     grpc_error *kick_error =
-        cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), pluck_worker);
+        cq->poller_vtable->kick(exec_ctx, POLLSET_FROM_CQ(cq), pluck_worker);
 
     gpr_mu_unlock(cq->mu);
 
@@ -930,7 +931,7 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
   if (cq_event_queue_num_items(&cqd->queue) > 0 &&
       gpr_atm_no_barrier_load(&cqd->pending_events) > 0) {
     gpr_mu_lock(cq->mu);
-    cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), NULL);
+    cq->poller_vtable->kick(&exec_ctx, POLLSET_FROM_CQ(cq), NULL);
     gpr_mu_unlock(cq->mu);
   }
 
