@@ -20,8 +20,6 @@
 #ifndef PHP_GRPC_H
 #define PHP_GRPC_H
 
-#include <stdbool.h>
-
 extern zend_module_entry grpc_module_entry;
 #define phpext_grpc_ptr &grpc_module_entry
 
