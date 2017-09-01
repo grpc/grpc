@@ -731,6 +731,22 @@ TEST_P(End2endTest, RequestStreamTwoRequests) {
   EXPECT_TRUE(s.ok());
 }
 
+TEST_P(End2endTest, RequestStreamTwoRequestsWithWriteThrough) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+
+  auto stream = stub_->RequestStream(&context, &response);
+  request.set_message("hello");
+  EXPECT_TRUE(stream->Write(request, WriteOptions().set_write_through()));
+  EXPECT_TRUE(stream->Write(request, WriteOptions().set_write_through()));
+  stream->WritesDone();
+  Status s = stream->Finish();
+  EXPECT_EQ(response.message(), "hellohello");
+  EXPECT_TRUE(s.ok());
+}
+
 TEST_P(End2endTest, RequestStreamTwoRequestsWithCoalescingApi) {
   ResetStub();
   EchoRequest request;
