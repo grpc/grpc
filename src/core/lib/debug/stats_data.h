@@ -22,6 +22,7 @@
 #define GRPC_CORE_LIB_DEBUG_STATS_DATA_H
 
 #include <inttypes.h>
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 typedef enum {
   GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED,
@@ -64,84 +65,19 @@ typedef enum {
   GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_SYSCALL_WAIT)
 #define GRPC_STATS_INC_HISTOGRAM_SLOW_LOOKUPS(exec_ctx) \
   GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_HISTOGRAM_SLOW_LOOKUPS)
-#define GRPC_STATS_INC_TCP_WRITE_SIZE(exec_ctx, value)                         \
-  do {                                                                         \
-    union {                                                                    \
-      double dbl;                                                              \
-      uint64_t uint;                                                           \
-    } _val;                                                                    \
-    _val.dbl = (double)(value);                                                \
-    if (_val.dbl < 0) _val.dbl = 0;                                            \
-    if (_val.dbl < 5.000000) {                                                 \
-      GRPC_STATS_INC_HISTOGRAM(                                                \
-          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE, (int)_val.dbl);     \
-    } else {                                                                   \
-      if (_val.uint < 4715268809856909312ull) {                                \
-        GRPC_STATS_INC_HISTOGRAM(                                              \
-            (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,                   \
-            grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)]); \
-      } else {                                                                 \
-        GRPC_STATS_INC_HISTOGRAM(                                              \
-            (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,                   \
-            grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,            \
-                                              grpc_stats_table_0, 64));        \
-      }                                                                        \
-    }                                                                          \
-  } while (false)
-#define GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(exec_ctx, value)                     \
-  do {                                                                         \
-    union {                                                                    \
-      double dbl;                                                              \
-      uint64_t uint;                                                           \
-    } _val;                                                                    \
-    _val.dbl = (double)(value);                                                \
-    if (_val.dbl < 0) _val.dbl = 0;                                            \
-    if (_val.dbl < 12.000000) {                                                \
-      GRPC_STATS_INC_HISTOGRAM(                                                \
-          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE, (int)_val.dbl); \
-    } else {                                                                   \
-      if (_val.uint < 4652218415073722368ull) {                                \
-        GRPC_STATS_INC_HISTOGRAM(                                              \
-            (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,               \
-            grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 49)]); \
-      } else {                                                                 \
-        GRPC_STATS_INC_HISTOGRAM(                                              \
-            (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,               \
-            grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,            \
-                                              grpc_stats_table_2, 64));        \
-      }                                                                        \
-    }                                                                          \
-  } while (false)
-#define GRPC_STATS_INC_TCP_READ_SIZE(exec_ctx, value)                          \
-  do {                                                                         \
-    union {                                                                    \
-      double dbl;                                                              \
-      uint64_t uint;                                                           \
-    } _val;                                                                    \
-    _val.dbl = (double)(value);                                                \
-    if (_val.dbl < 0) _val.dbl = 0;                                            \
-    if (_val.dbl < 5.000000) {                                                 \
-      GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE, \
-                               (int)_val.dbl);                                 \
-    } else {                                                                   \
-      if (_val.uint < 4715268809856909312ull) {                                \
-        GRPC_STATS_INC_HISTOGRAM(                                              \
-            (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,                    \
-            grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)]); \
-      } else {                                                                 \
-        GRPC_STATS_INC_HISTOGRAM(                                              \
-            (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,                    \
-            grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,            \
-                                              grpc_stats_table_0, 64));        \
-      }                                                                        \
-    }                                                                          \
-  } while (false)
-extern const double grpc_stats_table_0[64];
-extern const uint8_t grpc_stats_table_1[87];
-extern const double grpc_stats_table_2[64];
-extern const uint8_t grpc_stats_table_3[52];
+#define GRPC_STATS_INC_TCP_WRITE_SIZE(exec_ctx, value) \
+  grpc_stats_inc_tcp_write_size((exec_ctx), (double)(value))
+void grpc_stats_inc_tcp_write_size(grpc_exec_ctx *exec_ctx, double x);
+#define GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(exec_ctx, value) \
+  grpc_stats_inc_tcp_write_iov_size((exec_ctx), (double)(value))
+void grpc_stats_inc_tcp_write_iov_size(grpc_exec_ctx *exec_ctx, double x);
+#define GRPC_STATS_INC_TCP_READ_SIZE(exec_ctx, value) \
+  grpc_stats_inc_tcp_read_size((exec_ctx), (double)(value))
+void grpc_stats_inc_tcp_read_size(grpc_exec_ctx *exec_ctx, double x);
 extern const int grpc_stats_histo_buckets[3];
 extern const int grpc_stats_histo_start[3];
 extern const double *const grpc_stats_histo_bucket_boundaries[3];
+extern void (*const grpc_stats_inc_histogram[3])(grpc_exec_ctx *exec_ctx,
+                                                 double x);
 
 #endif /* GRPC_CORE_LIB_DEBUG_STATS_DATA_H */

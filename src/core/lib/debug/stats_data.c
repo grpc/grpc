@@ -19,6 +19,8 @@
  */
 
 #include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/debug/stats.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "client_calls_created",   "server_calls_created", "syscall_write",
     "syscall_read",           "syscall_poll",         "syscall_wait",
@@ -165,7 +167,80 @@ const uint8_t grpc_stats_table_3[52] = {
     0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17,
     18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
     36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 52};
+void grpc_stats_inc_tcp_write_size(grpc_exec_ctx *exec_ctx, double value) {
+  union {
+    double dbl;
+    uint64_t uint;
+  } _val;
+  _val.dbl = value;
+  if (_val.dbl < 0) _val.dbl = 0;
+  if (_val.dbl < 5.000000) {
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
+                             (int)_val.dbl);
+  } else {
+    if (_val.uint < 4715268809856909312ull) {
+      GRPC_STATS_INC_HISTOGRAM(
+          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
+          grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 4);
+    } else {
+      GRPC_STATS_INC_HISTOGRAM(
+          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
+          grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,
+                                            grpc_stats_table_0, 64));
+    }
+  }
+}
+void grpc_stats_inc_tcp_write_iov_size(grpc_exec_ctx *exec_ctx, double value) {
+  union {
+    double dbl;
+    uint64_t uint;
+  } _val;
+  _val.dbl = value;
+  if (_val.dbl < 0) _val.dbl = 0;
+  if (_val.dbl < 12.000000) {
+    GRPC_STATS_INC_HISTOGRAM(
+        (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE, (int)_val.dbl);
+  } else {
+    if (_val.uint < 4652218415073722368ull) {
+      GRPC_STATS_INC_HISTOGRAM(
+          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
+          grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 49)] +
+              11);
+    } else {
+      GRPC_STATS_INC_HISTOGRAM(
+          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
+          grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,
+                                            grpc_stats_table_2, 64));
+    }
+  }
+}
+void grpc_stats_inc_tcp_read_size(grpc_exec_ctx *exec_ctx, double value) {
+  union {
+    double dbl;
+    uint64_t uint;
+  } _val;
+  _val.dbl = value;
+  if (_val.dbl < 0) _val.dbl = 0;
+  if (_val.dbl < 5.000000) {
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
+                             (int)_val.dbl);
+  } else {
+    if (_val.uint < 4715268809856909312ull) {
+      GRPC_STATS_INC_HISTOGRAM(
+          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
+          grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 4);
+    } else {
+      GRPC_STATS_INC_HISTOGRAM(
+          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
+          grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,
+                                            grpc_stats_table_0, 64));
+    }
+  }
+}
 const int grpc_stats_histo_buckets[3] = {64, 64, 64};
 const int grpc_stats_histo_start[3] = {0, 64, 128};
 const double *const grpc_stats_histo_bucket_boundaries[3] = {
     grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_0};
+void (*const grpc_stats_inc_histogram[3])(grpc_exec_ctx *exec_ctx, double x) = {
+    grpc_stats_inc_tcp_write_size, grpc_stats_inc_tcp_write_iov_size,
+    grpc_stats_inc_tcp_read_size};
