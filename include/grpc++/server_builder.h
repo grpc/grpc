@@ -105,15 +105,34 @@ class ServerBuilder {
   ServerBuilder& SetCompressionAlgorithmSupportStatus(
       grpc_compression_algorithm algorithm, bool enabled);
 
+  /// Set the support status for stream compression algorithms. All algorithms
+  /// are enabled by default.
+  ///
+  /// Incoming calls compressed with an unsupported algorithm will fail with
+  /// \a GRPC_STATUS_UNIMPLEMENTED.
+  ServerBuilder& SetStreamCompressionAlgorithmSupportStatus(
+      grpc_stream_compression_algorithm algorithm, bool enabled);
+
   /// The default compression level to use for all channel calls in the
   /// absence of a call-specific level.
   ServerBuilder& SetDefaultCompressionLevel(grpc_compression_level level);
+
+  /// The default stream compression level to use for all channel calls in the
+  /// absence of a call-specific level.
+  ServerBuilder& SetDefaultStreamCompressionLevel(
+      grpc_stream_compression_level level);
 
   /// The default compression algorithm to use for all channel calls in the
   /// absence of a call-specific level. Note that it overrides any compression
   /// level set by \a SetDefaultCompressionLevel.
   ServerBuilder& SetDefaultCompressionAlgorithm(
       grpc_compression_algorithm algorithm);
+
+  /// The default stream compression algorithm to use for all channel calls in
+  /// the absence of a call-specific level. Note that it overrides any
+  /// compression level set by \a SetDefaultStreamCompressionLevel.
+  ServerBuilder& SetDefaultStreamCompressionAlgorithm(
+      grpc_stream_compression_algorithm algorithm);
 
   /// Set the attached buffer pool for this server
   ServerBuilder& SetResourceQuota(const ResourceQuota& resource_quota);
@@ -243,9 +262,18 @@ class ServerBuilder {
   } maybe_default_compression_level_;
   struct {
     bool is_set;
+    grpc_stream_compression_level level;
+  } maybe_default_stream_compression_level_;
+  struct {
+    bool is_set;
     grpc_compression_algorithm algorithm;
   } maybe_default_compression_algorithm_;
+  struct {
+    bool is_set;
+    grpc_stream_compression_algorithm algorithm;
+  } maybe_default_stream_compression_algorithm_;
   uint32_t enabled_compression_algorithms_bitset_;
+  uint32_t enabled_stream_compression_algorithms_bitset_;
 };
 
 }  // namespace grpc

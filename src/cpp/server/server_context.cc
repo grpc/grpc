@@ -200,6 +200,19 @@ void ServerContext::set_compression_algorithm(
   AddInitialMetadata(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, algorithm_name);
 }
 
+void ServerContext::set_stream_compression_algorithm(
+    grpc_stream_compression_algorithm algorithm) {
+  char* algorithm_name = NULL;
+  if (!grpc_stream_compression_algorithm_name(algorithm, &algorithm_name)) {
+    gpr_log(GPR_ERROR, "Name for stream compression algorithm '%d' unknown.",
+            algorithm);
+    abort();
+  }
+  GPR_ASSERT(algorithm_name != NULL);
+  AddInitialMetadata(GRPC_STREAM_COMPRESSION_REQUEST_ALGORITHM_MD_KEY,
+                     algorithm_name);
+}
+
 grpc::string ServerContext::peer() const {
   grpc::string peer;
   if (call_) {

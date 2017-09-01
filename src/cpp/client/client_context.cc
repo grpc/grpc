@@ -106,6 +106,18 @@ void ClientContext::set_compression_algorithm(
   AddMetadata(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, algorithm_name);
 }
 
+void ClientContext::set_stream_compression_algorithm(
+    grpc_stream_compression_algorithm algorithm) {
+  char* algorithm_name = nullptr;
+  if (!grpc_stream_compression_algorithm_name(algorithm, &algorithm_name)) {
+    gpr_log(GPR_ERROR, "Name for stream compression algorithm '%d' unknown.",
+            algorithm);
+    abort();
+  }
+  GPR_ASSERT(algorithm_name != nullptr);
+  AddMetadata(GRPC_STREAM_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, algorithm_name);
+}
+
 void ClientContext::TryCancel() {
   std::unique_lock<std::mutex> lock(mu_);
   if (call_) {
