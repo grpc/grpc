@@ -88,6 +88,7 @@ grpc_completion_queue_pluck_type grpc_completion_queue_pluck_import;
 grpc_completion_queue_shutdown_type grpc_completion_queue_shutdown_import;
 grpc_completion_queue_destroy_type grpc_completion_queue_destroy_import;
 grpc_alarm_create_type grpc_alarm_create_import;
+grpc_alarm_set_type grpc_alarm_set_import;
 grpc_alarm_cancel_type grpc_alarm_cancel_import;
 grpc_alarm_destroy_type grpc_alarm_destroy_import;
 grpc_channel_check_connectivity_state_type grpc_channel_check_connectivity_state_import;
@@ -394,6 +395,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_completion_queue_shutdown_import = (grpc_completion_queue_shutdown_type) GetProcAddress(library, "grpc_completion_queue_shutdown");
   grpc_completion_queue_destroy_import = (grpc_completion_queue_destroy_type) GetProcAddress(library, "grpc_completion_queue_destroy");
   grpc_alarm_create_import = (grpc_alarm_create_type) GetProcAddress(library, "grpc_alarm_create");
+  grpc_alarm_set_import = (grpc_alarm_set_type) GetProcAddress(library, "grpc_alarm_set");
   grpc_alarm_cancel_import = (grpc_alarm_cancel_type) GetProcAddress(library, "grpc_alarm_cancel");
   grpc_alarm_destroy_import = (grpc_alarm_destroy_type) GetProcAddress(library, "grpc_alarm_destroy");
   grpc_channel_check_connectivity_state_import = (grpc_channel_check_connectivity_state_type) GetProcAddress(library, "grpc_channel_check_connectivity_state");
