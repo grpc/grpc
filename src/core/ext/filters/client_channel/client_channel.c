@@ -1060,34 +1060,33 @@ static void pick_after_resolver_result_cancel_locked(grpc_exec_ctx *exec_ctx,
   pick_after_resolver_result_args *args = arg;
   if (args->finished) {
     gpr_free(args);
-  } else {
-    grpc_call_element *elem = args->elem;
-    channel_data *chand = elem->channel_data;
-    call_data *calld = elem->call_data;
-    // If we don't yet have a resolver result, then a closure for
-    // pick_after_resolver_result_done_locked() will have been added to
-    // chand->waiting_for_resolver_result_closures, and it may not be invoked
-    // until after this call has been destroyed.  We mark the operation as
-    // finished, so that when pick_after_resolver_result_done_locked()
-    // is called, it will be a no-op.  We also immediately invoke
-    // subchannel_ready_locked() to propagate the error back to the caller.
-    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-      gpr_log(GPR_DEBUG,
-              "chand=%p calld=%p: "
-              "cancelling pick waiting for resolver result",
-              chand, calld);
-    }
-    args->finished = true;
-    // Note: Although we are not in the call combiner here, we are
-    // basically stealing the call combiner from the pending pick, so
-    // it's safe to call subchannel_ready_locked() here -- we are
-    // essentially calling it here instead of calling it in
-    // pick_after_resolver_result_done_locked().
-    subchannel_ready_locked(
-        exec_ctx, elem,
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Pick cancelled",
-                                                         &error, 1));
+    return;
   }
+  args->finished = true;
+  grpc_call_element *elem = args->elem;
+  channel_data *chand = elem->channel_data;
+  call_data *calld = elem->call_data;
+  // If we don't yet have a resolver result, then a closure for
+  // pick_after_resolver_result_done_locked() will have been added to
+  // chand->waiting_for_resolver_result_closures, and it may not be invoked
+  // until after this call has been destroyed.  We mark the operation as
+  // finished, so that when pick_after_resolver_result_done_locked()
+  // is called, it will be a no-op.  We also immediately invoke
+  // subchannel_ready_locked() to propagate the error back to the caller.
+  if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+    gpr_log(GPR_DEBUG,
+            "chand=%p calld=%p: cancelling pick waiting for resolver result",
+            chand, calld);
+  }
+  // Note: Although we are not in the call combiner here, we are
+  // basically stealing the call combiner from the pending pick, so
+  // it's safe to call subchannel_ready_locked() here -- we are
+  // essentially calling it here instead of calling it in
+  // pick_after_resolver_result_done_locked().
+  subchannel_ready_locked(
+      exec_ctx, elem,
+      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Pick cancelled",
+                                                       &error, 1));
 }
 
 static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
@@ -1100,27 +1099,27 @@ static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
       gpr_log(GPR_DEBUG, "call cancelled before resolver result");
     }
     gpr_free(args);
+    return;
+  }
+  args->finished = true;
+  grpc_call_element *elem = args->elem;
+  channel_data *chand = elem->channel_data;
+  call_data *calld = elem->call_data;
+  grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner,
+                                          NULL);
+  if (error != GRPC_ERROR_NONE) {
+    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver failed to return data",
+              chand, calld);
+    }
+    subchannel_ready_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
   } else {
-    args->finished = true;
-    grpc_call_element *elem = args->elem;
-    channel_data *chand = elem->channel_data;
-    call_data *calld = elem->call_data;
-    grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner,
-                                            NULL);
-    if (error != GRPC_ERROR_NONE) {
-      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-        gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver failed to return data",
-                chand, calld);
-      }
-      subchannel_ready_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
-    } else {
-      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-        gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver returned, doing pick",
-                chand, calld);
-      }
-      if (pick_subchannel_locked(exec_ctx, elem)) {
-        subchannel_ready_locked(exec_ctx, elem, GRPC_ERROR_NONE);
-      }
+    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver returned, doing pick",
+              chand, calld);
+    }
+    if (pick_subchannel_locked(exec_ctx, elem)) {
+      subchannel_ready_locked(exec_ctx, elem, GRPC_ERROR_NONE);
     }
   }
 }
