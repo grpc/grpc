@@ -94,11 +94,11 @@ const double grpc_stats_table_0[64] = {0,
                                        12956014.428,
                                        16777216.0};
 const uint8_t grpc_stats_table_1[87] = {
-    0,  1,  3,  3,  4,  6,  6,  7,  9,  9,  10, 12, 12, 13, 15, 15, 16, 18,
-    18, 19, 21, 21, 22, 24, 24, 25, 27, 27, 28, 30, 30, 31, 32, 34, 34, 36,
-    36, 37, 39, 39, 40, 42, 42, 43, 44, 46, 46, 47, 49, 49, 51, 51, 52, 53,
-    55, 55, 56, 58, 58, 59, 61, 61, 63, 63, 64, 65, 67, 67, 68, 70, 70, 71,
-    73, 73, 75, 75, 76, 77, 79, 79, 80, 82, 82, 83, 85, 85, 87};
+    0,  1,  2,  2,  3,  4,  4,  5,  6,  6,  7,  8,  8,  9,  10, 10, 11, 12,
+    12, 13, 14, 14, 15, 16, 16, 17, 18, 18, 19, 20, 20, 21, 22, 23, 23, 24,
+    24, 25, 26, 26, 27, 28, 28, 29, 30, 31, 31, 32, 33, 33, 34, 34, 35, 36,
+    37, 37, 38, 39, 39, 40, 41, 41, 42, 42, 43, 44, 45, 45, 46, 47, 47, 48,
+    49, 49, 50, 50, 51, 52, 53, 53, 54, 55, 55, 56, 57, 57, 58};
 const double grpc_stats_table_2[64] = {0,
                                        1,
                                        2,
@@ -166,7 +166,7 @@ const double grpc_stats_table_2[64] = {0,
 const uint8_t grpc_stats_table_3[52] = {
     0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17,
     18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
-    36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 52};
+    36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51};
 void grpc_stats_inc_tcp_write_size(grpc_exec_ctx *exec_ctx, double value) {
   union {
     double dbl;
@@ -178,7 +178,7 @@ void grpc_stats_inc_tcp_write_size(grpc_exec_ctx *exec_ctx, double value) {
     GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
                              (int)_val.dbl);
   } else {
-    if (_val.uint < 4715268809856909312ull) {
+    if (_val.uint < 4682617712558473216ull) {
       GRPC_STATS_INC_HISTOGRAM(
           (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
           grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 4);
@@ -201,7 +201,7 @@ void grpc_stats_inc_tcp_write_iov_size(grpc_exec_ctx *exec_ctx, double value) {
     GRPC_STATS_INC_HISTOGRAM(
         (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE, (int)_val.dbl);
   } else {
-    if (_val.uint < 4652218415073722368ull) {
+    if (_val.uint < 4651655465120301056ull) {
       GRPC_STATS_INC_HISTOGRAM(
           (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
           grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 49)] +
@@ -225,7 +225,7 @@ void grpc_stats_inc_tcp_read_size(grpc_exec_ctx *exec_ctx, double value) {
     GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
                              (int)_val.dbl);
   } else {
-    if (_val.uint < 4715268809856909312ull) {
+    if (_val.uint < 4682617712558473216ull) {
       GRPC_STATS_INC_HISTOGRAM(
           (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
           grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 4);

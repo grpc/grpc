@@ -72,11 +72,13 @@ def find_ideal_shift(mapped_bounds, max_size):
 def gen_map_table(mapped_bounds, shift_data):
   tbl = []
   cur = 0
+  print mapped_bounds
   mapped_bounds = [x >> shift_data[0] for x in mapped_bounds]
+  print mapped_bounds
   for i in range(0, mapped_bounds[shift_data[1]-1]):
     while i > mapped_bounds[cur]:
       cur += 1
-    tbl.append(mapped_bounds[cur])
+    tbl.append(cur)
   return tbl
 
 static_tables = []
@@ -123,8 +125,8 @@ def gen_bucket_code(histogram):
     first_nontrivial_code = dbl2u64(first_nontrivial)
     code_bounds = [dbl2u64(x) - first_nontrivial_code for x in bounds]
     shift_data = find_ideal_shift(code_bounds[first_nontrivial:], 256 * histogram.buckets)
-  print first_nontrivial, shift_data, bounds
-  if shift_data is not None: print [hex(x >> shift_data[0]) for x in code_bounds[first_nontrivial:]]
+  #print first_nontrivial, shift_data, bounds
+  #if shift_data is not None: print [hex(x >> shift_data[0]) for x in code_bounds[first_nontrivial:]]
   code = '  union { double dbl; uint64_t uint; } _val;\n'
   code += '_val.dbl = value;\n'
   code += 'if (_val.dbl < 0) _val.dbl = 0;\n'
