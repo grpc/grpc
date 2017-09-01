@@ -1,5 +1,5 @@
-#Stats data declaration
-#use tools / codegen / core / gen_stats_data.py to turn this into stats_data.h
+# Stats data declaration
+# use tools / codegen / core / gen_stats_data.py to turn this into stats_data.h
 
 # overall
 - counter: client_calls_created
