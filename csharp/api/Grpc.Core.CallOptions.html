@@ -1,0 +1,684 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Struct CallOptions
+   | gRPC C# </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Struct CallOptions
+   | gRPC C# ">
+    <meta name="generator" content="docfx 2.23.1.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    <meta property="docfx:rel" content="../">
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div class="container body-content">
+        
+        <div id="search-results">
+          <div class="search-list"></div>
+          <div class="sr-items"></div>
+          <ul id="pagination"></ul>
+        </div>
+      </div>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="Grpc.Core.CallOptions">
+  
+  
+  <h1 id="Grpc_Core_CallOptions" data-uid="Grpc.Core.CallOptions" class="text-break">Struct CallOptions
+  </h1>
+  <div class="markdown level0 summary"><p>Options for calls made by client.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.ValueType.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.ValueType.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.ValueType.ToString()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="Grpc.Core.html">Grpc.Core</a></h6>
+  <h6><strong>Assembly</strong>: Grpc.Core.dll</h6>
+  <h5 id="Grpc_Core_CallOptions_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public struct CallOptions</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <a id="Grpc_Core_CallOptions__ctor_" data-uid="Grpc.Core.CallOptions.#ctor*"></a>
+  <h4 id="Grpc_Core_CallOptions__ctor_Grpc_Core_Metadata_System_Nullable_System_DateTime__System_Threading_CancellationToken_Grpc_Core_WriteOptions_Grpc_Core_ContextPropagationToken_Grpc_Core_CallCredentials_" data-uid="Grpc.Core.CallOptions.#ctor(Grpc.Core.Metadata,System.Nullable{System.DateTime},System.Threading.CancellationToken,Grpc.Core.WriteOptions,Grpc.Core.ContextPropagationToken,Grpc.Core.CallCredentials)">CallOptions(Metadata, Nullable&lt;DateTime&gt;, CancellationToken, WriteOptions, ContextPropagationToken, CallCredentials)</h4>
+  <div class="markdown level1 summary"><p>Creates a new instance of <code>CallOptions</code> struct.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public CallOptions(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = null, WriteOptions writeOptions = null, ContextPropagationToken propagationToken = null, CallCredentials credentials = null)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.Metadata.html">Metadata</a></td>
+        <td><span class="parametername">headers</span></td>
+        <td><p>Headers to be sent with the call.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Nullable</span>&lt;<span class="xref">System.DateTime</span>&gt;</td>
+        <td><span class="parametername">deadline</span></td>
+        <td><p>Deadline for the call to finish. null means no deadline.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Can be used to request cancellation of the call.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.WriteOptions.html">WriteOptions</a></td>
+        <td><span class="parametername">writeOptions</span></td>
+        <td><p>Write options that will be used for this call.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ContextPropagationToken.html">ContextPropagationToken</a></td>
+        <td><span class="parametername">propagationToken</span></td>
+        <td><p>Context propagation token obtained from <a class="xref" href="Grpc.Core.ServerCallContext.html">ServerCallContext</a>.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.CallCredentials.html">CallCredentials</a></td>
+        <td><span class="parametername">credentials</span></td>
+        <td><p>Credentials to use for this call.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <a id="Grpc_Core_CallOptions_CancellationToken_" data-uid="Grpc.Core.CallOptions.CancellationToken*"></a>
+  <h4 id="Grpc_Core_CallOptions_CancellationToken" data-uid="Grpc.Core.CallOptions.CancellationToken">CancellationToken</h4>
+  <div class="markdown level1 summary"><p>Token that can be used for cancelling the call on the client side.
+Cancelling the token will request cancellation
+of the remote call. Best effort will be made to deliver the cancellation
+notification to the server and interaction of the call with the server side
+will be terminated. Unless the call finishes before the cancellation could
+happen (there is an inherent race),
+the call will finish with <code>StatusCode.Cancelled</code> status.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public CancellationToken CancellationToken { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_CallOptions_Credentials_" data-uid="Grpc.Core.CallOptions.Credentials*"></a>
+  <h4 id="Grpc_Core_CallOptions_Credentials" data-uid="Grpc.Core.CallOptions.Credentials">Credentials</h4>
+  <div class="markdown level1 summary"><p>Credentials to use for this call.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public CallCredentials Credentials { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.CallCredentials.html">CallCredentials</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_CallOptions_Deadline_" data-uid="Grpc.Core.CallOptions.Deadline*"></a>
+  <h4 id="Grpc_Core_CallOptions_Deadline" data-uid="Grpc.Core.CallOptions.Deadline">Deadline</h4>
+  <div class="markdown level1 summary"><p>Call deadline.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DateTime? Deadline { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Nullable</span>&lt;<span class="xref">System.DateTime</span>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_CallOptions_Headers_" data-uid="Grpc.Core.CallOptions.Headers*"></a>
+  <h4 id="Grpc_Core_CallOptions_Headers" data-uid="Grpc.Core.CallOptions.Headers">Headers</h4>
+  <div class="markdown level1 summary"><p>Headers to send at the beginning of the call.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Metadata Headers { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.Metadata.html">Metadata</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_CallOptions_IsWaitForReady_" data-uid="Grpc.Core.CallOptions.IsWaitForReady*"></a>
+  <h4 id="Grpc_Core_CallOptions_IsWaitForReady" data-uid="Grpc.Core.CallOptions.IsWaitForReady">IsWaitForReady</h4>
+  <div class="markdown level1 summary"><p>If <code>true</code> and and channel is in <code>ChannelState.TransientFailure</code>, the call will attempt waiting for the channel to recover
+instead of failing immediately (which is the default &quot;FailFast&quot; semantics).
+Note: experimental API that can change or be removed without any prior notice.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsWaitForReady { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_CallOptions_PropagationToken_" data-uid="Grpc.Core.CallOptions.PropagationToken*"></a>
+  <h4 id="Grpc_Core_CallOptions_PropagationToken" data-uid="Grpc.Core.CallOptions.PropagationToken">PropagationToken</h4>
+  <div class="markdown level1 summary"><p>Token for propagating parent call context.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ContextPropagationToken PropagationToken { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ContextPropagationToken.html">ContextPropagationToken</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_CallOptions_WriteOptions_" data-uid="Grpc.Core.CallOptions.WriteOptions*"></a>
+  <h4 id="Grpc_Core_CallOptions_WriteOptions" data-uid="Grpc.Core.CallOptions.WriteOptions">WriteOptions</h4>
+  <div class="markdown level1 summary"><p>Write options that will be used for this call.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public WriteOptions WriteOptions { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.WriteOptions.html">WriteOptions</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <a id="Grpc_Core_CallOptions_WithCancellationToken_" data-uid="Grpc.Core.CallOptions.WithCancellationToken*"></a>
+  <h4 id="Grpc_Core_CallOptions_WithCancellationToken_System_Threading_CancellationToken_" data-uid="Grpc.Core.CallOptions.WithCancellationToken(System.Threading.CancellationToken)">WithCancellationToken(CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Returns new instance of <a class="xref" href="Grpc.Core.CallOptions.html">CallOptions</a> with
+<code>CancellationToken</code> set to the value provided. Values of all other fields are preserved.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public CallOptions WithCancellationToken(CancellationToken cancellationToken)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>The cancellation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.CallOptions.html">CallOptions</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_CallOptions_WithCredentials_" data-uid="Grpc.Core.CallOptions.WithCredentials*"></a>
+  <h4 id="Grpc_Core_CallOptions_WithCredentials_Grpc_Core_CallCredentials_" data-uid="Grpc.Core.CallOptions.WithCredentials(Grpc.Core.CallCredentials)">WithCredentials(CallCredentials)</h4>
+  <div class="markdown level1 summary"><p>Returns new instance of <a class="xref" href="Grpc.Core.CallOptions.html">CallOptions</a> with
+<code>Credentials</code> set to the value provided. Values of all other fields are preserved.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public CallOptions WithCredentials(CallCredentials credentials)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.CallCredentials.html">CallCredentials</a></td>
+        <td><span class="parametername">credentials</span></td>
+        <td><p>The call credentials.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.CallOptions.html">CallOptions</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_CallOptions_WithDeadline_" data-uid="Grpc.Core.CallOptions.WithDeadline*"></a>
+  <h4 id="Grpc_Core_CallOptions_WithDeadline_System_DateTime_" data-uid="Grpc.Core.CallOptions.WithDeadline(System.DateTime)">WithDeadline(DateTime)</h4>
+  <div class="markdown level1 summary"><p>Returns new instance of <a class="xref" href="Grpc.Core.CallOptions.html">CallOptions</a> with
+<code>Deadline</code> set to the value provided. Values of all other fields are preserved.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public CallOptions WithDeadline(DateTime deadline)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.DateTime</span></td>
+        <td><span class="parametername">deadline</span></td>
+        <td><p>The deadline.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.CallOptions.html">CallOptions</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_CallOptions_WithHeaders_" data-uid="Grpc.Core.CallOptions.WithHeaders*"></a>
+  <h4 id="Grpc_Core_CallOptions_WithHeaders_Grpc_Core_Metadata_" data-uid="Grpc.Core.CallOptions.WithHeaders(Grpc.Core.Metadata)">WithHeaders(Metadata)</h4>
+  <div class="markdown level1 summary"><p>Returns new instance of <a class="xref" href="Grpc.Core.CallOptions.html">CallOptions</a> with
+<code>Headers</code> set to the value provided. Values of all other fields are preserved.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public CallOptions WithHeaders(Metadata headers)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.Metadata.html">Metadata</a></td>
+        <td><span class="parametername">headers</span></td>
+        <td><p>The headers.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.CallOptions.html">CallOptions</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_CallOptions_WithPropagationToken_" data-uid="Grpc.Core.CallOptions.WithPropagationToken*"></a>
+  <h4 id="Grpc_Core_CallOptions_WithPropagationToken_Grpc_Core_ContextPropagationToken_" data-uid="Grpc.Core.CallOptions.WithPropagationToken(Grpc.Core.ContextPropagationToken)">WithPropagationToken(ContextPropagationToken)</h4>
+  <div class="markdown level1 summary"><p>Returns new instance of <a class="xref" href="Grpc.Core.CallOptions.html">CallOptions</a> with
+<code>PropagationToken</code> set to the value provided. Values of all other fields are preserved.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public CallOptions WithPropagationToken(ContextPropagationToken propagationToken)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ContextPropagationToken.html">ContextPropagationToken</a></td>
+        <td><span class="parametername">propagationToken</span></td>
+        <td><p>The context propagation token.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.CallOptions.html">CallOptions</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_CallOptions_WithWaitForReady_" data-uid="Grpc.Core.CallOptions.WithWaitForReady*"></a>
+  <h4 id="Grpc_Core_CallOptions_WithWaitForReady_System_Boolean_" data-uid="Grpc.Core.CallOptions.WithWaitForReady(System.Boolean)">WithWaitForReady(Boolean)</h4>
+  <div class="markdown level1 summary"><p>Returns new instance of <a class="xref" href="Grpc.Core.CallOptions.html">CallOptions</a> with &quot;WaitForReady&quot; semantics enabled/disabled.
+<a class="xref" href="Grpc.Core.CallOptions.html#Grpc_Core_CallOptions_IsWaitForReady">IsWaitForReady</a>.
+Note: experimental API that can change or be removed without any prior notice.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public CallOptions WithWaitForReady(bool waitForReady = true)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">waitForReady</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.CallOptions.html">CallOptions</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_CallOptions_WithWriteOptions_" data-uid="Grpc.Core.CallOptions.WithWriteOptions*"></a>
+  <h4 id="Grpc_Core_CallOptions_WithWriteOptions_Grpc_Core_WriteOptions_" data-uid="Grpc.Core.CallOptions.WithWriteOptions(Grpc.Core.WriteOptions)">WithWriteOptions(WriteOptions)</h4>
+  <div class="markdown level1 summary"><p>Returns new instance of <a class="xref" href="Grpc.Core.CallOptions.html">CallOptions</a> with
+<code>WriteOptions</code> set to the value provided. Values of all other fields are preserved.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public CallOptions WithWriteOptions(WriteOptions writeOptions)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.WriteOptions.html">WriteOptions</a></td>
+        <td><span class="parametername">writeOptions</span></td>
+        <td><p>The write options.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.CallOptions.html">CallOptions</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Copyright © 2015-2017 Microsoft<br>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

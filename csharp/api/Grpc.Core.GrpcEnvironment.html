@@ -1,0 +1,374 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class GrpcEnvironment
+   | gRPC C# </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class GrpcEnvironment
+   | gRPC C# ">
+    <meta name="generator" content="docfx 2.23.1.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    <meta property="docfx:rel" content="../">
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div class="container body-content">
+        
+        <div id="search-results">
+          <div class="search-list"></div>
+          <div class="sr-items"></div>
+          <ul id="pagination"></ul>
+        </div>
+      </div>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="Grpc.Core.GrpcEnvironment">
+  
+  
+  <h1 id="Grpc_Core_GrpcEnvironment" data-uid="Grpc.Core.GrpcEnvironment" class="text-break">Class GrpcEnvironment
+  </h1>
+  <div class="markdown level0 summary"><p>Encapsulates initialization and shutdown of gRPC library.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">GrpcEnvironment</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="Grpc.Core.html">Grpc.Core</a></h6>
+  <h6><strong>Assembly</strong>: Grpc.Core.dll</h6>
+  <h5 id="Grpc_Core_GrpcEnvironment_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class GrpcEnvironment</code></pre>
+  </div>
+  <h3 id="properties">Properties
+  </h3>
+  <a id="Grpc_Core_GrpcEnvironment_Logger_" data-uid="Grpc.Core.GrpcEnvironment.Logger*"></a>
+  <h4 id="Grpc_Core_GrpcEnvironment_Logger" data-uid="Grpc.Core.GrpcEnvironment.Logger">Logger</h4>
+  <div class="markdown level1 summary"><p>Gets application-wide logger used by gRPC.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ILogger Logger { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.Logging.ILogger.html">ILogger</a></td>
+        <td><p>The logger.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <a id="Grpc_Core_GrpcEnvironment_KillServersAsync_" data-uid="Grpc.Core.GrpcEnvironment.KillServersAsync*"></a>
+  <h4 id="Grpc_Core_GrpcEnvironment_KillServersAsync" data-uid="Grpc.Core.GrpcEnvironment.KillServersAsync">KillServersAsync()</h4>
+  <div class="markdown level1 summary"><p>Requests immediate shutdown of all servers created by the current process.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Task KillServersAsync()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_GrpcEnvironment_SetCompletionQueueCount_" data-uid="Grpc.Core.GrpcEnvironment.SetCompletionQueueCount*"></a>
+  <h4 id="Grpc_Core_GrpcEnvironment_SetCompletionQueueCount_System_Int32_" data-uid="Grpc.Core.GrpcEnvironment.SetCompletionQueueCount(System.Int32)">SetCompletionQueueCount(Int32)</h4>
+  <div class="markdown level1 summary"><p>Sets the number of completion queues in the  gRPC thread pool that polls for internal RPC events.
+Can be only invoke before the <code>GrpcEnviroment</code> is started and cannot be changed afterwards.
+Setting the number of completions queues is an advanced setting and you should only use it if you know what you are doing.
+Most users should rely on the default value provided by gRPC library.
+Note: this method is part of an experimental API that can change or be removed without any prior notice.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void SetCompletionQueueCount(int completionQueueCount)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">completionQueueCount</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_GrpcEnvironment_SetHandlerInlining_" data-uid="Grpc.Core.GrpcEnvironment.SetHandlerInlining*"></a>
+  <h4 id="Grpc_Core_GrpcEnvironment_SetHandlerInlining_System_Boolean_" data-uid="Grpc.Core.GrpcEnvironment.SetHandlerInlining(System.Boolean)">SetHandlerInlining(Boolean)</h4>
+  <div class="markdown level1 summary"><p>By default, gRPC&apos;s internal event handlers get offloaded to .NET default thread pool thread (<code>inlineHandlers=false</code>).
+Setting <code>inlineHandlers</code> to <code>true</code> will allow scheduling the event handlers directly to
+<code>GrpcThreadPool</code> internal threads. That can lead to significant performance gains in some situations,
+but requires user to never block in async code (incorrectly written code can easily lead to deadlocks).
+Inlining handlers is an advanced setting and you should only use it if you know what you are doing.
+Most users should rely on the default value provided by gRPC library.
+Note: this method is part of an experimental API that can change or be removed without any prior notice.
+Note: <code>inlineHandlers=true</code> was the default in gRPC C# v1.4.x and earlier.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void SetHandlerInlining(bool inlineHandlers)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">inlineHandlers</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_GrpcEnvironment_SetLogger_" data-uid="Grpc.Core.GrpcEnvironment.SetLogger*"></a>
+  <h4 id="Grpc_Core_GrpcEnvironment_SetLogger_Grpc_Core_Logging_ILogger_" data-uid="Grpc.Core.GrpcEnvironment.SetLogger(Grpc.Core.Logging.ILogger)">SetLogger(ILogger)</h4>
+  <div class="markdown level1 summary"><p>Sets the application-wide logger that should be used by gRPC.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void SetLogger(ILogger customLogger)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.Logging.ILogger.html">ILogger</a></td>
+        <td><span class="parametername">customLogger</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_GrpcEnvironment_SetThreadPoolSize_" data-uid="Grpc.Core.GrpcEnvironment.SetThreadPoolSize*"></a>
+  <h4 id="Grpc_Core_GrpcEnvironment_SetThreadPoolSize_System_Int32_" data-uid="Grpc.Core.GrpcEnvironment.SetThreadPoolSize(System.Int32)">SetThreadPoolSize(Int32)</h4>
+  <div class="markdown level1 summary"><p>Sets the number of threads in the gRPC thread pool that polls for internal RPC events.
+Can be only invoke before the <code>GrpcEnviroment</code> is started and cannot be changed afterwards.
+Setting thread pool size is an advanced setting and you should only use it if you know what you are doing.
+Most users should rely on the default value provided by gRPC library.
+Note: this method is part of an experimental API that can change or be removed without any prior notice.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void SetThreadPoolSize(int threadCount)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">threadCount</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_GrpcEnvironment_ShutdownChannelsAsync_" data-uid="Grpc.Core.GrpcEnvironment.ShutdownChannelsAsync*"></a>
+  <h4 id="Grpc_Core_GrpcEnvironment_ShutdownChannelsAsync" data-uid="Grpc.Core.GrpcEnvironment.ShutdownChannelsAsync">ShutdownChannelsAsync()</h4>
+  <div class="markdown level1 summary"><p>Requests shutdown of all channels created by the current process.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Task ShutdownChannelsAsync()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="events">Events
+  </h3>
+  <h4 id="Grpc_Core_GrpcEnvironment_ShuttingDown" data-uid="Grpc.Core.GrpcEnvironment.ShuttingDown">ShuttingDown</h4>
+  <div class="markdown level1 summary"><p>Occurs when <code>GrpcEnvironment</code> is about the start the shutdown logic.
+If <code>GrpcEnvironment</code> is later initialized and shutdown, the event will be fired again (unless unregistered first).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static event EventHandler ShuttingDown</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.EventHandler</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Copyright © 2015-2017 Microsoft<br>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

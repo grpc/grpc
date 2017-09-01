@@ -1,0 +1,480 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class TestCalls
+   | gRPC C# </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class TestCalls
+   | gRPC C# ">
+    <meta name="generator" content="docfx 2.23.1.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    <meta property="docfx:rel" content="../">
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div class="container body-content">
+        
+        <div id="search-results">
+          <div class="search-list"></div>
+          <div class="sr-items"></div>
+          <ul id="pagination"></ul>
+        </div>
+      </div>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="Grpc.Core.Testing.TestCalls">
+  
+  
+  <h1 id="Grpc_Core_Testing_TestCalls" data-uid="Grpc.Core.Testing.TestCalls" class="text-break">Class TestCalls
+  </h1>
+  <div class="markdown level0 summary"><p>Test doubles for client-side call objects.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">TestCalls</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="Grpc.Core.Testing.html">Grpc.Core.Testing</a></h6>
+  <h6><strong>Assembly</strong>: Grpc.Core.Testing.dll</h6>
+  <h5 id="Grpc_Core_Testing_TestCalls_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static class TestCalls</code></pre>
+  </div>
+  <h3 id="methods">Methods
+  </h3>
+  <a id="Grpc_Core_Testing_TestCalls_AsyncClientStreamingCall_" data-uid="Grpc.Core.Testing.TestCalls.AsyncClientStreamingCall*"></a>
+  <h4 id="Grpc_Core_Testing_TestCalls_AsyncClientStreamingCall__2_Grpc_Core_IClientStreamWriter___0__System_Threading_Tasks_Task___1__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_" data-uid="Grpc.Core.Testing.TestCalls.AsyncClientStreamingCall``2(Grpc.Core.IClientStreamWriter{``0},System.Threading.Tasks.Task{``1},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)">AsyncClientStreamingCall&lt;TRequest, TResponse&gt;(IClientStreamWriter&lt;TRequest&gt;, Task&lt;TResponse&gt;, Task&lt;Metadata&gt;, Func&lt;Status&gt;, Func&lt;Metadata&gt;, Action)</h4>
+  <div class="markdown level1 summary"><p>Creates a test double for <code>AsyncClientStreamingCall</code>. Only for testing.
+Note: experimental API that can change or be removed without any prior notice.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static AsyncClientStreamingCall&lt;TRequest, TResponse&gt; AsyncClientStreamingCall&lt;TRequest, TResponse&gt;(IClientStreamWriter&lt;TRequest&gt; requestStream, Task&lt;TResponse&gt; responseAsync, Task&lt;Metadata&gt; responseHeadersAsync, Func&lt;Status&gt; getStatusFunc, Func&lt;Metadata&gt; getTrailersFunc, Action disposeAction)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.IClientStreamWriter-1.html">IClientStreamWriter</a>&lt;TRequest&gt;</td>
+        <td><span class="parametername">requestStream</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;TResponse&gt;</td>
+        <td><span class="parametername">responseAsync</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="parametername">responseHeadersAsync</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Status.html">Status</a>&gt;</td>
+        <td><span class="parametername">getStatusFunc</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="parametername">getTrailersFunc</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span></td>
+        <td><span class="parametername">disposeAction</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.AsyncClientStreamingCall-2.html">AsyncClientStreamingCall</a>&lt;TRequest, TResponse&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">TRequest</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="parametername">TResponse</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Testing_TestCalls_AsyncDuplexStreamingCall_" data-uid="Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall*"></a>
+  <h4 id="Grpc_Core_Testing_TestCalls_AsyncDuplexStreamingCall__2_Grpc_Core_IClientStreamWriter___1__Grpc_Core_IAsyncStreamReader___0__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_" data-uid="Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall``2(Grpc.Core.IClientStreamWriter{``1},Grpc.Core.IAsyncStreamReader{``0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)">AsyncDuplexStreamingCall&lt;TResponse, TRequest&gt;(IClientStreamWriter&lt;TRequest&gt;, IAsyncStreamReader&lt;TResponse&gt;, Task&lt;Metadata&gt;, Func&lt;Status&gt;, Func&lt;Metadata&gt;, Action)</h4>
+  <div class="markdown level1 summary"><p>Creates a test double for <code>AsyncDuplexStreamingCall</code>. Only for testing.
+Note: experimental API that can change or be removed without any prior notice.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static AsyncDuplexStreamingCall&lt;TRequest, TResponse&gt; AsyncDuplexStreamingCall&lt;TResponse, TRequest&gt;(IClientStreamWriter&lt;TRequest&gt; requestStream, IAsyncStreamReader&lt;TResponse&gt; responseStream, Task&lt;Metadata&gt; responseHeadersAsync, Func&lt;Status&gt; getStatusFunc, Func&lt;Metadata&gt; getTrailersFunc, Action disposeAction)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.IClientStreamWriter-1.html">IClientStreamWriter</a>&lt;TRequest&gt;</td>
+        <td><span class="parametername">requestStream</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.IAsyncStreamReader-1.html">IAsyncStreamReader</a>&lt;TResponse&gt;</td>
+        <td><span class="parametername">responseStream</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="parametername">responseHeadersAsync</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Status.html">Status</a>&gt;</td>
+        <td><span class="parametername">getStatusFunc</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="parametername">getTrailersFunc</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span></td>
+        <td><span class="parametername">disposeAction</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.AsyncDuplexStreamingCall-2.html">AsyncDuplexStreamingCall</a>&lt;TRequest, TResponse&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">TResponse</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="parametername">TRequest</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Testing_TestCalls_AsyncServerStreamingCall_" data-uid="Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall*"></a>
+  <h4 id="Grpc_Core_Testing_TestCalls_AsyncServerStreamingCall__1_Grpc_Core_IAsyncStreamReader___0__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_" data-uid="Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall``1(Grpc.Core.IAsyncStreamReader{``0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)">AsyncServerStreamingCall&lt;TResponse&gt;(IAsyncStreamReader&lt;TResponse&gt;, Task&lt;Metadata&gt;, Func&lt;Status&gt;, Func&lt;Metadata&gt;, Action)</h4>
+  <div class="markdown level1 summary"><p>Creates a test double for <code>AsyncServerStreamingCall</code>. Only for testing.
+Note: experimental API that can change or be removed without any prior notice.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static AsyncServerStreamingCall&lt;TResponse&gt; AsyncServerStreamingCall&lt;TResponse&gt;(IAsyncStreamReader&lt;TResponse&gt; responseStream, Task&lt;Metadata&gt; responseHeadersAsync, Func&lt;Status&gt; getStatusFunc, Func&lt;Metadata&gt; getTrailersFunc, Action disposeAction)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.IAsyncStreamReader-1.html">IAsyncStreamReader</a>&lt;TResponse&gt;</td>
+        <td><span class="parametername">responseStream</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="parametername">responseHeadersAsync</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Status.html">Status</a>&gt;</td>
+        <td><span class="parametername">getStatusFunc</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="parametername">getTrailersFunc</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span></td>
+        <td><span class="parametername">disposeAction</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.AsyncServerStreamingCall-1.html">AsyncServerStreamingCall</a>&lt;TResponse&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">TResponse</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Testing_TestCalls_AsyncUnaryCall_" data-uid="Grpc.Core.Testing.TestCalls.AsyncUnaryCall*"></a>
+  <h4 id="Grpc_Core_Testing_TestCalls_AsyncUnaryCall__1_System_Threading_Tasks_Task___0__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_" data-uid="Grpc.Core.Testing.TestCalls.AsyncUnaryCall``1(System.Threading.Tasks.Task{``0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)">AsyncUnaryCall&lt;TResponse&gt;(Task&lt;TResponse&gt;, Task&lt;Metadata&gt;, Func&lt;Status&gt;, Func&lt;Metadata&gt;, Action)</h4>
+  <div class="markdown level1 summary"><p>Creates a test double for <code>AsyncUnaryCall</code>. Only for testing.
+Note: experimental API that can change or be removed without any prior notice.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static AsyncUnaryCall&lt;TResponse&gt; AsyncUnaryCall&lt;TResponse&gt;(Task&lt;TResponse&gt; responseAsync, Task&lt;Metadata&gt; responseHeadersAsync, Func&lt;Status&gt; getStatusFunc, Func&lt;Metadata&gt; getTrailersFunc, Action disposeAction)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;TResponse&gt;</td>
+        <td><span class="parametername">responseAsync</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="parametername">responseHeadersAsync</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Status.html">Status</a>&gt;</td>
+        <td><span class="parametername">getStatusFunc</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="parametername">getTrailersFunc</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span></td>
+        <td><span class="parametername">disposeAction</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.AsyncUnaryCall-1.html">AsyncUnaryCall</a>&lt;TResponse&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">TResponse</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Copyright © 2015-2017 Microsoft<br>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

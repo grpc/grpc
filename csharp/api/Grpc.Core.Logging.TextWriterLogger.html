@@ -1,0 +1,619 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class TextWriterLogger
+   | gRPC C# </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class TextWriterLogger
+   | gRPC C# ">
+    <meta name="generator" content="docfx 2.23.1.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    <meta property="docfx:rel" content="../">
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div class="container body-content">
+        
+        <div id="search-results">
+          <div class="search-list"></div>
+          <div class="sr-items"></div>
+          <ul id="pagination"></ul>
+        </div>
+      </div>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="Grpc.Core.Logging.TextWriterLogger">
+  
+  
+  <h1 id="Grpc_Core_Logging_TextWriterLogger" data-uid="Grpc.Core.Logging.TextWriterLogger" class="text-break">Class TextWriterLogger
+  </h1>
+  <div class="markdown level0 summary"><p>Logger that logs to an arbitrary <code>System.IO.TextWriter</code>.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">TextWriterLogger</span></div>
+  </div>
+      <div class="level2"><a class="xref" href="Grpc.Core.Logging.ConsoleLogger.html">ConsoleLogger</a></div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="Grpc.Core.Logging.html">Grpc.Core.Logging</a></h6>
+  <h6><strong>Assembly</strong>: Grpc.Core.dll</h6>
+  <h5 id="Grpc_Core_Logging_TextWriterLogger_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class TextWriterLogger : ILogger</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <a id="Grpc_Core_Logging_TextWriterLogger__ctor_" data-uid="Grpc.Core.Logging.TextWriterLogger.#ctor*"></a>
+  <h4 id="Grpc_Core_Logging_TextWriterLogger__ctor_System_Func_System_IO_TextWriter__" data-uid="Grpc.Core.Logging.TextWriterLogger.#ctor(System.Func{System.IO.TextWriter})">TextWriterLogger(Func&lt;TextWriter&gt;)</h4>
+  <div class="markdown level1 summary"><p>Creates a console logger not associated to any specific type and writes to a <code>System.IO.TextWriter</code> obtained from given provider.
+User is responsible for providing an instance of TextWriter that is thread-safe.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public TextWriterLogger(Func&lt;TextWriter&gt; textWriterProvider)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.IO.TextWriter</span>&gt;</td>
+        <td><span class="parametername">textWriterProvider</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Logging_TextWriterLogger__ctor_" data-uid="Grpc.Core.Logging.TextWriterLogger.#ctor*"></a>
+  <h4 id="Grpc_Core_Logging_TextWriterLogger__ctor_System_Func_System_IO_TextWriter__System_Type_" data-uid="Grpc.Core.Logging.TextWriterLogger.#ctor(System.Func{System.IO.TextWriter},System.Type)">TextWriterLogger(Func&lt;TextWriter&gt;, Type)</h4>
+  <div class="markdown level1 summary"><p>Creates a console logger that logs messsage specific for given type.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected TextWriterLogger(Func&lt;TextWriter&gt; textWriterProvider, Type forType)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.IO.TextWriter</span>&gt;</td>
+        <td><span class="parametername">textWriterProvider</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Type</span></td>
+        <td><span class="parametername">forType</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Logging_TextWriterLogger__ctor_" data-uid="Grpc.Core.Logging.TextWriterLogger.#ctor*"></a>
+  <h4 id="Grpc_Core_Logging_TextWriterLogger__ctor_System_IO_TextWriter_" data-uid="Grpc.Core.Logging.TextWriterLogger.#ctor(System.IO.TextWriter)">TextWriterLogger(TextWriter)</h4>
+  <div class="markdown level1 summary"><p>Creates a console logger not associated to any specific type and writes to given <code>System.IO.TextWriter</code>.
+User is responsible for providing an instance of TextWriter that is thread-safe.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public TextWriterLogger(TextWriter textWriter)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.IO.TextWriter</span></td>
+        <td><span class="parametername">textWriter</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <a id="Grpc_Core_Logging_TextWriterLogger_AssociatedType_" data-uid="Grpc.Core.Logging.TextWriterLogger.AssociatedType*"></a>
+  <h4 id="Grpc_Core_Logging_TextWriterLogger_AssociatedType" data-uid="Grpc.Core.Logging.TextWriterLogger.AssociatedType">AssociatedType</h4>
+  <div class="markdown level1 summary"><p>Gets the type associated with this logger.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected Type AssociatedType { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Type</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <a id="Grpc_Core_Logging_TextWriterLogger_Debug_" data-uid="Grpc.Core.Logging.TextWriterLogger.Debug*"></a>
+  <h4 id="Grpc_Core_Logging_TextWriterLogger_Debug_System_String_" data-uid="Grpc.Core.Logging.TextWriterLogger.Debug(System.String)">Debug(String)</h4>
+  <div class="markdown level1 summary"><p>Logs a message with severity Debug.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Debug(string message)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">message</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="implements">Implements</h5>
+      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Debug_System_String_">ILogger.Debug(String)</a></div>
+  <a id="Grpc_Core_Logging_TextWriterLogger_Debug_" data-uid="Grpc.Core.Logging.TextWriterLogger.Debug*"></a>
+  <h4 id="Grpc_Core_Logging_TextWriterLogger_Debug_System_String_System_Object___" data-uid="Grpc.Core.Logging.TextWriterLogger.Debug(System.String,System.Object[])">Debug(String, Object[])</h4>
+  <div class="markdown level1 summary"><p>Logs a formatted message with severity Debug.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Debug(string format, params object[] formatArgs)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">format</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Object</span>[]</td>
+        <td><span class="parametername">formatArgs</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="implements">Implements</h5>
+      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Debug_System_String_System_Object___">ILogger.Debug(String, Object[])</a></div>
+  <a id="Grpc_Core_Logging_TextWriterLogger_Error_" data-uid="Grpc.Core.Logging.TextWriterLogger.Error*"></a>
+  <h4 id="Grpc_Core_Logging_TextWriterLogger_Error_System_Exception_System_String_" data-uid="Grpc.Core.Logging.TextWriterLogger.Error(System.Exception,System.String)">Error(Exception, String)</h4>
+  <div class="markdown level1 summary"><p>Logs a message and an associated exception with severity Error.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Error(Exception exception, string message)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Exception</span></td>
+        <td><span class="parametername">exception</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">message</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="implements">Implements</h5>
+      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Error_System_Exception_System_String_">ILogger.Error(Exception, String)</a></div>
+  <a id="Grpc_Core_Logging_TextWriterLogger_Error_" data-uid="Grpc.Core.Logging.TextWriterLogger.Error*"></a>
+  <h4 id="Grpc_Core_Logging_TextWriterLogger_Error_System_String_" data-uid="Grpc.Core.Logging.TextWriterLogger.Error(System.String)">Error(String)</h4>
+  <div class="markdown level1 summary"><p>Logs a message with severity Error.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Error(string message)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">message</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="implements">Implements</h5>
+      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Error_System_String_">ILogger.Error(String)</a></div>
+  <a id="Grpc_Core_Logging_TextWriterLogger_Error_" data-uid="Grpc.Core.Logging.TextWriterLogger.Error*"></a>
+  <h4 id="Grpc_Core_Logging_TextWriterLogger_Error_System_String_System_Object___" data-uid="Grpc.Core.Logging.TextWriterLogger.Error(System.String,System.Object[])">Error(String, Object[])</h4>
+  <div class="markdown level1 summary"><p>Logs a formatted message with severity Error.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Error(string format, params object[] formatArgs)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">format</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Object</span>[]</td>
+        <td><span class="parametername">formatArgs</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="implements">Implements</h5>
+      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Error_System_String_System_Object___">ILogger.Error(String, Object[])</a></div>
+  <a id="Grpc_Core_Logging_TextWriterLogger_ForType_" data-uid="Grpc.Core.Logging.TextWriterLogger.ForType*"></a>
+  <h4 id="Grpc_Core_Logging_TextWriterLogger_ForType__1" data-uid="Grpc.Core.Logging.TextWriterLogger.ForType``1">ForType&lt;T&gt;()</h4>
+  <div class="markdown level1 summary"><p>Returns a logger associated with the specified type.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual ILogger ForType&lt;T&gt;()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.Logging.ILogger.html">ILogger</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="implements">Implements</h5>
+      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_ForType__1">ILogger.ForType&lt;T&gt;()</a></div>
+  <a id="Grpc_Core_Logging_TextWriterLogger_Info_" data-uid="Grpc.Core.Logging.TextWriterLogger.Info*"></a>
+  <h4 id="Grpc_Core_Logging_TextWriterLogger_Info_System_String_" data-uid="Grpc.Core.Logging.TextWriterLogger.Info(System.String)">Info(String)</h4>
+  <div class="markdown level1 summary"><p>Logs a message with severity Info.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Info(string message)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">message</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="implements">Implements</h5>
+      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Info_System_String_">ILogger.Info(String)</a></div>
+  <a id="Grpc_Core_Logging_TextWriterLogger_Info_" data-uid="Grpc.Core.Logging.TextWriterLogger.Info*"></a>
+  <h4 id="Grpc_Core_Logging_TextWriterLogger_Info_System_String_System_Object___" data-uid="Grpc.Core.Logging.TextWriterLogger.Info(System.String,System.Object[])">Info(String, Object[])</h4>
+  <div class="markdown level1 summary"><p>Logs a formatted message with severity Info.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Info(string format, params object[] formatArgs)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">format</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Object</span>[]</td>
+        <td><span class="parametername">formatArgs</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="implements">Implements</h5>
+      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Info_System_String_System_Object___">ILogger.Info(String, Object[])</a></div>
+  <a id="Grpc_Core_Logging_TextWriterLogger_Warning_" data-uid="Grpc.Core.Logging.TextWriterLogger.Warning*"></a>
+  <h4 id="Grpc_Core_Logging_TextWriterLogger_Warning_System_Exception_System_String_" data-uid="Grpc.Core.Logging.TextWriterLogger.Warning(System.Exception,System.String)">Warning(Exception, String)</h4>
+  <div class="markdown level1 summary"><p>Logs a message and an associated exception with severity Warning.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Warning(Exception exception, string message)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Exception</span></td>
+        <td><span class="parametername">exception</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">message</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="implements">Implements</h5>
+      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Warning_System_Exception_System_String_">ILogger.Warning(Exception, String)</a></div>
+  <a id="Grpc_Core_Logging_TextWriterLogger_Warning_" data-uid="Grpc.Core.Logging.TextWriterLogger.Warning*"></a>
+  <h4 id="Grpc_Core_Logging_TextWriterLogger_Warning_System_String_" data-uid="Grpc.Core.Logging.TextWriterLogger.Warning(System.String)">Warning(String)</h4>
+  <div class="markdown level1 summary"><p>Logs a message with severity Warning.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Warning(string message)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">message</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="implements">Implements</h5>
+      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Warning_System_String_">ILogger.Warning(String)</a></div>
+  <a id="Grpc_Core_Logging_TextWriterLogger_Warning_" data-uid="Grpc.Core.Logging.TextWriterLogger.Warning*"></a>
+  <h4 id="Grpc_Core_Logging_TextWriterLogger_Warning_System_String_System_Object___" data-uid="Grpc.Core.Logging.TextWriterLogger.Warning(System.String,System.Object[])">Warning(String, Object[])</h4>
+  <div class="markdown level1 summary"><p>Logs a formatted message with severity Warning.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Warning(string format, params object[] formatArgs)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">format</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Object</span>[]</td>
+        <td><span class="parametername">formatArgs</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="implements">Implements</h5>
+      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Warning_System_String_System_Object___">ILogger.Warning(String, Object[])</a></div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Copyright © 2015-2017 Microsoft<br>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>
