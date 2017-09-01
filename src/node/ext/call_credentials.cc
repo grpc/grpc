@@ -238,9 +238,12 @@ NAUV_WORK_CB(SendPluginCallback) {
   }
 }
 
-void plugin_get_metadata(void *state, grpc_auth_metadata_context context,
-                         grpc_credentials_plugin_metadata_cb cb,
-                         void *user_data) {
+int plugin_get_metadata(
+    void *state, grpc_auth_metadata_context context,
+    grpc_credentials_plugin_metadata_cb cb, void *user_data,
+    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+    size_t *num_creds_md, grpc_status_code *status,
+    const char **error_details) {
   plugin_state *p_state = reinterpret_cast<plugin_state *>(state);
   plugin_callback_data *data = new plugin_callback_data;
   data->service_url = context.service_url;
@@ -252,6 +255,7 @@ void plugin_get_metadata(void *state, grpc_auth_metadata_context context,
   uv_mutex_unlock(&p_state->plugin_mutex);
 
   uv_async_send(&p_state->plugin_async);
+  return 0;  // Async processing.
 }
 
 void plugin_uv_close_cb(uv_handle_t *handle) {

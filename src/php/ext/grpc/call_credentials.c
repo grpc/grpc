@@ -143,9 +143,12 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
 }
 
 /* Callback function for plugin creds API */
-void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
-                         grpc_credentials_plugin_metadata_cb cb,
-                         void *user_data) {
+int plugin_get_metadata(
+    void *ptr, grpc_auth_metadata_context context,
+    grpc_credentials_plugin_metadata_cb cb, void *user_data,
+    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+    size_t *num_creds_md, grpc_status_code *status,
+    const char **error_details) {
   TSRMLS_FETCH();
 
   plugin_state *state = (plugin_state *)ptr;
@@ -175,15 +178,19 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
   /* call the user callback function */
   zend_call_function(state->fci, state->fci_cache TSRMLS_CC);
 
-  grpc_status_code code = GRPC_STATUS_OK;
+  *num_creds_md = 0;
+  *status = GRPC_STATUS_OK;
+  *error_details = NULL;
+
   grpc_metadata_array metadata;
-  bool cleanup = true;
 
   if (retval == NULL || Z_TYPE_P(retval) != IS_ARRAY) {
-    cleanup = false;
-    code = GRPC_STATUS_INVALID_ARGUMENT;
-  } else if (!create_metadata_array(retval, &metadata)) {
-    code = GRPC_STATUS_INVALID_ARGUMENT;
+    *status = GRPC_STATUS_INVALID_ARGUMENT;
+    return true;  // Synchronous return.
+  }
+  if (!create_metadata_array(retval, &metadata)) {
+    *status = GRPC_STATUS_INVALID_ARGUMENT;
+    return true;  // Synchronous return.
   }
 
   if (retval != NULL) {
@@ -197,14 +204,24 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
 #endif
   }
 
-  /* Pass control back to core */
-  cb(user_data, metadata.metadata, metadata.count, code, NULL);
-  if (cleanup) {
-    for (int i = 0; i < metadata.count; i++) {
+  if (metadata.count > GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX) {
+    *status = GRPC_STATUS_INTERNAL;
+    *error_details = gpr_strdup(
+        "PHP plugin credentials returned too many metadata entries");
+    for (size_t i = 0; i < metadata.count; i++) {
+      // TODO(stanleycheung): Why don't we need to unref the key here?
       grpc_slice_unref(metadata.metadata[i].value);
     }
-    grpc_metadata_array_destroy(&metadata);
+  } else {
+    // Return data to core.
+    *num_creds_md = metadata.count;
+    for (size_t i = 0; i < metadata.count; ++i) {
+      creds_md[i] = metadata.metadata[i];
+    }
   }
+
+  grpc_metadata_array_destroy(&metadata);
+  return true;  // Synchronous return.
 }
 
 /* Cleanup function for plugin creds API */

@@ -58,16 +58,23 @@ class SecureCallCredentials final : public CallCredentials {
 class MetadataCredentialsPluginWrapper final : private GrpcLibraryCodegen {
  public:
   static void Destroy(void* wrapper);
-  static void GetMetadata(void* wrapper, grpc_auth_metadata_context context,
-                          grpc_credentials_plugin_metadata_cb cb,
-                          void* user_data);
+  static int GetMetadata(
+      void* wrapper, grpc_auth_metadata_context context,
+      grpc_credentials_plugin_metadata_cb cb, void* user_data,
+      grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+      size_t *num_creds_md, grpc_status_code *status,
+      const char **error_details);
 
   explicit MetadataCredentialsPluginWrapper(
       std::unique_ptr<MetadataCredentialsPlugin> plugin);
 
  private:
-  void InvokePlugin(grpc_auth_metadata_context context,
-                    grpc_credentials_plugin_metadata_cb cb, void* user_data);
+  void InvokePlugin(
+      grpc_auth_metadata_context context,
+      grpc_credentials_plugin_metadata_cb cb, void* user_data,
+      grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+      size_t *num_creds_md, grpc_status_code *status,
+      const char **error_details);
   std::unique_ptr<ThreadPoolInterface> thread_pool_;
   std::unique_ptr<MetadataCredentialsPlugin> plugin_;
 };
