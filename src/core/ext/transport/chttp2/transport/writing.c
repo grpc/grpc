@@ -22,6 +22,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/http2_errors.h"
@@ -116,6 +117,7 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
                          &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
   grpc_slice_buffer_add(&t->outbuf,
                         grpc_chttp2_ping_create(false, pq->inflight_id));
+  GRPC_STATS_INC_HTTP2_PINGS_SENT(exec_ctx);
   t->ping_state.last_ping_sent_time = now;
   t->ping_state.pings_before_data_required -=
       (t->ping_state.pings_before_data_required != 0);
@@ -170,6 +172,8 @@ static bool is_default_initial_metadata(grpc_metadata_batch *initial_metadata) {
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
   grpc_chttp2_stream *s;
+
+  GRPC_STATS_INC_HTTP2_WRITES_BEGUN(exec_ctx);
 
   GPR_TIMER_BEGIN("grpc_chttp2_begin_write", 0);
 

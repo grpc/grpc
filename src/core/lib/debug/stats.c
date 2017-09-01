@@ -63,7 +63,7 @@ void grpc_stats_diff(const grpc_stats_data *b, const grpc_stats_data *a,
 }
 
 int grpc_stats_histo_find_bucket_slow(grpc_exec_ctx *exec_ctx, double value,
-                                      const double *table, int table_size) {
+                                      const int *table, int table_size) {
   GRPC_STATS_INC_HISTOGRAM_SLOW_LOOKUPS(exec_ctx);
   if (value < 0.0) return 0;
   if (value >= table[table_size - 1]) return table_size - 1;
@@ -92,7 +92,7 @@ size_t grpc_stats_histo_count(const grpc_stats_data *stats,
 }
 
 static double threshold_for_count_below(const gpr_atm *bucket_counts,
-                                        const double *bucket_boundaries,
+                                        const int *bucket_boundaries,
                                         int num_buckets, double count_below) {
   double count_so_far;
   double lower_bound;
@@ -163,7 +163,7 @@ char *grpc_stats_data_as_json(const grpc_stats_data *data) {
     gpr_asprintf(&tmp, "], \"%s_bkt\": [", grpc_stats_histogram_name[i]);
     gpr_strvec_add(&v, tmp);
     for (int j = 0; j < grpc_stats_histo_buckets[i]; j++) {
-      gpr_asprintf(&tmp, "%s%lf", j == 0 ? "" : ",",
+      gpr_asprintf(&tmp, "%s%d", j == 0 ? "" : ",",
                    grpc_stats_histo_bucket_boundaries[i][j]);
       gpr_strvec_add(&v, tmp);
     }
