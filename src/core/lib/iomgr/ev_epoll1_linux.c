@@ -1194,10 +1194,6 @@ static const grpc_event_engine_vtable vtable = {
  * Create epoll_fd (epoll_set_init() takes care of that) to make sure epoll
  * support is available */
 const grpc_event_engine_vtable *grpc_init_epoll1_linux(bool explicit_request) {
-  if (!explicit_request) {
-    return NULL;
-  }
-
   if (!grpc_has_wakeup_fd()) {
     return NULL;
   }
