@@ -47,7 +47,7 @@ grpc_ssl_roots_override_result DefaultPEMRootCerts::get_ssl_roots_override(char*
     {
         ReadLock lock{ singletonCerts.m_CertsLock };
 
-        if (m_PEMRootCerts.empty())
+        if (singletonCerts.m_PEMRootCerts.empty())
         {
             return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
         }
