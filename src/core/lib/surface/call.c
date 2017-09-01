@@ -32,6 +32,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/compression/algorithm_metadata.h"
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -343,6 +344,11 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
   /* Always support no compression */
   GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
   call->is_client = args->server_transport_data == NULL;
+  if (call->is_client) {
+    GRPC_STATS_INC_CLIENT_CALLS_CREATED(exec_ctx);
+  } else {
+    GRPC_STATS_INC_SERVER_CALLS_CREATED(exec_ctx);
+  }
   call->stream_op_payload.context = call->context;
   grpc_slice path = grpc_empty_slice();
   if (call->is_client) {

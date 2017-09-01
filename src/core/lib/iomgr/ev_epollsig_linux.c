@@ -40,6 +40,7 @@
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -1223,6 +1224,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
   g_current_thread_polling_island = pi;
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
+  GRPC_STATS_INC_SYSCALL_POLL(exec_ctx);
   ep_rv =
       epoll_pwait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms, sig_mask);
   GRPC_SCHEDULING_END_BLOCKING_REGION_WITH_EXEC_CTX(exec_ctx);
@@ -1715,9 +1717,7 @@ const grpc_event_engine_vtable *grpc_init_epollsig_linux(
   }
 
   if (!is_grpc_wakeup_signal_initialized) {
-    /* TODO(ctiller): when other epoll engines are ready, remove the true || to
-     * force this to be explitly chosen if needed */
-    if (true || explicit_request) {
+    if (explicit_request) {
       grpc_use_signal(SIGRTMIN + 6);
     } else {
       return NULL;

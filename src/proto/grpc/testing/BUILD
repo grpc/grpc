@@ -14,15 +14,9 @@
 
 licenses(["notice"])  # Apache v2
 
-package(
-    default_visibility = ["//visibility:public"],
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
-)
+load("//bazel:grpc_build_system.bzl", "grpc_proto_library", "grpc_package")
 
-load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
+grpc_package(name = "testing", visibility = "public")
 
 grpc_proto_library(
     name = "compiler_test_proto",

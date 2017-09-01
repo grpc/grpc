@@ -21,12 +21,14 @@
 #include <string.h>
 #include <sys/un.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
@@ -157,13 +159,12 @@ static void test_unix_socket_path_name_too_long(void) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_iomgr_init(&exec_ctx);
-  grpc_iomgr_start(&exec_ctx);
   test_unix_socket();
   test_unix_socket_path_name_too_long();
   grpc_executor_shutdown(&exec_ctx);
-  grpc_iomgr_shutdown(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
+  grpc_shutdown();
   return 0;
 }

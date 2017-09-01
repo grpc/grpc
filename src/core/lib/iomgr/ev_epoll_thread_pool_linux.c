@@ -41,8 +41,9 @@
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/block_annotate.h"
-#include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/lockfree_event.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -50,17 +51,14 @@
 #include "src/core/lib/profiling/timers.h"
 
 /* TODO: sreek - Move this to init.c and initialize this like other tracers. */
-#define GRPC_POLLING_TRACE(fmt, ...)        \
-  if (GRPC_TRACER_ON(grpc_polling_trace)) { \
-    gpr_log(GPR_INFO, (fmt), __VA_ARGS__);  \
-  }
-
-/* The alarm system needs to be able to wakeup 'some poller' sometimes
- * (specifically when a new alarm needs to be triggered earlier than the next
- * alarm 'epoch'). This wakeup_fd gives us something to alert on when such a
- * case occurs. */
-
-struct epoll_set;
+#define GRPC_POLLING_TRACE(fmt, ...)                                          \
+  if (GRPC_TRACER_ON(grpc_polling_trace)) {                                   \
+    gpr_log(GPR_INFO, (fmt), __VA_ARGS__);                                    \
+  } /* The alarm system needs to be able to wakeup 'some poller' sometimes    \
+ * (specifically when a new alarm needs to be triggered earlier than the next \
+ * alarm 'epoch'). This wakeup_fd gives us something to alert on when such a  \
+ * case occurs. */                                                            \
+  struct epoll_set;
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
 
@@ -776,6 +774,7 @@ static void do_epoll_wait(grpc_exec_ctx *exec_ctx, int epoll_fd, epoll_set *eps,
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   acquire_epoll_lease(eps);
+  GRPC_STATS_INC_SYSCALL_POLL(exec_ctx);
   ep_rv = epoll_wait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms);
   release_epoll_lease(eps);
   GRPC_SCHEDULING_END_BLOCKING_REGION_WITH_EXEC_CTX(exec_ctx);

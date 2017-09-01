@@ -40,6 +40,7 @@
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -1291,6 +1292,7 @@ static bool acquire_polling_lease(grpc_exec_ctx *exec_ctx,
     } else {
       struct timespec sigwait_timeout = millis_to_timespec(timeout_ms);
       GRPC_SCHEDULING_START_BLOCKING_REGION;
+      GRPC_STATS_INC_SYSCALL_WAIT(exec_ctx);
       ret = sigtimedwait(&g_wakeup_sig_set, NULL, &sigwait_timeout);
       GRPC_SCHEDULING_END_BLOCKING_REGION_WITH_EXEC_CTX(exec_ctx);
     }
@@ -1371,6 +1373,7 @@ static void pollset_do_epoll_pwait(grpc_exec_ctx *exec_ctx, int epoll_fd,
   int timeout_ms = poll_deadline_to_millis_timeout(exec_ctx, deadline);
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
+  GRPC_STATS_INC_SYSCALL_POLL(exec_ctx);
   ep_rv =
       epoll_pwait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms, sig_mask);
   GRPC_SCHEDULING_END_BLOCKING_REGION_WITH_EXEC_CTX(exec_ctx);

@@ -962,6 +962,8 @@ add_library(grpc
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1313,6 +1315,8 @@ add_library(grpc_cronet
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1632,6 +1636,8 @@ add_library(grpc_test_util
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1895,6 +1901,8 @@ add_library(grpc_test_util_unsecure
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -2144,6 +2152,8 @@ add_library(grpc_unsecure
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -2845,6 +2855,8 @@ add_library(grpc++_cronet
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
