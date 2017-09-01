@@ -26,9 +26,8 @@
 #include <php.h>
 #include <php_ini.h>
 #include <ext/standard/info.h>
-#include "php_grpc.h"
 
-#include <grpc/grpc.h>
+#include "php_grpc.h"
 
 /* Class entry for the Server PHP class */
 extern zend_class_entry *grpc_ce_server;

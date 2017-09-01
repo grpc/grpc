@@ -18,13 +18,6 @@
 
 #include "channel.h"
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <php.h>
-#include <php_ini.h>
-#include <ext/standard/info.h>
 #include <ext/standard/php_var.h>
 #include <ext/standard/sha1.h>
 #if PHP_MAJOR_VERSION < 7
@@ -33,18 +26,12 @@
 #include <zend_smart_str.h>
 #endif
 #include <ext/spl/spl_exceptions.h>
-#include "php_grpc.h"
-
 #include <zend_exceptions.h>
 
-#include <stdbool.h>
-
-#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
 #include "completion_queue.h"
 #include "channel_credentials.h"
-#include "server.h"
 #include "timeval.h"
 
 zend_class_entry *grpc_ce_channel;
