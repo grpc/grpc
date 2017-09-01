@@ -177,7 +177,7 @@ typedef enum {
       if (_val.uint < 4652218415073722368ull) {                                \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,               \
-            grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 49)]); \
+            grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 48)]); \
       } else {                                                                 \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,               \
@@ -249,7 +249,7 @@ typedef enum {
       if (_val.uint < 4652218415073722368ull) {                                \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,                \
-            grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 49)]); \
+            grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 48)]); \
       } else {                                                                 \
         GRPC_STATS_INC_HISTOGRAM(                                              \
             (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,                \
@@ -283,12 +283,12 @@ typedef enum {
       }                                                                        \
     }                                                                          \
   } while (false)
-extern const double grpc_stats_table_0[64];
+extern const int grpc_stats_table_0[64];
 extern const uint8_t grpc_stats_table_1[87];
-extern const double grpc_stats_table_2[64];
-extern const uint8_t grpc_stats_table_3[52];
+extern const int grpc_stats_table_2[64];
+extern const uint8_t grpc_stats_table_3[104];
 extern const int grpc_stats_histo_buckets[6];
 extern const int grpc_stats_histo_start[6];
-extern const double *const grpc_stats_histo_bucket_boundaries[6];
+extern const int *const grpc_stats_histo_bucket_boundaries[6];
 
 #endif /* GRPC_CORE_LIB_DEBUG_STATS_DATA_H */

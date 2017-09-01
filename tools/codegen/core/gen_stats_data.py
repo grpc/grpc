@@ -109,16 +109,19 @@ def gen_bucket_code(histogram):
   first_nontrivial = None
   first_unmapped = None
   while len(bounds) < histogram.buckets:
-    mul = math.pow(float(histogram.max) / bounds[-1],
-                   1.0 / (histogram.buckets - len(bounds)))
-    nextb = bounds[-1] * mul
-    if nextb < bounds[-1] + 1:
+    if len(bounds) == histogram.buckets - 1:
+      nextb = int(histogram.max)
+    else:
+      mul = math.pow(float(histogram.max) / bounds[-1],
+                     1.0 / (histogram.buckets - len(bounds)))
+      nextb = int(math.ceil(bounds[-1] * mul))
+    if nextb <= bounds[-1] + 1:
       nextb = bounds[-1] + 1
     elif not done_trivial:
       done_trivial = True
       first_nontrivial = len(bounds)
     bounds.append(nextb)
-  bounds_idx = decl_static_table(bounds, 'double')
+  bounds_idx = decl_static_table(bounds, 'int')
   if done_trivial:
     first_nontrivial_code = dbl2u64(first_nontrivial)
     code_bounds = [dbl2u64(x) - first_nontrivial_code for x in bounds]
@@ -226,7 +229,7 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
 
   print >>H, "extern const int grpc_stats_histo_buckets[%d];" % len(inst_map['Histogram'])
   print >>H, "extern const int grpc_stats_histo_start[%d];" % len(inst_map['Histogram'])
-  print >>H, "extern const double *const grpc_stats_histo_bucket_boundaries[%d];" % len(inst_map['Histogram'])
+  print >>H, "extern const int *const grpc_stats_histo_bucket_boundaries[%d];" % len(inst_map['Histogram'])
 
   print >>H
   print >>H, "#endif /* GRPC_CORE_LIB_DEBUG_STATS_DATA_H */"
@@ -265,5 +268,5 @@ with open('src/core/lib/debug/stats_data.c', 'w') as C:
       len(inst_map['Histogram']), ','.join('%s' % x for x in histo_buckets))
   print >>C, "const int grpc_stats_histo_start[%d] = {%s};" % (
       len(inst_map['Histogram']), ','.join('%s' % x for x in histo_start))
-  print >>C, "const double *const grpc_stats_histo_bucket_boundaries[%d] = {%s};" % (
+  print >>C, "const int *const grpc_stats_histo_bucket_boundaries[%d] = {%s};" % (
       len(inst_map['Histogram']), ','.join('grpc_stats_table_%d' % x for x in histo_bucket_boundaries))
