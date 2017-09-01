@@ -47,6 +47,11 @@ grpc_ssl_roots_override_result DefaultPEMRootCerts::get_ssl_roots_override(char*
     {
         ReadLock lock{ singletonCerts.m_CertsLock };
 
+        if (m_PEMRootCerts.empty())
+        {
+            return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
+        }
+
         // allocate and copy string with null
         size_t strLength{ singletonCerts.m_PEMRootCerts.size() + 1};
         char* const pStr{ reinterpret_cast<char *>(gpr_zalloc(strLength)) };
