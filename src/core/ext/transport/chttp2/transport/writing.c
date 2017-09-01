@@ -155,7 +155,7 @@ static uint32_t target_write_size(grpc_chttp2_transport *t) {
 
 // Returns true if initial_metadata contains only default headers.
 static bool is_default_initial_metadata(grpc_metadata_batch *initial_metadata) {
-  return initial_metadata->list.static_count == initial_metadata->list.count;
+  return initial_metadata->list.default_count == initial_metadata->list.count;
 }
 
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
