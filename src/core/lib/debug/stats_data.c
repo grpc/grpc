@@ -19,6 +19,7 @@
  */
 
 #include "src/core/lib/debug/stats_data.h"
+#include <grpc/support/useful.h>
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
@@ -80,154 +81,146 @@ const uint8_t grpc_stats_table_3[104] = {
     24, 24, 25, 25, 26, 27, 28, 28, 29, 29, 30, 30, 31, 31, 32, 32, 33, 33,
     34, 34, 35, 36, 36, 37, 38, 38, 39, 39, 40, 40, 41, 41, 42, 42, 42, 43,
     44, 45, 45, 46, 47, 47, 48, 48, 49, 49, 50, 50, 51, 51};
-void grpc_stats_inc_tcp_write_size(grpc_exec_ctx *exec_ctx, double value) {
-  union {
-    double dbl;
-    uint64_t uint;
-  } _val;
-  _val.dbl = value;
-  if (_val.dbl < 0) _val.dbl = 0;
-  if (_val.dbl < 5.000000) {
+void grpc_stats_inc_tcp_write_size(grpc_exec_ctx *exec_ctx, int value) {
+  value = GPR_CLAMP(value, 0, 16777216);
+  if (value < 5) {
     GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
-                             (int)_val.dbl);
-  } else {
-    if (_val.uint < 4682617712558473216ull) {
-      GRPC_STATS_INC_HISTOGRAM(
-          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
-          grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 4);
-    } else {
-      GRPC_STATS_INC_HISTOGRAM(
-          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
-          grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,
-                                            grpc_stats_table_0, 64));
-    }
+                             value);
+    return;
   }
-}
-void grpc_stats_inc_tcp_write_iov_size(grpc_exec_ctx *exec_ctx, double value) {
   union {
     double dbl;
     uint64_t uint;
   } _val;
   _val.dbl = value;
-  if (_val.dbl < 0) _val.dbl = 0;
-  if (_val.dbl < 12.000000) {
+  if (_val.uint < 4682617712558473216ull) {
     GRPC_STATS_INC_HISTOGRAM(
-        (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE, (int)_val.dbl);
-  } else {
-    if (_val.uint < 4637300241308057600ull) {
-      GRPC_STATS_INC_HISTOGRAM(
-          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
-          grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 48)] +
-              11);
-    } else {
-      GRPC_STATS_INC_HISTOGRAM(
-          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
-          grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,
-                                            grpc_stats_table_2, 64));
-    }
+        (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
+        grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 4);
+    return;
   }
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
+                           grpc_stats_histo_find_bucket_slow(
+                               (exec_ctx), _val.dbl, grpc_stats_table_0, 64));
 }
-void grpc_stats_inc_tcp_read_size(grpc_exec_ctx *exec_ctx, double value) {
+void grpc_stats_inc_tcp_write_iov_size(grpc_exec_ctx *exec_ctx, int value) {
+  value = GPR_CLAMP(value, 0, 1024);
+  if (value < 12) {
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx),
+                             GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE, value);
+    return;
+  }
   union {
     double dbl;
     uint64_t uint;
   } _val;
   _val.dbl = value;
-  if (_val.dbl < 0) _val.dbl = 0;
-  if (_val.dbl < 5.000000) {
+  if (_val.uint < 4637300241308057600ull) {
+    GRPC_STATS_INC_HISTOGRAM(
+        (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
+        grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 48)] + 11);
+    return;
+  }
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
+                           grpc_stats_histo_find_bucket_slow(
+                               (exec_ctx), _val.dbl, grpc_stats_table_2, 64));
+}
+void grpc_stats_inc_tcp_read_size(grpc_exec_ctx *exec_ctx, int value) {
+  value = GPR_CLAMP(value, 0, 16777216);
+  if (value < 5) {
     GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
-                             (int)_val.dbl);
-  } else {
-    if (_val.uint < 4682617712558473216ull) {
-      GRPC_STATS_INC_HISTOGRAM(
-          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
-          grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 4);
-    } else {
-      GRPC_STATS_INC_HISTOGRAM(
-          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
-          grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,
-                                            grpc_stats_table_0, 64));
-    }
+                             value);
+    return;
   }
-}
-void grpc_stats_inc_tcp_read_offer(grpc_exec_ctx *exec_ctx, double value) {
   union {
     double dbl;
     uint64_t uint;
   } _val;
   _val.dbl = value;
-  if (_val.dbl < 0) _val.dbl = 0;
-  if (_val.dbl < 5.000000) {
+  if (_val.uint < 4682617712558473216ull) {
+    GRPC_STATS_INC_HISTOGRAM(
+        (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
+        grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 4);
+    return;
+  }
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
+                           grpc_stats_histo_find_bucket_slow(
+                               (exec_ctx), _val.dbl, grpc_stats_table_0, 64));
+}
+void grpc_stats_inc_tcp_read_offer(grpc_exec_ctx *exec_ctx, int value) {
+  value = GPR_CLAMP(value, 0, 16777216);
+  if (value < 5) {
     GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,
-                             (int)_val.dbl);
-  } else {
-    if (_val.uint < 4682617712558473216ull) {
-      GRPC_STATS_INC_HISTOGRAM(
-          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,
-          grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 4);
-    } else {
-      GRPC_STATS_INC_HISTOGRAM(
-          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,
-          grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,
-                                            grpc_stats_table_0, 64));
-    }
+                             value);
+    return;
   }
-}
-void grpc_stats_inc_tcp_read_iov_size(grpc_exec_ctx *exec_ctx, double value) {
   union {
     double dbl;
     uint64_t uint;
   } _val;
   _val.dbl = value;
-  if (_val.dbl < 0) _val.dbl = 0;
-  if (_val.dbl < 12.000000) {
-    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
-                             (int)_val.dbl);
-  } else {
-    if (_val.uint < 4637300241308057600ull) {
-      GRPC_STATS_INC_HISTOGRAM(
-          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
-          grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 48)] +
-              11);
-    } else {
-      GRPC_STATS_INC_HISTOGRAM(
-          (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
-          grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,
-                                            grpc_stats_table_2, 64));
-    }
+  if (_val.uint < 4682617712558473216ull) {
+    GRPC_STATS_INC_HISTOGRAM(
+        (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,
+        grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 4);
+    return;
   }
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,
+                           grpc_stats_histo_find_bucket_slow(
+                               (exec_ctx), _val.dbl, grpc_stats_table_0, 64));
+}
+void grpc_stats_inc_tcp_read_iov_size(grpc_exec_ctx *exec_ctx, int value) {
+  value = GPR_CLAMP(value, 0, 1024);
+  if (value < 12) {
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
+                             value);
+    return;
+  }
+  union {
+    double dbl;
+    uint64_t uint;
+  } _val;
+  _val.dbl = value;
+  if (_val.uint < 4637300241308057600ull) {
+    GRPC_STATS_INC_HISTOGRAM(
+        (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
+        grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 48)] + 11);
+    return;
+  }
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
+                           grpc_stats_histo_find_bucket_slow(
+                               (exec_ctx), _val.dbl, grpc_stats_table_2, 64));
 }
 void grpc_stats_inc_http2_send_message_size(grpc_exec_ctx *exec_ctx,
-                                            double value) {
+                                            int value) {
+  value = GPR_CLAMP(value, 0, 16777216);
+  if (value < 5) {
+    GRPC_STATS_INC_HISTOGRAM(
+        (exec_ctx), GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE, value);
+    return;
+  }
   union {
     double dbl;
     uint64_t uint;
   } _val;
   _val.dbl = value;
-  if (_val.dbl < 0) _val.dbl = 0;
-  if (_val.dbl < 5.000000) {
-    GRPC_STATS_INC_HISTOGRAM((exec_ctx),
-                             GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
-                             (int)_val.dbl);
-  } else {
-    if (_val.uint < 4682617712558473216ull) {
-      GRPC_STATS_INC_HISTOGRAM(
-          (exec_ctx), GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
-          grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 4);
-    } else {
-      GRPC_STATS_INC_HISTOGRAM(
-          (exec_ctx), GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
-          grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl,
-                                            grpc_stats_table_0, 64));
-    }
+  if (_val.uint < 4682617712558473216ull) {
+    GRPC_STATS_INC_HISTOGRAM(
+        (exec_ctx), GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
+        grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 4);
+    return;
   }
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx),
+                           GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
+                           grpc_stats_histo_find_bucket_slow(
+                               (exec_ctx), _val.dbl, grpc_stats_table_0, 64));
 }
 const int grpc_stats_histo_buckets[6] = {64, 64, 64, 64, 64, 64};
 const int grpc_stats_histo_start[6] = {0, 64, 128, 192, 256, 320};
 const int *const grpc_stats_histo_bucket_boundaries[6] = {
     grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_0,
     grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_0};
-void (*const grpc_stats_inc_histogram[6])(grpc_exec_ctx *exec_ctx, double x) = {
+void (*const grpc_stats_inc_histogram[6])(grpc_exec_ctx *exec_ctx, int x) = {
     grpc_stats_inc_tcp_write_size,    grpc_stats_inc_tcp_write_iov_size,
     grpc_stats_inc_tcp_read_size,     grpc_stats_inc_tcp_read_offer,
     grpc_stats_inc_tcp_read_iov_size, grpc_stats_inc_http2_send_message_size};

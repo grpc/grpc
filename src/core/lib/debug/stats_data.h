@@ -160,7 +160,6 @@ void grpc_stats_inc_http2_send_message_size(grpc_exec_ctx *exec_ctx, int x);
 extern const int grpc_stats_histo_buckets[6];
 extern const int grpc_stats_histo_start[6];
 extern const int *const grpc_stats_histo_bucket_boundaries[6];
-extern const double *const grpc_stats_histo_bucket_boundaries[6];
 extern void (*const grpc_stats_inc_histogram[6])(grpc_exec_ctx *exec_ctx,
                                                  int x);
 
