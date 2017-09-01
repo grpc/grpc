@@ -96,10 +96,10 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     tsi_ssl_client_handshaker_factory *self, const char *server_name_indication,
     tsi_handshaker **handshaker);
 
-/* Destroys the handshaker factory. WARNING: it is unsafe to destroy a factory
-   while handshakers created with this factory are still in use.  */
-void tsi_ssl_client_handshaker_factory_destroy(
-    tsi_ssl_client_handshaker_factory *self);
+/* Decrements reference count of the handshaker factory. Handshaker factory will
+ * be destroyed once no references exist. */
+void tsi_ssl_client_handshaker_factory_unref(
+    tsi_ssl_client_handshaker_factory *factory);
 
 /* --- tsi_ssl_server_handshaker_factory object ---
 
@@ -158,9 +158,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
     tsi_ssl_server_handshaker_factory *self, tsi_handshaker **handshaker);
 
-/* Destroys the handshaker factory. WARNING: it is unsafe to destroy a factory
-   while handshakers created with this factory are still in use.  */
-void tsi_ssl_server_handshaker_factory_destroy(
+/* Decrements reference count of the handshaker factory. Handshaker factory will
+ * be destroyed once no references exist. */
+void tsi_ssl_server_handshaker_factory_unref(
     tsi_ssl_server_handshaker_factory *self);
 
 /* Util that checks that an ssl peer matches a specific name.
