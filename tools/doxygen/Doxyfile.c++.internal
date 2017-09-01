@@ -948,6 +948,7 @@ src/core/lib/debug/trace.h \
 src/core/lib/http/format_request.h \
 src/core/lib/http/httpcli.h \
 src/core/lib/http/parser.h \
+src/core/lib/iomgr/call_combiner.h \
 src/core/lib/iomgr/closure.h \
 src/core/lib/iomgr/combiner.h \
 src/core/lib/iomgr/endpoint.h \

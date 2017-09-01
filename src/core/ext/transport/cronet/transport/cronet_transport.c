@@ -1386,10 +1386,6 @@ static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 
 static void destroy_transport(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {}
 
-static char *get_peer(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {
-  return NULL;
-}
-
 static grpc_endpoint *get_endpoint(grpc_exec_ctx *exec_ctx,
                                    grpc_transport *gt) {
   return NULL;
@@ -1408,7 +1404,6 @@ static const grpc_transport_vtable grpc_cronet_vtable = {
     perform_op,
     destroy_stream,
     destroy_transport,
-    get_peer,
     get_endpoint};
 
 grpc_transport *grpc_create_cronet_transport(void *engine, const char *target,
