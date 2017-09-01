@@ -39,6 +39,7 @@
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/lockfree_event.h"
@@ -635,6 +636,7 @@ static grpc_error *do_epoll_wait(grpc_exec_ctx *exec_ctx, grpc_pollset *ps,
     GRPC_SCHEDULING_START_BLOCKING_REGION;
   }
   do {
+    GRPC_STATS_INC_SYSCALL_POLL(exec_ctx);
     r = epoll_wait(g_epoll_set.epfd, g_epoll_set.events, MAX_EPOLL_EVENTS,
                    timeout);
   } while (r < 0 && errno == EINTR);
@@ -1192,10 +1194,6 @@ static const grpc_event_engine_vtable vtable = {
  * Create epoll_fd (epoll_set_init() takes care of that) to make sure epoll
  * support is available */
 const grpc_event_engine_vtable *grpc_init_epoll1_linux(bool explicit_request) {
-  if (!explicit_request) {
-    return NULL;
-  }
-
   if (!grpc_has_wakeup_fd()) {
     return NULL;
   }

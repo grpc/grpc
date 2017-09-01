@@ -1,0 +1,1065 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.props" Condition="Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\1.0.204.1.props')" />
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug-DLL|Win32">
+      <Configuration>Debug-DLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-DLL|x64">
+      <Configuration>Debug-DLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-DLL|Win32">
+      <Configuration>Release-DLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-DLL|x64">
+      <Configuration>Release-DLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{29D16885-7228-4C31-81ED-5F9187C7F2A9}</ProjectGuid>
+    <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
+    <IntDir>$(SolutionDir)IntDir\$(MSBuildProjectName)\</IntDir>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '10.0'" Label="Configuration">
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '11.0'" Label="Configuration">
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '12.0'" Label="Configuration">
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '14.0'" Label="Configuration">
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug-DLL'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release-DLL'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)\..\vsprojects\global.props" />
+    <Import Project="$(SolutionDir)\..\vsprojects\winsock.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <TargetName>grpc</TargetName>
+    <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
+    <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
+    <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
+    <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <TargetName>grpc</TargetName>
+    <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
+    <Configuration-grpc_dependencies_zlib>Release</Configuration-grpc_dependencies_zlib>
+    <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
+    <Configuration-grpc_dependencies_openssl>Release</Configuration-grpc_dependencies_openssl>
+  </PropertyGroup>
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-DLL|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-DLL|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\byte_buffer.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\byte_buffer_reader.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\compression.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security_constants.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\load_reporting.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\slice.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\slice_buffer.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\workaround_list.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\exec_ctx_fwd.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\propagation_bits.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_slice.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_types.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\context.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_factory.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\algorithm_metadata.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\stream_compression.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\stats.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\stats_data.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\format_request.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\httpcli.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\parser.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\combiner.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\error.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\error_internal.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll1_linux.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_limited_pollers_linux.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_thread_pool_linux.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epollex_linux.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epollsig_linux.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\exec_ctx.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\executor.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iocp_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_internal.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_uv.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\is_epollexclusive_available.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\lockfree_event.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\network_status_tracker.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\polling_entity.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_uv.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\port.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\resource_quota.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_factory_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_mutator.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sys_epoll_wrapper.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_uv.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_windows.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\time_averaged_stats.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_generic.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_heap.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_manager.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_uv.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\udp_server.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_cv.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_pipe.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_common.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_reader.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\b64.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_hash_table.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_internal.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\call.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\call_test_only.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\channel.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\channel_init.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\channel_stack_type.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue_factory.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\event_string.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\init.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\server.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\validate_metadata.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\bdp_estimator.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\error_utils.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\http2_errors.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\pid_controller.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\service_config.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\status_conversion.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\timeout_encoding.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport_impl.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\trace.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_decoder.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\chttp2_transport.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_data.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_goaway.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_ping.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_rst_stream.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_settings.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_window_update.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_encoder.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_parser.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_table.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\http2_settings.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\huffsyms.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\incoming_metadata.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\internal.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\stream_map.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\varint.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\client\http_client_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\message_compress\message_compress_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\http\server\http_server_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\context\security_context.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\composite\composite_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\fake\fake_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\google_default_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\iam\iam_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\jwt\json_token.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\jwt\jwt_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\jwt\jwt_verifier.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\oauth2\oauth2_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\plugin\plugin_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\ssl\ssl_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\auth_filters.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\lb_targets_info.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\secure_endpoint.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\security_connector.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\security_handshaker.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\tsi_error.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\util\json_util.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\gts_transport_security.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\ssl_types.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_adapter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\tsi\transport_security_interface.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\client_channel.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\client_channel_factory.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\connector.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\http_connect_handshaker.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\http_proxy.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy_factory.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy_registry.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\parse_address.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\proxy_mapper.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\proxy_mapper_registry.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver_factory.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver_registry.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\retry_throttle.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\subchannel.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\subchannel_index.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\uri_parser.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\inproc\inproc_transport.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\client_load_reporting_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb_channel.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb_client_stats.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\load_balancer_api.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\fake\fake_resolver.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_ev_driver.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_wrapper.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\load_reporting\load_reporting.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\load_reporting\load_reporting_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\aggregation.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\base_resources.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_interface.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_rpc_stats.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\gen\census.pb.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\gen\trace_context.pb.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\grpc_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\intrusive_hash_map.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\intrusive_hash_map_internal.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\mlog.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\resource.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\rpc_metric_id.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_context.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_label.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_propagation.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_status.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\trace_string.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\tracing.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\max_age\max_age_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\message_size\message_size_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\workarounds\workaround_cronet_compression_filter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\filters\workarounds\workaround_utils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_stack_builder.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\connected_channel.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_factory.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\handshaker_registry.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\stream_compression.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\stats.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\stats_data.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\format_request.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\httpcli.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\parser.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\combiner.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair_uv.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\error.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll1_linux.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_limited_pollers_linux.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_thread_pool_linux.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epollex_linux.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epollsig_linux.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\exec_ctx.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\executor.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iocp_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_uv.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\is_epollexclusive_available.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\lockfree_event.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\network_status_tracker.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\polling_entity.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set_uv.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_uv.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address_uv.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resource_quota.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_factory_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_mutator.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_common_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_linux.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_uv.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_uv.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_common.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_ifaddrs.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_noifaddrs.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_uv.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_uv.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\time_averaged_stats.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_generic.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_heap.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_manager.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_uv.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\udp_server.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\unix_sockets_posix_noop.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_cv.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_eventfd.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_nospecial.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_pipe.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\wakeup_fd_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_reader.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_string.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\b64.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\percent_encoding.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_buffer.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_hash_table.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_intern.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\slice\slice_string_helpers.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\alarm.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\byte_buffer.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\byte_buffer_reader.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\call.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\call_details.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\call_log_batch.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\channel.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\channel_init.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\channel_ping.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\channel_stack_type.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue_factory.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\event_string.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\metadata_array.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\server.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\validate_metadata.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\version.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\bdp_estimator.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\connectivity_state.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\error_utils.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\metadata_batch.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\pid_controller.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\service_config.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\status_conversion.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\timeout_encoding.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\transport.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\transport\transport_op_string.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\trace.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\secure\server_secure_chttp2.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_decoder.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\chttp2_plugin.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\chttp2_transport.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_data.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_goaway.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_ping.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_rst_stream.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_settings.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame_window_update.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_encoder.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_parser.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\hpack_table.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\http2_settings.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\huffsyms.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\incoming_metadata.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\parsing.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\stream_lists.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\stream_map.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\varint.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\writing.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\client\http_client_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\http_filters_plugin.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\message_compress\message_compress_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\http\server\http_server_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\httpcli_security_connector.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\context\security_context.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\composite\composite_credentials.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\credentials.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\credentials_metadata.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\fake\fake_credentials.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\credentials_generic.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\google_default_credentials.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\iam\iam_credentials.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\jwt\json_token.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\jwt\jwt_credentials.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\jwt\jwt_verifier.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\oauth2\oauth2_credentials.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\plugin\plugin_credentials.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\ssl\ssl_credentials.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\client_auth_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\lb_targets_info.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\secure_endpoint.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\security_connector.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\security_handshaker.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\server_auth_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\tsi_error.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\util\json_util.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init_secure.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\gts_transport_security.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\ssl_transport_security.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\tsi\transport_security_adapter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\chttp2_server.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\secure\secure_channel_create.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\channel_connectivity.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\client_channel.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\client_channel_factory.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\client_channel_plugin.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\connector.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\http_connect_handshaker.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\http_proxy.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy_factory.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy_registry.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\parse_address.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\proxy_mapper.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\proxy_mapper_registry.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver_factory.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver_registry.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\retry_throttle.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\subchannel.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\subchannel_index.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\uri_parser.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\deadline\deadline_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\chttp2_connector.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\insecure\server_chttp2.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\insecure\server_chttp2_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\inproc\inproc_plugin.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\inproc\inproc_transport.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\client_load_reporting_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb_channel_secure.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\grpclb_client_stats.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\load_balancer_api.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\fake\fake_resolver.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\pick_first\pick_first.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\lb_policy\round_robin\round_robin.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\dns_resolver_ares.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_ev_driver_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_wrapper.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\c_ares\grpc_ares_wrapper_fallback.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\dns\native\dns_resolver.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\client_channel\resolver\sockaddr\sockaddr_resolver.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\load_reporting\load_reporting.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\load_reporting\load_reporting_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\base_resources.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\context.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\gen\census.pb.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\gen\trace_context.pb.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\grpc_context.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\grpc_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\grpc_plugin.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\initialize.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\intrusive_hash_map.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\mlog.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\operation.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\placeholders.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\resource.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\trace_context.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\tracing.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\max_age\max_age_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\message_size\message_size_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\workarounds\workaround_cronet_compression_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\filters\workarounds\workaround_utils.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\plugin_registry\grpc_plugin_registry.c">
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\gpr\gpr.vcxproj">
+      <Project>{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  <Import Project="$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.targets" Condition="Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies\grpc.dependencies.zlib.targets')" />
+  <Import Project="$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.targets" Condition="Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies\grpc.dependencies.zlib.targets')" />
+  <Import Project="$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies.openssl.redist.targets" Condition="Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies\grpc.dependencies.openssl.targets')" />
+  <Import Project="$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.targets" Condition="Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies\grpc.dependencies.openssl.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.zlib.redist.1.2.8.10\build\native\grpc.dependencies.zlib.redist.targets')" />
+    <Error Condition="!Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\grpc.dependencies.zlib.targets')" />
+    <Error Condition="!Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies.openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.openssl.redist.1.0.204.1\build\native\grpc.dependencies.openssl.redist.targets')" />
+    <Error Condition="!Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.props')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.props')" />
+    <Error Condition="!Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.targets')" />
+  </Target>
+</Project>
+
