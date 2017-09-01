@@ -170,6 +170,25 @@ void tsi_ssl_server_handshaker_factory_unref(
    - handle public suffix wildchar more strictly (e.g. *.co.uk) */
 int tsi_ssl_peer_matches_name(const tsi_peer *peer, const char *name);
 
+/* --- Testing support. ---
+
+   These functions and typedefs are not intended to be used outside of testing.
+   */
+
+/* Base type of client and server handshaker factories. */
+typedef struct tsi_ssl_handshaker_factory tsi_ssl_handshaker_factory;
+
+/* Function pointer to handshaker_factory destructor. */
+typedef void (*tsi_ssl_handshaker_factory_destructor)(
+    tsi_ssl_handshaker_factory *factory);
+
+/* Set destructor of handshaker_factory to new_destructor, returns previous
+   destructor. */
+tsi_ssl_handshaker_factory_destructor
+tsi_ssl_handshaker_factory_swap_destructor(
+    tsi_ssl_handshaker_factory *factory,
+    tsi_ssl_handshaker_factory_destructor new_destructor);
+
 #ifdef __cplusplus
 }
 #endif

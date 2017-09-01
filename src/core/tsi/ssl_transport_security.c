@@ -67,10 +67,8 @@
 
 /* --- Structure definitions. ---*/
 
-typedef struct tsi_ssl_handshaker_factory tsi_ssl_handshaker_factory;
-
 typedef struct {
-  void (*destroy)(tsi_ssl_handshaker_factory *factory);
+  tsi_ssl_handshaker_factory_destructor destroy;
 } tsi_ssl_handshaker_factory_vtable;
 
 struct tsi_ssl_handshaker_factory {
@@ -1608,4 +1606,18 @@ int tsi_ssl_peer_matches_name(const tsi_peer *peer, const char *name) {
   }
 
   return 0; /* Not found. */
+}
+
+/* --- Testing support. --- */
+tsi_ssl_handshaker_factory_destructor
+tsi_ssl_handshaker_factory_swap_destructor(
+    tsi_ssl_handshaker_factory *factory,
+    tsi_ssl_handshaker_factory_destructor new_destructor) {
+  GPR_ASSERT(factory != NULL);
+  GPR_ASSERT(factory->vtable != NULL);
+
+  tsi_ssl_handshaker_factory_destructor orig_destructor =
+      factory->vtable->destroy;
+  factory->vtable->destroy = new_destructor;
+  return orig_destructor;
 }
