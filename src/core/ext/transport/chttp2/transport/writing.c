@@ -329,7 +329,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                 if (s->stream_compression_ctx == NULL) {
                   s->stream_compression_ctx =
                       grpc_stream_compression_context_create(
-                          GRPC_STREAM_COMPRESSION_COMPRESS);
+                          GRPC_STREAM_COMPRESSION_GZIP_COMPRESS);
                 }
                 s->uncompressed_data_size = s->flow_controlled_buffer.length;
                 GPR_ASSERT(grpc_stream_compress(

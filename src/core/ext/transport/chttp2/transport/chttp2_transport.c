@@ -1731,7 +1731,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
           if (!s->stream_decompression_ctx) {
             s->stream_decompression_ctx =
                 grpc_stream_compression_context_create(
-                    GRPC_STREAM_COMPRESSION_DECOMPRESS);
+                    GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS);
           }
           if (!grpc_stream_decompress(s->stream_decompression_ctx,
                                       &s->unprocessed_incoming_frames_buffer,
@@ -1804,7 +1804,7 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
       bool end_of_context;
       if (!s->stream_decompression_ctx) {
         s->stream_decompression_ctx = grpc_stream_compression_context_create(
-            GRPC_STREAM_COMPRESSION_DECOMPRESS);
+            GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS);
       }
       if (!grpc_stream_decompress(s->stream_decompression_ctx,
                                   &s->frame_storage,
@@ -2694,7 +2694,7 @@ static grpc_error *incoming_byte_stream_pull(grpc_exec_ctx *exec_ctx,
       bool end_of_context;
       if (!s->stream_decompression_ctx) {
         s->stream_decompression_ctx = grpc_stream_compression_context_create(
-            GRPC_STREAM_COMPRESSION_DECOMPRESS);
+            GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS);
       }
       if (!grpc_stream_decompress(s->stream_decompression_ctx,
                                   &s->unprocessed_incoming_frames_buffer,
