@@ -667,6 +667,8 @@
         'src/core/lib/compression/compression.c',
         'src/core/lib/compression/message_compress.c',
         'src/core/lib/compression/stream_compression.c',
+        'src/core/lib/compression/stream_compression_gzip.c',
+        'src/core/lib/compression/stream_compression_identity.c',
         'src/core/lib/debug/stats.c',
         'src/core/lib/debug/stats_data.c',
         'src/core/lib/http/format_request.c',
