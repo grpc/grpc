@@ -149,8 +149,8 @@
 #ifndef _DEFAULT_SOURCE
 #define _DEFAULT_SOURCE
 #endif
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+#ifdef _GNU_SOURCE
+#undef _GNU_SOURCE
 #endif
 #include <features.h>
 #define GPR_CPU_LINUX 1
