@@ -144,15 +144,18 @@ def gen_bucket_code(histogram):
     first_nontrivial_code = dbl2u64(first_nontrivial)
     if shift_data is not None:
       map_table_idx = decl_static_table(map_table, type_for_uint_table(map_table))
-      code += 'union { double dbl; uint64_t uint; } _val;\n'
+      code += 'union { double dbl; uint64_t uint; } _val, _bkt;\n'
       code += '_val.dbl = value;\n'
       code += 'if (_val.uint < %dull) {\n' % ((map_table[-1] << shift_data[0]) + first_nontrivial_code)
-      code += 'GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_%s, ' % histogram.name.upper()
-      code += 'grpc_stats_table_%d[((_val.uint - %dull) >> %d)] + %d);\n' % (map_table_idx, first_nontrivial_code, shift_data[0], first_nontrivial-1)
+      code += 'int bucket = '
+      code += 'grpc_stats_table_%d[((_val.uint - %dull) >> %d)] + %d;\n' % (map_table_idx, first_nontrivial_code, shift_data[0], first_nontrivial)
+      code += '_bkt.dbl = grpc_stats_table_%d[bucket];\n' % bounds_idx
+      code += 'bucket -= (_val.uint < _bkt.uint);\n'
+      code += 'GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_%s, bucket);\n' % histogram.name.upper()
       code += 'return;\n'
       code += '}\n'
     code += 'GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_%s, '% histogram.name.upper()
-    code += 'grpc_stats_histo_find_bucket_slow((exec_ctx), _val.dbl, grpc_stats_table_%d, %d));\n' % (bounds_idx, len(bounds))
+    code += 'grpc_stats_histo_find_bucket_slow((exec_ctx), value, grpc_stats_table_%d, %d));\n' % (bounds_idx, len(bounds))
   return (code, bounds_idx)
 
 # utility: print a big comment block into a set of files

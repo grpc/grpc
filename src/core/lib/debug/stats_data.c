@@ -91,17 +91,20 @@ void grpc_stats_inc_tcp_write_size(grpc_exec_ctx *exec_ctx, int value) {
   union {
     double dbl;
     uint64_t uint;
-  } _val;
+  } _val, _bkt;
   _val.dbl = value;
   if (_val.uint < 4682617712558473216ull) {
-    GRPC_STATS_INC_HISTOGRAM(
-        (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
-        grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 4);
+    int bucket =
+        grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
+    _bkt.dbl = grpc_stats_table_0[bucket];
+    bucket -= (_val.uint < _bkt.uint);
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
+                             bucket);
     return;
   }
   GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
                            grpc_stats_histo_find_bucket_slow(
-                               (exec_ctx), _val.dbl, grpc_stats_table_0, 64));
+                               (exec_ctx), value, grpc_stats_table_0, 64));
 }
 void grpc_stats_inc_tcp_write_iov_size(grpc_exec_ctx *exec_ctx, int value) {
   value = GPR_CLAMP(value, 0, 1024);
@@ -113,17 +116,20 @@ void grpc_stats_inc_tcp_write_iov_size(grpc_exec_ctx *exec_ctx, int value) {
   union {
     double dbl;
     uint64_t uint;
-  } _val;
+  } _val, _bkt;
   _val.dbl = value;
   if (_val.uint < 4637300241308057600ull) {
-    GRPC_STATS_INC_HISTOGRAM(
-        (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
-        grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 48)] + 11);
+    int bucket =
+        grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 48)] + 12;
+    _bkt.dbl = grpc_stats_table_2[bucket];
+    bucket -= (_val.uint < _bkt.uint);
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx),
+                             GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE, bucket);
     return;
   }
   GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
                            grpc_stats_histo_find_bucket_slow(
-                               (exec_ctx), _val.dbl, grpc_stats_table_2, 64));
+                               (exec_ctx), value, grpc_stats_table_2, 64));
 }
 void grpc_stats_inc_tcp_read_size(grpc_exec_ctx *exec_ctx, int value) {
   value = GPR_CLAMP(value, 0, 16777216);
@@ -135,17 +141,20 @@ void grpc_stats_inc_tcp_read_size(grpc_exec_ctx *exec_ctx, int value) {
   union {
     double dbl;
     uint64_t uint;
-  } _val;
+  } _val, _bkt;
   _val.dbl = value;
   if (_val.uint < 4682617712558473216ull) {
-    GRPC_STATS_INC_HISTOGRAM(
-        (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
-        grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 4);
+    int bucket =
+        grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
+    _bkt.dbl = grpc_stats_table_0[bucket];
+    bucket -= (_val.uint < _bkt.uint);
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
+                             bucket);
     return;
   }
   GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
                            grpc_stats_histo_find_bucket_slow(
-                               (exec_ctx), _val.dbl, grpc_stats_table_0, 64));
+                               (exec_ctx), value, grpc_stats_table_0, 64));
 }
 void grpc_stats_inc_tcp_read_offer(grpc_exec_ctx *exec_ctx, int value) {
   value = GPR_CLAMP(value, 0, 16777216);
@@ -157,17 +166,20 @@ void grpc_stats_inc_tcp_read_offer(grpc_exec_ctx *exec_ctx, int value) {
   union {
     double dbl;
     uint64_t uint;
-  } _val;
+  } _val, _bkt;
   _val.dbl = value;
   if (_val.uint < 4682617712558473216ull) {
-    GRPC_STATS_INC_HISTOGRAM(
-        (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,
-        grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 4);
+    int bucket =
+        grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
+    _bkt.dbl = grpc_stats_table_0[bucket];
+    bucket -= (_val.uint < _bkt.uint);
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,
+                             bucket);
     return;
   }
   GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,
                            grpc_stats_histo_find_bucket_slow(
-                               (exec_ctx), _val.dbl, grpc_stats_table_0, 64));
+                               (exec_ctx), value, grpc_stats_table_0, 64));
 }
 void grpc_stats_inc_tcp_read_iov_size(grpc_exec_ctx *exec_ctx, int value) {
   value = GPR_CLAMP(value, 0, 1024);
@@ -179,17 +191,20 @@ void grpc_stats_inc_tcp_read_iov_size(grpc_exec_ctx *exec_ctx, int value) {
   union {
     double dbl;
     uint64_t uint;
-  } _val;
+  } _val, _bkt;
   _val.dbl = value;
   if (_val.uint < 4637300241308057600ull) {
-    GRPC_STATS_INC_HISTOGRAM(
-        (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
-        grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 48)] + 11);
+    int bucket =
+        grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 48)] + 12;
+    _bkt.dbl = grpc_stats_table_2[bucket];
+    bucket -= (_val.uint < _bkt.uint);
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
+                             bucket);
     return;
   }
   GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
                            grpc_stats_histo_find_bucket_slow(
-                               (exec_ctx), _val.dbl, grpc_stats_table_2, 64));
+                               (exec_ctx), value, grpc_stats_table_2, 64));
 }
 void grpc_stats_inc_http2_send_message_size(grpc_exec_ctx *exec_ctx,
                                             int value) {
@@ -202,18 +217,21 @@ void grpc_stats_inc_http2_send_message_size(grpc_exec_ctx *exec_ctx,
   union {
     double dbl;
     uint64_t uint;
-  } _val;
+  } _val, _bkt;
   _val.dbl = value;
   if (_val.uint < 4682617712558473216ull) {
+    int bucket =
+        grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
+    _bkt.dbl = grpc_stats_table_0[bucket];
+    bucket -= (_val.uint < _bkt.uint);
     GRPC_STATS_INC_HISTOGRAM(
-        (exec_ctx), GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
-        grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 4);
+        (exec_ctx), GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE, bucket);
     return;
   }
   GRPC_STATS_INC_HISTOGRAM((exec_ctx),
                            GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
                            grpc_stats_histo_find_bucket_slow(
-                               (exec_ctx), _val.dbl, grpc_stats_table_0, 64));
+                               (exec_ctx), value, grpc_stats_table_0, 64));
 }
 const int grpc_stats_histo_buckets[6] = {64, 64, 64, 64, 64, 64};
 const int grpc_stats_histo_start[6] = {0, 64, 128, 192, 256, 320};

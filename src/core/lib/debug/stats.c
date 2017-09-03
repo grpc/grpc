@@ -62,24 +62,21 @@ void grpc_stats_diff(const grpc_stats_data *b, const grpc_stats_data *a,
   }
 }
 
-int grpc_stats_histo_find_bucket_slow(grpc_exec_ctx *exec_ctx, double value,
+int grpc_stats_histo_find_bucket_slow(grpc_exec_ctx *exec_ctx, int value,
                                       const int *table, int table_size) {
   GRPC_STATS_INC_HISTOGRAM_SLOW_LOOKUPS(exec_ctx);
-  if (value < 0.0) return 0;
-  if (value >= table[table_size - 1]) return table_size - 1;
-  int a = 0;
-  int b = table_size - 1;
-  while (a < b) {
-    int c = a + ((b - a) / 2);
-    if (value < table[c]) {
-      b = c - 1;
-    } else if (value > table[c]) {
-      a = c + 1;
+  const int *const start = table;
+  while (table_size > 0) {
+    int step = table_size / 2;
+    const int *it = table + step;
+    if (value >= *it) {
+      table = it + 1;
+      table_size -= step + 1;
     } else {
-      return c;
+      table_size = step;
     }
   }
-  return a;
+  return (int)(table - start) - 1;
 }
 
 size_t grpc_stats_histo_count(const grpc_stats_data *stats,
