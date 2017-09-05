@@ -18,13 +18,63 @@ licenses(["notice"])  # Apache v2
 
 grpc_package(name = "test/core/tsi")
 
+grpc_cc_library(
+    name = "transport_security_test_lib",
+    srcs = ["transport_security_test_lib.c"],
+    hdrs = ["transport_security_test_lib.h"],
+    deps = [
+        "//:grpc",
+        "//:tsi",
+    ],
+)
+
+grpc_cc_test(
+    name = "fake_transport_security_test",
+    srcs = ["fake_transport_security_test.c"],
+    language = "C",
+    deps = [
+        ":transport_security_test_lib",
+        "//:grpc",
+        "//:gpr",
+        "//:tsi",
+        "//test/core/util:gpr_test_util",
+    ],
+)
+
+
+grpc_cc_test(
+    name = "ssl_transport_security_test",
+    srcs = ["ssl_transport_security_test.c"],
+    data = [
+        "//src/core/tsi/test_creds:badclient.key",
+        "//src/core/tsi/test_creds:badclient.pem",
+        "//src/core/tsi/test_creds:badserver.key",
+        "//src/core/tsi/test_creds:badserver.pem",
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server0.key",
+        "//src/core/tsi/test_creds:server0.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    language = "C",
+    deps = [
+        ":transport_security_test_lib",
+        "//:grpc",
+        "//:gpr",
+        "//:tsi",
+        "//test/core/util:gpr_test_util",
+    ],
+)
+
 grpc_cc_test(
     name = "transport_security_test",
     srcs = ["transport_security_test.c"],
     language = "C",
     deps = [
-        "//:gpr",
         "//:grpc",
+        "//:gpr",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
