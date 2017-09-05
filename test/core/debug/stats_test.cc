@@ -70,7 +70,7 @@ static int FindExpectedBucket(int i, int j) {
     return 0;
   }
   if (j >=
-      grpc_stats_histo_bucket_boundaries[i][grpc_stats_histo_buckets[i] - 1]) {
+      grpc_stats_histo_bucket_boundaries[i][grpc_stats_histo_buckets[i]]) {
     return grpc_stats_histo_buckets[i] - 1;
   }
   return std::upper_bound(grpc_stats_histo_bucket_boundaries[i],

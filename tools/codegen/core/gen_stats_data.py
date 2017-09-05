@@ -155,7 +155,7 @@ def gen_bucket_code(histogram):
       code += 'return;\n'
       code += '}\n'
     code += 'GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_%s, '% histogram.name.upper()
-    code += 'grpc_stats_histo_find_bucket_slow((exec_ctx), value, grpc_stats_table_%d, %d));\n' % (bounds_idx, len(bounds))
+    code += 'grpc_stats_histo_find_bucket_slow((exec_ctx), value, grpc_stats_table_%d, %d));\n' % (bounds_idx, histogram.buckets)
   return (code, bounds_idx)
 
 # utility: print a big comment block into a set of files

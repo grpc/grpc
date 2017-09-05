@@ -105,7 +105,7 @@ void grpc_stats_inc_tcp_write_size(grpc_exec_ctx *exec_ctx, int value) {
   }
   GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
                            grpc_stats_histo_find_bucket_slow(
-                               (exec_ctx), value, grpc_stats_table_0, 65));
+                               (exec_ctx), value, grpc_stats_table_0, 64));
 }
 void grpc_stats_inc_tcp_write_iov_size(grpc_exec_ctx *exec_ctx, int value) {
   value = GPR_CLAMP(value, 0, 1024);
@@ -130,7 +130,7 @@ void grpc_stats_inc_tcp_write_iov_size(grpc_exec_ctx *exec_ctx, int value) {
   }
   GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
                            grpc_stats_histo_find_bucket_slow(
-                               (exec_ctx), value, grpc_stats_table_2, 65));
+                               (exec_ctx), value, grpc_stats_table_2, 64));
 }
 void grpc_stats_inc_tcp_read_size(grpc_exec_ctx *exec_ctx, int value) {
   value = GPR_CLAMP(value, 0, 16777216);
@@ -155,7 +155,7 @@ void grpc_stats_inc_tcp_read_size(grpc_exec_ctx *exec_ctx, int value) {
   }
   GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
                            grpc_stats_histo_find_bucket_slow(
-                               (exec_ctx), value, grpc_stats_table_0, 65));
+                               (exec_ctx), value, grpc_stats_table_0, 64));
 }
 void grpc_stats_inc_tcp_read_offer(grpc_exec_ctx *exec_ctx, int value) {
   value = GPR_CLAMP(value, 0, 16777216);
@@ -180,7 +180,7 @@ void grpc_stats_inc_tcp_read_offer(grpc_exec_ctx *exec_ctx, int value) {
   }
   GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,
                            grpc_stats_histo_find_bucket_slow(
-                               (exec_ctx), value, grpc_stats_table_0, 65));
+                               (exec_ctx), value, grpc_stats_table_0, 64));
 }
 void grpc_stats_inc_tcp_read_iov_size(grpc_exec_ctx *exec_ctx, int value) {
   value = GPR_CLAMP(value, 0, 1024);
@@ -205,7 +205,7 @@ void grpc_stats_inc_tcp_read_iov_size(grpc_exec_ctx *exec_ctx, int value) {
   }
   GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
                            grpc_stats_histo_find_bucket_slow(
-                               (exec_ctx), value, grpc_stats_table_2, 65));
+                               (exec_ctx), value, grpc_stats_table_2, 64));
 }
 void grpc_stats_inc_http2_send_message_size(grpc_exec_ctx *exec_ctx,
                                             int value) {
@@ -232,7 +232,7 @@ void grpc_stats_inc_http2_send_message_size(grpc_exec_ctx *exec_ctx,
   GRPC_STATS_INC_HISTOGRAM((exec_ctx),
                            GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
                            grpc_stats_histo_find_bucket_slow(
-                               (exec_ctx), value, grpc_stats_table_0, 65));
+                               (exec_ctx), value, grpc_stats_table_0, 64));
 }
 const int grpc_stats_histo_buckets[6] = {64, 64, 64, 64, 64, 64};
 const int grpc_stats_histo_start[6] = {0, 64, 128, 192, 256, 320};
