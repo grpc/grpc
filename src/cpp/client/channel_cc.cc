@@ -195,8 +195,8 @@ class ChannelConnectivityWatcher : private GrpcLibraryCodegen {
   int channel_count_;
 
   std::mutex shutdown_mu_;
-  std::condition_variable shutdown_cv_;  // protected by shutdown_cv_
-  bool shutdown_;                        // protected by shutdown_cv_
+  std::condition_variable shutdown_cv_;  // protected by shutdown_mu_
+  bool shutdown_;                        // protected by shutdown_mu_
 
   static std::mutex g_watcher_mu_;
   static ChannelConnectivityWatcher* g_watcher_;  // protected by g_watcher_mu_
@@ -222,11 +222,11 @@ Channel::Channel(const grpc::string& host, grpc_channel* channel)
 }
 
 Channel::~Channel() {
-  if (grpc_channel_support_connectivity_watcher(c_channel_)) {
-    grpc_channel_destroy(c_channel_);
+  const bool stop_watching =
+      grpc_channel_support_connectivity_watcher(c_channel_);
+  grpc_channel_destroy(c_channel_);
+  if (stop_watching) {
     ChannelConnectivityWatcher::StopWatching();
-  } else {
-    grpc_channel_destroy(c_channel_);
   }
 }
 
