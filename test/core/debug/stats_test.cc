@@ -73,30 +73,29 @@ static int FindExpectedBucket(int i, int j) {
       grpc_stats_histo_bucket_boundaries[i][grpc_stats_histo_buckets[i] - 1]) {
     return grpc_stats_histo_buckets[i] - 1;
   }
-  int r = 0;
-  while (grpc_stats_histo_bucket_boundaries[i][r + 1] <= j) r++;
-  return r;
-}
-
-static int FindNonZeroBucket(const grpc_stats_data& data, int i) {
-  for (int j = 0; j < grpc_stats_histo_buckets[i]; j++) {
-    if (data.histograms[grpc_stats_histo_start[i] + j] != 0) {
-      return j;
-    }
-  }
-  return -1;
+  return std::upper_bound(grpc_stats_histo_bucket_boundaries[i],
+                          grpc_stats_histo_bucket_boundaries[i] +
+                              grpc_stats_histo_buckets[i],
+                          j) -
+         grpc_stats_histo_bucket_boundaries[i] - 1;
 }
 
 TEST(StatsTest, IncHistogram) {
   for (int i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
+    std::vector<int> test_values;
     for (int j = -1000;
          j <
          grpc_stats_histo_bucket_boundaries[i]
                                            [grpc_stats_histo_buckets[i] - 1] +
              1000;
          j++) {
-      gpr_log(GPR_DEBUG, "histo:%d value:%d", i, j);
-
+      test_values.push_back(j);
+    }
+    std::random_shuffle(test_values.begin(), test_values.end());
+    if (test_values.size() > 10000) {
+      test_values.resize(10000);
+    }
+    for (auto j : test_values) {
       Snapshot snapshot;
 
       int expected_bucket = FindExpectedBucket(i, j);
@@ -106,9 +105,7 @@ TEST(StatsTest, IncHistogram) {
       grpc_exec_ctx_finish(&exec_ctx);
 
       auto delta = snapshot.delta();
-      int got_bucket = FindNonZeroBucket(delta, i);
 
-      EXPECT_EQ(expected_bucket, got_bucket);
       EXPECT_EQ(delta.histograms[grpc_stats_histo_start[i] + expected_bucket],
                 1);
     }
