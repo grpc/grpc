@@ -19,6 +19,9 @@
  */
 
 #include "src/core/lib/debug/stats_data.h"
+#include <grpc/support/useful.h>
+#include "src/core/lib/debug/stats.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "client_calls_created",
     "server_calls_created",
@@ -57,362 +60,281 @@ const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
     "tcp_write_iov_size", "tcp_read_size",           "tcp_read_offer",
     "tcp_read_iov_size",  "http2_send_message_size",
 };
-const double grpc_stats_table_0[64] = {0,
-                                       1,
-                                       2,
-                                       3,
-                                       4,
-                                       5,
-                                       6.03034139457,
-                                       7.27300346702,
-                                       8.77173877401,
-                                       10.5793158863,
-                                       12.759377303,
-                                       15.3886802239,
-                                       18.5597990724,
-                                       22.3843849243,
-                                       26.9970966002,
-                                       32.5603418323,
-                                       39.2699954346,
-                                       47.3622958068,
-                                       57.1221625891,
-                                       68.8932283217,
-                                       83.0899373109,
-                                       100.212137688,
-                                       120.862680427,
-                                       145.768644968,
-                                       175.806938756,
-                                       212.035172047,
-                                       255.72889502,
-                                       308.426508286,
-                                       371.98342802,
-                                       448.637412817,
-                                       541.087352333,
-                                       652.588291771,
-                                       787.066037897,
-                                       949.255381718,
-                                       1144.86680448,
-                                       1380.78753647,
-                                       1665.32404765,
-                                       2008.49450799,
-                                       2422.38151446,
-                                       2921.55750402,
-                                       3523.59783062,
-                                       4249.69957117,
-                                       5125.4278477,
-                                       6181.61594298,
-                                       7455.45090126,
-                                       8991.78283702,
-                                       10844.7040506,
-                                       13079.4535497,
-                                       15774.7140318,
-                                       19025.3822027,
-                                       22945.9099689,
-                                       27674.3341444,
-                                       33377.1365516,
-                                       40255.1056359,
-                                       48550.4059718,
-                                       58555.104571,
-                                       70621.4541917,
-                                       85174.2957114,
-                                       102726.016236,
-                                       123894.589602,
-                                       149425.334448,
-                                       180217.155944,
-                                       217354.195101,
-                                       262144.0};
+const int grpc_stats_table_0[64] = {
+    0,      1,      2,      3,     4,     5,     7,     9,     11,     14,
+    17,     21,     26,     32,    39,    47,    57,    69,    83,     100,
+    120,    144,    173,    207,   248,   297,   356,   426,   510,    610,
+    730,    873,    1044,   1248,  1492,  1784,  2133,  2550,  3048,   3643,
+    4354,   5204,   6219,   7432,  8882,  10615, 12685, 15159, 18115,  21648,
+    25870,  30915,  36944,  44148, 52757, 63044, 75337, 90027, 107581, 128558,
+    153625, 183579, 219373, 262144};
 const uint8_t grpc_stats_table_1[124] = {
-    0,   2,   2,   4,   4,   6,   6,   8,   8,   11,  11,  11,  13,  13,
-    15,  15,  17,  17,  20,  20,  20,  21,  23,  23,  26,  26,  26,  28,
-    28,  30,  30,  32,  32,  35,  35,  35,  37,  37,  38,  41,  41,  41,
-    43,  43,  45,  45,  47,  47,  50,  50,  50,  52,  52,  54,  54,  56,
-    56,  58,  58,  60,  60,  62,  62,  65,  65,  65,  67,  67,  69,  69,
-    71,  71,  73,  73,  76,  76,  76,  78,  78,  80,  80,  82,  82,  84,
-    84,  86,  86,  88,  88,  91,  91,  91,  93,  93,  95,  95,  97,  97,
-    100, 100, 100, 101, 103, 103, 106, 106, 106, 108, 108, 110, 110, 112,
-    112, 115, 115, 115, 117, 117, 118, 121, 121, 121, 124, 124};
-const double grpc_stats_table_2[128] = {0,
-                                        1,
-                                        2,
-                                        3,
-                                        4,
-                                        5,
-                                        6,
-                                        7,
-                                        8,
-                                        9,
-                                        10,
-                                        11,
-                                        12,
-                                        13,
-                                        14,
-                                        15,
-                                        16,
-                                        17,
-                                        18,
-                                        19,
-                                        20,
-                                        21,
-                                        22,
-                                        23,
-                                        24,
-                                        25,
-                                        26,
-                                        27,
-                                        28,
-                                        29.0367057593,
-                                        30.1117957626,
-                                        31.2266911945,
-                                        32.382865859,
-                                        33.5818481283,
-                                        34.8252229627,
-                                        36.1146340061,
-                                        37.4517857586,
-                                        38.8384458298,
-                                        40.2764472753,
-                                        41.7676910202,
-                                        43.3141483714,
-                                        44.9178636242,
-                                        46.580956764,
-                                        48.3056262695,
-                                        50.0941520181,
-                                        51.9488983005,
-                                        53.8723169454,
-                                        55.8669505614,
-                                        57.9354358972,
-                                        60.0805073281,
-                                        62.3050004699,
-                                        64.6118559278,
-                                        67.0041231836,
-                                        69.4849646266,
-                                        72.0576597342,
-                                        74.7256094075,
-                                        77.4923404661,
-                                        80.3615103113,
-                                        83.3369117602,
-                                        86.4224780597,
-                                        89.6222880862,
-                                        92.940571737,
-                                        96.3817155226,
-                                        99.9502683646,
-                                        103.65094761,
-                                        107.488645265,
-                                        111.468434465,
-                                        115.595576179,
-                                        119.875526164,
-                                        124.313942178,
-                                        128.916691457,
-                                        133.689858475,
-                                        138.639752984,
-                                        143.772918355,
-                                        149.09614023,
-                                        154.616455489,
-                                        160.341161557,
-                                        166.277826044,
-                                        172.434296755,
-                                        178.818712061,
-                                        185.439511656,
-                                        192.305447719,
-                                        199.425596476,
-                                        206.809370205,
-                                        214.466529676,
-                                        222.407197051,
-                                        230.641869269,
-                                        239.181431919,
-                                        248.037173633,
-                                        257.220801006,
-                                        266.744454071,
-                                        276.62072235,
-                                        286.862661493,
-                                        297.48381054,
-                                        308.498209814,
-                                        319.920419488,
-                                        331.765538824,
-                                        344.04922614,
-                                        356.787719506,
-                                        369.997858208,
-                                        383.697105013,
-                                        397.903569249,
-                                        412.636030746,
-                                        427.913964659,
-                                        443.757567219,
-                                        460.187782422,
-                                        477.226329722,
-                                        494.895732741,
-                                        513.219349041,
-                                        532.221401003,
-                                        551.927007848,
-                                        572.36221884,
-                                        593.554047722,
-                                        615.530508428,
-                                        638.320652111,
-                                        661.954605552,
-                                        686.46361098,
-                                        711.880067376,
-                                        738.237573297,
-                                        765.570971297,
-                                        793.91639398,
-                                        823.311311768,
-                                        853.794582433,
-                                        885.406502465,
-                                        918.188860339,
-                                        952.184991756,
-                                        987.439836931,
-                                        1024.0};
+    0,  0,  0,  1,  1,  1,  2,  2,  3,  3,  3,  4,  4,  5,  5,  6,  6,  6,
+    7,  7,  7,  8,  9,  9,  10, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 14,
+    15, 15, 16, 17, 17, 18, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 23,
+    24, 24, 25, 25, 26, 26, 26, 27, 28, 28, 29, 29, 30, 30, 30, 31, 32, 32,
+    33, 33, 33, 34, 34, 35, 35, 36, 36, 37, 37, 38, 38, 39, 39, 40, 40, 41,
+    41, 42, 42, 43, 43, 44, 44, 45, 45, 45, 46, 46, 47, 48, 48, 49, 49, 49,
+    50, 50, 51, 52, 52, 52, 53, 53, 54, 54, 55, 55, 56, 56, 57, 57};
+const int grpc_stats_table_2[128] = {
+    0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,  13,  14,
+    15,  16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  30,
+    32,  34,  36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,  61,
+    64,  67,  70,  73,  76,  79,  82,  85,  88,  91,  95,  99,  103, 107, 111,
+    115, 119, 123, 128, 133, 138, 143, 148, 153, 159, 165, 171, 177, 183, 189,
+    196, 203, 210, 217, 224, 232, 240, 248, 256, 265, 274, 283, 293, 303, 313,
+    323, 334, 345, 356, 368, 380, 392, 405, 418, 432, 446, 460, 475, 490, 506,
+    522, 539, 556, 574, 592, 611, 630, 650, 670, 691, 713, 735, 758, 782, 806,
+    831, 857, 883, 910, 938, 966, 995, 1024};
 const uint8_t grpc_stats_table_3[166] = {
-    0,   2,   2,   4,   4,   6,   6,   7,   8,   10,  10,  11,  12,  14,
-    14,  15,  17,  17,  18,  20,  20,  22,  22,  24,  24,  25,  27,  27,
-    29,  29,  31,  31,  34,  34,  34,  36,  36,  38,  38,  39,  40,  42,
-    42,  43,  44,  46,  46,  47,  49,  49,  50,  52,  52,  54,  54,  55,
-    57,  57,  59,  59,  61,  61,  63,  63,  65,  65,  68,  68,  68,  70,
-    70,  71,  72,  73,  75,  75,  76,  78,  78,  79,  81,  81,  82,  84,
-    84,  86,  86,  87,  89,  89,  91,  91,  93,  93,  95,  95,  97,  97,
-    100, 100, 100, 102, 102, 103, 104, 105, 107, 107, 108, 109, 111, 111,
-    113, 113, 114, 116, 116, 117, 119, 119, 121, 121, 123, 123, 125, 125,
-    127, 127, 129, 129, 131, 131, 134, 134, 134, 135, 136, 137, 139, 139,
-    140, 141, 143, 143, 144, 146, 146, 148, 148, 149, 151, 151, 153, 153,
-    155, 155, 157, 157, 159, 159, 161, 161, 163, 163, 166, 166};
-const double grpc_stats_table_4[64] = {0,
-                                       1,
-                                       2,
-                                       3,
-                                       4,
-                                       5.17974600698,
-                                       6.70744217421,
-                                       8.68571170472,
-                                       11.2474451301,
-                                       14.5647272503,
-                                       18.8603969544,
-                                       24.4230164536,
-                                       31.6262554885,
-                                       40.9539926456,
-                                       53.032819969,
-                                       68.6741343683,
-                                       88.9286433193,
-                                       115.156946285,
-                                       149.120933174,
-                                       193.102139541,
-                                       250.055009057,
-                                       323.805358672,
-                                       419.307378404,
-                                       542.976429747,
-                                       703.119998467,
-                                       910.495751121,
-                                       1179.03418281,
-                                       1526.77440013,
-                                       1977.07590065,
-                                       2560.18775048,
-                                       3315.28056941,
-                                       4293.07782286,
-                                       5559.26317765,
-                                       7198.89281155,
-                                       9322.10907382,
-                                       12071.5393129,
-                                       15631.8768886,
-                                       20242.2879738,
-                                       26212.4775761,
-                                       33943.4940145,
-                                       43954.6693961,
-                                       56918.5058232,
-                                       73705.8508152,
-                                       95444.3966128,
-                                       123594.433061,
-                                       160046.942783,
-                                       207250.628202,
-                                       268376.403469,
-                                       347530.401059,
-                                       450029.801797,
-                                       582760.01722,
-                                       754637.218056,
-                                       977207.279236,
-                                       1265421.37565,
-                                       1638640.32942,
-                                       2121935.1758,
-                                       2747771.31348,
-                                       3558189.37227,
-                                       4607629.29828,
-                                       5966587.36485,
-                                       7726351.7696,
-                                       10005134.9318,
-                                       12956014.428,
-                                       16777216.0};
+    0,  0,  0,  1,  1,  1,  1,  2,  2,  3,  3,  4,  4,  5,  5,  6,  6,  7,  7,
+    8,  8,  9,  9,  10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 16, 16,
+    16, 17, 18, 18, 19, 20, 20, 21, 22, 22, 23, 24, 24, 25, 26, 26, 27, 27, 28,
+    28, 29, 29, 30, 30, 31, 31, 32, 32, 33, 33, 34, 34, 34, 35, 36, 37, 38, 38,
+    39, 40, 41, 41, 42, 43, 43, 44, 45, 45, 46, 46, 47, 48, 48, 49, 49, 50, 50,
+    51, 51, 52, 52, 53, 53, 54, 54, 55, 56, 57, 58, 59, 60, 60, 61, 62, 63, 63,
+    64, 65, 65, 66, 67, 67, 68, 69, 69, 70, 70, 71, 72, 72, 73, 73, 74, 74, 75,
+    75, 76, 77, 78, 79, 80, 80, 81, 82, 83, 84, 85, 85, 86, 87, 88, 88, 89, 90,
+    90, 91, 92, 92, 93, 93, 94, 95, 95, 96, 96, 97, 97, 98};
+const int grpc_stats_table_4[64] = {
+    0,       1,       2,       3,       4,       6,        8,        11,
+    15,      20,      26,      34,      44,      57,       74,       96,
+    124,     160,     206,     265,     341,     439,      565,      727,
+    935,     1202,    1546,    1988,    2556,    3286,     4225,     5432,
+    6983,    8977,    11540,   14834,   19069,   24513,    31510,    40505,
+    52067,   66929,   86033,   110590,  142157,  182734,   234893,   301940,
+    388125,  498910,  641316,  824370,  1059674, 1362141,  1750943,  2250722,
+    2893155, 3718960, 4780478, 6144988, 7898976, 10153611, 13051794, 16777216};
 const uint8_t grpc_stats_table_5[87] = {
-    0,  1,  3,  3,  4,  6,  6,  7,  9,  9,  10, 12, 12, 13, 15, 15, 16, 18,
-    18, 19, 21, 21, 22, 24, 24, 25, 27, 27, 28, 30, 30, 31, 32, 34, 34, 36,
-    36, 37, 39, 39, 40, 42, 42, 43, 44, 46, 46, 47, 49, 49, 51, 51, 52, 53,
-    55, 55, 56, 58, 58, 59, 61, 61, 63, 63, 64, 65, 67, 67, 68, 70, 70, 71,
-    73, 73, 75, 75, 76, 77, 79, 79, 80, 82, 82, 83, 85, 85, 87};
-const double grpc_stats_table_6[64] = {0,
-                                       1,
-                                       2,
-                                       3,
-                                       4,
-                                       5,
-                                       6,
-                                       7,
-                                       8,
-                                       9,
-                                       10,
-                                       11,
-                                       12.0020736244,
-                                       13.0954337532,
-                                       14.2883963681,
-                                       15.5900350167,
-                                       17.0102498252,
-                                       18.5598427974,
-                                       20.2505999737,
-                                       22.0953810747,
-                                       24.1082173107,
-                                       26.3044181014,
-                                       28.7006875181,
-                                       31.315251333,
-                                       34.1679956422,
-                                       37.2806181177,
-                                       40.6767930374,
-                                       44.3823513489,
-                                       48.4254771375,
-                                       52.8369219909,
-                                       57.6502388927,
-                                       62.902037423,
-                                       68.6322622068,
-                                       74.8844967285,
-                                       81.7062948236,
-                                       89.1495423679,
-                                       97.2708519163,
-                                       106.131993291,
-                                       115.800363399,
-                                       126.34949884,
-                                       137.859635225,
-                                       150.418317437,
-                                       164.121065485,
-                                       179.072101023,
-                                       195.38514005,
-                                       213.184257818,
-                                       232.604832535,
-                                       253.794575043,
-                                       276.914652285,
-                                       302.140913126,
-                                       329.665225843,
-                                       359.696937452,
-                                       392.464465978,
-                                       428.217037783,
-                                       467.226583154,
-                                       509.78980457,
-                                       556.230433401,
-                                       606.901692163,
-                                       662.1889811,
-                                       722.512809492,
-                                       788.331994007,
-                                       860.147148411,
-                                       938.504491184,
-                                       1024.0};
-const uint8_t grpc_stats_table_7[52] = {
-    0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17,
-    18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
-    36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 52};
+    0,  0,  1,  1,  2,  3,  3,  4,  4,  5,  6,  6,  7,  8,  8,  9,  10, 10,
+    11, 12, 12, 13, 14, 14, 15, 16, 17, 17, 18, 19, 19, 20, 21, 21, 22, 23,
+    24, 24, 25, 25, 26, 27, 28, 28, 29, 30, 30, 31, 32, 33, 33, 34, 35, 35,
+    36, 36, 37, 38, 39, 39, 40, 41, 41, 42, 43, 44, 44, 45, 46, 46, 47, 47,
+    48, 49, 50, 50, 51, 52, 52, 53, 54, 55, 55, 56, 57, 57, 58};
+const int grpc_stats_table_6[64] = {
+    0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  13,
+    15,  17,  19,  21,  23,  25,  28,  31,  34,  37,  41,  45,  49,
+    54,  59,  64,  70,  76,  83,  90,  98,  106, 115, 125, 136, 147,
+    159, 172, 186, 201, 218, 236, 255, 276, 299, 323, 349, 377, 408,
+    441, 477, 515, 556, 601, 649, 701, 757, 817, 881, 950, 1024};
+const uint8_t grpc_stats_table_7[104] = {
+    0,  0,  0,  1,  1,  1,  1,  2,  2,  2,  3,  3,  4,  4,  5,  5,  6,  6,
+    7,  7,  7,  8,  8,  8,  9,  9,  10, 11, 11, 12, 12, 13, 13, 14, 14, 14,
+    15, 15, 16, 16, 16, 17, 18, 18, 19, 20, 20, 21, 21, 22, 22, 23, 23, 24,
+    24, 24, 25, 25, 26, 27, 28, 28, 29, 29, 30, 30, 31, 31, 32, 32, 33, 33,
+    34, 34, 35, 36, 36, 37, 38, 38, 39, 39, 40, 40, 41, 41, 42, 42, 42, 43,
+    44, 45, 45, 46, 47, 47, 48, 48, 49, 49, 50, 50, 51, 51};
+void grpc_stats_inc_call_initial_size(grpc_exec_ctx *exec_ctx, int value) {
+  value = GPR_CLAMP(value, 0, 262144);
+  if (value < 6) {
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE,
+                             value);
+    return;
+  }
+  union {
+    double dbl;
+    uint64_t uint;
+  } _val, _bkt;
+  _val.dbl = value;
+  if (_val.uint < 4650529565213458432ull) {
+    int bucket =
+        grpc_stats_table_1[((_val.uint - 4618441417868443648ull) >> 49)] + 6;
+    _bkt.dbl = grpc_stats_table_0[bucket];
+    bucket -= (_val.uint < _bkt.uint);
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE,
+                             bucket);
+    return;
+  }
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE,
+                           grpc_stats_histo_find_bucket_slow(
+                               (exec_ctx), value, grpc_stats_table_0, 64));
+}
+void grpc_stats_inc_poll_events_returned(grpc_exec_ctx *exec_ctx, int value) {
+  value = GPR_CLAMP(value, 0, 1024);
+  if (value < 29) {
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx),
+                             GRPC_STATS_HISTOGRAM_POLL_EVENTS_RETURNED, value);
+    return;
+  }
+  union {
+    double dbl;
+    uint64_t uint;
+  } _val, _bkt;
+  _val.dbl = value;
+  if (_val.uint < 4642648265865560064ull) {
+    int bucket =
+        grpc_stats_table_3[((_val.uint - 4628855992006737920ull) >> 47)] + 29;
+    _bkt.dbl = grpc_stats_table_2[bucket];
+    bucket -= (_val.uint < _bkt.uint);
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx),
+                             GRPC_STATS_HISTOGRAM_POLL_EVENTS_RETURNED, bucket);
+    return;
+  }
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx),
+                           GRPC_STATS_HISTOGRAM_POLL_EVENTS_RETURNED,
+                           grpc_stats_histo_find_bucket_slow(
+                               (exec_ctx), value, grpc_stats_table_2, 128));
+}
+void grpc_stats_inc_tcp_write_size(grpc_exec_ctx *exec_ctx, int value) {
+  value = GPR_CLAMP(value, 0, 16777216);
+  if (value < 5) {
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
+                             value);
+    return;
+  }
+  union {
+    double dbl;
+    uint64_t uint;
+  } _val, _bkt;
+  _val.dbl = value;
+  if (_val.uint < 4682617712558473216ull) {
+    int bucket =
+        grpc_stats_table_5[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
+    _bkt.dbl = grpc_stats_table_4[bucket];
+    bucket -= (_val.uint < _bkt.uint);
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
+                             bucket);
+    return;
+  }
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
+                           grpc_stats_histo_find_bucket_slow(
+                               (exec_ctx), value, grpc_stats_table_4, 64));
+}
+void grpc_stats_inc_tcp_write_iov_size(grpc_exec_ctx *exec_ctx, int value) {
+  value = GPR_CLAMP(value, 0, 1024);
+  if (value < 12) {
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx),
+                             GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE, value);
+    return;
+  }
+  union {
+    double dbl;
+    uint64_t uint;
+  } _val, _bkt;
+  _val.dbl = value;
+  if (_val.uint < 4637300241308057600ull) {
+    int bucket =
+        grpc_stats_table_7[((_val.uint - 4622945017495814144ull) >> 48)] + 12;
+    _bkt.dbl = grpc_stats_table_6[bucket];
+    bucket -= (_val.uint < _bkt.uint);
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx),
+                             GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE, bucket);
+    return;
+  }
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
+                           grpc_stats_histo_find_bucket_slow(
+                               (exec_ctx), value, grpc_stats_table_6, 64));
+}
+void grpc_stats_inc_tcp_read_size(grpc_exec_ctx *exec_ctx, int value) {
+  value = GPR_CLAMP(value, 0, 16777216);
+  if (value < 5) {
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
+                             value);
+    return;
+  }
+  union {
+    double dbl;
+    uint64_t uint;
+  } _val, _bkt;
+  _val.dbl = value;
+  if (_val.uint < 4682617712558473216ull) {
+    int bucket =
+        grpc_stats_table_5[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
+    _bkt.dbl = grpc_stats_table_4[bucket];
+    bucket -= (_val.uint < _bkt.uint);
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
+                             bucket);
+    return;
+  }
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
+                           grpc_stats_histo_find_bucket_slow(
+                               (exec_ctx), value, grpc_stats_table_4, 64));
+}
+void grpc_stats_inc_tcp_read_offer(grpc_exec_ctx *exec_ctx, int value) {
+  value = GPR_CLAMP(value, 0, 16777216);
+  if (value < 5) {
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,
+                             value);
+    return;
+  }
+  union {
+    double dbl;
+    uint64_t uint;
+  } _val, _bkt;
+  _val.dbl = value;
+  if (_val.uint < 4682617712558473216ull) {
+    int bucket =
+        grpc_stats_table_5[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
+    _bkt.dbl = grpc_stats_table_4[bucket];
+    bucket -= (_val.uint < _bkt.uint);
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,
+                             bucket);
+    return;
+  }
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,
+                           grpc_stats_histo_find_bucket_slow(
+                               (exec_ctx), value, grpc_stats_table_4, 64));
+}
+void grpc_stats_inc_tcp_read_iov_size(grpc_exec_ctx *exec_ctx, int value) {
+  value = GPR_CLAMP(value, 0, 1024);
+  if (value < 12) {
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
+                             value);
+    return;
+  }
+  union {
+    double dbl;
+    uint64_t uint;
+  } _val, _bkt;
+  _val.dbl = value;
+  if (_val.uint < 4637300241308057600ull) {
+    int bucket =
+        grpc_stats_table_7[((_val.uint - 4622945017495814144ull) >> 48)] + 12;
+    _bkt.dbl = grpc_stats_table_6[bucket];
+    bucket -= (_val.uint < _bkt.uint);
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
+                             bucket);
+    return;
+  }
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
+                           grpc_stats_histo_find_bucket_slow(
+                               (exec_ctx), value, grpc_stats_table_6, 64));
+}
+void grpc_stats_inc_http2_send_message_size(grpc_exec_ctx *exec_ctx,
+                                            int value) {
+  value = GPR_CLAMP(value, 0, 16777216);
+  if (value < 5) {
+    GRPC_STATS_INC_HISTOGRAM(
+        (exec_ctx), GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE, value);
+    return;
+  }
+  union {
+    double dbl;
+    uint64_t uint;
+  } _val, _bkt;
+  _val.dbl = value;
+  if (_val.uint < 4682617712558473216ull) {
+    int bucket =
+        grpc_stats_table_5[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
+    _bkt.dbl = grpc_stats_table_4[bucket];
+    bucket -= (_val.uint < _bkt.uint);
+    GRPC_STATS_INC_HISTOGRAM(
+        (exec_ctx), GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE, bucket);
+    return;
+  }
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx),
+                           GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
+                           grpc_stats_histo_find_bucket_slow(
+                               (exec_ctx), value, grpc_stats_table_4, 64));
+}
 const int grpc_stats_histo_buckets[8] = {64, 128, 64, 64, 64, 64, 64, 64};
 const int grpc_stats_histo_start[8] = {0, 64, 192, 256, 320, 384, 448, 512};
-const double *const grpc_stats_histo_bucket_boundaries[8] = {
+const int *const grpc_stats_histo_bucket_boundaries[8] = {
     grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_4,
     grpc_stats_table_6, grpc_stats_table_4, grpc_stats_table_4,
     grpc_stats_table_6, grpc_stats_table_4};
+void (*const grpc_stats_inc_histogram[8])(grpc_exec_ctx *exec_ctx, int x) = {
+    grpc_stats_inc_call_initial_size, grpc_stats_inc_poll_events_returned,
+    grpc_stats_inc_tcp_write_size,    grpc_stats_inc_tcp_write_iov_size,
+    grpc_stats_inc_tcp_read_size,     grpc_stats_inc_tcp_read_offer,
+    grpc_stats_inc_tcp_read_iov_size, grpc_stats_inc_http2_send_message_size};

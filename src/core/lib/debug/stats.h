@@ -50,8 +50,8 @@ void grpc_stats_collect(grpc_stats_data *output);
 void grpc_stats_diff(const grpc_stats_data *b, const grpc_stats_data *a,
                      grpc_stats_data *c);
 char *grpc_stats_data_as_json(const grpc_stats_data *data);
-int grpc_stats_histo_find_bucket_slow(grpc_exec_ctx *exec_ctx, double value,
-                                      const double *table, int table_size);
+int grpc_stats_histo_find_bucket_slow(grpc_exec_ctx *exec_ctx, int value,
+                                      const int *table, int table_size);
 double grpc_stats_histo_percentile(const grpc_stats_data *data,
                                    grpc_stats_histograms histogram,
                                    double percentile);

@@ -3726,6 +3726,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_core_stats", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
@@ -3747,6 +3748,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_core_stats", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
@@ -3854,6 +3856,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_core_stats", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
@@ -4012,6 +4015,24 @@
     "name": "shutdown_test", 
     "src": [
       "test/cpp/end2end/shutdown_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "stats_test", 
+    "src": [
+      "test/core/debug/stats_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
