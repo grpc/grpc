@@ -287,6 +287,7 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), tcp));
     TCP_UNREF(exec_ctx, tcp, "read");
   } else {
+    GRPC_STATS_INC_TCP_READ_SIZE(exec_ctx, read_bytes);
     add_to_estimate(tcp, (size_t)read_bytes);
     GPR_ASSERT((size_t)read_bytes <= tcp->incoming_buffer->length);
     if ((size_t)read_bytes < tcp->incoming_buffer->length) {
@@ -402,6 +403,9 @@ static bool tcp_flush(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
     msg.msg_control = NULL;
     msg.msg_controllen = 0;
     msg.msg_flags = 0;
+
+    GRPC_STATS_INC_TCP_WRITE_SIZE(exec_ctx, sending_length);
+    GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(exec_ctx, iov_size);
 
     GPR_TIMER_BEGIN("sendmsg", 1);
     do {
