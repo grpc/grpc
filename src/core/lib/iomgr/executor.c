@@ -151,9 +151,8 @@ static void executor_thread(void *arg) {
   size_t subtract_depth = 0;
   for (;;) {
     if (GRPC_TRACER_ON(executor_trace)) {
-      gpr_log(GPR_DEBUG,
-              "EXECUTOR[%" PRIdPTR "]: step (sub_depth=%" PRIdPTR ")",
-              ts - g_thread_state, subtract_depth);
+      gpr_log(GPR_DEBUG, "EXECUTOR[%d]: step (sub_depth=%" PRIdPTR ")",
+              (int)(ts - g_thread_state), subtract_depth);
     }
     gpr_mu_lock(&ts->mu);
     ts->depth -= subtract_depth;
@@ -163,8 +162,8 @@ static void executor_thread(void *arg) {
     }
     if (ts->shutdown) {
       if (GRPC_TRACER_ON(executor_trace)) {
-        gpr_log(GPR_DEBUG, "EXECUTOR[%" PRIdPTR "]: shutdown",
-                ts - g_thread_state);
+        gpr_log(GPR_DEBUG, "EXECUTOR[%d]: shutdown",
+                (int)(ts - g_thread_state));
       }
       gpr_mu_unlock(&ts->mu);
       break;
@@ -173,8 +172,7 @@ static void executor_thread(void *arg) {
     ts->elems = (grpc_closure_list)GRPC_CLOSURE_LIST_INIT;
     gpr_mu_unlock(&ts->mu);
     if (GRPC_TRACER_ON(executor_trace)) {
-      gpr_log(GPR_DEBUG, "EXECUTOR[%" PRIdPTR "]: execute",
-              ts - g_thread_state);
+      gpr_log(GPR_DEBUG, "EXECUTOR[%d]: execute", (int)(ts - g_thread_state));
     }
 
     subtract_depth = run_closures(&exec_ctx, exec);
