@@ -35,6 +35,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/string_util.h>
 
 zend_class_entry *grpc_ce_call_credentials;
 #if PHP_MAJOR_VERSION >= 7
