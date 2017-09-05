@@ -97,7 +97,6 @@ static void on_md_processing_done_inner(grpc_exec_ctx *exec_ctx,
                                         grpc_error *error) {
   call_data *calld = elem->call_data;
   grpc_transport_stream_op_batch *batch = calld->recv_initial_metadata_batch;
-  grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner, NULL);
   /* TODO(jboeuf): Implement support for response_md. */
   if (response_md != NULL && num_response_md > 0) {
     gpr_log(GPR_INFO,
