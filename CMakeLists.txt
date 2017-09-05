@@ -12156,6 +12156,7 @@ target_link_libraries(qps_openloop_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   qps
+  grpc++_core_stats
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -12201,6 +12202,7 @@ target_link_libraries(qps_worker
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   qps
+  grpc++_core_stats
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -12418,6 +12420,7 @@ target_link_libraries(secure_sync_unary_ping_pong_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   qps
+  grpc++_core_stats
   grpc++_test_util
   grpc_test_util
   grpc++

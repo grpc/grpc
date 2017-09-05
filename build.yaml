@@ -4332,6 +4332,7 @@ targets:
   - test/cpp/qps/qps_openloop_test.cc
   deps:
   - qps
+  - grpc++_core_stats
   - grpc++_test_util
   - grpc_test_util
   - grpc++
@@ -4354,6 +4355,7 @@ targets:
   - test/cpp/qps/worker.cc
   deps:
   - qps
+  - grpc++_core_stats
   - grpc++_test_util
   - grpc_test_util
   - grpc++
@@ -4417,6 +4419,7 @@ targets:
   - test/cpp/qps/secure_sync_unary_ping_pong_test.cc
   deps:
   - qps
+  - grpc++_core_stats
   - grpc++_test_util
   - grpc_test_util
   - grpc++
