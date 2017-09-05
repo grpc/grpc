@@ -1332,6 +1332,16 @@ libs:
   - grpc++_codegen_base_src
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
+- name: grpc++_core_stats
+  build: private
+  language: c++
+  public_headers:
+  - src/cpp/util/core_stats.h
+  src:
+  - src/proto/grpc/core/stats.proto
+  - src/cpp/util/core_stats.cc
+  deps:
+  - grpc++
 - name: grpc++_cronet
   build: all
   language: c++
@@ -1674,6 +1684,7 @@ libs:
   deps:
   - grpc_test_util
   - grpc++_test_util
+  - grpc++_core_stats
   - grpc++
   - grpc
 - name: grpc_csharp_ext
@@ -3835,6 +3846,7 @@ targets:
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_full.cc
   deps:
+  - grpc++_core_stats
   - grpc++
   - grpc
   - gpr
@@ -3852,6 +3864,7 @@ targets:
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_minimal.cc
   deps:
+  - grpc++_core_stats
   - grpc
   - gpr
   filegroups:
@@ -4342,6 +4355,7 @@ targets:
   - test/cpp/qps/qps_json_driver.cc
   deps:
   - qps
+  - grpc++_core_stats
   - grpc++_test_util
   - grpc_test_util
   - grpc++
