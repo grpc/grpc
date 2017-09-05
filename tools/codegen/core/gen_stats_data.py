@@ -110,12 +110,12 @@ def gen_bucket_code(histogram):
   done_unmapped = False
   first_nontrivial = None
   first_unmapped = None
-  while len(bounds) < histogram.buckets:
-    if len(bounds) == histogram.buckets - 1:
+  while len(bounds) < histogram.buckets + 1:
+    if len(bounds) == histogram.buckets:
       nextb = int(histogram.max)
     else:
       mul = math.pow(float(histogram.max) / bounds[-1],
-                     1.0 / (histogram.buckets - len(bounds)))
+                     1.0 / (histogram.buckets + 1 - len(bounds)))
       nextb = int(math.ceil(bounds[-1] * mul))
     if nextb <= bounds[-1] + 1:
       nextb = bounds[-1] + 1
