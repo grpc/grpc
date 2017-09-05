@@ -541,6 +541,23 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "transport_security_test_lib"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "fake_transport_security_test", 
+    "src": [
+      "test/core/tsi/fake_transport_security_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2159,6 +2176,23 @@
     "name": "ssl_server_fuzzer", 
     "src": [
       "test/core/security/ssl_server_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "transport_security_test_lib"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "ssl_transport_security_test", 
+    "src": [
+      "test/core/tsi/ssl_transport_security_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7822,10 +7856,11 @@
       "src/core/lib/compression/compression.c", 
       "src/core/lib/compression/message_compress.c", 
       "src/core/lib/compression/stream_compression.c", 
+      "src/core/lib/debug/stats.c", 
+      "src/core/lib/debug/stats_data.c", 
       "src/core/lib/http/format_request.c", 
       "src/core/lib/http/httpcli.c", 
       "src/core/lib/http/parser.c", 
-      "src/core/lib/iomgr/call_combiner.c", 
       "src/core/lib/iomgr/closure.c", 
       "src/core/lib/iomgr/combiner.c", 
       "src/core/lib/iomgr/endpoint.c", 
@@ -7974,10 +8009,11 @@
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/message_compress.h", 
       "src/core/lib/compression/stream_compression.h", 
+      "src/core/lib/debug/stats.h", 
+      "src/core/lib/debug/stats_data.h", 
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
-      "src/core/lib/iomgr/call_combiner.h", 
       "src/core/lib/iomgr/closure.h", 
       "src/core/lib/iomgr/combiner.h", 
       "src/core/lib/iomgr/endpoint.h", 
@@ -8105,10 +8141,11 @@
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/message_compress.h", 
       "src/core/lib/compression/stream_compression.h", 
+      "src/core/lib/debug/stats.h", 
+      "src/core/lib/debug/stats_data.h", 
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
-      "src/core/lib/iomgr/call_combiner.h", 
       "src/core/lib/iomgr/closure.h", 
       "src/core/lib/iomgr/combiner.h", 
       "src/core/lib/iomgr/endpoint.h", 
@@ -9100,6 +9137,23 @@
     "language": "c", 
     "name": "nanopb_headers", 
     "src": [], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "grpc"
+    ], 
+    "headers": [
+      "test/core/tsi/transport_security_test_lib.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "transport_security_test_lib", 
+    "src": [
+      "test/core/tsi/transport_security_test_lib.c", 
+      "test/core/tsi/transport_security_test_lib.h"
+    ], 
     "third_party": false, 
     "type": "filegroup"
   }, 

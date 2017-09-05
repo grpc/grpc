@@ -33,12 +33,12 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'bundler',            '~> 1.9'
   s.add_development_dependency 'facter',             '~> 2.4'
   s.add_development_dependency 'logging',            '~> 2.0'
-  s.add_development_dependency 'simplecov',          '~> 0.9'
-  s.add_development_dependency 'rake',               '~> 10.4'
+  s.add_development_dependency 'simplecov',          '~> 0.14.1'
+  s.add_development_dependency 'rake',               '~> 12.0'
   s.add_development_dependency 'rake-compiler',      '~> 1.0'
   s.add_development_dependency 'rake-compiler-dock', '~> 0.5.1'
-  s.add_development_dependency 'rspec',              '~> 3.2'
-  s.add_development_dependency 'rubocop',            '~> 0.30.0'
+  s.add_development_dependency 'rspec',              '~> 3.6'
+  s.add_development_dependency 'rubocop',            '~> 0.49.1'
   s.add_development_dependency 'signet',             '~> 0.7.0'
 
   s.extensions = %w(src/ruby/ext/grpc/extconf.rb)
@@ -261,10 +261,11 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/compression/algorithm_metadata.h )
   s.files += %w( src/core/lib/compression/message_compress.h )
   s.files += %w( src/core/lib/compression/stream_compression.h )
+  s.files += %w( src/core/lib/debug/stats.h )
+  s.files += %w( src/core/lib/debug/stats_data.h )
   s.files += %w( src/core/lib/http/format_request.h )
   s.files += %w( src/core/lib/http/httpcli.h )
   s.files += %w( src/core/lib/http/parser.h )
-  s.files += %w( src/core/lib/iomgr/call_combiner.h )
   s.files += %w( src/core/lib/iomgr/closure.h )
   s.files += %w( src/core/lib/iomgr/combiner.h )
   s.files += %w( src/core/lib/iomgr/endpoint.h )
@@ -414,10 +415,11 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/compression/compression.c )
   s.files += %w( src/core/lib/compression/message_compress.c )
   s.files += %w( src/core/lib/compression/stream_compression.c )
+  s.files += %w( src/core/lib/debug/stats.c )
+  s.files += %w( src/core/lib/debug/stats_data.c )
   s.files += %w( src/core/lib/http/format_request.c )
   s.files += %w( src/core/lib/http/httpcli.c )
   s.files += %w( src/core/lib/http/parser.c )
-  s.files += %w( src/core/lib/iomgr/call_combiner.c )
   s.files += %w( src/core/lib/iomgr/closure.c )
   s.files += %w( src/core/lib/iomgr/combiner.c )
   s.files += %w( src/core/lib/iomgr/endpoint.c )

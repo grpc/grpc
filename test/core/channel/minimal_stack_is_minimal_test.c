@@ -89,14 +89,14 @@ int main(int argc, char **argv) {
                         "connected", NULL);
   errors += CHECK_STACK("unknown", NULL, GRPC_SERVER_CHANNEL, "server",
                         "message_size", "deadline", "connected", NULL);
-  errors += CHECK_STACK("chttp2", NULL, GRPC_CLIENT_DIRECT_CHANNEL,
-                        "message_size", "deadline", "http-client",
-                        "message_compress", "connected", NULL);
+  errors +=
+      CHECK_STACK("chttp2", NULL, GRPC_CLIENT_DIRECT_CHANNEL, "message_size",
+                  "deadline", "http-client", "compress", "connected", NULL);
   errors += CHECK_STACK("chttp2", NULL, GRPC_CLIENT_SUBCHANNEL, "message_size",
-                        "http-client", "message_compress", "connected", NULL);
-  errors += CHECK_STACK("chttp2", NULL, GRPC_SERVER_CHANNEL, "server",
-                        "message_size", "deadline", "http-server",
-                        "message_compress", "connected", NULL);
+                        "http-client", "compress", "connected", NULL);
+  errors +=
+      CHECK_STACK("chttp2", NULL, GRPC_SERVER_CHANNEL, "server", "message_size",
+                  "deadline", "http-server", "compress", "connected", NULL);
   errors +=
       CHECK_STACK(NULL, NULL, GRPC_CLIENT_CHANNEL, "client-channel", NULL);
 

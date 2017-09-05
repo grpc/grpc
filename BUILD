@@ -577,7 +577,6 @@ grpc_cc_library(
         "src/core/lib/http/format_request.c",
         "src/core/lib/http/httpcli.c",
         "src/core/lib/http/parser.c",
-        "src/core/lib/iomgr/call_combiner.c",
         "src/core/lib/iomgr/closure.c",
         "src/core/lib/iomgr/combiner.c",
         "src/core/lib/iomgr/endpoint.c",
@@ -692,6 +691,8 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.c",
         "src/core/lib/transport/transport.c",
         "src/core/lib/transport/transport_op_string.c",
+        "src/core/lib/debug/stats.c",
+        "src/core/lib/debug/stats_data.c",
     ],
     hdrs = [
         "src/core/lib/channel/channel_args.h",
@@ -708,7 +709,6 @@ grpc_cc_library(
         "src/core/lib/http/format_request.h",
         "src/core/lib/http/httpcli.h",
         "src/core/lib/http/parser.h",
-        "src/core/lib/iomgr/call_combiner.h",
         "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/combiner.h",
         "src/core/lib/iomgr/endpoint.h",
@@ -809,6 +809,8 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
+        "src/core/lib/debug/stats.h",
+        "src/core/lib/debug/stats_data.h",
     ],
     external_deps = [
         "zlib",

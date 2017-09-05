@@ -189,7 +189,10 @@ static unsigned state_index(unsigned bitofs, symset syms, unsigned *isnew) {
     return i;
   }
   GPR_ASSERT(nhuffstates != MAXHUFFSTATES);
-  i = nhuffstates++;
+ 
+  i = nhuffstates;
+  nhuffstates++;
+  
   huffstates[i].bitofs = bitofs;
   huffstates[i].syms = syms;
   huffstates[i].next = nibblelut_empty();
