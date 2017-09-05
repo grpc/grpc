@@ -8,7 +8,6 @@
     <AssemblyName>Grpc.IntegrationTesting.StressClient</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>Grpc.IntegrationTesting.StressClient</PackageId>
-    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">$(PackageTargetFallback);portable-net45</PackageTargetFallback>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 

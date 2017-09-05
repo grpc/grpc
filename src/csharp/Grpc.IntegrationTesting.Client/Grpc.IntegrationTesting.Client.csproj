@@ -8,7 +8,6 @@
     <AssemblyName>Grpc.IntegrationTesting.Client</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>Grpc.IntegrationTesting.Client</PackageId>
-    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">$(PackageTargetFallback);portable-net45</PackageTargetFallback>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
