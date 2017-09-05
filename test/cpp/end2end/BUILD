@@ -193,6 +193,7 @@ grpc_cc_test(
         "//test/cpp/util:test_util",
     ],
     external_deps = [
+        "gmock",
         "gtest",
     ],
 )
@@ -235,6 +236,7 @@ grpc_cc_test(
         "//test/cpp/util:test_util",
     ],
     external_deps = [
+        "gmock",
         "gtest",
     ],
 )

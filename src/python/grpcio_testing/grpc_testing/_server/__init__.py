@@ -12,20 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+from grpc_testing._server import _server
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/macos/grpc_run_tests_matrix.sh"
-gfile_resources: "/bigstore/grpc-testing-secrets/gcp_credentials/GrpcTesting-d0eeee2db331.json"
-timeout_mins: 240
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.xml"
-    regex: "github/grpc/reports/**"
-  }
-}
 
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "-f basictests macos opt --internal_ci -j 1 --inner_jobs 4"
-}
+def server_from_dictionary(descriptors_to_servicers, time):
+    return _server.server_from_descriptor_to_servicers(
+        descriptors_to_servicers, time)
