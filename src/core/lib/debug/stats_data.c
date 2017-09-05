@@ -30,6 +30,7 @@ const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "histogram_slow_lookups",
     "syscall_write",
     "syscall_read",
+    "reads_when_exec_ctx_done",
     "http2_op_batches",
     "http2_op_cancel",
     "http2_op_send_initial_metadata",

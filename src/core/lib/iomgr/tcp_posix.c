@@ -43,6 +43,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -231,6 +232,12 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
   GRPC_CLOSURE_RUN(exec_ctx, cb, error);
 }
 
+static void notify_on_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
+  GRPC_CLOSURE_INIT(&tcp->read_closure, tcp_handle_read, tcp,
+                    grpc_schedule_on_exec_ctx);
+  grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_closure);
+}
+
 #define MAX_READ_IOVEC 4
 static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   struct msghdr msg;
@@ -271,7 +278,7 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
     if (errno == EAGAIN) {
       finish_estimate(tcp);
       /* We've consumed the edge, request a new one */
-      grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_closure);
+      notify_on_read(exec_ctx, tcp);
     } else {
       grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
                                                  tcp->incoming_buffer);
@@ -357,8 +364,13 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   TCP_REF(tcp, "read");
   if (tcp->finished_edge) {
     tcp->finished_edge = false;
-    grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_closure);
+    notify_on_read(exec_ctx, tcp);
   } else {
+    bool ready_to_finish = grpc_exec_ctx_ready_to_finish(exec_ctx);
+    if (ready_to_finish) GRPC_STATS_INC_READS_WHEN_EXEC_CTX_DONE(exec_ctx);
+    GRPC_CLOSURE_INIT(
+        &tcp->read_closure, tcp_handle_read, tcp,
+        ready_to_finish ? grpc_executor_scheduler : grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_SCHED(exec_ctx, &tcp->read_closure, GRPC_ERROR_NONE);
   }
 }
@@ -631,8 +643,6 @@ grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_fd *em_fd,
   gpr_ref_init(&tcp->refcount, 1);
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
-  GRPC_CLOSURE_INIT(&tcp->read_closure, tcp_handle_read, tcp,
-                    grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&tcp->write_closure, tcp_handle_write, tcp,
                     grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&tcp->last_read_buffer);
