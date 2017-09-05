@@ -727,10 +727,7 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
   grpc_slice_buffer_destroy_internal(exec_ctx,
                                      &s->unprocessed_incoming_frames_buffer);
   grpc_slice_buffer_destroy_internal(exec_ctx, &s->frame_storage);
-  if (s->compressed_data_buffer) {
-    grpc_slice_buffer_destroy_internal(exec_ctx, s->compressed_data_buffer);
-    gpr_free(s->compressed_data_buffer);
-  }
+  grpc_slice_buffer_destroy_internal(exec_ctx, &s->compressed_data_buffer);
   if (s->decompressed_data_buffer) {
     grpc_slice_buffer_destroy_internal(exec_ctx, s->decompressed_data_buffer);
     gpr_free(s->decompressed_data_buffer);
@@ -1300,12 +1297,11 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
 
     /* Identify stream compression */
-    if ((s->stream_compression_send_enabled =
-             (op_payload->send_initial_metadata.send_initial_metadata->idx.named
-                  .content_encoding != NULL)) == true) {
-      s->compressed_data_buffer = gpr_malloc(sizeof(grpc_slice_buffer));
-      grpc_slice_buffer_init(s->compressed_data_buffer);
+    if (op_payload->send_initial_metadata.send_initial_metadata->idx.named.content_encoding == NULL ||
+        grpc_stream_compression_method_parse(GRPC_MDVALUE(op_payload->send_initial_metadata.send_initial_metadata->idx.named.content_encoding->md), true, &s->stream_compression_method) == 0) {
+      s->stream_compression_method = GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
     }
+    grpc_slice_buffer_init(&s->compressed_data_buffer);
 
     s->send_initial_metadata_finished = add_closure_barrier(on_complete);
     s->send_initial_metadata =

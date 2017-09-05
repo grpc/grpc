@@ -557,10 +557,11 @@ struct grpc_chttp2_stream {
   grpc_chttp2_write_cb *finish_after_write;
   size_t sending_bytes;
 
-  /** Whether stream compression send is enabled */
+  /* Stream compression method to be used. */
+  grpc_stream_compression_method stream_compression_method;
+  /* Stream decompression method to be used. */
+  grpc_stream_compression_method stream_decompression_method;
   bool stream_compression_recv_enabled;
-  /** Whether stream compression recv is enabled */
-  bool stream_compression_send_enabled;
   /** Whether bytes stored in unprocessed_incoming_byte_stream is decompressed
    */
   bool unprocessed_incoming_frames_decompressed;
@@ -570,7 +571,7 @@ struct grpc_chttp2_stream {
   grpc_stream_compression_context *stream_compression_ctx;
 
   /** Buffer storing data that is compressed but not sent */
-  grpc_slice_buffer *compressed_data_buffer;
+  grpc_slice_buffer compressed_data_buffer;
   /** Amount of uncompressed bytes sent out when compressed_data_buffer is
    * emptied */
   size_t uncompressed_data_size;
