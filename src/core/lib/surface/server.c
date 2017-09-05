@@ -29,6 +29,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -538,6 +539,7 @@ static void publish_new_rpc(grpc_exec_ctx *exec_ctx, void *arg,
     if (request_id == -1) {
       continue;
     } else {
+      GRPC_STATS_INC_SERVER_CQS_CHECKED(exec_ctx, i);
       gpr_mu_lock(&calld->mu_state);
       calld->state = ACTIVATED;
       gpr_mu_unlock(&calld->mu_state);
@@ -548,6 +550,7 @@ static void publish_new_rpc(grpc_exec_ctx *exec_ctx, void *arg,
   }
 
   /* no cq to take the request found: queue it on the slow list */
+  GRPC_STATS_INC_SERVER_SLOWPATH_REQUESTS_QUEUED(exec_ctx);
   gpr_mu_lock(&server->mu_call);
   gpr_mu_lock(&calld->mu_state);
   calld->state = PENDING;
@@ -1429,6 +1432,7 @@ grpc_call_error grpc_server_request_call(
   grpc_call_error error;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   requested_call *rc = gpr_malloc(sizeof(*rc));
+  GRPC_STATS_INC_SERVER_REQUESTED_CALLS(&exec_ctx);
   GRPC_API_TRACE(
       "grpc_server_request_call("
       "server=%p, call=%p, details=%p, initial_metadata=%p, "
@@ -1475,6 +1479,7 @@ grpc_call_error grpc_server_request_registered_call(
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   requested_call *rc = gpr_malloc(sizeof(*rc));
   registered_method *rm = rmp;
+  GRPC_STATS_INC_SERVER_REQUESTED_CALLS(&exec_ctx);
   GRPC_API_TRACE(
       "grpc_server_request_registered_call("
       "server=%p, rmp=%p, call=%p, deadline=%p, initial_metadata=%p, "

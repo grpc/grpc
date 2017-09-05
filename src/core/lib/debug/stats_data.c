@@ -48,10 +48,13 @@ const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "executor_scheduled_to_self",
     "executor_wakeup_initiated",
     "executor_queue_drained",
+    "server_requested_calls",
+    "server_slowpath_requests_queued",
 };
 const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
-    "tcp_write_size", "tcp_write_iov_size", "tcp_read_size",
-    "tcp_read_offer", "tcp_read_iov_size",  "http2_send_message_size",
+    "tcp_write_size",     "tcp_write_iov_size", "tcp_read_size",
+    "tcp_read_offer",     "tcp_read_iov_size",  "http2_send_message_size",
+    "server_cqs_checked",
 };
 const int grpc_stats_table_0[64] = {
     0,       1,       2,       3,       4,       6,        8,        11,
@@ -81,6 +84,8 @@ const uint8_t grpc_stats_table_3[104] = {
     24, 24, 25, 25, 26, 27, 28, 28, 29, 29, 30, 30, 31, 31, 32, 32, 33, 33,
     34, 34, 35, 36, 36, 37, 38, 38, 39, 39, 40, 40, 41, 41, 42, 42, 42, 43,
     44, 45, 45, 46, 47, 47, 48, 48, 49, 49, 50, 50, 51, 51};
+const int grpc_stats_table_4[8] = {0, 1, 2, 4, 8, 16, 32, 64};
+const uint8_t grpc_stats_table_5[4] = {0, 1, 2, 3};
 void grpc_stats_inc_tcp_write_size(grpc_exec_ctx *exec_ctx, int value) {
   value = GPR_CLAMP(value, 0, 16777216);
   if (value < 5) {
@@ -233,12 +238,39 @@ void grpc_stats_inc_http2_send_message_size(grpc_exec_ctx *exec_ctx,
                            grpc_stats_histo_find_bucket_slow(
                                (exec_ctx), value, grpc_stats_table_0, 64));
 }
-const int grpc_stats_histo_buckets[6] = {64, 64, 64, 64, 64, 64};
-const int grpc_stats_histo_start[6] = {0, 64, 128, 192, 256, 320};
-const int *const grpc_stats_histo_bucket_boundaries[6] = {
+void grpc_stats_inc_server_cqs_checked(grpc_exec_ctx *exec_ctx, int value) {
+  value = GPR_CLAMP(value, 0, 64);
+  if (value < 3) {
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx),
+                             GRPC_STATS_HISTOGRAM_SERVER_CQS_CHECKED, value);
+    return;
+  }
+  union {
+    double dbl;
+    uint64_t uint;
+  } _val, _bkt;
+  _val.dbl = value;
+  if (_val.uint < 4627448617123184640ull) {
+    int bucket =
+        grpc_stats_table_5[((_val.uint - 4613937818241073152ull) >> 52)] + 3;
+    _bkt.dbl = grpc_stats_table_4[bucket];
+    bucket -= (_val.uint < _bkt.uint);
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx),
+                             GRPC_STATS_HISTOGRAM_SERVER_CQS_CHECKED, bucket);
+    return;
+  }
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_SERVER_CQS_CHECKED,
+                           grpc_stats_histo_find_bucket_slow(
+                               (exec_ctx), value, grpc_stats_table_4, 8));
+}
+const int grpc_stats_histo_buckets[7] = {64, 64, 64, 64, 64, 64, 8};
+const int grpc_stats_histo_start[7] = {0, 64, 128, 192, 256, 320, 384};
+const int *const grpc_stats_histo_bucket_boundaries[7] = {
     grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_0,
-    grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_0};
-void (*const grpc_stats_inc_histogram[6])(grpc_exec_ctx *exec_ctx, int x) = {
+    grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_0,
+    grpc_stats_table_4};
+void (*const grpc_stats_inc_histogram[7])(grpc_exec_ctx *exec_ctx, int x) = {
     grpc_stats_inc_tcp_write_size,    grpc_stats_inc_tcp_write_iov_size,
     grpc_stats_inc_tcp_read_size,     grpc_stats_inc_tcp_read_offer,
-    grpc_stats_inc_tcp_read_iov_size, grpc_stats_inc_http2_send_message_size};
+    grpc_stats_inc_tcp_read_iov_size, grpc_stats_inc_http2_send_message_size,
+    grpc_stats_inc_server_cqs_checked};

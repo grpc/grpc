@@ -65,3 +65,9 @@
 - counter: executor_scheduled_to_self
 - counter: executor_wakeup_initiated
 - counter: executor_queue_drained
+# server
+- counter: server_requested_calls
+- histogram: server_cqs_checked
+  buckets: 8
+  max: 64
+- counter: server_slowpath_requests_queued
