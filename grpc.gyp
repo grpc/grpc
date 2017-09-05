@@ -1227,6 +1227,17 @@
       ],
     },
     {
+      'target_name': 'grpc++_core_stats',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc++',
+      ],
+      'sources': [
+        'src/proto/grpc/core/stats.proto',
+        'src/cpp/util/core_stats.cc',
+      ],
+    },
+    {
       'target_name': 'grpc++_error_details',
       'type': 'static_library',
       'dependencies': [
@@ -1508,6 +1519,7 @@
       'dependencies': [
         'grpc_test_util',
         'grpc++_test_util',
+        'grpc++_core_stats',
         'grpc++',
         'grpc',
       ],

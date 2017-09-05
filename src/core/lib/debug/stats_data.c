@@ -20,6 +20,66 @@
 
 #include "src/core/lib/debug/stats_data.h"
 const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
-    "client_calls_created", "server_calls_created", "syscall_write",
-    "syscall_read",         "syscall_poll",         "syscall_wait",
+    "client_calls_created",
+    "server_calls_created",
+    "syscall_poll",
+    "syscall_wait",
+    "histogram_slow_lookups",
+    "syscall_write",
+    "syscall_read",
+    "http2_op_batches",
+    "http2_op_cancel",
+    "http2_op_send_initial_metadata",
+    "http2_op_send_message",
+    "http2_op_send_trailing_metadata",
+    "http2_op_recv_initial_metadata",
+    "http2_op_recv_message",
+    "http2_op_recv_trailing_metadata",
+    "http2_pings_sent",
+    "http2_writes_begun",
+    "combiner_locks_initiated",
+    "combiner_locks_scheduled_items",
+    "combiner_locks_scheduled_final_items",
+    "combiner_locks_offloaded",
+    "executor_scheduled_items",
+    "executor_scheduled_to_self",
+    "executor_wakeup_initiated",
+    "executor_queue_drained",
 };
+const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
+    "tcp_write_size", "tcp_write_iov_size", "tcp_read_size",
+    "tcp_read_offer", "tcp_read_iov_size",  "http2_send_message_size",
+};
+const int grpc_stats_table_0[64] = {
+    0,       1,       2,       3,       4,       6,        8,        11,
+    15,      20,      26,      34,      44,      57,       74,       96,
+    124,     160,     206,     265,     341,     439,      565,      727,
+    935,     1202,    1546,    1988,    2556,    3286,     4225,     5432,
+    6983,    8977,    11540,   14834,   19069,   24513,    31510,    40505,
+    52067,   66929,   86033,   110590,  142157,  182734,   234893,   301940,
+    388125,  498910,  641316,  824370,  1059674, 1362141,  1750943,  2250722,
+    2893155, 3718960, 4780478, 6144988, 7898976, 10153611, 13051794, 16777216};
+const uint8_t grpc_stats_table_1[87] = {
+    1,  1,  3,  3,  4,  6,  6,  8,  8,  9,  11, 11, 12, 14, 14, 15, 17, 17,
+    18, 20, 20, 21, 23, 23, 24, 25, 27, 27, 28, 30, 30, 31, 33, 33, 34, 35,
+    37, 37, 39, 39, 40, 41, 43, 43, 44, 46, 46, 47, 48, 50, 50, 51, 53, 53,
+    55, 55, 56, 57, 59, 59, 60, 62, 62, 63, 64, 66, 66, 67, 69, 69, 71, 71,
+    72, 73, 75, 75, 76, 78, 78, 79, 80, 82, 82, 83, 85, 85, 87};
+const int grpc_stats_table_2[64] = {
+    0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  13,
+    15,  17,  19,  21,  23,  25,  28,  31,  34,  37,  41,  45,  49,
+    54,  59,  64,  70,  76,  83,  90,  98,  106, 115, 125, 136, 147,
+    159, 172, 186, 201, 218, 236, 255, 276, 299, 323, 349, 377, 408,
+    441, 477, 515, 556, 601, 649, 701, 757, 817, 881, 950, 1024};
+const uint8_t grpc_stats_table_3[104] = {
+    2,  2,  2,  6,  6,  6,  6,  9,  9,  9,  11,  11,  13,  13, 15, 15, 17, 17,
+    20, 20, 20, 23, 23, 23, 25, 25, 26, 28, 28,  30,  30,  32, 32, 35, 35, 35,
+    37, 37, 40, 40, 40, 41, 43, 43, 44, 46, 46,  48,  48,  50, 50, 52, 52, 55,
+    55, 55, 57, 57, 58, 59, 61, 61, 63, 63, 65,  65,  67,  67, 69, 69, 71, 71,
+    73, 73, 74, 76, 76, 77, 79, 79, 81, 81, 83,  83,  85,  85, 88, 88, 88, 89,
+    90, 92, 92, 93, 95, 95, 97, 97, 99, 99, 101, 101, 104, 104};
+const int grpc_stats_histo_buckets[6] = {64, 64, 64, 64, 64, 64};
+const int grpc_stats_histo_start[6] = {0, 64, 128, 192, 256, 320};
+const int *const grpc_stats_histo_bucket_boundaries[6] = {
+    grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_0,
+    grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_0};
