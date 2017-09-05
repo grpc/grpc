@@ -45,9 +45,6 @@
 #include "src/cpp/thread_manager/thread_manager.h"
 
 namespace grpc {
-namespace {
-constexpr char this_file[] = __FILE__;
-}  // namespace
 
 class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
  public:
@@ -614,8 +611,8 @@ void Server::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
   auto result = grpc_call_start_batch(call->call(), cops, nops, ops, nullptr);
   if (result != GRPC_CALL_OK) {
     gpr_log(GPR_ERROR, "Fatal: grpc_call_start_batch returned %d", result);
-    grpc_call_log_batch(const_cast<char*>(this_file), __LINE__,
-                        GPR_LOG_SEVERITY_ERROR, call->call(), cops, nops, ops);
+    grpc_call_log_batch(__FILE__, __LINE__, GPR_LOG_SEVERITY_ERROR,
+                        call->call(), cops, nops, ops);
     abort();
   }
 }
