@@ -18,9 +18,10 @@ situations in which they are generated.
 
 | Case        | Code           | Generated at Client or Server  |
 | ------------- |:-------------| :-----:|
-| Client Application cancelled the request	| CANCELLED | Both |
+| Client application cancelled the request	| CANCELLED | Both |
 | Deadline expires before server returns status	| DEADLINE_EXCEEDED | Both |
 | Method not found at server	| UNIMPLEMENTED | Server|
+| Client channel enters TRANSIENT_FAILURE state for pending RPC and RPC is not [Wait For Ready](wait-for-ready.md)	|	UNAVAILABLE	|	Client	|
 | Server shutting down	| UNAVAILABLE | Server|
 | Server side application throws an exception (or does something other than returning a Status code to terminate an RPC) |	UNKNOWN | Server|
 | No response received before Deadline expires. This may occur either when the client is unable to send the request to the server or when the server fails to respond in time. |	DEADLINE_EXCEEDED | Both|
