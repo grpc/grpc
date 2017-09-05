@@ -1297,8 +1297,13 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
 
     /* Identify stream compression */
-    if (op_payload->send_initial_metadata.send_initial_metadata->idx.named.content_encoding == NULL ||
-        grpc_stream_compression_method_parse(GRPC_MDVALUE(op_payload->send_initial_metadata.send_initial_metadata->idx.named.content_encoding->md), true, &s->stream_compression_method) == 0) {
+    if (op_payload->send_initial_metadata.send_initial_metadata->idx.named
+                .content_encoding == NULL ||
+        grpc_stream_compression_method_parse(
+            GRPC_MDVALUE(
+                op_payload->send_initial_metadata.send_initial_metadata->idx
+                    .named.content_encoding->md),
+            true, &s->stream_compression_method) == 0) {
       s->stream_compression_method = GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
     }
     grpc_slice_buffer_init(&s->compressed_data_buffer);

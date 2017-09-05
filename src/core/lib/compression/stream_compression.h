@@ -49,18 +49,16 @@ typedef enum grpc_stream_compression_flush {
 } grpc_stream_compression_flush;
 
 struct grpc_stream_compression_vtable {
-bool (*compress)(grpc_stream_compression_context *ctx,
-                          grpc_slice_buffer *in, grpc_slice_buffer *out,
-                          size_t *output_size, size_t max_output_size,
-                          grpc_stream_compression_flush flush);
-bool (*decompress)(grpc_stream_compression_context *ctx,
-                            grpc_slice_buffer *in, grpc_slice_buffer *out,
-                            size_t *output_size, size_t max_output_size,
-                            bool *end_of_context);
-grpc_stream_compression_context *(*context_create)(
-    grpc_stream_compression_method method);
-void (*context_destroy)(
-    grpc_stream_compression_context *ctx);
+  bool (*compress)(grpc_stream_compression_context *ctx, grpc_slice_buffer *in,
+                   grpc_slice_buffer *out, size_t *output_size,
+                   size_t max_output_size, grpc_stream_compression_flush flush);
+  bool (*decompress)(grpc_stream_compression_context *ctx,
+                     grpc_slice_buffer *in, grpc_slice_buffer *out,
+                     size_t *output_size, size_t max_output_size,
+                     bool *end_of_context);
+  grpc_stream_compression_context *(*context_create)(
+      grpc_stream_compression_method method);
+  void (*context_destroy)(grpc_stream_compression_context *ctx);
 };
 
 /**
