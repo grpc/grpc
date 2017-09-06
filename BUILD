@@ -1117,6 +1117,7 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.c",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c",
     ],

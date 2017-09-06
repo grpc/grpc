@@ -22,7 +22,6 @@
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>

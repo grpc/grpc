@@ -360,11 +360,7 @@ typedef unsigned __int64 uint64_t;
 #define GPR_MAX_ALIGNMENT 16
 
 #ifndef GRPC_ARES
-#ifdef GPR_WINDOWS
-#define GRPC_ARES 0
-#else
 #define GRPC_ARES 1
-#endif
 #endif
 
 #ifndef GRPC_MUST_USE_RESULT
