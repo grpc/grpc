@@ -18,7 +18,6 @@
 
 /* Benchmark gRPC end2end in various configurations */
 
-
 #ifndef TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PUMP_H
 #define TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PUMP_H
 

@@ -30,7 +30,6 @@ namespace testing {
 // force library initialization
 auto& force_library_initialization = Library::get();
 
-
 BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, TCP)
     ->Range(0, 128 * 1024 * 1024);
 BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, UDS)
