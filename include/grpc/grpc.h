@@ -328,6 +328,16 @@ GRPCAPI grpc_call_error grpc_server_request_call(
     grpc_completion_queue *cq_bound_to_call,
     grpc_completion_queue *cq_for_notification, void *tag_new);
 
+GRPCAPI grpc_call_error grpc_server_request_call_and_request_close(
+    grpc_server *server, grpc_call **call, grpc_call_details *details,
+    grpc_metadata_array *request_metadata,
+    grpc_completion_queue *cq_bound_to_call,
+    grpc_completion_queue *cq_for_notification, void *tag_new,
+    /* these two parameters imply we'd like to start recv_close_on_server on the
+       new request
+        --- make similar changes for grpc_server_request_registered_call */
+    int *cancelled, void *tag_recv_close_on_server);
+
 /** How to handle payloads for a registered method */
 typedef enum {
   /** Don't try to read the payload */
