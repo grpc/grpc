@@ -72,10 +72,14 @@ grpc_ssl_roots_override_result DefaultPEMRootCerts::get_ssl_roots_override(char*
 
 void DefaultPEMRootCerts::setCerts(const String& pemRootsCerts)
 {
-    WriteLock lock{ m_CertsLock };
+    std::string certsString{ pemRootsCerts.toCppString() };
 
-    // copy new certs
-    m_PEMRootCerts = pemRootsCerts.toCppString();
+    {
+        WriteLock lock{ m_CertsLock };
+
+        // copy new certs
+        m_PEMRootCerts = std::move(certsString);
+    }
 }
 
 DefaultPEMRootCerts& DefaultPEMRootCerts::getDefaultPEMRootCerts(void)
