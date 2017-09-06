@@ -19,7 +19,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/compression/stream_compression.h"
+#include "src/core/lib/compression/stream_compression_gzip.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 
@@ -201,6 +201,7 @@ grpc_stream_compression_context_create_gzip(
     return NULL;
   }
 
+  gzip_ctx->base.vtable = &grpc_stream_compression_gzip_vtable;
   return (grpc_stream_compression_context *)gzip_ctx;
 }
 
