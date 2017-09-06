@@ -576,6 +576,8 @@ struct grpc_chttp2_stream {
   /** Whether bytes stored in unprocessed_incoming_byte_stream is decompressed
    */
   bool unprocessed_incoming_frames_decompressed;
+  /** gRPC header bytes that are already decompressed */
+  size_t decompressed_header_bytes;
 };
 
 /** Transport writing call flow:

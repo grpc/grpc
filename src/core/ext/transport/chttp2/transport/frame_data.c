@@ -210,7 +210,7 @@ grpc_error *grpc_deframe_unprocessed_incoming_frames(
 
         if (cur != end) {
           grpc_slice_buffer_undo_take_first(
-              &s->unprocessed_incoming_frames_buffer,
+              slices,
               grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
         }
         grpc_slice_unref_internal(exec_ctx, slice);
@@ -277,7 +277,7 @@ grpc_error *grpc_deframe_unprocessed_incoming_frames(
           p->state = GRPC_CHTTP2_DATA_FH_0;
           cur += p->frame_size;
           grpc_slice_buffer_undo_take_first(
-              &s->unprocessed_incoming_frames_buffer,
+              slices,
               grpc_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
           grpc_slice_unref_internal(exec_ctx, slice);
           return GRPC_ERROR_NONE;
