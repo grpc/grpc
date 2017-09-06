@@ -68,7 +68,7 @@ static void destroy(grpc_exec_ctx *exec_ctx, secure_endpoint *secure_ep) {
   secure_endpoint *ep = secure_ep;
   grpc_endpoint_destroy(exec_ctx, ep->wrapped_ep);
   tsi_frame_protector_destroy(ep->protector);
-  tsi_zero_copy_grpc_protector_destroy(ep->zero_copy_protector);
+  tsi_zero_copy_grpc_protector_destroy(exec_ctx, ep->zero_copy_protector);
   grpc_slice_buffer_destroy_internal(exec_ctx, &ep->leftover_bytes);
   grpc_slice_unref_internal(exec_ctx, ep->read_staging_buffer);
   grpc_slice_unref_internal(exec_ctx, ep->write_staging_buffer);
@@ -164,7 +164,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
   if (ep->zero_copy_protector != NULL) {
     // Use zero-copy grpc protector to unprotect.
     result = tsi_zero_copy_grpc_protector_unprotect(
-        ep->zero_copy_protector, &ep->source_buffer, ep->read_buffer);
+        exec_ctx, ep->zero_copy_protector, &ep->source_buffer, ep->read_buffer);
   } else {
     // Use frame protector to unprotect.
     /* TODO(yangg) check error, maybe bail out early */
@@ -281,8 +281,8 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
 
   if (ep->zero_copy_protector != NULL) {
     // Use zero-copy grpc protector to protect.
-    result = tsi_zero_copy_grpc_protector_protect(ep->zero_copy_protector,
-                                                  slices, &ep->output_buffer);
+    result = tsi_zero_copy_grpc_protector_protect(
+        exec_ctx, ep->zero_copy_protector, slices, &ep->output_buffer);
   } else {
     // Use frame protector to protect.
     for (i = 0; i < slices->count; i++) {

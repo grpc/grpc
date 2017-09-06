@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/transport_security_grpc.h"
 
 /* --- Constants. ---*/
@@ -396,7 +397,8 @@ static const tsi_frame_protector_vtable frame_protector_vtable = {
 /* --- tsi_zero_copy_grpc_protector methods implementation. ---*/
 
 static tsi_result fake_zero_copy_grpc_protector_protect(
-    tsi_zero_copy_grpc_protector *self, grpc_slice_buffer *unprotected_slices,
+    grpc_exec_ctx *exec_ctx, tsi_zero_copy_grpc_protector *self,
+    grpc_slice_buffer *unprotected_slices,
     grpc_slice_buffer *protected_slices) {
   if (self == NULL || unprotected_slices == NULL || protected_slices == NULL) {
     return TSI_INVALID_ARGUMENT;
@@ -408,7 +410,7 @@ static tsi_result fake_zero_copy_grpc_protector_protect(
     size_t frame_length =
         GPR_MIN(impl->max_frame_size,
                 unprotected_slices->length + TSI_FAKE_FRAME_HEADER_SIZE);
-    grpc_slice slice = grpc_slice_malloc(TSI_FAKE_FRAME_HEADER_SIZE);
+    grpc_slice slice = GRPC_SLICE_MALLOC(TSI_FAKE_FRAME_HEADER_SIZE);
     store32_little_endian((uint32_t)frame_length, GRPC_SLICE_START_PTR(slice));
     grpc_slice_buffer_add(protected_slices, slice);
     size_t data_length = frame_length - TSI_FAKE_FRAME_HEADER_SIZE;
@@ -419,7 +421,8 @@ static tsi_result fake_zero_copy_grpc_protector_protect(
 }
 
 static tsi_result fake_zero_copy_grpc_protector_unprotect(
-    tsi_zero_copy_grpc_protector *self, grpc_slice_buffer *protected_slices,
+    grpc_exec_ctx *exec_ctx, tsi_zero_copy_grpc_protector *self,
+    grpc_slice_buffer *protected_slices,
     grpc_slice_buffer *unprotected_slices) {
   if (self == NULL || unprotected_slices == NULL || protected_slices == NULL) {
     return TSI_INVALID_ARGUMENT;
@@ -447,18 +450,18 @@ static tsi_result fake_zero_copy_grpc_protector_unprotect(
         impl->parsed_frame_size - TSI_FAKE_FRAME_HEADER_SIZE,
         unprotected_slices);
     impl->parsed_frame_size = 0;
-    grpc_slice_buffer_reset_and_unref(&impl->header_sb);
+    grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &impl->header_sb);
   }
   return TSI_OK;
 }
 
 static void fake_zero_copy_grpc_protector_destroy(
-    tsi_zero_copy_grpc_protector *self) {
+    grpc_exec_ctx *exec_ctx, tsi_zero_copy_grpc_protector *self) {
   if (self == NULL) return;
   tsi_fake_zero_copy_grpc_protector *impl =
       (tsi_fake_zero_copy_grpc_protector *)self;
-  grpc_slice_buffer_destroy(&impl->header_sb);
-  grpc_slice_buffer_destroy(&impl->protected_sb);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &impl->header_sb);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &impl->protected_sb);
   gpr_free(impl);
 }
 
