@@ -14,8 +14,9 @@
 # limitations under the License.
 
 source ~/.rvm/scripts/rvm
-set -ex
 
 cd $(dirname $0)/../../..
+
+set -ex
 
 ruby src/ruby/qps/worker.rb $@

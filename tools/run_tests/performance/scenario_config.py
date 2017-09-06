@@ -757,25 +757,33 @@ class RubyLanguage:
     return 300
 
   def scenarios(self):
+    # The Ruby tests use "async_server_threads" to determine the number
+    # of server processes to run
     yield _ping_pong_scenario(
         'ruby_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
         client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-        categories=[SMOKETEST, SCALABLE])
+        async_server_threads=1, categories=[SMOKETEST, SCALABLE])
 
     yield _ping_pong_scenario(
         'ruby_protobuf_unary_ping_pong', rpc_type='UNARY',
         client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-        categories=[SMOKETEST, SCALABLE])
+        async_server_threads=1, categories=[SMOKETEST, SCALABLE])
 
     yield _ping_pong_scenario(
         'ruby_protobuf_sync_unary_qps_unconstrained', rpc_type='UNARY',
         client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-        unconstrained_client='sync')
+        unconstrained_client='sync', async_server_threads=1)
 
     yield _ping_pong_scenario(
         'ruby_protobuf_sync_streaming_qps_unconstrained', rpc_type='STREAMING',
         client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-        unconstrained_client='sync')
+        unconstrained_client='sync', async_server_threads=1)
+
+    yield _ping_pong_scenario(
+        'cpp_to_ruby_async_unary_qps_unconstrained_many_servers', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='async_server',
+        client_language='c++', async_server_threads=0,
+        unconstrained_client='async')
 
     yield _ping_pong_scenario(
         'ruby_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',

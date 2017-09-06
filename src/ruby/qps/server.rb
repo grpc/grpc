@@ -41,10 +41,12 @@ end
 class BenchmarkServer
   def initialize(config, port)
     if config.security_params
+      p 'Starting secure server'
       certs = load_test_certs
       cred = GRPC::Core::ServerCredentials.new(
         nil, [{private_key: certs[1], cert_chain: certs[2]}], false)
     else
+      p 'Starting insecure server'
       cred = :this_port_is_insecure
     end
     # Make sure server can handle the large number of calls in benchmarks
@@ -54,10 +56,10 @@ class BenchmarkServer
     @port = @server.add_http2_port("0.0.0.0:" + port.to_s, cred)
     @server.handle(BenchmarkServiceImpl.new)
     @start_time = Time.now
-    t = Thread.new {
+    @thread = Thread.new {
       @server.run
     }
-    t.abort_on_exception
+    @thread.abort_on_exception
   end
   def mark(reset)
     s = Grpc::Testing::ServerStats.new(time_elapsed:
@@ -70,5 +72,8 @@ class BenchmarkServer
   end
   def stop
     @server.stop
+  end
+  def wait
+    @thread.join
   end
 end

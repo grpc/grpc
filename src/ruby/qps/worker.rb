@@ -29,6 +29,7 @@ require 'facter'
 require 'client'
 require 'qps-common'
 require 'server'
+require 'multiprocess_server'
 require 'src/proto/grpc/testing/services_services_pb'
 
 class WorkerServiceImpl < Grpc::Testing::WorkerService::Service
@@ -43,7 +44,7 @@ class WorkerServiceImpl < Grpc::Testing::WorkerService::Service
       reqs.each do |req|
         case req.argtype.to_s
         when 'setup'
-          bms = BenchmarkServer.new(req.setup, @server_port)
+          bms = BenchmarkMultiprocessServer.new(req.setup, @server_port)
           q.push(gtss.new(stats: bms.mark(false), port: bms.get_port))
         when 'mark'
           q.push(gtss.new(stats: bms.mark(req.mark.reset), cores: cpu_cores))
@@ -106,7 +107,7 @@ def main
 
   # Configure any errors with client or server child threads to surface
   Thread.abort_on_exception = true
-  
+
   s = GRPC::RpcServer.new
   s.add_http2_port("0.0.0.0:" + options['driver_port'].to_s,
                    :this_port_is_insecure)
