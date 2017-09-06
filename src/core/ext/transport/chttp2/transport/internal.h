@@ -279,6 +279,9 @@ struct grpc_chttp2_transport {
   /** maps stream id to grpc_chttp2_stream objects */
   grpc_chttp2_stream_map stream_map;
 
+  /** Number of open streams */
+  uint32_t num_streams;
+
   grpc_closure write_action_begin_locked;
   grpc_closure write_action;
   grpc_closure write_action_end_locked;
@@ -501,6 +504,11 @@ struct grpc_chttp2_stream {
   bool write_closed;
   /** Is this stream reading half-closed. */
   bool read_closed;
+  /** Is this stream considered fully closed. This is to avoid race between
+   * sending a
+   * close message for a stream and accepting a new stream, when there is a
+   * restriction on maximum concurrent streams*/
+  bool considered_closed;
   /** Are all published incoming byte streams closed. */
   bool all_incoming_byte_streams_finished;
   /** Has this stream seen an error.
@@ -776,8 +784,9 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                              grpc_chttp2_stream *stream, grpc_error *error);
 void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
                                     grpc_chttp2_transport *t,
-                                    grpc_chttp2_stream *s, int close_reads,
-                                    int close_writes, grpc_error *error);
+                                    grpc_chttp2_stream *s, bool consider_closed,
+                                    bool close_reads, bool close_writes,
+                                    grpc_error *error);
 void grpc_chttp2_start_writing(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_transport *t);
 

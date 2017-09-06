@@ -327,6 +327,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
      needed.
      TODO(ctiller): tune this */
   grpc_chttp2_stream_map_init(&t->stream_map, 8);
+  t->num_streams = 0;
 
   /* copy in initial settings to all setting sets */
   for (i = 0; i < GRPC_CHTTP2_NUM_SETTINGS; i++) {
@@ -702,6 +703,7 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   if (server_data) {
     s->id = (uint32_t)(uintptr_t)server_data;
     *t->accepting_stream = s;
+    t->num_streams++;
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
     post_destructive_reclaimer(exec_ctx, t);
   }
@@ -1037,7 +1039,7 @@ static void maybe_start_some_streams(grpc_exec_ctx *exec_ctx,
   /* start streams where we have free grpc_chttp2_stream ids and free
    * concurrency */
   while (t->next_stream_id <= MAX_CLIENT_STREAM_ID &&
-         grpc_chttp2_stream_map_size(&t->stream_map) <
+         t->num_streams <
              t->settings[GRPC_PEER_SETTINGS]
                         [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS] &&
          grpc_chttp2_list_pop_waiting_for_concurrency(t, &s)) {
@@ -1057,6 +1059,7 @@ static void maybe_start_some_streams(grpc_exec_ctx *exec_ctx,
           "no_more_stream_ids");
     }
 
+    t->num_streams++;
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
     post_destructive_reclaimer(exec_ctx, t);
     grpc_chttp2_become_writable(exec_ctx, t, s,
@@ -1449,6 +1452,10 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
                       "stream was closed"),
             "send_trailing_metadata_finished");
       } else if (s->id != 0) {
+        if (!t->is_client) {
+          grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, false, false,
+                                         GRPC_ERROR_NONE);
+        }
         /* TODO(ctiller): check if there's flow control for any outstanding
            bytes before going writable */
         grpc_chttp2_become_writable(exec_ctx, t, s,
@@ -1899,7 +1906,8 @@ void grpc_chttp2_cancel_stream(grpc_exec_ctx *exec_ctx,
   if (due_to_error != GRPC_ERROR_NONE && !s->seen_error) {
     s->seen_error = true;
   }
-  grpc_chttp2_mark_stream_closed(exec_ctx, t, s, 1, 1, due_to_error);
+  grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, true, true,
+                                 due_to_error);
 }
 
 void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
@@ -2002,8 +2010,9 @@ void grpc_chttp2_fail_pending_writes(grpc_exec_ctx *exec_ctx,
 
 void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
                                     grpc_chttp2_transport *t,
-                                    grpc_chttp2_stream *s, int close_reads,
-                                    int close_writes, grpc_error *error) {
+                                    grpc_chttp2_stream *s, bool consider_closed,
+                                    bool close_reads, bool close_writes,
+                                    grpc_error *error) {
   if (s->read_closed && s->write_closed) {
     /* already closed */
     grpc_chttp2_maybe_complete_recv_trailing_metadata(exec_ctx, t, s);
@@ -2024,6 +2033,12 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
   }
   if (s->read_closed && s->write_closed) {
     became_closed = true;
+  }
+  if ((consider_closed || became_closed) && !s->considered_closed) {
+    s->considered_closed = true;
+    t->num_streams--;
+  }
+  if (became_closed) {
     grpc_error *overall_error =
         removal_error(GRPC_ERROR_REF(error), s, "Stream removed");
     if (s->id != 0) {
@@ -2205,7 +2220,7 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       &t->qbuf, grpc_chttp2_rst_stream_create(s->id, GRPC_HTTP2_NO_ERROR,
                                               &s->stats.outgoing));
 
-  grpc_chttp2_mark_stream_closed(exec_ctx, t, s, 1, 1, error);
+  grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, true, true, error);
   grpc_chttp2_initiate_write(exec_ctx, t, "close_from_api");
 }
 
