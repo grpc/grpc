@@ -1079,7 +1079,6 @@ static size_t get_batch_index(grpc_transport_stream_op_batch *batch) {
   if (batch->recv_initial_metadata) return 3;
   if (batch->recv_message) return 4;
   if (batch->recv_trailing_metadata) return 5;
-  if (batch->cancel_stream) return 6;
   GPR_UNREACHABLE_CODE(return (size_t)-1);
 }
 
@@ -1317,15 +1316,6 @@ static void retry_checks_for_new_batch(grpc_exec_ctx *exec_ctx,
   if (pending->retry_checks_for_new_batch_done) return;
   pending->retry_checks_for_new_batch_done = true;
   grpc_transport_stream_op_batch *batch = pending->batch;
-  if (batch->cancel_stream) return;
-gpr_log(GPR_INFO, "method_params=%p", calld->method_params);
-gpr_log(GPR_INFO, "retry_policy=%p", calld->method_params == NULL ? NULL : calld->method_params->retry_policy);
-gpr_log(GPR_INFO, "retry_committed=%d", calld->retry_committed);
-  if (calld->method_params == NULL ||
-      calld->method_params->retry_policy == NULL || calld->retry_committed) {
-    return;
-  }
-gpr_log(GPR_INFO, "retries configured and not committed");
   // Check if the batch takes us over the retry buffer limit.
   if (batch->send_initial_metadata) {
     calld->bytes_buffered_for_retry += grpc_metadata_batch_size(
