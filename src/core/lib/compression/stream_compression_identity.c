@@ -59,6 +59,7 @@ static bool grpc_stream_decompress_identity(
     return false;
   }
   grpc_stream_compression_pass_through(in, out, output_size, max_output_size);
+  *end_of_context = false;
   return true;
 }
 

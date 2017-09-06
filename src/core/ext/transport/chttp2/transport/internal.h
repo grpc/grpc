@@ -561,10 +561,6 @@ struct grpc_chttp2_stream {
   grpc_stream_compression_method stream_compression_method;
   /* Stream decompression method to be used. */
   grpc_stream_compression_method stream_decompression_method;
-  bool stream_compression_recv_enabled;
-  /** Whether bytes stored in unprocessed_incoming_byte_stream is decompressed
-   */
-  bool unprocessed_incoming_frames_decompressed;
   /** Stream compression decompress context */
   grpc_stream_compression_context *stream_decompression_ctx;
   /** Stream compression compress context */
@@ -576,7 +572,10 @@ struct grpc_chttp2_stream {
    * emptied */
   size_t uncompressed_data_size;
   /** Temporary buffer storing decompressed data */
-  grpc_slice_buffer *decompressed_data_buffer;
+  grpc_slice_buffer decompressed_data_buffer;
+  /** Whether bytes stored in unprocessed_incoming_byte_stream is decompressed
+   */
+  bool unprocessed_incoming_frames_decompressed;
 };
 
 /** Transport writing call flow:
