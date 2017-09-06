@@ -5,7 +5,7 @@
     "version": "${settings.node_version}",
     "author": "Google Inc.",
     "description": "gRPC Library for Node",
-    "homepage": "http://www.grpc.io/",
+    "homepage": "https://grpc.io/",
     "repository": {
       "type": "git",
       "url": "https://github.com/grpc/grpc.git"
@@ -35,8 +35,8 @@
       "arguejs": "^0.2.3",
       "lodash": "^4.15.0",
       "nan": "^2.0.0",
-      "node-pre-gyp": "^0.6.0",
-      "protobufjs": "^6.7.0"
+      "node-pre-gyp": "^0.6.35",
+      "protobufjs": "^5.0.0"
     },
     "devDependencies": {
       "async": "^2.0.1",
@@ -58,7 +58,7 @@
     },
     "binary": {
       "module_name": "grpc_node",
-      "module_path": "src/node/extension_binary",
+      "module_path": "src/node/extension_binary/{node_abi}-{platform}-{arch}",
       "host": "https://storage.googleapis.com/",
       "remote_path": "grpc-precompiled-binaries/node/{name}/v{version}",
       "package_name": "{node_abi}-{platform}-{arch}.tar.gz"
@@ -81,7 +81,7 @@
       "binding.gyp"
     ],
     "main": "src/node/index.js",
-    "license": "BSD-3-Clause",
+    "license": "Apache-2.0",
     "jshintConfig": {
       "bitwise": true,
       "curly": true,

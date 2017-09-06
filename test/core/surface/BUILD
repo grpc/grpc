@@ -1,38 +1,27 @@
-# Copyright 2017, Google Inc.
-# All rights reserved.
+# Copyright 2017 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-licenses(["notice"])  # 3-clause BSD
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
 
-cc_test(
+licenses(["notice"])  # Apache v2
+
+grpc_package(name = "test/core/surface")
+
+grpc_cc_test(
     name = "alarm_test",
     srcs = ["alarm_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -41,10 +30,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "grpc_byte_buffer_reader_test",
     srcs = ["byte_buffer_reader_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -53,10 +42,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "channel_create_test",
     srcs = ["channel_create_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -65,10 +54,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "grpc_completion_queue_test",
     srcs = ["completion_queue_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -77,10 +66,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "concurrent_connectivity_test",
     srcs = ["concurrent_connectivity_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -89,10 +78,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "init_test",
     srcs = ["init_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -101,10 +90,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "grpc_invalid_channel_args_test",
     srcs = ["invalid_channel_args_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -113,10 +102,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "lame_client_test",
     srcs = ["lame_client_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -126,10 +115,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "public_headers_must_be_c89",
     srcs = ["public_headers_must_be_c89.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -138,10 +127,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "secure_channel_create_test",
     srcs = ["secure_channel_create_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -150,10 +139,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "sequential_connectivity_test",
     srcs = ["sequential_connectivity_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -163,10 +152,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "server_chttp2_test",
     srcs = ["server_chttp2_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -175,10 +164,10 @@ cc_test(
     ],
 )
 
-cc_test(
+grpc_cc_test(
     name = "server_test",
     srcs = ["server_test.c"],
-    copts = ["-std=c99"],
+    language = "C",
     deps = [
         "//:gpr",
         "//:grpc",

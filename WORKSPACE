@@ -5,7 +5,7 @@ bind(
 
 bind(
     name = "libssl",
-    actual = "@submodule_boringssl//:ssl",
+    actual = "@boringssl//:ssl",
 )
 
 bind(
@@ -39,6 +39,11 @@ bind(
 )
 
 bind(
+    name = "gmock",
+    actual = "@submodule_gtest//:gmock",
+)
+
+bind(
     name = "benchmark",
     actual = "@submodule_benchmark//:benchmark",
 )
@@ -49,7 +54,7 @@ bind(
 )
 
 local_repository(
-    name = "submodule_boringssl",
+    name = "boringssl",
     path = "third_party/boringssl-with-bazel",
 )
 

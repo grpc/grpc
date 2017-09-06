@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -364,93 +349,25 @@ void grpc_chttp2_parsing_become_skip_parser(grpc_exec_ctx *exec_ctx,
                          t->parser == grpc_chttp2_header_parser_parse);
 }
 
-static grpc_error *update_incoming_window(grpc_exec_ctx *exec_ctx,
-                                          grpc_chttp2_transport *t,
-                                          grpc_chttp2_stream *s) {
-  uint32_t incoming_frame_size = t->incoming_frame_size;
-  if (incoming_frame_size > t->incoming_window) {
-    char *msg;
-    gpr_asprintf(&msg, "frame of size %d overflows incoming window of %" PRId64,
-                 t->incoming_frame_size, t->incoming_window);
-    grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return err;
-  }
-
-  if (s != NULL) {
-    if (incoming_frame_size >
-        s->incoming_window_delta +
-            t->settings[GRPC_ACKED_SETTINGS]
-                       [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]) {
-      if (incoming_frame_size <=
-          s->incoming_window_delta +
-              t->settings[GRPC_SENT_SETTINGS]
-                         [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]) {
-        gpr_log(
-            GPR_ERROR,
-            "Incoming frame of size %d exceeds incoming window size of %" PRId64
-            ".\n"
-            "The (un-acked, future) window size would be %" PRId64
-            " which is not exceeded.\n"
-            "This would usually cause a disconnection, but allowing it due to "
-            "broken HTTP2 implementations in the wild.\n"
-            "See (for example) https://github.com/netty/netty/issues/6520.",
-            t->incoming_frame_size,
-            s->incoming_window_delta +
-                t->settings[GRPC_ACKED_SETTINGS]
-                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
-            s->incoming_window_delta +
-                t->settings[GRPC_SENT_SETTINGS]
-                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
-      } else {
-        char *msg;
-        gpr_asprintf(&msg,
-                     "frame of size %d overflows incoming window of %" PRId64,
-                     t->incoming_frame_size,
-                     s->incoming_window_delta +
-                         t->settings[GRPC_ACKED_SETTINGS]
-                                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
-        grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-        gpr_free(msg);
-        return err;
-      }
-    }
-
-    GRPC_CHTTP2_FLOW_DEBIT_STREAM_INCOMING_WINDOW_DELTA("parse", t, s,
-                                                        incoming_frame_size);
-    if ((int64_t)s->incoming_window_delta - (int64_t)s->announce_window <=
-        -(int64_t)t->settings[GRPC_SENT_SETTINGS]
-                             [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] /
-            2) {
-      grpc_chttp2_become_writable(exec_ctx, t, s,
-                                  GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
-                                  "window-update-required");
-    }
-    s->received_bytes += incoming_frame_size;
-  }
-
-  uint32_t target_incoming_window = grpc_chttp2_target_incoming_window(t);
-  GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("parse", t, incoming_window,
-                                   incoming_frame_size);
-  if (t->incoming_window <= target_incoming_window / 2) {
-    grpc_chttp2_initiate_write(exec_ctx, t, false, "flow_control");
-  }
-
-  return GRPC_ERROR_NONE;
-}
-
 static grpc_error *init_data_frame_parser(grpc_exec_ctx *exec_ctx,
                                           grpc_chttp2_transport *t) {
   grpc_chttp2_stream *s =
       grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
   grpc_error *err = GRPC_ERROR_NONE;
-  err = update_incoming_window(exec_ctx, t, s);
+  err = grpc_chttp2_flowctl_recv_data(&t->flow_control,
+                                      s == NULL ? NULL : &s->flow_control,
+                                      t->incoming_frame_size);
+  grpc_chttp2_act_on_flowctl_action(
+      exec_ctx, grpc_chttp2_flowctl_get_action(
+                    &t->flow_control, s == NULL ? NULL : &s->flow_control),
+      t, s);
   if (err != GRPC_ERROR_NONE) {
     goto error_handler;
   }
   if (s == NULL) {
     return init_skip_frame_parser(exec_ctx, t, 0);
   }
+  s->received_bytes += t->incoming_frame_size;
   s->stats.incoming.framing_bytes += 9;
   if (err == GRPC_ERROR_NONE && s->read_closed) {
     return init_skip_frame_parser(exec_ctx, t, 0);
@@ -672,6 +589,10 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
           "ignoring grpc_chttp2_stream with non-client generated index %d",
           t->incoming_stream_id));
       return init_skip_frame_parser(exec_ctx, t, 1);
+    } else if (grpc_chttp2_stream_map_size(&t->stream_map) >=
+               t->settings[GRPC_ACKED_SETTINGS]
+                          [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS]) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Max stream count exceeded");
     }
     t->last_new_stream_id = t->incoming_stream_id;
     s = t->incoming_stream =
@@ -696,9 +617,19 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
   t->parser_data = &t->hpack_parser;
   switch (s->header_frames_received) {
     case 0:
-      t->hpack_parser.on_header = on_initial_header;
+      if (t->is_client && t->header_eof) {
+        GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing Trailers-Only"));
+        if (s->trailing_metadata_available != NULL) {
+          *s->trailing_metadata_available = true;
+        }
+        t->hpack_parser.on_header = on_trailing_header;
+      } else {
+        GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing initial_metadata"));
+        t->hpack_parser.on_header = on_initial_header;
+      }
       break;
     case 1:
+      GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing trailing_metadata"));
       t->hpack_parser.on_header = on_trailing_header;
       break;
     case 2:

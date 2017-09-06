@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -182,9 +167,15 @@ extern grpc_compression_algorithm_parse_type grpc_compression_algorithm_parse_im
 typedef int(*grpc_compression_algorithm_name_type)(grpc_compression_algorithm algorithm, char **name);
 extern grpc_compression_algorithm_name_type grpc_compression_algorithm_name_import;
 #define grpc_compression_algorithm_name grpc_compression_algorithm_name_import
+typedef int(*grpc_stream_compression_algorithm_name_type)(grpc_stream_compression_algorithm algorithm, char **name);
+extern grpc_stream_compression_algorithm_name_type grpc_stream_compression_algorithm_name_import;
+#define grpc_stream_compression_algorithm_name grpc_stream_compression_algorithm_name_import
 typedef grpc_compression_algorithm(*grpc_compression_algorithm_for_level_type)(grpc_compression_level level, uint32_t accepted_encodings);
 extern grpc_compression_algorithm_for_level_type grpc_compression_algorithm_for_level_import;
 #define grpc_compression_algorithm_for_level grpc_compression_algorithm_for_level_import
+typedef grpc_stream_compression_algorithm(*grpc_stream_compression_algorithm_for_level_type)(grpc_stream_compression_level level, uint32_t accepted_stream_encodings);
+extern grpc_stream_compression_algorithm_for_level_type grpc_stream_compression_algorithm_for_level_import;
+#define grpc_stream_compression_algorithm_for_level grpc_stream_compression_algorithm_for_level_import
 typedef void(*grpc_compression_options_init_type)(grpc_compression_options *opts);
 extern grpc_compression_options_init_type grpc_compression_options_init_import;
 #define grpc_compression_options_init grpc_compression_options_init_import
@@ -197,6 +188,9 @@ extern grpc_compression_options_disable_algorithm_type grpc_compression_options_
 typedef int(*grpc_compression_options_is_algorithm_enabled_type)(const grpc_compression_options *opts, grpc_compression_algorithm algorithm);
 extern grpc_compression_options_is_algorithm_enabled_type grpc_compression_options_is_algorithm_enabled_import;
 #define grpc_compression_options_is_algorithm_enabled grpc_compression_options_is_algorithm_enabled_import
+typedef int(*grpc_compression_options_is_stream_compression_algorithm_enabled_type)(const grpc_compression_options *opts, grpc_stream_compression_algorithm algorithm);
+extern grpc_compression_options_is_stream_compression_algorithm_enabled_type grpc_compression_options_is_stream_compression_algorithm_enabled_import;
+#define grpc_compression_options_is_stream_compression_algorithm_enabled grpc_compression_options_is_stream_compression_algorithm_enabled_import
 typedef void(*grpc_metadata_array_init_type)(grpc_metadata_array *array);
 extern grpc_metadata_array_init_type grpc_metadata_array_init_import;
 #define grpc_metadata_array_init grpc_metadata_array_init_import
@@ -260,6 +254,9 @@ extern grpc_alarm_destroy_type grpc_alarm_destroy_import;
 typedef grpc_connectivity_state(*grpc_channel_check_connectivity_state_type)(grpc_channel *channel, int try_to_connect);
 extern grpc_channel_check_connectivity_state_type grpc_channel_check_connectivity_state_import;
 #define grpc_channel_check_connectivity_state grpc_channel_check_connectivity_state_import
+typedef int(*grpc_channel_num_external_connectivity_watchers_type)(grpc_channel *channel);
+extern grpc_channel_num_external_connectivity_watchers_type grpc_channel_num_external_connectivity_watchers_import;
+#define grpc_channel_num_external_connectivity_watchers grpc_channel_num_external_connectivity_watchers_import
 typedef void(*grpc_channel_watch_connectivity_state_type)(grpc_channel *channel, grpc_connectivity_state last_observed_state, gpr_timespec deadline, grpc_completion_queue *cq, void *tag);
 extern grpc_channel_watch_connectivity_state_type grpc_channel_watch_connectivity_state_import;
 #define grpc_channel_watch_connectivity_state grpc_channel_watch_connectivity_state_import
@@ -656,22 +653,22 @@ extern gpr_get_allocation_functions_type gpr_get_allocation_functions_import;
 typedef gpr_avl(*gpr_avl_create_type)(const gpr_avl_vtable *vtable);
 extern gpr_avl_create_type gpr_avl_create_import;
 #define gpr_avl_create gpr_avl_create_import
-typedef gpr_avl(*gpr_avl_ref_type)(gpr_avl avl);
+typedef gpr_avl(*gpr_avl_ref_type)(gpr_avl avl, void *user_data);
 extern gpr_avl_ref_type gpr_avl_ref_import;
 #define gpr_avl_ref gpr_avl_ref_import
-typedef void(*gpr_avl_unref_type)(gpr_avl avl);
+typedef void(*gpr_avl_unref_type)(gpr_avl avl, void *user_data);
 extern gpr_avl_unref_type gpr_avl_unref_import;
 #define gpr_avl_unref gpr_avl_unref_import
-typedef gpr_avl(*gpr_avl_add_type)(gpr_avl avl, void *key, void *value);
+typedef gpr_avl(*gpr_avl_add_type)(gpr_avl avl, void *key, void *value, void *user_data);
 extern gpr_avl_add_type gpr_avl_add_import;
 #define gpr_avl_add gpr_avl_add_import
-typedef gpr_avl(*gpr_avl_remove_type)(gpr_avl avl, void *key);
+typedef gpr_avl(*gpr_avl_remove_type)(gpr_avl avl, void *key, void *user_data);
 extern gpr_avl_remove_type gpr_avl_remove_import;
 #define gpr_avl_remove gpr_avl_remove_import
-typedef void *(*gpr_avl_get_type)(gpr_avl avl, void *key);
+typedef void *(*gpr_avl_get_type)(gpr_avl avl, void *key, void *user_data);
 extern gpr_avl_get_type gpr_avl_get_import;
 #define gpr_avl_get gpr_avl_get_import
-typedef int(*gpr_avl_maybe_get_type)(gpr_avl avl, void *key, void **value);
+typedef int(*gpr_avl_maybe_get_type)(gpr_avl avl, void *key, void **value, void *user_data);
 extern gpr_avl_maybe_get_type gpr_avl_maybe_get_import;
 #define gpr_avl_maybe_get gpr_avl_maybe_get_import
 typedef int(*gpr_avl_is_empty_type)(gpr_avl avl);
@@ -761,6 +758,9 @@ extern gpr_join_host_port_type gpr_join_host_port_import;
 typedef int(*gpr_split_host_port_type)(const char *name, char **host, char **port);
 extern gpr_split_host_port_type gpr_split_host_port_import;
 #define gpr_split_host_port gpr_split_host_port_import
+typedef const char *(*gpr_log_severity_string_type)(gpr_log_severity severity);
+extern gpr_log_severity_string_type gpr_log_severity_string_import;
+#define gpr_log_severity_string gpr_log_severity_string_import
 typedef void(*gpr_log_type)(const char *file, int line, gpr_log_severity severity, const char *format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
 extern gpr_log_type gpr_log_import;
 #define gpr_log gpr_log_import

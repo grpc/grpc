@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2017, Google Inc.
- * All rights reserved.
+ * Copyright 2017 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -94,12 +79,12 @@ bool grpc_lfev_is_shutdown(gpr_atm *state) {
 }
 
 void grpc_lfev_notify_on(grpc_exec_ctx *exec_ctx, gpr_atm *state,
-                         grpc_closure *closure) {
+                         grpc_closure *closure, const char *variable) {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(state);
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
-      gpr_log(GPR_DEBUG, "lfev_notify_on: %p curr=%p closure=%p", state,
-              (void *)curr, closure);
+      gpr_log(GPR_ERROR, "lfev_notify_on[%s]: %p curr=%p closure=%p", variable,
+              state, (void *)curr, closure);
     }
     switch (curr) {
       case CLOSURE_NOT_READY: {
@@ -127,7 +112,7 @@ void grpc_lfev_notify_on(grpc_exec_ctx *exec_ctx, gpr_atm *state,
            closure when transitioning out of CLOSURE_NO_READY state (i.e there
            is no other code that needs to 'happen-after' this) */
         if (gpr_atm_no_barrier_cas(state, CLOSURE_READY, CLOSURE_NOT_READY)) {
-          grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
+          GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
           return; /* Successful. Return */
         }
 
@@ -140,7 +125,7 @@ void grpc_lfev_notify_on(grpc_exec_ctx *exec_ctx, gpr_atm *state,
            schedule the closure with the shutdown error */
         if ((curr & FD_SHUTDOWN_BIT) > 0) {
           grpc_error *shutdown_err = (grpc_error *)(curr & ~FD_SHUTDOWN_BIT);
-          grpc_closure_sched(exec_ctx, closure,
+          GRPC_CLOSURE_SCHED(exec_ctx, closure,
                              GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                  "FD Shutdown", &shutdown_err, 1));
           return;
@@ -164,7 +149,7 @@ bool grpc_lfev_set_shutdown(grpc_exec_ctx *exec_ctx, gpr_atm *state,
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(state);
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
-      gpr_log(GPR_DEBUG, "lfev_set_shutdown: %p curr=%p err=%s", state,
+      gpr_log(GPR_ERROR, "lfev_set_shutdown: %p curr=%p err=%s", state,
               (void *)curr, grpc_error_string(shutdown_err));
     }
     switch (curr) {
@@ -192,7 +177,7 @@ bool grpc_lfev_set_shutdown(grpc_exec_ctx *exec_ctx, gpr_atm *state,
            happens-after on that edge), and a release to pair with anything
            loading the shutdown state. */
         if (gpr_atm_full_cas(state, curr, new_state)) {
-          grpc_closure_sched(exec_ctx, (grpc_closure *)curr,
+          GRPC_CLOSURE_SCHED(exec_ctx, (grpc_closure *)curr,
                              GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                  "FD Shutdown", &shutdown_err, 1));
           return true;
@@ -208,12 +193,14 @@ bool grpc_lfev_set_shutdown(grpc_exec_ctx *exec_ctx, gpr_atm *state,
   GPR_UNREACHABLE_CODE(return false);
 }
 
-void grpc_lfev_set_ready(grpc_exec_ctx *exec_ctx, gpr_atm *state) {
+void grpc_lfev_set_ready(grpc_exec_ctx *exec_ctx, gpr_atm *state,
+                         const char *variable) {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(state);
 
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
-      gpr_log(GPR_DEBUG, "lfev_set_ready: %p curr=%p", state, (void *)curr);
+      gpr_log(GPR_ERROR, "lfev_set_ready[%s]: %p curr=%p", variable, state,
+              (void *)curr);
     }
 
     switch (curr) {
@@ -241,7 +228,7 @@ void grpc_lfev_set_ready(grpc_exec_ctx *exec_ctx, gpr_atm *state) {
            spurious set_ready; release pairs with this or the acquire in
            notify_on (or set_shutdown) */
         else if (gpr_atm_full_cas(state, curr, CLOSURE_NOT_READY)) {
-          grpc_closure_sched(exec_ctx, (grpc_closure *)curr, GRPC_ERROR_NONE);
+          GRPC_CLOSURE_SCHED(exec_ctx, (grpc_closure *)curr, GRPC_ERROR_NONE);
           return;
         }
         /* else the state changed again (only possible by either a racing

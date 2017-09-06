@@ -1,32 +1,17 @@
 #!/usr/bin/env python
-# Copyright 2017, Google Inc.
-# All rights reserved.
+# Copyright 2017 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import cgi
 import multiprocessing
@@ -38,18 +23,8 @@ import argparse
 import python_utils.jobset as jobset
 import python_utils.start_port_server as start_port_server
 
-_AVAILABLE_BENCHMARK_TESTS = ['bm_fullstack_unary_ping_pong',
-                              'bm_fullstack_streaming_ping_pong',
-                              'bm_fullstack_streaming_pump',
-                              'bm_closure',
-                              'bm_cq',
-                              'bm_call_create',
-                              'bm_error',
-                              'bm_chttp2_hpack',
-                              'bm_chttp2_transport',
-                              'bm_pollset',
-                              'bm_metadata',
-                              'bm_fullstack_trickle']
+sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..', 'profiling', 'microbenchmarks', 'bm_diff'))
+import bm_constants
 
 flamegraph_dir = os.path.join(os.path.expanduser('~'), 'FlameGraph')
 
@@ -108,12 +83,14 @@ def collect_latency(bm_name, args):
         jobset.JobSpec(['bins/basicprof/%s' % bm_name,
                         '--benchmark_filter=^%s$' % line,
                         '--benchmark_min_time=0.05'],
-                       environ={'LATENCY_TRACE': '%s.trace' % fnize(line)}))
+                       environ={'LATENCY_TRACE': '%s.trace' % fnize(line)},
+                       shortname='profile-%s' % fnize(line)))
     profile_analysis.append(
         jobset.JobSpec([sys.executable,
                         'tools/profiling/latency_profile/profile_analyzer.py',
                         '--source', '%s.trace' % fnize(line), '--fmt', 'simple',
-                        '--out', 'reports/%s.txt' % fnize(line)], timeout_seconds=None))
+                        '--out', 'reports/%s.txt' % fnize(line)], timeout_seconds=20*60,
+                        shortname='analyze-%s' % fnize(line)))
     cleanup.append(jobset.JobSpec(['rm', '%s.trace' % fnize(line)]))
     # periodically flush out the list of jobs: profile_analysis jobs at least
     # consume upwards of five gigabytes of ram in some cases, and so analysing
@@ -151,14 +128,16 @@ def collect_perf(bm_name, args):
                         '-g', '-F', '997',
                         'bins/mutrace/%s' % bm_name,
                         '--benchmark_filter=^%s$' % line,
-                        '--benchmark_min_time=10']))
+                        '--benchmark_min_time=10'],
+                        shortname='perf-%s' % fnize(line)))
     profile_analysis.append(
         jobset.JobSpec(['tools/run_tests/performance/process_local_perf_flamegraphs.sh'],
                        environ = {
                            'PERF_BASE_NAME': fnize(line),
                            'OUTPUT_DIR': 'reports',
                            'OUTPUT_FILENAME': fnize(line),
-                       }))
+                       },
+                       shortname='flame-%s' % fnize(line)))
     cleanup.append(jobset.JobSpec(['rm', '%s-perf.data' % fnize(line)]))
     cleanup.append(jobset.JobSpec(['rm', '%s-out.perf' % fnize(line)]))
     # periodically flush out the list of jobs: temporary space required for this
@@ -214,8 +193,8 @@ argp.add_argument('-c', '--collect',
                   default=sorted(collectors.keys()),
                   help='Which collectors should be run against each benchmark')
 argp.add_argument('-b', '--benchmarks',
-                  choices=_AVAILABLE_BENCHMARK_TESTS,
-                  default=_AVAILABLE_BENCHMARK_TESTS,
+                  choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                  default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
                   nargs='+',
                   type=str,
                   help='Which microbenchmarks should be run')

@@ -3,43 +3,28 @@
 # instead. This file can be regenerated from the template by running
 # `tools/buildgen/generate_projects.sh`.
 
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  version = '1.4.0-dev'
+  version = '1.7.0-dev'
   s.version  = version
   s.summary  = 'gRPC client library for iOS/OSX'
-  s.homepage = 'http://www.grpc.io'
-  s.license  = 'New BSD'
+  s.homepage = 'https://grpc.io'
+  s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
   s.source = {
@@ -55,12 +40,9 @@ Pod::Spec.new do |s|
   s.header_dir = name
 
   src_dir = 'src/objective-c/GRPCClient'
-  s.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
-  s.private_header_files = "#{src_dir}/private/*.h"
-  s.header_mappings_dir = "#{src_dir}"
 
-  s.dependency 'gRPC-Core', version
   s.dependency 'gRPC-RxLibrary', version
+  s.default_subspec = 'Main'
 
   # Certificates, to be able to establish TLS connections:
   s.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
@@ -69,4 +51,22 @@ Pod::Spec.new do |s|
     # This is needed by all pods that depend on gRPC-RxLibrary:
     'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES' => 'YES',
   }
+
+  s.subspec 'Main' do |ss|
+    ss.header_mappings_dir = "#{src_dir}"
+
+    ss.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
+    ss.exclude_files = "#{src_dir}/GRPCCall+GID.{h,m}"
+    ss.private_header_files = "#{src_dir}/private/*.h"
+
+    ss.dependency 'gRPC-Core', version
+  end
+
+  s.subspec 'GID' do |ss|
+    ss.header_mappings_dir = "#{src_dir}"
+
+    ss.source_files = "#{src_dir}/GRPCCall+GID.{h,m}"
+
+    ss.dependency 'Google/SignIn'
+  end
 end

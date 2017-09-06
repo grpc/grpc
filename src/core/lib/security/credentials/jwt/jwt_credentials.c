@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -44,10 +29,8 @@
 
 static void jwt_reset_cache(grpc_exec_ctx *exec_ctx,
                             grpc_service_account_jwt_access_credentials *c) {
-  if (c->cached.jwt_md != NULL) {
-    grpc_credentials_md_store_unref(exec_ctx, c->cached.jwt_md);
-    c->cached.jwt_md = NULL;
-  }
+  GRPC_MDELEM_UNREF(exec_ctx, c->cached.jwt_md);
+  c->cached.jwt_md = GRPC_MDNULL;
   if (c->cached.service_url != NULL) {
     gpr_free(c->cached.service_url);
     c->cached.service_url = NULL;
@@ -64,33 +47,34 @@ static void jwt_destruct(grpc_exec_ctx *exec_ctx,
   gpr_mu_destroy(&c->cache_mu);
 }
 
-static void jwt_get_request_metadata(grpc_exec_ctx *exec_ctx,
+static bool jwt_get_request_metadata(grpc_exec_ctx *exec_ctx,
                                      grpc_call_credentials *creds,
                                      grpc_polling_entity *pollent,
                                      grpc_auth_metadata_context context,
-                                     grpc_credentials_metadata_cb cb,
-                                     void *user_data) {
+                                     grpc_credentials_mdelem_array *md_array,
+                                     grpc_closure *on_request_metadata,
+                                     grpc_error **error) {
   grpc_service_account_jwt_access_credentials *c =
       (grpc_service_account_jwt_access_credentials *)creds;
   gpr_timespec refresh_threshold = gpr_time_from_seconds(
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);
 
   /* See if we can return a cached jwt. */
-  grpc_credentials_md_store *jwt_md = NULL;
+  grpc_mdelem jwt_md = GRPC_MDNULL;
   {
     gpr_mu_lock(&c->cache_mu);
     if (c->cached.service_url != NULL &&
         strcmp(c->cached.service_url, context.service_url) == 0 &&
-        c->cached.jwt_md != NULL &&
+        !GRPC_MDISNULL(c->cached.jwt_md) &&
         (gpr_time_cmp(gpr_time_sub(c->cached.jwt_expiration,
                                    gpr_now(GPR_CLOCK_REALTIME)),
                       refresh_threshold) > 0)) {
-      jwt_md = grpc_credentials_md_store_ref(c->cached.jwt_md);
+      jwt_md = GRPC_MDELEM_REF(c->cached.jwt_md);
     }
     gpr_mu_unlock(&c->cache_mu);
   }
 
-  if (jwt_md == NULL) {
+  if (GRPC_MDISNULL(jwt_md)) {
     char *jwt = NULL;
     /* Generate a new jwt. */
     gpr_mu_lock(&c->cache_mu);
@@ -104,27 +88,33 @@ static void jwt_get_request_metadata(grpc_exec_ctx *exec_ctx,
       c->cached.jwt_expiration =
           gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), c->jwt_lifetime);
       c->cached.service_url = gpr_strdup(context.service_url);
-      c->cached.jwt_md = grpc_credentials_md_store_create(1);
-      grpc_credentials_md_store_add_cstrings(
-          c->cached.jwt_md, GRPC_AUTHORIZATION_METADATA_KEY, md_value);
+      c->cached.jwt_md = grpc_mdelem_from_slices(
+          exec_ctx,
+          grpc_slice_from_static_string(GRPC_AUTHORIZATION_METADATA_KEY),
+          grpc_slice_from_copied_string(md_value));
       gpr_free(md_value);
-      jwt_md = grpc_credentials_md_store_ref(c->cached.jwt_md);
+      jwt_md = GRPC_MDELEM_REF(c->cached.jwt_md);
     }
     gpr_mu_unlock(&c->cache_mu);
   }
 
-  if (jwt_md != NULL) {
-    cb(exec_ctx, user_data, jwt_md->entries, jwt_md->num_entries,
-       GRPC_CREDENTIALS_OK, NULL);
-    grpc_credentials_md_store_unref(exec_ctx, jwt_md);
+  if (!GRPC_MDISNULL(jwt_md)) {
+    grpc_credentials_mdelem_array_add(md_array, jwt_md);
+    GRPC_MDELEM_UNREF(exec_ctx, jwt_md);
   } else {
-    cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_ERROR,
-       "Could not generate JWT.");
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Could not generate JWT.");
   }
+  return true;
 }
 
-static grpc_call_credentials_vtable jwt_vtable = {jwt_destruct,
-                                                  jwt_get_request_metadata};
+static void jwt_cancel_get_request_metadata(
+    grpc_exec_ctx *exec_ctx, grpc_call_credentials *c,
+    grpc_credentials_mdelem_array *md_array, grpc_error *error) {
+  GRPC_ERROR_UNREF(error);
+}
+
+static grpc_call_credentials_vtable jwt_vtable = {
+    jwt_destruct, jwt_get_request_metadata, jwt_cancel_get_request_metadata};
 
 grpc_call_credentials *
 grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
@@ -140,6 +130,13 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
   gpr_ref_init(&c->base.refcount, 1);
   c->base.vtable = &jwt_vtable;
   c->key = key;
+  gpr_timespec max_token_lifetime = grpc_max_auth_token_lifetime();
+  if (gpr_time_cmp(token_lifetime, max_token_lifetime) > 0) {
+    gpr_log(GPR_INFO,
+            "Cropping token lifetime to maximum allowed value (%d secs).",
+            (int)max_token_lifetime.tv_sec);
+    token_lifetime = grpc_max_auth_token_lifetime();
+  }
   c->jwt_lifetime = token_lifetime;
   gpr_mu_init(&c->cache_mu);
   jwt_reset_cache(exec_ctx, c);

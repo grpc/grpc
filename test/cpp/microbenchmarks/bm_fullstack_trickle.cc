@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -41,6 +26,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
+#include "test/cpp/util/test_config.h"
 extern "C" {
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -88,11 +74,11 @@ class TrickledCHTTP2 : public EndpointPairFixture {
       log_.reset(new std::ofstream(fn.str().c_str()));
       write_csv(log_.get(), "t", "iteration", "client_backlog",
                 "server_backlog", "client_t_stall", "client_s_stall",
-                "server_t_stall", "server_s_stall", "client_t_outgoing",
-                "server_t_outgoing", "client_t_incoming", "server_t_incoming",
-                "client_s_outgoing_delta", "server_s_outgoing_delta",
-                "client_s_incoming_delta", "server_s_incoming_delta",
-                "client_s_announce_window", "server_s_announce_window",
+                "server_t_stall", "server_s_stall", "client_t_remote",
+                "server_t_remote", "client_t_announced", "server_t_announced",
+                "client_s_remote_delta", "server_s_remote_delta",
+                "client_s_local_delta", "server_s_local_delta",
+                "client_s_announced_delta", "server_s_announced_delta",
                 "client_peer_iws", "client_local_iws", "client_sent_iws",
                 "client_acked_iws", "server_peer_iws", "server_local_iws",
                 "server_sent_iws", "server_acked_iws", "client_queued_bytes",
@@ -142,14 +128,15 @@ class TrickledCHTTP2 : public EndpointPairFixture {
         client->lists[GRPC_CHTTP2_LIST_STALLED_BY_STREAM].head != nullptr,
         server->lists[GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT].head != nullptr,
         server->lists[GRPC_CHTTP2_LIST_STALLED_BY_STREAM].head != nullptr,
-        client->outgoing_window, server->outgoing_window,
-        client->incoming_window, server->incoming_window,
-        client_stream ? client_stream->outgoing_window_delta : -1,
-        server_stream ? server_stream->outgoing_window_delta : -1,
-        client_stream ? client_stream->incoming_window_delta : -1,
-        server_stream ? server_stream->incoming_window_delta : -1,
-        client_stream ? client_stream->announce_window : -1,
-        server_stream ? server_stream->announce_window : -1,
+        client->flow_control.remote_window, server->flow_control.remote_window,
+        client->flow_control.announced_window,
+        server->flow_control.announced_window,
+        client_stream ? client_stream->flow_control.remote_window_delta : -1,
+        server_stream ? server_stream->flow_control.remote_window_delta : -1,
+        client_stream ? client_stream->flow_control.local_window_delta : -1,
+        server_stream ? server_stream->flow_control.local_window_delta : -1,
+        client_stream ? client_stream->flow_control.announced_window_delta : -1,
+        server_stream ? server_stream->flow_control.announced_window_delta : -1,
         client->settings[GRPC_PEER_SETTINGS]
                         [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
         client->settings[GRPC_LOCAL_SETTINGS]
@@ -177,7 +164,6 @@ class TrickledCHTTP2 : public EndpointPairFixture {
     size_t server_backlog =
         grpc_trickle_endpoint_trickle(&exec_ctx, endpoint_pair_.server);
     grpc_exec_ctx_finish(&exec_ctx);
-
     if (update_stats) {
       UpdateStats((grpc_chttp2_transport*)client_transport_, &client_stats_,
                   client_backlog);
@@ -331,7 +317,7 @@ BENCHMARK(BM_PumpStreamServerToClient_Trickle)->Apply(StreamingTrickleArgs);
 static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
   EchoTestService::AsyncService service;
   std::unique_ptr<TrickledCHTTP2> fixture(new TrickledCHTTP2(
-      &service, true, state.range(0) /* req_size */,
+      &service, false, state.range(0) /* req_size */,
       state.range(1) /* resp_size */, state.range(2) /* bw in kbit/s */));
   EchoRequest send_request;
   EchoResponse send_response;
@@ -371,7 +357,7 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
         stub->AsyncEcho(&cli_ctx, send_request, fixture->cq()));
     void* t;
     bool ok;
-    TrickleCQNext(fixture.get(), &t, &ok, state.iterations());
+    TrickleCQNext(fixture.get(), &t, &ok, in_warmup ? -1 : state.iterations());
     GPR_ASSERT(ok);
     GPR_ASSERT(t == tag(0) || t == tag(1));
     intptr_t slot = reinterpret_cast<intptr_t>(t);
@@ -379,7 +365,8 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
     response_reader->Finish(&recv_response, &recv_status, tag(4));
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
-      TrickleCQNext(fixture.get(), &t, &ok, state.iterations());
+      TrickleCQNext(fixture.get(), &t, &ok,
+                    in_warmup ? -1 : state.iterations());
       GPR_ASSERT(ok);
       int tagnum = (int)reinterpret_cast<intptr_t>(t);
       GPR_ASSERT(i & (1 << tagnum));
@@ -416,18 +403,16 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
 }
 
 static void UnaryTrickleArgs(benchmark::internal::Benchmark* b) {
-  const int cli_1024k = 1024 * 1024;
-  const int cli_32M = 32 * 1024 * 1024;
-  const int svr_256k = 256 * 1024;
-  const int svr_4M = 4 * 1024 * 1024;
-  const int svr_64M = 64 * 1024 * 1024;
   for (int bw = 64; bw <= 128 * 1024 * 1024; bw *= 16) {
-    b->Args({bw, cli_1024k, svr_256k});
-    b->Args({bw, cli_1024k, svr_4M});
-    b->Args({bw, cli_1024k, svr_64M});
-    b->Args({bw, cli_32M, svr_256k});
-    b->Args({bw, cli_32M, svr_4M});
-    b->Args({bw, cli_32M, svr_64M});
+    b->Args({1, 1, bw});
+    for (int i = 64; i <= 128 * 1024 * 1024; i *= 64) {
+      double expected_time =
+          static_cast<double>(14 + i) / (125.0 * static_cast<double>(bw));
+      if (expected_time > 2.0) continue;
+      b->Args({i, 1, bw});
+      b->Args({1, i, bw});
+      b->Args({i, i, bw});
+    }
   }
 }
 BENCHMARK(BM_PumpUnbalancedUnary_Trickle)->Apply(UnaryTrickleArgs);
@@ -436,6 +421,6 @@ BENCHMARK(BM_PumpUnbalancedUnary_Trickle)->Apply(UnaryTrickleArgs);
 
 int main(int argc, char** argv) {
   ::benchmark::Initialize(&argc, argv);
-  ::google::ParseCommandLineFlags(&argc, &argv, false);
+  ::grpc::testing::InitTest(&argc, &argv, false);
   ::benchmark::RunSpecifiedBenchmarks();
 }

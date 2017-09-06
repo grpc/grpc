@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -42,14 +27,23 @@
 namespace grpc {
 
 ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
-    : thd_mgr_(thd_mgr), thd_(&ThreadManager::WorkerThread::Run, this) {}
+    : thd_mgr_(thd_mgr) {
+  // Make thread creation exclusive with respect to its join happening in
+  // ~WorkerThread().
+  std::lock_guard<std::mutex> lock(wt_mu_);
+  thd_ = std::thread(&ThreadManager::WorkerThread::Run, this);
+}
 
 void ThreadManager::WorkerThread::Run() {
   thd_mgr_->MainWorkLoop();
   thd_mgr_->MarkAsCompleted(this);
 }
 
-ThreadManager::WorkerThread::~WorkerThread() { thd_.join(); }
+ThreadManager::WorkerThread::~WorkerThread() {
+  // Don't join until the thread is fully constructed.
+  std::lock_guard<std::mutex> lock(wt_mu_);
+  thd_.join();
+}
 
 ThreadManager::ThreadManager(int min_pollers, int max_pollers)
     : shutdown_(false),
@@ -60,7 +54,7 @@ ThreadManager::ThreadManager(int min_pollers, int max_pollers)
 
 ThreadManager::~ThreadManager() {
   {
-    std::unique_lock<std::mutex> lock(mu_);
+    std::lock_guard<std::mutex> lock(mu_);
     GPR_ASSERT(num_threads_ == 0);
   }
 
@@ -75,22 +69,22 @@ void ThreadManager::Wait() {
 }
 
 void ThreadManager::Shutdown() {
-  std::unique_lock<std::mutex> lock(mu_);
+  std::lock_guard<std::mutex> lock(mu_);
   shutdown_ = true;
 }
 
 bool ThreadManager::IsShutdown() {
-  std::unique_lock<std::mutex> lock(mu_);
+  std::lock_guard<std::mutex> lock(mu_);
   return shutdown_;
 }
 
 void ThreadManager::MarkAsCompleted(WorkerThread* thd) {
   {
-    std::unique_lock<std::mutex> list_lock(list_mu_);
+    std::lock_guard<std::mutex> list_lock(list_mu_);
     completed_threads_.push_back(thd);
   }
 
-  std::unique_lock<std::mutex> lock(mu_);
+  std::lock_guard<std::mutex> lock(mu_);
   num_threads_--;
   if (num_threads_ == 0) {
     shutdown_cv_.notify_one();
@@ -164,11 +158,39 @@ void ThreadManager::MainWorkLoop() {
     }
     // If we decided to finish the thread, break out of the while loop
     if (done) break;
-    // ... otherwise increase poller count and continue
-    // There's a chance that we'll exceed the max poller count: that is
-    // explicitly ok - we'll decrease after one poll timeout, and prevent
-    // some thrashing starting up and shutting down threads
-    num_pollers_++;
+
+    // Otherwise go back to polling as long as it doesn't exceed max_pollers_
+    //
+    // **WARNING**:
+    // There is a possibility of threads thrashing here (i.e excessive thread
+    // shutdowns and creations than the ideal case). This happens if max_poller_
+    // count is small and the rate of incoming requests is also small. In such
+    // scenarios we can possibly configure max_pollers_ to a higher value and/or
+    // increase the cq timeout.
+    //
+    // However, not doing this check here and unconditionally incrementing
+    // num_pollers (and hoping that the system will eventually settle down) has
+    // far worse consequences i.e huge number of threads getting created to the
+    // point of thread-exhaustion. For example: if the incoming request rate is
+    // very high, all the polling threads will return very quickly from
+    // PollForWork() with WORK_FOUND. They all briefly decrement num_pollers_
+    // counter thereby possibly - and briefly - making it go below min_pollers;
+    // This will most likely result in the creation of a new poller since
+    // num_pollers_ dipped below min_pollers_.
+    //
+    // Now, If we didn't do the max_poller_ check here, all these threads will
+    // go back to doing PollForWork() and the whole cycle repeats (with a new
+    // thread being added in each cycle). Once the total number of threads in
+    // the system crosses a certain threshold (around ~1500), there is heavy
+    // contention on mutexes (the mu_ here or the mutexes in gRPC core like the
+    // pollset mutex) that makes DoWork() take longer to finish thereby causing
+    // new poller threads to be created even faster. This results in a thread
+    // avalanche.
+    if (num_pollers_ < max_pollers_) {
+      num_pollers_++;
+    } else {
+      break;
+    }
   };
 
   CleanupCompletedThreads();

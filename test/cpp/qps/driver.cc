@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -55,6 +40,7 @@
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qps_worker.h"
 #include "test/cpp/qps/stats.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 using std::list;
 using std::thread;
@@ -112,6 +98,8 @@ static deque<string> get_workers(const string& env_name) {
 static double WallTime(ClientStats s) { return s.time_elapsed(); }
 static double SystemTime(ClientStats s) { return s.time_system(); }
 static double UserTime(ClientStats s) { return s.time_user(); }
+static double CliPollCount(ClientStats s) { return s.cq_poll_count(); }
+static double SvrPollCount(ServerStats s) { return s.cq_poll_count(); }
 static double ServerWallTime(ServerStats s) { return s.time_elapsed(); }
 static double ServerSystemTime(ServerStats s) { return s.time_system(); }
 static double ServerUserTime(ServerStats s) { return s.time_user(); }
@@ -180,13 +168,31 @@ static void postprocess_scenario_result(ScenarioResult* result) {
     result->mutable_summary()->set_failed_requests_per_second(failures /
                                                               time_estimate);
   }
+
+  result->mutable_summary()->set_client_polls_per_request(
+      sum(result->client_stats(), CliPollCount) / histogram.Count());
+  result->mutable_summary()->set_server_polls_per_request(
+      sum(result->server_stats(), SvrPollCount) / histogram.Count());
+
+  auto server_queries_per_cpu_sec =
+      histogram.Count() / (sum(result->server_stats(), ServerSystemTime) +
+                           sum(result->server_stats(), ServerUserTime));
+  auto client_queries_per_cpu_sec =
+      histogram.Count() / (sum(result->client_stats(), SystemTime) +
+                           sum(result->client_stats(), UserTime));
+
+  result->mutable_summary()->set_server_queries_per_cpu_sec(
+      server_queries_per_cpu_sec);
+  result->mutable_summary()->set_client_queries_per_cpu_sec(
+      client_queries_per_cpu_sec);
 }
 
 std::unique_ptr<ScenarioResult> RunScenario(
     const ClientConfig& initial_client_config, size_t num_clients,
     const ServerConfig& initial_server_config, size_t num_servers,
     int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count,
-    const char* qps_server_target_override) {
+    const grpc::string& qps_server_target_override,
+    const grpc::string& credential_type) {
   // Log everything from the driver
   gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
 
@@ -222,7 +228,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
 
     int driver_port = grpc_pick_unused_port_or_die();
-    local_workers.emplace_back(new QpsWorker(driver_port));
+    local_workers.emplace_back(new QpsWorker(driver_port, 0, credential_type));
     char addr[256];
     sprintf(addr, "localhost:%d", driver_port);
     if (spawn_local_worker_count < 0) {
@@ -254,12 +260,14 @@ std::unique_ptr<ScenarioResult> RunScenario(
   };
   std::vector<ServerData> servers(num_servers);
   std::unordered_map<string, std::deque<int>> hosts_cores;
+  ChannelArguments channel_args;
 
   for (size_t i = 0; i < num_servers; i++) {
     gpr_log(GPR_INFO, "Starting server on %s (worker #%" PRIuPTR ")",
             workers[i].c_str(), i);
-    servers[i].stub = WorkerService::NewStub(
-        CreateChannel(workers[i], InsecureChannelCredentials()));
+    servers[i].stub = WorkerService::NewStub(CreateChannel(
+        workers[i], GetCredentialsProvider()->GetChannelCredentials(
+                        credential_type, &channel_args)));
 
     ServerConfig server_config = initial_server_config;
     if (server_config.core_limit() != 0) {
@@ -277,8 +285,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     if (!servers[i].stream->Read(&init_status)) {
       gpr_log(GPR_ERROR, "Server %zu did not yield initial status", i);
     }
-    if (qps_server_target_override != NULL &&
-        strlen(qps_server_target_override) > 0) {
+    if (qps_server_target_override.length() > 0) {
       // overriding the qps server target only works if there is 1 server
       GPR_ASSERT(num_servers == 1);
       client_config.add_server_targets(qps_server_target_override);
@@ -306,7 +313,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
     gpr_log(GPR_INFO, "Starting client on %s (worker #%" PRIuPTR ")",
             worker.c_str(), i + num_servers);
     clients[i].stub = WorkerService::NewStub(
-        CreateChannel(worker, InsecureChannelCredentials()));
+        CreateChannel(worker, GetCredentialsProvider()->GetChannelCredentials(
+                                  credential_type, &channel_args)));
     ClientConfig per_client_config = client_config;
 
     if (initial_client_config.core_limit() != 0) {
@@ -491,16 +499,19 @@ std::unique_ptr<ScenarioResult> RunScenario(
   return result;
 }
 
-bool RunQuit() {
+bool RunQuit(const grpc::string& credential_type) {
   // Get client, server lists
   bool result = true;
   auto workers = get_workers("QPS_WORKERS");
   if (workers.size() == 0) {
     return false;
   }
+
+  ChannelArguments channel_args;
   for (size_t i = 0; i < workers.size(); i++) {
-    auto stub = WorkerService::NewStub(
-        CreateChannel(workers[i], InsecureChannelCredentials()));
+    auto stub = WorkerService::NewStub(CreateChannel(
+        workers[i], GetCredentialsProvider()->GetChannelCredentials(
+                        credential_type, &channel_args)));
     Void dummy;
     grpc::ClientContext ctx;
     ctx.set_wait_for_ready(true);

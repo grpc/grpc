@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -1664,10 +1649,27 @@ static void force_client_rst_stream(grpc_exec_ctx *exec_ctx, void *sp,
     grpc_slice_buffer_add(
         &t->qbuf, grpc_chttp2_rst_stream_create(s->id, GRPC_HTTP2_NO_ERROR,
                                                 &s->stats.outgoing));
-    grpc_chttp2_initiate_write(exec_ctx, t, false, "force_rst_stream");
+    grpc_chttp2_initiate_write(exec_ctx, t, "force_rst_stream");
     grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, true, GRPC_ERROR_NONE);
   }
   GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "final_rst");
+}
+
+static void parse_stream_compression_md(grpc_exec_ctx *exec_ctx,
+                                        grpc_chttp2_transport *t,
+                                        grpc_chttp2_stream *s,
+                                        grpc_metadata_batch *initial_metadata) {
+  if (initial_metadata->idx.named.content_encoding != NULL) {
+    grpc_slice content_encoding =
+        GRPC_MDVALUE(initial_metadata->idx.named.content_encoding->md);
+    if (!grpc_slice_eq(content_encoding, GRPC_MDSTR_IDENTITY)) {
+      if (grpc_slice_eq(content_encoding, GRPC_MDSTR_GZIP)) {
+        s->stream_compression_recv_enabled = true;
+        s->decompressed_data_buffer = gpr_malloc(sizeof(grpc_slice_buffer));
+        grpc_slice_buffer_init(s->decompressed_data_buffer);
+      }
+    }
+  }
 }
 
 grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
@@ -1696,8 +1698,15 @@ grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
     if (s != NULL) {
       if (parser->is_boundary) {
         if (s->header_frames_received == GPR_ARRAY_SIZE(s->metadata_buffer)) {
+          GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Too many trailer frames");
+        }
+        /* Process stream compression md element if it exists */
+        if (s->header_frames_received ==
+            0) { /* Only acts on initial metadata */
+          parse_stream_compression_md(exec_ctx, t, s,
+                                      &s->metadata_buffer[0].batch);
         }
         s->published_metadata[s->header_frames_received] =
             GRPC_METADATA_PUBLISHED_FROM_WIRE;
@@ -1711,10 +1720,10 @@ grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
              however -- it might be that we receive a RST_STREAM following this
              and can avoid the extra write */
           GRPC_CHTTP2_STREAM_REF(s, "final_rst");
-          grpc_closure_sched(
-              exec_ctx, grpc_closure_create(force_client_rst_stream, s,
-                                            grpc_combiner_finally_scheduler(
-                                                t->combiner, false)),
+          GRPC_CLOSURE_SCHED(
+              exec_ctx,
+              GRPC_CLOSURE_CREATE(force_client_rst_stream, s,
+                                  grpc_combiner_finally_scheduler(t->combiner)),
               GRPC_ERROR_NONE);
         }
         grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, false,

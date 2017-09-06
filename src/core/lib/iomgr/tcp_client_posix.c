@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -224,7 +209,8 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
 finish:
   if (fd != NULL) {
     grpc_pollset_set_del_fd(exec_ctx, ac->interested_parties, fd);
-    grpc_fd_orphan(exec_ctx, fd, NULL, NULL, "tcp_client_orphan");
+    grpc_fd_orphan(exec_ctx, fd, NULL, NULL, false /* already_closed */,
+                   "tcp_client_orphan");
     fd = NULL;
   }
   done = (--ac->refs == 0);
@@ -249,7 +235,7 @@ finish:
     grpc_channel_args_destroy(exec_ctx, ac->channel_args);
     gpr_free(ac);
   }
-  grpc_closure_sched(exec_ctx, closure, error);
+  GRPC_CLOSURE_SCHED(exec_ctx, closure, error);
 }
 
 static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
@@ -278,7 +264,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
 
   error = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode, &fd);
   if (error != GRPC_ERROR_NONE) {
-    grpc_closure_sched(exec_ctx, closure, error);
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, error);
     return;
   }
   if (dsmode == GRPC_DSMODE_IPV4) {
@@ -287,7 +273,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
     addr = &addr4_copy;
   }
   if ((error = prepare_socket(addr, fd, channel_args)) != GRPC_ERROR_NONE) {
-    grpc_closure_sched(exec_ctx, closure, error);
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, error);
     return;
   }
 
@@ -305,13 +291,14 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   if (err >= 0) {
     *ep =
         grpc_tcp_client_create_from_fd(exec_ctx, fdobj, channel_args, addr_str);
-    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
     goto done;
   }
 
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
-    grpc_fd_orphan(exec_ctx, fdobj, NULL, NULL, "tcp_client_connect_error");
-    grpc_closure_sched(exec_ctx, closure, GRPC_OS_ERROR(errno, "connect"));
+    grpc_fd_orphan(exec_ctx, fdobj, NULL, NULL, false /* already_closed */,
+                   "tcp_client_connect_error");
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_OS_ERROR(errno, "connect"));
     goto done;
   }
 
@@ -326,7 +313,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   addr_str = NULL;
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
-  grpc_closure_init(&ac->write_closure, on_writable, ac,
+  GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,
                     grpc_schedule_on_exec_ctx);
   ac->channel_args = grpc_channel_args_copy(channel_args);
 
@@ -336,7 +323,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   }
 
   gpr_mu_lock(&ac->mu);
-  grpc_closure_init(&ac->on_alarm, tc_on_alarm, ac, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&ac->on_alarm, tc_on_alarm, ac, grpc_schedule_on_exec_ctx);
   grpc_timer_init(exec_ctx, &ac->alarm,
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
                   &ac->on_alarm, gpr_now(GPR_CLOCK_MONOTONIC));

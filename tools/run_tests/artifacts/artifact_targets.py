@@ -1,32 +1,17 @@
 #!/usr/bin/env python
-# Copyright 2016, Google Inc.
-# All rights reserved.
+# Copyright 2016 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Definition of targets to build artifacts."""
 
@@ -41,10 +26,11 @@ import python_utils.jobset as jobset
 
 def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
                    flake_retries=0, timeout_retries=0, timeout_seconds=30*60,
-                   docker_base_image=None):
+                   docker_base_image=None, extra_docker_args=None):
   """Creates jobspec for a task running under docker."""
   environ = environ.copy()
   environ['RUN_COMMAND'] = shell_command
+  environ['ARTIFACTS_OUT'] = 'artifacts/%s' % name
 
   docker_args=[]
   for k,v in environ.items():
@@ -55,6 +41,8 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
 
   if docker_base_image is not None:
     docker_env['DOCKER_BASE_IMAGE'] = docker_base_image
+  if extra_docker_args is not None:
+    docker_env['EXTRA_DOCKER_ARGS'] = extra_docker_args
   jobspec = jobset.JobSpec(
           cmdline=['tools/run_tests/dockerize/build_and_run_docker.sh'] + docker_args,
           environ=docker_env,
@@ -65,9 +53,20 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
   return jobspec
 
 
-def create_jobspec(name, cmdline, environ=None, shell=False,
-                   flake_retries=0, timeout_retries=0, timeout_seconds=30*60):
+def create_jobspec(name, cmdline, environ={}, shell=False,
+                   flake_retries=0, timeout_retries=0, timeout_seconds=30*60,
+                   use_workspace=False,
+                   cpu_cost=1.0):
   """Creates jobspec."""
+  environ = environ.copy()
+  if use_workspace:
+    environ['WORKSPACE_NAME'] = 'workspace_%s' % name
+    environ['ARTIFACTS_OUT'] = os.path.join('..', 'artifacts', name)
+    cmdline = ['bash',
+               'tools/run_tests/artifacts/run_in_workspace.sh'] + cmdline
+  else:
+    environ['ARTIFACTS_OUT'] = os.path.join('artifacts', name)
+
   jobspec = jobset.JobSpec(
           cmdline=cmdline,
           environ=environ,
@@ -75,7 +74,8 @@ def create_jobspec(name, cmdline, environ=None, shell=False,
           timeout_seconds=timeout_seconds,
           flake_retries=flake_retries,
           timeout_retries=timeout_retries,
-          shell=shell)
+          shell=shell,
+          cpu_cost=cpu_cost)
   return jobspec
 
 
@@ -102,7 +102,22 @@ class PythonArtifact:
 
   def build_jobspec(self):
     environ = {}
-    if self.platform == 'linux':
+    if self.platform == 'linux_extra':
+      # Raspberry Pi build
+      environ['PYTHON'] = '/usr/local/bin/python{}'.format(self.py_version)
+      environ['PIP'] = '/usr/local/bin/pip{}'.format(self.py_version)
+      # https://github.com/resin-io-projects/armv7hf-debian-qemu/issues/9
+      # A QEMU bug causes submodule update to hang, so we copy directly
+      environ['RELATIVE_COPY_PATH'] = '.'
+      extra_args = ' --entrypoint=/usr/bin/qemu-arm-static '
+      return create_docker_jobspec(self.name,
+          'tools/dockerfile/grpc_artifact_linux_{}'.format(self.arch),
+          'tools/run_tests/artifacts/build_artifact_python.sh',
+          environ=environ,
+          timeout_seconds=60*60*5,
+          docker_base_image='quay.io/grpc/raspbian_{}'.format(self.arch),
+          extra_docker_args=extra_args)
+    elif self.platform == 'linux':
       if self.arch == 'x86':
         environ['SETARCH_CMD'] = 'linux32'
       # Inside the manylinux container, the python installations are located in
@@ -133,17 +148,16 @@ class PythonArtifact:
       return create_jobspec(self.name,
                             ['tools\\run_tests\\artifacts\\build_artifact_python.bat',
                              self.py_version,
-                             '32' if self.arch == 'x86' else '64',
-                             dir
-                            ],
+                             '32' if self.arch == 'x86' else '64'],
                             environ=environ,
-                            shell=True)
+                            use_workspace=True)
     else:
       environ['PYTHON'] = self.py_version
       environ['SKIP_PIP_INSTALL'] = 'TRUE'
       return create_jobspec(self.name,
                             ['tools/run_tests/artifacts/build_artifact_python.sh'],
-                            environ=environ)
+                            environ=environ,
+                            use_workspace=True)
 
   def __str__(self):
     return self.name
@@ -162,20 +176,12 @@ class RubyArtifact:
     return []
 
   def build_jobspec(self):
-    if self.platform == 'windows':
-      raise Exception("Not supported yet")
-    else:
-      if self.platform == 'linux':
-        environ = {}
-        if self.arch == 'x86':
-          environ['SETARCH_CMD'] = 'linux32'
-        return create_docker_jobspec(self.name,
-            'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
-            'tools/run_tests/artifacts/build_artifact_ruby.sh',
-            environ=environ)
-      else:
-        return create_jobspec(self.name,
-                              ['tools/run_tests/artifacts/build_artifact_ruby.sh'])
+    # Ruby build uses docker internally and docker cannot be nested.
+    # We are using a custom workspace instead.
+    return create_jobspec(self.name,
+                          ['tools/run_tests/artifacts/build_artifact_ruby.sh'],
+                          use_workspace=True,
+                          timeout_seconds=45*60)
 
 
 class CSharpExtArtifact:
@@ -196,7 +202,7 @@ class CSharpExtArtifact:
       return create_jobspec(self.name,
                             ['tools\\run_tests\\artifacts\\build_artifact_csharp.bat',
                              cmake_arch_option],
-                            shell=True)
+                            use_workspace=True)
     else:
       environ = {'CONFIG': 'opt',
                  'EMBED_OPENSSL': 'true',
@@ -216,7 +222,8 @@ class CSharpExtArtifact:
         environ['LDFLAGS'] += ' %s' % archflag
         return create_jobspec(self.name,
                               ['tools/run_tests/artifacts/build_artifact_csharp.sh'],
-                              environ=environ)
+                              environ=environ,
+                              use_workspace=True)
 
   def __str__(self):
     return self.name
@@ -242,20 +249,27 @@ class NodeExtArtifact:
 
   def build_jobspec(self):
     if self.platform == 'windows':
+      # Simultaneous builds of node on the same windows machine are flaky.
+      # Set x86 build as exclusive to make sure there is only one node build
+      # at a time. See https://github.com/grpc/grpc/issues/8293
+      cpu_cost = 1e6 if self.arch != 'x64' else 1.0
       return create_jobspec(self.name,
                             ['tools\\run_tests\\artifacts\\build_artifact_node.bat',
                              self.gyp_arch],
-                            shell=True)
+                            use_workspace=True,
+                            cpu_cost=cpu_cost)
     else:
       if self.platform == 'linux':
         return create_docker_jobspec(
             self.name,
             'tools/dockerfile/grpc_artifact_linux_{}'.format(self.arch),
-            'tools/run_tests/artifacts/build_artifact_node.sh {}'.format(self.gyp_arch))
+            'tools/run_tests/artifacts/build_artifact_node.sh {} {}'.format(
+                self.gyp_arch, self.platform))
       else:
         return create_jobspec(self.name,
                               ['tools/run_tests/artifacts/build_artifact_node.sh',
-                               self.gyp_arch])
+                               self.gyp_arch, self.platform],
+                               use_workspace=True)
 
 class PHPArtifact:
   """Builds PHP PECL package"""
@@ -277,7 +291,8 @@ class PHPArtifact:
           'tools/run_tests/artifacts/build_artifact_php.sh')
     else:
       return create_jobspec(self.name,
-                            ['tools/run_tests/artifacts/build_artifact_php.sh'])
+                            ['tools/run_tests/artifacts/build_artifact_php.sh'],
+                            use_workspace=True)
 
 class ProtocArtifact:
   """Builds protoc and protoc-plugin artifacts"""
@@ -310,14 +325,14 @@ class ProtocArtifact:
         environ['CXXFLAGS'] += ' -std=c++11 -stdlib=libc++ %s' % _MACOS_COMPAT_FLAG
         return create_jobspec(self.name,
             ['tools/run_tests/artifacts/build_artifact_protoc.sh'],
-            environ=environ)
+            environ=environ,
+            use_workspace=True)
     else:
-      generator = 'Visual Studio 12 Win64' if self.arch == 'x64' else 'Visual Studio 12' 
-      vcplatform = 'x64' if self.arch == 'x64' else 'Win32'
+      generator = 'Visual Studio 14 2015 Win64' if self.arch == 'x64' else 'Visual Studio 14 2015'
       return create_jobspec(self.name,
                             ['tools\\run_tests\\artifacts\\build_artifact_protoc.bat'],
-                            environ={'generator': generator,
-                                     'Platform': vcplatform})
+                            environ={'generator': generator},
+                            use_workspace=True)
 
   def __str__(self):
     return self.name
@@ -334,6 +349,14 @@ def targets():
            PythonArtifact('linux', 'x86', 'cp34-cp34m'),
            PythonArtifact('linux', 'x86', 'cp35-cp35m'),
            PythonArtifact('linux', 'x86', 'cp36-cp36m'),
+           PythonArtifact('linux_extra', 'armv7', '2.7'),
+           PythonArtifact('linux_extra', 'armv7', '3.4'),
+           PythonArtifact('linux_extra', 'armv7', '3.5'),
+           PythonArtifact('linux_extra', 'armv7', '3.6'),
+           PythonArtifact('linux_extra', 'armv6', '2.7'),
+           PythonArtifact('linux_extra', 'armv6', '3.4'),
+           PythonArtifact('linux_extra', 'armv6', '3.5'),
+           PythonArtifact('linux_extra', 'armv6', '3.6'),
            PythonArtifact('linux', 'x64', 'cp27-cp27m'),
            PythonArtifact('linux', 'x64', 'cp27-cp27mu'),
            PythonArtifact('linux', 'x64', 'cp34-cp34m'),
@@ -351,7 +374,6 @@ def targets():
            PythonArtifact('windows', 'x64', 'Python34'),
            PythonArtifact('windows', 'x64', 'Python35'),
            PythonArtifact('windows', 'x64', 'Python36'),
-           RubyArtifact('linux', 'x86'),
            RubyArtifact('linux', 'x64'),
            RubyArtifact('macos', 'x64'),
            PHPArtifact('linux', 'x64'),

@@ -1,34 +1,19 @@
 
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -61,6 +46,8 @@ extern void cancel_after_client_done(grpc_end2end_test_config config);
 extern void cancel_after_client_done_pre_init(void);
 extern void cancel_after_invoke(grpc_end2end_test_config config);
 extern void cancel_after_invoke_pre_init(void);
+extern void cancel_after_round_trip(grpc_end2end_test_config config);
+extern void cancel_after_round_trip_pre_init(void);
 extern void cancel_before_invoke(grpc_end2end_test_config config);
 extern void cancel_before_invoke_pre_init(void);
 extern void cancel_in_a_vacuum(grpc_end2end_test_config config);
@@ -121,6 +108,8 @@ extern void ping(grpc_end2end_test_config config);
 extern void ping_pre_init(void);
 extern void ping_pong_streaming(grpc_end2end_test_config config);
 extern void ping_pong_streaming_pre_init(void);
+extern void proxy_auth(grpc_end2end_test_config config);
+extern void proxy_auth_pre_init(void);
 extern void registered_call(grpc_end2end_test_config config);
 extern void registered_call_pre_init(void);
 extern void request_with_flags(grpc_end2end_test_config config);
@@ -143,10 +132,18 @@ extern void simple_metadata(grpc_end2end_test_config config);
 extern void simple_metadata_pre_init(void);
 extern void simple_request(grpc_end2end_test_config config);
 extern void simple_request_pre_init(void);
+extern void stream_compression_compressed_payload(grpc_end2end_test_config config);
+extern void stream_compression_compressed_payload_pre_init(void);
+extern void stream_compression_payload(grpc_end2end_test_config config);
+extern void stream_compression_payload_pre_init(void);
+extern void stream_compression_ping_pong_streaming(grpc_end2end_test_config config);
+extern void stream_compression_ping_pong_streaming_pre_init(void);
 extern void streaming_error_response(grpc_end2end_test_config config);
 extern void streaming_error_response_pre_init(void);
 extern void trailing_metadata(grpc_end2end_test_config config);
 extern void trailing_metadata_pre_init(void);
+extern void workaround_cronet_compression(grpc_end2end_test_config config);
+extern void workaround_cronet_compression_pre_init(void);
 extern void write_buffering(grpc_end2end_test_config config);
 extern void write_buffering_pre_init(void);
 extern void write_buffering_at_end(grpc_end2end_test_config config);
@@ -164,6 +161,7 @@ void grpc_end2end_tests_pre_init(void) {
   cancel_after_accept_pre_init();
   cancel_after_client_done_pre_init();
   cancel_after_invoke_pre_init();
+  cancel_after_round_trip_pre_init();
   cancel_before_invoke_pre_init();
   cancel_in_a_vacuum_pre_init();
   cancel_with_status_pre_init();
@@ -194,6 +192,7 @@ void grpc_end2end_tests_pre_init(void) {
   payload_pre_init();
   ping_pre_init();
   ping_pong_streaming_pre_init();
+  proxy_auth_pre_init();
   registered_call_pre_init();
   request_with_flags_pre_init();
   request_with_payload_pre_init();
@@ -205,8 +204,12 @@ void grpc_end2end_tests_pre_init(void) {
   simple_delayed_request_pre_init();
   simple_metadata_pre_init();
   simple_request_pre_init();
+  stream_compression_compressed_payload_pre_init();
+  stream_compression_payload_pre_init();
+  stream_compression_ping_pong_streaming_pre_init();
   streaming_error_response_pre_init();
   trailing_metadata_pre_init();
+  workaround_cronet_compression_pre_init();
   write_buffering_pre_init();
   write_buffering_at_end_pre_init();
 }
@@ -226,6 +229,7 @@ void grpc_end2end_tests(int argc, char **argv,
     cancel_after_accept(config);
     cancel_after_client_done(config);
     cancel_after_invoke(config);
+    cancel_after_round_trip(config);
     cancel_before_invoke(config);
     cancel_in_a_vacuum(config);
     cancel_with_status(config);
@@ -256,6 +260,7 @@ void grpc_end2end_tests(int argc, char **argv,
     payload(config);
     ping(config);
     ping_pong_streaming(config);
+    proxy_auth(config);
     registered_call(config);
     request_with_flags(config);
     request_with_payload(config);
@@ -267,8 +272,12 @@ void grpc_end2end_tests(int argc, char **argv,
     simple_delayed_request(config);
     simple_metadata(config);
     simple_request(config);
+    stream_compression_compressed_payload(config);
+    stream_compression_payload(config);
+    stream_compression_ping_pong_streaming(config);
     streaming_error_response(config);
     trailing_metadata(config);
+    workaround_cronet_compression(config);
     write_buffering(config);
     write_buffering_at_end(config);
     return;
@@ -305,6 +314,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("cancel_after_invoke", argv[i])) {
       cancel_after_invoke(config);
+      continue;
+    }
+    if (0 == strcmp("cancel_after_round_trip", argv[i])) {
+      cancel_after_round_trip(config);
       continue;
     }
     if (0 == strcmp("cancel_before_invoke", argv[i])) {
@@ -427,6 +440,10 @@ void grpc_end2end_tests(int argc, char **argv,
       ping_pong_streaming(config);
       continue;
     }
+    if (0 == strcmp("proxy_auth", argv[i])) {
+      proxy_auth(config);
+      continue;
+    }
     if (0 == strcmp("registered_call", argv[i])) {
       registered_call(config);
       continue;
@@ -471,12 +488,28 @@ void grpc_end2end_tests(int argc, char **argv,
       simple_request(config);
       continue;
     }
+    if (0 == strcmp("stream_compression_compressed_payload", argv[i])) {
+      stream_compression_compressed_payload(config);
+      continue;
+    }
+    if (0 == strcmp("stream_compression_payload", argv[i])) {
+      stream_compression_payload(config);
+      continue;
+    }
+    if (0 == strcmp("stream_compression_ping_pong_streaming", argv[i])) {
+      stream_compression_ping_pong_streaming(config);
+      continue;
+    }
     if (0 == strcmp("streaming_error_response", argv[i])) {
       streaming_error_response(config);
       continue;
     }
     if (0 == strcmp("trailing_metadata", argv[i])) {
       trailing_metadata(config);
+      continue;
+    }
+    if (0 == strcmp("workaround_cronet_compression", argv[i])) {
+      workaround_cronet_compression(config);
       continue;
     }
     if (0 == strcmp("write_buffering", argv[i])) {

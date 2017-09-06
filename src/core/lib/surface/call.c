@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -47,6 +32,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/compression/algorithm_metadata.h"
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -159,6 +145,9 @@ typedef struct {
   grpc_call *sibling_prev;
 } child_call;
 
+#define RECV_NONE ((gpr_atm)0)
+#define RECV_INITIAL_METADATA_FIRST ((gpr_atm)1)
+
 struct grpc_call {
   gpr_refcount ext_ref;
   gpr_arena *arena;
@@ -185,9 +174,6 @@ struct grpc_call {
   gpr_atm any_ops_sent_atm;
   gpr_atm received_final_op_atm;
 
-  /* have we received initial metadata */
-  bool has_initial_md_been_received;
-
   batch_control *active_batches[MAX_CONCURRENT_BATCHES];
   grpc_transport_stream_op_batch_payload stream_op_payload;
 
@@ -207,8 +193,12 @@ struct grpc_call {
 
   /* Compression algorithm for *incoming* data */
   grpc_compression_algorithm incoming_compression_algorithm;
+  /* Stream compression algorithm for *incoming* data */
+  grpc_stream_compression_algorithm incoming_stream_compression_algorithm;
   /* Supported encodings (compression algorithms), a bitset */
   uint32_t encodings_accepted_by_peer;
+  /* Supported stream encodings (stream compression algorithms), a bitset */
+  uint32_t stream_encodings_accepted_by_peer;
 
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context[GRPC_CONTEXT_COUNT];
@@ -241,11 +231,29 @@ struct grpc_call {
     } server;
   } final_op;
 
-  void *saved_receiving_stream_ready_bctlp;
+  /* recv_state can contain one of the following values:
+     RECV_NONE :                 :  no initial metadata and messages received
+     RECV_INITIAL_METADATA_FIRST :  received initial metadata first
+     a batch_control*            :  received messages first
+
+                 +------1------RECV_NONE------3-----+
+                 |                                  |
+                 |                                  |
+                 v                                  v
+     RECV_INITIAL_METADATA_FIRST        receiving_stream_ready_bctlp
+           |           ^                      |           ^
+           |           |                      |           |
+           +-----2-----+                      +-----4-----+
+
+    For 1, 4: See receiving_initial_metadata_ready() function
+    For 2, 3: See receiving_stream_ready() function */
+  gpr_atm recv_state;
 };
 
-grpc_tracer_flag grpc_call_error_trace = GRPC_TRACER_INITIALIZER(false);
-grpc_tracer_flag grpc_compression_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_call_error_trace =
+    GRPC_TRACER_INITIALIZER(false, "call_error");
+grpc_tracer_flag grpc_compression_trace =
+    GRPC_TRACER_INITIALIZER(false, "compression");
 
 #define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
 #define CALL_FROM_CALL_STACK(call_stack) (((grpc_call *)(call_stack)) - 1)
@@ -327,6 +335,11 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
   /* Always support no compression */
   GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
   call->is_client = args->server_transport_data == NULL;
+  if (call->is_client) {
+    GRPC_STATS_INC_CLIENT_CALLS_CREATED(exec_ctx);
+  } else {
+    GRPC_STATS_INC_SERVER_CALLS_CREATED(exec_ctx);
+  }
   call->stream_op_payload.context = call->context;
   grpc_slice path = grpc_empty_slice();
   if (call->is_client) {
@@ -472,7 +485,7 @@ void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,
       exec_ctx, CALL_STACK_FROM_CALL(call), &call->pollent);
 }
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 #define REF_REASON reason
 #define REF_ARG , const char *reason
 #else
@@ -535,7 +548,7 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
   }
 
   grpc_call_stack_destroy(exec_ctx, CALL_STACK_FROM_CALL(c), &c->final_info,
-                          grpc_closure_init(&c->release_call, release_call, c,
+                          GRPC_CLOSURE_INIT(&c->release_call, release_call, c,
                                             grpc_schedule_on_exec_ctx));
   GPR_TIMER_END("destroy_call", 0);
 }
@@ -649,7 +662,7 @@ static void cancel_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
   GRPC_CALL_INTERNAL_REF(c, "termination");
   set_status_from_error(exec_ctx, c, source, GRPC_ERROR_REF(error));
   grpc_transport_stream_op_batch *op = grpc_make_transport_stream_op(
-      grpc_closure_create(done_termination, c, grpc_schedule_on_exec_ctx));
+      GRPC_CLOSURE_CREATE(done_termination, c, grpc_schedule_on_exec_ctx));
   op->cancel_stream = true;
   op->payload->cancel_stream.cancel_error = error;
   execute_op(exec_ctx, c, op);
@@ -657,6 +670,8 @@ static void cancel_with_error(grpc_exec_ctx *exec_ctx, grpc_call *c,
 
 static grpc_error *error_from_status(grpc_status_code status,
                                      const char *description) {
+  // copying 'description' is needed to ensure the grpc_call_cancel_with_status
+  // guarantee that can be short-lived.
   return grpc_error_set_int(
       grpc_error_set_str(GRPC_ERROR_CREATE_FROM_COPIED_STRING(description),
                          GRPC_ERROR_STR_GRPC_MESSAGE,
@@ -763,6 +778,12 @@ static void set_incoming_compression_algorithm(
   call->incoming_compression_algorithm = algo;
 }
 
+static void set_incoming_stream_compression_algorithm(
+    grpc_call *call, grpc_stream_compression_algorithm algo) {
+  GPR_ASSERT(algo < GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT);
+  call->incoming_stream_compression_algorithm = algo;
+}
+
 grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
     grpc_call *call) {
   grpc_compression_algorithm algorithm;
@@ -774,6 +795,13 @@ static grpc_compression_algorithm compression_algorithm_for_level_locked(
     grpc_call *call, grpc_compression_level level) {
   return grpc_compression_algorithm_for_level(level,
                                               call->encodings_accepted_by_peer);
+}
+
+static grpc_stream_compression_algorithm
+stream_compression_algorithm_for_level_locked(
+    grpc_call *call, grpc_stream_compression_level level) {
+  return grpc_stream_compression_algorithm_for_level(
+      level, call->stream_encodings_accepted_by_peer);
 }
 
 uint32_t grpc_call_test_only_get_message_flags(grpc_call *call) {
@@ -830,13 +858,71 @@ static void set_encodings_accepted_by_peer(grpc_exec_ctx *exec_ctx,
       (void *)(((uintptr_t)call->encodings_accepted_by_peer) + 1));
 }
 
+static void set_stream_encodings_accepted_by_peer(grpc_exec_ctx *exec_ctx,
+                                                  grpc_call *call,
+                                                  grpc_mdelem mdel) {
+  size_t i;
+  grpc_stream_compression_algorithm algorithm;
+  grpc_slice_buffer accept_encoding_parts;
+  grpc_slice accept_encoding_slice;
+  void *accepted_user_data;
+
+  accepted_user_data =
+      grpc_mdelem_get_user_data(mdel, destroy_encodings_accepted_by_peer);
+  if (accepted_user_data != NULL) {
+    call->stream_encodings_accepted_by_peer =
+        (uint32_t)(((uintptr_t)accepted_user_data) - 1);
+    return;
+  }
+
+  accept_encoding_slice = GRPC_MDVALUE(mdel);
+  grpc_slice_buffer_init(&accept_encoding_parts);
+  grpc_slice_split(accept_encoding_slice, ",", &accept_encoding_parts);
+
+  /* Always support no compression */
+  GPR_BITSET(&call->stream_encodings_accepted_by_peer,
+             GRPC_STREAM_COMPRESS_NONE);
+  for (i = 0; i < accept_encoding_parts.count; i++) {
+    grpc_slice accept_encoding_entry_slice = accept_encoding_parts.slices[i];
+    if (grpc_stream_compression_algorithm_parse(accept_encoding_entry_slice,
+                                                &algorithm)) {
+      GPR_BITSET(&call->stream_encodings_accepted_by_peer, algorithm);
+    } else {
+      char *accept_encoding_entry_str =
+          grpc_slice_to_c_string(accept_encoding_entry_slice);
+      gpr_log(GPR_ERROR,
+              "Invalid entry in accept encoding metadata: '%s'. Ignoring.",
+              accept_encoding_entry_str);
+      gpr_free(accept_encoding_entry_str);
+    }
+  }
+
+  grpc_slice_buffer_destroy_internal(exec_ctx, &accept_encoding_parts);
+
+  grpc_mdelem_set_user_data(
+      mdel, destroy_encodings_accepted_by_peer,
+      (void *)(((uintptr_t)call->stream_encodings_accepted_by_peer) + 1));
+}
+
 uint32_t grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call *call) {
   uint32_t encodings_accepted_by_peer;
   encodings_accepted_by_peer = call->encodings_accepted_by_peer;
   return encodings_accepted_by_peer;
 }
 
-static grpc_linked_mdelem *linked_from_md(grpc_metadata *md) {
+uint32_t grpc_call_test_only_get_stream_encodings_accepted_by_peer(
+    grpc_call *call) {
+  uint32_t stream_encodings_accepted_by_peer;
+  stream_encodings_accepted_by_peer = call->stream_encodings_accepted_by_peer;
+  return stream_encodings_accepted_by_peer;
+}
+
+grpc_stream_compression_algorithm
+grpc_call_test_only_get_incoming_stream_encodings(grpc_call *call) {
+  return call->incoming_stream_compression_algorithm;
+}
+
+static grpc_linked_mdelem *linked_from_md(const grpc_metadata *md) {
   return (grpc_linked_mdelem *)&md->internal_data;
 }
 
@@ -860,7 +946,7 @@ static int prepare_application_metadata(
   for (i = 0; i < total_count; i++) {
     const grpc_metadata *md =
         get_md_elem(metadata, additional_metadata, i, count);
-    grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
+    grpc_linked_mdelem *l = linked_from_md(md);
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
     if (!GRPC_LOG_IF_ERROR("validate_metadata",
                            grpc_validate_header_key_is_legal(md->key))) {
@@ -877,7 +963,7 @@ static int prepare_application_metadata(
     for (int j = 0; j < i; j++) {
       const grpc_metadata *md =
           get_md_elem(metadata, additional_metadata, j, count);
-      grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
+      grpc_linked_mdelem *l = linked_from_md(md);
       GRPC_MDELEM_UNREF(exec_ctx, l->md);
     }
     return 0;
@@ -895,9 +981,12 @@ static int prepare_application_metadata(
   }
   for (i = 0; i < total_count; i++) {
     grpc_metadata *md = get_md_elem(metadata, additional_metadata, i, count);
-    GRPC_LOG_IF_ERROR(
-        "prepare_application_metadata",
-        grpc_metadata_batch_link_tail(exec_ctx, batch, linked_from_md(md)));
+    grpc_linked_mdelem *l = linked_from_md(md);
+    grpc_error *error = grpc_metadata_batch_link_tail(exec_ctx, batch, l);
+    if (error != GRPC_ERROR_NONE) {
+      GRPC_MDELEM_UNREF(exec_ctx, l->md);
+    }
+    GRPC_LOG_IF_ERROR("prepare_application_metadata", error);
   }
   call->send_extra_metadata_count = 0;
 
@@ -944,31 +1033,20 @@ static grpc_compression_algorithm decode_compression(grpc_mdelem md) {
   return algorithm;
 }
 
-static void recv_common_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
-                               grpc_metadata_batch *b) {
-  if (b->idx.named.grpc_status != NULL) {
-    uint32_t status_code = decode_status(b->idx.named.grpc_status->md);
-    grpc_error *error =
-        status_code == GRPC_STATUS_OK
-            ? GRPC_ERROR_NONE
-            : grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                     "Error received from peer"),
-                                 GRPC_ERROR_INT_GRPC_STATUS,
-                                 (intptr_t)status_code);
-
-    if (b->idx.named.grpc_message != NULL) {
-      error = grpc_error_set_str(
-          error, GRPC_ERROR_STR_GRPC_MESSAGE,
-          grpc_slice_ref_internal(GRPC_MDVALUE(b->idx.named.grpc_message->md)));
-      grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_message);
-    } else if (error != GRPC_ERROR_NONE) {
-      error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
-                                 grpc_empty_slice());
-    }
-
-    set_status_from_error(exec_ctx, call, STATUS_FROM_WIRE, error);
-    grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_status);
+static grpc_stream_compression_algorithm decode_stream_compression(
+    grpc_mdelem md) {
+  grpc_stream_compression_algorithm algorithm =
+      grpc_stream_compression_algorithm_from_slice(GRPC_MDVALUE(md));
+  if (algorithm == GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT) {
+    char *md_c_str = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+    gpr_log(GPR_ERROR,
+            "Invalid incoming stream compression algorithm: '%s'. Interpreting "
+            "incoming data as uncompressed.",
+            md_c_str);
+    gpr_free(md_c_str);
+    return GRPC_STREAM_COMPRESS_NONE;
   }
+  return algorithm;
 }
 
 static void publish_app_metadata(grpc_call *call, grpc_metadata_batch *b,
@@ -995,16 +1073,25 @@ static void publish_app_metadata(grpc_call *call, grpc_metadata_batch *b,
 
 static void recv_initial_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                 grpc_metadata_batch *b) {
-  recv_common_filter(exec_ctx, call, b);
-
-  if (b->idx.named.grpc_encoding != NULL) {
+  if (b->idx.named.content_encoding != NULL) {
+    if (b->idx.named.grpc_encoding != NULL) {
+      gpr_log(GPR_ERROR,
+              "Received both content-encoding and grpc-encoding header. "
+              "Ignoring grpc-encoding.");
+      grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_encoding);
+    }
+    GPR_TIMER_BEGIN("incoming_stream_compression_algorithm", 0);
+    set_incoming_stream_compression_algorithm(
+        call, decode_stream_compression(b->idx.named.content_encoding->md));
+    GPR_TIMER_END("incoming_stream_compression_algorithm", 0);
+    grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.content_encoding);
+  } else if (b->idx.named.grpc_encoding != NULL) {
     GPR_TIMER_BEGIN("incoming_compression_algorithm", 0);
     set_incoming_compression_algorithm(
         call, decode_compression(b->idx.named.grpc_encoding->md));
     GPR_TIMER_END("incoming_compression_algorithm", 0);
     grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_encoding);
   }
-
   if (b->idx.named.grpc_accept_encoding != NULL) {
     GPR_TIMER_BEGIN("encodings_accepted_by_peer", 0);
     set_encodings_accepted_by_peer(exec_ctx, call,
@@ -1012,14 +1099,40 @@ static void recv_initial_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
     grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_accept_encoding);
     GPR_TIMER_END("encodings_accepted_by_peer", 0);
   }
-
+  if (b->idx.named.accept_encoding != NULL) {
+    GPR_TIMER_BEGIN("stream_encodings_accepted_by_peer", 0);
+    set_stream_encodings_accepted_by_peer(exec_ctx, call,
+                                          b->idx.named.accept_encoding->md);
+    grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.accept_encoding);
+    GPR_TIMER_END("stream_encodings_accepted_by_peer", 0);
+  }
   publish_app_metadata(call, b, false);
 }
 
 static void recv_trailing_filter(grpc_exec_ctx *exec_ctx, void *args,
                                  grpc_metadata_batch *b) {
   grpc_call *call = args;
-  recv_common_filter(exec_ctx, call, b);
+  if (b->idx.named.grpc_status != NULL) {
+    uint32_t status_code = decode_status(b->idx.named.grpc_status->md);
+    grpc_error *error =
+        status_code == GRPC_STATUS_OK
+            ? GRPC_ERROR_NONE
+            : grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                     "Error received from peer"),
+                                 GRPC_ERROR_INT_GRPC_STATUS,
+                                 (intptr_t)status_code);
+    if (b->idx.named.grpc_message != NULL) {
+      error = grpc_error_set_str(
+          error, GRPC_ERROR_STR_GRPC_MESSAGE,
+          grpc_slice_ref_internal(GRPC_MDVALUE(b->idx.named.grpc_message->md)));
+      grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_message);
+    } else if (error != GRPC_ERROR_NONE) {
+      error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
+                                 grpc_empty_slice());
+    }
+    set_status_from_error(exec_ctx, call, STATUS_FROM_WIRE, error);
+    grpc_metadata_batch_remove(exec_ctx, b, b->idx.named.grpc_status);
+  }
   publish_app_metadata(call, b, true);
 }
 
@@ -1185,7 +1298,7 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
   if (bctl->completion_data.notify_tag.is_closure) {
     /* unrefs bctl->error */
     bctl->call = NULL;
-    grpc_closure_run(exec_ctx, bctl->completion_data.notify_tag.tag, error);
+    GRPC_CLOSURE_RUN(exec_ctx, bctl->completion_data.notify_tag.tag, error);
     GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "completion");
   } else {
     /* unrefs bctl->error */
@@ -1290,7 +1403,7 @@ static void process_data_after_md(grpc_exec_ctx *exec_ctx,
     } else {
       *call->receiving_buffer = grpc_raw_byte_buffer_create(NULL, 0);
     }
-    grpc_closure_init(&call->receiving_slice_ready, receiving_slice_ready, bctl,
+    GRPC_CLOSURE_INIT(&call->receiving_slice_ready, receiving_slice_ready, bctl,
                       grpc_schedule_on_exec_ctx);
     continue_receiving_slices(exec_ctx, bctl);
   }
@@ -1309,19 +1422,61 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
     cancel_with_error(exec_ctx, call, STATUS_FROM_SURFACE,
                       GRPC_ERROR_REF(error));
   }
-  if (call->has_initial_md_been_received || error != GRPC_ERROR_NONE ||
-      call->receiving_stream == NULL) {
+  /* If recv_state is RECV_NONE, we will save the batch_control
+   * object with rel_cas, and will not use it after the cas. Its corresponding
+   * acq_load is in receiving_initial_metadata_ready() */
+  if (error != GRPC_ERROR_NONE || call->receiving_stream == NULL ||
+      !gpr_atm_rel_cas(&call->recv_state, RECV_NONE, (gpr_atm)bctlp)) {
     process_data_after_md(exec_ctx, bctlp);
-  } else {
-    call->saved_receiving_stream_ready_bctlp = bctlp;
   }
 }
 
 static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
                                        batch_control *bctl) {
   grpc_call *call = bctl->call;
-  /* validate call->incoming_compression_algorithm */
-  if (call->incoming_compression_algorithm != GRPC_COMPRESS_NONE) {
+  /* validate compression algorithms */
+  if (call->incoming_stream_compression_algorithm !=
+      GRPC_STREAM_COMPRESS_NONE) {
+    const grpc_stream_compression_algorithm algo =
+        call->incoming_stream_compression_algorithm;
+    char *error_msg = NULL;
+    const grpc_compression_options compression_options =
+        grpc_channel_compression_options(call->channel);
+    if (algo >= GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT) {
+      gpr_asprintf(&error_msg,
+                   "Invalid stream compression algorithm value '%d'.", algo);
+      gpr_log(GPR_ERROR, "%s", error_msg);
+      cancel_with_status(exec_ctx, call, STATUS_FROM_SURFACE,
+                         GRPC_STATUS_UNIMPLEMENTED, error_msg);
+    } else if (grpc_compression_options_is_stream_compression_algorithm_enabled(
+                   &compression_options, algo) == 0) {
+      /* check if algorithm is supported by current channel config */
+      char *algo_name = NULL;
+      grpc_stream_compression_algorithm_name(algo, &algo_name);
+      gpr_asprintf(&error_msg, "Stream compression algorithm '%s' is disabled.",
+                   algo_name);
+      gpr_log(GPR_ERROR, "%s", error_msg);
+      cancel_with_status(exec_ctx, call, STATUS_FROM_SURFACE,
+                         GRPC_STATUS_UNIMPLEMENTED, error_msg);
+    }
+    gpr_free(error_msg);
+
+    GPR_ASSERT(call->stream_encodings_accepted_by_peer != 0);
+    if (!GPR_BITGET(call->stream_encodings_accepted_by_peer,
+                    call->incoming_stream_compression_algorithm)) {
+      if (GRPC_TRACER_ON(grpc_compression_trace)) {
+        char *algo_name = NULL;
+        grpc_stream_compression_algorithm_name(
+            call->incoming_stream_compression_algorithm, &algo_name);
+        gpr_log(
+            GPR_ERROR,
+            "Stream compression algorithm (content-encoding = '%s') not "
+            "present in the bitset of accepted encodings (accept-encodings: "
+            "'0x%x')",
+            algo_name, call->stream_encodings_accepted_by_peer);
+      }
+    }
+  } else if (call->incoming_compression_algorithm != GRPC_COMPRESS_NONE) {
     const grpc_compression_algorithm algo =
         call->incoming_compression_algorithm;
     char *error_msg = NULL;
@@ -1348,22 +1503,20 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
       call->incoming_compression_algorithm = algo;
     }
     gpr_free(error_msg);
-  }
 
-  /* make sure the received grpc-encoding is amongst the ones listed in
-   * grpc-accept-encoding */
-  GPR_ASSERT(call->encodings_accepted_by_peer != 0);
-  if (!GPR_BITGET(call->encodings_accepted_by_peer,
-                  call->incoming_compression_algorithm)) {
-    if (GRPC_TRACER_ON(grpc_compression_trace)) {
-      char *algo_name = NULL;
-      grpc_compression_algorithm_name(call->incoming_compression_algorithm,
-                                      &algo_name);
-      gpr_log(GPR_ERROR,
-              "Compression algorithm (grpc-encoding = '%s') not present in "
-              "the bitset of accepted encodings (grpc-accept-encodings: "
-              "'0x%x')",
-              algo_name, call->encodings_accepted_by_peer);
+    GPR_ASSERT(call->encodings_accepted_by_peer != 0);
+    if (!GPR_BITGET(call->encodings_accepted_by_peer,
+                    call->incoming_compression_algorithm)) {
+      if (GRPC_TRACER_ON(grpc_compression_trace)) {
+        char *algo_name = NULL;
+        grpc_compression_algorithm_name(call->incoming_compression_algorithm,
+                                        &algo_name);
+        gpr_log(GPR_ERROR,
+                "Compression algorithm (grpc-encoding = '%s') not present in "
+                "the bitset of accepted encodings (grpc-accept-encodings: "
+                "'0x%x')",
+                algo_name, call->encodings_accepted_by_peer);
+      }
     }
   }
 }
@@ -1403,13 +1556,32 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
     }
   }
 
-  call->has_initial_md_been_received = true;
-  if (call->saved_receiving_stream_ready_bctlp != NULL) {
-    grpc_closure *saved_rsr_closure = grpc_closure_create(
-        receiving_stream_ready, call->saved_receiving_stream_ready_bctlp,
-        grpc_schedule_on_exec_ctx);
-    call->saved_receiving_stream_ready_bctlp = NULL;
-    grpc_closure_run(exec_ctx, saved_rsr_closure, GRPC_ERROR_REF(error));
+  grpc_closure *saved_rsr_closure = NULL;
+  while (true) {
+    gpr_atm rsr_bctlp = gpr_atm_acq_load(&call->recv_state);
+    /* Should only receive initial metadata once */
+    GPR_ASSERT(rsr_bctlp != 1);
+    if (rsr_bctlp == 0) {
+      /* We haven't seen initial metadata and messages before, thus initial
+       * metadata is received first.
+       * no_barrier_cas is used, as this function won't access the batch_control
+       * object saved by receiving_stream_ready() if the initial metadata is
+       * received first. */
+      if (gpr_atm_no_barrier_cas(&call->recv_state, RECV_NONE,
+                                 RECV_INITIAL_METADATA_FIRST)) {
+        break;
+      }
+    } else {
+      /* Already received messages */
+      saved_rsr_closure = GRPC_CLOSURE_CREATE(receiving_stream_ready,
+                                              (batch_control *)rsr_bctlp,
+                                              grpc_schedule_on_exec_ctx);
+      /* No need to modify recv_state */
+      break;
+    }
+  }
+  if (saved_rsr_closure != NULL) {
+    GRPC_CLOSURE_RUN(exec_ctx, saved_rsr_closure, GRPC_ERROR_REF(error));
   }
 
   finish_batch_step(exec_ctx, bctl);
@@ -1446,12 +1618,12 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
 
   if (nops == 0) {
     if (!is_notify_tag_closure) {
-      grpc_cq_begin_op(call->cq, notify_tag);
+      GPR_ASSERT(grpc_cq_begin_op(call->cq, notify_tag));
       grpc_cq_end_op(exec_ctx, call->cq, notify_tag, GRPC_ERROR_NONE,
                      free_no_op_completion, NULL,
                      gpr_malloc(sizeof(grpc_cq_completion)));
     } else {
-      grpc_closure_sched(exec_ctx, notify_tag, GRPC_ERROR_NONE);
+      GRPC_CLOSURE_SCHED(exec_ctx, notify_tag, GRPC_ERROR_NONE);
     }
     error = GRPC_CALL_OK;
     goto done;
@@ -1468,7 +1640,6 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   grpc_transport_stream_op_batch *stream_op = &bctl->op;
   grpc_transport_stream_op_batch_payload *stream_op_payload =
       &call->stream_op_payload;
-  stream_op->covered_by_poller = true;
 
   /* rewrite batch ops into a transport op */
   for (i = 0; i < nops; i++) {
@@ -1491,29 +1662,56 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         /* process compression level */
         memset(&compression_md, 0, sizeof(compression_md));
         size_t additional_metadata_count = 0;
-        grpc_compression_level effective_compression_level;
+        grpc_compression_level effective_compression_level =
+            GRPC_COMPRESS_LEVEL_NONE;
+        grpc_stream_compression_level effective_stream_compression_level =
+            GRPC_STREAM_COMPRESS_LEVEL_NONE;
         bool level_set = false;
-        if (op->data.send_initial_metadata.maybe_compression_level.is_set) {
+        bool stream_compression = false;
+        if (op->data.send_initial_metadata.maybe_stream_compression_level
+                .is_set) {
+          effective_stream_compression_level =
+              op->data.send_initial_metadata.maybe_stream_compression_level
+                  .level;
+          level_set = true;
+          stream_compression = true;
+        } else if (op->data.send_initial_metadata.maybe_compression_level
+                       .is_set) {
           effective_compression_level =
               op->data.send_initial_metadata.maybe_compression_level.level;
           level_set = true;
         } else {
           const grpc_compression_options copts =
               grpc_channel_compression_options(call->channel);
-          level_set = copts.default_level.is_set;
-          if (level_set) {
+          if (copts.default_stream_compression_level.is_set) {
+            level_set = true;
+            effective_stream_compression_level =
+                copts.default_stream_compression_level.level;
+            stream_compression = true;
+          } else if (copts.default_level.is_set) {
+            level_set = true;
             effective_compression_level = copts.default_level.level;
           }
         }
         if (level_set && !call->is_client) {
-          const grpc_compression_algorithm calgo =
-              compression_algorithm_for_level_locked(
-                  call, effective_compression_level);
-          // the following will be picked up by the compress filter and used as
-          // the call's compression algorithm.
-          compression_md.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
-          compression_md.value = grpc_compression_algorithm_slice(calgo);
-          additional_metadata_count++;
+          if (stream_compression) {
+            const grpc_stream_compression_algorithm calgo =
+                stream_compression_algorithm_for_level_locked(
+                    call, effective_stream_compression_level);
+            compression_md.key =
+                GRPC_MDSTR_GRPC_INTERNAL_STREAM_ENCODING_REQUEST;
+            compression_md.value =
+                grpc_stream_compression_algorithm_slice(calgo);
+          } else {
+            const grpc_compression_algorithm calgo =
+                compression_algorithm_for_level_locked(
+                    call, effective_compression_level);
+            /* the following will be picked up by the compress filter and used
+             * as the call's compression algorithm. */
+            compression_md.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
+            compression_md.value = grpc_compression_algorithm_slice(calgo);
+            additional_metadata_count++;
+          }
         }
 
         if (op->data.send_initial_metadata.count + additional_metadata_count >
@@ -1531,7 +1729,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         /* TODO(ctiller): just make these the same variable? */
-        call->metadata_batch[0][0].deadline = call->send_deadline;
+        if (call->is_client) {
+          call->metadata_batch[0][0].deadline = call->send_deadline;
+        }
         stream_op_payload->send_initial_metadata.send_initial_metadata =
             &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */];
         stream_op_payload->send_initial_metadata.send_initial_metadata_flags =
@@ -1657,14 +1857,10 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
-        /* IF this is a server, then GRPC_OP_RECV_INITIAL_METADATA *must* come
-           from server.c. In that case, it's coming from accept_stream, and in
-           that case we're not necessarily covered by a poller. */
-        stream_op->covered_by_poller = call->is_client;
         call->received_initial_metadata = true;
         call->buffered_metadata[0] =
             op->data.recv_initial_metadata.recv_initial_metadata;
-        grpc_closure_init(&call->receiving_initial_metadata_ready,
+        GRPC_CLOSURE_INIT(&call->receiving_initial_metadata_ready,
                           receiving_initial_metadata_ready, bctl,
                           grpc_schedule_on_exec_ctx);
         stream_op->recv_initial_metadata = true;
@@ -1688,7 +1884,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         stream_op->recv_message = true;
         call->receiving_buffer = op->data.recv_message.recv_message;
         stream_op_payload->recv_message.recv_message = &call->receiving_stream;
-        grpc_closure_init(&call->receiving_stream_ready, receiving_stream_ready,
+        GRPC_CLOSURE_INIT(&call->receiving_stream_ready, receiving_stream_ready,
                           bctl, grpc_schedule_on_exec_ctx);
         stream_op_payload->recv_message.recv_message_ready =
             &call->receiving_stream_ready;
@@ -1750,11 +1946,11 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
 
   GRPC_CALL_INTERNAL_REF(call, "completion");
   if (!is_notify_tag_closure) {
-    grpc_cq_begin_op(call->cq, notify_tag);
+    GPR_ASSERT(grpc_cq_begin_op(call->cq, notify_tag));
   }
   gpr_ref_init(&bctl->steps_to_complete, num_completion_callbacks_needed);
 
-  grpc_closure_init(&bctl->finish_batch, finish_batch, bctl,
+  GRPC_CLOSURE_INIT(&bctl->finish_batch, finish_batch, bctl,
                     grpc_schedule_on_exec_ctx);
   stream_op->on_complete = &bctl->finish_batch;
   gpr_atm_rel_store(&call->any_ops_sent_atm, 1);
@@ -1871,6 +2067,8 @@ const char *grpc_call_error_to_string(grpc_call_error error) {
       return "GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH";
     case GRPC_CALL_ERROR_TOO_MANY_OPERATIONS:
       return "GRPC_CALL_ERROR_TOO_MANY_OPERATIONS";
+    case GRPC_CALL_ERROR_COMPLETION_QUEUE_SHUTDOWN:
+      return "GRPC_CALL_ERROR_COMPLETION_QUEUE_SHUTDOWN";
     case GRPC_CALL_OK:
       return "GRPC_CALL_OK";
   }

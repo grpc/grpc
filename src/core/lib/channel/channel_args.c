@@ -1,35 +1,22 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
+
+#include <grpc/support/port_platform.h>
 
 #include <limits.h>
 #include <string.h>
@@ -127,9 +114,23 @@ grpc_channel_args *grpc_channel_args_copy(const grpc_channel_args *src) {
   return grpc_channel_args_copy_and_add(src, NULL, 0);
 }
 
-grpc_channel_args *grpc_channel_args_merge(const grpc_channel_args *a,
+grpc_channel_args *grpc_channel_args_union(const grpc_channel_args *a,
                                            const grpc_channel_args *b) {
-  return grpc_channel_args_copy_and_add(a, b->args, b->num_args);
+  const size_t max_out = (a->num_args + b->num_args);
+  grpc_arg *uniques = gpr_malloc(sizeof(*uniques) * max_out);
+  for (size_t i = 0; i < a->num_args; ++i) uniques[i] = a->args[i];
+
+  size_t uniques_idx = a->num_args;
+  for (size_t i = 0; i < b->num_args; ++i) {
+    const char *b_key = b->args[i].key;
+    if (grpc_channel_args_find(a, b_key) == NULL) {  // not found
+      uniques[uniques_idx++] = b->args[i];
+    }
+  }
+  grpc_channel_args *result =
+      grpc_channel_args_copy_and_add(NULL, uniques, uniques_idx);
+  gpr_free(uniques);
+  return result;
 }
 
 static int cmp_arg(const grpc_arg *a, const grpc_arg *b) {
@@ -220,12 +221,37 @@ grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
   return GRPC_COMPRESS_NONE;
 }
 
+grpc_stream_compression_algorithm
+grpc_channel_args_get_stream_compression_algorithm(const grpc_channel_args *a) {
+  size_t i;
+  if (a == NULL) return 0;
+  for (i = 0; i < a->num_args; ++i) {
+    if (a->args[i].type == GRPC_ARG_INTEGER &&
+        !strcmp(GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
+                a->args[i].key)) {
+      return (grpc_stream_compression_algorithm)a->args[i].value.integer;
+      break;
+    }
+  }
+  return GRPC_STREAM_COMPRESS_NONE;
+}
+
 grpc_channel_args *grpc_channel_args_set_compression_algorithm(
     grpc_channel_args *a, grpc_compression_algorithm algorithm) {
   GPR_ASSERT(algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT);
   grpc_arg tmp;
   tmp.type = GRPC_ARG_INTEGER;
   tmp.key = GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM;
+  tmp.value.integer = algorithm;
+  return grpc_channel_args_copy_and_add(a, &tmp, 1);
+}
+
+grpc_channel_args *grpc_channel_args_set_stream_compression_algorithm(
+    grpc_channel_args *a, grpc_stream_compression_algorithm algorithm) {
+  GPR_ASSERT(algorithm < GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT);
+  grpc_arg tmp;
+  tmp.type = GRPC_ARG_INTEGER;
+  tmp.key = GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM;
   tmp.value.integer = algorithm;
   return grpc_channel_args_copy_and_add(a, &tmp, 1);
 }
@@ -240,6 +266,26 @@ static int find_compression_algorithm_states_bitset(const grpc_channel_args *a,
     for (i = 0; i < a->num_args; ++i) {
       if (a->args[i].type == GRPC_ARG_INTEGER &&
           !strcmp(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
+                  a->args[i].key)) {
+        *states_arg = &a->args[i].value.integer;
+        **states_arg |= 0x1; /* forcefully enable support for no compression */
+        return 1;
+      }
+    }
+  }
+  return 0; /* GPR_FALSE */
+}
+
+/** Returns 1 if the argument for compression algorithm's enabled states bitset
+ * was found in \a a, returning the arg's value in \a states. Otherwise, returns
+ * 0. */
+static int find_stream_compression_algorithm_states_bitset(
+    const grpc_channel_args *a, int **states_arg) {
+  if (a != NULL) {
+    size_t i;
+    for (i = 0; i < a->num_args; ++i) {
+      if (a->args[i].type == GRPC_ARG_INTEGER &&
+          !strcmp(GRPC_STREAM_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
                   a->args[i].key)) {
         *states_arg = &a->args[i].value.integer;
         **states_arg |= 0x1; /* forcefully enable support for no compression */
@@ -291,6 +337,48 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
   return result;
 }
 
+grpc_channel_args *grpc_channel_args_stream_compression_algorithm_set_state(
+    grpc_exec_ctx *exec_ctx, grpc_channel_args **a,
+    grpc_stream_compression_algorithm algorithm, int state) {
+  int *states_arg = NULL;
+  grpc_channel_args *result = *a;
+  const int states_arg_found =
+      find_stream_compression_algorithm_states_bitset(*a, &states_arg);
+
+  if (grpc_channel_args_get_stream_compression_algorithm(*a) == algorithm &&
+      state == 0) {
+    char *algo_name = NULL;
+    GPR_ASSERT(grpc_stream_compression_algorithm_name(algorithm, &algo_name) !=
+               0);
+    gpr_log(GPR_ERROR,
+            "Tried to disable default stream compression algorithm '%s'. The "
+            "operation has been ignored.",
+            algo_name);
+  } else if (states_arg_found) {
+    if (state != 0) {
+      GPR_BITSET((unsigned *)states_arg, algorithm);
+    } else if (algorithm != GRPC_STREAM_COMPRESS_NONE) {
+      GPR_BITCLEAR((unsigned *)states_arg, algorithm);
+    }
+  } else {
+    /* create a new arg */
+    grpc_arg tmp;
+    tmp.type = GRPC_ARG_INTEGER;
+    tmp.key = GRPC_STREAM_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET;
+    /* all enabled by default */
+    tmp.value.integer = (1u << GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT) - 1;
+    if (state != 0) {
+      GPR_BITSET((unsigned *)&tmp.value.integer, algorithm);
+    } else if (algorithm != GRPC_STREAM_COMPRESS_NONE) {
+      GPR_BITCLEAR((unsigned *)&tmp.value.integer, algorithm);
+    }
+    result = grpc_channel_args_copy_and_add(*a, &tmp, 1);
+    grpc_channel_args_destroy(exec_ctx, *a);
+    *a = result;
+  }
+  return result;
+}
+
 uint32_t grpc_channel_args_compression_algorithm_get_states(
     const grpc_channel_args *a) {
   int *states_arg;
@@ -298,6 +386,17 @@ uint32_t grpc_channel_args_compression_algorithm_get_states(
     return (uint32_t)*states_arg;
   } else {
     return (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1; /* All algs. enabled */
+  }
+}
+
+uint32_t grpc_channel_args_stream_compression_algorithm_get_states(
+    const grpc_channel_args *a) {
+  int *states_arg;
+  if (find_stream_compression_algorithm_states_bitset(a, &states_arg)) {
+    return (uint32_t)*states_arg;
+  } else {
+    return (1u << GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT) -
+           1; /* All algs. enabled */
   }
 }
 
@@ -371,4 +470,30 @@ bool grpc_channel_arg_get_bool(const grpc_arg *arg, bool default_value) {
 bool grpc_channel_args_want_minimal_stack(const grpc_channel_args *args) {
   return grpc_channel_arg_get_bool(
       grpc_channel_args_find(args, GRPC_ARG_MINIMAL_STACK), false);
+}
+
+grpc_arg grpc_channel_arg_string_create(char *name, char *value) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_STRING;
+  arg.key = name;
+  arg.value.string = value;
+  return arg;
+}
+
+grpc_arg grpc_channel_arg_integer_create(char *name, int value) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_INTEGER;
+  arg.key = name;
+  arg.value.integer = value;
+  return arg;
+}
+
+grpc_arg grpc_channel_arg_pointer_create(
+    char *name, void *value, const grpc_arg_pointer_vtable *vtable) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_POINTER;
+  arg.key = name;
+  arg.value.pointer.p = value;
+  arg.value.pointer.vtable = vtable;
+  return arg;
 }

@@ -1,33 +1,18 @@
 #!/usr/bin/env python2.7
 
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import hashlib
 import itertools
@@ -48,6 +33,7 @@ CONFIG = [
     'host',
     'grpc-timeout',
     'grpc-internal-encoding-request',
+    'grpc-internal-stream-encoding-request',
     'grpc-payload-bin',
     ':path',
     'grpc-encoding',
@@ -104,6 +90,8 @@ CONFIG = [
     ('authorization', ''),
     ('cache-control', ''),
     ('content-disposition', ''),
+    ('content-encoding', 'identity'),
+    ('content-encoding', 'gzip'),
     ('content-encoding', ''),
     ('content-language', ''),
     ('content-length', ''),
@@ -144,26 +132,33 @@ CONFIG = [
     ('www-authenticate', ''),
 ]
 
+# Entries marked with is_default=True are ignored when counting
+# non-default initial metadata that prevents the chttp2 server from
+# sending a Trailers-Only response.
 METADATA_BATCH_CALLOUTS = [
-    ':path',
-    ':method',
-    ':status',
-    ':authority',
-    ':scheme',
-    'te',
-    'grpc-message',
-    'grpc-status',
-    'grpc-payload-bin',
-    'grpc-encoding',
-    'grpc-accept-encoding',
-    'grpc-server-stats-bin',
-    'grpc-tags-bin',
-    'grpc-trace-bin',
-    'content-type',
-    'grpc-internal-encoding-request',
-    'user-agent',
-    'host',
-    'lb-token',
+    # (name, is_default)
+    (':path', True),
+    (':method', True),
+    (':status', True),
+    (':authority', True),
+    (':scheme', True),
+    ('te', True),
+    ('grpc-message', True),
+    ('grpc-status', True),
+    ('grpc-payload-bin', True),
+    ('grpc-encoding', True),
+    ('grpc-accept-encoding', True),
+    ('grpc-server-stats-bin', True),
+    ('grpc-tags-bin', True),
+    ('grpc-trace-bin', True),
+    ('content-type', True),
+    ('content-encoding', True),
+    ('accept-encoding', True),
+    ('grpc-internal-encoding-request', True),
+    ('grpc-internal-stream-encoding-request', True),
+    ('user-agent', True),
+    ('host', True),
+    ('lb-token', True),
 ]
 
 COMPRESSION_ALGORITHMS = [
@@ -172,6 +167,10 @@ COMPRESSION_ALGORITHMS = [
     'gzip',
 ]
 
+STREAM_COMPRESSION_ALGORITHMS = [
+    'identity',
+    'gzip',
+]
 
 # utility: mangle the name of a config
 def mangle(elem, name=None):
@@ -240,7 +239,7 @@ all_elems = list()
 static_userdata = {}
 # put metadata batch callouts first, to make the check of if a static metadata
 # string is a callout trivial
-for elem in METADATA_BATCH_CALLOUTS:
+for elem, _ in METADATA_BATCH_CALLOUTS:
   if elem not in all_strs:
     all_strs.append(elem)
 for elem in CONFIG:
@@ -265,6 +264,18 @@ for mask in range(1, 1 << len(COMPRESSION_ALGORITHMS)):
   if elem not in all_elems:
     all_elems.append(elem)
   compression_elems.append(elem)
+  static_userdata[elem] = 1 + (mask | 1)
+stream_compression_elems = []
+for mask in range(1, 1 << len(STREAM_COMPRESSION_ALGORITHMS)):
+  val = ','.join(STREAM_COMPRESSION_ALGORITHMS[alg]
+                 for alg in range(0, len(STREAM_COMPRESSION_ALGORITHMS))
+                 if (1 << alg) & mask)
+  elem = ('accept-encoding', val)
+  if val not in all_strs:
+    all_strs.append(val)
+  if elem not in all_elems:
+    all_elems.append(elem)
+  stream_compression_elems.append(elem)
   static_userdata[elem] = 1 + (mask | 1)
 
 # output configuration
@@ -365,7 +376,7 @@ def slice_def(i):
 
 
 # validate configuration
-for elem in METADATA_BATCH_CALLOUTS:
+for elem, _ in METADATA_BATCH_CALLOUTS:
   assert elem in all_strs
 
 print >> H, '#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs)
@@ -523,7 +534,7 @@ print >> C, 'grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b) {'
 print >> C, '  if (a == -1 || b == -1) return GRPC_MDNULL;'
 print >> C, '  uint32_t k = (uint32_t)(a * %d + b);' % len(all_strs)
 print >> C, '  uint32_t h = elems_phash(k);'
-print >> C, '  return h < GPR_ARRAY_SIZE(elem_keys) && elem_keys[h] == k ? GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[elem_idxs[h]], GRPC_MDELEM_STORAGE_STATIC) : GRPC_MDNULL;'
+print >> C, '  return h < GPR_ARRAY_SIZE(elem_keys) && elem_keys[h] == k && elem_idxs[h] != 255 ? GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[elem_idxs[h]], GRPC_MDELEM_STORAGE_STATIC) : GRPC_MDNULL;'
 print >> C, '}'
 print >> C
 
@@ -533,7 +544,7 @@ for a, b in all_elems:
 print >> C, '};'
 
 print >> H, 'typedef enum {'
-for elem in METADATA_BATCH_CALLOUTS:
+for elem, _ in METADATA_BATCH_CALLOUTS:
   print >> H, '  %s,' % mangle(elem, 'batch').upper()
 print >> H, '  GRPC_BATCH_CALLOUTS_COUNT'
 print >> H, '} grpc_metadata_batch_callouts_index;'
@@ -541,7 +552,7 @@ print >> H
 print >> H, 'typedef union {'
 print >> H, '  struct grpc_linked_mdelem *array[GRPC_BATCH_CALLOUTS_COUNT];'
 print >> H, '  struct {'
-for elem in METADATA_BATCH_CALLOUTS:
+for elem, _ in METADATA_BATCH_CALLOUTS:
   print >> H, '  struct grpc_linked_mdelem *%s;' % mangle(elem, '').lower()
 print >> H, '  } named;'
 print >> H, '} grpc_metadata_batch_callouts;'
@@ -549,6 +560,14 @@ print >> H
 print >> H, '#define GRPC_BATCH_INDEX_OF(slice) \\'
 print >> H, '  (GRPC_IS_STATIC_METADATA_STRING((slice)) ? (grpc_metadata_batch_callouts_index)GPR_CLAMP(GRPC_STATIC_METADATA_INDEX((slice)), 0, GRPC_BATCH_CALLOUTS_COUNT) : GRPC_BATCH_CALLOUTS_COUNT)'
 print >> H
+print >> H, ('extern bool grpc_static_callout_is_default['
+             'GRPC_BATCH_CALLOUTS_COUNT];')
+print >> H
+print >> C, 'bool grpc_static_callout_is_default[GRPC_BATCH_CALLOUTS_COUNT] = {'
+for elem, is_default in METADATA_BATCH_CALLOUTS:
+  print >> C, '  %s, // %s' % (str(is_default).lower(), elem)
+print >> C, '};'
+print >> C
 
 print >> H, 'extern const uint8_t grpc_static_accept_encoding_metadata[%d];' % (
     1 << len(COMPRESSION_ALGORITHMS))
@@ -559,6 +578,16 @@ print >> C, '};'
 print >> C
 
 print >> H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
+print >> H
+
+print >> H, 'extern const uint8_t grpc_static_accept_stream_encoding_metadata[%d];' % (
+    1 << len(STREAM_COMPRESSION_ALGORITHMS))
+print >> C, 'const uint8_t grpc_static_accept_stream_encoding_metadata[%d] = {' % (
+    1 << len(STREAM_COMPRESSION_ALGORITHMS))
+print >> C, '0,%s' % ','.join('%d' % md_idx(elem) for elem in stream_compression_elems)
+print >> C, '};'
+
+print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
 
 print >> H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
 

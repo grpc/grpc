@@ -1,37 +1,23 @@
 /*
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #include <grpc++/server.h>
 
+#include <cstdlib>
 #include <sstream>
 #include <utility>
 
@@ -51,7 +37,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/surface/call.h"
+#include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/server/health/default_health_check_service.h"
 #include "src/cpp/thread_manager/thread_manager.h"
 
@@ -164,19 +153,25 @@ class Server::SyncRequest final : public CompletionQueueTag {
     GPR_ASSERT(cq_ && !in_flight_);
     in_flight_ = true;
     if (tag_) {
-      GPR_ASSERT(GRPC_CALL_OK ==
-                 grpc_server_request_registered_call(
-                     server, tag_, &call_, &deadline_, &request_metadata_,
-                     has_request_payload_ ? &request_payload_ : nullptr, cq_,
-                     notify_cq, this));
+      if (GRPC_CALL_OK !=
+          grpc_server_request_registered_call(
+              server, tag_, &call_, &deadline_, &request_metadata_,
+              has_request_payload_ ? &request_payload_ : nullptr, cq_,
+              notify_cq, this)) {
+        TeardownRequest();
+        return;
+      }
     } else {
       if (!call_details_) {
         call_details_ = new grpc_call_details;
         grpc_call_details_init(call_details_);
       }
-      GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                     server, &call_, call_details_,
-                                     &request_metadata_, cq_, notify_cq, this));
+      if (grpc_server_request_call(server, &call_, call_details_,
+                                   &request_metadata_, cq_, notify_cq,
+                                   this) != GRPC_CALL_OK) {
+        TeardownRequest();
+        return;
+      }
     }
   }
 
@@ -299,12 +294,10 @@ class Server::SyncRequestThreadManager : public ThreadManager {
     if (ok) {
       // Calldata takes ownership of the completion queue inside sync_req
       SyncRequest::CallData cd(server_, sync_req);
-      {
-        // Prepare for the next request
-        if (!IsShutdown()) {
-          sync_req->SetupRequest();  // Create new completion queue for sync_req
-          sync_req->Request(server_->c_server(), server_cq_->cq());
-        }
+      // Prepare for the next request
+      if (!IsShutdown()) {
+        sync_req->SetupRequest();  // Create new completion queue for sync_req
+        sync_req->Request(server_->c_server(), server_cq_->cq());
       }
 
       GPR_TIMER_SCOPE("cd.Run()", 0);
@@ -329,8 +322,8 @@ class Server::SyncRequestThreadManager : public ThreadManager {
   }
 
   void Shutdown() override {
-    server_cq_->Shutdown();
     ThreadManager::Shutdown();
+    server_cq_->Shutdown();
   }
 
   void Wait() override {
@@ -434,6 +427,13 @@ void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
 }
 
 grpc_server* Server::c_server() { return server_; }
+
+std::shared_ptr<Channel> Server::InProcessChannel(
+    const ChannelArguments& args) {
+  grpc_channel_args channel_args = args.c_channel_args();
+  return CreateChannelInternal(
+      "inproc", grpc_inproc_channel_create(server_, &channel_args, nullptr));
+}
 
 static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
     RpcServiceMethod* method) {
@@ -609,7 +609,12 @@ void Server::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
   grpc_op cops[MAX_OPS];
   ops->FillOps(call->call(), cops, &nops);
   auto result = grpc_call_start_batch(call->call(), cops, nops, ops, nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == result);
+  if (result != GRPC_CALL_OK) {
+    gpr_log(GPR_ERROR, "Fatal: grpc_call_start_batch returned %d", result);
+    grpc_call_log_batch(__FILE__, __LINE__, GPR_LOG_SEVERITY_ERROR,
+                        call->call(), cops, nops, ops);
+    abort();
+  }
 }
 
 ServerInterface::BaseAsyncRequest::BaseAsyncRequest(
@@ -658,10 +663,11 @@ ServerInterface::RegisteredAsyncRequest::RegisteredAsyncRequest(
 void ServerInterface::RegisteredAsyncRequest::IssueRequest(
     void* registered_method, grpc_byte_buffer** payload,
     ServerCompletionQueue* notification_cq) {
-  grpc_server_request_registered_call(
-      server_->server(), registered_method, &call_, &context_->deadline_,
-      context_->client_metadata_.arr(), payload, call_cq_->cq(),
-      notification_cq->cq(), this);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_registered_call(
+                                 server_->server(), registered_method, &call_,
+                                 &context_->deadline_,
+                                 context_->client_metadata_.arr(), payload,
+                                 call_cq_->cq(), notification_cq->cq(), this));
 }
 
 ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
@@ -673,9 +679,10 @@ ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
   grpc_call_details_init(&call_details_);
   GPR_ASSERT(notification_cq);
   GPR_ASSERT(call_cq);
-  grpc_server_request_call(server->server(), &call_, &call_details_,
-                           context->client_metadata_.arr(), call_cq->cq(),
-                           notification_cq->cq(), this);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                 server->server(), &call_, &call_details_,
+                                 context->client_metadata_.arr(), call_cq->cq(),
+                                 notification_cq->cq(), this));
 }
 
 bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
@@ -686,6 +693,7 @@ bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
         StringFromCopiedSlice(call_details_.method);
     static_cast<GenericServerContext*>(context_)->host_ =
         StringFromCopiedSlice(call_details_.host);
+    context_->deadline_ = call_details_.deadline;
   }
   grpc_slice_unref(call_details_.method);
   grpc_slice_unref(call_details_.host);

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2017, Google Inc.
- * All rights reserved.
+ * Copyright 2017 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -81,14 +66,21 @@ class FullstackFixture : public BaseFixture {
   FullstackFixture(Service* service, const FixtureConfiguration& config,
                    const grpc::string& address) {
     ServerBuilder b;
-    b.AddListeningPort(address, InsecureServerCredentials());
+    if (address.length() > 0) {
+      b.AddListeningPort(address, InsecureServerCredentials());
+    }
     cq_ = b.AddCompletionQueue(true);
     b.RegisterService(service);
     config.ApplyCommonServerBuilderConfig(&b);
     server_ = b.BuildAndStart();
     ChannelArguments args;
     config.ApplyCommonChannelArguments(&args);
-    channel_ = CreateCustomChannel(address, InsecureChannelCredentials(), args);
+    if (address.length() > 0) {
+      channel_ =
+          CreateCustomChannel(address, InsecureChannelCredentials(), args);
+    } else {
+      channel_ = server_->InProcessChannel(args);
+    }
   }
 
   virtual ~FullstackFixture() {
@@ -98,6 +90,12 @@ class FullstackFixture : public BaseFixture {
     bool ok;
     while (cq_->Next(&tag, &ok)) {
     }
+  }
+
+  void AddToLabel(std::ostream& out, benchmark::State& state) {
+    BaseFixture::AddToLabel(out, state);
+    out << " polls/iter:"
+        << (double)grpc_get_cq_poll_num(this->cq()->cq()) / state.iterations();
   }
 
   ServerCompletionQueue* cq() { return cq_.get(); }
@@ -146,6 +144,15 @@ class UDS : public FullstackFixture {
     addr << "unix:/tmp/bm_fullstack." << *port;
     return addr.str();
   }
+};
+
+class InProcess : public FullstackFixture {
+ public:
+  InProcess(Service* service,
+            const FixtureConfiguration& fixture_configuration =
+                FixtureConfiguration())
+      : FullstackFixture(service, fixture_configuration, "") {}
+  ~InProcess() {}
 };
 
 class EndpointPairFixture : public BaseFixture {
@@ -212,6 +219,12 @@ class EndpointPairFixture : public BaseFixture {
     }
   }
 
+  void AddToLabel(std::ostream& out, benchmark::State& state) {
+    BaseFixture::AddToLabel(out, state);
+    out << " polls/iter:"
+        << (double)grpc_get_cq_poll_num(this->cq()->cq()) / state.iterations();
+  }
+
   ServerCompletionQueue* cq() { return cq_.get(); }
   std::shared_ptr<Channel> channel() { return channel_; }
 
@@ -245,7 +258,7 @@ class InProcessCHTTP2 : public EndpointPairFixture {
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     EndpointPairFixture::AddToLabel(out, state);
     out << " writes/iter:"
-        << ((double)stats_.num_writes / (double)state.iterations());
+        << (double)stats_.num_writes / (double)state.iterations();
   }
 
  private:
@@ -282,6 +295,7 @@ class MinStackize : public Base {
 
 typedef MinStackize<TCP> MinTCP;
 typedef MinStackize<UDS> MinUDS;
+typedef MinStackize<InProcess> MinInProcess;
 typedef MinStackize<SockPair> MinSockPair;
 typedef MinStackize<InProcessCHTTP2> MinInProcessCHTTP2;
 
