@@ -44,6 +44,8 @@ os.chdir(_ROOT)
 
 _REMOTE_HOST_USERNAME = 'jenkins'
 
+_BUILD_CONFIG = os.environ.get('CONFIG') or 'opt'
+
 
 class QpsWorkerJob:
   """Encapsulates a qps worker server job."""
@@ -125,7 +127,7 @@ def create_scenario_jobspec(scenario_json, workers, remote_host=None,
 def create_quit_jobspec(workers, remote_host=None):
   """Runs quit using QPS driver."""
   # setting QPS_WORKERS env variable here makes sure it works with SSH too.
-  cmd = 'QPS_WORKERS="%s" bins/opt/qps_json_driver --quit' % ','.join(w.host_and_port for w in workers)
+  cmd = 'QPS_WORKERS="%s" bins/%s/qps_json_driver --quit' % (','.join(w.host_and_port for w in workers), _BUILD_CONFIG)
   if remote_host:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
     cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (user_at_host, pipes.quote(cmd))
@@ -236,7 +238,7 @@ def build_on_remote_hosts(hosts, languages=scenario_config.LANGUAGES.keys(), bui
         jobset.JobSpec(
             cmdline=['tools/run_tests/performance/remote_host_build.sh'] + languages,
             shortname='remote_host_build.%s' % host,
-            environ = {'USER_AT_HOST': user_at_host, 'CONFIG': 'opt'},
+            environ = {'USER_AT_HOST': user_at_host, 'CONFIG': _BUILD_CONFIG},
             timeout_seconds=build_timeout))
   if build_local:
     # Build locally as well
@@ -244,7 +246,7 @@ def build_on_remote_hosts(hosts, languages=scenario_config.LANGUAGES.keys(), bui
         jobset.JobSpec(
             cmdline=['tools/run_tests/performance/build_performance.sh'] + languages,
             shortname='local_build',
-            environ = {'CONFIG': 'opt'},
+            environ = {'CONFIG': _BUILD_CONFIG},
             timeout_seconds=build_timeout))
   jobset.message('START', 'Building.', do_newline=True)
   num_failures, _ = jobset.run(

@@ -19,23 +19,26 @@ set -ex
 # Enter the gRPC repo root
 cd $(dirname $0)/../..
 
-# scalability with 32cores c++ benchmarks
-tools/run_tests/run_performance_tests.py \
-    -l c++ \
-    --category scalable \
-    --remote_worker_host grpc-performance-server-32core grpc-performance-client-32core grpc-performance-client2-32core \
-    --perf_args "record -F 97 --call-graph dwarf" \
-    --flame_graph_reports cpp_flamegraphs \
-    || EXIT_CODE=1
-
 # scalability with 32cores go benchmarks
 tools/run_tests/run_performance_tests.py \
     -l go \
     --category scalable \
     --remote_worker_host grpc-performance-server-32core grpc-performance-client-32core grpc-performance-client2-32core \
-    --perf_args "record -F 97 -g" \
+    --perf_args "record -c 1000 -g" \
     --flame_graph_reports go_flamegraphs \
     || EXIT_CODE=1
+
+export CONFIG=mutrace
+
+# scalability with 32cores c++ benchmarks
+tools/run_tests/run_performance_tests.py \
+    -l c++ \
+    --category scalable \
+    --remote_worker_host grpc-performance-server-32core grpc-performance-client-32core grpc-performance-client2-32core \
+    --perf_args "record -c 1000 -g" \
+    --flame_graph_reports cpp_flamegraphs \
+    || EXIT_CODE=1
+
 
 exit $EXIT_CODE
 

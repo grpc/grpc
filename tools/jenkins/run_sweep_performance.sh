@@ -28,7 +28,6 @@ tools/run_tests/run_performance_tests.py \
     --category sweep \
     --bq_result_table performance_test.performance_experiment_32core \
     --remote_worker_host ${SERVER_HOST} ${CLIENT_HOST1} ${CLIENT_HOST2} \
-    --perf_args "record -F 97 --call-graph dwarf" \
     || EXIT_CODE=1
 
 exit $EXIT_CODE
