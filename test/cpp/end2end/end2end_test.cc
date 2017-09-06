@@ -707,7 +707,7 @@ TEST_P(End2endTest, ReconnectChannel) {
   // It needs more than kConnectivityCheckIntervalMsec time to reconnect the
   // channel.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                               gpr_time_from_millis(1100, GPR_TIMESPAN)));
+                               gpr_time_from_millis(1600, GPR_TIMESPAN)));
   SendRpc(stub_.get(), 1, false);
 }
 
