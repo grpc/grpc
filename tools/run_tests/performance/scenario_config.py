@@ -422,6 +422,18 @@ class CXXLanguage:
 
       for rpc_type in ['unary', 'streaming', 'streaming_from_client', 'streaming_from_server']:
         for synchronicity in ['sync', 'async']:
+          for size in geometric_progression(1, 1024*1024*1024+1, 8):
+              yield _ping_pong_scenario(
+                  'cpp_protobuf_%s_%s_ping_pong_%s_%db' % (synchronicity, rpc_type, secstr, size),
+                  rpc_type=rpc_type.upper(),
+                  req_size=size,
+                  resp_size=size,
+                  client_type='%s_CLIENT' % synchronicity.upper(),
+                  server_type='%s_SERVER' % synchronicity.upper(),
+                  async_server_threads=1,
+                  secure=secure,
+                  categories=[SWEEP])
+
           yield _ping_pong_scenario(
               'cpp_protobuf_%s_%s_ping_pong_%s' % (synchronicity, rpc_type, secstr),
               rpc_type=rpc_type.upper(),
@@ -868,6 +880,21 @@ class JavaLanguage:
           async_server_threads=1,
           secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
 
+      for rpc_type in ['unary', 'streaming']:
+          for size in geometric_progression(1, 1024*1024*32+1, 8):
+              yield _ping_pong_scenario(
+                  'java_protobuf_async_%s_ping_pong_%s_%db' % (rpc_type, secstr, size),
+                  rpc_type=rpc_type.upper(),
+                  req_size=size,
+                  resp_size=size,
+                  client_type='ASYNC_CLIENT',
+                  server_type='ASYNC_SERVER',
+                  async_server_threads=1,
+                  secure=secure,
+                  warmup_seconds=JAVA_WARMUP_SECONDS,
+                  categories=[SWEEP])
+
+
       # TODO(jtattermusch): add scenarios java vs C++
 
   def __str__(self):
@@ -896,20 +923,18 @@ class GoLanguage:
       yield _ping_pong_scenario(
           'go_generic_sync_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
           client_type='SYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
-          use_generic_payload=True, async_server_threads=1,
+          use_generic_payload=True,
           secure=secure,
           categories=smoketest_categories)
 
       yield _ping_pong_scenario(
           'go_protobuf_sync_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
           client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-          async_server_threads=1,
           secure=secure)
 
       yield _ping_pong_scenario(
           'go_protobuf_sync_unary_ping_pong_%s' % secstr, rpc_type='UNARY',
           client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-          async_server_threads=1,
           secure=secure,
           categories=smoketest_categories)
 
@@ -938,6 +963,32 @@ class GoLanguage:
           unconstrained_client='async', use_generic_payload=True,
           secure=secure,
           categories=[SCALABLE])
+
+      for size in geometric_progression(1, 1024*1024*32+1, 8):
+        for rpc_type in ['unary', 'streaming']:
+          yield _ping_pong_scenario(
+              'go_protobuf_sync_%s_ping_pong_%s_%db' % (rpc_type, secstr, size),
+              rpc_type=rpc_type.upper(),
+              client_type='SYNC_CLIENT',
+              server_type='SYNC_SERVER',
+              req_size=size,
+              resp_size=size,
+              secure=secure,
+              categories=[SWEEP])
+
+      for rpc_type in ['unary', 'streaming']:
+        for size in geometric_progression(1, 1024*1024*32+1, 8):
+            yield _ping_pong_scenario(
+                'go_protobuf_sync_%s_qps_unconstrained_%s_%db' % (rpc_type, secstr, size),
+                rpc_type=rpc_type.upper(),
+                req_size=size,
+                resp_size=size,
+                client_type='SYNC_CLIENT',
+                server_type='SYNC_SERVER',
+                unconstrained_client='async',
+                secure=secure,
+                categories=[SWEEP])
+
 
       # TODO(jtattermusch): add scenarios go vs C++
 
