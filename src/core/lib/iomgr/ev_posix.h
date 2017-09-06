@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -36,10 +21,13 @@
 
 #include <poll.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
+
+extern grpc_tracer_flag grpc_polling_trace; /* Disabled by default */
 
 typedef struct grpc_fd grpc_fd;
 
@@ -49,28 +37,31 @@ typedef struct grpc_event_engine_vtable {
   grpc_fd *(*fd_create)(int fd, const char *name);
   int (*fd_wrapped_fd)(grpc_fd *fd);
   void (*fd_orphan)(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
-                    int *release_fd, const char *reason);
-  void (*fd_shutdown)(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
+                    int *release_fd, bool already_closed, const char *reason);
+  void (*fd_shutdown)(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why);
   void (*fd_notify_on_read)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                             grpc_closure *closure);
   void (*fd_notify_on_write)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure *closure);
+  bool (*fd_is_shutdown)(grpc_fd *fd);
+  grpc_pollset *(*fd_get_read_notifier_pollset)(grpc_exec_ctx *exec_ctx,
+                                                grpc_fd *fd);
 
   void (*pollset_init)(grpc_pollset *pollset, gpr_mu **mu);
   void (*pollset_shutdown)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_closure *closure);
-  void (*pollset_reset)(grpc_pollset *pollset);
-  void (*pollset_destroy)(grpc_pollset *pollset);
-  void (*pollset_work)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                       grpc_pollset_worker **worker, gpr_timespec now,
-                       gpr_timespec deadline);
-  void (*pollset_kick)(grpc_pollset *pollset,
-                       grpc_pollset_worker *specific_worker);
+  void (*pollset_destroy)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset);
+  grpc_error *(*pollset_work)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                              grpc_pollset_worker **worker, gpr_timespec now,
+                              gpr_timespec deadline);
+  grpc_error *(*pollset_kick)(grpc_pollset *pollset,
+                              grpc_pollset_worker *specific_worker);
   void (*pollset_add_fd)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                          struct grpc_fd *fd);
 
   grpc_pollset_set *(*pollset_set_create)(void);
-  void (*pollset_set_destroy)(grpc_pollset_set *pollset_set);
+  void (*pollset_set_destroy)(grpc_exec_ctx *exec_ctx,
+                              grpc_pollset_set *pollset_set);
   void (*pollset_set_add_pollset)(grpc_exec_ctx *exec_ctx,
                                   grpc_pollset_set *pollset_set,
                                   grpc_pollset *pollset);
@@ -88,13 +79,14 @@ typedef struct grpc_event_engine_vtable {
   void (*pollset_set_del_fd)(grpc_exec_ctx *exec_ctx,
                              grpc_pollset_set *pollset_set, grpc_fd *fd);
 
-  void (*kick_poller)(void);
-
   void (*shutdown_engine)(void);
 } grpc_event_engine_vtable;
 
 void grpc_event_engine_init(void);
 void grpc_event_engine_shutdown(void);
+
+/* Return the name of the poll strategy */
+const char *grpc_get_poll_strategy_name();
 
 /* Create a wrapped file descriptor.
    Requires fd is a non-blocking file descriptor.
@@ -112,10 +104,13 @@ int grpc_fd_wrapped_fd(grpc_fd *fd);
    notify_on_write.
    MUST NOT be called with a pollset lock taken */
 void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
-                    int *release_fd, const char *reason);
+                    int *release_fd, bool already_closed, const char *reason);
 
-/* Cause any current callbacks to error out with GRPC_CALLBACK_CANCELLED. */
-void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
+/* Has grpc_fd_shutdown been called on an fd? */
+bool grpc_fd_is_shutdown(grpc_fd *fd);
+
+/* Cause any current and future callbacks to fail. */
+void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why);
 
 /* Register read interest, causing read_cb to be called once when fd becomes
    readable, on deadline specified by deadline, or on shutdown triggered by
@@ -137,6 +132,10 @@ void grpc_fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 void grpc_fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure *closure);
 
+/* Return the read notifier pollset from the fd */
+grpc_pollset *grpc_fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
+                                                grpc_fd *fd);
+
 /* pollset_posix functions */
 
 /* Add an fd to a pollset */
@@ -153,6 +152,10 @@ void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
 /* override to allow tests to hook poll() usage */
 typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
-extern grpc_wakeup_fd grpc_global_wakeup_fd;
+
+/* WARNING: The following two functions should be used for testing purposes
+ * ONLY */
+void grpc_set_event_engine_test_only(const grpc_event_engine_vtable *);
+const grpc_event_engine_vtable *grpc_get_event_engine_test_only();
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_POSIX_H */

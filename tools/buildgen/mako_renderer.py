@@ -1,32 +1,17 @@
 #!/usr/bin/env python2.7
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 
 """Simple Mako renderer.
@@ -81,9 +66,10 @@ def main(argv):
   plugins = []
   output_name = None
   got_preprocessed_input = False
+  output_merged = None
 
   try:
-    opts, args = getopt.getopt(argv, 'hm:d:o:p:t:P:w:')
+    opts, args = getopt.getopt(argv, 'hM:m:d:o:p:t:P:w:')
   except getopt.GetoptError:
     out('Unknown option')
     showhelp()
@@ -107,6 +93,12 @@ def main(argv):
         showhelp()
         sys.exit(4)
       module_directory = arg
+    elif opt == '-M':
+      if output_merged is not None:
+        out('Got more than one output merged path')
+        showhelp()
+        sys.exit(5)
+      output_merged = arg
     elif opt == '-P':
       assert not got_preprocessed_input
       assert json_dict == {}
@@ -126,6 +118,9 @@ def main(argv):
   if not got_preprocessed_input:
     for plugin in plugins:
       plugin.mako_plugin(json_dict)
+    if output_merged:
+      with open(output_merged, 'w') as yaml_file:
+        yaml_file.write(yaml.dump(json_dict))
     for k, v in json_dict.items():
       dictionary[k] = bunch.to_bunch(v)
 

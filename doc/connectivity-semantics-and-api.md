@@ -16,7 +16,7 @@ reconnect, or in the case of HTTP/2 GO_AWAY, re-resolve the name and reconnect.
 
 To hide the details of all this activity from the user of the gRPC API (i.e.,
 application code) while exposing meaningful information about the state of a
-channel, we use a state machine with four states, defined below:
+channel, we use a state machine with five states, defined below:
 
 CONNECTING: The channel is trying to establish a connection and is waiting to
 make progress on one of the steps involved in name resolution, TCP connection
@@ -101,7 +101,7 @@ corresponding reasons. Empty cells denote disallowed transitions.
     <td>Shutdown triggered by application.</td>
   </tr>
   <tr>
-    <th>FATAL_FAILURE</th>
+    <th>SHUTDOWN</th>
     <td></td>
     <td></td>
     <td></td>
@@ -116,7 +116,7 @@ Channel State API
 
 All gRPC libraries will expose a channel-level API method to poll the current
 state of a channel. In C++, this method is called GetCurrentState and returns
-an enum for one of the four legal states.
+an enum for one of the five legal states.
 
 All libraries should also expose an API that enables the application (user of
 the gRPC API) to be notified when the channel state changes. Since state

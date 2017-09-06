@@ -5,16 +5,17 @@ inherit_from: .rubocop_todo.yml
 AllCops:
   Exclude:
     - 'bin/apis/**/*'
-    - 'bin/math.rb'
-    - 'bin/math_services.rb'
+    - 'bin/math_pb.rb'
+    - 'bin/math_services_pb.rb'
     - 'pb/grpc/health/v1/*'
     - 'pb/test/**/*'
+    - 'end2end/lib/*'
 
 Metrics/CyclomaticComplexity:
-  Max: 8
+  Max: 9
 
 Metrics/PerceivedComplexity:
-  Max: 8
+  Max: 9
 
 Metrics/ClassLength:
   Max: 250

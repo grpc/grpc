@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -43,6 +28,9 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <stdio.h>
+#include <string.h>
+
+#include "src/core/lib/support/env.h"
 
 typedef enum { BEGIN = '{', END = '}', MARK = '.' } marker_type;
 
@@ -74,7 +62,7 @@ typedef struct gpr_timer_log_list {
 static __thread gpr_timer_log *g_thread_log;
 static gpr_once g_once_init = GPR_ONCE_INIT;
 static FILE *output_file;
-static const char *output_filename = "latency_trace.txt";
+static const char *output_filename_or_null = NULL;
 static pthread_mutex_t g_mu;
 static pthread_cond_t g_cv;
 static gpr_timer_log_list g_in_progress_logs;
@@ -83,6 +71,18 @@ static int g_shutdown;
 static gpr_thd_id g_writing_thread;
 static __thread int g_thread_id;
 static int g_next_thread_id;
+static int g_writing_enabled = 1;
+
+static const char *output_filename() {
+  if (output_filename_or_null == NULL) {
+    output_filename_or_null = gpr_getenv("LATENCY_TRACE");
+    if (output_filename_or_null == NULL ||
+        strlen(output_filename_or_null) == 0) {
+      output_filename_or_null = "latency_trace.txt";
+    }
+  }
+  return output_filename_or_null;
+}
 
 static int timer_log_push_back(gpr_timer_log_list *list, gpr_timer_log *log) {
   if (list->head == NULL) {
@@ -133,7 +133,7 @@ static void timer_log_remove(gpr_timer_log_list *list, gpr_timer_log *log) {
 static void write_log(gpr_timer_log *log) {
   size_t i;
   if (output_file == NULL) {
-    output_file = fopen(output_filename, "w");
+    output_file = fopen(output_filename(), "w");
   }
   for (i = 0; i < log->num_entries; i++) {
     gpr_timer_entry *entry = &(log->log[i]);
@@ -141,11 +141,11 @@ static void write_log(gpr_timer_log *log) {
       entry->tm = gpr_time_0(entry->tm.clock_type);
     }
     fprintf(output_file,
-            "{\"t\": %lld.%09d, \"thd\": \"%d\", \"type\": \"%c\", \"tag\": "
+            "{\"t\": %" PRId64
+            ".%09d, \"thd\": \"%d\", \"type\": \"%c\", \"tag\": "
             "\"%s\", \"file\": \"%s\", \"line\": %d, \"imp\": %d}\n",
-            (long long)entry->tm.tv_sec, (int)entry->tm.tv_nsec, entry->thd,
-            entry->type, entry->tagstr, entry->file, entry->line,
-            entry->important);
+            entry->tm.tv_sec, entry->tm.tv_nsec, entry->thd, entry->type,
+            entry->tagstr, entry->file, entry->line, entry->important);
   }
 }
 
@@ -177,7 +177,7 @@ static void flush_logs(gpr_timer_log_list *list) {
   }
 }
 
-static void finish_writing() {
+static void finish_writing(void) {
   pthread_mutex_lock(&g_mu);
   g_shutdown = 1;
   pthread_cond_signal(&g_cv);
@@ -197,17 +197,18 @@ static void finish_writing() {
 }
 
 void gpr_timers_set_log_filename(const char *filename) {
-  output_filename = filename;
+  output_filename_or_null = filename;
 }
 
 static void init_output() {
   gpr_thd_options options = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&options);
-  gpr_thd_new(&g_writing_thread, writing_thread, NULL, &options);
+  GPR_ASSERT(gpr_thd_new(&g_writing_thread, writing_thread, NULL, &options));
   atexit(finish_writing);
 }
 
 static void rotate_log() {
+  /* Using malloc here, as this code could end up being called by gpr_malloc */
   gpr_timer_log *new = malloc(sizeof(*new));
   gpr_once_init(&g_once_init, init_output);
   new->num_entries = 0;
@@ -228,6 +229,10 @@ static void rotate_log() {
 static void gpr_timers_log_add(const char *tagstr, marker_type type,
                                int important, const char *file, int line) {
   gpr_timer_entry *entry;
+
+  if (!g_writing_enabled) {
+    return;
+  }
 
   if (g_thread_log == NULL || g_thread_log->num_entries == MAX_COUNT) {
     rotate_log();
@@ -260,6 +265,8 @@ void gpr_timer_end(const char *tagstr, int important, const char *file,
   gpr_timers_log_add(tagstr, END, important, file, line);
 }
 
+void gpr_timer_set_enabled(int enabled) { g_writing_enabled = enabled; }
+
 /* Basic profiler specific API functions. */
 void gpr_timers_global_init(void) {}
 
@@ -271,4 +278,6 @@ void gpr_timers_global_init(void) {}
 void gpr_timers_global_destroy(void) {}
 
 void gpr_timers_set_log_filename(const char *filename) {}
+
+void gpr_timer_set_enabled(int enabled) {}
 #endif /* GRPC_BASIC_PROFILER */

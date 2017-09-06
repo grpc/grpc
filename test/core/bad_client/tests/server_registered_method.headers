@@ -1,4 +1,4 @@
-# headers used in simple_request.c
+# headers used in server_registered_method.c
 # use tools/codegen/core/gen_header_frame.py to generate the binary strings
 # contained in the source code
 :path: /registered/bar

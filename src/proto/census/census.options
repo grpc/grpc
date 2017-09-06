@@ -1,0 +1,3 @@
+google.census.Tag.key max_size:255
+google.census.Tag.value max_size:255
+google.census.View.tag_key max_count:15

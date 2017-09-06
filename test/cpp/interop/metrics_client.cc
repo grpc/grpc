@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *is % allowed in string
  */
 
@@ -36,32 +21,39 @@
 
 #include <gflags/gflags.h>
 #include <grpc++/grpc++.h>
+#include <grpc/support/log.h>
 
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
 #include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
 
-DEFINE_string(metrics_server_address, "",
+int kDeadlineSecs = 10;
+
+DEFINE_string(metrics_server_address, "localhost:8081",
               "The metrics server addresses in the fomrat <hostname>:<port>");
+DEFINE_int32(deadline_secs, kDeadlineSecs,
+             "The deadline (in seconds) for RCP call");
 DEFINE_bool(total_only, false,
             "If true, this prints only the total value of all gauges");
-
-int kDeadlineSecs = 10;
 
 using grpc::testing::EmptyMessage;
 using grpc::testing::GaugeResponse;
 using grpc::testing::MetricsService;
 using grpc::testing::MetricsServiceImpl;
 
+// Do not log anything
+void BlackholeLogger(gpr_log_func_args* args) {}
+
 // Prints the values of all Gauges (unless total_only is set to 'true' in which
 // case this only prints the sum of all gauge values).
-bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only) {
+bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only,
+                  int deadline_secs) {
   grpc::ClientContext context;
   EmptyMessage message;
 
   std::chrono::system_clock::time_point deadline =
-      std::chrono::system_clock::now() + std::chrono::seconds(kDeadlineSecs);
+      std::chrono::system_clock::now() + std::chrono::seconds(deadline_secs);
 
   context.set_deadline(deadline);
 
@@ -73,21 +65,21 @@ bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only) {
   while (reader->Read(&gauge_response)) {
     if (gauge_response.value_case() == GaugeResponse::kLongValue) {
       if (!total_only) {
-        gpr_log(GPR_INFO, "%s: %ld", gauge_response.name().c_str(),
-                gauge_response.long_value());
+        std::cout << gauge_response.name() << ": "
+                  << gauge_response.long_value() << std::endl;
       }
       overall_qps += gauge_response.long_value();
     } else {
-      gpr_log(GPR_INFO, "Gauge %s is not a long value",
-              gauge_response.name().c_str());
+      std::cout << "Gauge '" << gauge_response.name() << "' is not long valued"
+                << std::endl;
     }
   }
 
-  gpr_log(GPR_INFO, "%ld", overall_qps);
+  std::cout << overall_qps << std::endl;
 
   const grpc::Status status = reader->Finish();
   if (!status.ok()) {
-    gpr_log(GPR_ERROR, "Error in getting metrics from the client");
+    std::cout << "Error in getting metrics from the client" << std::endl;
   }
 
   return status.ok();
@@ -96,19 +88,16 @@ bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only) {
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
-  // Make sure server_addresses flag is not empty
-  if (FLAGS_metrics_server_address.empty()) {
-    gpr_log(
-        GPR_ERROR,
-        "Cannot connect to the Metrics server. Please pass the address of the"
-        "metrics server to connect to via the 'metrics_server_address' flag");
-    return 1;
-  }
+  // The output of metrics client is in some cases programatically parsed (for
+  // example by the stress test framework). So, we do not want any of the log
+  // from the grpc library appearing on stdout.
+  gpr_set_log_function(BlackholeLogger);
 
   std::shared_ptr<grpc::Channel> channel(grpc::CreateChannel(
       FLAGS_metrics_server_address, grpc::InsecureChannelCredentials()));
 
-  if (!PrintMetrics(MetricsService::NewStub(channel), FLAGS_total_only)) {
+  if (!PrintMetrics(MetricsService::NewStub(channel), FLAGS_total_only,
+                    FLAGS_deadline_secs)) {
     return 1;
   }
 

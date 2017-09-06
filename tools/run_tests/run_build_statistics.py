@@ -1,0 +1,245 @@
+#!/usr/bin/env python
+# Copyright 2016 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Tool to get build statistics from Jenkins and upload to BigQuery."""
+
+from __future__ import print_function
+
+import argparse
+import jenkinsapi
+from jenkinsapi.custom_exceptions import JenkinsAPIException
+from jenkinsapi.jenkins import Jenkins
+import json
+import os
+import re
+import sys
+import urllib
+
+
+gcp_utils_dir = os.path.abspath(os.path.join(
+    os.path.dirname(__file__), '../gcp/utils'))
+sys.path.append(gcp_utils_dir)
+import big_query_utils
+
+
+_PROJECT_ID = 'grpc-testing'
+_HAS_MATRIX = True
+_BUILDS = {'gRPC_interop_master': not _HAS_MATRIX,
+           'gRPC_master_linux': not _HAS_MATRIX,
+           'gRPC_master_macos': not _HAS_MATRIX,
+           'gRPC_master_windows': not _HAS_MATRIX,
+           'gRPC_performance_master': not _HAS_MATRIX,
+           'gRPC_portability_master_linux': not _HAS_MATRIX,
+           'gRPC_portability_master_windows': not _HAS_MATRIX,
+           'gRPC_master_asanitizer_c': not _HAS_MATRIX,
+           'gRPC_master_asanitizer_cpp': not _HAS_MATRIX,
+           'gRPC_master_msan_c': not _HAS_MATRIX,
+           'gRPC_master_tsanitizer_c': not _HAS_MATRIX,
+           'gRPC_master_tsan_cpp': not _HAS_MATRIX,
+           'gRPC_interop_pull_requests': not _HAS_MATRIX,
+           'gRPC_performance_pull_requests': not _HAS_MATRIX,
+           'gRPC_portability_pull_requests_linux': not _HAS_MATRIX,
+           'gRPC_portability_pr_win': not _HAS_MATRIX,
+           'gRPC_pull_requests_linux': not _HAS_MATRIX,
+           'gRPC_pull_requests_macos': not _HAS_MATRIX,
+           'gRPC_pr_win': not _HAS_MATRIX,
+           'gRPC_pull_requests_asan_c': not _HAS_MATRIX,
+           'gRPC_pull_requests_asan_cpp': not _HAS_MATRIX,
+           'gRPC_pull_requests_msan_c': not _HAS_MATRIX,
+           'gRPC_pull_requests_tsan_c': not _HAS_MATRIX,
+           'gRPC_pull_requests_tsan_cpp': not _HAS_MATRIX,
+}
+_URL_BASE = 'https://grpc-testing.appspot.com/job'
+
+# This is a dynamic list where known and active issues should be added. 
+# Fixed ones should be removed.
+# Also try not to add multiple messages from the same failure.
+_KNOWN_ERRORS = [
+    'Failed to build workspace Tests with scheme AllTests',
+    'Build timed out',
+    'TIMEOUT: tools/run_tests/pre_build_node.sh',
+    'TIMEOUT: tools/run_tests/pre_build_ruby.sh',
+    'FATAL: Unable to produce a script file',
+    'FAILED: build_docker_c\+\+',
+    'cannot find package \"cloud.google.com/go/compute/metadata\"',
+    'LLVM ERROR: IO failure on output stream.',
+    'MSBUILD : error MSB1009: Project file does not exist.',
+    'fatal: git fetch_pack: expected ACK/NAK',
+    'Failed to fetch from http://github.com/grpc/grpc.git',
+    ('hudson.remoting.RemotingSystemException: java.io.IOException: '
+     'Backing channel is disconnected.'),
+    'hudson.remoting.ChannelClosedException',
+    'Could not initialize class hudson.Util',
+    'Too many open files in system',
+    'FAILED: bins/tsan/qps_openloop_test GRPC_POLL_STRATEGY=epoll',
+    'FAILED: bins/tsan/qps_openloop_test GRPC_POLL_STRATEGY=legacy',
+    'FAILED: bins/tsan/qps_openloop_test GRPC_POLL_STRATEGY=poll',
+    ('tests.bins/asan/h2_proxy_test streaming_error_response '
+     'GRPC_POLL_STRATEGY=legacy'),
+    'hudson.plugins.git.GitException',
+    'Couldn\'t find any revision to build',
+    'org.jenkinsci.plugin.Diskcheck.preCheckout',
+    'Something went wrong while deleting Files',
+]
+_NO_REPORT_FILES_FOUND_ERROR = 'No test report files were found.'
+_UNKNOWN_ERROR = 'Unknown error'
+_DATASET_ID = 'build_statistics'
+
+
+def _scrape_for_known_errors(html):
+  error_list = []
+  for known_error in _KNOWN_ERRORS:
+    errors = re.findall(known_error, html)
+    this_error_count = len(errors)
+    if this_error_count > 0: 
+      error_list.append({'description': known_error,
+                         'count': this_error_count})
+      print('====> %d failures due to %s' % (this_error_count, known_error))
+  return error_list
+
+
+def _no_report_files_found(html):
+  return _NO_REPORT_FILES_FOUND_ERROR in html
+
+
+def _get_last_processed_buildnumber(build_name):
+  query = 'SELECT max(build_number) FROM [%s:%s.%s];' % (
+      _PROJECT_ID, _DATASET_ID, build_name)
+  query_job = big_query_utils.sync_query_job(bq, _PROJECT_ID, query)
+  page = bq.jobs().getQueryResults(
+      pageToken=None,
+      **query_job['jobReference']).execute(num_retries=3)
+  if page['rows'][0]['f'][0]['v']:
+    return int(page['rows'][0]['f'][0]['v'])
+  return 0
+
+
+def _process_matrix(build, url_base):
+  matrix_list = []
+  for matrix in build.get_matrix_runs():
+    matrix_str = re.match('.*\\xc2\\xbb ((?:[^,]+,?)+) #.*', 
+                          matrix.name).groups()[0]
+    matrix_tuple = matrix_str.split(',')
+    json_url = '%s/config=%s,language=%s,platform=%s/testReport/api/json' % (
+        url_base, matrix_tuple[0], matrix_tuple[1], matrix_tuple[2])
+    console_url = '%s/config=%s,language=%s,platform=%s/consoleFull' % (
+        url_base, matrix_tuple[0], matrix_tuple[1], matrix_tuple[2])
+    matrix_dict = {'name': matrix_str,
+                   'duration': matrix.get_duration().total_seconds()}
+    matrix_dict.update(_process_build(json_url, console_url))
+    matrix_list.append(matrix_dict)
+
+  return matrix_list 
+
+
+def _process_build(json_url, console_url):
+  build_result = {}
+  error_list = []
+  try:
+    html = urllib.urlopen(json_url).read()
+    test_result = json.loads(html)
+    print('====> Parsing result from %s' % json_url)
+    failure_count = test_result['failCount']
+    build_result['pass_count'] = test_result['passCount']
+    build_result['failure_count'] = failure_count
+    # This means Jenkins failure occurred.
+    build_result['no_report_files_found'] = _no_report_files_found(html)
+    # Only check errors if Jenkins failure occurred.
+    if build_result['no_report_files_found']:
+      error_list = _scrape_for_known_errors(html)
+  except Exception as e:
+    print('====> Got exception for %s: %s.' % (json_url, str(e)))   
+    print('====> Parsing errors from %s.' % console_url)
+    html = urllib.urlopen(console_url).read()
+    build_result['pass_count'] = 0  
+    build_result['failure_count'] = 1
+    # In this case, the string doesn't exist in the result html but the fact 
+    # that we fail to parse the result html indicates Jenkins failure and hence 
+    # no report files were generated.
+    build_result['no_report_files_found'] = True
+    error_list = _scrape_for_known_errors(html)
+
+  if error_list:
+    build_result['error'] = error_list
+  elif build_result['no_report_files_found']:
+    build_result['error'] = [{'description': _UNKNOWN_ERROR, 'count': 1}]
+  else:
+    build_result['error'] = [{'description': '', 'count': 0}]
+
+  return build_result 
+
+
+# parse command line
+argp = argparse.ArgumentParser(description='Get build statistics.')
+argp.add_argument('-u', '--username', default='jenkins')
+argp.add_argument('-b', '--builds', 
+                  choices=['all'] + sorted(_BUILDS.keys()),
+                  nargs='+',
+                  default=['all'])
+args = argp.parse_args()
+
+J = Jenkins('https://grpc-testing.appspot.com', args.username, 'apiToken')
+bq = big_query_utils.create_big_query()
+
+for build_name in _BUILDS.keys() if 'all' in args.builds else args.builds:
+  print('====> Build: %s' % build_name)
+  # Since get_last_completed_build() always fails due to malformatted string
+  # error, we use get_build_metadata() instead.
+  job = None
+  try:
+    job = J[build_name]
+  except Exception as e:
+    print('====> Failed to get build %s: %s.' % (build_name, str(e)))
+    continue
+  last_processed_build_number = _get_last_processed_buildnumber(build_name)
+  last_complete_build_number = job.get_last_completed_buildnumber()
+  # To avoid processing all builds for a project never looked at. In this case,
+  # only examine 10 latest builds.
+  starting_build_number = max(last_processed_build_number+1, 
+                              last_complete_build_number-9)
+  for build_number in xrange(starting_build_number, 
+                             last_complete_build_number+1):
+    print('====> Processing %s build %d.' % (build_name, build_number))
+    build = None
+    try:
+      build = job.get_build_metadata(build_number)
+      print('====> Build status: %s.' % build.get_status())
+      if build.get_status() == 'ABORTED':
+        continue
+      # If any build is still running, stop processing this job. Next time, we
+      # start from where it was left so that all builds are processed 
+      # sequentially.
+      if build.is_running():
+        print('====> Build %d is still running.' % build_number)
+        break
+    except KeyError:
+      print('====> Build %s is missing. Skip.' % build_number)
+      continue
+    build_result = {'build_number': build_number, 
+                    'timestamp': str(build.get_timestamp())}
+    url_base = json_url = '%s/%s/%d' % (_URL_BASE, build_name, build_number)
+    if _BUILDS[build_name]:  # The build has matrix, such as gRPC_master.
+      build_result['matrix'] = _process_matrix(build, url_base)
+    else:
+      json_url = '%s/testReport/api/json' % url_base
+      console_url = '%s/consoleFull' % url_base
+      build_result['duration'] = build.get_duration().total_seconds()
+      build_stat = _process_build(json_url, console_url)
+      build_result.update(build_stat)
+    rows = [big_query_utils.make_row(build_number, build_result)]
+    if not big_query_utils.insert_rows(bq, _PROJECT_ID, _DATASET_ID, build_name, 
+                                       rows):
+      print('====> Error uploading result to bigquery.')
+      sys.exit(1)

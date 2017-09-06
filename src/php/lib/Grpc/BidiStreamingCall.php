@@ -1,42 +1,27 @@
 <?php
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 namespace Grpc;
 
 /**
- * Represents an active call that allows for sending and recieving messages in
- * streams in any order.
+ * Represents an active call that allows for sending and recieving messages
+ * in streams in any order.
  */
 class BidiStreamingCall extends AbstractCall
 {
@@ -44,8 +29,9 @@ class BidiStreamingCall extends AbstractCall
      * Start the call.
      *
      * @param array $metadata Metadata to send with the call, if applicable
+     *                        (optional)
      */
-    public function start($metadata = [])
+    public function start(array $metadata = [])
     {
         $this->call->startBatch([
             OP_SEND_INITIAL_METADATA => $metadata,
@@ -55,7 +41,7 @@ class BidiStreamingCall extends AbstractCall
     /**
      * Reads the next value from the server.
      *
-     * @return The next value from the server, or null if there is none
+     * @return mixed The next value from the server, or null if there is none
      */
     public function read()
     {
@@ -68,7 +54,7 @@ class BidiStreamingCall extends AbstractCall
             $this->metadata = $read_event->metadata;
         }
 
-        return $this->deserializeResponse($read_event->message);
+        return $this->_deserializeResponse($read_event->message);
     }
 
     /**
@@ -76,13 +62,13 @@ class BidiStreamingCall extends AbstractCall
      * writesDone is called.
      *
      * @param ByteBuffer $data    The data to write
-     * @param array      $options an array of options, possible keys:
-     *                            'flags' => a number
+     * @param array      $options An array of options, possible keys:
+     *                            'flags' => a number (optional)
      */
-    public function write($data, $options = [])
+    public function write($data, array $options = [])
     {
-        $message_array = ['message' => $data->serialize()];
-        if (isset($options['flags'])) {
+        $message_array = ['message' => $this->_serializeMessage($data)];
+        if (array_key_exists('flags', $options)) {
             $message_array['flags'] = $options['flags'];
         }
         $this->call->startBatch([
@@ -103,14 +89,16 @@ class BidiStreamingCall extends AbstractCall
     /**
      * Wait for the server to send the status, and return it.
      *
-     * @return object The status object, with integer $code, string $details,
-     *                and array $metadata members
+     * @return \stdClass The status object, with integer $code, string
+     *                   $details, and array $metadata members
      */
     public function getStatus()
     {
         $status_event = $this->call->startBatch([
             OP_RECV_STATUS_ON_CLIENT => true,
         ]);
+
+        $this->trailing_metadata = $status_event->status->metadata;
 
         return $status_event->status;
     }

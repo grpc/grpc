@@ -1,34 +1,19 @@
 <?php
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 class CallTest extends PHPUnit_Framework_TestCase
@@ -48,6 +33,17 @@ class CallTest extends PHPUnit_Framework_TestCase
         $this->call = new Grpc\Call($this->channel,
                                     '/foo',
                                     Grpc\Timeval::infFuture());
+    }
+
+    public function tearDown()
+    {
+        $this->channel->close();
+    }
+
+    public function testConstructor()
+    {
+        $this->assertSame('Grpc\Call', get_class($this->call));
+        $this->assertObjectHasAttribute('channel', $this->call);
     }
 
     public function testAddEmptyMetadata()
@@ -81,7 +77,8 @@ class CallTest extends PHPUnit_Framework_TestCase
     {
         $batch = [
             Grpc\OP_SEND_INITIAL_METADATA => ['key1' => ['value1'],
-                                              'key2' => ['value2', 'value3'], ],
+                                              'key2' => ['value2',
+                                                         'value3', ], ],
         ];
         $result = $this->call->startBatch($batch);
         $this->assertTrue($result->send_metadata);
@@ -94,16 +91,38 @@ class CallTest extends PHPUnit_Framework_TestCase
 
     public function testCancel()
     {
-      $this->assertNull($this->call->cancel());
+        $this->assertNull($this->call->cancel());
     }
 
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testInvalidMetadataKey()
+    public function testInvalidStartBatchKey()
     {
         $batch = [
             'invalid' => ['key1' => 'value1'],
+        ];
+        $result = $this->call->startBatch($batch);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidMetadataStrKey()
+    {
+        $batch = [
+            Grpc\OP_SEND_INITIAL_METADATA => ['Key' => ['value1', 'value2']],
+        ];
+        $result = $this->call->startBatch($batch);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidMetadataIntKey()
+    {
+        $batch = [
+            Grpc\OP_SEND_INITIAL_METADATA => [1 => ['value1', 'value2']],
         ];
         $result = $this->call->startBatch($batch);
     }
@@ -119,4 +138,37 @@ class CallTest extends PHPUnit_Framework_TestCase
         $result = $this->call->startBatch($batch);
     }
 
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidConstuctor()
+    {
+        $this->call = new Grpc\Call();
+        $this->assertNull($this->call);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidConstuctor2()
+    {
+        $this->call = new Grpc\Call('hi', 'hi', 'hi');
+        $this->assertNull($this->call);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidSetCredentials()
+    {
+        $this->call->setCredentials('hi');
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidSetCredentials2()
+    {
+        $this->call->setCredentials([]);
+    }
 }

@@ -1,0 +1,13 @@
+# headers used in simple_request.c
+# use tools/codegen/core/gen_header_frame.py to generate the binary strings
+# contained in the source code
+:path: /foo/bar
+:scheme: http
+:method: POST
+host: localhost
+content-type: application/grpc;this-is-valid
+grpc-accept-encoding: deflate,identity,gzip
+te: trailers
+user-agent: bad-client grpc-c/0.12.0.0 (linux)
+grpc-timeout: 10S
+grpc-timeout: 5S

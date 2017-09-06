@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -41,7 +26,9 @@
 #include <grpc++/support/config.h>
 
 #include "test/cpp/qps/driver.h"
-#include "test/cpp/qps/perf_db_client.h"
+
+#include <grpc++/channel.h>
+#include "src/proto/grpc/testing/services.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -71,6 +58,15 @@ class Reporter {
   /** Reports system and user time for client and server systems. */
   virtual void ReportTimes(const ScenarioResult& result) = 0;
 
+  /** Reports server cpu usage. */
+  virtual void ReportCpuUsage(const ScenarioResult& result) = 0;
+
+  /** Reports client and server poll usage inside completion queue. */
+  virtual void ReportPollCount(const ScenarioResult& result) = 0;
+
+  /** Reports queries per cpu-sec. */
+  virtual void ReportQueriesPerCpuSec(const ScenarioResult& result) = 0;
+
  private:
   const string name_;
 };
@@ -83,10 +79,13 @@ class CompositeReporter : public Reporter {
   /** Adds a \a reporter to the composite. */
   void add(std::unique_ptr<Reporter> reporter);
 
-  void ReportQPS(const ScenarioResult& result) GRPC_OVERRIDE;
-  void ReportQPSPerCore(const ScenarioResult& result) GRPC_OVERRIDE;
-  void ReportLatency(const ScenarioResult& result) GRPC_OVERRIDE;
-  void ReportTimes(const ScenarioResult& result) GRPC_OVERRIDE;
+  void ReportQPS(const ScenarioResult& result) override;
+  void ReportQPSPerCore(const ScenarioResult& result) override;
+  void ReportLatency(const ScenarioResult& result) override;
+  void ReportTimes(const ScenarioResult& result) override;
+  void ReportCpuUsage(const ScenarioResult& result) override;
+  void ReportPollCount(const ScenarioResult& result) override;
+  void ReportQueriesPerCpuSec(const ScenarioResult& result) override;
 
  private:
   std::vector<std::unique_ptr<Reporter> > reporters_;
@@ -98,39 +97,48 @@ class GprLogReporter : public Reporter {
   GprLogReporter(const string& name) : Reporter(name) {}
 
  private:
-  void ReportQPS(const ScenarioResult& result) GRPC_OVERRIDE;
-  void ReportQPSPerCore(const ScenarioResult& result) GRPC_OVERRIDE;
-  void ReportLatency(const ScenarioResult& result) GRPC_OVERRIDE;
-  void ReportTimes(const ScenarioResult& result) GRPC_OVERRIDE;
+  void ReportQPS(const ScenarioResult& result) override;
+  void ReportQPSPerCore(const ScenarioResult& result) override;
+  void ReportLatency(const ScenarioResult& result) override;
+  void ReportTimes(const ScenarioResult& result) override;
+  void ReportCpuUsage(const ScenarioResult& result) override;
+  void ReportPollCount(const ScenarioResult& result) override;
+  void ReportQueriesPerCpuSec(const ScenarioResult& result) override;
 };
 
-/** Reporter for performance database tool */
-class PerfDbReporter : public Reporter {
+/** Dumps the report to a JSON file. */
+class JsonReporter : public Reporter {
  public:
-  PerfDbReporter(const string& name, const string& hashed_id,
-                 const string& test_name, const string& sys_info,
-                 const string& server_address, const string& tag)
-      : Reporter(name),
-        hashed_id_(hashed_id),
-        test_name_(test_name),
-        sys_info_(sys_info),
-        tag_(tag) {
-    perf_db_client_.init(grpc::CreateChannel(
-        server_address, grpc::InsecureChannelCredentials()));
-  }
-  ~PerfDbReporter() GRPC_OVERRIDE { SendData(); };
+  JsonReporter(const string& name, const string& report_file)
+      : Reporter(name), report_file_(report_file) {}
 
  private:
-  PerfDbClient perf_db_client_;
-  std::string hashed_id_;
-  std::string test_name_;
-  std::string sys_info_;
-  std::string tag_;
-  void ReportQPS(const ScenarioResult& result) GRPC_OVERRIDE;
-  void ReportQPSPerCore(const ScenarioResult& result) GRPC_OVERRIDE;
-  void ReportLatency(const ScenarioResult& result) GRPC_OVERRIDE;
-  void ReportTimes(const ScenarioResult& result) GRPC_OVERRIDE;
-  void SendData();
+  void ReportQPS(const ScenarioResult& result) override;
+  void ReportQPSPerCore(const ScenarioResult& result) override;
+  void ReportLatency(const ScenarioResult& result) override;
+  void ReportTimes(const ScenarioResult& result) override;
+  void ReportCpuUsage(const ScenarioResult& result) override;
+  void ReportPollCount(const ScenarioResult& result) override;
+  void ReportQueriesPerCpuSec(const ScenarioResult& result) override;
+
+  const string report_file_;
+};
+
+class RpcReporter : public Reporter {
+ public:
+  RpcReporter(const string& name, std::shared_ptr<grpc::Channel> channel)
+      : Reporter(name), stub_(ReportQpsScenarioService::NewStub(channel)) {}
+
+ private:
+  void ReportQPS(const ScenarioResult& result) override;
+  void ReportQPSPerCore(const ScenarioResult& result) override;
+  void ReportLatency(const ScenarioResult& result) override;
+  void ReportTimes(const ScenarioResult& result) override;
+  void ReportCpuUsage(const ScenarioResult& result) override;
+  void ReportPollCount(const ScenarioResult& result) override;
+  void ReportQueriesPerCpuSec(const ScenarioResult& result) override;
+
+  std::unique_ptr<ReportQpsScenarioService::Stub> stub_;
 };
 
 }  // namespace testing

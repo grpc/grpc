@@ -1,33 +1,18 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
-// All rights reserved.
+// Copyright 2015 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #endregion
 
@@ -38,12 +23,15 @@ using System.Reflection;
 using Grpc.Core;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
+using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Grpc.Core.Tests
 {
     public class SanityTest
     {
+        // TODO: make sanity test work for CoreCLR as well
+#if !NETCOREAPP1_0
         /// <summary>
         /// Because we depend on a native library, sometimes when things go wrong, the
         /// entire NUnit test process crashes. To be able to track down problems better,
@@ -55,27 +43,24 @@ namespace Grpc.Core.Tests
         [Test]
         public void TestsJsonUpToDate()
         {
-            var testClasses = DiscoverAllTestClasses();
-            string testsJson = GetTestsJson();
+            var discoveredTests = DiscoverAllTestClasses();
+            var testsFromFile 
+                = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(ReadTestsJson());
 
-            // we don't have a JSON parser at hand, but check that the test class
-            // name is contained in the file instead.
-            foreach (var className in testClasses) {
-                Assert.IsTrue(testsJson.Contains(className),
-                    string.Format("Test class \"{0}\" is missing in C# tests.json file", className));
-            }
+            Assert.AreEqual(discoveredTests, testsFromFile);
         }
 
         /// <summary>
         /// Gets list of all test classes obtained by inspecting all the test assemblies.
         /// </summary>
-        private List<string> DiscoverAllTestClasses()
+        private Dictionary<string, List<string>> DiscoverAllTestClasses()
         {
             var assemblies = GetTestAssemblies();
 
-            var testClasses = new List<string>();
+            var testsByAssembly = new Dictionary<string, List<string>>();
             foreach (var assembly in assemblies)
             {
+                var testClasses = new List<string>();
                 foreach (var t in assembly.GetTypes())
                 {
                     foreach (var m in t.GetMethods())
@@ -89,16 +74,19 @@ namespace Grpc.Core.Tests
 
                     }
                 }
+                testClasses.Sort();
+                testsByAssembly.Add(assembly.GetName().Name, testClasses);
             }
-            testClasses.Sort();
-            return testClasses;
+            return testsByAssembly;
         }
 
-        private string GetTestsJson()
+        /// <summary>
+        /// Reads contents of tests.json file.
+        /// </summary>
+        private string ReadTestsJson()
         {
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var testsJsonFile = Path.Combine(assemblyDir, "..", "..", "..", "tests.json");
-
+            var testsJsonFile = Path.Combine(assemblyDir, "..", "..", "..", "..", "tests.json");
             return File.ReadAllText(testsJsonFile);
         }
 
@@ -112,7 +100,8 @@ namespace Grpc.Core.Tests
             var otherAssemblies = new[] {
                 "Grpc.Examples.Tests",
                 "Grpc.HealthCheck.Tests",
-                "Grpc.IntegrationTesting"
+                "Grpc.IntegrationTesting",
+                "Grpc.Reflection.Tests",
             };
             foreach (var assemblyName in otherAssemblies)
             {
@@ -121,5 +110,6 @@ namespace Grpc.Core.Tests
             }
             return result;
         }
+#endif
     }
 }

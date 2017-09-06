@@ -1,32 +1,17 @@
 #!/usr/bin/env python2.7
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import argparse
 import collections
@@ -34,6 +19,7 @@ import hashlib
 import itertools
 import json
 import math
+import sys
 import tabulate
 import time
 
@@ -43,11 +29,13 @@ TIME_FROM_SCOPE_START = object()
 TIME_TO_SCOPE_END = object()
 TIME_FROM_STACK_START = object()
 TIME_TO_STACK_END = object()
+TIME_FROM_LAST_IMPORTANT = object()
 
 
 argp = argparse.ArgumentParser(description='Process output of basic_prof builds')
 argp.add_argument('--source', default='latency_trace.txt', type=str)
 argp.add_argument('--fmt', choices=tabulate.tabulate_formats, default='simple')
+argp.add_argument('--out', default='-', type=str)
 args = argp.parse_args()
 
 class LineItem(object):
@@ -78,10 +66,14 @@ class ScopeBuilder(object):
     self.call_stack_builder.lines.append(line_item)
 
   def finish(self, line):
-    assert line['tag'] == self.top_line.tag, 'expected %s, got %s; thread=%s; t0=%f t1=%f' % (self.top_line.tag, line['tag'], line['thd'], self.top_line.start_time, line['t'])
+    assert line['tag'] == self.top_line.tag, (
+        'expected %s, got %s; thread=%s; t0=%f t1=%f' %
+        (self.top_line.tag, line['tag'], line['thd'], self.top_line.start_time,
+         line['t']))
     final_time_stamp = line['t']
     assert self.top_line.end_time is None
     self.top_line.end_time = final_time_stamp
+    self.top_line.important = self.top_line.important or line['imp']
     assert SELF_TIME not in self.top_line.times
     self.top_line.times[SELF_TIME] = final_time_stamp - self.top_line.start_time
     for line in self.call_stack_builder.lines[self.first_child_pos:]:
@@ -101,9 +93,14 @@ class CallStackBuilder(object):
     start_time = self.lines[0].start_time
     end_time = self.lines[0].end_time
     self.signature = self.signature.hexdigest()
+    last_important = start_time
     for line in self.lines:
       line.times[TIME_FROM_STACK_START] = line.start_time - start_time
       line.times[TIME_TO_STACK_END] = end_time - line.end_time
+      line.times[TIME_FROM_LAST_IMPORTANT] = line.start_time - last_important
+      if line.important:
+        last_important = line.end_time
+    last_important = end_time
 
   def add(self, line):
     line_type = line['type']
@@ -113,7 +110,9 @@ class CallStackBuilder(object):
       self.stk.append(ScopeBuilder(self, line))
       return False
     elif line_type == '}':
-      assert self.stk, 'expected non-empty stack for closing %s; thread=%s; t=%f' % (line['tag'], line['thd'], line['t'])
+      assert self.stk, (
+          'expected non-empty stack for closing %s; thread=%s; t=%f' %
+          (line['tag'], line['thd'], line['t']))
       self.stk.pop().finish(line)
       if not self.stk:
         self.finish()
@@ -216,9 +215,16 @@ def time_format(idx):
     return ''
   return ent
 
+BANNER = {
+    'simple': 'Count: %(count)d',
+    'html': '<h1>Count: %(count)d</h1>'
+}
+
 FORMAT = [
   ('TAG', lambda line: '..'*line.indent + tidy_tag(line.tag)),
   ('LOC', lambda line: '%s:%d' % (line.filename[line.filename.rfind('/')+1:], line.fileline)),
+  ('IMP', lambda line: '*' if line.important else ''),
+  ('FROM_IMP', time_format(TIME_FROM_LAST_IMPORTANT)),
   ('FROM_STACK_START', time_format(TIME_FROM_STACK_START)),
   ('SELF', time_format(SELF_TIME)),
   ('TO_STACK_END', time_format(TIME_TO_STACK_END)),
@@ -227,21 +233,20 @@ FORMAT = [
   ('TO_SCOPE_END', time_format(TIME_TO_SCOPE_END)),
 ]
 
-BANNER = {
-    'simple': 'Count: %(count)d',
-    'html': '<h1>Count: %(count)d</h1>'
-}
+out = sys.stdout
+if args.out != '-':
+  out = open(args.out, 'w')
 
 if args.fmt == 'html':
-  print '<html>'
-  print '<head>'
-  print '<title>Profile Report</title>'
-  print '</head>'
+  print >>out, '<html>'
+  print >>out, '<head>'
+  print >>out, '<title>Profile Report</title>'
+  print >>out, '</head>'
 
 accounted_for = 0
 for cs in call_stacks:
   if args.fmt in BANNER:
-    print BANNER[args.fmt] % {
+    print >>out, BANNER[args.fmt] % {
         'count': cs.count,
     }
   header, _ = zip(*FORMAT)
@@ -251,7 +256,7 @@ for cs in call_stacks:
     for _, fn in FORMAT:
       fields.append(fn(line))
     table.append(fields)
-  print tabulate.tabulate(table, header, tablefmt=args.fmt)
+  print >>out, tabulate.tabulate(table, header, tablefmt=args.fmt)
   accounted_for += cs.count
   if accounted_for > .99 * total_stacks:
     break

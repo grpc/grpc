@@ -1,0 +1,11 @@
+// This file exists only to prevent VS2015 from mistakenly picking up
+// project.json file when building .csproj project.
+// See https://github.com/Microsoft/msbuild/issues/394
+{
+  "frameworks": {
+    "net45": { }
+  },
+  "runtimes": {
+    "win": { }
+  }
+}

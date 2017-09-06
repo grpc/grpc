@@ -1,0 +1,43 @@
+%YAML 1.2
+--- |
+  {
+    "name": "grpc-tools",
+    "version": "${settings.node_version}",
+    "author": "Google Inc.",
+    "description": "Tools for developing with gRPC on Node.js",
+    "homepage": "https://grpc.io/",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/grpc/grpc.git"
+    },
+    "bugs": "https://github.com/grpc/grpc/issues",
+    "contributors": [
+      {
+        "name": "Michael Lumish",
+        "email": "mlumish@google.com"
+      }
+    ],
+    "bin": {
+      "grpc_tools_node_protoc": "./bin/protoc.js",
+      "grpc_tools_node_protoc_plugin": "./bin/protoc_plugin.js"
+    },
+    "scripts": {
+      "install": "./node_modules/.bin/node-pre-gyp install"
+    },
+    "bundledDependencies": ["node-pre-gyp"],
+    "binary": {
+      "module_name": "grpc_tools",
+      "host": "https://storage.googleapis.com/",
+      "remote_path": "grpc-precompiled-binaries/node/{name}/v{version}",
+      "package_name": "{platform}-{arch}.tar.gz",
+      "module_path": "bin"
+    },
+    "files": [
+      "index.js",
+      "bin/protoc.js",
+      "bin/protoc_plugin.js",
+      "bin/google/protobuf",
+      "LICENSE"
+    ],
+    "main": "index.js"
+  }

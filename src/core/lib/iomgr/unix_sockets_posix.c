@@ -1,73 +1,76 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
+#include "src/core/lib/iomgr/port.h"
 
-#include "src/core/lib/iomgr/unix_sockets_posix.h"
+#ifdef GRPC_HAVE_UNIX_SOCKET
 
-#ifdef GPR_HAVE_UNIX_SOCKET
+#include "src/core/lib/iomgr/sockaddr.h"
 
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/un.h>
 
+#include "src/core/lib/iomgr/unix_sockets_posix.h"
+
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/useful.h>
 
 void grpc_create_socketpair_if_unix(int sv[2]) {
   GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
 }
 
-grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char *name) {
+grpc_error *grpc_resolve_unix_domain_address(const char *name,
+                                             grpc_resolved_addresses **addrs) {
   struct sockaddr_un *un;
-
-  grpc_resolved_addresses *addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
-  addrs->naddrs = 1;
-  addrs->addrs = gpr_malloc(sizeof(grpc_resolved_address));
-  un = (struct sockaddr_un *)addrs->addrs->addr;
+  if (strlen(name) > GPR_ARRAY_SIZE(((struct sockaddr_un *)0)->sun_path) - 1) {
+    char *err_msg;
+    grpc_error *err;
+    gpr_asprintf(&err_msg,
+                 "Path name should not have more than %" PRIuPTR " characters.",
+                 GPR_ARRAY_SIZE(un->sun_path) - 1);
+    err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(err_msg);
+    gpr_free(err_msg);
+    return err;
+  }
+  *addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
+  (*addrs)->naddrs = 1;
+  (*addrs)->addrs = gpr_malloc(sizeof(grpc_resolved_address));
+  un = (struct sockaddr_un *)(*addrs)->addrs->addr;
   un->sun_family = AF_UNIX;
   strcpy(un->sun_path, name);
-  addrs->addrs->len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
-  return addrs;
+  (*addrs)->addrs->len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
+  return GRPC_ERROR_NONE;
 }
 
-int grpc_is_unix_socket(const struct sockaddr *addr) {
+int grpc_is_unix_socket(const grpc_resolved_address *resolved_addr) {
+  const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   return addr->sa_family == AF_UNIX;
 }
 
-void grpc_unlink_if_unix_domain_socket(const struct sockaddr *addr) {
+void grpc_unlink_if_unix_domain_socket(
+    const grpc_resolved_address *resolved_addr) {
+  const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   if (addr->sa_family != AF_UNIX) {
     return;
   }
-  struct sockaddr_un *un = (struct sockaddr_un *)addr;
+  struct sockaddr_un *un = (struct sockaddr_un *)resolved_addr->addr;
   struct stat st;
 
   if (stat(un->sun_path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFSOCK) {
@@ -75,22 +78,9 @@ void grpc_unlink_if_unix_domain_socket(const struct sockaddr *addr) {
   }
 }
 
-int grpc_parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len) {
-  struct sockaddr_un *un = (struct sockaddr_un *)addr;
-
-  un->sun_family = AF_UNIX;
-  strcpy(un->sun_path, uri->path);
-  *len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
-
-  return 1;
-}
-
-char *grpc_unix_get_default_authority(grpc_resolver_factory *factory,
-                                      grpc_uri *uri) {
-  return gpr_strdup("localhost");
-}
-
-char *grpc_sockaddr_to_uri_unix_if_possible(const struct sockaddr *addr) {
+char *grpc_sockaddr_to_uri_unix_if_possible(
+    const grpc_resolved_address *resolved_addr) {
+  const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
   if (addr->sa_family != AF_UNIX) {
     return NULL;
   }

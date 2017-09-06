@@ -3,7 +3,7 @@
 
 Gem::Specification.new do |s|
   s.name          = 'grpc-demo'
-  s.version       = '0.11.0'
+  s.version       = '1.0.0'
   s.authors       = ['gRPC Authors']
   s.email         = 'temiola@google.com'
   s.homepage      = 'https://github.com/grpc/grpc'
@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'grpc', '~> 0.11'
+  s.add_dependency 'grpc', '~> 1.0'
 
   s.add_development_dependency 'bundler', '~> 1.7'
 end

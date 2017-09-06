@@ -1,37 +1,23 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
-// All rights reserved.
+// Copyright 2015 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #endregion
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -41,7 +27,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Core;
+using Grpc.Core.Internal;
 using Grpc.Core.Logging;
+using Grpc.Core.Profiling;
 using Grpc.Core.Utils;
 using NUnit.Framework;
 using Grpc.Testing;
@@ -55,21 +43,22 @@ namespace Grpc.IntegrationTesting
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ClientRunners>();
 
+        // Profilers to use for clients.
+        static readonly BlockingCollection<BasicProfiler> profilers = new BlockingCollection<BasicProfiler>();
+
+        internal static void AddProfiler(BasicProfiler profiler)
+        {
+            GrpcPreconditions.CheckNotNull(profiler);
+            profilers.Add(profiler);
+        }
+
         /// <summary>
         /// Creates a started client runner.
         /// </summary>
         public static IClientRunner CreateStarted(ClientConfig config)
         {
             Logger.Debug("ClientConfig: {0}", config);
-            string target = config.ServerTargets.Single();
-            GrpcPreconditions.CheckArgument(config.LoadParams.LoadCase == LoadParams.LoadOneofCase.ClosedLoop,
-                "Only closed loop scenario supported for C#");
-            GrpcPreconditions.CheckArgument(config.ClientChannels == 1, "ClientConfig.ClientChannels needs to be 1");
 
-            if (config.OutstandingRpcsPerChannel != 0)
-            {
-                Logger.Warning("ClientConfig.OutstandingRpcsPerChannel is not supported for C#. Ignoring the value");
-            }
             if (config.AsyncClientThreads != 0)
             {
                 Logger.Warning("ClientConfig.AsyncClientThreads is not supported for C#. Ignoring the value");
@@ -83,59 +72,107 @@ namespace Grpc.IntegrationTesting
                 Logger.Warning("ClientConfig.CoreList is not supported for C#. Ignoring the value");
             }
 
-            var credentials = config.SecurityParams != null ? TestCredentials.CreateSslCredentials() : ChannelCredentials.Insecure;
+            var channels = CreateChannels(config.ClientChannels, config.ServerTargets, config.SecurityParams);
+
+            return new ClientRunnerImpl(channels,
+                config.ClientType,
+                config.RpcType,
+                config.OutstandingRpcsPerChannel,
+                config.LoadParams,
+                config.PayloadConfig,
+                config.HistogramParams,
+                () => GetNextProfiler());
+        }
+
+        private static List<Channel> CreateChannels(int clientChannels, IEnumerable<string> serverTargets, SecurityParams securityParams)
+        {
+            GrpcPreconditions.CheckArgument(clientChannels > 0, "clientChannels needs to be at least 1.");
+            GrpcPreconditions.CheckArgument(serverTargets.Count() > 0, "at least one serverTarget needs to be specified.");
+
+            var credentials = securityParams != null ? TestCredentials.CreateSslCredentials() : ChannelCredentials.Insecure;
             List<ChannelOption> channelOptions = null;
-            if (config.SecurityParams != null && config.SecurityParams.ServerHostOverride != "")
+            if (securityParams != null && securityParams.ServerHostOverride != "")
             {
                 channelOptions = new List<ChannelOption>
                 {
-                    new ChannelOption(ChannelOptions.SslTargetNameOverride, config.SecurityParams.ServerHostOverride)
+                    new ChannelOption(ChannelOptions.SslTargetNameOverride, securityParams.ServerHostOverride)
                 };
             }
-            var channel = new Channel(target, credentials, channelOptions);
 
-            return new ClientRunnerImpl(channel,
-                config.ClientType,
-                config.RpcType,
-                config.PayloadConfig,
-                config.HistogramParams);
+            var result = new List<Channel>();
+            for (int i = 0; i < clientChannels; i++)
+            {
+                var target = serverTargets.ElementAt(i % serverTargets.Count());
+                var channel = new Channel(target, credentials, channelOptions);
+                result.Add(channel);
+            }
+            return result;
+        }
+
+        private static BasicProfiler GetNextProfiler()
+        {
+            BasicProfiler result = null;
+            profilers.TryTake(out result);
+            return result;
         }
     }
 
-    public class ClientRunnerImpl : IClientRunner
+    internal class ClientRunnerImpl : IClientRunner
     {
         const double SecondsToNanos = 1e9;
 
-        readonly Channel channel;
+        readonly List<Channel> channels;
         readonly ClientType clientType;
         readonly RpcType rpcType;
         readonly PayloadConfig payloadConfig;
-        readonly Histogram histogram;
+        readonly Lazy<byte[]> cachedByteBufferRequest;
+        readonly ThreadLocal<Histogram> threadLocalHistogram;
 
-        readonly BenchmarkService.IBenchmarkServiceClient client;
-        readonly Task runnerTask;
-        readonly CancellationTokenSource stoppedCts;
+        readonly List<Task> runnerTasks;
+        readonly CancellationTokenSource stoppedCts = new CancellationTokenSource();
         readonly WallClockStopwatch wallClockStopwatch = new WallClockStopwatch();
+        readonly AtomicCounter statsResetCount = new AtomicCounter();
         
-        public ClientRunnerImpl(Channel channel, ClientType clientType, RpcType rpcType, PayloadConfig payloadConfig, HistogramParams histogramParams)
+        public ClientRunnerImpl(List<Channel> channels, ClientType clientType, RpcType rpcType, int outstandingRpcsPerChannel, LoadParams loadParams, PayloadConfig payloadConfig, HistogramParams histogramParams, Func<BasicProfiler> profilerFactory)
         {
-            this.channel = GrpcPreconditions.CheckNotNull(channel);
+            GrpcPreconditions.CheckArgument(outstandingRpcsPerChannel > 0, "outstandingRpcsPerChannel");
+            GrpcPreconditions.CheckNotNull(histogramParams, "histogramParams");
+            this.channels = new List<Channel>(channels);
             this.clientType = clientType;
             this.rpcType = rpcType;
             this.payloadConfig = payloadConfig;
-            this.histogram = new Histogram(histogramParams.Resolution, histogramParams.MaxPossible);
+            this.cachedByteBufferRequest = new Lazy<byte[]>(() => new byte[payloadConfig.BytebufParams.ReqSize]);
+            this.threadLocalHistogram = new ThreadLocal<Histogram>(() => new Histogram(histogramParams.Resolution, histogramParams.MaxPossible), true);
 
-            this.stoppedCts = new CancellationTokenSource();
-            this.client = BenchmarkService.NewClient(channel);
-
-            var threadBody = GetThreadBody();
-            this.runnerTask = Task.Factory.StartNew(threadBody, TaskCreationOptions.LongRunning);
+            this.runnerTasks = new List<Task>();
+            foreach (var channel in this.channels)
+            {
+                for (int i = 0; i < outstandingRpcsPerChannel; i++)
+                {
+                    var timer = CreateTimer(loadParams, 1.0 / this.channels.Count / outstandingRpcsPerChannel);
+                    var optionalProfiler = profilerFactory();
+                    this.runnerTasks.Add(RunClientAsync(channel, timer, optionalProfiler));
+                }
+            }
         }
 
         public ClientStats GetStats(bool reset)
         {
-            var histogramData = histogram.GetSnapshot(reset);
+            var histogramData = new HistogramData();
+            foreach (var hist in threadLocalHistogram.Values)
+            {
+                hist.GetSnapshot(histogramData, reset);
+            }
+
             var secondsElapsed = wallClockStopwatch.GetElapsedSnapshot(reset).TotalSeconds;
+
+            if (reset)
+            {
+                statsResetCount.Increment();
+            }
+
+            GrpcEnvironment.Logger.Info("[ClientRunnerImpl.GetStats] GC collection counts: gen0 {0}, gen1 {1}, gen2 {2}, (histogram reset count:{3}, seconds since reset: {4})",
+                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), statsResetCount.Count, secondsElapsed);
 
             // TODO: populate user time and system time
             return new ClientStats
@@ -150,28 +187,52 @@ namespace Grpc.IntegrationTesting
         public async Task StopAsync()
         {
             stoppedCts.Cancel();
-            await runnerTask;
-            await channel.ShutdownAsync();
+            foreach (var runnerTask in runnerTasks)
+            {
+                await runnerTask;
+            }
+            foreach (var channel in channels)
+            {
+                await channel.ShutdownAsync();
+            }
         }
 
-        private void RunClosedLoopUnary()
+        private void RunUnary(Channel channel, IInterarrivalTimer timer, BasicProfiler optionalProfiler)
         {
+            if (optionalProfiler != null)
+            {
+                Profilers.SetForCurrentThread(optionalProfiler);
+            }
+
+            bool profilerReset = false;
+
+            var client = new BenchmarkService.BenchmarkServiceClient(channel);
             var request = CreateSimpleRequest();
             var stopwatch = new Stopwatch();
 
             while (!stoppedCts.Token.IsCancellationRequested)
             {
+                // after the first stats reset, also reset the profiler.
+                if (optionalProfiler != null && !profilerReset && statsResetCount.Count > 0)
+                {
+                    optionalProfiler.Reset();
+                    profilerReset = true;
+                }
+
                 stopwatch.Restart();
                 client.UnaryCall(request);
                 stopwatch.Stop();
 
                 // spec requires data point in nanoseconds.
-                histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+                threadLocalHistogram.Value.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+
+                timer.WaitForNext();
             }
         }
 
-        private async Task RunClosedLoopUnaryAsync()
+        private async Task RunUnaryAsync(Channel channel, IInterarrivalTimer timer)
         {
+            var client = new BenchmarkService.BenchmarkServiceClient(channel);
             var request = CreateSimpleRequest();
             var stopwatch = new Stopwatch();
 
@@ -182,12 +243,15 @@ namespace Grpc.IntegrationTesting
                 stopwatch.Stop();
 
                 // spec requires data point in nanoseconds.
-                histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+                threadLocalHistogram.Value.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+
+                await timer.WaitForNextAsync();
             }
         }
 
-        private async Task RunClosedLoopStreamingAsync()
+        private async Task RunStreamingPingPongAsync(Channel channel, IInterarrivalTimer timer)
         {
+            var client = new BenchmarkService.BenchmarkServiceClient(channel);
             var request = CreateSimpleRequest();
             var stopwatch = new Stopwatch();
 
@@ -201,7 +265,9 @@ namespace Grpc.IntegrationTesting
                     stopwatch.Stop();
 
                     // spec requires data point in nanoseconds.
-                    histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+                    threadLocalHistogram.Value.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+
+                    await timer.WaitForNextAsync();
                 }
 
                 // finish the streaming call
@@ -210,9 +276,9 @@ namespace Grpc.IntegrationTesting
             }
         }
 
-        private async Task RunGenericClosedLoopStreamingAsync()
+        private async Task RunGenericStreamingAsync(Channel channel, IInterarrivalTimer timer)
         {
-            var request = CreateByteBufferRequest();
+            var request = cachedByteBufferRequest.Value;
             var stopwatch = new Stopwatch();
 
             var callDetails = new CallInvocationDetails<byte[], byte[]>(channel, GenericService.StreamingCallMethod, new CallOptions());
@@ -227,7 +293,9 @@ namespace Grpc.IntegrationTesting
                     stopwatch.Stop();
 
                     // spec requires data point in nanoseconds.
-                    histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+                    threadLocalHistogram.Value.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+
+                    await timer.WaitForNextAsync();
                 }
 
                 // finish the streaming call
@@ -236,38 +304,30 @@ namespace Grpc.IntegrationTesting
             }
         }
 
-        private Action GetThreadBody()
+        private Task RunClientAsync(Channel channel, IInterarrivalTimer timer, BasicProfiler optionalProfiler)
         {
             if (payloadConfig.PayloadCase == PayloadConfig.PayloadOneofCase.BytebufParams)
             {
-                GrpcPreconditions.CheckArgument(clientType == ClientType.ASYNC_CLIENT, "Generic client only supports async API");
-                GrpcPreconditions.CheckArgument(rpcType == RpcType.STREAMING, "Generic client only supports streaming calls");
-                return () =>
-                {
-                    RunGenericClosedLoopStreamingAsync().Wait();
-                };
+                GrpcPreconditions.CheckArgument(clientType == ClientType.AsyncClient, "Generic client only supports async API");
+                GrpcPreconditions.CheckArgument(rpcType == RpcType.Streaming, "Generic client only supports streaming calls");
+                return RunGenericStreamingAsync(channel, timer);
             }
 
             GrpcPreconditions.CheckNotNull(payloadConfig.SimpleParams);
-            if (clientType == ClientType.SYNC_CLIENT)
+            if (clientType == ClientType.SyncClient)
             {
-                GrpcPreconditions.CheckArgument(rpcType == RpcType.UNARY, "Sync client can only be used for Unary calls in C#");
-                return RunClosedLoopUnary;
+                GrpcPreconditions.CheckArgument(rpcType == RpcType.Unary, "Sync client can only be used for Unary calls in C#");
+                // create a dedicated thread for the synchronous client
+                return Task.Factory.StartNew(() => RunUnary(channel, timer, optionalProfiler), TaskCreationOptions.LongRunning);
             }
-            else if (clientType == ClientType.ASYNC_CLIENT)
+            else if (clientType == ClientType.AsyncClient)
             {
                 switch (rpcType)
                 {
-                    case RpcType.UNARY:
-                        return () =>
-                        {
-                            RunClosedLoopUnaryAsync().Wait();
-                        };
-                    case RpcType.STREAMING:
-                        return () =>
-                        {
-                            RunClosedLoopStreamingAsync().Wait();
-                        };
+                    case RpcType.Unary:
+                        return RunUnaryAsync(channel, timer);
+                    case RpcType.Streaming:
+                        return RunStreamingPingPongAsync(channel, timer);
                 }
             }
             throw new ArgumentException("Unsupported configuration.");
@@ -283,14 +343,22 @@ namespace Grpc.IntegrationTesting
             };
         }
 
-        private byte[] CreateByteBufferRequest()
-        {
-            return new byte[payloadConfig.BytebufParams.ReqSize];
-        }
-
         private static Payload CreateZerosPayload(int size)
         {
             return new Payload { Body = ByteString.CopyFrom(new byte[size]) };
+        }
+
+        private static IInterarrivalTimer CreateTimer(LoadParams loadParams, double loadMultiplier)
+        {
+            switch (loadParams.LoadCase)
+            {
+                case LoadParams.LoadOneofCase.ClosedLoop:
+                    return new ClosedLoopInterarrivalTimer();
+                case LoadParams.LoadOneofCase.Poisson:
+                    return new PoissonInterarrivalTimer(loadParams.Poisson.OfferedLoad * loadMultiplier);
+                default:
+                    throw new ArgumentException("Unknown load type");
+            }
         }
     }
 }

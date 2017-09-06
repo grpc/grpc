@@ -1,10 +1,48 @@
 source 'https://github.com/CocoaPods/Specs.git'
 platform :ios, '8.0'
 
-pod 'Protobuf', :path => "../../../../third_party/protobuf"
-pod 'BoringSSL', :podspec => "../.."
-pod 'gRPC', :path => "../../../.."
-pod 'RemoteTest', :path => "../RemoteTestClient"
+install! 'cocoapods', :deterministic_uuids => false
+
+use_frameworks! if ENV['FRAMEWORKS'] == 'YES'
+
+# Location of gRPC's repo root relative to this file.
+GRPC_LOCAL_SRC = '../../../..'
 
 target 'Sample' do
+  # Depend on the generated RemoteTestClient library
+  pod 'RemoteTest', :path => "../RemoteTestClient"
+
+  # Use the local versions of Protobuf, BoringSSL, and gRPC. You don't need any of the following
+  # lines in your application.
+  pod '!ProtoCompiler',  :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
+  pod '!ProtoCompiler-gRPCPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
+
+  pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf"
+
+  pod 'BoringSSL', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
+
+  pod 'gRPC', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-Core', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-ProtoRPC',  :path => GRPC_LOCAL_SRC
+end
+
+# This pre_install hook is only needed to use the local version of gRPC-Core. You don't need it in
+# your application.
+pre_install do |installer|
+  # This is the gRPC-Core podspec object, as initialized by its podspec file.
+  grpc_core_spec = installer.pod_targets.find{|t| t.name == 'gRPC-Core'}.root_spec
+
+  # Copied from gRPC-Core.podspec, except for the adjusted src_root:
+  src_root = "$(PODS_ROOT)/../#{GRPC_LOCAL_SRC}"
+  grpc_core_spec.pod_target_xcconfig = {
+    'GRPC_SRC_ROOT' => src_root,
+    'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(GRPC_SRC_ROOT)/include"',
+    'USER_HEADER_SEARCH_PATHS' => '"$(GRPC_SRC_ROOT)"',
+    # If we don't set these two settings, `include/grpc/support/time.h` and
+    # `src/core/lib/support/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
+    # build.
+    'USE_HEADERMAP' => 'NO',
+    'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+  }
 end

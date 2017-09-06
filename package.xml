@@ -10,26 +10,27 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2016-03-01</date>
+ <date>2017-05-22</date>
  <time>16:06:07</time>
  <version>
-  <release>0.14.0</release>
-  <api>0.14.0</api>
+  <release>1.7.0dev</release>
+  <api>1.7.0dev</api>
  </version>
  <stability>
   <release>beta</release>
   <api>beta</api>
  </stability>
- <license>BSD</license>
+ <license>Apache 2.0</license>
  <notes>
-- Increase unit test code coverage #5225
+- Channel are now by default persistent #11878
+- Some bug fixes from 1.4 branch #12109, #12123
+- Fixed hang bug when fork() was used #11814
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
     <file baseinstalldir="/" name="config.m4" role="src" />
+    <file baseinstalldir="/" name="config.w32" role="src" />
     <file baseinstalldir="/" name="src/php/README.md" role="src" />
-    <file baseinstalldir="/" name="src/php/ext/grpc/CREDITS" role="src" />
-    <file baseinstalldir="/" name="src/php/ext/grpc/LICENSE" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/byte_buffer.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/call.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/call_credentials.c" role="src" />
@@ -46,45 +47,32 @@
     <file baseinstalldir="/" name="src/php/ext/grpc/channel.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/channel_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/completion_queue.h" role="src" />
+    <file baseinstalldir="/" name="src/php/ext/grpc/php7_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/php_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/server.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/server_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/timeval.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/alloc.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_sync.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_win32.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/log.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/slice_buffer.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_win32.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/time.h" role="src" />
+    <file baseinstalldir="/" name="src/php/ext/grpc/version.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/alloc.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/atm.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/atm_gcc_atomic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/atm_gcc_sync.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/atm_win32.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/atm_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/avl.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/cmdline.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/cpu.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/histogram.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/host_port.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/log.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/log_win32.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/log_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/port_platform.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/slice.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/slice_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/string_util.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/subprocess.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/sync_custom.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync_posix.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/sync_win32.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/thd.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/time.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/tls.h" role="src" />
@@ -92,21 +80,40 @@
     <file baseinstalldir="/" name="include/grpc/support/tls_msvc.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/tls_pthread.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/useful.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_sync.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_windows.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_slice.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_types.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_custom.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/arena.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/atomic.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/atomic_with_atm.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/atomic_with_std.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/backoff.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/block_annotate.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/env.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/load_file.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/memory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/spinlock.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/string_win32.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/thd_internal.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/string_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/time_precise.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/tmpfile.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/stap_timers.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/alloc.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/arena.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/atm.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/avl.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/backoff.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/cmdline.c" role="src" />
@@ -116,60 +123,72 @@
     <file baseinstalldir="/" name="src/core/lib/support/cpu_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/env_linux.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/env_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/env_win32.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/env_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/histogram.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/host_port.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/load_file.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/log.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/log_android.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/log_linux.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/log_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/log_win32.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/log_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/mpscq.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/slice.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/slice_buffer.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/string_win32.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/string_util_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/string_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/subprocess_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/subprocess_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/sync.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/sync_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/sync_win32.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/sync_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/thd.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/thd_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/thd_win32.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/thd_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/time.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/time_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/time_precise.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/time_win32.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/time_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/tls_pthread.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/tmpfile_msys.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/tmpfile_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/tmpfile_win32.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/tmpfile_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/wrap_memcpy.c" role="src" />
-    <file baseinstalldir="/" name="include/grpc/byte_buffer.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/byte_buffer_reader.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/census.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/grpc.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/grpc_security.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/byte_buffer.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/byte_buffer_reader.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/compression_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/connectivity_state.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/exec_ctx_fwd.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/grpc_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/propagation_bits.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/status.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_sync.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_windows.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_slice.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_types.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_custom.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/grpc_security.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/byte_buffer.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/byte_buffer_reader.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/grpc.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/grpc_posix.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/grpc_security_constants.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/load_reporting.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/slice.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/slice_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/status.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/aggregation.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/census_interface.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/census_rpc_stats.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/mlog.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/rpc_metric_id.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/load_balancer_api.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/alpn.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/workaround_list.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/census.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_decoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame.h" role="src" />
@@ -182,92 +201,154 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_encoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_table.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_errors.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/incoming_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/status_conversion.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_map.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/timeout_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/message_compress_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/server/http_server_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/context/security_context.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/composite/composite_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/fake/fake_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/google_default_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/iam/iam_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/jwt/json_token.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/jwt/jwt_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/jwt/jwt_verifier.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/oauth2/oauth2_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/auth_filters.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/lb_targets_info.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/security_connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/util/json_util.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/gts_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_types.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/transport_security_adapter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_connect_handshaker.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_proxy.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/parse_address.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/client_channel.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/compress_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/context.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/subchannel_call_holder.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/client_config.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/connector.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/initial_connect_string.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/lb_policy.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/lb_policy_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/lb_policy_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/resolver.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/resolver_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/resolver_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/subchannel.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/subchannel_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/subchannel_index.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/uri_parser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/algorithm_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/debug/trace.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/compression/stream_compression.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/stats.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/stats_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/format_request.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/closure.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_poll_and_epoll_posix.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/error.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/error_internal.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll1_linux.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll_thread_pool_linux.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epollex_linux.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epollsig_linux.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_poll_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/executor.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/gethostname.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iocp_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_posix.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_uv.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/is_epollexclusive_available.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/load_file.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/lockfree_event.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/nameser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/network_status_tracker.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/polling_entity.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_windows.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_uv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/port.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/resource_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_win32.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_windows.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_factory_posix.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_mutator.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_windows.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/sys_epoll_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_utils_posix.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_uv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/time_averaged_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_generic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_heap.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_manager.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_uv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/udp_server.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_cv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_posix.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_common.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/auth_filters.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/b64.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/handshake.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/json_token.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/jwt_verifier.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/secure_endpoint.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_connector.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_context.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/b64.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_hash_table.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/alarm_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call_test_only.h" role="src" />
@@ -275,49 +356,202 @@
     <file baseinstalldir="/" name="src/core/lib/surface/channel_init.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/completion_queue_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/event_string.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/lame_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/server.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/surface_trace.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/byte_stream.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/error_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/http2_errors.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/pid_controller.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_impl.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/tsi/fake_transport_security.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/tsi/ssl_transport_security.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/tsi/ssl_types.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/tsi/transport_security.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/tsi/transport_security_interface.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/trace.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_common.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_encode.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/context.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/grpc_context.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/grpc_plugin.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/initialize.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/mlog.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/operation.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/placeholders.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/tracing.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/load_balancer_api.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/lb_policy/pick_first/pick_first.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/lb_policy/round_robin/round_robin.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/resolver/dns/native/dns_resolver.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/resolver/sockaddr/sockaddr_resolver.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/secure/secure_channel_create.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/load_reporting.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/load_reporting_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/aggregation.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/base_resources.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/census_interface.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/census_rpc_stats.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/gen/trace_context.pb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/intrusive_hash_map.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/intrusive_hash_map_internal.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/mlog.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/resource.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/rpc_metric_id.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_context.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_label.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_propagation.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_status.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_string.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/tracing.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/max_age/max_age_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/message_size/message_size_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/init.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/channel_args.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker_factory.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/compression/compression.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/compression/message_compress.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/compression/stream_compression.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/stats.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/stats_data.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/http/format_request.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/http/httpcli.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/http/parser.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/closure.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_uv.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/error.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll1_linux.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll_thread_pool_linux.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epollex_linux.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epollsig_linux.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_poll_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/executor.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/gethostname_fallback.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/gethostname_host_name_max.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/gethostname_sysconf.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/iocp_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_uv.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/is_epollexclusive_available.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/load_file.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/lockfree_event.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/network_status_tracker.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/polling_entity.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_uv.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_uv.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_uv.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/resource_quota.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_factory_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_mutator.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_common_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_linux.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_uv.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_uv.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_utils_posix_common.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_uv.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_uv.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/time_averaged_stats.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_generic.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_heap.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_manager.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_uv.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/udp_server.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix_noop.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_cv.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_eventfd.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_nospecial.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/json/json.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/json/json_reader.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/json/json_string.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/json/json_writer.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/b64.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_buffer.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_hash_table.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_intern.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/alarm.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/api_trace.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer_reader.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/call.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/call_details.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/call_log_batch.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/channel.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/channel_init.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/channel_ping.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/completion_queue.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/completion_queue_factory.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/event_string.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/lame_client.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/metadata_array.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/server.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/version.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/byte_stream.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/error_utils.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/metadata.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/pid_controller.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/service_config.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/transport.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/transport_op_string.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/trace.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/alpn.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_decoder.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_plugin.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/flow_control.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_data.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_goaway.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_ping.c" role="src" />
@@ -327,137 +561,119 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_encoder.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_table.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/incoming_metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/parsing.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/status_conversion.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_lists.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_map.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/timeout_encoding.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/writing.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/channel_args.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/client_channel.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/compress_filter.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/http_client_filter.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/http_server_filter.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/subchannel_call_holder.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/client_config.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/connector.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/default_initial_connect_string.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/initial_connect_string.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/lb_policy.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/lb_policy_factory.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/lb_policy_registry.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/resolver.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/resolver_factory.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/resolver_registry.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/subchannel.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/subchannel_factory.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/subchannel_index.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/client_config/uri_parser.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/compression/compression_algorithm.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/compression/message_compress.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/debug/trace.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/http/format_request.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/http/httpcli.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/http_filters_plugin.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/message_compress_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/server/http_server_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli_security_connector.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/http/parser.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/closure.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_windows.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_poll_and_epoll_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/executor.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/iocp_windows.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_windows.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_windows.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_windows.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_common_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_linux.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_windows.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_windows.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_windows.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_windows.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/time_averaged_stats.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/timer.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_heap.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/udp_server.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix_noop.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_eventfd.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_nospecial.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/workqueue_windows.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/json/json.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/json/json_reader.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/json/json_string.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/json/json_writer.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/b64.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/client_auth_filter.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials_metadata.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials_win32.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/google_default_credentials.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/handshake.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/json_token.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/jwt_verifier.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/secure_endpoint.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_connector.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_context.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/server_auth_filter.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/alarm.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/api_trace.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer_reader.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/call.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/call_details.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/call_log_batch.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/channel.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/channel_connectivity.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/channel_init.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/channel_ping.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/completion_queue.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/event_string.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/init.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/context/security_context.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/composite/composite_credentials.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials_metadata.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/fake/fake_credentials.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/credentials_generic.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/google_default_credentials.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/iam/iam_credentials.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/jwt/json_token.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/jwt/jwt_credentials.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/jwt/jwt_verifier.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/oauth2/oauth2_credentials.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/client_auth_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/lb_targets_info.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/security_connector.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/server_auth_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/util/json_util.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init_secure.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/lame_client.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/metadata_array.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/server.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/version.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/byte_stream.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/metadata.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/transport.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/transport_op_string.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/tsi/fake_transport_security.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/tsi/ssl_transport_security.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/tsi/transport_security.c" role="src" />
-    <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.c" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.c" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/gts_transport_security.c" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.c" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.c" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/transport_security.c" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/transport_security_adapter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/secure/secure_channel_create.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/channel_connectivity.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_factory.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_plugin.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/connector.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_connect_handshaker.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_proxy.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_factory.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_registry.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/parse_address.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper_registry.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_factory.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_plugin.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_transport.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_common.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_encode.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/load_reporting.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/load_reporting_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/base_resources.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/context.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/gen/trace_context.pb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/grpc_context.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/grpc_plugin.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/initialize.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/intrusive_hash_map.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/mlog.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/operation.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/placeholders.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/resource.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/trace_context.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/tracing.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/max_age/max_age_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/message_size/message_size_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_utils.c" role="src" />
+    <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/aes/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/asn1_locl.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bio/internal.h" role="src" />
@@ -467,25 +683,24 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/conf/conf_def.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/conf/internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/curve25519/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/des/internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/dh/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/digest/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/digest/md32_common.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/directory.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/dsa/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/ec/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/ec/p256-x86_64-table.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/ec/p256-x86_64.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/modes/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/obj/obj_dat.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/obj/obj_xref.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pkcs8/internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/poly1305/internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/pool/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/rand/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/rsa/internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/test/scoped_types.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/test/test_util.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/charmap.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/vpm_int.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509v3/ext_dat.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509v3/pcy_int.h" role="src" />
@@ -531,10 +746,11 @@
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/md4.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/md5.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/mem.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/include/openssl/nid.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/obj.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/obj_mac.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/objects.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/include/openssl/opensslfeatures.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/include/openssl/opensslconf.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/opensslv.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/ossl_typ.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/pem.h" role="src" />
@@ -542,9 +758,10 @@
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/pkcs7.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/pkcs8.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/poly1305.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/include/openssl/pqueue.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/include/openssl/pool.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/rand.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/rc4.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/include/openssl/ripemd.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/rsa.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/safestack.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/sha.h" role="src" />
@@ -554,23 +771,18 @@
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/stack.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/stack_macros.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/thread.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/include/openssl/time_support.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/tls1.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/type_check.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/x509.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/x509_vfy.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/x509v3.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/test/async_bio.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/test/packeted_bio.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/test/scoped_types.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/test/test_config.h" role="src" />
     <file baseinstalldir="/" name="src/boringssl/err_data.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/aes/aes.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/aes/key_wrap.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/aes/mode_wrappers.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/a_bitstr.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/a_bool.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/a_bytes.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/a_d2i_fp.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/a_dup.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/a_enum.c" role="src" />
@@ -589,26 +801,22 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/asn1_lib.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/asn1_par.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/asn_pack.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/bio_asn1.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/bio_ndef.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/f_enum.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/f_int.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/f_string.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/t_bitst.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/t_pkey.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/tasn_dec.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/tasn_enc.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/tasn_fre.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/tasn_new.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/tasn_prn.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/tasn_typ.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/tasn_utl.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/time_support.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/x_bignum.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/x_long.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/base64/base64.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bio/bio.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bio/bio_mem.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/bio/buffer.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bio/connect.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bio/fd.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bio/file.c" role="src" />
@@ -630,6 +838,7 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/generic.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/kronecker.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/montgomery.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/montgomery_inv.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/mul.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/prime.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/random.c" role="src" />
@@ -637,11 +846,11 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/shift.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bn/sqrt.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/buf/buf.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/bytestring/asn1_compat.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bytestring/ber.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bytestring/cbb.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bytestring/cbs.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/chacha/chacha_generic.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/chacha/chacha_vec.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/chacha/chacha.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher/aead.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher/cipher.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher/derive_key.c" role="src" />
@@ -656,10 +865,15 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/cipher/tls_cbc.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/cmac/cmac.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/conf/conf.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/cpu-aarch64-linux.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/cpu-arm-linux.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/cpu-arm.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/cpu-intel.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/cpu-ppc64le.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/crypto.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/curve25519/curve25519.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/curve25519/spake25519.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/curve25519/x25519-x86_64.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/des/des.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/dh/check.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/dh/dh.c" role="src" />
@@ -667,8 +881,6 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/dh/params.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/digest/digest.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/digest/digests.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/directory_posix.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/directory_win.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/dsa/dsa.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/dsa/dsa_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/ec/ec.c" role="src" />
@@ -687,7 +899,6 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/ecdsa/ecdsa_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/engine/engine.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/err/err.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/algorithm.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/digestsign.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/evp.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/evp_asn1.c" role="src" />
@@ -698,6 +909,7 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/p_rsa.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/p_rsa_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/pbkdf.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/print.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/sign.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/ex_data.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/hkdf/hkdf.c" role="src" />
@@ -711,6 +923,7 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/modes/ctr.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/modes/gcm.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/modes/ofb.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/modes/polyval.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/obj/obj.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/obj/obj_xref.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pem/pem_all.c" role="src" />
@@ -721,13 +934,15 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pem/pem_pkey.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pem/pem_x509.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pem/pem_xaux.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/pkcs8/p5_pbe.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pkcs8/p5_pbev2.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pkcs8/p8_pkey.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/pkcs8/pkcs8.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/poly1305/poly1305.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/poly1305/poly1305_arm.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/poly1305/poly1305_vec.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/pool/pool.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/rand/deterministic.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/rand/fuchsia.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/rand/rand.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/rand/urandom.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/rand/windows.c" role="src" />
@@ -739,6 +954,7 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/rsa/rsa.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/rsa/rsa_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/rsa/rsa_impl.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/sha/sha1-altivec.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/sha/sha1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/sha/sha256.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/sha/sha512.c" role="src" />
@@ -747,16 +963,17 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/thread_none.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/thread_pthread.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/thread_win.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/crypto/time_support.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/a_digest.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/a_sign.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/a_strex.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/a_verify.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/algorithm.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/asn1_gen.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/by_dir.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/by_file.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/i2d_pr.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/pkcs7.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/rsa_pss.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/t_crl.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/t_req.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509/t_x509.c" role="src" />
@@ -829,36 +1046,68 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509v3/v3_skey.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509v3/v3_sxnet.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509v3/v3_utl.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/bio_ssl.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/custom_extensions.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_both.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_clnt.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_lib.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_meth.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_pkt.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_srtp.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_srvr.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/dtls_method.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/dtls_record.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/pqueue/pqueue.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/handshake_client.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/handshake_server.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_both.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_clnt.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_enc.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_lib.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_meth.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_pkt.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_srvr.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_aead_ctx.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_buffer.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_cert.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_cipher.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_ecdh.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_file.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_lib.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_rsa.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_privkey.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_privkey_cc.cc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_session.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_stat.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_transcript.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_x509.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/t1_enc.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/t1_lib.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_both.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_client.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_enc.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_server.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_method.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_record.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/crc32.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/deflate.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzguts.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/inffast.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/inffixed.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/inflate.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/inftrees.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/trees.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zconf.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zutil.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/adler32.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/compress.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/crc32.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/deflate.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzclose.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzlib.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzread.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzwrite.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/infback.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/inffast.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/inflate.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/inftrees.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/trees.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/uncompr.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zutil.c" role="src" />
+    <file name="LICENSE" role="doc" />
   </dir>
  </contents>
  <dependencies>
@@ -970,6 +1219,22 @@ Update to wrap gRPC C Core version 0.10.0
    <license>BSD</license>
    <notes>
 - Simplify gRPC PHP installation #4517
+- Wrap gRPC core library version 0.13
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>0.8.1</release>
+    <api>0.8.1</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2016-03-01</date>
+   <license>BSD</license>
+   <notes>
+- Increase unit test code coverage #5225
    </notes>
   </release>
   <release>
@@ -981,10 +1246,197 @@ Update to wrap gRPC C Core version 0.10.0
     <release>beta</release>
     <api>beta</api>
    </stability>
-   <date>2016-03-01</date>
+   <date>2016-04-19</date>
    <license>BSD</license>
    <notes>
-- Increase unit test code coverage #5225
+- wrap grpc C core version 0.14.0
+- destroy grpc_byte_buffer after startBatch #6096
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>0.15.0</release>
+    <api>0.15.0</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2016-05-18</date>
+   <license>BSD</license>
+   <notes>
+- Updated functions with TSRM macros for ZTS support #6607
+- Load default roots.pem via grpc_set_ssl_roots_override_callback #6848
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.0.0RC1</release>
+    <api>1.0.0RC1</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2016-07-13</date>
+   <license>BSD</license>
+   <notes>
+- GA release
+- Fix shutdown hang problem #4017
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.0.0RC2</release>
+    <api>1.0.0RC2</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2016-07-21</date>
+   <license>BSD</license>
+   <notes>
+- PHP7 Support #7464
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.0.0RC3</release>
+    <api>1.0.0RC3</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2016-07-28</date>
+   <license>BSD</license>
+   <notes>
+- PHP7 Support continued, reduce code duplication #7543
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.0.0RC4</release>
+    <api>1.0.0RC4</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2016-08-09</date>
+   <license>BSD</license>
+   <notes>
+- Fixed Ubuntu compile error #7571, #7642
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.0.0</release>
+    <api>1.0.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2016-08-18</date>
+   <license>BSD</license>
+   <notes>
+- gRPC 1.0.0 release
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.0.1RC1</release>
+    <api>1.0.1RC1</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2016-10-06</date>
+   <license>BSD</license>
+   <notes>
+- Reject metadata keys which are not legal #7881
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.0.1</release>
+    <api>1.0.1</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2016-10-27</date>
+   <license>BSD</license>
+   <notes>
+- Reject metadata keys which are not legal #7881
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.1.0RC1</release>
+    <api>1.1.0RC1</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2017-01-13</date>
+   <license>BSD</license>
+   <notes>
+- PHP Proto3 adoption #8179
+- Various bug fixes
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.1.0</release>
+    <api>1.1.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2017-01-31</date>
+   <license>BSD</license>
+   <notes>
+- PHP Proto3 adoption #8179
+- Various bug fixes
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.0RC1</release>
+    <api>1.2.0RC1</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2017-03-01</date>
+   <license>BSD</license>
+   <notes>
+- Added arg info macros #9751
+- Updated codegen to be consistent with protobuf #9492
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>1.2.0</release>
+    <api>1.2.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2017-03-20</date>
+   <license>BSD</license>
+   <notes>
+- Added arg info macros #9751
+- Updated codegen to be consistent with protobuf #9492
    </notes>
   </release>
  </changelog>

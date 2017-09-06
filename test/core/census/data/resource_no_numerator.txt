@@ -1,0 +1,6 @@
+# Resource without a numerator
+name : 'resource_no_numerator'
+unit {
+  prefix : -3
+  denominator : SECS
+}

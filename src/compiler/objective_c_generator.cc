@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -49,9 +34,9 @@ using ::std::map;
 namespace grpc_objective_c_generator {
 namespace {
 
-void PrintProtoRpcDeclarationAsPragma(Printer *printer,
-                                      const MethodDescriptor *method,
-                                      map< ::grpc::string, ::grpc::string> vars) {
+void PrintProtoRpcDeclarationAsPragma(
+    Printer *printer, const MethodDescriptor *method,
+    map< ::grpc::string, ::grpc::string> vars) {
   vars["client_stream"] = method->client_streaming() ? "stream " : "";
   vars["server_stream"] = method->server_streaming() ? "stream " : "";
 
@@ -60,9 +45,34 @@ void PrintProtoRpcDeclarationAsPragma(Printer *printer,
                  " returns ($server_stream$$response_type$)\n\n");
 }
 
+template <typename DescriptorType>
+static void PrintAllComments(const DescriptorType *desc, Printer *printer) {
+  std::vector<grpc::string> comments;
+  grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING_DETACHED,
+                             &comments);
+  grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING,
+                             &comments);
+  grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_TRAILING,
+                             &comments);
+  if (comments.empty()) {
+    return;
+  }
+  printer->Print("/**\n");
+  for (auto it = comments.begin(); it != comments.end(); ++it) {
+    printer->Print(" * ");
+    size_t start_pos = it->find_first_not_of(' ');
+    if (start_pos != grpc::string::npos) {
+      printer->Print(it->c_str() + start_pos);
+    }
+    printer->Print("\n");
+  }
+  printer->Print(" */\n");
+}
+
 void PrintMethodSignature(Printer *printer, const MethodDescriptor *method,
                           const map< ::grpc::string, ::grpc::string> &vars) {
-  // TODO(jcanizales): Print method comments.
+  // Print comment
+  PrintAllComments(method, printer);
 
   printer->Print(vars, "- ($return_type$)$method_name$With");
   if (method->client_streaming()) {
@@ -75,11 +85,12 @@ void PrintMethodSignature(Printer *printer, const MethodDescriptor *method,
   if (method->server_streaming()) {
     printer->Print(vars,
                    " eventHandler:(void(^)(BOOL done, "
-                   "$response_class$ *response, NSError *error))eventHandler");
+                   "$response_class$ *_Nullable response, NSError *_Nullable "
+                   "error))eventHandler");
   } else {
     printer->Print(vars,
-                   " handler:(void(^)($response_class$ *response, "
-                   "NSError *error))handler");
+                   " handler:(void(^)($response_class$ *_Nullable response, "
+                   "NSError *_Nullable error))handler");
   }
 }
 
@@ -94,11 +105,12 @@ void PrintSimpleSignature(Printer *printer, const MethodDescriptor *method,
 void PrintAdvancedSignature(Printer *printer, const MethodDescriptor *method,
                             map< ::grpc::string, ::grpc::string> vars) {
   vars["method_name"] = "RPCTo" + vars["method_name"];
-  vars["return_type"] = "ProtoRPC *";
+  vars["return_type"] = "GRPCProtoCall *";
   PrintMethodSignature(printer, method, vars);
 }
 
-inline map< ::grpc::string, ::grpc::string> GetMethodVars(const MethodDescriptor *method) {
+inline map< ::grpc::string, ::grpc::string> GetMethodVars(
+    const MethodDescriptor *method) {
   map< ::grpc::string, ::grpc::string> res;
   res["method_name"] = method->name();
   res["request_type"] = method->input_type()->name();
@@ -185,7 +197,8 @@ void PrintMethodImplementations(Printer *printer,
     grpc::protobuf::io::StringOutputStream output_stream(&output);
     Printer printer(&output_stream, '$');
 
-    map< ::grpc::string, ::grpc::string> vars = {{"service_class", ServiceClassName(service)}};
+    map< ::grpc::string, ::grpc::string> vars = {
+        {"service_class", ServiceClassName(service)}};
 
     printer.Print(vars, "@protocol $service_class$ <NSObject>\n\n");
 
@@ -195,11 +208,13 @@ void PrintMethodImplementations(Printer *printer,
     printer.Print("@end\n\n");
 
     printer.Print(
-        "// Basic service implementation, over gRPC, that only does"
-        " marshalling and parsing.\n");
+        "/**\n"
+        " * Basic service implementation, over gRPC, that only does\n"
+        " * marshalling and parsing.\n"
+        " */\n");
     printer.Print(vars,
                   "@interface $service_class$ :"
-                  " ProtoService<$service_class$>\n");
+                  " GRPCProtoService<$service_class$>\n");
     printer.Print(
         "- (instancetype)initWithHost:(NSString *)host"
         " NS_DESIGNATED_INITIALIZER;\n");
@@ -210,28 +225,25 @@ void PrintMethodImplementations(Printer *printer,
 }
 
 ::grpc::string GetSource(const ServiceDescriptor *service) {
- ::grpc::string output;
+  ::grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
     grpc::protobuf::io::StringOutputStream output_stream(&output);
     Printer printer(&output_stream, '$');
 
-    map< ::grpc::string,::grpc::string> vars = {{"service_name", service->name()},
-                                {"service_class", ServiceClassName(service)},
-                                {"package", service->file()->package()}};
-
-    printer.Print(vars,
-                  "static NSString *const kPackageName = @\"$package$\";\n");
-    printer.Print(
-        vars, "static NSString *const kServiceName = @\"$service_name$\";\n\n");
+    map< ::grpc::string, ::grpc::string> vars = {
+        {"service_name", service->name()},
+        {"service_class", ServiceClassName(service)},
+        {"package", service->file()->package()}};
 
     printer.Print(vars, "@implementation $service_class$\n\n");
 
     printer.Print("// Designated initializer\n");
     printer.Print("- (instancetype)initWithHost:(NSString *)host {\n");
     printer.Print(
+        vars,
         "  return (self = [super initWithHost:host"
-        " packageName:kPackageName serviceName:kServiceName]);\n");
+        " packageName:@\"$package$\" serviceName:@\"$service_name$\"]);\n");
     printer.Print("}\n\n");
     printer.Print(
         "// Override superclass initializer to disallow different"

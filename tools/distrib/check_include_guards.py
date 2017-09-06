@@ -1,36 +1,22 @@
 #!/usr/bin/env python2.7
 
-# Copyright 2016, Google Inc.
-# All rights reserved.
+# Copyright 2016 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import argparse
 import os
+import os.path
 import re
 import sys
 import subprocess
@@ -55,7 +41,7 @@ class GuardValidator(object):
   def __init__(self):
     self.ifndef_re = re.compile(r'#ifndef ([A-Z][A-Z_1-9]*)')
     self.define_re = re.compile(r'#define ([A-Z][A-Z_1-9]*)')
-    self.endif_c_re = re.compile(r'#endif /\* ([A-Z][A-Z_1-9]*) \*/')
+    self.endif_c_re = re.compile(r'#endif /\* ([A-Z][A-Z_1-9]*) (?:\\ *\n *)?\*/')
     self.endif_cpp_re = re.compile(r'#endif  // ([A-Z][A-Z_1-9]*)')
     self.failed = False
 
@@ -95,6 +81,9 @@ class GuardValidator(object):
     fcontents = load(fpath)
 
     match = self.ifndef_re.search(fcontents)
+    if not match:
+      print 'something drastically wrong with: %s' % fpath
+      return False # failed
     if match.lastindex is None:
       # No ifndef. Request manual addition with hints
       self.fail(fpath, match.re, match.string, '', '', False)
@@ -129,7 +118,7 @@ class GuardValidator(object):
     # Is there a properly commented #endif?
     endif_re = self.endif_cpp_re if cpp_header else self.endif_c_re
     flines = fcontents.rstrip().splitlines()
-    match = endif_re.search(flines[-1])
+    match = endif_re.search('\n'.join(flines[-2:]))
     if not match:
       # No endif. Check if we have the last line as just '#endif' and if so
       # replace it with a properly commented one.
@@ -167,7 +156,9 @@ argp.add_argument('--precommit',
 args = argp.parse_args()
 
 KNOWN_BAD = set([
-    'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h',
+    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
+    'include/grpc++/ext/reflection.grpc.pb.h',
+    'include/grpc++/ext/reflection.pb.h',
 ])
 
 
@@ -185,6 +176,8 @@ filename_list = []
 try:
   filename_list = subprocess.check_output(FILE_LIST_COMMAND,
                                           shell=True).splitlines()
+  # Filter out non-existent files (ie, file removed or renamed)
+  filename_list = (f for f in filename_list if os.path.isfile(f))
 except subprocess.CalledProcessError:
   sys.exit(0)
 
@@ -192,6 +185,6 @@ validator = GuardValidator()
 
 for filename in filename_list:
   if filename in KNOWN_BAD: continue
-  ok = validator.check(filename, args.fix)
+  ok = ok and validator.check(filename, args.fix)
 
 sys.exit(0 if ok else 1)

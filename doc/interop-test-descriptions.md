@@ -27,11 +27,10 @@ Clients should accept these arguments:
     * Whether to use a plaintext or encrypted connection
 * --use_test_ca=BOOLEAN
     * Whether to replace platform root CAs with
-      [ca.pem](https://github.com/grpc/grpc/blob/master/src/core/lib/tsi/test_creds/ca.pem)
+      [ca.pem](https://github.com/grpc/grpc/blob/master/src/core/tsi/test_creds/ca.pem)
       as the CA root
 * --default_service_account=ACCOUNT_EMAIL
-    * Email of the GCE default service account. Only applicable
-      for compute_engine_creds test.
+    * Email of the GCE default service account.
 * --oauth_scope=SCOPE
     * OAuth scope. For example, "https://www.googleapis.com/auth/xapi.zoo"
 * --service_account_key_file=PATH
@@ -61,6 +60,34 @@ Client asserts:
 *It may be possible to use UnaryCall instead of EmptyCall, but it is harder to
 ensure that the proto serialized to zero bytes.*
 
+### cacheable_unary
+
+This test verifies that gRPC requests marked as cacheable use GET verb instead
+of POST, and that server sets appropriate cache control headers for the response
+to be cached by a proxy. This test requires that the server is behind
+a caching proxy. Use of current timestamp in the request prevents accidental
+cache matches left over from previous tests.
+
+Server features:
+* [CacheableUnaryCall][]
+
+Procedure:
+ 1. Client calls CacheableUnaryCall with `SimpleRequest` request with payload
+    set to current timestamp. Timestamp format is irrelevant, and resolution is
+    in nanoseconds.
+    Client adds a `x-user-ip` header with value `1.2.3.4` to the request.
+    This is done since some proxys such as GFE will not cache requests from
+    localhost.
+    Client marks the request as cacheable by setting the cacheable flag in the
+    request context. Longer term this should be driven by the method option
+    specified in the proto file itself.
+ 2. Client calls CacheableUnaryCall again immediately with the same request and
+    configuration as the previous call.
+
+Client asserts:
+* Both calls were successful
+* The payload body of both responses is the same.
+
 ### large_unary
 
 This test verifies unary calls succeed in sending messages, and touches on flow
@@ -68,14 +95,12 @@ control (even if compression is enabled on the channel).
 
 Server features:
 * [UnaryCall][]
-* [Compressable Payload][]
 
 Procedure:
  1. Client calls UnaryCall with:
 
     ```
     {
-      response_type: COMPRESSABLE
       response_size: 314159
       payload:{
         body: 271828 bytes of zeros
@@ -85,35 +110,107 @@ Procedure:
 
 Client asserts:
 * call was successful
-* response payload type is COMPRESSABLE
 * response payload body is 314159 bytes in size
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response message against a golden response
 
-### large_compressed_unary
+### client_compressed_unary
 
-This test verifies compressed unary calls succeed in sending messages. It
-sends one unary request for every combination of compression algorithm and
-payload type.
+This test verifies the client can compress unary messages by sending two unary
+calls, for compressed and uncompressed payloads. It also sends an initial
+probing request to verify whether the server supports the [CompressedRequest][]
+feature by checking if the probing call fails with an `INVALID_ARGUMENT` status.
 
-In all scenarios, whether compression was actually performed is determined by
-the compression bit in the response's message flags. The response's compression
-value indicates which algorithm was used if said compression bit is set.
+Server features:
+* [UnaryCall][]
+* [CompressedRequest][]
+
+Procedure:
+ 1. Client calls UnaryCall with the feature probe, an *uncompressed* message:
+    ```
+    {
+      expect_compressed:{
+        value: true
+      }
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+
+ 1. Client calls UnaryCall with the *compressed* message:
+
+    ```
+    {
+      expect_compressed:{
+        value: true
+      }
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+
+ 1. Client calls UnaryCall with the *uncompressed* message:
+
+    ```
+    {
+      expect_compressed:{
+        value: false
+      }
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+
+    Client asserts:
+    * First call failed with `INVALID_ARGUMENT` status.
+    * Subsequent calls were successful.
+    * Response payload body is 314159 bytes in size.
+    * Clients are free to assert that the response payload body contents are
+      zeros and comparing the entire response message against a golden response.
+
+
+### server_compressed_unary
+
+This test verifies the server can compress unary messages. It sends two unary
+requests, expecting the server's response to be compressed or not according to
+the `response_compressed` boolean.
+
+Whether compression was actually performed is determined by the compression bit
+in the response's message flags. *Note that some languages may not have access
+to the message flags, in which case the client will be unable to verify that
+the `response_compressed` boolean is obeyed by the server*.
 
 
 Server features:
 * [UnaryCall][]
-* [Compressable Payload][]
-* [Uncompressable Payload][]
-* [Random Payload][]
+* [CompressedResponse][]
 
 Procedure:
- 1. Client calls UnaryCall with:
+ 1. Client calls UnaryCall with `SimpleRequest`:
 
     ```
     {
-      response_compression: <one of {NONE, GZIP, DEFLATE}>
-      response_type: COMPRESSABLE
+      response_compressed:{
+        value: true
+      }
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+
+    ```
+    {
+      response_compressed:{
+        value: false
+      }
       response_size: 314159
       payload:{
         body: 271828 bytes of zeros
@@ -122,54 +219,14 @@ Procedure:
     ```
     Client asserts:
     * call was successful
-    * response payload type is COMPRESSABLE
-    * response compression is consistent with the requested one.
-    * if `response_compression == NONE`, the response MUST NOT have the
-      compressed message flag set.
-    * if `response_compression != NONE`, the response MUST have the compressed
-      message flag set.
-    * response payload body is 314159 bytes in size
+    * if supported by the implementation, when `response_compressed` is true,
+      the response MUST have the compressed message flag set.
+    * if supported by the implementation, when `response_compressed` is false,
+      the response MUST NOT have the compressed message flag set.
+    * response payload body is 314159 bytes in size in both cases.
     * clients are free to assert that the response payload body contents are
       zero and comparing the entire response message against a golden response
 
-
- 2. Client calls UnaryCall with:
-    ```
-    {
-      response_compression: <one of {NONE, GZIP, DEFLATE}>
-      response_type: UNCOMPRESSABLE
-      response_size: 314159
-      payload:{
-        body: 271828 bytes of zeros
-      }
-    }
-    ```
-    Client asserts:
-    * call was successful
-    * response payload type is UNCOMPRESSABLE
-    * response compression is consistent with the requested one.
-    * the response MUST NOT have the compressed message flag set.
-    * response payload body is 314159 bytes in size
-    * clients are free to assert that the response payload body contents are
-      identical to the golden uncompressable data at `test/cpp/interop/rnd.dat`.
-
-
- 3. Client calls UnaryCall with:
-    ```
-    {
-      response_compression: <one of {NONE, GZIP, DEFLATE}>
-      response_type: RANDOM
-      response_size: 314159
-      payload:{
-        body: 271828 bytes of zeros
-      }
-    }
-    ```
-    Client asserts:
-    * call was successful
-    * response payload type is either COMPRESSABLE or UNCOMPRESSABLE
-    * the behavior is consistent with the randomly chosen incoming payload type,
-      as described in their respective sections.
 
 ### client_streaming
 
@@ -177,7 +234,6 @@ This test verifies that client-only streaming succeeds.
 
 Server features:
 * [StreamingInputCall][]
-* [Compressable Payload][]
 
 Procedure:
  1. Client calls StreamingInputCall
@@ -227,20 +283,76 @@ Client asserts:
 * call was successful
 * response aggregated_payload_size is 74922
 
+
+### client_compressed_streaming
+
+This test verifies the client can compress requests on per-message basis by
+performing a two-request streaming call. It also sends an initial probing
+request to verify whether the server supports the [CompressedRequest][] feature
+by checking if the probing call fails with an `INVALID_ARGUMENT` status.
+
+Procedure:
+ 1. Client calls `StreamingInputCall` and sends the following feature-probing
+    *uncompressed* `StreamingInputCallRequest` message
+
+    ```
+    {
+      expect_compressed:{
+        value: true
+      }
+      payload:{
+        body: 27182 bytes of zeros
+      }
+    }
+    ```
+    If the call does not fail with `INVALID_ARGUMENT`, the test fails.
+    Otherwise, we continue.
+
+ 1. Client calls `StreamingInputCall` again, sending the *compressed* message
+
+    ```
+    {
+      expect_compressed:{
+        value: true
+      }
+      payload:{
+        body: 27182 bytes of zeros
+      }
+    }
+    ```
+
+ 1. And finally, the *uncompressed* message
+    ```
+    {
+      expect_compressed:{
+        value: false
+      }
+      payload:{
+        body: 45904 bytes of zeros
+      }
+    }
+    ```
+
+ 1. Client half-closes
+
+Client asserts:
+* First call fails with `INVALID_ARGUMENT`.
+* Next calls succeeds.
+* Response aggregated payload size is 73086.
+
+
 ### server_streaming
 
 This test verifies that server-only streaming succeeds.
 
 Server features:
 * [StreamingOutputCall][]
-* [Compressable Payload][]
 
 Procedure:
- 1. Client calls StreamingOutputCall with:
+ 1. Client calls StreamingOutputCall with `StreamingOutputCallRequest`:
 
     ```
     {
-      response_type:COMPRESSABLE
       response_parameters:{
         size: 31415
       }
@@ -259,116 +371,56 @@ Procedure:
 Client asserts:
 * call was successful
 * exactly four responses
-* response payloads are COMPRESSABLE
 * response payload bodies are sized (in order): 31415, 9, 2653, 58979
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response messages against golden responses
 
 ### server_compressed_streaming
 
-This test verifies that server-only compressed streaming succeeds.
+This test verifies that the server can compress streaming messages and disable
+compression on individual messages, expecting the server's response to be
+compressed or not according to the `response_compressed` boolean.
+
+Whether compression was actually performed is determined by the compression bit
+in the response's message flags. *Note that some languages may not have access
+to the message flags, in which case the client will be unable to verify that the
+`response_compressed` boolean is obeyed by the server*.
 
 Server features:
 * [StreamingOutputCall][]
-* [Compressable Payload][]
-* [Uncompressable Payload][]
-* [Random Payload][]
+* [CompressedResponse][]
 
 
 Procedure:
- 1. Client calls StreamingOutputCall with:
+ 1. Client calls StreamingOutputCall with `StreamingOutputCallRequest`:
 
     ```
     {
-      response_compression: <one of {NONE, GZIP, DEFLATE}>
-      response_type:COMPRESSABLE
       response_parameters:{
+        compressed: {
+          value: true
+        }
         size: 31415
       }
       response_parameters:{
-        size: 9
-      }
-      response_parameters:{
-        size: 2653
-      }
-      response_parameters:{
-        size: 58979
+        compressed: {
+          value: false
+        }
+        size: 92653
       }
     }
     ```
 
     Client asserts:
     * call was successful
-    * exactly four responses
-    * response payloads are COMPRESSABLE
-    * response compression is consistent with the requested one.
-    * if `response_compression == NONE`, the response MUST NOT have the
-      compressed message flag set.
-    * if `response_compression != NONE`, the response MUST have the compressed
-      message flag set.
-    * response payload bodies are sized (in order): 31415, 9, 2653, 58979
+    * exactly two responses
+    * if supported by the implementation, when `response_compressed` is false,
+      the response's messages MUST NOT have the compressed message flag set.
+    * if supported by the implementation, when `response_compressed` is true,
+      the response's messages MUST have the compressed message flag set.
+    * response payload bodies are sized (in order): 31415, 92653
     * clients are free to assert that the response payload body contents are
       zero and comparing the entire response messages against golden responses
-
-
- 2. Client calls StreamingOutputCall with:
-
-    ```
-    {
-      response_compression: <one of {NONE, GZIP, DEFLATE}>
-      response_type:UNCOMPRESSABLE
-      response_parameters:{
-        size: 31415
-      }
-      response_parameters:{
-        size: 9
-      }
-      response_parameters:{
-        size: 2653
-      }
-      response_parameters:{
-        size: 58979
-      }
-    }
-    ```
-
-    Client asserts:
-    * call was successful
-    * exactly four responses
-    * response payloads are UNCOMPRESSABLE
-    * response compressions are consistent with the requested one.
-    * the responses MUST NOT have the compressed message flag set.
-    * response payload bodies are sized (in order): 31415, 9, 2653, 58979
-    * clients are free to assert that the body of the responses are identical to
-      the golden uncompressable data at `test/cpp/interop/rnd.dat`.
-
-
- 3. Client calls StreamingOutputCall with:
-
-    ```
-    {
-      response_compression: <one of {NONE, GZIP, DEFLATE}>
-      response_type:RANDOM
-      response_parameters:{
-        size: 31415
-      }
-      response_parameters:{
-        size: 9
-      }
-      response_parameters:{
-        size: 2653
-      }
-      response_parameters:{
-        size: 58979
-      }
-    }
-    ```
-
-    Client asserts:
-    * call was successful
-    * response payload type is either COMPRESSABLE or UNCOMPRESSABLE
-    * the behavior is consistent with the randomly chosen incoming payload type,
-      as described in their respective sections.
 
 ### ping_pong
 
@@ -376,14 +428,12 @@ This test verifies that full duplex bidi is supported.
 
 Server features:
 * [FullDuplexCall][]
-* [Compressable Payload][]
 
 Procedure:
  1. Client calls FullDuplexCall with:
 
     ```
     {
-      response_type: COMPRESSABLE
       response_parameters:{
         size: 31415
       }
@@ -397,7 +447,6 @@ Procedure:
 
     ```
     {
-      response_type: COMPRESSABLE
       response_parameters:{
         size: 9
       }
@@ -411,7 +460,6 @@ Procedure:
 
     ```
     {
-      response_type: COMPRESSABLE
       response_parameters:{
         size: 2653
       }
@@ -425,7 +473,6 @@ Procedure:
 
     ```
     {
-      response_type: COMPRESSABLE
       response_parameters:{
         size: 58979
       }
@@ -440,7 +487,6 @@ Procedure:
 Client asserts:
 * call was successful
 * exactly four responses
-* response payloads are COMPRESSABLE
 * response payload bodies are sized (in order): 31415, 9, 2653, 58979
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response messages against golden responses
@@ -470,12 +516,12 @@ with desired oauth scope.
 
 The test uses `--default_service_account` with GCE service account email and
 `--oauth_scope` with the OAuth scope to use. For testing against
-grpc-test.sandbox.googleapis.com, "https://www.googleapis.com/auth/xapi.zoo" should
+grpc-test.sandbox.googleapis.com, "https://www.googleapis.com/auth/xapi.zoo"
+should
 be passed in as `--oauth_scope`.
 
 Server features:
 * [UnaryCall][]
-* [Compressable Payload][]
 * [Echo Authenticated Username][]
 * [Echo OAuth Scope][]
 
@@ -485,7 +531,6 @@ Procedure:
 
     ```
     {
-      response_type: COMPRESSABLE
       response_size: 314159
       payload:{
         body: 271828 bytes of zeros
@@ -497,7 +542,8 @@ Procedure:
 
 Client asserts:
 * call was successful
-* received SimpleResponse.username equals the value of `--default_service_account` flag
+* received SimpleResponse.username equals the value of
+  `--default_service_account` flag
 * received SimpleResponse.oauth_scope is in `--oauth_scope`
 * response payload body is 314159 bytes in size
 * clients are free to assert that the response payload body contents are zero
@@ -518,7 +564,6 @@ variable GOOGLE_APPLICATION_CREDENTIALS.
 
 Server features:
 * [UnaryCall][]
-* [Compressable Payload][]
 * [Echo Authenticated Username][]
 * [Echo OAuth Scope][]
 
@@ -528,7 +573,6 @@ Procedure:
 
     ```
     {
-      response_type: COMPRESSABLE
       response_size: 314159
       payload:{
         body: 271828 bytes of zeros
@@ -541,7 +585,8 @@ Client asserts:
 * call was successful
 * received SimpleResponse.username is not empty and is in the json key file used
 by the auth library. The client can optionally check the username matches the
-email address in the key file or equals the value of `--default_service_account` flag.
+email address in the key file or equals the value of `--default_service_account`
+flag.
 * response payload body is 314159 bytes in size
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response message against a golden response
@@ -567,18 +612,18 @@ variable GOOGLE_APPLICATION_CREDENTIALS, *OR* if GCE credentials is used to
 fetch the token, `--default_service_account` can be used to pass in GCE service
 account email.
 - uses the flag `--oauth_scope` for the oauth scope.  For testing against
-grpc-test.sandbox.googleapis.com, "https://www.googleapis.com/auth/xapi.zoo" should
-be passed as the `--oauth_scope`.
+grpc-test.sandbox.googleapis.com, "https://www.googleapis.com/auth/xapi.zoo"
+should be passed as the `--oauth_scope`.
 
 Server features:
 * [UnaryCall][]
-* [Compressable Payload][]
 * [Echo Authenticated Username][]
 * [Echo OAuth Scope][]
 
 Procedure:
  1. Client uses the auth library to obtain an authorization token
- 2. Client configures the channel to use AccessTokenCredentials with the access token obtained in step 1
+ 2. Client configures the channel to use AccessTokenCredentials with the access
+    token obtained in step 1
  3. Client calls UnaryCall with the following message
 
     ```
@@ -599,22 +644,21 @@ json key file or GCE default service account email.
 
 Similar to the other auth tests, this test is only for cloud-to-prod path.
 
-This test verifies unary calls succeed in sending messages using a JWT or a service account
-credentials set on the RPC.
+This test verifies unary calls succeed in sending messages using a JWT or a
+service account credentials set on the RPC.
 
 The test
 - uses the flag `--service_account_key_file` with the path to a json key file
 downloaded from https://console.developers.google.com. Alternately, if using a
 usable auth implementation, it may specify the file location in the environment
 variable GOOGLE_APPLICATION_CREDENTIALS
-- optionally uses the flag `--oauth_scope` for the oauth scope if implementator 
+- optionally uses the flag `--oauth_scope` for the oauth scope if implementator
 wishes to use service account credential instead of JWT credential. For testing
-against grpc-test.sandbox.googleapis.com, oauth scope 
+against grpc-test.sandbox.googleapis.com, oauth scope
 "https://www.googleapis.com/auth/xapi.zoo" should be used.
 
 Server features:
 * [UnaryCall][]
-* [Compressable Payload][]
 * [Echo Authenticated Username][]
 * [Echo OAuth Scope][]
 
@@ -645,7 +689,6 @@ by the server.
 Server features:
 * [UnaryCall][]
 * [FullDuplexCall][]
-* [Compressable Payload][]
 * [Echo Metadata][]
 
 Procedure:
@@ -660,7 +703,6 @@ Procedure:
 
     ```
     {
-      response_type: COMPRESSABLE
       response_size: 314159
       payload:{
         body: 271828 bytes of zeros
@@ -679,8 +721,9 @@ Procedure:
 
     ```
     {
-      response_type: COMPRESSABLE
-      response_size: 314159
+      response_parameters:{
+        size: 314159
+      }
       payload:{
         body: 271828 bytes of zeros
       }
@@ -743,16 +786,15 @@ Client asserts:
 
 ### unimplemented_method
 
-Status: Ready for implementation. Blocking beta.
-
-This test verifies calling unimplemented RPC method returns the UNIMPLEMENTED status code.
+This test verifies that calling an unimplemented RPC method returns the
+UNIMPLEMENTED status code.
 
 Server features:
 N/A
 
 Procedure:
-* Client calls `grpc.testing.UnimplementedService/UnimplementedCall` with an
-  empty request (defined as `grpc.testing.Empty`):
+* Client calls `grpc.testing.TestService/UnimplementedCall` with an empty
+  request (defined as `grpc.testing.Empty`):
 
     ```
     {
@@ -761,7 +803,21 @@ Procedure:
 
 Client asserts:
 * received status code is 12 (UNIMPLEMENTED)
-* received status message is empty or null/unset
+
+### unimplemented_service
+
+This test verifies calling an unimplemented server returns the UNIMPLEMENTED
+status code.
+
+Server features:
+N/A
+
+Procedure:
+* Client calls `grpc.testing.UnimplementedService/UnimplementedCall` with an
+  empty request (defined as `grpc.testing.Empty`)
+
+Client asserts:
+* received status code is 12 (UNIMPLEMENTED)
 
 ### cancel_after_begin
 
@@ -785,14 +841,12 @@ from the server.
 
 Server features:
 * [FullDuplexCall][]
-* [Compressable Payload][]
 
 Procedure:
  1. Client starts FullDuplexCall with
 
     ```
     {
-      response_type: COMPRESSABLE
       response_parameters:{
         size: 31415
       }
@@ -920,7 +974,7 @@ Servers should accept these arguments:
     * Whether to use a plaintext or encrypted connection
 
 Servers must support TLS with ALPN. They should use
-[server1.pem](https://github.com/grpc/grpc/blob/master/src/core/lib/tsi/test_creds/server1.pem)
+[server1.pem](https://github.com/grpc/grpc/blob/master/src/core/tsi/test_creds/server1.pem)
 for their certificate.
 
 ### EmptyCall
@@ -932,9 +986,37 @@ Server implements EmptyCall which immediately returns the empty message.
 [UnaryCall]: #unarycall
 
 Server implements UnaryCall which immediately returns a SimpleResponse with a
-payload body of size SimpleRequest.response_size bytes and type as appropriate
-for the SimpleRequest.response_type. If the server does not support the
-response_type, then it should fail the RPC with INVALID_ARGUMENT.
+payload body of size `SimpleRequest.response_size` bytes and type as appropriate
+for the `SimpleRequest.response_type`. If the server does not support the
+`response_type`, then it should fail the RPC with `INVALID_ARGUMENT`.
+
+### CacheableUnaryCall
+[CacheableUnaryCall]: #cacheableunarycall
+
+Server gets the default SimpleRequest proto as the request. The content of the
+request is ignored. It returns the SimpleResponse proto with the payload set
+to current timestamp.  The timestamp is an integer representing current time
+with nanosecond resolution. This integer is formated as ASCII decimal in the
+response. The format is not really important as long as the response payload
+is different for each request. In addition it adds
+  1. cache control headers such that the response can be cached by proxies in
+     the response path. Server should be behind a caching proxy for this test
+     to pass. Currently we set the max-age to 60 seconds.
+
+### CompressedResponse
+[CompressedResponse]: #compressedresponse
+
+When the client sets `response_compressed` to true, the server's response is
+sent back compressed. Note that `response_compressed` is present on both
+`SimpleRequest` (unary) and `StreamingOutputCallRequest` (streaming).
+
+### CompressedRequest
+[CompressedRequest]: #compressedrequest
+
+When the client sets `expect_compressed` to true, the server expects the client
+request to be compressed. If it's not, it fails the RPC with `INVALID_ARGUMENT`.
+Note that `response_compressed` is present on both `SimpleRequest` (unary) and
+`StreamingOutputCallRequest` (streaming).
 
 ### StreamingInputCall
 [StreamingInputCall]: #streaminginputcall
@@ -947,8 +1029,8 @@ request payload bodies received.
 [StreamingOutputCall]: #streamingoutputcall
 
 Server implements StreamingOutputCall by replying, in order, with one
-StreamingOutputCallResponses for each ResponseParameters in
-StreamingOutputCallRequest. Each StreamingOutputCallResponses should have a
+StreamingOutputCallResponse for each ResponseParameters in
+StreamingOutputCallRequest. Each StreamingOutputCallResponse should have a
 payload body of size ResponseParameters.size bytes, as specified by its
 respective ResponseParameters. After sending all responses, it closes with OK.
 
@@ -956,33 +1038,11 @@ respective ResponseParameters. After sending all responses, it closes with OK.
 [FullDuplexCall]: #fullduplexcall
 
 Server implements FullDuplexCall by replying, in order, with one
-StreamingOutputCallResponses for each ResponseParameters in each
-StreamingOutputCallRequest. Each StreamingOutputCallResponses should have a
+StreamingOutputCallResponse for each ResponseParameters in each
+StreamingOutputCallRequest. Each StreamingOutputCallResponse should have a
 payload body of size ResponseParameters.size bytes, as specified by its
 respective ResponseParameters. After receiving half close and sending all
 responses, it closes with OK.
-
-### Compressable Payload
-[Compressable Payload]: #compressable-payload
-
-When the client requests COMPRESSABLE payload, the response includes a payload
-of the size requested containing all zeros and the payload type is
-COMPRESSABLE.
-
-### Uncompressable Payload
-[Uncompressable Payload]: #uncompressable-payload
-
-When the client requests UNCOMPRESSABLE payload, the response includes a payload
-of the size requested containing uncompressable data and the payload type is
-UNCOMPRESSABLE. A 512 kB dump from /dev/urandom is the current golden data,
-stored at `test/cpp/interop/rnd.dat`
-
-### Random Payload
-[Random Payload]: #random-payload
-
-When the client requests RANDOM payload, the response includes either a randomly
-chosen COMPRESSABLE or UNCOMPRESSABLE payload. The data and the payload type
-will be consistent with this choice.
 
 ### Echo Status
 [Echo Status]: #echo-status
@@ -1004,8 +1064,8 @@ key and the corresponding value back to the client as trailing metadata.
 [Observe ResponseParameters.interval_us]: #observe-responseparametersinterval_us
 
 In StreamingOutputCall and FullDuplexCall, server delays sending a
-StreamingOutputCallResponse by the ResponseParameters's interval_us for that
-particular response, relative to the last response sent. That is, interval_us
+StreamingOutputCallResponse by the ResponseParameters's `interval_us` for that
+particular response, relative to the last response sent. That is, `interval_us`
 acts like a sleep *before* sending the response and accumulates from one
 response to the next.
 
@@ -1027,13 +1087,13 @@ an email address.
 #### Echo OAuth scope
 [Echo OAuth Scope]: #echo-oauth-scope
 
-If a SimpleRequest has fill_oauth_scope=true and that request was successfully
+If a SimpleRequest has `fill_oauth_scope=true` and that request was successfully
 authenticated via OAuth, then the SimpleResponse should have oauth_scope filled
 with the scope of the method being invoked.
 
 Although a general server-side feature, most test servers won't implement this
-feature. The TLS server grpc-test.sandbox.googleapis.com:443 supports this feature.
-It requires at least the OAuth scope
+feature. The TLS server `grpc-test.sandbox.googleapis.com:443` supports this
+feature. It requires at least the OAuth scope
 `https://www.googleapis.com/auth/xapi.zoo` for authentication to succeed.
 
 Discussion:
@@ -1041,4 +1101,3 @@ Discussion:
 Ideally, this would be communicated via metadata and not in the
 request/response, but we want to use this test in code paths that don't yet
 fully communicate metadata.
-

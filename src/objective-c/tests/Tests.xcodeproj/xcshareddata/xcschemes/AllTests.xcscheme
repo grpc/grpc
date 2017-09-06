@@ -23,7 +23,7 @@
       </BuildActionEntries>
    </BuildAction>
    <TestAction
-      buildConfiguration = "Debug"
+      buildConfiguration = "Test"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES">
@@ -38,12 +38,6 @@
                ReferencedContainer = "container:Tests.xcodeproj">
             </BuildableReference>
             <SkippedTests>
-               <Test
-                  Identifier = "GRPCClientTests/testConnectionToRemoteServer">
-               </Test>
-               <Test
-                  Identifier = "GRPCClientTests/testMetadata">
-               </Test>
                <Test
                   Identifier = "InteropTests">
                </Test>
@@ -69,7 +63,7 @@
       </AdditionalOptions>
    </TestAction>
    <LaunchAction
-      buildConfiguration = "Debug"
+      buildConfiguration = "Test"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
@@ -107,7 +101,7 @@
       </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
-      buildConfiguration = "Debug">
+      buildConfiguration = "Test">
    </AnalyzeAction>
    <ArchiveAction
       buildConfiguration = "Release"

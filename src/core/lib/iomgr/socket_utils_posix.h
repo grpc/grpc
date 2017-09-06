@@ -1,57 +1,52 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H
 #define GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H
 
+#include "src/core/lib/iomgr/resolve_address.h"
+
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <grpc/impl/codegen/grpc_types.h>
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/socket_factory_posix.h"
+#include "src/core/lib/iomgr/socket_mutator.h"
+
 /* a wrapper for accept or accept4 */
-int grpc_accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
-                 int nonblock, int cloexec);
+int grpc_accept4(int sockfd, grpc_resolved_address *resolved_addr, int nonblock,
+                 int cloexec);
 
 /* set a socket to non blocking mode */
-int grpc_set_socket_nonblocking(int fd, int non_blocking);
+grpc_error *grpc_set_socket_nonblocking(int fd, int non_blocking);
 
 /* set a socket to close on exec */
-int grpc_set_socket_cloexec(int fd, int close_on_exec);
+grpc_error *grpc_set_socket_cloexec(int fd, int close_on_exec);
 
 /* set a socket to reuse old addresses */
-int grpc_set_socket_reuse_addr(int fd, int reuse);
+grpc_error *grpc_set_socket_reuse_addr(int fd, int reuse);
 
 /* disable nagle */
-int grpc_set_socket_low_latency(int fd, int low_latency);
+grpc_error *grpc_set_socket_low_latency(int fd, int low_latency);
+
+/* set SO_REUSEPORT */
+grpc_error *grpc_set_socket_reuse_port(int fd, int reuse);
 
 /* Returns true if this system can create AF_INET6 sockets bound to ::1.
    The value is probed once, and cached for the life of the process.
@@ -64,19 +59,25 @@ int grpc_set_socket_low_latency(int fd, int low_latency);
 int grpc_ipv6_loopback_available(void);
 
 /* Tries to set SO_NOSIGPIPE if available on this platform.
-   Returns 1 on success, 0 on failure.
    If SO_NO_SIGPIPE is not available, returns 1. */
-int grpc_set_socket_no_sigpipe_if_possible(int fd);
+grpc_error *grpc_set_socket_no_sigpipe_if_possible(int fd);
 
 /* Tries to set IP_PKTINFO if available on this platform.
-   Returns 1 on success, 0 on failure.
    If IP_PKTINFO is not available, returns 1. */
-int grpc_set_socket_ip_pktinfo_if_possible(int fd);
+grpc_error *grpc_set_socket_ip_pktinfo_if_possible(int fd);
 
 /* Tries to set IPV6_RECVPKTINFO if available on this platform.
-   Returns 1 on success, 0 on failure.
    If IPV6_RECVPKTINFO is not available, returns 1. */
-int grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd);
+grpc_error *grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd);
+
+/* Tries to set the socket's send buffer to given size. */
+grpc_error *grpc_set_socket_sndbuf(int fd, int buffer_size_bytes);
+
+/* Tries to set the socket's receive buffer to given size. */
+grpc_error *grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes);
+
+/* Tries to set the socket using a grpc_socket_mutator */
+grpc_error *grpc_set_socket_with_mutator(int fd, grpc_socket_mutator *mutator);
 
 /* An enum to keep track of IPv4/IPv6 socket modes.
 
@@ -117,7 +118,15 @@ extern int grpc_forbid_dualstack_sockets_for_testing;
      IPv4, so that bind() or connect() see the correct family.
    Also, it's important to distinguish between DUALSTACK and IPV6 when
    listening on the [::] wildcard address. */
-int grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
-                                 int protocol, grpc_dualstack_mode *dsmode);
+grpc_error *grpc_create_dualstack_socket(const grpc_resolved_address *addr,
+                                         int type, int protocol,
+                                         grpc_dualstack_mode *dsmode,
+                                         int *newfd);
+
+/* Same as grpc_create_dualstack_socket(), but use the given socket factory (if
+   non-null) to create the socket, rather than calling socket() directly. */
+grpc_error *grpc_create_dualstack_socket_using_factory(
+    grpc_socket_factory *factory, const grpc_resolved_address *addr, int type,
+    int protocol, grpc_dualstack_mode *dsmode, int *newfd);
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H */

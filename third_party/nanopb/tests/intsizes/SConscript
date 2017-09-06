@@ -1,0 +1,12 @@
+# Test that the int_size option in .proto works.
+
+Import('env')
+
+env.NanopbProto('intsizes')
+
+p = env.Program(["intsizes_unittests.c",
+                 "intsizes.pb.c",
+                 "$COMMON/pb_encode.o",
+                 "$COMMON/pb_decode.o",
+                 "$COMMON/pb_common.o"])
+env.RunTest(p)

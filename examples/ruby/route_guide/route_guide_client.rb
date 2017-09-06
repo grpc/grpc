@@ -1,33 +1,18 @@
 #!/usr/bin/env ruby
 
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 # Sample app that connects to a Route Guide service.
 #
@@ -39,7 +24,7 @@ $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 
 require 'grpc'
 require 'multi_json'
-require 'route_guide_services'
+require 'route_guide_services_pb'
 
 include Routeguide
 
@@ -140,10 +125,24 @@ ROUTE_CHAT_NOTES = [
 def run_route_chat(stub)
   p 'Route Chat'
   p '----------'
-  # TODO: decouple sending and receiving, i.e have the response enumerator run
-  # on its own thread.
-  resps = stub.route_chat(ROUTE_CHAT_NOTES)
-  resps.each { |r| p "received #{r.inspect}" }
+  sleeping_enumerator = SleepingEnumerator.new(ROUTE_CHAT_NOTES, 1)
+  stub.route_chat(sleeping_enumerator.each_item) { |r| p "received #{r.inspect}" }
+end
+
+# SleepingEnumerator yields through items, and sleeps between each one
+class SleepingEnumerator
+  def initialize(items, delay)
+    @items = items
+    @delay = delay
+  end
+  def each_item
+    return enum_for(:each_item) unless block_given?
+    @items.each do |item|
+      sleep @delay
+      p "next item to send is #{item.inspect}"
+      yield item
+    end
+  end
 end
 
 def main

@@ -1,0 +1,5 @@
+grpc.lb.v1.InitialLoadBalanceRequest.name max_size:128
+grpc.lb.v1.InitialLoadBalanceResponse.load_balancer_delegate max_size:64
+grpc.lb.v1.Server.ip_address max_size:16
+grpc.lb.v1.Server.load_balance_token max_size:50
+load_balancer.proto no_unions:true

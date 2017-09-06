@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -49,7 +34,8 @@
 #include <ext/standard/info.h>
 #include "php_grpc.h"
 
-// ZEND_DECLARE_MODULE_GLOBALS(grpc)
+ZEND_DECLARE_MODULE_GLOBALS(grpc)
+static PHP_GINIT_FUNCTION(grpc);
 
 /* {{{ grpc_functions[]
  *
@@ -63,16 +49,20 @@ const zend_function_entry grpc_functions[] = {
 /* {{{ grpc_module_entry
  */
 zend_module_entry grpc_module_entry = {
-#if ZEND_MODULE_API_NO >= 20010901
-    STANDARD_MODULE_HEADER,
-#endif
-    "grpc",                    grpc_functions, PHP_MINIT(grpc),
-    PHP_MSHUTDOWN(grpc),       NULL,           NULL,
-    PHP_MINFO(grpc),
-#if ZEND_MODULE_API_NO >= 20010901
-    PHP_GRPC_VERSION,
-#endif
-    STANDARD_MODULE_PROPERTIES};
+  STANDARD_MODULE_HEADER,
+  "grpc",
+  grpc_functions,
+  PHP_MINIT(grpc),
+  PHP_MSHUTDOWN(grpc),
+  PHP_RINIT(grpc),
+  NULL,
+  PHP_MINFO(grpc),
+  PHP_GRPC_VERSION,
+  PHP_MODULE_GLOBALS(grpc),
+  PHP_GINIT(grpc),
+  NULL,
+  NULL,
+  STANDARD_MODULE_PROPERTIES_EX};
 /* }}} */
 
 #ifdef COMPILE_DL_GRPC
@@ -82,23 +72,24 @@ ZEND_GET_MODULE(grpc)
 /* {{{ PHP_INI
  */
 /* Remove comments and fill if you need to have entries in php.ini
-PHP_INI_BEGIN()
-    STD_PHP_INI_ENTRY("grpc.global_value",      "42", PHP_INI_ALL, OnUpdateLong,
-global_value, zend_grpc_globals, grpc_globals)
-    STD_PHP_INI_ENTRY("grpc.global_string", "foobar", PHP_INI_ALL,
-OnUpdateString, global_string, zend_grpc_globals, grpc_globals)
-PHP_INI_END()
+   PHP_INI_BEGIN()
+   STD_PHP_INI_ENTRY("grpc.global_value", "42", PHP_INI_ALL, OnUpdateLong,
+                     global_value, zend_grpc_globals, grpc_globals)
+   STD_PHP_INI_ENTRY("grpc.global_string", "foobar", PHP_INI_ALL,
+                     OnUpdateString, global_string, zend_grpc_globals,
+                     grpc_globals)
+   PHP_INI_END()
 */
 /* }}} */
 
 /* {{{ php_grpc_init_globals
  */
 /* Uncomment this function if you have INI entries
-static void php_grpc_init_globals(zend_grpc_globals *grpc_globals)
-{
-    grpc_globals->global_value = 0;
-    grpc_globals->global_string = NULL;
-}
+   static void php_grpc_init_globals(zend_grpc_globals *grpc_globals)
+   {
+     grpc_globals->global_value = 0;
+     grpc_globals->global_string = NULL;
+   }
 */
 /* }}} */
 
@@ -106,10 +97,9 @@ static void php_grpc_init_globals(zend_grpc_globals *grpc_globals)
  */
 PHP_MINIT_FUNCTION(grpc) {
   /* If you have INI entries, uncomment these lines
-  REGISTER_INI_ENTRIES();
+     REGISTER_INI_ENTRIES();
   */
   /* Register call error constants */
-  grpc_init();
   REGISTER_LONG_CONSTANT("Grpc\\CALL_OK", GRPC_CALL_OK,
                          CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR", GRPC_CALL_ERROR,
@@ -227,17 +217,16 @@ PHP_MINIT_FUNCTION(grpc) {
                          GRPC_CHANNEL_TRANSIENT_FAILURE,
                          CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_FATAL_FAILURE",
-                         GRPC_CHANNEL_FATAL_FAILURE,
+                         GRPC_CHANNEL_SHUTDOWN,
                          CONST_CS | CONST_PERSISTENT);
 
   grpc_init_call(TSRMLS_C);
-  grpc_init_channel(TSRMLS_C);
+  GRPC_STARTUP(channel);
   grpc_init_server(TSRMLS_C);
   grpc_init_timeval(TSRMLS_C);
   grpc_init_channel_credentials(TSRMLS_C);
   grpc_init_call_credentials(TSRMLS_C);
   grpc_init_server_credentials(TSRMLS_C);
-  grpc_php_init_completion_queue(TSRMLS_C);
   return SUCCESS;
 }
 /* }}} */
@@ -246,11 +235,16 @@ PHP_MINIT_FUNCTION(grpc) {
  */
 PHP_MSHUTDOWN_FUNCTION(grpc) {
   /* uncomment this line if you have INI entries
-  UNREGISTER_INI_ENTRIES();
+     UNREGISTER_INI_ENTRIES();
   */
-  grpc_shutdown_timeval(TSRMLS_C);
-  grpc_php_shutdown_completion_queue(TSRMLS_C);
-  grpc_shutdown();
+  // WARNING: This function IS being called by PHP when the extension
+  // is unloaded but the logs were somehow suppressed.
+  if (GRPC_G(initialized)) {
+    grpc_shutdown_timeval(TSRMLS_C);
+    grpc_php_shutdown_completion_queue(TSRMLS_C);
+    grpc_shutdown();
+    GRPC_G(initialized) = 0;
+  }
   return SUCCESS;
 }
 /* }}} */
@@ -263,21 +257,32 @@ PHP_MINFO_FUNCTION(grpc) {
   php_info_print_table_end();
 
   /* Remove comments if you have entries in php.ini
-  DISPLAY_INI_ENTRIES();
+     DISPLAY_INI_ENTRIES();
   */
 }
 /* }}} */
+
+/* {{{ PHP_RINIT_FUNCTION
+ */
+PHP_RINIT_FUNCTION(grpc) {
+  if (!GRPC_G(initialized)) {
+    grpc_init();
+    grpc_php_init_completion_queue(TSRMLS_C);
+    GRPC_G(initialized) = 1;
+  }
+  return SUCCESS;
+}
+/* }}} */
+
+/* {{{ PHP_GINIT_FUNCTION
+ */
+static PHP_GINIT_FUNCTION(grpc) {
+  grpc_globals->initialized = 0;
+}
+/* }}} */
+
 /* The previous line is meant for vim and emacs, so it can correctly fold and
    unfold functions in source code. See the corresponding marks just before
    function definition, where the functions purpose is also documented. Please
    follow this convention for the convenience of others editing your code.
 */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

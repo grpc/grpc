@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -42,6 +27,8 @@ var fs = require('fs');
 var path = require('path');
 var util = require('util');
 var EventEmitter = require('events');
+
+var async = require('async');
 var _ = require('lodash');
 var PoissonProcess = require('poisson-process');
 var Histogram = require('./histogram');
@@ -86,7 +73,10 @@ function timeDiffToNanos(time_diff) {
  */
 function BenchmarkClient(server_targets, channels, histogram_params,
     security_params) {
-  var options = {};
+  var options = {
+    "grpc.max_receive_message_length": -1,
+    "grpc.max_send_message_length": -1
+  };
   var creds;
   if (security_params) {
     var ca_path;
@@ -128,6 +118,36 @@ function BenchmarkClient(server_targets, channels, histogram_params,
 util.inherits(BenchmarkClient, EventEmitter);
 
 /**
+ * Start every client in the list of clients by waiting for each to be ready,
+ * then starting outstanding_rpcs_per_channel calls on each of them
+ * @param {Array<grpc.Client>} client_list The list of clients
+ * @param {Number} outstanding_rpcs_per_channel The number of calls to start
+ *     on each client
+ * @param {function(grpc.Client)} makeCall Function to make a single call on
+ *     a single client
+ * @param {EventEmitter} emitter The event emitter to send errors on, if
+ *     necessary
+ */
+function startAllClients(client_list, outstanding_rpcs_per_channel, makeCall,
+                         emitter) {
+  var ready_wait_funcs = _.map(client_list, function(client) {
+    return _.partial(grpc.waitForClientReady, client, Infinity);
+  });
+  async.parallel(ready_wait_funcs, function(err) {
+    if (err) {
+      emitter.emit('error', err);
+      return;
+    }
+
+    _.each(client_list, function(client) {
+      _.times(outstanding_rpcs_per_channel, function() {
+        makeCall(client);
+      });
+    });
+  });
+}
+
+/**
  * Start a closed-loop test. For each channel, start
  * outstanding_rpcs_per_channel RPCs. Then, whenever an RPC finishes, start
  * another one.
@@ -147,6 +167,8 @@ BenchmarkClient.prototype.startClosedLoop = function(
   self.running = true;
 
   self.last_wall_time = process.hrtime();
+
+  self.last_usage = process.cpuUsage();
 
   var makeCall;
 
@@ -190,18 +212,22 @@ BenchmarkClient.prototype.startClosedLoop = function(
     makeCall = function(client) {
       if (self.running) {
         self.pending_calls++;
-        var start_time = process.hrtime();
         var call = client.streamingCall();
+        var start_time = process.hrtime();
         call.write(argument);
         call.on('data', function() {
-        });
-        call.on('end', function() {
           var time_diff = process.hrtime(start_time);
           self.histogram.add(timeDiffToNanos(time_diff));
-          makeCall(client);
           self.pending_calls--;
-          if ((!self.running) && self.pending_calls == 0) {
-            self.emit('finished');
+          if (self.running) {
+            self.pending_calls++;
+            start_time = process.hrtime();
+            call.write(argument);
+          } else {
+            call.end();
+            if (self.pending_calls == 0) {
+              self.emit('finished');
+            }
           }
         });
         call.on('error', function(error) {
@@ -212,11 +238,7 @@ BenchmarkClient.prototype.startClosedLoop = function(
     };
   }
 
-  _.each(client_list, function(client) {
-    _.times(outstanding_rpcs_per_channel, function() {
-      makeCall(client);
-    });
-  });
+  startAllClients(client_list, outstanding_rpcs_per_channel, makeCall, self);
 };
 
 /**
@@ -242,6 +264,8 @@ BenchmarkClient.prototype.startPoisson = function(
 
   self.last_wall_time = process.hrtime();
 
+  self.last_usage = process.cpuUsage();
+
   var makeCall;
 
   var argument;
@@ -282,42 +306,18 @@ BenchmarkClient.prototype.startPoisson = function(
       }
     };
   } else {
-    makeCall = function(client, poisson) {
-      if (self.running) {
-        self.pending_calls++;
-        var start_time = process.hrtime();
-        var call = client.streamingCall();
-        call.write(argument);
-        call.on('data', function() {
-        });
-        call.on('end', function() {
-          var time_diff = process.hrtime(start_time);
-          self.histogram.add(timeDiffToNanos(time_diff));
-          self.pending_calls--;
-          if ((!self.running) && self.pending_calls == 0) {
-            self.emit('finished');
-          }
-        });
-        call.on('error', function(error) {
-          self.emit('error', new Error('Client error: ' + error.message));
-          self.running = false;
-        });
-      } else {
-        poisson.stop();
-      }
-    };
+    self.emit('error', new Error('Streaming Poisson benchmarks not supported'));
+    return;
   }
 
   var averageIntervalMs = (1 / offered_load) * 1000;
 
-  _.each(client_list, function(client) {
-    _.times(outstanding_rpcs_per_channel, function() {
-      var p = PoissonProcess.create(averageIntervalMs, function() {
-        makeCall(client, p);
-      });
-      p.start();
+  startAllClients(client_list, outstanding_rpcs_per_channel, function(client){
+    var p = PoissonProcess.create(averageIntervalMs, function() {
+      makeCall(client, p);
     });
-  });
+    p.start();
+  }, self);
 };
 
 /**
@@ -328,9 +328,11 @@ BenchmarkClient.prototype.startPoisson = function(
  */
 BenchmarkClient.prototype.mark = function(reset) {
   var wall_time_diff = process.hrtime(this.last_wall_time);
+  var usage_diff = process.cpuUsage(this.last_usage);
   var histogram = this.histogram;
   if (reset) {
     this.last_wall_time = process.hrtime();
+    this.last_usage = process.cpuUsage();
     this.histogram = new Histogram(histogram.resolution,
                                    histogram.max_possible);
   }
@@ -345,9 +347,8 @@ BenchmarkClient.prototype.mark = function(reset) {
       count: histogram.getCount()
     },
     time_elapsed: wall_time_diff[0] + wall_time_diff[1] / 1e9,
-    // Not sure how to measure these values
-    time_user: 0,
-    time_system: 0
+    time_user: usage_diff.user / 1000000,
+    time_system: usage_diff.system / 1000000
   };
 };
 

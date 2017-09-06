@@ -1,41 +1,27 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
-#include <grpc/support/port_platform.h>
-#ifdef GPR_WINSOCK_SOCKET
+#include "src/core/lib/iomgr/port.h"
+#ifdef GRPC_WINSOCK_SOCKET
+
+#include "src/core/lib/iomgr/sockaddr.h"
 
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 
 #include <string.h>
 #include <sys/types.h>
@@ -43,7 +29,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <grpc/support/log_win32.h>
+#include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
@@ -56,30 +42,37 @@
 typedef struct {
   char *name;
   char *default_port;
-  grpc_resolve_cb cb;
   grpc_closure request_closure;
-  void *arg;
+  grpc_closure *on_done;
+  grpc_resolved_addresses **addresses;
 } request;
 
-static grpc_resolved_addresses *blocking_resolve_address_impl(
-    const char *name, const char *default_port) {
+static grpc_error *blocking_resolve_address_impl(
+    const char *name, const char *default_port,
+    grpc_resolved_addresses **addresses) {
   struct addrinfo hints;
   struct addrinfo *result = NULL, *resp;
   char *host;
   char *port;
   int s;
   size_t i;
-  grpc_resolved_addresses *addrs = NULL;
+  grpc_error *error = GRPC_ERROR_NONE;
 
   /* parse name, splitting it into host and port parts */
   gpr_split_host_port(name, &host, &port);
   if (host == NULL) {
-    gpr_log(GPR_ERROR, "unparseable host:port: '%s'", name);
+    char *msg;
+    gpr_asprintf(&msg, "unparseable host:port: '%s'", name);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+    gpr_free(msg);
     goto done;
   }
   if (port == NULL) {
     if (default_port == NULL) {
-      gpr_log(GPR_ERROR, "no port in name '%s'", name);
+      char *msg;
+      gpr_asprintf(&msg, "no port in name '%s'", name);
+      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+      gpr_free(msg);
       goto done;
     }
     port = gpr_strdup(default_port);
@@ -95,31 +88,29 @@ static grpc_resolved_addresses *blocking_resolve_address_impl(
   s = getaddrinfo(host, port, &hints, &result);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
   if (s != 0) {
-    char *error_message = gpr_format_message(s);
-    gpr_log(GPR_ERROR, "getaddrinfo: %s", error_message);
-    gpr_free(error_message);
+    error = GRPC_WSA_ERROR(WSAGetLastError(), "getaddrinfo");
     goto done;
   }
 
   /* Success path: set addrs non-NULL, fill it in */
-  addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
-  addrs->naddrs = 0;
+  (*addresses) = gpr_malloc(sizeof(grpc_resolved_addresses));
+  (*addresses)->naddrs = 0;
   for (resp = result; resp != NULL; resp = resp->ai_next) {
-    addrs->naddrs++;
+    (*addresses)->naddrs++;
   }
-  addrs->addrs = gpr_malloc(sizeof(grpc_resolved_address) * addrs->naddrs);
+  (*addresses)->addrs =
+      gpr_malloc(sizeof(grpc_resolved_address) * (*addresses)->naddrs);
   i = 0;
   for (resp = result; resp != NULL; resp = resp->ai_next) {
-    memcpy(&addrs->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
-    addrs->addrs[i].len = resp->ai_addrlen;
+    memcpy(&(*addresses)->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
+    (*addresses)->addrs[i].len = resp->ai_addrlen;
     i++;
   }
 
   {
-    for (i = 0; i < addrs->naddrs; i++) {
+    for (i = 0; i < (*addresses)->naddrs; i++) {
       char *buf;
-      grpc_sockaddr_to_string(&buf, (struct sockaddr *)&addrs->addrs[i].addr,
-                              0);
+      grpc_sockaddr_to_string(&buf, &(*addresses)->addrs[i], 0);
       gpr_free(buf);
     }
   }
@@ -130,40 +121,55 @@ done:
   if (result) {
     freeaddrinfo(result);
   }
-  return addrs;
+  return error;
 }
 
-grpc_resolved_addresses *(*grpc_blocking_resolve_address)(
-    const char *name, const char *default_port) = blocking_resolve_address_impl;
+grpc_error *(*grpc_blocking_resolve_address)(
+    const char *name, const char *default_port,
+    grpc_resolved_addresses **addresses) = blocking_resolve_address_impl;
 
 /* Callback to be passed to grpc_executor to asynch-ify
  * grpc_blocking_resolve_address */
-static void do_request_thread(grpc_exec_ctx *exec_ctx, void *rp, bool success) {
+static void do_request_thread(grpc_exec_ctx *exec_ctx, void *rp,
+                              grpc_error *error) {
   request *r = rp;
-  grpc_resolved_addresses *resolved =
-      grpc_blocking_resolve_address(r->name, r->default_port);
-  void *arg = r->arg;
-  grpc_resolve_cb cb = r->cb;
+  if (error == GRPC_ERROR_NONE) {
+    error =
+        grpc_blocking_resolve_address(r->name, r->default_port, r->addresses);
+  } else {
+    GRPC_ERROR_REF(error);
+  }
+  GRPC_CLOSURE_SCHED(exec_ctx, r->on_done, error);
   gpr_free(r->name);
   gpr_free(r->default_port);
-  cb(exec_ctx, arg, resolved);
   gpr_free(r);
 }
 
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addrs) {
-  gpr_free(addrs->addrs);
+  if (addrs != NULL) {
+    gpr_free(addrs->addrs);
+  }
   gpr_free(addrs);
 }
 
-void grpc_resolve_address(const char *name, const char *default_port,
-                          grpc_resolve_cb cb, void *arg) {
+static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
+                                 const char *default_port,
+                                 grpc_pollset_set *interested_parties,
+                                 grpc_closure *on_done,
+                                 grpc_resolved_addresses **addresses) {
   request *r = gpr_malloc(sizeof(request));
-  grpc_closure_init(&r->request_closure, do_request_thread, r);
+  GRPC_CLOSURE_INIT(&r->request_closure, do_request_thread, r,
+                    grpc_executor_scheduler);
   r->name = gpr_strdup(name);
   r->default_port = gpr_strdup(default_port);
-  r->cb = cb;
-  r->arg = arg;
-  grpc_executor_enqueue(&r->request_closure, 1);
+  r->on_done = on_done;
+  r->addresses = addresses;
+  GRPC_CLOSURE_SCHED(exec_ctx, &r->request_closure, GRPC_ERROR_NONE);
 }
+
+void (*grpc_resolve_address)(
+    grpc_exec_ctx *exec_ctx, const char *name, const char *default_port,
+    grpc_pollset_set *interested_parties, grpc_closure *on_done,
+    grpc_resolved_addresses **addresses) = resolve_address_impl;
 
 #endif

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -36,37 +21,43 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/security/credentials/composite/composite_credentials.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
 typedef struct {
   gpr_mu *mu;
-  grpc_pollset *pollset;
-  int is_done;
+  grpc_polling_entity pops;
+  bool is_done;
+
+  grpc_credentials_mdelem_array md_array;
+  grpc_closure on_request_metadata;
 } synchronizer;
 
-static void on_metadata_response(grpc_exec_ctx *exec_ctx, void *user_data,
-                                 grpc_credentials_md *md_elems, size_t num_md,
-                                 grpc_credentials_status status) {
-  synchronizer *sync = user_data;
-  if (status == GRPC_CREDENTIALS_ERROR) {
-    fprintf(stderr, "Fetching token failed.\n");
+static void on_metadata_response(grpc_exec_ctx *exec_ctx, void *arg,
+                                 grpc_error *error) {
+  synchronizer *sync = arg;
+  if (error != GRPC_ERROR_NONE) {
+    fprintf(stderr, "Fetching token failed: %s\n", grpc_error_string(error));
   } else {
     char *token;
-    GPR_ASSERT(num_md == 1);
-    token = gpr_dump_slice(md_elems[0].value, GPR_DUMP_ASCII);
+    GPR_ASSERT(sync->md_array.size == 1);
+    token = grpc_slice_to_c_string(GRPC_MDVALUE(sync->md_array.md[0]));
     printf("\nGot token: %s\n\n", token);
     gpr_free(token);
   }
   gpr_mu_lock(sync->mu);
-  sync->is_done = 1;
-  grpc_pollset_kick(sync->pollset, NULL);
+  sync->is_done = true;
+  GRPC_LOG_IF_ERROR(
+      "pollset_kick",
+      grpc_pollset_kick(grpc_polling_entity_pollset(&sync->pops), NULL));
   gpr_mu_unlock(sync->mu);
 }
 
@@ -93,20 +84,34 @@ int main(int argc, char **argv) {
     goto end;
   }
 
-  sync.pollset = gpr_malloc(grpc_pollset_size());
-  grpc_pollset_init(sync.pollset, &sync.mu);
-  sync.is_done = 0;
+  memset(&sync, 0, sizeof(sync));
+  grpc_pollset *pollset = gpr_zalloc(grpc_pollset_size());
+  grpc_pollset_init(pollset, &sync.mu);
+  sync.pops = grpc_polling_entity_create_from_pollset(pollset);
+  sync.is_done = false;
+  GRPC_CLOSURE_INIT(&sync.on_request_metadata, on_metadata_response, &sync,
+                    grpc_schedule_on_exec_ctx);
 
-  grpc_call_credentials_get_request_metadata(
-      &exec_ctx, ((grpc_composite_channel_credentials *)creds)->call_creds,
-      sync.pollset, context, on_metadata_response, &sync);
+  grpc_error *error = GRPC_ERROR_NONE;
+  if (grpc_call_credentials_get_request_metadata(
+          &exec_ctx, ((grpc_composite_channel_credentials *)creds)->call_creds,
+          &sync.pops, context, &sync.md_array, &sync.on_request_metadata,
+          &error)) {
+    // Synchronous response.  Invoke callback directly.
+    on_metadata_response(&exec_ctx, &sync, error);
+    GRPC_ERROR_UNREF(error);
+  }
 
   gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, sync.pollset, &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    if (!GRPC_LOG_IF_ERROR(
+            "pollset_work",
+            grpc_pollset_work(&exec_ctx,
+                              grpc_polling_entity_pollset(&sync.pops), &worker,
+                              gpr_now(GPR_CLOCK_MONOTONIC),
+                              gpr_inf_future(GPR_CLOCK_MONOTONIC))))
+      sync.is_done = true;
     gpr_mu_unlock(sync.mu);
     grpc_exec_ctx_flush(&exec_ctx);
     gpr_mu_lock(sync.mu);
@@ -116,7 +121,7 @@ int main(int argc, char **argv) {
   grpc_exec_ctx_finish(&exec_ctx);
 
   grpc_channel_credentials_release(creds);
-  gpr_free(sync.pollset);
+  gpr_free(grpc_polling_entity_pollset(&sync.pops));
 
 end:
   gpr_cmdline_destroy(cl);

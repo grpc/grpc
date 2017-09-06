@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -77,6 +62,7 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map *map, uint32_t key,
 
   GPR_ASSERT(count == 0 || keys[count - 1] < key);
   GPR_ASSERT(value);
+  GPR_ASSERT(grpc_chttp2_stream_map_find(map, key) == NULL);
 
   if (count == capacity) {
     if (map->free > capacity / 4) {
@@ -94,40 +80,6 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map *map, uint32_t key,
   keys[count] = key;
   values[count] = value;
   map->count = count + 1;
-}
-
-void grpc_chttp2_stream_map_move_into(grpc_chttp2_stream_map *src,
-                                      grpc_chttp2_stream_map *dst) {
-  /* if src is empty we dont need to do anything */
-  if (src->count == src->free) {
-    return;
-  }
-  /* if dst is empty we simply need to swap */
-  if (dst->count == dst->free) {
-    GPR_SWAP(grpc_chttp2_stream_map, *src, *dst);
-    return;
-  }
-  /* the first element of src must be greater than the last of dst...
-   * however the maps may need compacting for this property to hold */
-  if (src->keys[0] <= dst->keys[dst->count - 1]) {
-    src->count = compact(src->keys, src->values, src->count);
-    src->free = 0;
-    dst->count = compact(dst->keys, dst->values, dst->count);
-    dst->free = 0;
-  }
-  GPR_ASSERT(src->keys[0] > dst->keys[dst->count - 1]);
-  /* if dst doesn't have capacity, resize */
-  if (dst->count + src->count > dst->capacity) {
-    dst->capacity = GPR_MAX(dst->capacity * 3 / 2, dst->count + src->count);
-    dst->keys = gpr_realloc(dst->keys, dst->capacity * sizeof(uint32_t));
-    dst->values = gpr_realloc(dst->values, dst->capacity * sizeof(void *));
-  }
-  memcpy(dst->keys + dst->count, src->keys, src->count * sizeof(uint32_t));
-  memcpy(dst->values + dst->count, src->values, src->count * sizeof(void *));
-  dst->count += src->count;
-  dst->free += src->free;
-  src->count = 0;
-  src->free = 0;
 }
 
 static void **find(grpc_chttp2_stream_map *map, uint32_t key) {
@@ -170,6 +122,7 @@ void *grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map *map, uint32_t key) {
     if (map->free == map->count) {
       map->free = map->count = 0;
     }
+    GPR_ASSERT(grpc_chttp2_stream_map_find(map, key) == NULL);
   }
   return out;
 }
@@ -181,6 +134,17 @@ void *grpc_chttp2_stream_map_find(grpc_chttp2_stream_map *map, uint32_t key) {
 
 size_t grpc_chttp2_stream_map_size(grpc_chttp2_stream_map *map) {
   return map->count - map->free;
+}
+
+void *grpc_chttp2_stream_map_rand(grpc_chttp2_stream_map *map) {
+  if (map->count == map->free) {
+    return NULL;
+  }
+  if (map->free != 0) {
+    map->count = compact(map->keys, map->values, map->count);
+    map->free = 0;
+  }
+  return map->values[((size_t)rand()) % map->count];
 }
 
 void grpc_chttp2_stream_map_for_each(grpc_chttp2_stream_map *map,

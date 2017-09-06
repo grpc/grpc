@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+# Copyright 2016 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+require 'rbconfig'
+
+require_relative '../platform_check'
+
+ext = RbConfig::CONFIG['EXEEXT']
+
+protoc_name = 'protoc' + ext
+
+plugin_name = 'grpc_ruby_plugin' + ext
+
+protoc_dir = File.join(File.dirname(__FILE__),
+                       PLATFORM.architecture + '-' + PLATFORM.os_name)
+
+protoc_path = File.join(protoc_dir, protoc_name)
+
+plugin_path = File.join(protoc_dir, plugin_name)
+
+exec([ protoc_path, protoc_path ], "--plugin=protoc-gen-grpc=#{plugin_path}", *ARGV)

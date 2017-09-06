@@ -1,0 +1,19 @@
+syntax = "proto2";
+
+import 'alltypes.proto';
+
+extend AllTypes {
+    optional int32 AllTypes_extensionfield1 = 255 [default = 5];
+}
+
+message ExtensionMessage {
+    extend AllTypes {
+        optional ExtensionMessage AllTypes_extensionfield2 = 254;
+        // required ExtensionMessage AllTypes_extensionfield3 = 253; // No longer allowed by protobuf 3
+        repeated ExtensionMessage AllTypes_extensionfield4 = 252;
+    }
+    
+    required string test1 = 1;
+    required int32 test2 = 2;
+}
+

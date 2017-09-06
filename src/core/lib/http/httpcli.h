@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -41,6 +26,7 @@
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
 /* User agent this library reports */
@@ -56,7 +42,7 @@ typedef struct grpc_httpcli_context {
 typedef struct {
   const char *default_port;
   void (*handshake)(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *endpoint,
-                    const char *host,
+                    const char *host, gpr_timespec deadline,
                     void (*on_done)(grpc_exec_ctx *exec_ctx, void *arg,
                                     grpc_endpoint *endpoint));
 } grpc_httpcli_handshaker;
@@ -81,13 +67,9 @@ typedef struct grpc_httpcli_request {
 /* Expose the parser response type as a httpcli response too */
 typedef struct grpc_http_response grpc_httpcli_response;
 
-/* Callback for grpc_httpcli_get and grpc_httpcli_post. */
-typedef void (*grpc_httpcli_response_cb)(grpc_exec_ctx *exec_ctx,
-                                         void *user_data,
-                                         const grpc_http_response *response);
-
 void grpc_httpcli_context_init(grpc_httpcli_context *context);
-void grpc_httpcli_context_destroy(grpc_httpcli_context *context);
+void grpc_httpcli_context_destroy(grpc_exec_ctx *exec_ctx,
+                                  grpc_httpcli_context *context);
 
 /* Asynchronously perform a HTTP GET.
    'context' specifies the http context under which to do the get
@@ -97,13 +79,13 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context *context);
    'request' contains request parameters - these are caller owned and can be
      destroyed once the call returns
    'deadline' contains a deadline for the request (or gpr_inf_future)
-   'on_response' is a callback to report results to (and 'user_data' is a user
-     supplied pointer to pass to said call) */
+   'on_response' is a callback to report results to */
 void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
-                      grpc_pollset *pollset,
+                      grpc_polling_entity *pollent,
+                      grpc_resource_quota *resource_quota,
                       const grpc_httpcli_request *request,
-                      gpr_timespec deadline,
-                      grpc_httpcli_response_cb on_response, void *user_data);
+                      gpr_timespec deadline, grpc_closure *on_complete,
+                      grpc_httpcli_response *response);
 
 /* Asynchronously perform a HTTP POST.
    'context' specifies the http context under which to do the post
@@ -117,26 +99,26 @@ void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
    'deadline' contains a deadline for the request (or gpr_inf_future)
    'em' points to a caller owned event manager that must be alive for the
      lifetime of the request
-   'on_response' is a callback to report results to (and 'user_data' is a user
-     supplied pointer to pass to said call)
+   'on_response' is a callback to report results to
    Does not support ?var1=val1&var2=val2 in the path. */
 void grpc_httpcli_post(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
-                       grpc_pollset *pollset,
+                       grpc_polling_entity *pollent,
+                       grpc_resource_quota *resource_quota,
                        const grpc_httpcli_request *request,
                        const char *body_bytes, size_t body_size,
-                       gpr_timespec deadline,
-                       grpc_httpcli_response_cb on_response, void *user_data);
+                       gpr_timespec deadline, grpc_closure *on_complete,
+                       grpc_httpcli_response *response);
 
 /* override functions return 1 if they handled the request, 0 otherwise */
 typedef int (*grpc_httpcli_get_override)(grpc_exec_ctx *exec_ctx,
                                          const grpc_httpcli_request *request,
                                          gpr_timespec deadline,
-                                         grpc_httpcli_response_cb on_response,
-                                         void *user_data);
+                                         grpc_closure *on_complete,
+                                         grpc_httpcli_response *response);
 typedef int (*grpc_httpcli_post_override)(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
     const char *body_bytes, size_t body_size, gpr_timespec deadline,
-    grpc_httpcli_response_cb on_response, void *user_data);
+    grpc_closure *on_complete, grpc_httpcli_response *response);
 
 void grpc_httpcli_set_override(grpc_httpcli_get_override get,
                                grpc_httpcli_post_override post);

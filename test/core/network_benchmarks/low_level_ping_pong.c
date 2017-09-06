@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -49,12 +34,14 @@
 #endif
 #include <sys/socket.h>
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/cmdline.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
 typedef struct fd_pair {
@@ -228,12 +215,12 @@ static int blocking_write_bytes(struct thread_args *args, char *buf) {
    on the scenario we're using.
  */
 static int set_socket_nonblocking(thread_args *args) {
-  if (!grpc_set_socket_nonblocking(args->fds.read_fd, 1)) {
-    gpr_log(GPR_ERROR, "Unable to set socket nonblocking: %s", strerror(errno));
+  if (!GRPC_LOG_IF_ERROR("Unable to set read socket nonblocking",
+                         grpc_set_socket_nonblocking(args->fds.read_fd, 1))) {
     return -1;
   }
-  if (!grpc_set_socket_nonblocking(args->fds.write_fd, 1)) {
-    gpr_log(GPR_ERROR, "Unable to set socket nonblocking: %s", strerror(errno));
+  if (!GRPC_LOG_IF_ERROR("Unable to set write socket nonblocking",
+                         grpc_set_socket_nonblocking(args->fds.write_fd, 1))) {
     return -1;
   }
   return 0;
@@ -265,19 +252,19 @@ static int epoll_setup(thread_args *args) {
 #endif
 
 static void server_thread(thread_args *args) {
-  char *buf = malloc(args->msg_size);
+  char *buf = gpr_malloc(args->msg_size);
   if (args->setup(args) < 0) {
     gpr_log(GPR_ERROR, "Setup failed");
   }
   for (;;) {
     if (args->read_bytes(args, buf) < 0) {
       gpr_log(GPR_ERROR, "Server read failed");
-      free(buf);
+      gpr_free(buf);
       return;
     }
     if (args->write_bytes(args, buf) < 0) {
       gpr_log(GPR_ERROR, "Server write failed");
-      free(buf);
+      gpr_free(buf);
       return;
     }
   }
@@ -304,7 +291,8 @@ static double now(void) {
 }
 
 static void client_thread(thread_args *args) {
-  char *buf = calloc(args->msg_size, sizeof(char));
+  char *buf = gpr_malloc(args->msg_size * sizeof(char));
+  memset(buf, 0, args->msg_size * sizeof(char));
   gpr_histogram *histogram = gpr_histogram_create(0.01, 60e9);
   double start_time;
   double end_time;
@@ -333,7 +321,7 @@ static void client_thread(thread_args *args) {
   }
   print_histogram(histogram);
 error:
-  free(buf);
+  gpr_free(buf);
   gpr_histogram_destroy(histogram);
 }
 
@@ -345,10 +333,16 @@ static int create_listening_socket(struct sockaddr *port, socklen_t len) {
     goto error;
   }
 
-  if (!grpc_set_socket_cloexec(fd, 1) || !grpc_set_socket_low_latency(fd, 1) ||
-      !grpc_set_socket_reuse_addr(fd, 1)) {
-    gpr_log(GPR_ERROR, "Unable to configure socket %d: %s", fd,
-            strerror(errno));
+  if (!GRPC_LOG_IF_ERROR("Failed to set listening socket cloexec",
+                         grpc_set_socket_cloexec(fd, 1))) {
+    goto error;
+  }
+  if (!GRPC_LOG_IF_ERROR("Failed to set listening socket low latency",
+                         grpc_set_socket_low_latency(fd, 1))) {
+    goto error;
+  }
+  if (!GRPC_LOG_IF_ERROR("Failed to set listening socket reuse addr",
+                         grpc_set_socket_reuse_addr(fd, 1))) {
     goto error;
   }
 
@@ -384,8 +378,12 @@ static int connect_client(struct sockaddr *addr, socklen_t len) {
     goto error;
   }
 
-  if (!grpc_set_socket_cloexec(fd, 1) || !grpc_set_socket_low_latency(fd, 1)) {
-    gpr_log(GPR_ERROR, "Failed to configure socket");
+  if (!GRPC_LOG_IF_ERROR("Failed to set connecting socket cloexec",
+                         grpc_set_socket_cloexec(fd, 1))) {
+    goto error;
+  }
+  if (!GRPC_LOG_IF_ERROR("Failed to set connecting socket low latency",
+                         grpc_set_socket_low_latency(fd, 1))) {
     goto error;
   }
 
@@ -581,7 +579,7 @@ static int run_benchmark(char *socket_type, thread_args *client_args,
     return rv;
   }
 
-  gpr_log(GPR_INFO, "Starting test %s %s %d", client_args->strategy_name,
+  gpr_log(GPR_INFO, "Starting test %s %s %zu", client_args->strategy_name,
           socket_type, client_args->msg_size);
 
   gpr_thd_new(&tid, server_thread_wrap, server_args, NULL);
@@ -596,8 +594,8 @@ static int run_all_benchmarks(size_t msg_size) {
     test_strategy *strategy = &test_strategies[i];
     size_t j;
     for (j = 0; j < GPR_ARRAY_SIZE(socket_types); ++j) {
-      thread_args *client_args = malloc(sizeof(thread_args));
-      thread_args *server_args = malloc(sizeof(thread_args));
+      thread_args *client_args = gpr_malloc(sizeof(thread_args));
+      thread_args *server_args = gpr_malloc(sizeof(thread_args));
       char *socket_type = socket_types[j];
 
       client_args->read_bytes = strategy->read_strategy;
@@ -620,8 +618,8 @@ static int run_all_benchmarks(size_t msg_size) {
 }
 
 int main(int argc, char **argv) {
-  thread_args *client_args = malloc(sizeof(thread_args));
-  thread_args *server_args = malloc(sizeof(thread_args));
+  thread_args *client_args = gpr_malloc(sizeof(thread_args));
+  thread_args *server_args = gpr_malloc(sizeof(thread_args));
   int msg_size = -1;
   char *read_strategy = NULL;
   char *socket_type = NULL;

@@ -1,39 +1,24 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_WINSOCK_SOCKET
+#ifdef GRPC_WINSOCK_SOCKET
 
 #include <winsock2.h>
 
@@ -42,7 +27,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/log_win32.h>
+#include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/iomgr/iocp_windows.h"
@@ -76,6 +61,14 @@ void grpc_winsocket_shutdown(grpc_winsocket *winsocket) {
   LPFN_DISCONNECTEX DisconnectEx;
   DWORD ioctl_num_bytes;
 
+  gpr_mu_lock(&winsocket->state_mu);
+  if (winsocket->shutdown_called) {
+    gpr_mu_unlock(&winsocket->state_mu);
+    return;
+  }
+  winsocket->shutdown_called = true;
+  gpr_mu_unlock(&winsocket->state_mu);
+
   status = WSAIoctl(winsocket->socket, SIO_GET_EXTENSION_FUNCTION_POINTER,
                     &guid, sizeof(guid), &DisconnectEx, sizeof(DisconnectEx),
                     &ioctl_num_bytes, NULL, NULL);
@@ -84,17 +77,76 @@ void grpc_winsocket_shutdown(grpc_winsocket *winsocket) {
     DisconnectEx(winsocket->socket, NULL, 0, 0);
   } else {
     char *utf8_message = gpr_format_message(WSAGetLastError());
-    gpr_log(GPR_ERROR, "Unable to retrieve DisconnectEx pointer : %s",
+    gpr_log(GPR_INFO, "Unable to retrieve DisconnectEx pointer : %s",
             utf8_message);
     gpr_free(utf8_message);
   }
   closesocket(winsocket->socket);
 }
 
-void grpc_winsocket_destroy(grpc_winsocket *winsocket) {
+static void destroy(grpc_winsocket *winsocket) {
   grpc_iomgr_unregister_object(&winsocket->iomgr_object);
   gpr_mu_destroy(&winsocket->state_mu);
   gpr_free(winsocket);
 }
 
-#endif /* GPR_WINSOCK_SOCKET */
+static bool check_destroyable(grpc_winsocket *winsocket) {
+  return winsocket->destroy_called == true &&
+         winsocket->write_info.closure == NULL &&
+         winsocket->read_info.closure == NULL;
+}
+
+void grpc_winsocket_destroy(grpc_winsocket *winsocket) {
+  gpr_mu_lock(&winsocket->state_mu);
+  GPR_ASSERT(!winsocket->destroy_called);
+  winsocket->destroy_called = true;
+  bool should_destroy = check_destroyable(winsocket);
+  gpr_mu_unlock(&winsocket->state_mu);
+  if (should_destroy) destroy(winsocket);
+}
+
+/* Calling notify_on_read or write means either of two things:
+-) The IOCP already completed in the background, and we need to call
+the callback now.
+-) The IOCP hasn't completed yet, and we're queuing it for later. */
+static void socket_notify_on_iocp(grpc_exec_ctx *exec_ctx,
+                                  grpc_winsocket *socket, grpc_closure *closure,
+                                  grpc_winsocket_callback_info *info) {
+  GPR_ASSERT(info->closure == NULL);
+  gpr_mu_lock(&socket->state_mu);
+  if (info->has_pending_iocp) {
+    info->has_pending_iocp = 0;
+    GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
+  } else {
+    info->closure = closure;
+  }
+  gpr_mu_unlock(&socket->state_mu);
+}
+
+void grpc_socket_notify_on_write(grpc_exec_ctx *exec_ctx,
+                                 grpc_winsocket *socket,
+                                 grpc_closure *closure) {
+  socket_notify_on_iocp(exec_ctx, socket, closure, &socket->write_info);
+}
+
+void grpc_socket_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
+                                grpc_closure *closure) {
+  socket_notify_on_iocp(exec_ctx, socket, closure, &socket->read_info);
+}
+
+void grpc_socket_become_ready(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
+                              grpc_winsocket_callback_info *info) {
+  GPR_ASSERT(!info->has_pending_iocp);
+  gpr_mu_lock(&socket->state_mu);
+  if (info->closure) {
+    GRPC_CLOSURE_SCHED(exec_ctx, info->closure, GRPC_ERROR_NONE);
+    info->closure = NULL;
+  } else {
+    info->has_pending_iocp = 1;
+  }
+  bool should_destroy = check_destroyable(socket);
+  gpr_mu_unlock(&socket->state_mu);
+  if (should_destroy) destroy(socket);
+}
+
+#endif /* GRPC_WINSOCK_SOCKET */

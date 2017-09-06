@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -48,8 +33,9 @@
 #include <stdbool.h>
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/grpc_security.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
 
 #include "completion_queue.h"
 #include "server.h"
@@ -58,48 +44,40 @@
 #include "timeval.h"
 
 zend_class_entry *grpc_ce_server;
+#if PHP_MAJOR_VERSION >= 7
+static zend_object_handlers server_ce_handlers;
+#endif
 
 /* Frees and destroys an instance of wrapped_grpc_server */
-void free_wrapped_grpc_server(void *object TSRMLS_DC) {
-  wrapped_grpc_server *server = (wrapped_grpc_server *)object;
-  if (server->wrapped != NULL) {
-    grpc_server_shutdown_and_notify(server->wrapped, completion_queue, NULL);
-    grpc_server_cancel_all_calls(server->wrapped);
+PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_server)
+  if (p->wrapped != NULL) {
+    grpc_server_shutdown_and_notify(p->wrapped, completion_queue, NULL);
+    grpc_server_cancel_all_calls(p->wrapped);
     grpc_completion_queue_pluck(completion_queue, NULL,
                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-    grpc_server_destroy(server->wrapped);
+    grpc_server_destroy(p->wrapped);
   }
-  efree(server);
-}
+PHP_GRPC_FREE_WRAPPED_FUNC_END()
 
-/* Initializes an instance of wrapped_grpc_call to be associated with an object
- * of a class specified by class_type */
-zend_object_value create_wrapped_grpc_server(zend_class_entry *class_type
-                                                 TSRMLS_DC) {
-  zend_object_value retval;
-  wrapped_grpc_server *intern;
-
-  intern = (wrapped_grpc_server *)emalloc(sizeof(wrapped_grpc_server));
-  memset(intern, 0, sizeof(wrapped_grpc_server));
-
+/* Initializes an instance of wrapped_grpc_call to be associated with an
+ * object of a class specified by class_type */
+php_grpc_zend_object create_wrapped_grpc_server(zend_class_entry *class_type
+                                                TSRMLS_DC) {
+  PHP_GRPC_ALLOC_CLASS_OBJECT(wrapped_grpc_server);
   zend_object_std_init(&intern->std, class_type TSRMLS_CC);
   object_properties_init(&intern->std, class_type);
-  retval.handle = zend_objects_store_put(
-      intern, (zend_objects_store_dtor_t)zend_objects_destroy_object,
-      free_wrapped_grpc_server, NULL TSRMLS_CC);
-  retval.handlers = zend_get_std_object_handlers();
-  return retval;
+  PHP_GRPC_FREE_CLASS_OBJECT(wrapped_grpc_server, server_ce_handlers);
 }
 
 /**
  * Constructs a new instance of the Server class
- * @param array $args The arguments to pass to the server (optional)
+ * @param array $args_array The arguments to pass to the server (optional)
  */
 PHP_METHOD(Server, __construct) {
-  wrapped_grpc_server *server =
-      (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
   zval *args_array = NULL;
   grpc_channel_args args;
+
   /* "|a" == 1 optional array */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a", &args_array) ==
       FAILURE) {
@@ -111,7 +89,9 @@ PHP_METHOD(Server, __construct) {
   if (args_array == NULL) {
     server->wrapped = grpc_server_create(NULL, NULL);
   } else {
-    php_grpc_read_args_array(args_array, &args);
+    //TODO(thinkerou): deal it if key of array is long, crash now on php7
+    // and update unit test case
+    php_grpc_read_args_array(args_array, &args TSRMLS_CC);
     server->wrapped = grpc_server_create(&args, NULL);
     efree(args.args);
   }
@@ -121,21 +101,20 @@ PHP_METHOD(Server, __construct) {
 
 /**
  * Request a call on a server. Creates a single GRPC_SERVER_RPC_NEW event.
- * @param long $tag_new The tag to associate with the new request
- * @param long $tag_cancel The tag to use if the call is cancelled
- * @return Void
+ * @return void
  */
 PHP_METHOD(Server, requestCall) {
   grpc_call_error error_code;
-  wrapped_grpc_server *server =
-      (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
   grpc_call *call;
   grpc_call_details details;
   grpc_metadata_array metadata;
-  zval *result;
   grpc_event event;
-  MAKE_STD_ZVAL(result);
+
+  wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
+  zval *result;
+  PHP_GRPC_MAKE_STD_ZVAL(result);
   object_init(result);
+
   grpc_call_details_init(&details);
   grpc_metadata_array_init(&metadata);
   error_code =
@@ -147,20 +126,41 @@ PHP_METHOD(Server, requestCall) {
     goto cleanup;
   }
   event = grpc_completion_queue_pluck(completion_queue, NULL,
-                                      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+                                      gpr_inf_future(GPR_CLOCK_REALTIME),
+                                      NULL);
   if (!event.success) {
     zend_throw_exception(spl_ce_LogicException,
                          "Failed to request a call for some reason",
                          1 TSRMLS_CC);
     goto cleanup;
   }
-  add_property_zval(result, "call", grpc_php_wrap_call(call, true));
-  add_property_string(result, "method", details.method, true);
-  add_property_string(result, "host", details.host, true);
+  char *method_text = grpc_slice_to_c_string(details.method);
+  char *host_text = grpc_slice_to_c_string(details.host);
+  php_grpc_add_property_string(result, "method", method_text, true);
+  php_grpc_add_property_string(result, "host", host_text, true);
+  gpr_free(method_text);
+  gpr_free(host_text);
+#if PHP_MAJOR_VERSION < 7
+  add_property_zval(result, "call", grpc_php_wrap_call(call, true TSRMLS_CC));
   add_property_zval(result, "absolute_deadline",
-                    grpc_php_wrap_timeval(details.deadline));
-  add_property_zval(result, "metadata", grpc_parse_metadata_array(&metadata));
-cleanup:
+                    grpc_php_wrap_timeval(details.deadline TSRMLS_CC));
+  add_property_zval(result, "metadata", grpc_parse_metadata_array(&metadata
+                                                                  TSRMLS_CC));
+#else
+  zval zv_call;
+  zval zv_timeval;
+  zval zv_md;
+  //TODO(thinkerou): why use zval* to unit test error?
+  zv_call = *grpc_php_wrap_call(call, true);
+  zv_timeval = *grpc_php_wrap_timeval(details.deadline);
+  zv_md = *grpc_parse_metadata_array(&metadata);
+
+  add_property_zval(result, "call", &zv_call);
+  add_property_zval(result, "absolute_deadline", &zv_timeval);
+  add_property_zval(result, "metadata", &zv_md);
+#endif
+
+ cleanup:
   grpc_call_details_destroy(&details);
   grpc_metadata_array_destroy(&metadata);
   RETURN_DESTROY_ZVAL(result);
@@ -169,16 +169,16 @@ cleanup:
 /**
  * Add a http2 over tcp listener.
  * @param string $addr The address to add
- * @return true on success, false on failure
+ * @return bool True on success, false on failure
  */
 PHP_METHOD(Server, addHttp2Port) {
-  wrapped_grpc_server *server =
-      (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
   const char *addr;
-  int addr_len;
+  php_grpc_int addr_len;
+  wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
+
   /* "s" == 1 string */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &addr, &addr_len) ==
-      FAILURE) {
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &addr, &addr_len)
+      == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "add_http2_port expects a string", 1 TSRMLS_CC);
     return;
@@ -186,12 +186,18 @@ PHP_METHOD(Server, addHttp2Port) {
   RETURN_LONG(grpc_server_add_insecure_http2_port(server->wrapped, addr));
 }
 
+/**
+ * Add a secure http2 over tcp listener.
+ * @param string $addr The address to add
+ * @param ServerCredentials The ServerCredentials object
+ * @return bool True on success, false on failure
+ */
 PHP_METHOD(Server, addSecureHttp2Port) {
-  wrapped_grpc_server *server =
-      (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
   const char *addr;
-  int addr_len;
+  php_grpc_int addr_len;
   zval *creds_obj;
+  wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
+
   /* "sO" == 1 string, 1 object */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sO", &addr, &addr_len,
                             &creds_obj, grpc_ce_server_credentials) ==
@@ -202,32 +208,57 @@ PHP_METHOD(Server, addSecureHttp2Port) {
     return;
   }
   wrapped_grpc_server_credentials *creds =
-      (wrapped_grpc_server_credentials *)zend_object_store_get_object(
-          creds_obj TSRMLS_CC);
+    Z_WRAPPED_GRPC_SERVER_CREDS_P(creds_obj);
   RETURN_LONG(grpc_server_add_secure_http2_port(server->wrapped, addr,
                                                 creds->wrapped));
 }
 
 /**
  * Start a server - tells all listeners to start listening
- * @return Void
+ * @return void
  */
 PHP_METHOD(Server, start) {
-  wrapped_grpc_server *server =
-      (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
   grpc_server_start(server->wrapped);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_construct, 0, 0, 0)
+  ZEND_ARG_INFO(0, args)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_requestCall, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_addHttp2Port, 0, 0, 1)
+  ZEND_ARG_INFO(0, addr)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_addSecureHttp2Port, 0, 0, 2)
+  ZEND_ARG_INFO(0, addr)
+  ZEND_ARG_INFO(0, server_creds)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_start, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry server_methods[] = {
-    PHP_ME(Server, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    PHP_ME(Server, requestCall, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Server, addHttp2Port, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Server, addSecureHttp2Port, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Server, start, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
+  PHP_ME(Server, __construct, arginfo_construct,
+         ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
+  PHP_ME(Server, requestCall, arginfo_requestCall,
+         ZEND_ACC_PUBLIC)
+  PHP_ME(Server, addHttp2Port, arginfo_addHttp2Port,
+         ZEND_ACC_PUBLIC)
+  PHP_ME(Server, addSecureHttp2Port, arginfo_addSecureHttp2Port,
+         ZEND_ACC_PUBLIC)
+  PHP_ME(Server, start, arginfo_start,
+         ZEND_ACC_PUBLIC)
+  PHP_FE_END
+};
 
 void grpc_init_server(TSRMLS_D) {
   zend_class_entry ce;
   INIT_CLASS_ENTRY(ce, "Grpc\\Server", server_methods);
   ce.create_object = create_wrapped_grpc_server;
   grpc_ce_server = zend_register_internal_class(&ce TSRMLS_CC);
+  PHP_GRPC_INIT_HANDLER(wrapped_grpc_server, server_ce_handlers);
 }

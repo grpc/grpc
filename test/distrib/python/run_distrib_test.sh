@@ -1,58 +1,64 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 set -ex
 
 cd $(dirname $0)
 
 # Pick up the source dist archive whatever its version is
-SDIST_ARCHIVE=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio-*.tar.gz
-BDIST_DIR="file://$EXTERNAL_GIT_ROOT/input_artifacts"
+SDIST_ARCHIVES=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio-*.tar.gz
+BDIST_ARCHIVES=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio-*.whl
+TOOLS_SDIST_ARCHIVES=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio_tools-*.tar.gz
+TOOLS_BDIST_ARCHIVES=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio_tools-*.whl
 
-if [ ! -f ${SDIST_ARCHIVE} ]
-then
-  echo "Archive ${SDIST_ARCHIVE} does not exist."
-  exit 1
-fi
+function make_virtualenv() {
+  virtualenv $1
+  $1/bin/python -m pip install --upgrade six pip
+  $1/bin/python -m pip install cython
+}
 
-PIP=pip2
-which $PIP || PIP=pip
-PYTHON=python2
-which $PYTHON || PYTHON=python
+function at_least_one_installs() {
+  for file in "$@"; do
+    if python -m pip install $file; then
+      return 0
+    fi
+  done
+  return -1
+}
 
-# TODO(jtattermusch): this shouldn't be required
-$PIP install --upgrade six
+make_virtualenv bdist_test
+make_virtualenv sdist_test
 
-GRPC_PYTHON_BINARIES_REPOSITORY="${BDIST_DIR}" \
-    $PIP install \
-    ${SDIST_ARCHIVE}
+#
+# Install our distributions in order of dependencies
+#
 
-$PYTHON distribtest.py
+(source bdist_test/bin/activate && at_least_one_installs ${BDIST_ARCHIVES})
+(source bdist_test/bin/activate && at_least_one_installs ${TOOLS_BDIST_ARCHIVES})
 
+(source sdist_test/bin/activate && at_least_one_installs ${SDIST_ARCHIVES})
+(source sdist_test/bin/activate && at_least_one_installs ${TOOLS_SDIST_ARCHIVES})
+
+#
+# Test our distributions
+#
+
+# TODO(jtattermusch): add a .proto file to the distribtest, generate python
+# code from it and then use the generated code from distribtest.py
+(source bdist_test/bin/activate && python -m grpc.tools.protoc --help)
+(source sdist_test/bin/activate && python -m grpc.tools.protoc --help)
+
+(source bdist_test/bin/activate && python distribtest.py)
+(source sdist_test/bin/activate && python distribtest.py)

@@ -1,33 +1,18 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
-// All rights reserved.
+// Copyright 2015 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #endregion
 
@@ -44,7 +29,7 @@ namespace Grpc.Core.Internal
 {
     internal interface IServerCallHandler
     {
-        Task HandleCall(ServerRpcNew newRpc, GrpcEnvironment environment);
+        Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq);
     }
 
     internal class UnaryServerCallHandler<TRequest, TResponse> : IServerCallHandler
@@ -62,42 +47,45 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(ServerRpcNew newRpc, GrpcEnvironment environment)
+        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
                 method.RequestMarshaller.Deserializer,
-                environment, newRpc.Server);
+                newRpc.Server);
 
-            asyncCall.Initialize(newRpc.Call);
+            asyncCall.Initialize(newRpc.Call, cq);
             var finishedTask = asyncCall.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
+            Tuple<TResponse,WriteFlags> responseTuple = null;
+            var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
                 GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
                 var request = requestStream.Current;
-                // TODO(jtattermusch): we need to read the full stream so that native callhandle gets deallocated.
-                GrpcPreconditions.CheckArgument(!await requestStream.MoveNext().ConfigureAwait(false));
-                var result = await handler(request, context).ConfigureAwait(false);
+                var response = await handler(request, context).ConfigureAwait(false);
                 status = context.Status;
-                await responseStream.WriteAsync(result).ConfigureAwait(false);
+                responseTuple = Tuple.Create(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
             } 
             catch (Exception e)
             {
-                Logger.Error(e, "Exception occured in handler.");
-                status = HandlerUtils.StatusFromException(e);
+                if (!(e is RpcException))
+                {
+                    Logger.Warning(e, "Exception occured in handler.");
+                }
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
             try
             {
-                await responseStream.WriteStatusAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseTuple).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (Exception)
             {
-                // Call has been already cancelled.
+                asyncCall.Cancel();
+                throw;
             }
             await finishedTask.ConfigureAwait(false);
         }
@@ -118,42 +106,44 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(ServerRpcNew newRpc, GrpcEnvironment environment)
+        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
                 method.RequestMarshaller.Deserializer,
-                environment, newRpc.Server);
+                newRpc.Server);
 
-            asyncCall.Initialize(newRpc.Call);
+            asyncCall.Initialize(newRpc.Call, cq);
             var finishedTask = asyncCall.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
+            var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
                 GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
                 var request = requestStream.Current;
-                // TODO(jtattermusch): we need to read the full stream so that native callhandle gets deallocated.
-                GrpcPreconditions.CheckArgument(!await requestStream.MoveNext().ConfigureAwait(false));
                 await handler(request, responseStream, context).ConfigureAwait(false);
                 status = context.Status;
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Exception occured in handler.");
-                status = HandlerUtils.StatusFromException(e);
+                if (!(e is RpcException))
+                {
+                    Logger.Warning(e, "Exception occured in handler.");
+                }
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
 
             try
             {
-                await responseStream.WriteStatusAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (Exception)
             {
-                // Call has been already cancelled.
+                asyncCall.Cancel();
+                throw;
             }
             await finishedTask.ConfigureAwait(false);
         }
@@ -174,46 +164,44 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(ServerRpcNew newRpc, GrpcEnvironment environment)
+        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
                 method.RequestMarshaller.Deserializer,
-                environment, newRpc.Server);
+                newRpc.Server);
 
-            asyncCall.Initialize(newRpc.Call);
+            asyncCall.Initialize(newRpc.Call, cq);
             var finishedTask = asyncCall.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
+            Tuple<TResponse,WriteFlags> responseTuple = null;
+            var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
-                var result = await handler(requestStream, context).ConfigureAwait(false);
+                var response = await handler(requestStream, context).ConfigureAwait(false);
                 status = context.Status;
-                try
-                {
-                    await responseStream.WriteAsync(result).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    status = Status.DefaultCancelled;
-                }
+                responseTuple = Tuple.Create(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Exception occured in handler.");
-                status = HandlerUtils.StatusFromException(e);
+                if (!(e is RpcException))
+                {
+                    Logger.Warning(e, "Exception occured in handler.");
+                }
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
 
             try
             {
-                await responseStream.WriteStatusAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseTuple).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (Exception)
             {
-                // Call has been already cancelled.
+                asyncCall.Cancel();
+                throw;
             }
             await finishedTask.ConfigureAwait(false);
         }
@@ -234,20 +222,20 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(ServerRpcNew newRpc, GrpcEnvironment environment)
+        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
                 method.RequestMarshaller.Deserializer,
-                environment, newRpc.Server);
+                newRpc.Server);
 
-            asyncCall.Initialize(newRpc.Call);
+            asyncCall.Initialize(newRpc.Call, cq);
             var finishedTask = asyncCall.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
+            var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
                 await handler(requestStream, responseStream, context).ConfigureAwait(false);
@@ -255,62 +243,88 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Exception occured in handler.");
-                status = HandlerUtils.StatusFromException(e);
+                if (!(e is RpcException))
+                {
+                    Logger.Warning(e, "Exception occured in handler.");
+                }
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
             try
             {
-                await responseStream.WriteStatusAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (Exception)
             {
-                // Call has been already cancelled.
+                asyncCall.Cancel();
+                throw;
             }
             await finishedTask.ConfigureAwait(false);
         }
     }
 
-    internal class NoSuchMethodCallHandler : IServerCallHandler
+    internal class UnimplementedMethodCallHandler : IServerCallHandler
     {
-        public static readonly NoSuchMethodCallHandler Instance = new NoSuchMethodCallHandler();
+        public static readonly UnimplementedMethodCallHandler Instance = new UnimplementedMethodCallHandler();
 
-        public async Task HandleCall(ServerRpcNew newRpc, GrpcEnvironment environment)
+        DuplexStreamingServerCallHandler<byte[], byte[]> callHandlerImpl;
+
+        public UnimplementedMethodCallHandler()
         {
-            // We don't care about the payload type here.
-            var asyncCall = new AsyncCallServer<byte[], byte[]>(
-                (payload) => payload, (payload) => payload, environment, newRpc.Server);
-            
-            asyncCall.Initialize(newRpc.Call);
-            var finishedTask = asyncCall.ServerSideCallAsync();
-            var responseStream = new ServerResponseStream<byte[], byte[]>(asyncCall);
+            var marshaller = new Marshaller<byte[]>((payload) => payload, (payload) => payload);
+            var method = new Method<byte[], byte[]>(MethodType.DuplexStreaming, "", "", marshaller, marshaller);
+            this.callHandlerImpl = new DuplexStreamingServerCallHandler<byte[], byte[]>(method, new DuplexStreamingServerMethod<byte[], byte[]>(UnimplementedMethod));
+        }
 
-            await responseStream.WriteStatusAsync(new Status(StatusCode.Unimplemented, ""), Metadata.Empty).ConfigureAwait(false);
-            await finishedTask.ConfigureAwait(false);
+        /// <summary>
+        /// Handler used for unimplemented method.
+        /// </summary>
+        private Task UnimplementedMethod(IAsyncStreamReader<byte[]> requestStream, IServerStreamWriter<byte[]> responseStream, ServerCallContext ctx)
+        {
+            ctx.Status = new Status(StatusCode.Unimplemented, "");
+            return TaskUtils.CompletedTask;
+        }
+
+        public Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        {
+            return callHandlerImpl.HandleCall(newRpc, cq);
         }
     }
 
     internal static class HandlerUtils
     {
-        public static Status StatusFromException(Exception e)
+        public static Status GetStatusFromExceptionAndMergeTrailers(Exception e, Metadata callContextResponseTrailers)
         {
             var rpcException = e as RpcException;
             if (rpcException != null)
             {
+                // There are two sources of metadata entries on the server-side:
+                // 1. serverCallContext.ResponseTrailers
+                // 2. trailers in RpcException thrown by user code in server side handler.
+                // As metadata allows duplicate keys, the logical thing to do is
+                // to just merge trailers from RpcException into serverCallContext.ResponseTrailers.
+                foreach (var entry in rpcException.Trailers)
+                {
+                    callContextResponseTrailers.Add(entry);
+                }
                 // use the status thrown by handler.
                 return rpcException.Status;
             }
 
-            // TODO(jtattermusch): what is the right status code here?
             return new Status(StatusCode.Unknown, "Exception was thrown by handler.");
         }
 
-        public static ServerCallContext NewContext<TRequest, TResponse>(ServerRpcNew newRpc, string peer, ServerResponseStream<TRequest, TResponse> serverResponseStream, CancellationToken cancellationToken)
+        public static WriteFlags GetWriteFlags(WriteOptions writeOptions)
+        {
+            return writeOptions != null ? writeOptions.Flags : default(WriteFlags);
+        }
+
+        public static ServerCallContext NewContext<TRequest, TResponse>(ServerRpcNew newRpc, ServerResponseStream<TRequest, TResponse> serverResponseStream, CancellationToken cancellationToken)
             where TRequest : class
             where TResponse : class
         {
-            DateTime realtimeDeadline = newRpc.Deadline.ToClockType(GPRClockType.Realtime).ToDateTime();
+            DateTime realtimeDeadline = newRpc.Deadline.ToClockType(ClockType.Realtime).ToDateTime();
 
-            return new ServerCallContext(newRpc.Call, newRpc.Method, newRpc.Host, peer, realtimeDeadline,
+            return new ServerCallContext(newRpc.Call, newRpc.Method, newRpc.Host, realtimeDeadline,
                 newRpc.RequestMetadata, cancellationToken, serverResponseStream.WriteResponseHeadersAsync, serverResponseStream);
         }
     }

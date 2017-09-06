@@ -1,0 +1,6 @@
+# Install composer
+RUN curl -sS https://getcomposer.org/installer | php
+RUN mv composer.phar /usr/local/bin/composer
+
+# Define the default command.
+CMD ["bash"]

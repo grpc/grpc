@@ -1,49 +1,35 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #include "test/cpp/qps/report.h"
 
+#include <fstream>
+
 #include <grpc/support/log.h>
 #include "test/cpp/qps/driver.h"
+#include "test/cpp/qps/parse_json.h"
 #include "test/cpp/qps/stats.h"
+
+#include <grpc++/client_context.h>
+#include "src/proto/grpc/testing/services.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
-
-static double WallTime(ResourceUsage u) { return u.wall_time(); }
-static double UserTime(ResourceUsage u) { return u.user_time(); }
-static double SystemTime(ResourceUsage u) { return u.system_time(); }
-static int Cores(ResourceUsage u) { return u.cores(); }
 
 void CompositeReporter::add(std::unique_ptr<Reporter> reporter) {
   reporters_.emplace_back(std::move(reporter));
@@ -73,103 +59,149 @@ void CompositeReporter::ReportTimes(const ScenarioResult& result) {
   }
 }
 
+void CompositeReporter::ReportCpuUsage(const ScenarioResult& result) {
+  for (size_t i = 0; i < reporters_.size(); ++i) {
+    reporters_[i]->ReportCpuUsage(result);
+  }
+}
+
+void CompositeReporter::ReportPollCount(const ScenarioResult& result) {
+  for (size_t i = 0; i < reporters_.size(); ++i) {
+    reporters_[i]->ReportPollCount(result);
+  }
+}
+
+void CompositeReporter::ReportQueriesPerCpuSec(const ScenarioResult& result) {
+  for (size_t i = 0; i < reporters_.size(); ++i) {
+    reporters_[i]->ReportQueriesPerCpuSec(result);
+  }
+}
+
 void GprLogReporter::ReportQPS(const ScenarioResult& result) {
-  gpr_log(
-      GPR_INFO, "QPS: %.1f",
-      result.latencies.Count() / average(result.client_resources, WallTime));
+  gpr_log(GPR_INFO, "QPS: %.1f", result.summary().qps());
+  if (result.summary().failed_requests_per_second() > 0) {
+    gpr_log(GPR_INFO, "failed requests/second: %.1f",
+            result.summary().failed_requests_per_second());
+    gpr_log(GPR_INFO, "successful requests/second: %.1f",
+            result.summary().successful_requests_per_second());
+  }
 }
 
 void GprLogReporter::ReportQPSPerCore(const ScenarioResult& result) {
-  auto qps =
-      result.latencies.Count() / average(result.client_resources, WallTime);
-
-  gpr_log(GPR_INFO, "QPS: %.1f (%.1f/server core)", qps,
-          qps / sum(result.server_resources, Cores));
+  gpr_log(GPR_INFO, "QPS: %.1f (%.1f/server core)", result.summary().qps(),
+          result.summary().qps_per_server_core());
 }
 
 void GprLogReporter::ReportLatency(const ScenarioResult& result) {
   gpr_log(GPR_INFO,
           "Latencies (50/90/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f/%.1f us",
-          result.latencies.Percentile(50) / 1000,
-          result.latencies.Percentile(90) / 1000,
-          result.latencies.Percentile(95) / 1000,
-          result.latencies.Percentile(99) / 1000,
-          result.latencies.Percentile(99.9) / 1000);
+          result.summary().latency_50() / 1000,
+          result.summary().latency_90() / 1000,
+          result.summary().latency_95() / 1000,
+          result.summary().latency_99() / 1000,
+          result.summary().latency_999() / 1000);
 }
 
 void GprLogReporter::ReportTimes(const ScenarioResult& result) {
   gpr_log(GPR_INFO, "Server system time: %.2f%%",
-          100.0 * sum(result.server_resources, SystemTime) /
-              sum(result.server_resources, WallTime));
+          result.summary().server_system_time());
   gpr_log(GPR_INFO, "Server user time:   %.2f%%",
-          100.0 * sum(result.server_resources, UserTime) /
-              sum(result.server_resources, WallTime));
+          result.summary().server_user_time());
   gpr_log(GPR_INFO, "Client system time: %.2f%%",
-          100.0 * sum(result.client_resources, SystemTime) /
-              sum(result.client_resources, WallTime));
+          result.summary().client_system_time());
   gpr_log(GPR_INFO, "Client user time:   %.2f%%",
-          100.0 * sum(result.client_resources, UserTime) /
-              sum(result.client_resources, WallTime));
+          result.summary().client_user_time());
 }
 
-void PerfDbReporter::ReportQPS(const ScenarioResult& result) {
-  auto qps =
-      result.latencies.Count() / average(result.client_resources, WallTime);
-
-  perf_db_client_.setQps(qps);
-  perf_db_client_.setConfigs(result.client_config, result.server_config);
+void GprLogReporter::ReportCpuUsage(const ScenarioResult& result) {
+  gpr_log(GPR_INFO, "Server CPU usage: %.2f%%",
+          result.summary().server_cpu_usage());
 }
 
-void PerfDbReporter::ReportQPSPerCore(const ScenarioResult& result) {
-  auto qps =
-      result.latencies.Count() / average(result.client_resources, WallTime);
-
-  auto qps_per_core = qps / sum(result.server_resources, Cores);
-
-  perf_db_client_.setQps(qps);
-  perf_db_client_.setQpsPerCore(qps_per_core);
-  perf_db_client_.setConfigs(result.client_config, result.server_config);
+void GprLogReporter::ReportPollCount(const ScenarioResult& result) {
+  gpr_log(GPR_INFO, "Client Polls per Request: %.2f",
+          result.summary().client_polls_per_request());
+  gpr_log(GPR_INFO, "Server Polls per Request: %.2f",
+          result.summary().server_polls_per_request());
 }
 
-void PerfDbReporter::ReportLatency(const ScenarioResult& result) {
-  perf_db_client_.setLatencies(result.latencies.Percentile(50) / 1000,
-                               result.latencies.Percentile(90) / 1000,
-                               result.latencies.Percentile(95) / 1000,
-                               result.latencies.Percentile(99) / 1000,
-                               result.latencies.Percentile(99.9) / 1000);
-  perf_db_client_.setConfigs(result.client_config, result.server_config);
+void GprLogReporter::ReportQueriesPerCpuSec(const ScenarioResult& result) {
+  gpr_log(GPR_INFO, "Server Queries/CPU-sec: %.2f",
+          result.summary().server_queries_per_cpu_sec());
+  gpr_log(GPR_INFO, "Client Queries/CPU-sec: %.2f",
+          result.summary().client_queries_per_cpu_sec());
 }
 
-void PerfDbReporter::ReportTimes(const ScenarioResult& result) {
-  const double server_system_time = 100.0 *
-                                    sum(result.server_resources, SystemTime) /
-                                    sum(result.server_resources, WallTime);
-  const double server_user_time = 100.0 *
-                                  sum(result.server_resources, UserTime) /
-                                  sum(result.server_resources, WallTime);
-  const double client_system_time = 100.0 *
-                                    sum(result.client_resources, SystemTime) /
-                                    sum(result.client_resources, WallTime);
-  const double client_user_time = 100.0 *
-                                  sum(result.client_resources, UserTime) /
-                                  sum(result.client_resources, WallTime);
-
-  perf_db_client_.setTimes(server_system_time, server_user_time,
-                           client_system_time, client_user_time);
-  perf_db_client_.setConfigs(result.client_config, result.server_config);
+void JsonReporter::ReportQPS(const ScenarioResult& result) {
+  grpc::string json_string =
+      SerializeJson(result, "type.googleapis.com/grpc.testing.ScenarioResult");
+  std::ofstream output_file(report_file_);
+  output_file << json_string;
+  output_file.close();
 }
 
-void PerfDbReporter::SendData() {
-  // send data to performance database
-  bool data_state =
-      perf_db_client_.sendData(hashed_id_, test_name_, sys_info_, tag_);
+void JsonReporter::ReportQPSPerCore(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
+}
 
-  // check state of data sending
-  if (data_state) {
-    gpr_log(GPR_INFO, "Data sent to performance database successfully");
+void JsonReporter::ReportLatency(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
+}
+
+void JsonReporter::ReportTimes(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
+}
+
+void JsonReporter::ReportCpuUsage(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
+}
+
+void JsonReporter::ReportPollCount(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
+}
+
+void JsonReporter::ReportQueriesPerCpuSec(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
+}
+
+void RpcReporter::ReportQPS(const ScenarioResult& result) {
+  grpc::ClientContext context;
+  grpc::Status status;
+  Void dummy;
+
+  gpr_log(GPR_INFO, "RPC reporter sending scenario result to server");
+  status = stub_->ReportScenario(&context, result, &dummy);
+
+  if (status.ok()) {
+    gpr_log(GPR_INFO, "RpcReporter report RPC success!");
   } else {
-    gpr_log(GPR_INFO, "Data could not be sent to performance database");
+    gpr_log(GPR_ERROR, "RpcReporter report RPC: code: %d. message: %s",
+            status.error_code(), status.error_message().c_str());
   }
+}
+
+void RpcReporter::ReportQPSPerCore(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
+}
+
+void RpcReporter::ReportLatency(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
+}
+
+void RpcReporter::ReportTimes(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
+}
+
+void RpcReporter::ReportCpuUsage(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
+}
+
+void RpcReporter::ReportPollCount(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
+}
+
+void RpcReporter::ReportQueriesPerCpuSec(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
 }
 
 }  // namespace testing

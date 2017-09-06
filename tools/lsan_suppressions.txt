@@ -1,3 +1,5 @@
 # this is busted in BoringSSL
 leak:CRYPTO_set_thread_local
 leak:err_get_state
+leak:ERR_add_error_dataf
+leak:err_add_error_vdata

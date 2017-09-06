@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -56,7 +41,7 @@ class SecureCallCredentials;
 /// It can make various assertions, e.g., about the client’s identity, role
 /// for all the calls on that channel.
 ///
-/// \see http://www.grpc.io/docs/guides/auth.html
+/// \see https://grpc.io/docs/guides/auth.html
 class ChannelCredentials : private GrpcLibraryCodegen {
  public:
   ChannelCredentials();
@@ -82,7 +67,7 @@ class ChannelCredentials : private GrpcLibraryCodegen {
 /// A call credentials object encapsulates the state needed by a client to
 /// authenticate with a server for a given call on a channel.
 ///
-/// \see http://www.grpc.io/docs/guides/auth.html
+/// \see https://grpc.io/docs/guides/auth.html
 class CallCredentials : private GrpcLibraryCodegen {
  public:
   CallCredentials();
@@ -147,13 +132,17 @@ std::shared_ptr<ChannelCredentials> SslCredentials(
 /// services.
 std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials();
 
+/// Constant for maximum auth token lifetime.
+constexpr long kMaxAuthTokenLifetimeSecs = 3600;
+
 /// Builds Service Account JWT Access credentials.
 /// json_key is the JSON key string containing the client's private key.
 /// token_lifetime_seconds is the lifetime in seconds of each Json Web Token
 /// (JWT) created with this credentials. It should not exceed
-/// grpc_max_auth_token_lifetime or will be cropped to this value.
+/// \a kMaxAuthTokenLifetimeSecs or will be cropped to this value.
 std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
-    const grpc::string& json_key, long token_lifetime_seconds);
+    const grpc::string& json_key,
+    long token_lifetime_seconds = kMaxAuthTokenLifetimeSecs);
 
 /// Builds refresh token credentials.
 /// json_refresh_token is the JSON string containing the refresh token along
@@ -201,23 +190,26 @@ std::shared_ptr<CallCredentials> CompositeCallCredentials(
 /// Credentials for an unencrypted, unauthenticated channel
 std::shared_ptr<ChannelCredentials> InsecureChannelCredentials();
 
-// User defined metadata credentials.
+/// Credentials for a channel using Cronet.
+std::shared_ptr<ChannelCredentials> CronetChannelCredentials(void* engine);
+
+/// User defined metadata credentials.
 class MetadataCredentialsPlugin {
  public:
   virtual ~MetadataCredentialsPlugin() {}
 
-  // If this method returns true, the Process function will be scheduled in
-  // a different thread from the one processing the call.
+  /// If this method returns true, the Process function will be scheduled in
+  /// a different thread from the one processing the call.
   virtual bool IsBlocking() const { return true; }
 
-  // Type of credentials this plugin is implementing.
+  /// Type of credentials this plugin is implementing.
   virtual const char* GetType() const { return ""; }
 
-  // Gets the auth metatada produced by this plugin.
-  // The fully qualified method name is:
-  // service_url + "/" + method_name.
-  // The channel_auth_context contains (among other things), the identity of
-  // the server.
+  /// Gets the auth metatada produced by this plugin.
+  /// The fully qualified method name is:
+  /// service_url + "/" + method_name.
+  /// The channel_auth_context contains (among other things), the identity of
+  /// the server.
   virtual Status GetMetadata(
       grpc::string_ref service_url, grpc::string_ref method_name,
       const AuthContext& channel_auth_context,

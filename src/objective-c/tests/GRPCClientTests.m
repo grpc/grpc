@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -38,19 +23,22 @@
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+OAuth2.h>
 #import <GRPCClient/GRPCCall+Tests.h>
+#import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 #import <ProtoRPC/ProtoMethod.h>
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
+
+#define TEST_TIMEOUT 16
 
 static NSString * const kHostAddress = @"localhost:5050";
 static NSString * const kPackage = @"grpc.testing";
 static NSString * const kService = @"TestService";
 static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.googleapis.com";
 
-static ProtoMethod *kInexistentMethod;
-static ProtoMethod *kEmptyCallMethod;
-static ProtoMethod *kUnaryCallMethod;
+static GRPCProtoMethod *kInexistentMethod;
+static GRPCProtoMethod *kEmptyCallMethod;
+static GRPCProtoMethod *kUnaryCallMethod;
 
 /** Observer class for testing that responseMetadata is KVO-compliant */
 @interface PassthroughObserver : NSObject
@@ -109,15 +97,15 @@ static ProtoMethod *kUnaryCallMethod;
   [GRPCCall useInsecureConnectionsForHost:kHostAddress];
 
   // This method isn't implemented by the remote server.
-  kInexistentMethod = [[ProtoMethod alloc] initWithPackage:kPackage
-                                                   service:kService
-                                                    method:@"Inexistent"];
-  kEmptyCallMethod = [[ProtoMethod alloc] initWithPackage:kPackage
-                                                  service:kService
-                                                   method:@"EmptyCall"];
-  kUnaryCallMethod = [[ProtoMethod alloc] initWithPackage:kPackage
-                                                  service:kService
-                                                   method:@"UnaryCall"];
+  kInexistentMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
+                                                       service:kService
+                                                        method:@"Inexistent"];
+  kEmptyCallMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
+                                                      service:kService
+                                                       method:@"EmptyCall"];
+  kUnaryCallMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
+                                                      service:kService
+                                                       method:@"UnaryCall"];
 }
 
 - (void)testConnectionToRemoteServer {
@@ -137,7 +125,7 @@ static ProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testEmptyRPC {
@@ -159,7 +147,7 @@ static ProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:8 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testSimpleProtoRPC {
@@ -191,7 +179,7 @@ static ProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:8 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testMetadata {
@@ -225,7 +213,7 @@ static ProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testResponseMetadataKVO {
@@ -256,7 +244,7 @@ static ProtoMethod *kUnaryCallMethod;
   
   [call startWithWriteable:responsesWriteable];
   
-  [self waitForExpectationsWithTimeout:8 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testUserAgentPrefix {
@@ -287,25 +275,45 @@ static ProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:8 handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+- (void)testTrailers {
+  __weak XCTestExpectation *response = [self expectationWithDescription:@"Empty response received."];
+  __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+                                             path:kEmptyCallMethod.HTTPPath
+                                   requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
+  // Setting this special key in the header will cause the interop server to echo back the
+  // trailer data.
+  const unsigned char raw_bytes[] = {1,2,3,4};
+  NSData *trailer_data = [NSData dataWithBytes:raw_bytes length:sizeof(raw_bytes)];
+  call.requestHeaders[@"x-grpc-test-echo-trailing-bin"] = trailer_data;
+
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    XCTAssertNotNil(value, @"nil value received as response.");
+    XCTAssertEqual([value length], 0, @"Non-empty response received: %@", value);
+    [response fulfill];
+  } completionHandler:^(NSError *errorOrNil) {
+    XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
+    XCTAssertEqualObjects((NSData *)call.responseTrailers[@"x-grpc-test-echo-trailing-bin"],
+                          trailer_data,
+                          @"Did not receive expected trailer");
+    [completion fulfill];
+  }];
+
+  [call startWithWriteable:responsesWriteable];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 // TODO(makarandd): Move to a different file that contains only unit tests
 - (void)testExceptions {
-  // Try to set userAgentPrefix for host that is nil. This should cause
-  // an exception.
-  @try {
-    [GRPCCall setUserAgentPrefix:@"Foo" forHost:nil];
-    XCTFail(@"Did not receive an exception when host is nil");
-  } @catch(NSException *theException) {
-    NSLog(@"Received exception as expected: %@", theException.name);
-  }
-
   // Try to set parameters to nil for GRPCCall. This should cause an exception
   @try {
-    GRPCCall *call = [[GRPCCall alloc] initWithHost:nil
-                                               path:nil
-                                     requestsWriter:nil];
+    (void)[[GRPCCall alloc] initWithHost:nil
+                                    path:nil
+                          requestsWriter:nil];
     XCTFail(@"Did not receive an exception when parameters are nil");
   } @catch(NSException *theException) {
     NSLog(@"Received exception as expected: %@", theException.name);
@@ -316,14 +324,102 @@ static ProtoMethod *kUnaryCallMethod;
   GRXWriter *requestsWriter = [GRXWriter emptyWriter];
   [requestsWriter finishWithError:nil];
   @try {
-    GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
-                                               path:kUnaryCallMethod.HTTPPath
-                                     requestsWriter:requestsWriter];
+    (void)[[GRPCCall alloc] initWithHost:kHostAddress
+                                    path:kUnaryCallMethod.HTTPPath
+                          requestsWriter:requestsWriter];
     XCTFail(@"Did not receive an exception when GRXWriter has incorrect state.");
   } @catch(NSException *theException) {
     NSLog(@"Received exception as expected: %@", theException.name);
   }
 
+}
+
+- (void)testIdempotentProtoRPC {
+  __weak XCTestExpectation *response = [self expectationWithDescription:@"Expected response."];
+  __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  request.responseSize = 100;
+  request.fillUsername = YES;
+  request.fillOauthScope = YES;
+  GRXWriter *requestsWriter = [GRXWriter writerWithValue:[request data]];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+                                             path:kUnaryCallMethod.HTTPPath
+                                   requestsWriter:requestsWriter];
+  [GRPCCall setCallSafety:GRPCCallSafetyIdempotentRequest host:kHostAddress path:kUnaryCallMethod.HTTPPath];
+
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    XCTAssertNotNil(value, @"nil value received as response.");
+    XCTAssertGreaterThan(value.length, 0, @"Empty response received.");
+    RMTSimpleResponse *responseProto = [RMTSimpleResponse parseFromData:value error:NULL];
+    // We expect empty strings, not nil:
+    XCTAssertNotNil(responseProto.username, @"Response's username is nil.");
+    XCTAssertNotNil(responseProto.oauthScope, @"Response's OAuth scope is nil.");
+    [response fulfill];
+  } completionHandler:^(NSError *errorOrNil) {
+    XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
+    [completion fulfill];
+  }];
+
+  [call startWithWriteable:responsesWriteable];
+
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+- (void)testAlternateDispatchQueue {
+  const int32_t kPayloadSize = 100;
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  request.responseSize = kPayloadSize;
+
+  __weak XCTestExpectation *expectation1 = [self expectationWithDescription:@"AlternateDispatchQueue1"];
+
+  // Use default (main) dispatch queue
+  NSString *main_queue_label = [NSString stringWithUTF8String:dispatch_queue_get_label(dispatch_get_main_queue())];
+
+  GRXWriter *requestsWriter1 = [GRXWriter writerWithValue:[request data]];
+
+  GRPCCall *call1 = [[GRPCCall alloc] initWithHost:kHostAddress
+                                              path:kUnaryCallMethod.HTTPPath
+                                    requestsWriter:requestsWriter1];
+
+  id<GRXWriteable> responsesWriteable1 = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    NSString *label = [NSString stringWithUTF8String:dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL)];
+    XCTAssert([label isEqualToString:main_queue_label]);
+
+    [expectation1 fulfill];
+  } completionHandler:^(NSError *errorOrNil) {
+  }];
+
+  [call1 startWithWriteable:responsesWriteable1];
+
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+
+  // Use a custom  queue
+  __weak XCTestExpectation *expectation2 = [self expectationWithDescription:@"AlternateDispatchQueue2"];
+
+  NSString *queue_label = @"test.queue1";
+  dispatch_queue_t queue = dispatch_queue_create([queue_label UTF8String], DISPATCH_QUEUE_SERIAL);
+
+  GRXWriter *requestsWriter2 = [GRXWriter writerWithValue:[request data]];
+
+  GRPCCall *call2 = [[GRPCCall alloc] initWithHost:kHostAddress
+                                              path:kUnaryCallMethod.HTTPPath
+                                    requestsWriter:requestsWriter2];
+
+  [call2 setResponseDispatchQueue:queue];
+
+  id<GRXWriteable> responsesWriteable2 = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    NSString *label = [NSString stringWithUTF8String:dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL)];
+    XCTAssert([label isEqualToString:queue_label]);
+
+    [expectation2 fulfill];
+  } completionHandler:^(NSError *errorOrNil) {
+  }];
+
+  [call2 startWithWriteable:responsesWriteable2];
+
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 @end

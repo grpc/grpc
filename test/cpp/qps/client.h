@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -36,21 +21,24 @@
 
 #include <condition_variable>
 #include <mutex>
+#include <unordered_map>
 #include <vector>
 
+#include <grpc++/channel.h>
 #include <grpc++/support/byte_buffer.h>
+#include <grpc++/support/channel_arguments.h>
 #include <grpc++/support/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/proto/grpc/testing/payloads.grpc.pb.h"
+#include "src/proto/grpc/testing/payloads.pb.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
-#include "test/cpp/qps/limit_cores.h"
 #include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/create_test_channel.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 namespace grpc {
 namespace testing {
@@ -100,9 +88,7 @@ class ClientRequestCreator<ByteBuffer> {
     if (payload_config.has_bytebuf_params()) {
       std::unique_ptr<char[]> buf(
           new char[payload_config.bytebuf_params().req_size()]);
-      gpr_slice s = gpr_slice_from_copied_buffer(
-          buf.get(), payload_config.bytebuf_params().req_size());
-      Slice slice(s, Slice::STEAL_REF);
+      Slice slice(buf.get(), payload_config.bytebuf_params().req_size());
       *req = ByteBuffer(&slice, 1);
     } else {
       GPR_ASSERT(false);  // not appropriate for this specialization
@@ -110,55 +96,132 @@ class ClientRequestCreator<ByteBuffer> {
   }
 };
 
+class HistogramEntry final {
+ public:
+  HistogramEntry() : value_used_(false), status_used_(false) {}
+  bool value_used() const { return value_used_; }
+  double value() const { return value_; }
+  void set_value(double v) {
+    value_used_ = true;
+    value_ = v;
+  }
+  bool status_used() const { return status_used_; }
+  int status() const { return status_; }
+  void set_status(int status) {
+    status_used_ = true;
+    status_ = status;
+  }
+
+ private:
+  bool value_used_;
+  double value_;
+  bool status_used_;
+  int status_;
+};
+
+typedef std::unordered_map<int, int64_t> StatusHistogram;
+
+inline void MergeStatusHistogram(const StatusHistogram& from,
+                                 StatusHistogram* to) {
+  for (StatusHistogram::const_iterator it = from.begin(); it != from.end();
+       ++it) {
+    (*to)[it->first] += it->second;
+  }
+}
+
 class Client {
  public:
-  Client() : timer_(new UsageTimer), interarrival_timer_() {}
+  Client()
+      : timer_(new UsageTimer),
+        interarrival_timer_(),
+        started_requests_(false),
+        last_reset_poll_count_(0) {
+    gpr_event_init(&start_requests_);
+  }
   virtual ~Client() {}
 
   ClientStats Mark(bool reset) {
     Histogram latencies;
+    StatusHistogram statuses;
     UsageTimer::Result timer_result;
 
-    // avoid std::vector for old compilers that expect a copy constructor
-    if (reset) {
-      Histogram* to_merge = new Histogram[threads_.size()];
-      for (size_t i = 0; i < threads_.size(); i++) {
-        threads_[i]->Swap(&to_merge[i]);
-        latencies.Merge(to_merge[i]);
-      }
-      delete[] to_merge;
+    MaybeStartRequests();
 
+    int cur_poll_count = GetPollCount();
+    int poll_count = cur_poll_count - last_reset_poll_count_;
+    if (reset) {
+      std::vector<Histogram> to_merge(threads_.size());
+      std::vector<StatusHistogram> to_merge_status(threads_.size());
+
+      for (size_t i = 0; i < threads_.size(); i++) {
+        threads_[i]->BeginSwap(&to_merge[i], &to_merge_status[i]);
+      }
       std::unique_ptr<UsageTimer> timer(new UsageTimer);
       timer_.swap(timer);
+      for (size_t i = 0; i < threads_.size(); i++) {
+        latencies.Merge(to_merge[i]);
+        MergeStatusHistogram(to_merge_status[i], &statuses);
+      }
       timer_result = timer->Mark();
+      last_reset_poll_count_ = cur_poll_count;
     } else {
       // merge snapshots of each thread histogram
       for (size_t i = 0; i < threads_.size(); i++) {
-        threads_[i]->MergeStatsInto(&latencies);
+        threads_[i]->MergeStatsInto(&latencies, &statuses);
       }
       timer_result = timer_->Mark();
     }
 
     ClientStats stats;
     latencies.FillProto(stats.mutable_latencies());
+    for (StatusHistogram::const_iterator it = statuses.begin();
+         it != statuses.end(); ++it) {
+      RequestResultCount* rrc = stats.add_request_results();
+      rrc->set_status_code(it->first);
+      rrc->set_count(it->second);
+    }
     stats.set_time_elapsed(timer_result.wall);
     stats.set_time_system(timer_result.system);
     stats.set_time_user(timer_result.user);
+    stats.set_cq_poll_count(poll_count);
     return stats;
+  }
+
+  // Must call AwaitThreadsCompletion before destructor to avoid a race
+  // between destructor and invocation of virtual ThreadFunc
+  void AwaitThreadsCompletion() {
+    gpr_atm_rel_store(&thread_pool_done_, static_cast<gpr_atm>(true));
+    DestroyMultithreading();
+    std::unique_lock<std::mutex> g(thread_completion_mu_);
+    while (threads_remaining_ != 0) {
+      threads_complete_.wait(g);
+    }
+  }
+
+  virtual int GetPollCount() {
+    // For sync client.
+    return 0;
   }
 
  protected:
   bool closed_loop_;
+  gpr_atm thread_pool_done_;
 
   void StartThreads(size_t num_threads) {
+    gpr_atm_rel_store(&thread_pool_done_, static_cast<gpr_atm>(false));
+    threads_remaining_ = num_threads;
     for (size_t i = 0; i < num_threads; i++) {
       threads_.emplace_back(new Thread(this, i));
     }
   }
 
-  void EndThreads() { threads_.clear(); }
+  void EndThreads() {
+    MaybeStartRequests();
+    threads_.clear();
+  }
 
-  virtual bool ThreadFunc(Histogram* histogram, size_t thread_idx) = 0;
+  virtual void DestroyMultithreading() = 0;
+  virtual bool ThreadFunc(HistogramEntry* histogram, size_t thread_idx) = 0;
 
   void SetupLoadTest(const ClientConfig& config, size_t num_threads) {
     // Set up the load distribution based on the number of threads
@@ -172,20 +235,6 @@ class Client {
       case LoadParams::kPoisson:
         random_dist.reset(
             new ExpDist(load.poisson().offered_load() / num_threads));
-        break;
-      case LoadParams::kUniform:
-        random_dist.reset(
-            new UniformDist(load.uniform().interarrival_lo() * num_threads,
-                            load.uniform().interarrival_hi() * num_threads));
-        break;
-      case LoadParams::kDeterm:
-        random_dist.reset(
-            new DetDist(num_threads / load.determ().offered_load()));
-        break;
-      case LoadParams::kPareto:
-        random_dist.reset(
-            new ParetoDist(load.pareto().interarrival_base() * num_threads,
-                           load.pareto().alpha()));
         break;
       default:
         GPR_ASSERT(false);
@@ -224,27 +273,20 @@ class Client {
   class Thread {
    public:
     Thread(Client* client, size_t idx)
-        : done_(false),
-          client_(client),
-          idx_(idx),
-          impl_(&Thread::ThreadFunc, this) {}
+        : client_(client), idx_(idx), impl_(&Thread::ThreadFunc, this) {}
 
-    ~Thread() {
-      {
-        std::lock_guard<std::mutex> g(mu_);
-        done_ = true;
-      }
-      impl_.join();
-    }
+    ~Thread() { impl_.join(); }
 
-    void Swap(Histogram* n) {
+    void BeginSwap(Histogram* n, StatusHistogram* s) {
       std::lock_guard<std::mutex> g(mu_);
       n->Swap(&histogram_);
+      s->swap(statuses_);
     }
 
-    void MergeStatsInto(Histogram* hist) {
+    void MergeStatsInto(Histogram* hist, StatusHistogram* s) {
       std::unique_lock<std::mutex> g(mu_);
       hist->Merge(histogram_);
+      MergeStatusHistogram(statuses_, s);
     }
 
    private:
@@ -252,25 +294,39 @@ class Client {
     Thread& operator=(const Thread&);
 
     void ThreadFunc() {
+      while (!gpr_event_wait(
+          &client_->start_requests_,
+          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                       gpr_time_from_seconds(1, GPR_TIMESPAN)))) {
+        gpr_log(GPR_INFO, "Waiting for benchmark to start");
+      }
+
       for (;;) {
-        // lock since the thread should only be doing one thing at a time
-        std::lock_guard<std::mutex> g(mu_);
         // run the loop body
-        const bool thread_still_ok = client_->ThreadFunc(&histogram_, idx_);
-        // see if we're done
+        HistogramEntry entry;
+        const bool thread_still_ok = client_->ThreadFunc(&entry, idx_);
+        // lock, update histogram if needed and see if we're done
+        std::lock_guard<std::mutex> g(mu_);
+        if (entry.value_used()) {
+          histogram_.Add(entry.value());
+        }
+        if (entry.status_used()) {
+          statuses_[entry.status()]++;
+        }
         if (!thread_still_ok) {
           gpr_log(GPR_ERROR, "Finishing client thread due to RPC error");
-          done_ = true;
         }
-        if (done_) {
+        if (!thread_still_ok ||
+            static_cast<bool>(gpr_atm_acq_load(&client_->thread_pool_done_))) {
+          client_->CompleteThread();
           return;
         }
       }
     }
 
     std::mutex mu_;
-    bool done_;
     Histogram histogram_;
+    StatusHistogram statuses_;
     Client* client_;
     const size_t idx_;
     std::thread impl_;
@@ -281,6 +337,30 @@ class Client {
 
   InterarrivalTimer interarrival_timer_;
   std::vector<gpr_timespec> next_time_;
+
+  std::mutex thread_completion_mu_;
+  size_t threads_remaining_;
+  std::condition_variable threads_complete_;
+
+  gpr_event start_requests_;
+  bool started_requests_;
+
+  int last_reset_poll_count_;
+
+  void MaybeStartRequests() {
+    if (!started_requests_) {
+      started_requests_ = true;
+      gpr_event_set(&start_requests_, (void*)1);
+    }
+  }
+
+  void CompleteThread() {
+    std::lock_guard<std::mutex> g(thread_completion_mu_);
+    threads_remaining_--;
+    if (threads_remaining_ == 0) {
+      threads_complete_.notify_all();
+    }
+  }
 };
 
 template <class StubType, class RequestType>
@@ -289,12 +369,11 @@ class ClientImpl : public Client {
   ClientImpl(const ClientConfig& config,
              std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
                  create_stub)
-      : cores_(LimitCores(config.core_list().data(), config.core_list_size())),
-        channels_(config.client_channels()),
-        create_stub_(create_stub) {
+      : cores_(gpr_cpu_num_cores()), create_stub_(create_stub) {
     for (int i = 0; i < config.client_channels(); i++) {
-      channels_[i].init(config.server_targets(i % config.server_targets_size()),
-                        config, create_stub_);
+      channels_.emplace_back(
+          config.server_targets(i % config.server_targets_size()), config,
+          create_stub_, i);
     }
 
     ClientRequestCreator<RequestType> create_req(&request_,
@@ -308,29 +387,49 @@ class ClientImpl : public Client {
 
   class ClientChannelInfo {
    public:
-    ClientChannelInfo() {}
-    ClientChannelInfo(const ClientChannelInfo& i) {
-      // The copy constructor is to satisfy old compilers
-      // that need it for using std::vector . It is only ever
-      // used for empty entries
-      GPR_ASSERT(!i.channel_ && !i.stub_);
-    }
-    void init(const grpc::string& target, const ClientConfig& config,
-              std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
-                  create_stub) {
-      // We have to use a 2-phase init like this with a default
-      // constructor followed by an initializer function to make
-      // old compilers happy with using this in std::vector
+    ClientChannelInfo(
+        const grpc::string& target, const ClientConfig& config,
+        std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
+            create_stub,
+        int shard) {
+      ChannelArguments args;
+      args.SetInt("shard_to_ensure_no_subchannel_merges", shard);
+      set_channel_args(config, &args);
+
+      grpc::string type;
+      if (config.has_security_params() &&
+          config.security_params().cred_type().empty()) {
+        type = kTlsCredentialsType;
+      } else {
+        type = config.security_params().cred_type();
+      }
+
       channel_ = CreateTestChannel(
-          target, config.security_params().server_host_override(),
-          config.has_security_params(),
-          !config.security_params().use_test_ca());
+          target, type, config.security_params().server_host_override(),
+          !config.security_params().use_test_ca(),
+          std::shared_ptr<CallCredentials>(), args);
+      gpr_log(GPR_INFO, "Connecting to %s", target.c_str());
+      GPR_ASSERT(channel_->WaitForConnected(
+          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                       gpr_time_from_seconds(300, GPR_TIMESPAN))));
       stub_ = create_stub(channel_);
     }
     Channel* get_channel() { return channel_.get(); }
     StubType* get_stub() { return stub_.get(); }
 
    private:
+    void set_channel_args(const ClientConfig& config, ChannelArguments* args) {
+      for (auto channel_arg : config.channel_args()) {
+        if (channel_arg.value_case() == ChannelArg::kStrValue) {
+          args->SetString(channel_arg.name(), channel_arg.str_value());
+        } else if (channel_arg.value_case() == ChannelArg::kIntValue) {
+          args->SetInt(channel_arg.name(), channel_arg.int_value());
+        } else {
+          gpr_log(GPR_ERROR, "Empty channel arg value.");
+        }
+      }
+    }
+
     std::shared_ptr<Channel> channel_;
     std::unique_ptr<StubType> stub_;
   };
@@ -339,11 +438,8 @@ class ClientImpl : public Client {
       create_stub_;
 };
 
-std::unique_ptr<Client> CreateSynchronousUnaryClient(const ClientConfig& args);
-std::unique_ptr<Client> CreateSynchronousStreamingClient(
-    const ClientConfig& args);
-std::unique_ptr<Client> CreateAsyncUnaryClient(const ClientConfig& args);
-std::unique_ptr<Client> CreateAsyncStreamingClient(const ClientConfig& args);
+std::unique_ptr<Client> CreateSynchronousClient(const ClientConfig& args);
+std::unique_ptr<Client> CreateAsyncClient(const ClientConfig& args);
 std::unique_ptr<Client> CreateGenericAsyncStreamingClient(
     const ClientConfig& args);
 

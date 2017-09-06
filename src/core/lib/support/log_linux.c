@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -41,13 +26,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_LINUX
+#ifdef GPR_LINUX_LOG
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include <linux/unistd.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -68,6 +52,7 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
   }
   va_end(args);
   gpr_log_message(file, line, severity, message);
+  /* message has been allocated by vasprintf above, and needs free */
   free(message);
 }
 
@@ -79,6 +64,8 @@ void gpr_default_log(gpr_log_func_args *args) {
   time_t timer;
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   struct tm tm;
+  static __thread long tid = 0;
+  if (tid == 0) tid = gettid();
 
   timer = (time_t)now.tv_sec;
   final_slash = strrchr(args->file, '/');
@@ -94,12 +81,12 @@ void gpr_default_log(gpr_log_func_args *args) {
     strcpy(time_buffer, "error:strftime");
   }
 
-  gpr_asprintf(&prefix, "%s%s.%09d %7tu %s:%d]",
+  gpr_asprintf(&prefix, "%s%s.%09" PRId32 " %7ld %s:%d]",
                gpr_log_severity_string(args->severity), time_buffer,
-               (int)(now.tv_nsec), gettid(), display_file, args->line);
+               now.tv_nsec, tid, display_file, args->line);
 
   fprintf(stderr, "%-60s %s\n", prefix, args->message);
   gpr_free(prefix);
 }
 
-#endif
+#endif /* GPR_LINUX_LOG */

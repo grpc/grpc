@@ -1,31 +1,16 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 require 'grpc'
 require 'grpc/generic/rpc_desc'
@@ -48,27 +33,34 @@ describe GRPC::RpcDesc do
     @bidi_streamer = RpcDesc.new('ss', Stream.new(Object.new),
                                  Stream.new(Object.new), 'encode', 'decode')
     @bs_code = INTERNAL
-    @no_reason = 'no reason given'
     @ok_response = Object.new
   end
 
   shared_examples 'it handles errors' do
     it 'sends the specified status if BadStatus is raised' do
-      expect(@call).to receive(:remote_read).once.and_return(Object.new)
+      expect(@call).to receive(:read_unary_request).once.and_return(Object.new)
       expect(@call).to receive(:send_status).once.with(@bs_code, 'NOK', false,
-                                                       {})
+                                                       metadata: {})
       this_desc.run_server_method(@call, method(:bad_status))
     end
 
     it 'sends status UNKNOWN if other StandardErrors are raised' do
-      expect(@call).to receive(:remote_read).once.and_return(Object.new)
-      expect(@call).to receive(:send_status) .once.with(UNKNOWN, @no_reason,
-                                                        false, {})
+      expect(@call).to receive(:read_unary_request).once.and_return(Object.new)
+      expect(@call).to receive(:send_status).once.with(UNKNOWN,
+                                                       arg_error_msg,
+                                                       false, metadata: {})
       this_desc.run_server_method(@call, method(:other_error))
     end
 
+    it 'sends status UNKNOWN if NotImplementedErrors are raised' do
+      expect(@call).to receive(:read_unary_request).once.and_return(Object.new)
+      expect(@call).to receive(:send_status).once.with(
+        UNKNOWN, not_implemented_error_msg, false, metadata: {})
+      this_desc.run_server_method(@call, method(:not_implemented))
+    end
+
     it 'absorbs CallError with no further action' do
-      expect(@call).to receive(:remote_read).once.and_raise(CallError)
+      expect(@call).to receive(:read_unary_request).once.and_raise(CallError)
       blk = proc do
         this_desc.run_server_method(@call, method(:fake_reqresp))
       end
@@ -83,17 +75,18 @@ describe GRPC::RpcDesc do
       before(:each) do
         @call = double('active_call')
         allow(@call).to receive(:single_req_view).and_return(@call)
+        allow(@call).to receive(:output_metadata).and_return(@call)
       end
 
       it_behaves_like 'it handles errors'
 
       it 'sends a response and closes the stream if there no errors' do
         req = Object.new
-        expect(@call).to receive(:remote_read).once.and_return(req)
-        expect(@call).to receive(:remote_send).once.with(@ok_response)
-        expect(@call).to receive(:output_metadata).and_return(fake_md)
-        expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
-                                                         **fake_md)
+        expect(@call).to receive(:read_unary_request).once.and_return(req)
+        expect(@call).to receive(:output_metadata).once.and_return(fake_md)
+        expect(@call).to receive(:server_unary_response).once
+          .with(@ok_response, trailing_metadata: fake_md)
+
         this_desc.run_server_method(@call, method(:fake_reqresp))
       end
     end
@@ -106,18 +99,26 @@ describe GRPC::RpcDesc do
 
       it 'sends the specified status if BadStatus is raised' do
         expect(@call).to receive(:send_status).once.with(@bs_code, 'NOK', false,
-                                                         {})
+                                                         metadata: {})
         @client_streamer.run_server_method(@call, method(:bad_status_alt))
       end
 
       it 'sends status UNKNOWN if other StandardErrors are raised' do
-        expect(@call).to receive(:send_status) .once.with(UNKNOWN, @no_reason,
-                                                          false, {})
+        expect(@call).to receive(:send_status).once.with(UNKNOWN, arg_error_msg,
+                                                         false, metadata: {})
         @client_streamer.run_server_method(@call, method(:other_error_alt))
       end
 
+      it 'sends status UNKNOWN if NotImplementedErrors are raised' do
+        expect(@call).to receive(:send_status).once.with(
+          UNKNOWN, not_implemented_error_msg, false, metadata: {})
+        @client_streamer.run_server_method(@call, method(:not_implemented_alt))
+      end
+
       it 'absorbs CallError with no further action' do
-        expect(@call).to receive(:remote_send).once.and_raise(CallError)
+        expect(@call).to receive(:server_unary_response).once.and_raise(
+          CallError)
+        allow(@call).to receive(:output_metadata).and_return({})
         blk = proc do
           @client_streamer.run_server_method(@call, method(:fake_clstream))
         end
@@ -125,10 +126,11 @@ describe GRPC::RpcDesc do
       end
 
       it 'sends a response and closes the stream if there no errors' do
-        expect(@call).to receive(:remote_send).once.with(@ok_response)
-        expect(@call).to receive(:output_metadata).and_return(fake_md)
-        expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
-                                                         **fake_md)
+        expect(@call).to receive(:output_metadata).and_return(
+          fake_md)
+        expect(@call).to receive(:server_unary_response).once
+          .with(@ok_response, trailing_metadata: fake_md)
+
         @client_streamer.run_server_method(@call, method(:fake_clstream))
       end
     end
@@ -144,11 +146,11 @@ describe GRPC::RpcDesc do
 
       it 'sends a response and closes the stream if there no errors' do
         req = Object.new
-        expect(@call).to receive(:remote_read).once.and_return(req)
+        expect(@call).to receive(:read_unary_request).once.and_return(req)
         expect(@call).to receive(:remote_send).twice.with(@ok_response)
         expect(@call).to receive(:output_metadata).and_return(fake_md)
         expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
-                                                         **fake_md)
+                                                         metadata: fake_md)
         @server_streamer.run_server_method(@call, method(:fake_svstream))
       end
     end
@@ -165,22 +167,31 @@ describe GRPC::RpcDesc do
         e = GRPC::BadStatus.new(@bs_code, 'NOK')
         expect(@call).to receive(:run_server_bidi).and_raise(e)
         expect(@call).to receive(:send_status).once.with(@bs_code, 'NOK', false,
-                                                         {})
+                                                         metadata: {})
         @bidi_streamer.run_server_method(@call, method(:bad_status_alt))
       end
 
       it 'sends status UNKNOWN if other StandardErrors are raised' do
+        error_msg = arg_error_msg(StandardError.new)
         expect(@call).to receive(:run_server_bidi).and_raise(StandardError)
-        expect(@call).to receive(:send_status).once.with(UNKNOWN, @no_reason,
-                                                         false, {})
+        expect(@call).to receive(:send_status).once.with(UNKNOWN, error_msg,
+                                                         false, metadata: {})
         @bidi_streamer.run_server_method(@call, method(:other_error_alt))
+      end
+
+      it 'sends status UNKNOWN if NotImplementedErrors are raised' do
+        expect(@call).to receive(:run_server_bidi).and_raise(
+          not_implemented_error)
+        expect(@call).to receive(:send_status).once.with(
+          UNKNOWN, not_implemented_error_msg, false, metadata: {})
+        @bidi_streamer.run_server_method(@call, method(:not_implemented_alt))
       end
 
       it 'closes the stream if there no errors' do
         expect(@call).to receive(:run_server_bidi)
         expect(@call).to receive(:output_metadata).and_return(fake_md)
         expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
-                                                         **fake_md)
+                                                         metadata: fake_md)
         @bidi_streamer.run_server_method(@call, method(:fake_bidistream))
       end
     end
@@ -194,6 +205,9 @@ describe GRPC::RpcDesc do
     end
 
     def fake_svstream(_arg1, _arg2)
+    end
+
+    def fake_three_args(_arg1, _arg2, _arg3)
     end
 
     it 'raises when a request_response does not have 2 args' do
@@ -244,8 +258,8 @@ describe GRPC::RpcDesc do
       expect(&blk).to_not raise_error
     end
 
-    it 'raises when a bidi streamer does not have 1 arg' do
-      [:fake_svstream, :no_arg].each do |mth|
+    it 'raises when a bidi streamer does not have 1 or 2 args' do
+      [:fake_three_args, :no_arg].each do |mth|
         blk = proc do
           @bidi_streamer.assert_arity_matches(method(mth))
         end
@@ -256,6 +270,13 @@ describe GRPC::RpcDesc do
     it 'passes when a bidi streamer has 1 arg' do
       blk = proc do
         @bidi_streamer.assert_arity_matches(method(:fake_clstream))
+      end
+      expect(&blk).to_not raise_error
+    end
+
+    it 'passes when a bidi streamer has 2 args' do
+      blk = proc do
+        @bidi_streamer.assert_arity_matches(method(:fake_svstream))
       end
       expect(&blk).to_not raise_error
     end
@@ -327,5 +348,27 @@ describe GRPC::RpcDesc do
 
   def other_error_alt(_call)
     fail(ArgumentError, 'other error')
+  end
+
+  def not_implemented(_req, _call)
+    fail not_implemented_error
+  end
+
+  def not_implemented_alt(_call)
+    fail not_implemented_error
+  end
+
+  def arg_error_msg(error = nil)
+    error ||= ArgumentError.new('other error')
+    "#{error.class}: #{error.message}"
+  end
+
+  def not_implemented_error
+    NotImplementedError.new('some OS feature not implemented')
+  end
+
+  def not_implemented_error_msg(error = nil)
+    error ||= not_implemented_error
+    "#{error.class}: #{error.message}"
   end
 end

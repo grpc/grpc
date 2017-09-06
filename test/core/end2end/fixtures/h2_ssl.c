@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -41,7 +26,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/support/tmpfile.h"
@@ -64,7 +49,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   gpr_join_host_port(&ffd->localaddr, "localhost", port);
 
   f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create(NULL);
+  f.cq = grpc_completion_queue_create_for_next(NULL);
+  f.shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
 
   return f;
 }
@@ -118,7 +104,11 @@ static void chttp2_init_client_simple_ssl_secure_fullstack(
   grpc_channel_args *new_client_args =
       grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);
   chttp2_init_client_secure_fullstack(f, new_client_args, ssl_creds);
-  grpc_channel_args_destroy(new_client_args);
+  {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(&exec_ctx, new_client_args);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
 }
 
 static int fail_server_auth_check(grpc_channel_args *server_args) {
@@ -151,7 +141,9 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
 static grpc_end2end_test_config configs[] = {
     {"chttp2/simple_ssl_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS,
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_simple_ssl_secure_fullstack,
      chttp2_init_server_simple_ssl_secure_fullstack,
@@ -165,6 +157,7 @@ int main(int argc, char **argv) {
   char *roots_filename;
 
   grpc_test_init(argc, argv);
+  grpc_end2end_tests_pre_init();
 
   /* Set the SSL roots env var. */
   roots_file = gpr_tmpfile("chttp2_simple_ssl_fullstack_test", &roots_filename);

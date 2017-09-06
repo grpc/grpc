@@ -1,33 +1,20 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 require 'grpc'
+
+Thread.abort_on_exception = true
 
 describe GRPC::Pool do
   Pool = GRPC::Pool
@@ -44,32 +31,37 @@ describe GRPC::Pool do
     end
   end
 
-  describe '#jobs_waiting' do
-    it 'at start, it is zero' do
+  describe '#ready_for_work?' do
+    it 'before start it is not ready' do
       p = Pool.new(1)
-      expect(p.jobs_waiting).to be(0)
+      expect(p.ready_for_work?).to be(false)
     end
 
-    it 'it increases, with each scheduled job if the pool is not running' do
-      p = Pool.new(1)
-      job = proc {}
-      expect(p.jobs_waiting).to be(0)
-      5.times do |i|
-        p.schedule(&job)
-        expect(p.jobs_waiting).to be(i + 1)
-      end
-    end
-
-    it 'it decreases as jobs are run' do
-      p = Pool.new(1)
-      job = proc {}
-      expect(p.jobs_waiting).to be(0)
-      3.times do
-        p.schedule(&job)
-      end
+    it 'it stops being ready after all workers are busy' do
+      p = Pool.new(5)
       p.start
-      sleep 2
-      expect(p.jobs_waiting).to be(0)
+
+      wait_mu = Mutex.new
+      wait_cv = ConditionVariable.new
+      wait = true
+
+      job = proc do
+        wait_mu.synchronize do
+          wait_cv.wait(wait_mu) while wait
+        end
+      end
+
+      5.times do
+        expect(p.ready_for_work?).to be(true)
+        p.schedule(&job)
+      end
+
+      expect(p.ready_for_work?).to be(false)
+
+      wait_mu.synchronize do
+        wait = false
+        wait_cv.broadcast
+      end
     end
   end
 
@@ -101,30 +93,27 @@ describe GRPC::Pool do
     it 'stops jobs when there are long running jobs' do
       p = Pool.new(1)
       p.start
-      o, q = Object.new, Queue.new
+
+      wait_forever_mu = Mutex.new
+      wait_forever_cv = ConditionVariable.new
+      wait_forever = true
+
+      job_running = Queue.new
       job = proc do
-        sleep(5)  # long running
-        q.push(o)
+        job_running.push(Object.new)
+        wait_forever_mu.synchronize do
+          wait_forever_cv.wait while wait_forever
+        end
       end
       p.schedule(&job)
-      sleep(1)  # should ensure the long job gets scheduled
+      job_running.pop
       expect { p.stop }.not_to raise_error
     end
   end
 
   describe '#start' do
-    it 'runs pre-scheduled jobs' do
-      p = Pool.new(2)
-      o, q = Object.new, Queue.new
-      n = 5  # arbitrary
-      n.times { p.schedule(o, &q.method(:push)) }
-      p.start
-      n.times { expect(q.pop).to be(o) }
-      p.stop
-    end
-
-    it 'runs jobs as they are scheduled ' do
-      p = Pool.new(2)
+    it 'runs jobs as they are scheduled' do
+      p = Pool.new(5)
       o, q = Object.new, Queue.new
       p.start
       n = 5  # arbitrary

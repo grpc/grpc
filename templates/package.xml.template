@@ -12,7 +12,7 @@
     <email>grpc-packages@google.com</email>
     <active>yes</active>
    </lead>
-   <date>2016-03-01</date>
+   <date>2017-05-22</date>
    <time>16:06:07</time>
    <version>
     <release>${settings.php_version.php()}</release>
@@ -22,16 +22,17 @@
     <release>beta</release>
     <api>beta</api>
    </stability>
-   <license>BSD</license>
+   <license>Apache 2.0</license>
    <notes>
-  - Increase unit test code coverage #5225
+  - Channel are now by default persistent #11878
+  - Some bug fixes from 1.4 branch #12109, #12123
+  - Fixed hang bug when fork() was used #11814
    </notes>
    <contents>
     <dir baseinstalldir="/" name="/">
       <file baseinstalldir="/" name="config.m4" role="src" />
+      <file baseinstalldir="/" name="config.w32" role="src" />
       <file baseinstalldir="/" name="src/php/README.md" role="src" />
-      <file baseinstalldir="/" name="src/php/ext/grpc/CREDITS" role="src" />
-      <file baseinstalldir="/" name="src/php/ext/grpc/LICENSE" role="src" />
       % for source in php_config_m4.src + php_config_m4.headers:
       <file baseinstalldir="/" name="${source}" role="src" />
       % endfor
@@ -42,6 +43,7 @@
       % endfor
       % endif
       % endfor
+      <file name="LICENSE" role="doc" />
     </dir>
    </contents>
    <dependencies>
@@ -153,12 +155,13 @@
      <license>BSD</license>
      <notes>
   - Simplify gRPC PHP installation #4517
+  - Wrap gRPC core library version 0.13
      </notes>
     </release>
     <release>
      <version>
-      <release>${settings.php_version.php()}</release>
-      <api>${settings.php_version.php()}</api>
+      <release>0.8.1</release>
+      <api>0.8.1</api>
      </version>
      <stability>
       <release>beta</release>
@@ -168,6 +171,208 @@
      <license>BSD</license>
      <notes>
   - Increase unit test code coverage #5225
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>0.14.0</release>
+      <api>0.14.0</api>
+     </version>
+     <stability>
+      <release>beta</release>
+      <api>beta</api>
+     </stability>
+     <date>2016-04-19</date>
+     <license>BSD</license>
+     <notes>
+  - wrap grpc C core version 0.14.0
+  - destroy grpc_byte_buffer after startBatch #6096
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>0.15.0</release>
+      <api>0.15.0</api>
+     </version>
+     <stability>
+      <release>beta</release>
+      <api>beta</api>
+     </stability>
+     <date>2016-05-18</date>
+     <license>BSD</license>
+     <notes>
+  - Updated functions with TSRM macros for ZTS support #6607
+  - Load default roots.pem via grpc_set_ssl_roots_override_callback #6848
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>1.0.0RC1</release>
+      <api>1.0.0RC1</api>
+     </version>
+     <stability>
+      <release>stable</release>
+      <api>stable</api>
+     </stability>
+     <date>2016-07-13</date>
+     <license>BSD</license>
+     <notes>
+  - GA release
+  - Fix shutdown hang problem #4017
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>1.0.0RC2</release>
+      <api>1.0.0RC2</api>
+     </version>
+     <stability>
+      <release>stable</release>
+      <api>stable</api>
+     </stability>
+     <date>2016-07-21</date>
+     <license>BSD</license>
+     <notes>
+  - PHP7 Support #7464
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>1.0.0RC3</release>
+      <api>1.0.0RC3</api>
+     </version>
+     <stability>
+      <release>stable</release>
+      <api>stable</api>
+     </stability>
+     <date>2016-07-28</date>
+     <license>BSD</license>
+     <notes>
+  - PHP7 Support continued, reduce code duplication #7543
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>1.0.0RC4</release>
+      <api>1.0.0RC4</api>
+     </version>
+     <stability>
+      <release>stable</release>
+      <api>stable</api>
+     </stability>
+     <date>2016-08-09</date>
+     <license>BSD</license>
+     <notes>
+  - Fixed Ubuntu compile error #7571, #7642
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>1.0.0</release>
+      <api>1.0.0</api>
+     </version>
+     <stability>
+      <release>stable</release>
+      <api>stable</api>
+     </stability>
+     <date>2016-08-18</date>
+     <license>BSD</license>
+     <notes>
+  - gRPC 1.0.0 release
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>1.0.1RC1</release>
+      <api>1.0.1RC1</api>
+     </version>
+     <stability>
+      <release>beta</release>
+      <api>beta</api>
+     </stability>
+     <date>2016-10-06</date>
+     <license>BSD</license>
+     <notes>
+  - Reject metadata keys which are not legal #7881
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>1.0.1</release>
+      <api>1.0.1</api>
+     </version>
+     <stability>
+      <release>stable</release>
+      <api>stable</api>
+     </stability>
+     <date>2016-10-27</date>
+     <license>BSD</license>
+     <notes>
+  - Reject metadata keys which are not legal #7881
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>1.1.0RC1</release>
+      <api>1.1.0RC1</api>
+     </version>
+     <stability>
+      <release>beta</release>
+      <api>beta</api>
+     </stability>
+     <date>2017-01-13</date>
+     <license>BSD</license>
+     <notes>
+  - PHP Proto3 adoption #8179
+  - Various bug fixes
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>1.1.0</release>
+      <api>1.1.0</api>
+     </version>
+     <stability>
+      <release>stable</release>
+      <api>stable</api>
+     </stability>
+     <date>2017-01-31</date>
+     <license>BSD</license>
+     <notes>
+  - PHP Proto3 adoption #8179
+  - Various bug fixes
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>1.2.0RC1</release>
+      <api>1.2.0RC1</api>
+     </version>
+     <stability>
+      <release>beta</release>
+      <api>beta</api>
+     </stability>
+     <date>2017-03-01</date>
+     <license>BSD</license>
+     <notes>
+  - Added arg info macros #9751
+  - Updated codegen to be consistent with protobuf #9492
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>1.2.0</release>
+      <api>1.2.0</api>
+     </version>
+     <stability>
+      <release>stable</release>
+      <api>stable</api>
+     </stability>
+     <date>2017-03-20</date>
+     <license>BSD</license>
+     <notes>
+  - Added arg info macros #9751
+  - Updated codegen to be consistent with protobuf #9492
      </notes>
     </release>
    </changelog>

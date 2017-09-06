@@ -1,34 +1,19 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 require 'grpc'
-require 'grpc/health/v1/health'
+require 'grpc/health/v1/health_pb'
 require 'grpc/health/checker'
 require 'open3'
 require 'tmpdir'
@@ -43,7 +28,7 @@ describe 'Health protobuf code generation' do
       skip 'protoc || grpc_ruby_plugin missing, cannot verify health code-gen'
     else
       it 'should already be loaded indirectly i.e, used by the other specs' do
-        expect(require('grpc/health/v1/health_services')).to be(false)
+        expect(require('grpc/health/v1/health_services_pb')).to be(false)
       end
 
       it 'should have the same content as created by code generation' do
@@ -52,7 +37,7 @@ describe 'Health protobuf code generation' do
 
         # Get the current content
         service_path = File.join(root_dir, 'ruby', 'pb', 'grpc',
-                                 'health', 'v1', 'health_services.rb')
+                                 'health', 'v1', 'health_services_pb.rb')
         want = nil
         File.open(service_path) { |f| want = f.read }
 
@@ -62,7 +47,7 @@ describe 'Health protobuf code generation' do
         got = nil
         Dir.mktmpdir do |tmp_dir|
           gen_out = File.join(tmp_dir, 'grpc', 'health', 'v1',
-                              'health_services.rb')
+                              'health_services_pb.rb')
           pid = spawn(
             'protoc',
             '-I.',
@@ -97,15 +82,17 @@ describe Grpc::Health::Checker do
 
   context 'initialization' do
     it 'can be constructed with no args' do
-      expect(subject).to_not be(nil)
+      checker = Grpc::Health::Checker.new
+      expect(checker).to_not be(nil)
     end
   end
 
   context 'method `add_status` and `check`' do
     success_tests.each do |t|
       it "should succeed when #{t[:desc]}" do
-        subject.add_status(t[:service], ServingStatus::NOT_SERVING)
-        got = subject.check(HCReq.new(service: t[:service]), nil)
+        checker = Grpc::Health::Checker.new
+        checker.add_status(t[:service], ServingStatus::NOT_SERVING)
+        got = checker.check(HCReq.new(service: t[:service]), nil)
         want = HCResp.new(status: ServingStatus::NOT_SERVING)
         expect(got).to eq(want)
       end
@@ -115,11 +102,12 @@ describe Grpc::Health::Checker do
   context 'method `check`' do
     success_tests.each do |t|
       it "should fail with NOT_FOUND when #{t[:desc]}" do
+        checker = Grpc::Health::Checker.new
         blk = proc do
-          subject.check(HCReq.new(service: t[:service]), nil)
+          checker.check(HCReq.new(service: t[:service]), nil)
         end
         expected_msg = /#{StatusCodes::NOT_FOUND}/
-        expect(&blk).to raise_error GRPC::BadStatus, expected_msg
+        expect(&blk).to raise_error GRPC::NotFound, expected_msg
       end
     end
   end
@@ -127,38 +115,40 @@ describe Grpc::Health::Checker do
   context 'method `clear_status`' do
     success_tests.each do |t|
       it "should fail after clearing status when #{t[:desc]}" do
-        subject.add_status(t[:service], ServingStatus::NOT_SERVING)
-        got = subject.check(HCReq.new(service: t[:service]), nil)
+        checker = Grpc::Health::Checker.new
+        checker.add_status(t[:service], ServingStatus::NOT_SERVING)
+        got = checker.check(HCReq.new(service: t[:service]), nil)
         want = HCResp.new(status: ServingStatus::NOT_SERVING)
         expect(got).to eq(want)
 
-        subject.clear_status(t[:service])
+        checker.clear_status(t[:service])
         blk = proc do
-          subject.check(HCReq.new(service: t[:service]), nil)
+          checker.check(HCReq.new(service: t[:service]), nil)
         end
         expected_msg = /#{StatusCodes::NOT_FOUND}/
-        expect(&blk).to raise_error GRPC::BadStatus, expected_msg
+        expect(&blk).to raise_error GRPC::NotFound, expected_msg
       end
     end
   end
 
   context 'method `clear_all`' do
     it 'should return NOT_FOUND after being invoked' do
+      checker = Grpc::Health::Checker.new
       success_tests.each do |t|
-        subject.add_status(t[:service], ServingStatus::NOT_SERVING)
-        got = subject.check(HCReq.new(service: t[:service]), nil)
+        checker.add_status(t[:service], ServingStatus::NOT_SERVING)
+        got = checker.check(HCReq.new(service: t[:service]), nil)
         want = HCResp.new(status: ServingStatus::NOT_SERVING)
         expect(got).to eq(want)
       end
 
-      subject.clear_all
+      checker.clear_all
 
       success_tests.each do |t|
         blk = proc do
-          subject.check(HCReq.new(service: t[:service]), nil)
+          checker.check(HCReq.new(service: t[:service]), nil)
         end
         expected_msg = /#{StatusCodes::NOT_FOUND}/
-        expect(&blk).to raise_error GRPC::BadStatus, expected_msg
+        expect(&blk).to raise_error GRPC::NotFound, expected_msg
       end
     end
   end
@@ -168,19 +158,15 @@ describe Grpc::Health::Checker do
     CheckerStub = Grpc::Health::Checker.rpc_stub_class
 
     before(:each) do
-      @server_queue = GRPC::Core::CompletionQueue.new
       server_host = '0.0.0.0:0'
-      @server = GRPC::Core::Server.new(@server_queue, nil)
-      server_port = @server.add_http2_port(server_host, :this_port_is_insecure)
-      @host = "localhost:#{server_port}"
-      @ch = GRPC::Core::Channel.new(@host, nil, :this_channel_is_insecure)
       @client_opts = { channel_override: @ch }
       server_opts = {
-        server_override: @server,
-        completion_queue_override: @server_queue,
         poll_period: 1
       }
       @srv = RpcServer.new(**server_opts)
+      server_port = @srv.add_http2_port(server_host, :this_port_is_insecure)
+      @host = "localhost:#{server_port}"
+      @ch = GRPC::Core::Channel.new(@host, nil, :this_channel_is_insecure)
     end
 
     after(:each) do
@@ -188,8 +174,10 @@ describe Grpc::Health::Checker do
     end
 
     it 'should receive the correct status', server: true do
-      @srv.handle(subject)
-      subject.add_status('', ServingStatus::NOT_SERVING)
+      Thread.abort_on_exception = true
+      checker = Grpc::Health::Checker.new
+      @srv.handle(checker)
+      checker.add_status('', ServingStatus::NOT_SERVING)
       t = Thread.new { @srv.run }
       @srv.wait_till_running
 
@@ -202,7 +190,8 @@ describe Grpc::Health::Checker do
     end
 
     it 'should fail on unknown services', server: true do
-      @srv.handle(subject)
+      checker = Grpc::Health::Checker.new
+      @srv.handle(checker)
       t = Thread.new { @srv.run }
       @srv.wait_till_running
       blk = proc do
@@ -210,7 +199,7 @@ describe Grpc::Health::Checker do
         stub.check(HCReq.new(service: 'unknown'))
       end
       expected_msg = /#{StatusCodes::NOT_FOUND}/
-      expect(&blk).to raise_error GRPC::BadStatus, expected_msg
+      expect(&blk).to raise_error GRPC::NotFound, expected_msg
       @srv.stop
       t.join
     end

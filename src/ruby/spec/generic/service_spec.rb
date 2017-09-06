@@ -1,31 +1,16 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 require 'grpc'
 require 'grpc/generic/rpc_desc'
@@ -271,75 +256,6 @@ describe GenericService do
         expect(o.methods).to include(:a_client_streamer)
         expect(o.methods).to include(:a_bidi_streamer)
       end
-    end
-  end
-
-  describe '#assert_rpc_descs_have_methods' do
-    it 'fails if there is no instance method for an rpc descriptor' do
-      c1 = Class.new do
-        include GenericService
-        rpc :AnRpc, GoodMsg, GoodMsg
-      end
-      expect { c1.assert_rpc_descs_have_methods }.to raise_error
-
-      c2 = Class.new do
-        include GenericService
-        rpc :AnRpc, GoodMsg, GoodMsg
-        rpc :AnotherRpc, GoodMsg, GoodMsg
-
-        def an_rpc
-        end
-      end
-      expect { c2.assert_rpc_descs_have_methods }.to raise_error
-    end
-
-    it 'passes if there are corresponding methods for each descriptor' do
-      c = Class.new do
-        include GenericService
-        rpc :AnRpc, GoodMsg, GoodMsg
-        rpc :AServerStreamer, GoodMsg, stream(GoodMsg)
-        rpc :AClientStreamer, stream(GoodMsg), GoodMsg
-        rpc :ABidiStreamer, stream(GoodMsg), stream(GoodMsg)
-
-        def an_rpc(_req, _call)
-        end
-
-        def a_server_streamer(_req, _call)
-        end
-
-        def a_client_streamer(_call)
-        end
-
-        def a_bidi_streamer(_call)
-        end
-      end
-      expect { c.assert_rpc_descs_have_methods }.to_not raise_error
-    end
-
-    it 'passes for subclasses of that include GenericService' do
-      base = Class.new do
-        include GenericService
-        rpc :AnRpc, GoodMsg, GoodMsg
-
-        def an_rpc(_req, _call)
-        end
-      end
-      c = Class.new(base)
-      expect { c.assert_rpc_descs_have_methods }.to_not raise_error
-      expect(c.include?(GenericService)).to be(true)
-    end
-
-    it 'passes if subclasses define the rpc methods' do
-      base = Class.new do
-        include GenericService
-        rpc :AnRpc, GoodMsg, GoodMsg
-      end
-      c = Class.new(base) do
-        def an_rpc(_req, _call)
-        end
-      end
-      expect { c.assert_rpc_descs_have_methods }.to_not raise_error
-      expect(c.include?(GenericService)).to be(true)
     end
   end
 end

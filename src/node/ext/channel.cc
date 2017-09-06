@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -35,14 +20,14 @@
 
 #include "grpc/support/log.h"
 
-#include <node.h>
 #include <nan.h>
-#include "grpc/grpc.h"
-#include "grpc/grpc_security.h"
+#include <node.h>
 #include "call.h"
 #include "channel.h"
-#include "completion_queue_async_worker.h"
 #include "channel_credentials.h"
+#include "completion_queue.h"
+#include "grpc/grpc.h"
+#include "grpc/grpc_security.h"
 #include "timeval.h"
 
 namespace grpc {
@@ -81,8 +66,8 @@ bool ParseChannelArgs(Local<Value> args_val,
     *channel_args_ptr = NULL;
     return false;
   }
-  grpc_channel_args *channel_args = reinterpret_cast<grpc_channel_args*>(
-      malloc(sizeof(grpc_channel_args)));
+  grpc_channel_args *channel_args =
+      reinterpret_cast<grpc_channel_args *>(malloc(sizeof(grpc_channel_args)));
   *channel_args_ptr = channel_args;
   Local<Object> args_hash = Nan::To<Object>(args_val).ToLocalChecked();
   Local<Array> keys = Nan::GetOwnPropertyNames(args_hash).ToLocalChecked();
@@ -103,16 +88,16 @@ bool ParseChannelArgs(Local<Value> args_val,
     } else if (value->IsString()) {
       Utf8String val_str(value);
       channel_args->args[i].type = GRPC_ARG_STRING;
-      channel_args->args[i].value.string = reinterpret_cast<char*>(
-          calloc(val_str.length() + 1,sizeof(char)));
-      memcpy(channel_args->args[i].value.string,
-             *val_str, val_str.length() + 1);
+      channel_args->args[i].value.string =
+          reinterpret_cast<char *>(calloc(val_str.length() + 1, sizeof(char)));
+      memcpy(channel_args->args[i].value.string, *val_str,
+             val_str.length() + 1);
     } else {
       // The value does not match either of the accepted types
       return false;
     }
-    channel_args->args[i].key = reinterpret_cast<char*>(
-        calloc(key_str.length() + 1, sizeof(char)));
+    channel_args->args[i].key =
+        reinterpret_cast<char *>(calloc(key_str.length() + 1, sizeof(char)));
     memcpy(channel_args->args[i].key, *key_str, key_str.length() + 1);
   }
   return true;
@@ -140,6 +125,7 @@ void DeallocateChannelArgs(grpc_channel_args *channel_args) {
 Channel::Channel(grpc_channel *channel) : wrapped_channel(channel) {}
 
 Channel::~Channel() {
+  gpr_log(GPR_DEBUG, "Destroying channel");
   if (wrapped_channel != NULL) {
     grpc_channel_destroy(wrapped_channel);
   }
@@ -188,12 +174,13 @@ NAN_METHOD(Channel::New) {
     grpc_channel_args *channel_args_ptr = NULL;
     if (!ParseChannelArgs(info[2], &channel_args_ptr)) {
       DeallocateChannelArgs(channel_args_ptr);
-      return Nan::ThrowTypeError("Channel options must be an object with "
-                                 "string keys and integer or string values");
+      return Nan::ThrowTypeError(
+          "Channel options must be an object with "
+          "string keys and integer or string values");
     }
     if (creds == NULL) {
-      wrapped_channel = grpc_insecure_channel_create(*host, channel_args_ptr,
-                                                     NULL);
+      wrapped_channel =
+          grpc_insecure_channel_create(*host, channel_args_ptr, NULL);
     } else {
       wrapped_channel =
           grpc_secure_channel_create(creds, *host, channel_args_ptr, NULL);
@@ -206,8 +193,8 @@ NAN_METHOD(Channel::New) {
   } else {
     const int argc = 3;
     Local<Value> argv[argc] = {info[0], info[1], info[2]};
-    MaybeLocal<Object> maybe_instance = constructor->GetFunction()->NewInstance(
-        argc, argv);
+    MaybeLocal<Object> maybe_instance =
+        Nan::NewInstance(constructor->GetFunction(), argc, argv);
     if (maybe_instance.IsEmpty()) {
       // There's probably a pending exception
       return;
@@ -230,11 +217,13 @@ NAN_METHOD(Channel::Close) {
 
 NAN_METHOD(Channel::GetTarget) {
   if (!HasInstance(info.This())) {
-    return Nan::ThrowTypeError("getTarget can only be called on Channel objects");
+    return Nan::ThrowTypeError(
+        "getTarget can only be called on Channel objects");
   }
   Channel *channel = ObjectWrap::Unwrap<Channel>(info.This());
-  info.GetReturnValue().Set(Nan::New(
-      grpc_channel_get_target(channel->wrapped_channel)).ToLocalChecked());
+  info.GetReturnValue().Set(
+      Nan::New(grpc_channel_get_target(channel->wrapped_channel))
+          .ToLocalChecked());
 }
 
 NAN_METHOD(Channel::GetConnectivityState) {
@@ -244,9 +233,8 @@ NAN_METHOD(Channel::GetConnectivityState) {
   }
   Channel *channel = ObjectWrap::Unwrap<Channel>(info.This());
   int try_to_connect = (int)info[0]->Equals(Nan::True());
-  info.GetReturnValue().Set(
-      grpc_channel_check_connectivity_state(channel->wrapped_channel,
-                                            try_to_connect));
+  info.GetReturnValue().Set(grpc_channel_check_connectivity_state(
+      channel->wrapped_channel, try_to_connect));
 }
 
 NAN_METHOD(Channel::WatchConnectivityState) {
@@ -266,9 +254,8 @@ NAN_METHOD(Channel::WatchConnectivityState) {
     return Nan::ThrowTypeError(
         "watchConnectivityState's third argument must be a callback");
   }
-  grpc_connectivity_state last_state =
-      static_cast<grpc_connectivity_state>(
-          Nan::To<uint32_t>(info[0]).FromJust());
+  grpc_connectivity_state last_state = static_cast<grpc_connectivity_state>(
+      Nan::To<uint32_t>(info[0]).FromJust());
   double deadline = Nan::To<double>(info[1]).FromJust();
   Local<Function> callback_func = info[2].As<Function>();
   Nan::Callback *callback = new Callback(callback_func);
@@ -276,11 +263,9 @@ NAN_METHOD(Channel::WatchConnectivityState) {
   unique_ptr<OpVec> ops(new OpVec());
   grpc_channel_watch_connectivity_state(
       channel->wrapped_channel, last_state, MillisecondsToTimespec(deadline),
-      CompletionQueueAsyncWorker::GetQueue(),
-      new struct tag(callback,
-                     ops.release(),
-                     shared_ptr<Resources>(nullptr)));
-  CompletionQueueAsyncWorker::Next();
+      GetCompletionQueue(),
+      new struct tag(callback, ops.release(), NULL, Nan::Null()));
+  CompletionQueueNext();
 }
 
 }  // namespace node

@@ -1,4 +1,4 @@
-#gRPC in 3 minutes (Objective-C)
+# gRPC in 3 minutes (Objective-C)
 
 ## Installation
 
@@ -16,7 +16,7 @@ this repository to your local machine by running the following commands:
 
 
 ```sh
-$ git clone https://github.com/grpc/grpc.git
+$ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
 $ cd grpc
 $ git submodule update --init
 ```
@@ -55,4 +55,4 @@ responds with a `HLWHelloResponse`, which contains a string that is then output 
 
 ## Tutorial
 
-You can find a more detailed tutorial in [gRPC Basics: Objective-C](http://www.grpc.io/docs/tutorials/basic/objective-c.html).
+You can find a more detailed tutorial in [gRPC Basics: Objective-C](https://grpc.io/docs/tutorials/basic/objective-c.html).

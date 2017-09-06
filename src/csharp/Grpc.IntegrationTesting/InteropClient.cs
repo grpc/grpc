@@ -1,33 +1,18 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
-// All rights reserved.
+// Copyright 2015-2016 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #endregion
 
@@ -45,6 +30,7 @@ using Google.Apis.Auth.OAuth2;
 using Google.Protobuf;
 using Grpc.Auth;
 using Grpc.Core;
+using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 using Grpc.Testing;
 using Newtonsoft.Json.Linq;
@@ -56,24 +42,24 @@ namespace Grpc.IntegrationTesting
     {
         private class ClientOptions
         {
-            [Option("server_host", DefaultValue = "127.0.0.1")]
+            [Option("server_host", Default = "localhost")]
             public string ServerHost { get; set; }
 
-            [Option("server_host_override", DefaultValue = TestCredentials.DefaultHostOverride)]
+            [Option("server_host_override", Default = TestCredentials.DefaultHostOverride)]
             public string ServerHostOverride { get; set; }
 
             [Option("server_port", Required = true)]
             public int ServerPort { get; set; }
 
-            [Option("test_case", DefaultValue = "large_unary")]
+            [Option("test_case", Default = "large_unary")]
             public string TestCase { get; set; }
 
             // Deliberately using nullable bool type to allow --use_tls=true syntax (as opposed to --use_tls)
-            [Option("use_tls", DefaultValue = false)]
+            [Option("use_tls", Default = false)]
             public bool? UseTls { get; set; }
 
             // Deliberately using nullable bool type to allow --use_test_ca=true syntax (as opposed to --use_test_ca)
-            [Option("use_test_ca", DefaultValue = false)]
+            [Option("use_test_ca", Default = false)]
             public bool? UseTestCa { get; set; }
 
             [Option("default_service_account", Required = false)]
@@ -84,19 +70,6 @@ namespace Grpc.IntegrationTesting
 
             [Option("service_account_key_file", Required = false)]
             public string ServiceAccountKeyFile { get; set; }
-
-            [HelpOption]
-            public string GetUsage()
-            {
-                var help = new HelpText
-                {
-                    Heading = "gRPC C# interop testing client",
-                    AddDashesToOption = true
-                };
-                help.AddPreOptionsLine("Usage:");
-                help.AddOptions(this);
-                return help;
-            }
         }
 
         ClientOptions options;
@@ -108,14 +81,14 @@ namespace Grpc.IntegrationTesting
 
         public static void Run(string[] args)
         {
-            var options = new ClientOptions();
-            if (!Parser.Default.ParseArguments(args, options))
-            {
-                Environment.Exit(1);
-            }
-
-            var interopClient = new InteropClient(options);
-            interopClient.Run().Wait();
+            GrpcEnvironment.SetLogger(new ConsoleLogger());
+            var parserResult = Parser.Default.ParseArguments<ClientOptions>(args)
+                .WithNotParsed(errors => Environment.Exit(1))
+                .WithParsed(options =>
+                {
+                    var interopClient = new InteropClient(options);
+                    interopClient.Run().Wait();
+                });
         }
 
         private async Task Run()
@@ -209,15 +182,24 @@ namespace Grpc.IntegrationTesting
                 case "status_code_and_message":
                     await RunStatusCodeAndMessageAsync(client);
                     break;
+                case "unimplemented_service":
+                    RunUnimplementedService(new UnimplementedService.UnimplementedServiceClient(channel));
+                    break;
                 case "unimplemented_method":
-                    RunUnimplementedMethod(new UnimplementedService.UnimplementedServiceClient(channel));
+                    RunUnimplementedMethod(client);
+                    break;
+                case "client_compressed_unary":
+                    RunClientCompressedUnary(client);
+                    break;
+                case "client_compressed_streaming":
+                    await RunClientCompressedStreamingAsync(client);
                     break;
                 default:
                     throw new ArgumentException("Unknown test case " + options.TestCase);
             }
         }
 
-        public static void RunEmptyUnary(TestService.ITestServiceClient client)
+        public static void RunEmptyUnary(TestService.TestServiceClient client)
         {
             Console.WriteLine("running empty_unary");
             var response = client.EmptyCall(new Empty());
@@ -225,27 +207,25 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static void RunLargeUnary(TestService.ITestServiceClient client)
+        public static void RunLargeUnary(TestService.TestServiceClient client)
         {
             Console.WriteLine("running large_unary");
             var request = new SimpleRequest
             {
-                ResponseType = PayloadType.COMPRESSABLE,
                 ResponseSize = 314159,
                 Payload = CreateZerosPayload(271828)
             };
             var response = client.UnaryCall(request);
 
-            Assert.AreEqual(PayloadType.COMPRESSABLE, response.Payload.Type);
             Assert.AreEqual(314159, response.Payload.Body.Length);
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunClientStreamingAsync(TestService.ITestServiceClient client)
+        public static async Task RunClientStreamingAsync(TestService.TestServiceClient client)
         {
             Console.WriteLine("running client_streaming");
 
-            var bodySizes = new List<int> { 27182, 8, 1828, 45904 }.ConvertAll((size) => new StreamingInputCallRequest { Payload = CreateZerosPayload(size) });
+            var bodySizes = new List<int> { 27182, 8, 1828, 45904 }.Select((size) => new StreamingInputCallRequest { Payload = CreateZerosPayload(size) });
 
             using (var call = client.StreamingInputCall())
             {
@@ -257,7 +237,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunServerStreamingAsync(TestService.ITestServiceClient client)
+        public static async Task RunServerStreamingAsync(TestService.TestServiceClient client)
         {
             Console.WriteLine("running server_streaming");
 
@@ -265,23 +245,18 @@ namespace Grpc.IntegrationTesting
 
             var request = new StreamingOutputCallRequest
             {
-                ResponseType = PayloadType.COMPRESSABLE,
-                ResponseParameters = { bodySizes.ConvertAll((size) => new ResponseParameters { Size = size }) }
+                ResponseParameters = { bodySizes.Select((size) => new ResponseParameters { Size = size }) }
             };
 
             using (var call = client.StreamingOutputCall(request))
             {
                 var responseList = await call.ResponseStream.ToListAsync();
-                foreach (var res in responseList)
-                {
-                    Assert.AreEqual(PayloadType.COMPRESSABLE, res.Payload.Type);
-                }
-                CollectionAssert.AreEqual(bodySizes, responseList.ConvertAll((item) => item.Payload.Body.Length));
+                CollectionAssert.AreEqual(bodySizes, responseList.Select((item) => item.Payload.Body.Length));
             }
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunPingPongAsync(TestService.ITestServiceClient client)
+        public static async Task RunPingPongAsync(TestService.TestServiceClient client)
         {
             Console.WriteLine("running ping_pong");
 
@@ -289,46 +264,38 @@ namespace Grpc.IntegrationTesting
             {
                 await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
                 {
-                    ResponseType = PayloadType.COMPRESSABLE,
                     ResponseParameters = { new ResponseParameters { Size = 31415 } },
                     Payload = CreateZerosPayload(27182)
                 });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
-                Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(31415, call.ResponseStream.Current.Payload.Body.Length);
 
                 await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
                 {
-                    ResponseType = PayloadType.COMPRESSABLE,
                     ResponseParameters = { new ResponseParameters { Size = 9 } },
                     Payload = CreateZerosPayload(8)
                 });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
-                Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(9, call.ResponseStream.Current.Payload.Body.Length);
 
                 await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
                 {
-                    ResponseType = PayloadType.COMPRESSABLE,
                     ResponseParameters = { new ResponseParameters { Size = 2653 } },
                     Payload = CreateZerosPayload(1828)
                 });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
-                Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(2653, call.ResponseStream.Current.Payload.Body.Length);
 
                 await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
                 {
-                    ResponseType = PayloadType.COMPRESSABLE,
                     ResponseParameters = { new ResponseParameters { Size = 58979 } },
                     Payload = CreateZerosPayload(45904)
                 });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
-                Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(58979, call.ResponseStream.Current.Payload.Body.Length);
 
                 await call.RequestStream.CompleteAsync();
@@ -338,7 +305,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunEmptyStreamAsync(TestService.ITestServiceClient client)
+        public static async Task RunEmptyStreamAsync(TestService.TestServiceClient client)
         {
             Console.WriteLine("running empty_stream");
             using (var call = client.FullDuplexCall())
@@ -357,7 +324,6 @@ namespace Grpc.IntegrationTesting
 
             var request = new SimpleRequest
             {
-                ResponseType = PayloadType.COMPRESSABLE,
                 ResponseSize = 314159,
                 Payload = CreateZerosPayload(271828),
                 FillUsername = true,
@@ -367,7 +333,6 @@ namespace Grpc.IntegrationTesting
             // not setting credentials here because they were set on channel already
             var response = client.UnaryCall(request);
 
-            Assert.AreEqual(PayloadType.COMPRESSABLE, response.Payload.Type);
             Assert.AreEqual(314159, response.Payload.Body.Length);
             Assert.False(string.IsNullOrEmpty(response.OauthScope));
             Assert.True(oauthScope.Contains(response.OauthScope));
@@ -381,7 +346,6 @@ namespace Grpc.IntegrationTesting
            
             var request = new SimpleRequest
             {
-                ResponseType = PayloadType.COMPRESSABLE,
                 ResponseSize = 314159,
                 Payload = CreateZerosPayload(271828),
                 FillUsername = true,
@@ -390,7 +354,6 @@ namespace Grpc.IntegrationTesting
             // not setting credentials here because they were set on channel already
             var response = client.UnaryCall(request);
 
-            Assert.AreEqual(PayloadType.COMPRESSABLE, response.Payload.Type);
             Assert.AreEqual(314159, response.Payload.Body.Length);
             Assert.AreEqual(GetEmailFromServiceAccountFile(), response.Username);
             Console.WriteLine("Passed!");
@@ -434,7 +397,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunCancelAfterBeginAsync(TestService.ITestServiceClient client)
+        public static async Task RunCancelAfterBeginAsync(TestService.TestServiceClient client)
         {
             Console.WriteLine("running cancel_after_begin");
 
@@ -445,13 +408,13 @@ namespace Grpc.IntegrationTesting
                 await Task.Delay(1000);
                 cts.Cancel();
 
-                var ex = Assert.Throws<RpcException>(async () => await call.ResponseAsync);
+                var ex = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseAsync);
                 Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
             }
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunCancelAfterFirstResponseAsync(TestService.ITestServiceClient client)
+        public static async Task RunCancelAfterFirstResponseAsync(TestService.TestServiceClient client)
         {
             Console.WriteLine("running cancel_after_first_response");
 
@@ -460,24 +423,30 @@ namespace Grpc.IntegrationTesting
             {
                 await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
                 {
-                    ResponseType = PayloadType.COMPRESSABLE,
                     ResponseParameters = { new ResponseParameters { Size = 31415 } },
                     Payload = CreateZerosPayload(27182)
                 });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
-                Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(31415, call.ResponseStream.Current.Payload.Body.Length);
 
                 cts.Cancel();
 
-                var ex = Assert.Throws<RpcException>(async () => await call.ResponseStream.MoveNext());
-                Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
+                try
+                {
+                    // cannot use Assert.ThrowsAsync because it uses Task.Wait and would deadlock.
+                    await call.ResponseStream.MoveNext();
+                    Assert.Fail();
+                }
+                catch (RpcException ex)
+                {
+                    Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
+                }
             }
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunTimeoutOnSleepingServerAsync(TestService.ITestServiceClient client)
+        public static async Task RunTimeoutOnSleepingServerAsync(TestService.TestServiceClient client)
         {
             Console.WriteLine("running timeout_on_sleeping_server");
 
@@ -492,21 +461,32 @@ namespace Grpc.IntegrationTesting
                 {
                     // Deadline was reached before write has started. Eat the exception and continue.
                 }
+                catch (RpcException)
+                {
+                    // Deadline was reached before write has started. Eat the exception and continue.
+                }
 
-                var ex = Assert.Throws<RpcException>(async () => await call.ResponseStream.MoveNext());
-                Assert.AreEqual(StatusCode.DeadlineExceeded, ex.Status.StatusCode);
+                try
+                {
+                    await call.ResponseStream.MoveNext();
+                    Assert.Fail();
+                }
+                catch (RpcException ex)
+                {
+                    // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
+                    Assert.Contains(ex.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
+                }
             }
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunCustomMetadataAsync(TestService.ITestServiceClient client)
+        public static async Task RunCustomMetadataAsync(TestService.TestServiceClient client)
         {
             Console.WriteLine("running custom_metadata");
             {
                 // step 1: test unary call
                 var request = new SimpleRequest
                 {
-                    ResponseType = PayloadType.COMPRESSABLE,
                     ResponseSize = 314159,
                     Payload = CreateZerosPayload(271828)
                 };
@@ -525,18 +505,17 @@ namespace Grpc.IntegrationTesting
                 // step 2: test full duplex call
                 var request = new StreamingOutputCallRequest
                 {
-                    ResponseType = PayloadType.COMPRESSABLE,
                     ResponseParameters = { new ResponseParameters { Size = 31415 } },
                     Payload = CreateZerosPayload(27182)
                 };
 
                 var call = client.FullDuplexCall(headers: CreateTestMetadata());
-                var responseHeaders = await call.ResponseHeadersAsync;
 
                 await call.RequestStream.WriteAsync(request);
                 await call.RequestStream.CompleteAsync();
                 await call.ResponseStream.ToListAsync();
 
+                var responseHeaders = await call.ResponseHeadersAsync;
                 var responseTrailers = call.GetTrailers();
 
                 Assert.AreEqual("test_initial_metadata_value", responseHeaders.First((entry) => entry.Key == "x-grpc-test-echo-initial").Value);
@@ -546,7 +525,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunStatusCodeAndMessageAsync(TestService.ITestServiceClient client)
+        public static async Task RunStatusCodeAndMessageAsync(TestService.TestServiceClient client)
         {
             Console.WriteLine("running status_code_and_message");
             var echoStatus = new EchoStatus
@@ -572,21 +551,130 @@ namespace Grpc.IntegrationTesting
                 await call.RequestStream.WriteAsync(request);
                 await call.RequestStream.CompleteAsync();
 
-                var e = Assert.Throws<RpcException>(async () => await call.ResponseStream.ToListAsync());
-                Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
-                Assert.AreEqual(echoStatus.Message, e.Status.Detail);
+                try
+                {
+                    // cannot use Assert.ThrowsAsync because it uses Task.Wait and would deadlock.
+                    await call.ResponseStream.ToListAsync();
+                    Assert.Fail();
+                }
+                catch (RpcException e)
+                {
+                    Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
+                    Assert.AreEqual(echoStatus.Message, e.Status.Detail);
+                }
             }
 
             Console.WriteLine("Passed!");
         }
 
-        public static void RunUnimplementedMethod(UnimplementedService.IUnimplementedServiceClient client)
+        public static void RunUnimplementedService(UnimplementedService.UnimplementedServiceClient client)
+        {
+            Console.WriteLine("running unimplemented_service");
+            var e = Assert.Throws<RpcException>(() => client.UnimplementedCall(new Empty()));
+
+            Assert.AreEqual(StatusCode.Unimplemented, e.Status.StatusCode);
+            Console.WriteLine("Passed!");
+        }
+
+        public static void RunUnimplementedMethod(TestService.TestServiceClient client)
         {
             Console.WriteLine("running unimplemented_method");
             var e = Assert.Throws<RpcException>(() => client.UnimplementedCall(new Empty()));
 
             Assert.AreEqual(StatusCode.Unimplemented, e.Status.StatusCode);
-            Assert.AreEqual("", e.Status.Detail);
+            Console.WriteLine("Passed!");
+        }
+
+        public static void RunClientCompressedUnary(TestService.TestServiceClient client)
+        {
+            Console.WriteLine("running client_compressed_unary");
+            var probeRequest = new SimpleRequest
+            {
+                ExpectCompressed = new BoolValue
+                {
+                    Value = true  // lie about compression
+                },
+                ResponseSize = 314159,
+                Payload = CreateZerosPayload(271828)
+            };
+            var e = Assert.Throws<RpcException>(() => client.UnaryCall(probeRequest, CreateClientCompressionMetadata(false)));
+            Assert.AreEqual(StatusCode.InvalidArgument, e.Status.StatusCode);
+
+            var compressedRequest = new SimpleRequest
+            {
+                ExpectCompressed = new BoolValue
+                {
+                    Value = true
+                },
+                ResponseSize = 314159,
+                Payload = CreateZerosPayload(271828)
+            };
+            var response1 = client.UnaryCall(compressedRequest, CreateClientCompressionMetadata(true));
+            Assert.AreEqual(314159, response1.Payload.Body.Length);
+
+            var uncompressedRequest = new SimpleRequest
+            {
+                ExpectCompressed = new BoolValue
+                {
+                    Value = false
+                },
+                ResponseSize = 314159,
+                Payload = CreateZerosPayload(271828)
+            };
+            var response2 = client.UnaryCall(uncompressedRequest, CreateClientCompressionMetadata(false));
+            Assert.AreEqual(314159, response2.Payload.Body.Length);
+
+            Console.WriteLine("Passed!");
+        }
+
+        public static async Task RunClientCompressedStreamingAsync(TestService.TestServiceClient client)
+        {
+            Console.WriteLine("running client_compressed_streaming");
+            try
+            {
+                var probeCall = client.StreamingInputCall(CreateClientCompressionMetadata(false));
+                await probeCall.RequestStream.WriteAsync(new StreamingInputCallRequest
+                {
+                    ExpectCompressed = new BoolValue
+                    {
+                        Value = true
+                    },
+                    Payload = CreateZerosPayload(27182)
+                });
+
+                // cannot use Assert.ThrowsAsync because it uses Task.Wait and would deadlock.
+                await probeCall;
+                Assert.Fail();
+            }
+            catch (RpcException e)
+            {
+                Assert.AreEqual(StatusCode.InvalidArgument, e.Status.StatusCode);
+            }
+
+            var call = client.StreamingInputCall(CreateClientCompressionMetadata(true));
+            await call.RequestStream.WriteAsync(new StreamingInputCallRequest
+            {
+                ExpectCompressed = new BoolValue
+                {
+                    Value = true
+                },
+                Payload = CreateZerosPayload(27182)
+            });
+
+            call.RequestStream.WriteOptions = new WriteOptions(WriteFlags.NoCompress);
+            await call.RequestStream.WriteAsync(new StreamingInputCallRequest
+            {
+                ExpectCompressed = new BoolValue
+                {
+                    Value = false
+                },
+                Payload = CreateZerosPayload(45904)
+            });
+            await call.RequestStream.CompleteAsync();
+
+            var response = await call.ResponseAsync;
+            Assert.AreEqual(73086, response.AggregatedPayloadSize);
+
             Console.WriteLine("Passed!");
         }
 
@@ -595,12 +683,20 @@ namespace Grpc.IntegrationTesting
             return new Payload { Body = ByteString.CopyFrom(new byte[size]) };
         }
 
+        private static Metadata CreateClientCompressionMetadata(bool compressed)
+        {
+            var algorithmName = compressed ? "gzip" : "identity";
+            return new Metadata
+            {
+                { new Metadata.Entry(Metadata.CompressionRequestAlgorithmMetadataKey, algorithmName) }
+            };
+        }
+
         // extracts the client_email field from service account file used for auth test cases
         private static string GetEmailFromServiceAccountFile()
         {
             string keyFile = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
             Assert.IsNotNull(keyFile);
-
             var jobject = JObject.Parse(File.ReadAllText(keyFile));
             string email = jobject.GetValue("client_email").Value<string>();
             Assert.IsTrue(email.Length > 0);  // spec requires nonempty client email.

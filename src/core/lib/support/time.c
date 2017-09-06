@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -42,7 +27,7 @@
 int gpr_time_cmp(gpr_timespec a, gpr_timespec b) {
   int cmp = (a.tv_sec > b.tv_sec) - (a.tv_sec < b.tv_sec);
   GPR_ASSERT(a.clock_type == b.clock_type);
-  if (cmp == 0) {
+  if (cmp == 0 && a.tv_sec != INT64_MAX && a.tv_sec != INT64_MIN) {
     cmp = (a.tv_nsec > b.tv_nsec) - (a.tv_nsec < b.tv_nsec);
   }
   return cmp;
@@ -80,103 +65,67 @@ gpr_timespec gpr_inf_past(gpr_clock_type type) {
   return out;
 }
 
-/* TODO(ctiller): consider merging _nanos, _micros, _millis into a single
-   function for maintainability. Similarly for _seconds, _minutes, and _hours */
+static gpr_timespec to_seconds_from_sub_second_time(int64_t time_in_units,
+                                                    int64_t units_per_sec,
+                                                    gpr_clock_type type) {
+  gpr_timespec out;
+  if (time_in_units == INT64_MAX) {
+    out = gpr_inf_future(type);
+  } else if (time_in_units == INT64_MIN) {
+    out = gpr_inf_past(type);
+  } else {
+    if (time_in_units >= 0) {
+      out.tv_sec = time_in_units / units_per_sec;
+    } else {
+      out.tv_sec = (-((units_per_sec - 1) - (time_in_units + units_per_sec)) /
+                    units_per_sec) -
+                   1;
+    }
+    out.tv_nsec = (int32_t)((time_in_units - out.tv_sec * units_per_sec) *
+                            GPR_NS_PER_SEC / units_per_sec);
+    out.clock_type = type;
+  }
+  return out;
+}
+
+static gpr_timespec to_seconds_from_above_second_time(int64_t time_in_units,
+                                                      int64_t secs_per_unit,
+                                                      gpr_clock_type type) {
+  gpr_timespec out;
+  if (time_in_units >= INT64_MAX / secs_per_unit) {
+    out = gpr_inf_future(type);
+  } else if (time_in_units <= INT64_MIN / secs_per_unit) {
+    out = gpr_inf_past(type);
+  } else {
+    out.tv_sec = time_in_units * secs_per_unit;
+    out.tv_nsec = 0;
+    out.clock_type = type;
+  }
+  return out;
+}
 
 gpr_timespec gpr_time_from_nanos(int64_t ns, gpr_clock_type type) {
-  gpr_timespec result;
-  result.clock_type = type;
-  if (ns == INT64_MAX) {
-    result = gpr_inf_future(type);
-  } else if (ns == INT64_MIN) {
-    result = gpr_inf_past(type);
-  } else if (ns >= 0) {
-    result.tv_sec = ns / GPR_NS_PER_SEC;
-    result.tv_nsec = (int32_t)(ns - result.tv_sec * GPR_NS_PER_SEC);
-  } else {
-    /* Calculation carefully formulated to avoid any possible under/overflow. */
-    result.tv_sec = (-(999999999 - (ns + GPR_NS_PER_SEC)) / GPR_NS_PER_SEC) - 1;
-    result.tv_nsec = (int32_t)(ns - result.tv_sec * GPR_NS_PER_SEC);
-  }
-  return result;
+  return to_seconds_from_sub_second_time(ns, GPR_NS_PER_SEC, type);
 }
 
 gpr_timespec gpr_time_from_micros(int64_t us, gpr_clock_type type) {
-  gpr_timespec result;
-  result.clock_type = type;
-  if (us == INT64_MAX) {
-    result = gpr_inf_future(type);
-  } else if (us == INT64_MIN) {
-    result = gpr_inf_past(type);
-  } else if (us >= 0) {
-    result.tv_sec = us / 1000000;
-    result.tv_nsec = (int32_t)((us - result.tv_sec * 1000000) * 1000);
-  } else {
-    /* Calculation carefully formulated to avoid any possible under/overflow. */
-    result.tv_sec = (-(999999 - (us + 1000000)) / 1000000) - 1;
-    result.tv_nsec = (int32_t)((us - result.tv_sec * 1000000) * 1000);
-  }
-  return result;
+  return to_seconds_from_sub_second_time(us, GPR_US_PER_SEC, type);
 }
 
 gpr_timespec gpr_time_from_millis(int64_t ms, gpr_clock_type type) {
-  gpr_timespec result;
-  result.clock_type = type;
-  if (ms == INT64_MAX) {
-    result = gpr_inf_future(type);
-  } else if (ms == INT64_MIN) {
-    result = gpr_inf_past(type);
-  } else if (ms >= 0) {
-    result.tv_sec = ms / 1000;
-    result.tv_nsec = (int32_t)((ms - result.tv_sec * 1000) * 1000000);
-  } else {
-    /* Calculation carefully formulated to avoid any possible under/overflow. */
-    result.tv_sec = (-(999 - (ms + 1000)) / 1000) - 1;
-    result.tv_nsec = (int32_t)((ms - result.tv_sec * 1000) * 1000000);
-  }
-  return result;
+  return to_seconds_from_sub_second_time(ms, GPR_MS_PER_SEC, type);
 }
 
 gpr_timespec gpr_time_from_seconds(int64_t s, gpr_clock_type type) {
-  gpr_timespec result;
-  result.clock_type = type;
-  if (s == INT64_MAX) {
-    result = gpr_inf_future(type);
-  } else if (s == INT64_MIN) {
-    result = gpr_inf_past(type);
-  } else {
-    result.tv_sec = s;
-    result.tv_nsec = 0;
-  }
-  return result;
+  return to_seconds_from_sub_second_time(s, 1, type);
 }
 
 gpr_timespec gpr_time_from_minutes(int64_t m, gpr_clock_type type) {
-  gpr_timespec result;
-  result.clock_type = type;
-  if (m >= INT64_MAX / 60) {
-    result = gpr_inf_future(type);
-  } else if (m <= INT64_MIN / 60) {
-    result = gpr_inf_past(type);
-  } else {
-    result.tv_sec = m * 60;
-    result.tv_nsec = 0;
-  }
-  return result;
+  return to_seconds_from_above_second_time(m, 60, type);
 }
 
 gpr_timespec gpr_time_from_hours(int64_t h, gpr_clock_type type) {
-  gpr_timespec result;
-  result.clock_type = type;
-  if (h >= INT64_MAX / 3600) {
-    result = gpr_inf_future(type);
-  } else if (h <= INT64_MIN / 3600) {
-    result = gpr_inf_past(type);
-  } else {
-    result.tv_sec = h * 3600;
-    result.tv_nsec = 0;
-  }
-  return result;
+  return to_seconds_from_above_second_time(h, 3600, type);
 }
 
 gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) {
@@ -280,15 +229,9 @@ gpr_timespec gpr_convert_clock_type(gpr_timespec t, gpr_clock_type clock_type) {
     return t;
   }
 
-  if (t.tv_nsec == 0) {
-    if (t.tv_sec == INT64_MAX) {
-      t.clock_type = clock_type;
-      return t;
-    }
-    if (t.tv_sec == INT64_MIN) {
-      t.clock_type = clock_type;
-      return t;
-    }
+  if (t.tv_sec == INT64_MAX || t.tv_sec == INT64_MIN) {
+    t.clock_type = clock_type;
+    return t;
   }
 
   if (clock_type == GPR_TIMESPAN) {

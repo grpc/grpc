@@ -1,664 +1,72 @@
-# GRPC CocoaPods podspec
 # This file has been automatically generated from a template file.
-# Please look at the templates directory instead.
-# This file can be regenerated from the template by running
-# tools/buildgen/generate_projects.sh
+# Please make modifications to `templates/gRPC.podspec.template`
+# instead. This file can be regenerated from the template by running
+# `tools/buildgen/generate_projects.sh`.
 
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  version = '0.12.0'
+  version = '1.7.0-dev'
   s.version  = version
   s.summary  = 'gRPC client library for iOS/OSX'
-  s.homepage = 'http://www.grpc.io'
-  s.license  = 'New BSD'
+  s.homepage = 'https://grpc.io'
+  s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  s.source = { :git => 'https://github.com/grpc/grpc.git',
-               :tag => "release-#{version.gsub(/\./, '_')}-objectivec-#{version}" }
+  s.source = {
+    :git => 'https://github.com/grpc/grpc.git',
+    :tag => "v#{version}",
+  }
 
-
-  s.ios.deployment_target = '7.1'
+  s.ios.deployment_target = '7.0'
   s.osx.deployment_target = '10.9'
-  s.requires_arc = true
 
-  objc_dir = 'src/objective-c'
+  name = 'GRPCClient'
+  s.module_name = name
+  s.header_dir = name
 
-  # Reactive Extensions library for iOS.
-  s.subspec 'RxLibrary' do |ss|
-    src_dir = "#{objc_dir}/RxLibrary"
+  src_dir = 'src/objective-c/GRPCClient'
+
+  s.dependency 'gRPC-RxLibrary', version
+  s.default_subspec = 'Main'
+
+  # Certificates, to be able to establish TLS connections:
+  s.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
+
+  s.pod_target_xcconfig = {
+    # This is needed by all pods that depend on gRPC-RxLibrary:
+    'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES' => 'YES',
+  }
+
+  s.subspec 'Main' do |ss|
+    ss.header_mappings_dir = "#{src_dir}"
+
     ss.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
+    ss.exclude_files = "#{src_dir}/GRPCCall+GID.{h,m}"
     ss.private_header_files = "#{src_dir}/private/*.h"
-    ss.header_mappings_dir = "#{objc_dir}"
+
+    ss.dependency 'gRPC-Core', version
   end
 
-  # Core cross-platform gRPC library, written in C.
-  s.subspec 'C-Core' do |ss|
-    ss.source_files = 'src/core/lib/profiling/timers.h',
-                      'src/core/lib/support/backoff.h',
-                      'src/core/lib/support/block_annotate.h',
-                      'src/core/lib/support/env.h',
-                      'src/core/lib/support/load_file.h',
-                      'src/core/lib/support/murmur_hash.h',
-                      'src/core/lib/support/stack_lockfree.h',
-                      'src/core/lib/support/string.h',
-                      'src/core/lib/support/string_win32.h',
-                      'src/core/lib/support/thd_internal.h',
-                      'src/core/lib/support/time_precise.h',
-                      'src/core/lib/support/tmpfile.h',
-                      'include/grpc/impl/codegen/alloc.h',
-                      'include/grpc/impl/codegen/atm.h',
-                      'include/grpc/impl/codegen/atm_gcc_atomic.h',
-                      'include/grpc/impl/codegen/atm_gcc_sync.h',
-                      'include/grpc/impl/codegen/atm_win32.h',
-                      'include/grpc/impl/codegen/log.h',
-                      'include/grpc/impl/codegen/port_platform.h',
-                      'include/grpc/impl/codegen/slice.h',
-                      'include/grpc/impl/codegen/slice_buffer.h',
-                      'include/grpc/impl/codegen/sync.h',
-                      'include/grpc/impl/codegen/sync_generic.h',
-                      'include/grpc/impl/codegen/sync_posix.h',
-                      'include/grpc/impl/codegen/sync_win32.h',
-                      'include/grpc/impl/codegen/time.h',
-                      'include/grpc/support/alloc.h',
-                      'include/grpc/support/atm.h',
-                      'include/grpc/support/atm_gcc_atomic.h',
-                      'include/grpc/support/atm_gcc_sync.h',
-                      'include/grpc/support/atm_win32.h',
-                      'include/grpc/support/avl.h',
-                      'include/grpc/support/cmdline.h',
-                      'include/grpc/support/cpu.h',
-                      'include/grpc/support/histogram.h',
-                      'include/grpc/support/host_port.h',
-                      'include/grpc/support/log.h',
-                      'include/grpc/support/log_win32.h',
-                      'include/grpc/support/port_platform.h',
-                      'include/grpc/support/slice.h',
-                      'include/grpc/support/slice_buffer.h',
-                      'include/grpc/support/string_util.h',
-                      'include/grpc/support/subprocess.h',
-                      'include/grpc/support/sync.h',
-                      'include/grpc/support/sync_generic.h',
-                      'include/grpc/support/sync_posix.h',
-                      'include/grpc/support/sync_win32.h',
-                      'include/grpc/support/thd.h',
-                      'include/grpc/support/time.h',
-                      'include/grpc/support/tls.h',
-                      'include/grpc/support/tls_gcc.h',
-                      'include/grpc/support/tls_msvc.h',
-                      'include/grpc/support/tls_pthread.h',
-                      'include/grpc/support/useful.h',
-                      'src/core/lib/profiling/basic_timers.c',
-                      'src/core/lib/profiling/stap_timers.c',
-                      'src/core/lib/support/alloc.c',
-                      'src/core/lib/support/avl.c',
-                      'src/core/lib/support/backoff.c',
-                      'src/core/lib/support/cmdline.c',
-                      'src/core/lib/support/cpu_iphone.c',
-                      'src/core/lib/support/cpu_linux.c',
-                      'src/core/lib/support/cpu_posix.c',
-                      'src/core/lib/support/cpu_windows.c',
-                      'src/core/lib/support/env_linux.c',
-                      'src/core/lib/support/env_posix.c',
-                      'src/core/lib/support/env_win32.c',
-                      'src/core/lib/support/histogram.c',
-                      'src/core/lib/support/host_port.c',
-                      'src/core/lib/support/load_file.c',
-                      'src/core/lib/support/log.c',
-                      'src/core/lib/support/log_android.c',
-                      'src/core/lib/support/log_linux.c',
-                      'src/core/lib/support/log_posix.c',
-                      'src/core/lib/support/log_win32.c',
-                      'src/core/lib/support/murmur_hash.c',
-                      'src/core/lib/support/slice.c',
-                      'src/core/lib/support/slice_buffer.c',
-                      'src/core/lib/support/stack_lockfree.c',
-                      'src/core/lib/support/string.c',
-                      'src/core/lib/support/string_posix.c',
-                      'src/core/lib/support/string_win32.c',
-                      'src/core/lib/support/subprocess_posix.c',
-                      'src/core/lib/support/subprocess_windows.c',
-                      'src/core/lib/support/sync.c',
-                      'src/core/lib/support/sync_posix.c',
-                      'src/core/lib/support/sync_win32.c',
-                      'src/core/lib/support/thd.c',
-                      'src/core/lib/support/thd_posix.c',
-                      'src/core/lib/support/thd_win32.c',
-                      'src/core/lib/support/time.c',
-                      'src/core/lib/support/time_posix.c',
-                      'src/core/lib/support/time_precise.c',
-                      'src/core/lib/support/time_win32.c',
-                      'src/core/lib/support/tls_pthread.c',
-                      'src/core/lib/support/tmpfile_posix.c',
-                      'src/core/lib/support/tmpfile_win32.c',
-                      'src/core/lib/support/wrap_memcpy.c',
-                      'src/core/ext/census/aggregation.h',
-                      'src/core/ext/census/census_interface.h',
-                      'src/core/ext/census/census_rpc_stats.h',
-                      'src/core/ext/census/grpc_filter.h',
-                      'src/core/ext/census/mlog.h',
-                      'src/core/ext/census/rpc_metric_id.h',
-                      'src/core/ext/lb_policy/grpclb/load_balancer_api.h',
-                      'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h',
-                      'src/core/ext/transport/chttp2/transport/alpn.h',
-                      'src/core/ext/transport/chttp2/transport/bin_encoder.h',
-                      'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
-                      'src/core/ext/transport/chttp2/transport/frame.h',
-                      'src/core/ext/transport/chttp2/transport/frame_data.h',
-                      'src/core/ext/transport/chttp2/transport/frame_goaway.h',
-                      'src/core/ext/transport/chttp2/transport/frame_ping.h',
-                      'src/core/ext/transport/chttp2/transport/frame_rst_stream.h',
-                      'src/core/ext/transport/chttp2/transport/frame_settings.h',
-                      'src/core/ext/transport/chttp2/transport/frame_window_update.h',
-                      'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
-                      'src/core/ext/transport/chttp2/transport/hpack_parser.h',
-                      'src/core/ext/transport/chttp2/transport/hpack_table.h',
-                      'src/core/ext/transport/chttp2/transport/http2_errors.h',
-                      'src/core/ext/transport/chttp2/transport/huffsyms.h',
-                      'src/core/ext/transport/chttp2/transport/incoming_metadata.h',
-                      'src/core/ext/transport/chttp2/transport/internal.h',
-                      'src/core/ext/transport/chttp2/transport/status_conversion.h',
-                      'src/core/ext/transport/chttp2/transport/stream_map.h',
-                      'src/core/ext/transport/chttp2/transport/timeout_encoding.h',
-                      'src/core/ext/transport/chttp2/transport/varint.h',
-                      'src/core/lib/channel/channel_args.h',
-                      'src/core/lib/channel/channel_stack.h',
-                      'src/core/lib/channel/channel_stack_builder.h',
-                      'src/core/lib/channel/client_channel.h',
-                      'src/core/lib/channel/compress_filter.h',
-                      'src/core/lib/channel/connected_channel.h',
-                      'src/core/lib/channel/context.h',
-                      'src/core/lib/channel/http_client_filter.h',
-                      'src/core/lib/channel/http_server_filter.h',
-                      'src/core/lib/channel/subchannel_call_holder.h',
-                      'src/core/lib/client_config/client_config.h',
-                      'src/core/lib/client_config/connector.h',
-                      'src/core/lib/client_config/initial_connect_string.h',
-                      'src/core/lib/client_config/lb_policy.h',
-                      'src/core/lib/client_config/lb_policy_factory.h',
-                      'src/core/lib/client_config/lb_policy_registry.h',
-                      'src/core/lib/client_config/resolver.h',
-                      'src/core/lib/client_config/resolver_factory.h',
-                      'src/core/lib/client_config/resolver_registry.h',
-                      'src/core/lib/client_config/subchannel.h',
-                      'src/core/lib/client_config/subchannel_factory.h',
-                      'src/core/lib/client_config/subchannel_index.h',
-                      'src/core/lib/client_config/uri_parser.h',
-                      'src/core/lib/compression/algorithm_metadata.h',
-                      'src/core/lib/compression/message_compress.h',
-                      'src/core/lib/debug/trace.h',
-                      'src/core/lib/http/format_request.h',
-                      'src/core/lib/http/httpcli.h',
-                      'src/core/lib/http/parser.h',
-                      'src/core/lib/iomgr/closure.h',
-                      'src/core/lib/iomgr/endpoint.h',
-                      'src/core/lib/iomgr/endpoint_pair.h',
-                      'src/core/lib/iomgr/ev_poll_and_epoll_posix.h',
-                      'src/core/lib/iomgr/ev_posix.h',
-                      'src/core/lib/iomgr/exec_ctx.h',
-                      'src/core/lib/iomgr/executor.h',
-                      'src/core/lib/iomgr/iocp_windows.h',
-                      'src/core/lib/iomgr/iomgr.h',
-                      'src/core/lib/iomgr/iomgr_internal.h',
-                      'src/core/lib/iomgr/iomgr_posix.h',
-                      'src/core/lib/iomgr/pollset.h',
-                      'src/core/lib/iomgr/pollset_set.h',
-                      'src/core/lib/iomgr/pollset_set_windows.h',
-                      'src/core/lib/iomgr/pollset_windows.h',
-                      'src/core/lib/iomgr/resolve_address.h',
-                      'src/core/lib/iomgr/sockaddr.h',
-                      'src/core/lib/iomgr/sockaddr_posix.h',
-                      'src/core/lib/iomgr/sockaddr_utils.h',
-                      'src/core/lib/iomgr/sockaddr_win32.h',
-                      'src/core/lib/iomgr/socket_utils_posix.h',
-                      'src/core/lib/iomgr/socket_windows.h',
-                      'src/core/lib/iomgr/tcp_client.h',
-                      'src/core/lib/iomgr/tcp_posix.h',
-                      'src/core/lib/iomgr/tcp_server.h',
-                      'src/core/lib/iomgr/tcp_windows.h',
-                      'src/core/lib/iomgr/time_averaged_stats.h',
-                      'src/core/lib/iomgr/timer.h',
-                      'src/core/lib/iomgr/timer_heap.h',
-                      'src/core/lib/iomgr/udp_server.h',
-                      'src/core/lib/iomgr/unix_sockets_posix.h',
-                      'src/core/lib/iomgr/wakeup_fd_pipe.h',
-                      'src/core/lib/iomgr/wakeup_fd_posix.h',
-                      'src/core/lib/iomgr/workqueue.h',
-                      'src/core/lib/iomgr/workqueue_posix.h',
-                      'src/core/lib/iomgr/workqueue_windows.h',
-                      'src/core/lib/json/json.h',
-                      'src/core/lib/json/json_common.h',
-                      'src/core/lib/json/json_reader.h',
-                      'src/core/lib/json/json_writer.h',
-                      'src/core/lib/security/auth_filters.h',
-                      'src/core/lib/security/b64.h',
-                      'src/core/lib/security/credentials.h',
-                      'src/core/lib/security/handshake.h',
-                      'src/core/lib/security/json_token.h',
-                      'src/core/lib/security/jwt_verifier.h',
-                      'src/core/lib/security/secure_endpoint.h',
-                      'src/core/lib/security/security_connector.h',
-                      'src/core/lib/security/security_context.h',
-                      'src/core/lib/surface/api_trace.h',
-                      'src/core/lib/surface/call.h',
-                      'src/core/lib/surface/call_test_only.h',
-                      'src/core/lib/surface/channel.h',
-                      'src/core/lib/surface/channel_init.h',
-                      'src/core/lib/surface/channel_stack_type.h',
-                      'src/core/lib/surface/completion_queue.h',
-                      'src/core/lib/surface/event_string.h',
-                      'src/core/lib/surface/init.h',
-                      'src/core/lib/surface/lame_client.h',
-                      'src/core/lib/surface/server.h',
-                      'src/core/lib/surface/surface_trace.h',
-                      'src/core/lib/transport/byte_stream.h',
-                      'src/core/lib/transport/connectivity_state.h',
-                      'src/core/lib/transport/metadata.h',
-                      'src/core/lib/transport/metadata_batch.h',
-                      'src/core/lib/transport/static_metadata.h',
-                      'src/core/lib/transport/transport.h',
-                      'src/core/lib/transport/transport_impl.h',
-                      'src/core/lib/tsi/fake_transport_security.h',
-                      'src/core/lib/tsi/ssl_transport_security.h',
-                      'src/core/lib/tsi/ssl_types.h',
-                      'src/core/lib/tsi/transport_security.h',
-                      'src/core/lib/tsi/transport_security_interface.h',
-                      'third_party/nanopb/pb.h',
-                      'third_party/nanopb/pb_common.h',
-                      'third_party/nanopb/pb_decode.h',
-                      'third_party/nanopb/pb_encode.h',
-                      'include/grpc/byte_buffer.h',
-                      'include/grpc/byte_buffer_reader.h',
-                      'include/grpc/census.h',
-                      'include/grpc/compression.h',
-                      'include/grpc/grpc.h',
-                      'include/grpc/grpc_security.h',
-                      'include/grpc/impl/codegen/byte_buffer.h',
-                      'include/grpc/impl/codegen/compression_types.h',
-                      'include/grpc/impl/codegen/connectivity_state.h',
-                      'include/grpc/impl/codegen/grpc_types.h',
-                      'include/grpc/impl/codegen/propagation_bits.h',
-                      'include/grpc/impl/codegen/status.h',
-                      'include/grpc/status.h',
-                      'src/core/ext/census/context.c',
-                      'src/core/ext/census/grpc_context.c',
-                      'src/core/ext/census/grpc_filter.c',
-                      'src/core/ext/census/grpc_plugin.c',
-                      'src/core/ext/census/initialize.c',
-                      'src/core/ext/census/mlog.c',
-                      'src/core/ext/census/operation.c',
-                      'src/core/ext/census/placeholders.c',
-                      'src/core/ext/census/tracing.c',
-                      'src/core/ext/lb_policy/grpclb/load_balancer_api.c',
-                      'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c',
-                      'src/core/ext/lb_policy/pick_first/pick_first.c',
-                      'src/core/ext/lb_policy/round_robin/round_robin.c',
-                      'src/core/ext/resolver/dns/native/dns_resolver.c',
-                      'src/core/ext/resolver/sockaddr/sockaddr_resolver.c',
-                      'src/core/ext/transport/chttp2/client/insecure/channel_create.c',
-                      'src/core/ext/transport/chttp2/client/secure/secure_channel_create.c',
-                      'src/core/ext/transport/chttp2/server/insecure/server_chttp2.c',
-                      'src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c',
-                      'src/core/ext/transport/chttp2/transport/alpn.c',
-                      'src/core/ext/transport/chttp2/transport/bin_encoder.c',
-                      'src/core/ext/transport/chttp2/transport/chttp2_transport.c',
-                      'src/core/ext/transport/chttp2/transport/frame_data.c',
-                      'src/core/ext/transport/chttp2/transport/frame_goaway.c',
-                      'src/core/ext/transport/chttp2/transport/frame_ping.c',
-                      'src/core/ext/transport/chttp2/transport/frame_rst_stream.c',
-                      'src/core/ext/transport/chttp2/transport/frame_settings.c',
-                      'src/core/ext/transport/chttp2/transport/frame_window_update.c',
-                      'src/core/ext/transport/chttp2/transport/hpack_encoder.c',
-                      'src/core/ext/transport/chttp2/transport/hpack_parser.c',
-                      'src/core/ext/transport/chttp2/transport/hpack_table.c',
-                      'src/core/ext/transport/chttp2/transport/huffsyms.c',
-                      'src/core/ext/transport/chttp2/transport/incoming_metadata.c',
-                      'src/core/ext/transport/chttp2/transport/parsing.c',
-                      'src/core/ext/transport/chttp2/transport/status_conversion.c',
-                      'src/core/ext/transport/chttp2/transport/stream_lists.c',
-                      'src/core/ext/transport/chttp2/transport/stream_map.c',
-                      'src/core/ext/transport/chttp2/transport/timeout_encoding.c',
-                      'src/core/ext/transport/chttp2/transport/varint.c',
-                      'src/core/ext/transport/chttp2/transport/writing.c',
-                      'src/core/lib/channel/channel_args.c',
-                      'src/core/lib/channel/channel_stack.c',
-                      'src/core/lib/channel/channel_stack_builder.c',
-                      'src/core/lib/channel/client_channel.c',
-                      'src/core/lib/channel/compress_filter.c',
-                      'src/core/lib/channel/connected_channel.c',
-                      'src/core/lib/channel/http_client_filter.c',
-                      'src/core/lib/channel/http_server_filter.c',
-                      'src/core/lib/channel/subchannel_call_holder.c',
-                      'src/core/lib/client_config/client_config.c',
-                      'src/core/lib/client_config/connector.c',
-                      'src/core/lib/client_config/default_initial_connect_string.c',
-                      'src/core/lib/client_config/initial_connect_string.c',
-                      'src/core/lib/client_config/lb_policy.c',
-                      'src/core/lib/client_config/lb_policy_factory.c',
-                      'src/core/lib/client_config/lb_policy_registry.c',
-                      'src/core/lib/client_config/resolver.c',
-                      'src/core/lib/client_config/resolver_factory.c',
-                      'src/core/lib/client_config/resolver_registry.c',
-                      'src/core/lib/client_config/subchannel.c',
-                      'src/core/lib/client_config/subchannel_factory.c',
-                      'src/core/lib/client_config/subchannel_index.c',
-                      'src/core/lib/client_config/uri_parser.c',
-                      'src/core/lib/compression/compression_algorithm.c',
-                      'src/core/lib/compression/message_compress.c',
-                      'src/core/lib/debug/trace.c',
-                      'src/core/lib/http/format_request.c',
-                      'src/core/lib/http/httpcli.c',
-                      'src/core/lib/http/httpcli_security_connector.c',
-                      'src/core/lib/http/parser.c',
-                      'src/core/lib/iomgr/closure.c',
-                      'src/core/lib/iomgr/endpoint.c',
-                      'src/core/lib/iomgr/endpoint_pair_posix.c',
-                      'src/core/lib/iomgr/endpoint_pair_windows.c',
-                      'src/core/lib/iomgr/ev_poll_and_epoll_posix.c',
-                      'src/core/lib/iomgr/ev_posix.c',
-                      'src/core/lib/iomgr/exec_ctx.c',
-                      'src/core/lib/iomgr/executor.c',
-                      'src/core/lib/iomgr/iocp_windows.c',
-                      'src/core/lib/iomgr/iomgr.c',
-                      'src/core/lib/iomgr/iomgr_posix.c',
-                      'src/core/lib/iomgr/iomgr_windows.c',
-                      'src/core/lib/iomgr/pollset_set_windows.c',
-                      'src/core/lib/iomgr/pollset_windows.c',
-                      'src/core/lib/iomgr/resolve_address_posix.c',
-                      'src/core/lib/iomgr/resolve_address_windows.c',
-                      'src/core/lib/iomgr/sockaddr_utils.c',
-                      'src/core/lib/iomgr/socket_utils_common_posix.c',
-                      'src/core/lib/iomgr/socket_utils_linux.c',
-                      'src/core/lib/iomgr/socket_utils_posix.c',
-                      'src/core/lib/iomgr/socket_windows.c',
-                      'src/core/lib/iomgr/tcp_client_posix.c',
-                      'src/core/lib/iomgr/tcp_client_windows.c',
-                      'src/core/lib/iomgr/tcp_posix.c',
-                      'src/core/lib/iomgr/tcp_server_posix.c',
-                      'src/core/lib/iomgr/tcp_server_windows.c',
-                      'src/core/lib/iomgr/tcp_windows.c',
-                      'src/core/lib/iomgr/time_averaged_stats.c',
-                      'src/core/lib/iomgr/timer.c',
-                      'src/core/lib/iomgr/timer_heap.c',
-                      'src/core/lib/iomgr/udp_server.c',
-                      'src/core/lib/iomgr/unix_sockets_posix.c',
-                      'src/core/lib/iomgr/unix_sockets_posix_noop.c',
-                      'src/core/lib/iomgr/wakeup_fd_eventfd.c',
-                      'src/core/lib/iomgr/wakeup_fd_nospecial.c',
-                      'src/core/lib/iomgr/wakeup_fd_pipe.c',
-                      'src/core/lib/iomgr/wakeup_fd_posix.c',
-                      'src/core/lib/iomgr/workqueue_posix.c',
-                      'src/core/lib/iomgr/workqueue_windows.c',
-                      'src/core/lib/json/json.c',
-                      'src/core/lib/json/json_reader.c',
-                      'src/core/lib/json/json_string.c',
-                      'src/core/lib/json/json_writer.c',
-                      'src/core/lib/security/b64.c',
-                      'src/core/lib/security/client_auth_filter.c',
-                      'src/core/lib/security/credentials.c',
-                      'src/core/lib/security/credentials_metadata.c',
-                      'src/core/lib/security/credentials_posix.c',
-                      'src/core/lib/security/credentials_win32.c',
-                      'src/core/lib/security/google_default_credentials.c',
-                      'src/core/lib/security/handshake.c',
-                      'src/core/lib/security/json_token.c',
-                      'src/core/lib/security/jwt_verifier.c',
-                      'src/core/lib/security/secure_endpoint.c',
-                      'src/core/lib/security/security_connector.c',
-                      'src/core/lib/security/security_context.c',
-                      'src/core/lib/security/server_auth_filter.c',
-                      'src/core/lib/surface/alarm.c',
-                      'src/core/lib/surface/api_trace.c',
-                      'src/core/lib/surface/byte_buffer.c',
-                      'src/core/lib/surface/byte_buffer_reader.c',
-                      'src/core/lib/surface/call.c',
-                      'src/core/lib/surface/call_details.c',
-                      'src/core/lib/surface/call_log_batch.c',
-                      'src/core/lib/surface/channel.c',
-                      'src/core/lib/surface/channel_connectivity.c',
-                      'src/core/lib/surface/channel_init.c',
-                      'src/core/lib/surface/channel_ping.c',
-                      'src/core/lib/surface/channel_stack_type.c',
-                      'src/core/lib/surface/completion_queue.c',
-                      'src/core/lib/surface/event_string.c',
-                      'src/core/lib/surface/init.c',
-                      'src/core/lib/surface/init_secure.c',
-                      'src/core/lib/surface/lame_client.c',
-                      'src/core/lib/surface/metadata_array.c',
-                      'src/core/lib/surface/server.c',
-                      'src/core/lib/surface/validate_metadata.c',
-                      'src/core/lib/surface/version.c',
-                      'src/core/lib/transport/byte_stream.c',
-                      'src/core/lib/transport/connectivity_state.c',
-                      'src/core/lib/transport/metadata.c',
-                      'src/core/lib/transport/metadata_batch.c',
-                      'src/core/lib/transport/static_metadata.c',
-                      'src/core/lib/transport/transport.c',
-                      'src/core/lib/transport/transport_op_string.c',
-                      'src/core/lib/tsi/fake_transport_security.c',
-                      'src/core/lib/tsi/ssl_transport_security.c',
-                      'src/core/lib/tsi/transport_security.c',
-                      'src/core/plugin_registry/grpc_plugin_registry.c',
-                      'third_party/nanopb/pb_common.c',
-                      'third_party/nanopb/pb_decode.c',
-                      'third_party/nanopb/pb_encode.c'
+  s.subspec 'GID' do |ss|
+    ss.header_mappings_dir = "#{src_dir}"
 
-    ss.private_header_files = 'src/core/lib/profiling/timers.h',
-                              'src/core/lib/support/backoff.h',
-                              'src/core/lib/support/block_annotate.h',
-                              'src/core/lib/support/env.h',
-                              'src/core/lib/support/load_file.h',
-                              'src/core/lib/support/murmur_hash.h',
-                              'src/core/lib/support/stack_lockfree.h',
-                              'src/core/lib/support/string.h',
-                              'src/core/lib/support/string_win32.h',
-                              'src/core/lib/support/thd_internal.h',
-                              'src/core/lib/support/time_precise.h',
-                              'src/core/lib/support/tmpfile.h',
-                              'src/core/ext/census/aggregation.h',
-                              'src/core/ext/census/census_interface.h',
-                              'src/core/ext/census/census_rpc_stats.h',
-                              'src/core/ext/census/grpc_filter.h',
-                              'src/core/ext/census/mlog.h',
-                              'src/core/ext/census/rpc_metric_id.h',
-                              'src/core/ext/lb_policy/grpclb/load_balancer_api.h',
-                              'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h',
-                              'src/core/ext/transport/chttp2/transport/alpn.h',
-                              'src/core/ext/transport/chttp2/transport/bin_encoder.h',
-                              'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
-                              'src/core/ext/transport/chttp2/transport/frame.h',
-                              'src/core/ext/transport/chttp2/transport/frame_data.h',
-                              'src/core/ext/transport/chttp2/transport/frame_goaway.h',
-                              'src/core/ext/transport/chttp2/transport/frame_ping.h',
-                              'src/core/ext/transport/chttp2/transport/frame_rst_stream.h',
-                              'src/core/ext/transport/chttp2/transport/frame_settings.h',
-                              'src/core/ext/transport/chttp2/transport/frame_window_update.h',
-                              'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
-                              'src/core/ext/transport/chttp2/transport/hpack_parser.h',
-                              'src/core/ext/transport/chttp2/transport/hpack_table.h',
-                              'src/core/ext/transport/chttp2/transport/http2_errors.h',
-                              'src/core/ext/transport/chttp2/transport/huffsyms.h',
-                              'src/core/ext/transport/chttp2/transport/incoming_metadata.h',
-                              'src/core/ext/transport/chttp2/transport/internal.h',
-                              'src/core/ext/transport/chttp2/transport/status_conversion.h',
-                              'src/core/ext/transport/chttp2/transport/stream_map.h',
-                              'src/core/ext/transport/chttp2/transport/timeout_encoding.h',
-                              'src/core/ext/transport/chttp2/transport/varint.h',
-                              'src/core/lib/channel/channel_args.h',
-                              'src/core/lib/channel/channel_stack.h',
-                              'src/core/lib/channel/channel_stack_builder.h',
-                              'src/core/lib/channel/client_channel.h',
-                              'src/core/lib/channel/compress_filter.h',
-                              'src/core/lib/channel/connected_channel.h',
-                              'src/core/lib/channel/context.h',
-                              'src/core/lib/channel/http_client_filter.h',
-                              'src/core/lib/channel/http_server_filter.h',
-                              'src/core/lib/channel/subchannel_call_holder.h',
-                              'src/core/lib/client_config/client_config.h',
-                              'src/core/lib/client_config/connector.h',
-                              'src/core/lib/client_config/initial_connect_string.h',
-                              'src/core/lib/client_config/lb_policy.h',
-                              'src/core/lib/client_config/lb_policy_factory.h',
-                              'src/core/lib/client_config/lb_policy_registry.h',
-                              'src/core/lib/client_config/resolver.h',
-                              'src/core/lib/client_config/resolver_factory.h',
-                              'src/core/lib/client_config/resolver_registry.h',
-                              'src/core/lib/client_config/subchannel.h',
-                              'src/core/lib/client_config/subchannel_factory.h',
-                              'src/core/lib/client_config/subchannel_index.h',
-                              'src/core/lib/client_config/uri_parser.h',
-                              'src/core/lib/compression/algorithm_metadata.h',
-                              'src/core/lib/compression/message_compress.h',
-                              'src/core/lib/debug/trace.h',
-                              'src/core/lib/http/format_request.h',
-                              'src/core/lib/http/httpcli.h',
-                              'src/core/lib/http/parser.h',
-                              'src/core/lib/iomgr/closure.h',
-                              'src/core/lib/iomgr/endpoint.h',
-                              'src/core/lib/iomgr/endpoint_pair.h',
-                              'src/core/lib/iomgr/ev_poll_and_epoll_posix.h',
-                              'src/core/lib/iomgr/ev_posix.h',
-                              'src/core/lib/iomgr/exec_ctx.h',
-                              'src/core/lib/iomgr/executor.h',
-                              'src/core/lib/iomgr/iocp_windows.h',
-                              'src/core/lib/iomgr/iomgr.h',
-                              'src/core/lib/iomgr/iomgr_internal.h',
-                              'src/core/lib/iomgr/iomgr_posix.h',
-                              'src/core/lib/iomgr/pollset.h',
-                              'src/core/lib/iomgr/pollset_set.h',
-                              'src/core/lib/iomgr/pollset_set_windows.h',
-                              'src/core/lib/iomgr/pollset_windows.h',
-                              'src/core/lib/iomgr/resolve_address.h',
-                              'src/core/lib/iomgr/sockaddr.h',
-                              'src/core/lib/iomgr/sockaddr_posix.h',
-                              'src/core/lib/iomgr/sockaddr_utils.h',
-                              'src/core/lib/iomgr/sockaddr_win32.h',
-                              'src/core/lib/iomgr/socket_utils_posix.h',
-                              'src/core/lib/iomgr/socket_windows.h',
-                              'src/core/lib/iomgr/tcp_client.h',
-                              'src/core/lib/iomgr/tcp_posix.h',
-                              'src/core/lib/iomgr/tcp_server.h',
-                              'src/core/lib/iomgr/tcp_windows.h',
-                              'src/core/lib/iomgr/time_averaged_stats.h',
-                              'src/core/lib/iomgr/timer.h',
-                              'src/core/lib/iomgr/timer_heap.h',
-                              'src/core/lib/iomgr/udp_server.h',
-                              'src/core/lib/iomgr/unix_sockets_posix.h',
-                              'src/core/lib/iomgr/wakeup_fd_pipe.h',
-                              'src/core/lib/iomgr/wakeup_fd_posix.h',
-                              'src/core/lib/iomgr/workqueue.h',
-                              'src/core/lib/iomgr/workqueue_posix.h',
-                              'src/core/lib/iomgr/workqueue_windows.h',
-                              'src/core/lib/json/json.h',
-                              'src/core/lib/json/json_common.h',
-                              'src/core/lib/json/json_reader.h',
-                              'src/core/lib/json/json_writer.h',
-                              'src/core/lib/security/auth_filters.h',
-                              'src/core/lib/security/b64.h',
-                              'src/core/lib/security/credentials.h',
-                              'src/core/lib/security/handshake.h',
-                              'src/core/lib/security/json_token.h',
-                              'src/core/lib/security/jwt_verifier.h',
-                              'src/core/lib/security/secure_endpoint.h',
-                              'src/core/lib/security/security_connector.h',
-                              'src/core/lib/security/security_context.h',
-                              'src/core/lib/surface/api_trace.h',
-                              'src/core/lib/surface/call.h',
-                              'src/core/lib/surface/call_test_only.h',
-                              'src/core/lib/surface/channel.h',
-                              'src/core/lib/surface/channel_init.h',
-                              'src/core/lib/surface/channel_stack_type.h',
-                              'src/core/lib/surface/completion_queue.h',
-                              'src/core/lib/surface/event_string.h',
-                              'src/core/lib/surface/init.h',
-                              'src/core/lib/surface/lame_client.h',
-                              'src/core/lib/surface/server.h',
-                              'src/core/lib/surface/surface_trace.h',
-                              'src/core/lib/transport/byte_stream.h',
-                              'src/core/lib/transport/connectivity_state.h',
-                              'src/core/lib/transport/metadata.h',
-                              'src/core/lib/transport/metadata_batch.h',
-                              'src/core/lib/transport/static_metadata.h',
-                              'src/core/lib/transport/transport.h',
-                              'src/core/lib/transport/transport_impl.h',
-                              'src/core/lib/tsi/fake_transport_security.h',
-                              'src/core/lib/tsi/ssl_transport_security.h',
-                              'src/core/lib/tsi/ssl_types.h',
-                              'src/core/lib/tsi/transport_security.h',
-                              'src/core/lib/tsi/transport_security_interface.h',
-                              'third_party/nanopb/pb.h',
-                              'third_party/nanopb/pb_common.h',
-                              'third_party/nanopb/pb_decode.h',
-                              'third_party/nanopb/pb_encode.h'
+    ss.source_files = "#{src_dir}/GRPCCall+GID.{h,m}"
 
-    ss.header_mappings_dir = '.'
-    # This isn't officially supported in Cocoapods. We've asked for an alternative:
-    # https://github.com/CocoaPods/CocoaPods/issues/4386
-    ss.xcconfig = {
-      'USE_HEADERMAP' => 'NO',
-      'ALWAYS_SEARCH_USER_PATHS' => 'NO',
-      'USER_HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/Headers/Private/gRPC"',
-      'HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/Headers/Private/gRPC/include"'
-    }
-
-    ss.requires_arc = false
-    ss.libraries = 'z'
-    ss.dependency 'BoringSSL', '~> 2.0'
-
-    # ss.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
-  end
-
-  # Objective-C wrapper around the core gRPC library.
-  s.subspec 'GRPCClient' do |ss|
-    src_dir = "#{objc_dir}/GRPCClient"
-    ss.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
-    ss.private_header_files = "#{src_dir}/private/*.h"
-    ss.header_mappings_dir = "#{objc_dir}"
-
-    ss.dependency 'gRPC/C-Core'
-    ss.dependency 'gRPC/RxLibrary'
-
-    # Certificates, to be able to establish TLS connections:
-    ss.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
-  end
-
-  # RPC library for ProtocolBuffers, based on gRPC
-  s.subspec 'ProtoRPC' do |ss|
-    src_dir = "#{objc_dir}/ProtoRPC"
-    ss.source_files = "#{src_dir}/*.{h,m}"
-    ss.header_mappings_dir = "#{objc_dir}"
-
-    ss.dependency 'gRPC/GRPCClient'
-    ss.dependency 'gRPC/RxLibrary'
-    ss.dependency 'Protobuf', '~> 3.0.0-alpha-4'
+    ss.dependency 'Google/SignIn'
   end
 end

@@ -1,47 +1,33 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GPR_WINSOCK_SOCKET
+#ifdef GRPC_WINSOCK_SOCKET
 
 #include <winsock2.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/log_win32.h>
+#include <grpc/support/log_windows.h>
 #include <grpc/support/thd.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/socket_windows.h"
@@ -80,7 +66,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
   LPOVERLAPPED overlapped;
   grpc_winsocket *socket;
   grpc_winsocket_callback_info *info;
-  grpc_closure *closure = NULL;
+  GRPC_STATS_INC_SYSCALL_POLL(exec_ctx);
   success = GetQueuedCompletionStatus(
       g_iocp, &bytes, &completion_key, &overlapped,
       deadline_to_millis_timeout(deadline, gpr_now(deadline.clock_type)));
@@ -104,7 +90,6 @@ grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
   } else if (overlapped == &socket->read_info.overlapped) {
     info = &socket->read_info;
   } else {
-    gpr_log(GPR_ERROR, "Unknown IOCP operation");
     abort();
   }
   success = WSAGetOverlappedResult(socket->socket, &info->overlapped, &bytes,
@@ -112,16 +97,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
   info->bytes_transfered = bytes;
   info->wsa_error = success ? 0 : WSAGetLastError();
   GPR_ASSERT(overlapped == &info->overlapped);
-  GPR_ASSERT(!info->has_pending_iocp);
-  gpr_mu_lock(&socket->state_mu);
-  if (info->closure) {
-    closure = info->closure;
-    info->closure = NULL;
-  } else {
-    info->has_pending_iocp = 1;
-  }
-  gpr_mu_unlock(&socket->state_mu);
-  grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
+  grpc_socket_become_ready(exec_ctx, socket, info);
   return GRPC_IOCP_WORK_WORK;
 }
 
@@ -176,33 +152,4 @@ void grpc_iocp_add_socket(grpc_winsocket *socket) {
   GPR_ASSERT(ret == g_iocp);
 }
 
-/* Calling notify_on_read or write means either of two things:
-   -) The IOCP already completed in the background, and we need to call
-   the callback now.
-   -) The IOCP hasn't completed yet, and we're queuing it for later. */
-static void socket_notify_on_iocp(grpc_exec_ctx *exec_ctx,
-                                  grpc_winsocket *socket, grpc_closure *closure,
-                                  grpc_winsocket_callback_info *info) {
-  GPR_ASSERT(info->closure == NULL);
-  gpr_mu_lock(&socket->state_mu);
-  if (info->has_pending_iocp) {
-    info->has_pending_iocp = 0;
-    grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
-  } else {
-    info->closure = closure;
-  }
-  gpr_mu_unlock(&socket->state_mu);
-}
-
-void grpc_socket_notify_on_write(grpc_exec_ctx *exec_ctx,
-                                 grpc_winsocket *socket,
-                                 grpc_closure *closure) {
-  socket_notify_on_iocp(exec_ctx, socket, closure, &socket->write_info);
-}
-
-void grpc_socket_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
-                                grpc_closure *closure) {
-  socket_notify_on_iocp(exec_ctx, socket, closure, &socket->read_info);
-}
-
-#endif /* GPR_WINSOCK_SOCKET */
+#endif /* GRPC_WINSOCK_SOCKET */

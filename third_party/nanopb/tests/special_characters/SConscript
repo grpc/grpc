@@ -1,0 +1,6 @@
+# Test that special characters in .proto filenames work.
+
+Import('env')
+
+env.NanopbProto("funny-proto+name has.characters.proto")
+env.Object("funny-proto+name has.characters.pb.c")

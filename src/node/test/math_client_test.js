@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -36,7 +21,8 @@
 var assert = require('assert');
 
 var grpc = require('..');
-var math = grpc.load(__dirname + '/../../proto/math/math.proto').math;
+var math = require('./math/math_pb');
+var MathClient = require('./math/math_grpc_pb').MathClient;
 
 /**
  * Client to use to make requests to a running server.
@@ -55,35 +41,41 @@ describe('Math client', function() {
     var port_num = server.bind('0.0.0.0:0',
                                grpc.ServerCredentials.createInsecure());
     server.start();
-    math_client = new math.Math('localhost:' + port_num,
-                                grpc.credentials.createInsecure());
+    math_client = new MathClient('localhost:' + port_num,
+                                 grpc.credentials.createInsecure());
     done();
   });
   after(function() {
     server.forceShutdown();
   });
   it('should handle a single request', function(done) {
-    var arg = {dividend: 7, divisor: 4};
+    var arg = new math.DivArgs();
+    arg.setDividend(7);
+    arg.setDivisor(4);
     math_client.div(arg, function handleDivResult(err, value) {
       assert.ifError(err);
-      assert.equal(value.quotient, 1);
-      assert.equal(value.remainder, 3);
+      assert.equal(value.getQuotient(), 1);
+      assert.equal(value.getRemainder(), 3);
       done();
     });
   });
   it('should handle an error from a unary request', function(done) {
-    var arg = {dividend: 7, divisor: 0};
+    var arg = new math.DivArgs();
+    arg.setDividend(7);
+    arg.setDivisor(0);
     math_client.div(arg, function handleDivResult(err, value) {
       assert(err);
       done();
     });
   });
   it('should handle a server streaming request', function(done) {
-    var call = math_client.fib({limit: 7});
+    var arg = new math.FibArgs();
+    arg.setLimit(7);
+    var call = math_client.fib(arg);
     var expected_results = [1, 1, 2, 3, 5, 8, 13];
     var next_expected = 0;
     call.on('data', function checkResponse(value) {
-      assert.equal(value.num, expected_results[next_expected]);
+      assert.equal(value.getNum(), expected_results[next_expected]);
       next_expected += 1;
     });
     call.on('status', function checkStatus(status) {
@@ -94,10 +86,12 @@ describe('Math client', function() {
   it('should handle a client streaming request', function(done) {
     var call = math_client.sum(function handleSumResult(err, value) {
       assert.ifError(err);
-      assert.equal(value.num, 21);
+      assert.equal(value.getNum(), 21);
     });
     for (var i = 0; i < 7; i++) {
-      call.write({'num': i});
+      var arg = new math.Num();
+      arg.setNum(i);
+      call.write(arg);
     }
     call.end();
     call.on('status', function checkStatus(status) {
@@ -107,8 +101,8 @@ describe('Math client', function() {
   });
   it('should handle a bidirectional streaming request', function(done) {
     function checkResponse(index, value) {
-      assert.equal(value.quotient, index);
-      assert.equal(value.remainder, 1);
+      assert.equal(value.getQuotient(), index);
+      assert.equal(value.getRemainder(), 1);
     }
     var call = math_client.divMany();
     var response_index = 0;
@@ -117,7 +111,10 @@ describe('Math client', function() {
       response_index += 1;
     });
     for (var i = 0; i < 7; i++) {
-      call.write({dividend: 2 * i + 1, divisor: 2});
+      var arg = new math.DivArgs();
+      arg.setDividend(2 * i + 1);
+      arg.setDivisor(2);
+      call.write(arg);
     }
     call.end();
     call.on('status', function checkStatus(status) {
@@ -131,7 +128,10 @@ describe('Math client', function() {
       assert.fail(value, undefined, 'Unexpected data response on failing call',
                   '!=');
     });
-    call.write({dividend: 7, divisor: 0});
+    var arg = new math.DivArgs();
+    arg.setDividend(7);
+    arg.setDivisor(0);
+    call.write(arg);
     call.end();
     call.on('error', function checkStatus(status) {
       done();

@@ -1,32 +1,17 @@
 #region Copyright notice and license
-// Copyright 2015, Google Inc.
-// All rights reserved.
+// Copyright 2015 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 #endregion
 using System;
 using System.Runtime.InteropServices;
@@ -49,11 +34,11 @@ namespace Grpc.Core.Internal
         static readonly NativeMethods Native = NativeMethods.Get();
         static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
-        public Timespec(long tv_sec, int tv_nsec) : this(tv_sec, tv_nsec, GPRClockType.Realtime)
+        public Timespec(long tv_sec, int tv_nsec) : this(tv_sec, tv_nsec, ClockType.Realtime)
         {
         }
 
-        public Timespec(long tv_sec, int tv_nsec, GPRClockType clock_type)
+        public Timespec(long tv_sec, int tv_nsec, ClockType clock_type)
         {
             this.tv_sec = tv_sec;
             this.tv_nsec = tv_nsec;
@@ -62,7 +47,7 @@ namespace Grpc.Core.Internal
 
         private long tv_sec;
         private int tv_nsec;
-        private GPRClockType clock_type;
+        private ClockType clock_type;
 
         /// <summary>
         /// Timespec a long time in the future.
@@ -71,7 +56,7 @@ namespace Grpc.Core.Internal
         {
             get
             {
-                return Native.gprsharp_inf_future(GPRClockType.Realtime);
+                return new Timespec(long.MaxValue, 0, ClockType.Realtime);
             }
         }
 
@@ -82,7 +67,7 @@ namespace Grpc.Core.Internal
         {
             get
             {
-                return Native.gprsharp_inf_past(GPRClockType.Realtime);
+                return new Timespec(long.MinValue, 0, ClockType.Realtime);
             }
         }
 
@@ -93,7 +78,7 @@ namespace Grpc.Core.Internal
         {
             get
             {
-                return Native.gprsharp_now(GPRClockType.Realtime);
+                return Native.gprsharp_now(ClockType.Realtime);
             }
         }
 
@@ -122,7 +107,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Converts the timespec to desired clock type.
         /// </summary>
-        public Timespec ToClockType(GPRClockType targetClock)
+        public Timespec ToClockType(ClockType targetClock)
         {
             return Native.gprsharp_convert_clock_type(this, targetClock);
         }
@@ -142,7 +127,7 @@ namespace Grpc.Core.Internal
         public DateTime ToDateTime()
         {
             GrpcPreconditions.CheckState(tv_nsec >= 0 && tv_nsec < NanosPerSecond);
-            GrpcPreconditions.CheckState(clock_type == GPRClockType.Realtime);
+            GrpcPreconditions.CheckState(clock_type == ClockType.Realtime);
 
             // fast path for InfFuture
             if (this.Equals(InfFuture))
@@ -227,15 +212,34 @@ namespace Grpc.Core.Internal
         {
             get
             {
-                return Native.gprsharp_now(GPRClockType.Precise);
+                return Native.gprsharp_now(ClockType.Precise);
             }
         }
 
+        // for tests only
         internal static int NativeSize
         {
             get
             {
                 return Native.gprsharp_sizeof_timespec();
+            }
+        }
+
+        // for tests only
+        internal static Timespec NativeInfFuture
+        {
+            get
+            {
+                return Native.gprsharp_inf_future(ClockType.Realtime);
+            }
+        }
+
+        // for tests only
+        public static Timespec NativeInfPast
+        {
+            get
+            {
+                return Native.gprsharp_inf_past(ClockType.Realtime);
             }
         }
     }

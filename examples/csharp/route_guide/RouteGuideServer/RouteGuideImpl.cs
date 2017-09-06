@@ -1,31 +1,16 @@
-﻿// Copyright 2015, Google Inc.
-// All rights reserved.
+// Copyright 2015 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 using System;
 using System.Collections.Concurrent;
@@ -35,6 +20,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Grpc.Core;
 using Grpc.Core.Utils;
 
 namespace Routeguide
@@ -42,11 +28,11 @@ namespace Routeguide
     /// <summary>
     /// Example implementation of RouteGuide server.
     /// </summary>
-    public class RouteGuideImpl : RouteGuide.IRouteGuide
+    public class RouteGuideImpl : RouteGuide.RouteGuideBase
     {
         readonly List<Feature> features;
         readonly object myLock = new object();
-        readonly Dictionary<Point, List<RouteNote>> routeNotes = new Dictionary<Point, List<RouteNote>>();   
+        readonly Dictionary<Point, List<RouteNote>> routeNotes = new Dictionary<Point, List<RouteNote>>();
 
         public RouteGuideImpl(List<Feature> features)
         {
@@ -57,7 +43,7 @@ namespace Routeguide
         /// Gets the feature at the requested point. If no feature at that location
         /// exists, an unnammed feature is returned at the provided location.
         /// </summary>
-        public Task<Feature> GetFeature(Point request, Grpc.Core.ServerCallContext context)
+        public override Task<Feature> GetFeature(Point request, ServerCallContext context)
         {
             return Task.FromResult(CheckFeature(request));
         }
@@ -65,7 +51,7 @@ namespace Routeguide
         /// <summary>
         /// Gets all features contained within the given bounding rectangle.
         /// </summary>
-        public async Task ListFeatures(Rectangle request, Grpc.Core.IServerStreamWriter<Feature> responseStream, Grpc.Core.ServerCallContext context)
+        public override async Task ListFeatures(Rectangle request, IServerStreamWriter<Feature> responseStream, ServerCallContext context)
         {
             var responses = features.FindAll( (feature) => feature.Exists() && request.Contains(feature.Location) );
             foreach (var response in responses)
@@ -78,7 +64,7 @@ namespace Routeguide
         /// Gets a stream of points, and responds with statistics about the "trip": number of points,
         /// number of known features visited, total distance traveled, and total time spent.
         /// </summary>
-        public async Task<RouteSummary> RecordRoute(Grpc.Core.IAsyncStreamReader<Point> requestStream, Grpc.Core.ServerCallContext context)
+        public override async Task<RouteSummary> RecordRoute(IAsyncStreamReader<Point> requestStream, ServerCallContext context)
         {
             int pointCount = 0;
             int featureCount = 0;
@@ -117,7 +103,7 @@ namespace Routeguide
         /// Receives a stream of message/location pairs, and responds with a stream of all previous
         /// messages at each of those locations.
         /// </summary>
-        public async Task RouteChat(Grpc.Core.IAsyncStreamReader<RouteNote> requestStream, Grpc.Core.IServerStreamWriter<RouteNote> responseStream, Grpc.Core.ServerCallContext context)
+        public override async Task RouteChat(IAsyncStreamReader<RouteNote> requestStream, IServerStreamWriter<RouteNote> responseStream, ServerCallContext context)
         {
             while (await requestStream.MoveNext())
             {

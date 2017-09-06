@@ -1,67 +1,68 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #ifndef GRPC_CORE_LIB_SURFACE_CALL_H
 #define GRPC_CORE_LIB_SURFACE_CALL_H
 
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
-#include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/surface/surface_trace.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/codegen/compression_types.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/surface/api_trace.h"
+
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/compression_types.h>
 
 typedef void (*grpc_ioreq_completion_func)(grpc_exec_ctx *exec_ctx,
                                            grpc_call *call, int success,
                                            void *user_data);
 
-grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
-                            uint32_t propagation_mask,
-                            grpc_completion_queue *cq,
-                            const void *server_transport_data,
-                            grpc_mdelem **add_initial_metadata,
-                            size_t add_initial_metadata_count,
-                            gpr_timespec send_deadline);
+typedef struct grpc_call_create_args {
+  grpc_channel *channel;
+
+  grpc_call *parent_call;
+  uint32_t propagation_mask;
+
+  grpc_completion_queue *cq;
+  /* if not NULL, it'll be used in lieu of cq */
+  grpc_pollset_set *pollset_set_alternative;
+
+  const void *server_transport_data;
+
+  grpc_mdelem *add_initial_metadata;
+  size_t add_initial_metadata_count;
+
+  gpr_timespec send_deadline;
+} grpc_call_create_args;
+
+/* Create a new call based on \a args.
+   Regardless of success or failure, always returns a valid new call into *call
+   */
+grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
+                             const grpc_call_create_args *args,
+                             grpc_call **call);
 
 void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                     grpc_completion_queue *cq);
 
-#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#ifndef NDEBUG
 void grpc_call_internal_ref(grpc_call *call, const char *reason);
 void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *call,
                               const char *reason);
@@ -88,19 +89,21 @@ grpc_call_error grpc_call_start_batch_and_execute(grpc_exec_ctx *exec_ctx,
 /* Given the top call_element, get the call object. */
 grpc_call *grpc_call_from_top_element(grpc_call_element *surface_element);
 
-void grpc_call_log_batch(char *file, int line, gpr_log_severity severity,
+void grpc_call_log_batch(const char *file, int line, gpr_log_severity severity,
                          grpc_call *call, const grpc_op *ops, size_t nops,
                          void *tag);
 
 /* Set a context pointer.
    No thread safety guarantees are made wrt this value. */
+/* TODO(#9731): add exec_ctx to destroy */
 void grpc_call_context_set(grpc_call *call, grpc_context_index elem,
                            void *value, void (*destroy)(void *value));
 /* Get a context pointer. */
 void *grpc_call_context_get(grpc_call *call, grpc_context_index elem);
 
 #define GRPC_CALL_LOG_BATCH(sev, call, ops, nops, tag) \
-  if (grpc_api_trace) grpc_call_log_batch(sev, call, ops, nops, tag)
+  if (GRPC_TRACER_ON(grpc_api_trace))                  \
+  grpc_call_log_batch(sev, call, ops, nops, tag)
 
 uint8_t grpc_call_is_client(grpc_call *call);
 
@@ -108,6 +111,9 @@ uint8_t grpc_call_is_client(grpc_call *call);
  * level in the context of \a call. */
 grpc_compression_algorithm grpc_call_compression_for_level(
     grpc_call *call, grpc_compression_level level);
+
+extern grpc_tracer_flag grpc_call_error_trace;
+extern grpc_tracer_flag grpc_compression_trace;
 
 #ifdef __cplusplus
 }

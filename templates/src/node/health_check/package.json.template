@@ -1,0 +1,31 @@
+%YAML 1.2
+--- |
+  {
+    "name": "grpc-health-check",
+    "version": "${settings.node_version}",
+    "author": "Google Inc.",
+    "description": "Health check service for use with gRPC",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/grpc/grpc.git"
+    },
+    "bugs": "https://github.com/grpc/grpc/issues",
+    "contributors": [
+      {
+        "name": "Michael Lumish",
+        "email": "mlumish@google.com"
+      }
+    ],
+    "dependencies": {
+      "grpc": "^${settings.node_version}",
+      "lodash": "^3.9.3",
+      "google-protobuf": "^3.0.0"
+    },
+    "files": [
+      "LICENSE",
+      "health.js",
+      "v1"
+    ],
+    "main": "src/node/index.js",
+    "license": "Apache-2.0"
+  }

@@ -1,31 +1,16 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 cimport cpython
 
@@ -34,16 +19,20 @@ cdef class Call:
 
   def __cinit__(self):
     # Create an *empty* call
+    grpc_init()
     self.c_call = NULL
     self.references = []
 
-  def start_batch(self, operations, tag):
+  def _start_batch(self, operations, tag, retain_self):
     if not self.is_valid:
       raise ValueError("invalid call object cannot be used from Python")
     cdef grpc_call_error result
     cdef Operations cy_operations = Operations(operations)
     cdef OperationTag operation_tag = OperationTag(tag)
-    operation_tag.operation_call = self
+    if retain_self:
+      operation_tag.operation_call = self
+    else:
+      operation_tag.operation_call = None
     operation_tag.batch_operations = cy_operations
     cpython.Py_INCREF(operation_tag)
     with nogil:
@@ -52,9 +41,18 @@ cdef class Call:
           <cpython.PyObject *>operation_tag, NULL)
     return result
 
+  def start_client_batch(self, operations, tag):
+    # We don't reference this call in the operations tag because
+    # it should be cancelled when it goes out of scope
+    return self._start_batch(operations, tag, False)
+
+  def start_server_batch(self, operations, tag):
+    return self._start_batch(operations, tag, True)
+
   def cancel(
       self, grpc_status_code error_code=GRPC_STATUS__DO_NOT_USE,
       details=None):
+    details = str_to_bytes(details)
     if not self.is_valid:
       raise ValueError("invalid call object cannot be used from Python")
     if (details is None) != (error_code == GRPC_STATUS__DO_NOT_USE):
@@ -63,12 +61,6 @@ cdef class Call:
     cdef grpc_call_error result
     cdef char *c_details = NULL
     if error_code != GRPC_STATUS__DO_NOT_USE:
-      if isinstance(details, bytes):
-        pass
-      elif isinstance(details, basestring):
-        details = details.encode()
-      else:
-        raise TypeError("expected details to be str or bytes")
       self.references.append(details)
       c_details = details
       with nogil:
@@ -99,8 +91,8 @@ cdef class Call:
 
   def __dealloc__(self):
     if self.c_call != NULL:
-      with nogil:
-        grpc_call_destroy(self.c_call)
+      grpc_call_unref(self.c_call)
+    grpc_shutdown()
 
   # The object *should* always be valid from Python. Used for debugging.
   @property

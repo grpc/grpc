@@ -1,37 +1,51 @@
 
-#Overview
+# Overview
 
-This directory contains source code for PHP implementation of gRPC layered on shared C library.
-
-#Status
-
-Beta
+This directory contains source code for PHP implementation of gRPC layered on
+shared C library.
 
 ## Environment
 
-Prerequisite: `php` >=5.5, `phpize`, `pecl`, `phpunit`
+**Prerequisite:**
+* `php` 5.5 or above, 7.0 or above
+* `pecl`
+* `composer`
+* `phpunit` (optional)
 
-**Linux (Debian):**
+**Install PHP and PECL on Ubuntu/Debian:**
+
+For PHP5:
 
 ```sh
-$ sudo apt-get install php5 php5-dev php-pear
+$ sudo apt-get install php5 php5-dev php-pear phpunit
 ```
 
-**Linux (CentOS):**
+For PHP7:
 
 ```sh
-$ yum install php55w
-$ yum --enablerepo=remi,remi-php55 install php-devel php-pear
+$ sudo apt-get install php7.0 php7.0-dev php-pear phpunit
 ```
 
-**Mac OS X:**
+**Install PHP and PECL on CentOS/RHEL 7:**
+```sh
+$ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+$ sudo rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
+$ sudo yum install php56w php56w-devel php-pear phpunit gcc zlib-devel
+```
 
+**Install PECL on Mac:**
 ```sh
 $ curl -O http://pear.php.net/go-pear.phar
 $ sudo php -d detect_unicode=0 go-pear.phar
 ```
 
-**PHPUnit:**
+**Install Composer (Linux or Mac):**
+```sh
+$ curl -sS https://getcomposer.org/installer | php
+$ sudo mv composer.phar /usr/local/bin/composer
+```
+
+**Install PHPUnit (Linux or Mac):**
 ```sh
 $ wget https://phar.phpunit.de/phpunit-old.phar
 $ chmod +x phpunit-old.phar
@@ -40,15 +54,43 @@ $ sudo mv phpunit-old.phar /usr/bin/phpunit
 
 ## Quick Install
 
-Install the gRPC PHP extension
+**Install the gRPC PHP extension**
 
 ```sh
-sudo pecl install grpc-beta
+sudo pecl install grpc
 ```
 
-This will compile and install the gRPC PHP extension into the standard PHP extension directory. You should be able to run the [unit tests](#unit-tests), with the PHP extension installed.
+This will compile and install the gRPC PHP extension into the standard PHP
+extension directory. You should be able to run the [unit tests](#unit-tests),
+with the PHP extension installed.
 
-To run tests with generated stub code from `.proto` files, you will also need the `composer`, `protoc` and `protoc-gen-php` binaries. You can find out how to get these [below](#generated-code-tests).
+Note: For users on CentOS/RHEL 6, unfortunately this step won't work. Please
+follow the instructions below to compile the extension from source.
+
+
+**Update php.ini**
+
+Add this line to your `php.ini` file, e.g. `/etc/php5/cli/php.ini`
+
+```sh
+extension=grpc.so
+```
+
+
+**Add the gRPC PHP library as a Composer dependency**
+
+You need to add this to your project's `composer.json` file.
+
+```
+  "require": {
+    "grpc/grpc": "v1.1.0"
+  }
+```
+
+To run tests with generated stub code from `.proto` files, you will also need
+the `composer` and `protoc` binaries. You can find out how to get these
+[below](#generated-code-tests).
+
 
 ## Build from Source
 
@@ -58,7 +100,7 @@ To run tests with generated stub code from `.proto` files, you will also need th
 Clone this repository
 
 ```sh
-$ git clone https://github.com/grpc/grpc.git
+$ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
 ```
 
 Build and install the gRPC C core library
@@ -72,13 +114,7 @@ $ sudo make install
 
 ### gRPC PHP extension
 
-Install the gRPC PHP extension from PECL
-
-```sh
-$ sudo pecl install grpc-beta
-```
-
-Or, compile from source
+Compile the gRPC PHP extension
 
 ```sh
 $ cd grpc/src/php/ext/grpc
@@ -88,20 +124,12 @@ $ make
 $ sudo make install
 ```
 
-### Update php.ini
-
-Add this line to your `php.ini` file, e.g. `/etc/php5/cli/php.ini`
-
-```sh
-extension=grpc.so
-```
-
 ## Unit Tests
 
 You will need the source code to run tests
 
 ```sh
-$ git clone https://github.com/grpc/grpc.git
+$ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
 $ cd grpc
 $ git pull --recurse-submodules && git submodule update --init --recursive
 ```
@@ -115,49 +143,75 @@ $ ./bin/run_tests.sh
 
 ## Generated Code Tests
 
-This section specifies the prerequisites for running the generated code tests, as well as how to run the tests themselves.
+This section specifies the prerequisites for running the generated code tests,
+as well as how to run the tests themselves.
 
 ### Composer
 
-If you don't have it already, install `composer` to pull in some runtime dependencies based on the `composer.json` file.
+Install the runtime dependencies via `composer install`.
 
 ```sh
-$ curl -sS https://getcomposer.org/installer | php
-$ sudo mv composer.phar /usr/local/bin/composer
-
 $ cd grpc/src/php
 $ composer install
 ```
 
 ### Protobuf compiler
 
-Again if you don't have it already, you need to install the protobuf compiler `protoc`, version 3.0.0+.
+Again if you don't have it already, you need to install the protobuf compiler
+`protoc`, version 3.1.0+ (the newer the better).
 
-If you compiled the gRPC C core library from source above, the `protoc` binary should have been installed as well. If it hasn't been installed, you can run the following commands to install it.
+If `protoc` hasn't been installed, you can download the `protoc` binaries from
+[the protocol buffers Github repository](https://github.com/google/protobuf/releases).
+
+If you really must compile `protoc` from source, you can run the following
+commands, but this is risky because there is no easy way to uninstall /
+upgrade to a newer release.
 
 ```sh
 $ cd grpc/third_party/protobuf
-$ sudo make install   # 'make' should have been run by core grpc
+$ ./autogen.sh && ./configure && make
+$ sudo make install
 ```
 
-Alternatively, you can download `protoc` binaries from [the protocol buffers Github repository](https://github.com/google/protobuf/releases).
+
+### Protobuf Runtime library
+
+There are two protobuf runtime libraries to choose from. They are idenfical in terms of APIs offered.
+
+1. C implementation (for better performance)
+
+``` sh
+$ sudo pecl install protobuf
+```
+
+2. PHP implementation (for easier installation)
 
 
-### PHP protobuf compiler
+Add this to your `composer.json` file:
 
-You need to install `protoc-gen-php` to generate stub class `.php` files from service definition `.proto` files.
+```
+  "require": {
+    "google/protobuf": "^v3.3.0"
+  }
+``` 
+
+
+### PHP Protoc Plugin
+
+You need the gRPC PHP protoc plugin to generate the client stub classes.
+
+It should already been compiled when you run `make` from the root directory
+of this repo. The plugin can be found in the `bins/opt` directory. We are
+planning to provide a better way to download and install the plugin
+in the future.
+
+You can also just build the gRPC PHP protoc plugin by running:
 
 ```sh
-$ cd grpc/src/php/vendor/datto/protobuf-php # if you had run `composer install` in the previous step
-
-OR
-
-$ git clone https://github.com/stanley-cheung/Protobuf-PHP # clone from github repo
-
-$ gem install rake ronn
-$ rake pear:package version=1.0
-$ sudo pear install Protobuf-1.0.tgz
+$ cd grpc
+$ make grpc_php_plugin
 ```
+
 
 ### Client Stub
 
@@ -170,12 +224,13 @@ $ ./bin/generate_proto_php.sh
 
 ### Run test server
 
-Run a local server serving the math services. Please see [Node][] for how to run an example server.
+Run a local server serving the math services. Please see [Node][] for how to
+run an example server.
 
 ```sh
 $ cd grpc
 $ npm install
-$ nodejs src/node/test/math/math_server.js
+$ node src/node/test/math/math_server.js
 ```
 
 ### Run test client
@@ -196,6 +251,7 @@ $ sudo apt-get install apache2
 ```
 
 Add this line to your `php.ini` file, e.g. `/etc/php5/apache2/php.ini`
+or `/etc/php/7.0/apache2/php.ini`
 
 ```sh
 extension=grpc.so
@@ -212,7 +268,7 @@ Make sure the Node math server is still running, as above.
 ```sh
 $ cd grpc
 $ npm install
-$ nodejs src/node/test/math/math_server.js
+$ node src/node/test/math/math_server.js
 ```
 
 Make sure you have run `composer install` to generate the `vendor/autoload.php` file
@@ -222,7 +278,7 @@ $ cd grpc/src/php
 $ composer install
 ```
 
-Make sure you have generated the client stub `math.php`
+Make sure you have generated the client stubs
 
 ```sh
 $ ./bin/generate_proto_php.sh
@@ -234,11 +290,10 @@ Copy the `math_client.php` file into your Apache document root, e.g.
 $ cp tests/generated_code/math_client.php /var/www/html
 ```
 
-You may have to fix the first two lines to point the includes to your installation:
+You may have to fix the first line to point the includes to your installation:
 
 ```php
 include 'vendor/autoload.php';
-include 'tests/generated_code/math.php';
 ```
 
 Connect to `localhost/math_client.php` in your browser, or run this from command line:
@@ -253,6 +308,10 @@ Install `nginx` and `php5-fpm`, in addition to `php5` above
 
 ```sh
 $ sudo apt-get install nginx php5-fpm
+
+OR
+
+$ sudo apt-get install nginx php7.0-fpm
 ```
 
 Add this line to your `php.ini` file, e.g. `/etc/php5/fpm/php.ini`
@@ -282,7 +341,7 @@ Make sure the Node math server is still running, as above.
 ```sh
 $ cd grpc
 $ npm install
-$ nodejs src/node/test/math/math_server.js
+$ node src/node/test/math/math_server.js
 ```
 
 Make sure you have run `composer install` to generate the `vendor/autoload.php` file
@@ -292,7 +351,7 @@ $ cd grpc/src/php
 $ composer install
 ```
 
-Make sure you have generated the client stub `math.php`
+Make sure you have generated the client stubs
 
 ```sh
 $ ./bin/generate_proto_php.sh
@@ -304,11 +363,10 @@ Copy the `math_client.php` file into your Nginx document root, e.g.
 $ cp tests/generated_code/math_client.php /var/www/html
 ```
 
-You may have to fix the first two lines to point the includes to your installation:
+You may have to fix the first line to point the includes to your installation:
 
 ```php
 include 'vendor/autoload.php';
-include 'tests/generated_code/math.php';
 ```
 
 Connect to `localhost/math_client.php` in your browser, or run this from command line:

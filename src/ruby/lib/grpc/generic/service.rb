@@ -1,34 +1,19 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-require 'grpc/generic/client_stub'
-require 'grpc/generic/rpc_desc'
+require_relative 'client_stub'
+require_relative 'rpc_desc'
 
 # GRPC contains the General RPC module.
 module GRPC
@@ -110,6 +95,10 @@ module GRPC
         rpc_descs[name] = RpcDesc.new(name, input, output,
                                       marshal_class_method,
                                       unmarshal_class_method)
+        define_method(GenericService.underscore(name.to_s).to_sym) do |_, _|
+          fail GRPC::BadStatus.new_status_exception(
+            GRPC::Core::StatusCodes::UNIMPLEMENTED)
+        end
       end
 
       def inherited(subclass)
@@ -165,7 +154,7 @@ module GRPC
           # @param kw [KeywordArgs] the channel arguments, plus any optional
           #                         args for configuring the client's channel
           def initialize(host, creds, **kw)
-            super(host, Core::CompletionQueue.new, creds, **kw)
+            super(host, creds, **kw)
           end
 
           # Used define_method to add a method for each rpc_desc.  Each method
@@ -176,40 +165,27 @@ module GRPC
             unmarshal = desc.unmarshal_proc(:output)
             route = "/#{route_prefix}/#{name}"
             if desc.request_response?
-              define_method(mth_name) do |req, **kw|
+              define_method(mth_name) do |req, metadata = {}|
                 GRPC.logger.debug("calling #{@host}:#{route}")
-                request_response(route, req, marshal, unmarshal, **kw)
+                request_response(route, req, marshal, unmarshal, metadata)
               end
             elsif desc.client_streamer?
-              define_method(mth_name) do |reqs, **kw|
+              define_method(mth_name) do |reqs, metadata = {}|
                 GRPC.logger.debug("calling #{@host}:#{route}")
-                client_streamer(route, reqs, marshal, unmarshal, **kw)
+                client_streamer(route, reqs, marshal, unmarshal, metadata)
               end
             elsif desc.server_streamer?
-              define_method(mth_name) do |req, **kw, &blk|
+              define_method(mth_name) do |req, metadata = {}, &blk|
                 GRPC.logger.debug("calling #{@host}:#{route}")
-                server_streamer(route, req, marshal, unmarshal, **kw, &blk)
+                server_streamer(route, req, marshal, unmarshal, metadata, &blk)
               end
             else  # is a bidi_stream
-              define_method(mth_name) do |reqs, **kw, &blk|
+              define_method(mth_name) do |reqs, metadata = {}, &blk|
                 GRPC.logger.debug("calling #{@host}:#{route}")
-                bidi_streamer(route, reqs, marshal, unmarshal, **kw, &blk)
+                bidi_streamer(route, reqs, marshal, unmarshal, metadata, &blk)
               end
             end
           end
-        end
-      end
-
-      # Asserts that the appropriate methods are defined for each added rpc
-      # spec. Is intended to aid verifying that server classes are correctly
-      # implemented.
-      def assert_rpc_descs_have_methods
-        rpc_descs.each_pair do |m, spec|
-          mth_name = GenericService.underscore(m.to_s).to_sym
-          unless instance_methods.include?(mth_name)
-            fail "#{self} does not provide instance method '#{mth_name}'"
-          end
-          spec.assert_arity_matches(instance_method(mth_name))
         end
       end
     end

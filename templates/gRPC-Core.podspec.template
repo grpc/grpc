@@ -1,0 +1,187 @@
+%YAML 1.2
+--- |
+  # This file has been automatically generated from a template file.
+  # Please make modifications to `templates/gRPC-Core.podspec.template`
+  # instead. This file can be regenerated from the template by running
+  # `tools/buildgen/generate_projects.sh`.
+
+  # gRPC Core CocoaPods podspec
+  #
+  # Copyright 2015 gRPC authors.
+  #
+  # Licensed under the Apache License, Version 2.0 (the "License");
+  # you may not use this file except in compliance with the License.
+  # You may obtain a copy of the License at
+  #
+  #     http://www.apache.org/licenses/LICENSE-2.0
+  #
+  # Unless required by applicable law or agreed to in writing, software
+  # distributed under the License is distributed on an "AS IS" BASIS,
+  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  # See the License for the specific language governing permissions and
+  # limitations under the License.
+
+  <%!
+  def grpc_private_files(libs):
+    out = []
+    for lib in libs:
+      if lib.name in ("grpc", "gpr"):
+        out += lib.get('headers', [])
+        out += lib.get('src', [])
+    return [f for f in out if not f.startswith("third_party/nanopb/")]
+
+  def grpc_public_headers(libs):
+    out = []
+    for lib in libs:
+      if lib.name in ("grpc", "gpr"):
+        out += lib.get('public_headers', [])
+    return out
+
+  def grpc_private_headers(libs):
+    out = []
+    for lib in libs:
+      if lib.name in ("grpc", "gpr"):
+        out += lib.get('headers', [])
+    return [f for f in out if not f.startswith("third_party/nanopb/")]
+
+  def ruby_multiline_list(files, indent):
+    return (',\n' + indent*' ').join('\'%s\'' % f for f in files)
+  %>
+  Pod::Spec.new do |s|
+    s.name     = 'gRPC-Core'
+    version = '${settings.version}'
+    s.version  = version
+    s.summary  = 'Core cross-platform gRPC library, written in C'
+    s.homepage = 'https://grpc.io'
+    s.license  = 'Apache License, Version 2.0'
+    s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
+
+    s.source = {
+      :git => 'https://github.com/grpc/grpc.git',
+      :tag => "v#{version}",
+    }
+
+    s.ios.deployment_target = '7.0'
+    s.osx.deployment_target = '10.9'
+    s.requires_arc = false
+
+    name = 'grpc'
+
+    # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
+    # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
+    # <gRPC-Core/grpc.h>`.
+    s.module_name = name
+
+    # When creating a dynamic framework, copy the headers under `include/grpc/` into the root of
+    # the `Headers/` directory of the framework (i.e., not under `Headers/include/grpc`).
+    #
+    # TODO(jcanizales): Debug why this doesn't work on macOS.
+    s.header_mappings_dir = 'include/grpc'
+
+    # The above has an undesired effect when creating a static library: It forces users to write
+    # includes like `#include <gRPC-Core/grpc.h>`. `s.header_dir` adds a path prefix to that, and
+    # because Cocoapods lets omit the pod name when including headers of static libraries, the
+    # following lets users write `#include <grpc/grpc.h>`.
+    s.header_dir = name
+
+    # The module map created automatically by Cocoapods doesn't work for C libraries like gRPC-Core.
+    s.module_map = 'include/grpc/module.modulemap'
+
+    # To compile the library, we need the user headers search path (quoted includes) to point to the
+    # root of the repo, and the system headers search path (angled includes) to point to `include/`.
+    # Cocoapods effectively clones the repo under `<Podfile dir>/Pods/gRPC-Core/`, and sets a build
+    # variable called `$(PODS_ROOT)` to `<Podfile dir>/Pods/`, so we use that.
+    #
+    # Relying on the file structure under $(PODS_ROOT) isn't officially supported in Cocoapods, as it
+    # is taken as an implementation detail. We've asked for an alternative, and have been told that
+    # what we're doing should keep working: https://github.com/CocoaPods/CocoaPods/issues/4386
+    #
+    # The `src_root` value of `$(PODS_ROOT)/gRPC-Core` assumes Cocoapods is installing this pod from
+    # its remote repo. For local development of this library, enabled by using `:path` in the Podfile,
+    # that assumption is wrong. In such case, the following settings need to be reset with the
+    # appropriate value of `src_root`. This can be accomplished in the `pre_install` hook of the
+    # Podfile; see `src/objective-c/tests/Podfile` for an example.
+    src_root = '$(PODS_ROOT)/gRPC-Core'
+    s.pod_target_xcconfig = {
+      'GRPC_SRC_ROOT' => src_root,
+      'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(GRPC_SRC_ROOT)/include"',
+      'USER_HEADER_SEARCH_PATHS' => '"$(GRPC_SRC_ROOT)"',
+      # If we don't set these two settings, `include/grpc/support/time.h` and
+      # `src/core/lib/support/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
+      # build.
+      'USE_HEADERMAP' => 'NO',
+      'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+    }
+
+    s.default_subspecs = 'Interface', 'Implementation'
+    s.compiler_flags = '-DGRPC_ARES=0'
+
+    # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
+    # sources and private headers in other directories outside `include/`. Cocoapods' linter doesn't
+    # allow any header to be listed outside the `header_mappings_dir` (even though doing so works in
+    # practice). Because we need our `header_mappings_dir` to be `include/grpc/` for the reason
+    # mentioned above, we work around the linter limitation by dividing the pod into two subspecs, one
+    # for public headers and the other for implementation. Each gets its own `header_mappings_dir`,
+    # making the linter happy.
+    #
+    # The list of source files is generated by a template: `templates/gRPC-Core.podspec.template`. It
+    # can be regenerated from the template by running `tools/buildgen/generate_projects.sh`.
+    s.subspec 'Interface' do |ss|
+      ss.header_mappings_dir = 'include/grpc'
+
+      ss.source_files = ${ruby_multiline_list(grpc_public_headers(libs), 22)}
+    end
+    s.subspec 'Implementation' do |ss|
+      ss.header_mappings_dir = '.'
+      ss.libraries = 'z'
+      ss.dependency "#{s.name}/Interface", version
+      ss.dependency 'BoringSSL', '~> 9.0'
+      ss.dependency 'nanopb', '~> 0.3'
+
+      # To save you from scrolling, this is the last part of the podspec.
+      ss.source_files = ${ruby_multiline_list(grpc_private_files(libs), 22)}
+
+      ss.private_header_files = ${ruby_multiline_list(grpc_private_headers(libs), 30)}
+    end
+
+    s.subspec 'Cronet-Interface' do |ss|
+      ss.header_mappings_dir = 'include/grpc'
+      ss.source_files = 'include/grpc/grpc_cronet.h'
+    end
+
+    s.subspec 'Cronet-Implementation' do |ss|
+      ss.header_mappings_dir = '.'
+
+      ss.dependency "#{s.name}/Interface", version
+      ss.dependency "#{s.name}/Implementation", version
+      ss.dependency "#{s.name}/Cronet-Interface", version
+
+      ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.c',
+                        'src/core/ext/transport/cronet/transport/cronet_transport.{c,h}',
+                        'third_party/objective_c/Cronet/bidirectional_stream_c.h'
+    end
+
+    s.subspec 'Tests' do |ss|
+      ss.header_mappings_dir = '.'
+
+      ss.dependency "#{s.name}/Interface", version
+      ss.dependency "#{s.name}/Implementation", version
+
+      ss.source_files = 'test/core/end2end/cq_verifier.{c,h}',
+                        'test/core/end2end/end2end_tests.{c,h}',
+                        'test/core/end2end/end2end_test_utils.c',
+                        'test/core/end2end/tests/*.{c,h}',
+                        'test/core/end2end/fixtures/*.h',
+                        'test/core/end2end/data/*.{c,h}',
+                        'test/core/util/debugger_macros.{c,h}',
+                        'test/core/util/test_config.{c,h}',
+                        'test/core/util/port.h',
+                        'test/core/util/port.c',
+                        'test/core/util/port_server_client.{c,h}'
+    end
+
+    # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
+    s.prepare_command = <<-END_OF_COMMAND
+      find src/core/ -type f -exec sed -E -i '.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
+    END_OF_COMMAND
+  end

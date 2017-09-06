@@ -1,318 +1,222 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #include <grpc/grpc.h>
 
-#include <stdlib.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
+#include <grpc/support/string_util.h>
 
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/uri_parser.h"
+#include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/client_channel.h"
-#include "src/core/lib/client_config/resolver_registry.h"
-#include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/security/auth_filters.h"
-#include "src/core/lib/security/credentials.h"
-#include "src/core/lib/security/security_context.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/transport/lb_targets_info.h"
+#include "src/core/lib/security/transport/security_connector.h"
+#include "src/core/lib/slice/slice_hash_table.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/tsi/transport_security_interface.h"
 
-typedef struct {
-  grpc_connector base;
-  gpr_refcount refs;
+static void client_channel_factory_ref(
+    grpc_client_channel_factory *cc_factory) {}
 
-  grpc_channel_security_connector *security_connector;
+static void client_channel_factory_unref(
+    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory) {}
 
-  grpc_closure *notify;
-  grpc_connect_in_args args;
-  grpc_connect_out_args *result;
-  grpc_closure initial_string_sent;
-  gpr_slice_buffer initial_string_buffer;
-
-  gpr_mu mu;
-  grpc_endpoint *connecting_endpoint;
-  grpc_endpoint *newly_connecting_endpoint;
-
-  grpc_closure connected_closure;
-} connector;
-
-static void connector_ref(grpc_connector *con) {
-  connector *c = (connector *)con;
-  gpr_ref(&c->refs);
-}
-
-static void connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
-  connector *c = (connector *)con;
-  if (gpr_unref(&c->refs)) {
-    /* c->initial_string_buffer does not need to be destroyed */
-    gpr_free(c);
+static grpc_subchannel_args *get_secure_naming_subchannel_args(
+    grpc_exec_ctx *exec_ctx, const grpc_subchannel_args *args) {
+  grpc_channel_credentials *channel_credentials =
+      grpc_channel_credentials_find_in_args(args->args);
+  if (channel_credentials == NULL) {
+    gpr_log(GPR_ERROR,
+            "Can't create subchannel: channel credentials missing for secure "
+            "channel.");
+    return NULL;
   }
-}
-
-static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
-                                     grpc_security_status status,
-                                     grpc_endpoint *secure_endpoint,
-                                     grpc_auth_context *auth_context) {
-  connector *c = arg;
-  grpc_closure *notify;
-  grpc_channel_args *args_copy = NULL;
-  gpr_mu_lock(&c->mu);
-  if (c->connecting_endpoint == NULL) {
-    memset(c->result, 0, sizeof(*c->result));
-    gpr_mu_unlock(&c->mu);
-  } else if (status != GRPC_SECURITY_OK) {
-    gpr_log(GPR_ERROR, "Secure handshake failed with error %d.", status);
-    memset(c->result, 0, sizeof(*c->result));
-    c->connecting_endpoint = NULL;
-    gpr_mu_unlock(&c->mu);
-  } else {
-    grpc_arg auth_context_arg;
-    c->connecting_endpoint = NULL;
-    gpr_mu_unlock(&c->mu);
-    c->result->transport = grpc_create_chttp2_transport(
-        exec_ctx, c->args.channel_args, secure_endpoint, 1);
-    grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport, NULL,
-                                        0);
-    auth_context_arg = grpc_auth_context_to_arg(auth_context);
-    args_copy = grpc_channel_args_copy_and_add(c->args.channel_args,
-                                               &auth_context_arg, 1);
-    c->result->channel_args = args_copy;
+  // Make sure security connector does not already exist in args.
+  if (grpc_security_connector_find_in_args(args->args) != NULL) {
+    gpr_log(GPR_ERROR,
+            "Can't create subchannel: security connector already present in "
+            "channel args.");
+    return NULL;
   }
-  notify = c->notify;
-  c->notify = NULL;
-  /* look at c->args which are connector args. */
-  notify->cb(exec_ctx, notify->cb_arg, 1);
-  if (args_copy != NULL) grpc_channel_args_destroy(args_copy);
-}
-
-static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
-                                           bool success) {
-  connector *c = arg;
-  grpc_channel_security_connector_do_handshake(exec_ctx, c->security_connector,
-                                               c->connecting_endpoint,
-                                               on_secure_handshake_done, c);
-}
-
-static void connected(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
-  connector *c = arg;
-  grpc_closure *notify;
-  grpc_endpoint *tcp = c->newly_connecting_endpoint;
-  if (tcp != NULL) {
-    gpr_mu_lock(&c->mu);
-    GPR_ASSERT(c->connecting_endpoint == NULL);
-    c->connecting_endpoint = tcp;
-    gpr_mu_unlock(&c->mu);
-    if (!GPR_SLICE_IS_EMPTY(c->args.initial_connect_string)) {
-      grpc_closure_init(&c->initial_string_sent, on_initial_connect_string_sent,
-                        c);
-      gpr_slice_buffer_init(&c->initial_string_buffer);
-      gpr_slice_buffer_add(&c->initial_string_buffer,
-                           c->args.initial_connect_string);
-      grpc_endpoint_write(exec_ctx, tcp, &c->initial_string_buffer,
-                          &c->initial_string_sent);
-    } else {
-      grpc_channel_security_connector_do_handshake(
-          exec_ctx, c->security_connector, tcp, on_secure_handshake_done, c);
+  // To which address are we connecting? By default, use the server URI.
+  const grpc_arg *server_uri_arg =
+      grpc_channel_args_find(args->args, GRPC_ARG_SERVER_URI);
+  GPR_ASSERT(server_uri_arg != NULL);
+  GPR_ASSERT(server_uri_arg->type == GRPC_ARG_STRING);
+  const char *server_uri_str = server_uri_arg->value.string;
+  GPR_ASSERT(server_uri_str != NULL);
+  grpc_uri *server_uri =
+      grpc_uri_parse(exec_ctx, server_uri_str, true /* supress errors */);
+  GPR_ASSERT(server_uri != NULL);
+  const char *server_uri_path;
+  server_uri_path =
+      server_uri->path[0] == '/' ? server_uri->path + 1 : server_uri->path;
+  const grpc_slice_hash_table *targets_info =
+      grpc_lb_targets_info_find_in_args(args->args);
+  char *target_name_to_check = NULL;
+  if (targets_info != NULL) {  // LB channel
+    // Find the balancer name for the target.
+    const char *target_uri_str =
+        grpc_get_subchannel_address_uri_arg(args->args);
+    grpc_uri *target_uri =
+        grpc_uri_parse(exec_ctx, target_uri_str, false /* suppress errors */);
+    GPR_ASSERT(target_uri != NULL);
+    if (target_uri->path[0] != '\0') {  // "path" may be empty
+      const grpc_slice key = grpc_slice_from_static_string(
+          target_uri->path[0] == '/' ? target_uri->path + 1 : target_uri->path);
+      const char *value = grpc_slice_hash_table_get(targets_info, key);
+      if (value != NULL) target_name_to_check = gpr_strdup(value);
+      grpc_slice_unref_internal(exec_ctx, key);
     }
-  } else {
-    memset(c->result, 0, sizeof(*c->result));
-    notify = c->notify;
-    c->notify = NULL;
-    notify->cb(exec_ctx, notify->cb_arg, 1);
+    if (target_name_to_check == NULL) {
+      // If the target name to check hasn't already been set, fall back to using
+      // SERVER_URI
+      target_name_to_check = gpr_strdup(server_uri_path);
+    }
+    grpc_uri_destroy(target_uri);
+  } else {  // regular channel: the secure name is the original server URI.
+    target_name_to_check = gpr_strdup(server_uri_path);
   }
-}
-
-static void connector_shutdown(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
-  connector *c = (connector *)con;
-  grpc_endpoint *ep;
-  gpr_mu_lock(&c->mu);
-  ep = c->connecting_endpoint;
-  c->connecting_endpoint = NULL;
-  gpr_mu_unlock(&c->mu);
-  if (ep) {
-    grpc_endpoint_shutdown(exec_ctx, ep);
+  grpc_uri_destroy(server_uri);
+  GPR_ASSERT(target_name_to_check != NULL);
+  grpc_channel_security_connector *subchannel_security_connector = NULL;
+  // Create the security connector using the credentials and target name.
+  grpc_channel_args *new_args_from_connector = NULL;
+  const grpc_security_status security_status =
+      grpc_channel_credentials_create_security_connector(
+          exec_ctx, channel_credentials, target_name_to_check, args->args,
+          &subchannel_security_connector, &new_args_from_connector);
+  if (security_status != GRPC_SECURITY_OK) {
+    gpr_log(GPR_ERROR,
+            "Failed to create secure subchannel for secure name '%s'",
+            target_name_to_check);
+    gpr_free(target_name_to_check);
+    return NULL;
   }
-}
+  gpr_free(target_name_to_check);
+  grpc_arg new_security_connector_arg =
+      grpc_security_connector_to_arg(&subchannel_security_connector->base);
 
-static void connector_connect(grpc_exec_ctx *exec_ctx, grpc_connector *con,
-                              const grpc_connect_in_args *args,
-                              grpc_connect_out_args *result,
-                              grpc_closure *notify) {
-  connector *c = (connector *)con;
-  GPR_ASSERT(c->notify == NULL);
-  GPR_ASSERT(notify->cb);
-  c->notify = notify;
-  c->args = *args;
-  c->result = result;
-  gpr_mu_lock(&c->mu);
-  GPR_ASSERT(c->connecting_endpoint == NULL);
-  gpr_mu_unlock(&c->mu);
-  grpc_closure_init(&c->connected_closure, connected, c);
-  grpc_tcp_client_connect(
-      exec_ctx, &c->connected_closure, &c->newly_connecting_endpoint,
-      args->interested_parties, args->addr, args->addr_len, args->deadline);
-}
-
-static const grpc_connector_vtable connector_vtable = {
-    connector_ref, connector_unref, connector_shutdown, connector_connect};
-
-typedef struct {
-  grpc_subchannel_factory base;
-  gpr_refcount refs;
-  grpc_channel_args *merge_args;
-  grpc_channel_security_connector *security_connector;
-  grpc_channel *master;
-} subchannel_factory;
-
-static void subchannel_factory_ref(grpc_subchannel_factory *scf) {
-  subchannel_factory *f = (subchannel_factory *)scf;
-  gpr_ref(&f->refs);
-}
-
-static void subchannel_factory_unref(grpc_exec_ctx *exec_ctx,
-                                     grpc_subchannel_factory *scf) {
-  subchannel_factory *f = (subchannel_factory *)scf;
-  if (gpr_unref(&f->refs)) {
-    GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base,
-                                  "subchannel_factory");
-    GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, f->master, "subchannel_factory");
-    grpc_channel_args_destroy(f->merge_args);
-    gpr_free(f);
+  grpc_channel_args *new_args = grpc_channel_args_copy_and_add(
+      new_args_from_connector != NULL ? new_args_from_connector : args->args,
+      &new_security_connector_arg, 1);
+  GRPC_SECURITY_CONNECTOR_UNREF(exec_ctx, &subchannel_security_connector->base,
+                                "lb_channel_create");
+  if (new_args_from_connector != NULL) {
+    grpc_channel_args_destroy(exec_ctx, new_args_from_connector);
   }
+  grpc_subchannel_args *final_sc_args = gpr_malloc(sizeof(*final_sc_args));
+  memcpy(final_sc_args, args, sizeof(*args));
+  final_sc_args->args = new_args;
+  return final_sc_args;
 }
 
-static grpc_subchannel *subchannel_factory_create_subchannel(
-    grpc_exec_ctx *exec_ctx, grpc_subchannel_factory *scf,
-    grpc_subchannel_args *args) {
-  subchannel_factory *f = (subchannel_factory *)scf;
-  connector *c = gpr_malloc(sizeof(*c));
-  grpc_channel_args *final_args =
-      grpc_channel_args_merge(args->args, f->merge_args);
-  grpc_subchannel *s;
-  memset(c, 0, sizeof(*c));
-  c->base.vtable = &connector_vtable;
-  c->security_connector = f->security_connector;
-  gpr_mu_init(&c->mu);
-  gpr_ref_init(&c->refs, 1);
-  args->args = final_args;
-  s = grpc_subchannel_create(exec_ctx, &c->base, args);
-  grpc_connector_unref(exec_ctx, &c->base);
-  grpc_channel_args_destroy(final_args);
+static grpc_subchannel *client_channel_factory_create_subchannel(
+    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
+    const grpc_subchannel_args *args) {
+  grpc_subchannel_args *subchannel_args =
+      get_secure_naming_subchannel_args(exec_ctx, args);
+  if (subchannel_args == NULL) {
+    gpr_log(
+        GPR_ERROR,
+        "Failed to create subchannel arguments during subchannel creation.");
+    return NULL;
+  }
+  grpc_connector *connector = grpc_chttp2_connector_create();
+  grpc_subchannel *s =
+      grpc_subchannel_create(exec_ctx, connector, subchannel_args);
+  grpc_connector_unref(exec_ctx, connector);
+  grpc_channel_args_destroy(exec_ctx,
+                            (grpc_channel_args *)subchannel_args->args);
+  gpr_free(subchannel_args);
   return s;
 }
 
-static const grpc_subchannel_factory_vtable subchannel_factory_vtable = {
-    subchannel_factory_ref, subchannel_factory_unref,
-    subchannel_factory_create_subchannel};
+static grpc_channel *client_channel_factory_create_channel(
+    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
+    const char *target, grpc_client_channel_type type,
+    const grpc_channel_args *args) {
+  if (target == NULL) {
+    gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
+    return NULL;
+  }
+  // Add channel arg containing the server URI.
+  grpc_arg arg = grpc_channel_arg_string_create(
+      GRPC_ARG_SERVER_URI,
+      grpc_resolver_factory_add_default_prefix_if_needed(exec_ctx, target));
+  const char *to_remove[] = {GRPC_ARG_SERVER_URI};
+  grpc_channel_args *new_args =
+      grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
+  gpr_free(arg.value.string);
+  grpc_channel *channel = grpc_channel_create(exec_ctx, target, new_args,
+                                              GRPC_CLIENT_CHANNEL, NULL);
+  grpc_channel_args_destroy(exec_ctx, new_args);
+  return channel;
+}
 
-/* Create a secure client channel:
-   Asynchronously: - resolve target
-                   - connect to it (trying alternatives as presented)
-                   - perform handshakes */
+static const grpc_client_channel_factory_vtable client_channel_factory_vtable =
+    {client_channel_factory_ref, client_channel_factory_unref,
+     client_channel_factory_create_subchannel,
+     client_channel_factory_create_channel};
+
+static grpc_client_channel_factory client_channel_factory = {
+    &client_channel_factory_vtable};
+
+// Create a secure client channel:
+//   Asynchronously: - resolve target
+//                   - connect to it (trying alternatives as presented)
+//                   - perform handshakes
 grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
                                          const char *target,
                                          const grpc_channel_args *args,
                                          void *reserved) {
-  grpc_channel *channel;
-  grpc_arg connector_arg;
-  grpc_channel_args *args_copy;
-  grpc_channel_args *new_args_from_connector;
-  grpc_channel_security_connector *security_connector;
-  grpc_resolver *resolver;
-  subchannel_factory *f;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-
   GRPC_API_TRACE(
       "grpc_secure_channel_create(creds=%p, target=%s, args=%p, "
       "reserved=%p)",
-      4, (creds, target, args, reserved));
+      4, ((void *)creds, target, (void *)args, (void *)reserved));
   GPR_ASSERT(reserved == NULL);
-
-  if (grpc_find_security_connector_in_args(args) != NULL) {
-    gpr_log(GPR_ERROR, "Cannot set security context in channel args.");
+  grpc_channel *channel = NULL;
+  if (creds != NULL) {
+    // Add channel args containing the client channel factory and channel
+    // credentials.
+    grpc_arg args_to_add[] = {
+        grpc_client_channel_factory_create_channel_arg(&client_channel_factory),
+        grpc_channel_credentials_to_arg(creds)};
+    grpc_channel_args *new_args = grpc_channel_args_copy_and_add(
+        args, args_to_add, GPR_ARRAY_SIZE(args_to_add));
+    // Create channel.
+    channel = client_channel_factory_create_channel(
+        &exec_ctx, &client_channel_factory, target,
+        GRPC_CLIENT_CHANNEL_TYPE_REGULAR, new_args);
+    // Clean up.
+    grpc_channel_args_destroy(&exec_ctx, new_args);
     grpc_exec_ctx_finish(&exec_ctx);
-    return grpc_lame_client_channel_create(
-        target, GRPC_STATUS_INTERNAL,
-        "Security connector exists in channel args.");
   }
-
-  if (grpc_channel_credentials_create_security_connector(
-          creds, target, args, &security_connector, &new_args_from_connector) !=
-      GRPC_SECURITY_OK) {
-    grpc_exec_ctx_finish(&exec_ctx);
-    return grpc_lame_client_channel_create(
-        target, GRPC_STATUS_INTERNAL, "Failed to create security connector.");
-  }
-
-  connector_arg = grpc_security_connector_to_arg(&security_connector->base);
-  args_copy = grpc_channel_args_copy_and_add(
-      new_args_from_connector != NULL ? new_args_from_connector : args,
-      &connector_arg, 1);
-
-  channel = grpc_channel_create(&exec_ctx, target, args_copy,
-                                GRPC_CLIENT_CHANNEL, NULL);
-
-  f = gpr_malloc(sizeof(*f));
-  f->base.vtable = &subchannel_factory_vtable;
-  gpr_ref_init(&f->refs, 1);
-  GRPC_SECURITY_CONNECTOR_REF(&security_connector->base, "subchannel_factory");
-  f->security_connector = security_connector;
-  f->merge_args = grpc_channel_args_copy(args_copy);
-  f->master = channel;
-  GRPC_CHANNEL_INTERNAL_REF(channel, "subchannel_factory");
-  resolver = grpc_resolver_create(target, &f->base);
-  if (resolver) {
-    grpc_client_channel_set_resolver(
-        &exec_ctx, grpc_channel_get_channel_stack(channel), resolver);
-    GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "create");
-  }
-  grpc_subchannel_factory_unref(&exec_ctx, &f->base);
-  GRPC_SECURITY_CONNECTOR_UNREF(&security_connector->base, "channel_create");
-  grpc_channel_args_destroy(args_copy);
-  if (new_args_from_connector != NULL) {
-    grpc_channel_args_destroy(new_args_from_connector);
-  }
-
-  if (!resolver) {
-    GRPC_CHANNEL_INTERNAL_UNREF(&exec_ctx, channel, "subchannel_factory");
-    channel = NULL;
-  }
-  grpc_exec_ctx_finish(&exec_ctx);
-
-  return channel;
+  return channel != NULL ? channel
+                         : grpc_lame_client_channel_create(
+                               target, GRPC_STATUS_INTERNAL,
+                               "Failed to create secure client channel");
 }

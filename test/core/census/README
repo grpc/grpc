@@ -1,0 +1,7 @@
+Test source and data files for Census.
+
+binary proto files (*.pb) in data directory are generated from the *.txt file,
+via:
+
+BASE="filename"
+cat $BASE.txt | protoc --encode=google.census.Resource census.proto > $BASE.pb

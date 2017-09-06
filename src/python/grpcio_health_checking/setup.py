@@ -1,72 +1,68 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """Setup module for the GRPC Python package's optional health checking."""
 
 import os
-import os.path
-import sys
 
-from distutils import core as _core
 import setuptools
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Break import-style to ensure we can actually find our commands module.
-import commands
+import health_commands
+import grpc_version
 
-_PACKAGES = (
-    setuptools.find_packages('.')
-)
+CLASSIFIERS = [
+    'Development Status :: 5 - Production/Stable',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 2',
+    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.4',
+    'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.6',
+    'License :: OSI Approved :: Apache Software License',
+],
 
-_PACKAGE_DIRECTORIES = {
+PACKAGE_DIRECTORIES = {
     '': '.',
 }
 
-_INSTALL_REQUIRES = (
-    'grpcio>=0.11.0b0',
-)
+SETUP_REQUIRES = (
+    'grpcio-tools>={version}'.format(version=grpc_version.VERSION),)
 
-_SETUP_REQUIRES = _INSTALL_REQUIRES
+INSTALL_REQUIRES = ('protobuf>=3.3.0',
+                    'grpcio>={version}'.format(version=grpc_version.VERSION),)
 
-_COMMAND_CLASS = {
-    'build_proto_modules': commands.BuildProtoModules,
-    'build_py': commands.BuildPy,
+COMMAND_CLASS = {
+    # Run preprocess from the repository *before* doing any packaging!
+    'preprocess': health_commands.CopyProtoModules,
+    'build_package_protos': health_commands.BuildPackageProtos,
 }
 
 setuptools.setup(
-    name='grpcio_health_checking',
-    version='0.11.0b0',
-    packages=list(_PACKAGES),
-    package_dir=_PACKAGE_DIRECTORIES,
-    install_requires=_INSTALL_REQUIRES,
-    setup_requires=_SETUP_REQUIRES,
-    cmdclass=_COMMAND_CLASS
-)
+    name='grpcio-health-checking',
+    version=grpc_version.VERSION,
+    description='Standard Health Checking Service for gRPC',
+    author='The gRPC Authors',
+    author_email='grpc-io@googlegroups.com',
+    url='https://grpc.io',
+    license='Apache License 2.0',
+    classifiers=CLASSIFIERS,
+    package_dir=PACKAGE_DIRECTORIES,
+    packages=setuptools.find_packages('.'),
+    install_requires=INSTALL_REQUIRES,
+    setup_requires=SETUP_REQUIRES,
+    cmdclass=COMMAND_CLASS)

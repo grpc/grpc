@@ -1,0 +1,5 @@
+# A minimal "good" Resource definition: has a name and numerator/unit.
+name : 'minimal_good'
+unit {
+  numerator : SECS
+}

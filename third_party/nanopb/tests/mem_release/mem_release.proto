@@ -1,0 +1,35 @@
+syntax = "proto2";
+import "nanopb.proto";
+
+message SubMessage
+{
+    optional string dynamic_str = 1 [(nanopb).type = FT_POINTER];
+    repeated string dynamic_str_arr = 2 [(nanopb).type = FT_POINTER];
+    repeated SubMessage dynamic_submsg = 3 [(nanopb).type = FT_POINTER];
+}
+
+message TestMessage
+{
+    required SubMessage static_req_submsg = 1 [(nanopb).type = FT_STATIC];
+    optional SubMessage dynamic_submsg = 2 [(nanopb).type = FT_POINTER];
+    optional SubMessage static_opt_submsg = 3 [(nanopb).type = FT_STATIC];
+    repeated SubMessage static_rep_submsg = 4 [(nanopb).type = FT_STATIC, (nanopb).max_count=2];
+    extensions 100 to 200;
+}
+
+extend TestMessage
+{
+    optional SubMessage dynamic_ext = 100 [(nanopb).type = FT_POINTER];
+    optional SubMessage static_ext = 101 [(nanopb).type = FT_STATIC];
+}
+
+message OneofMessage
+{
+    required int32 first = 1;
+    oneof msgs
+    {
+        TestMessage msg1 = 2;
+        SubMessage msg2 = 3;
+    }
+    required int32 last = 4;
+}

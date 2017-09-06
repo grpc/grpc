@@ -6,3 +6,8 @@ race:cleanse_ctr
 race:ssleay_rand_add
 race:ssleay_rand_bytes
 race:__sleep_for
+# protobuf has an idempotent write race in ByteSize/GetCachedSize
+# https://github.com/google/protobuf/issues/2169
+race:ByteSize
+race:ByteSizeLong
+race:GetCachedSize

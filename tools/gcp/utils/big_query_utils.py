@@ -1,32 +1,17 @@
 #!/usr/bin/env python2.7
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import argparse
 import json
@@ -37,6 +22,8 @@ from apiclient import discovery
 from apiclient.errors import HttpError
 from oauth2client.client import GoogleCredentials
 
+# 30 days in milliseconds
+_EXPIRATION_MS = 30 * 24 * 60 * 60 * 1000
 NUM_RETRIES = 3
 
 
@@ -44,7 +31,7 @@ def create_big_query():
   """Authenticates with cloud platform and gets a BiqQuery service object
   """
   creds = GoogleCredentials.get_application_default()
-  return discovery.build('bigquery', 'v2', credentials=creds)
+  return discovery.build('bigquery', 'v2', credentials=creds, cache_discovery=False)
 
 
 def create_dataset(biq_query, project_id, dataset_id):
@@ -71,16 +58,35 @@ def create_dataset(biq_query, project_id, dataset_id):
 
 def create_table(big_query, project_id, dataset_id, table_id, table_schema,
                  description):
+  fields = [{'name': field_name,
+             'type': field_type,
+             'description': field_description
+             } for (field_name, field_type, field_description) in table_schema]
+  return create_table2(big_query, project_id, dataset_id, table_id,
+                       fields, description)
+
+
+def create_partitioned_table(big_query, project_id, dataset_id, table_id, table_schema,
+                             description, partition_type='DAY', expiration_ms=_EXPIRATION_MS):
+  """Creates a partitioned table. By default, a date-paritioned table is created with
+  each partition lasting 30 days after it was last modified.
+  """
+  fields = [{'name': field_name,
+             'type': field_type,
+             'description': field_description
+             } for (field_name, field_type, field_description) in table_schema]
+  return create_table2(big_query, project_id, dataset_id, table_id,
+                       fields, description, partition_type, expiration_ms)
+
+
+def create_table2(big_query, project_id, dataset_id, table_id, fields_schema,
+                 description, partition_type=None, expiration_ms=None):
   is_success = True
 
   body = {
       'description': description,
       'schema': {
-          'fields': [{
-              'name': field_name,
-              'type': field_type,
-              'description': field_description
-          } for (field_name, field_type, field_description) in table_schema]
+          'fields': fields_schema
       },
       'tableReference': {
           'datasetId': dataset_id,
@@ -88,6 +94,12 @@ def create_table(big_query, project_id, dataset_id, table_id, table_schema,
           'tableId': table_id
       }
   }
+
+  if partition_type and expiration_ms:
+    body["timePartitioning"] = {
+      "type": partition_type,
+      "expirationMs": expiration_ms
+    }
 
   try:
     table_req = big_query.tables().insert(projectId=project_id,
@@ -104,6 +116,33 @@ def create_table(big_query, project_id, dataset_id, table_id, table_schema,
   return is_success
 
 
+def patch_table(big_query, project_id, dataset_id, table_id, fields_schema):
+  is_success = True
+
+  body = {
+      'schema': {
+          'fields': fields_schema
+      },
+      'tableReference': {
+          'datasetId': dataset_id,
+          'projectId': project_id,
+          'tableId': table_id
+      }
+  }
+
+  try:
+    table_req = big_query.tables().patch(projectId=project_id,
+                                         datasetId=dataset_id,
+                                         tableId=table_id,
+                                         body=body)
+    res = table_req.execute(num_retries=NUM_RETRIES)
+    print 'Successfully patched %s "%s"' % (res['kind'], res['id'])
+  except HttpError as http_error:
+    print 'Error in creating table: %s. Err: %s' % (table_id, http_error)
+    is_success = False
+  return is_success
+
+
 def insert_rows(big_query, project_id, dataset_id, table_id, rows_list):
   is_success = True
   body = {'rows': rows_list}
@@ -112,12 +151,14 @@ def insert_rows(big_query, project_id, dataset_id, table_id, rows_list):
                                                  datasetId=dataset_id,
                                                  tableId=table_id,
                                                  body=body)
-    print body
     res = insert_req.execute(num_retries=NUM_RETRIES)
-    print res
+    if res.get('insertErrors', None):
+      print 'Error inserting rows! Response: %s' % res
+      is_success = False
   except HttpError as http_error:
-    print 'Error in inserting rows in the table %s' % table_id
+    print 'Error inserting rows to the table %s' % table_id
     is_success = False
+
   return is_success
 
 

@@ -1,71 +1,35 @@
 
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #include "test/cpp/util/test_credentials_provider.h"
 
+#include <mutex>
 #include <unordered_map>
 
-#include <grpc++/impl/sync.h>
+#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "test/core/end2end/data/ssl_test_data.h"
 
+namespace grpc {
+namespace testing {
 namespace {
-
-using grpc::ChannelArguments;
-using grpc::ChannelCredentials;
-using grpc::InsecureChannelCredentials;
-using grpc::InsecureServerCredentials;
-using grpc::ServerCredentials;
-using grpc::SslCredentialsOptions;
-using grpc::SslServerCredentialsOptions;
-using grpc::testing::CredentialTypeProvider;
-
-// Provide test credentials. Thread-safe.
-class CredentialsProvider {
- public:
-  virtual ~CredentialsProvider() {}
-
-  virtual void AddSecureType(
-      const grpc::string& type,
-      std::unique_ptr<CredentialTypeProvider> type_provider) = 0;
-  virtual std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-      const grpc::string& type, ChannelArguments* args) = 0;
-  virtual std::shared_ptr<ServerCredentials> GetServerCredentials(
-      const grpc::string& type) = 0;
-  virtual std::vector<grpc::string> GetSecureCredentialsTypeList() = 0;
-};
 
 class DefaultCredentialsProvider : public CredentialsProvider {
  public:
@@ -76,8 +40,16 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       std::unique_ptr<CredentialTypeProvider> type_provider) override {
     // This clobbers any existing entry for type, except the defaults, which
     // can't be clobbered.
-    grpc::unique_lock<grpc::mutex> lock(mu_);
-    added_secure_types_[type] = std::move(type_provider);
+    std::unique_lock<std::mutex> lock(mu_);
+    auto it = std::find(added_secure_type_names_.begin(),
+                        added_secure_type_names_.end(), type);
+    if (it == added_secure_type_names_.end()) {
+      added_secure_type_names_.push_back(type);
+      added_secure_type_providers_.push_back(std::move(type_provider));
+    } else {
+      added_secure_type_providers_[it - added_secure_type_names_.begin()] =
+          std::move(type_provider);
+    }
   }
 
   std::shared_ptr<ChannelCredentials> GetChannelCredentials(
@@ -89,13 +61,15 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       args->SetSslTargetNameOverride("foo.test.google.fr");
       return SslCredentials(ssl_opts);
     } else {
-      grpc::unique_lock<grpc::mutex> lock(mu_);
-      auto it(added_secure_types_.find(type));
-      if (it == added_secure_types_.end()) {
+      std::unique_lock<std::mutex> lock(mu_);
+      auto it(std::find(added_secure_type_names_.begin(),
+                        added_secure_type_names_.end(), type));
+      if (it == added_secure_type_names_.end()) {
         gpr_log(GPR_ERROR, "Unsupported credentials type %s.", type.c_str());
         return nullptr;
       }
-      return it->second->GetChannelCredentials(args);
+      return added_secure_type_providers_[it - added_secure_type_names_.begin()]
+          ->GetChannelCredentials(args);
     }
   }
 
@@ -111,63 +85,50 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       ssl_opts.pem_key_cert_pairs.push_back(pkcp);
       return SslServerCredentials(ssl_opts);
     } else {
-      grpc::unique_lock<grpc::mutex> lock(mu_);
-      auto it(added_secure_types_.find(type));
-      if (it == added_secure_types_.end()) {
+      std::unique_lock<std::mutex> lock(mu_);
+      auto it(std::find(added_secure_type_names_.begin(),
+                        added_secure_type_names_.end(), type));
+      if (it == added_secure_type_names_.end()) {
         gpr_log(GPR_ERROR, "Unsupported credentials type %s.", type.c_str());
         return nullptr;
       }
-      return it->second->GetServerCredentials();
+      return added_secure_type_providers_[it - added_secure_type_names_.begin()]
+          ->GetServerCredentials();
     }
   }
   std::vector<grpc::string> GetSecureCredentialsTypeList() override {
     std::vector<grpc::string> types;
     types.push_back(grpc::testing::kTlsCredentialsType);
-    grpc::unique_lock<grpc::mutex> lock(mu_);
-    for (const auto& type_pair : added_secure_types_) {
-      types.push_back(type_pair.first);
+    std::unique_lock<std::mutex> lock(mu_);
+    for (auto it = added_secure_type_names_.begin();
+         it != added_secure_type_names_.end(); it++) {
+      types.push_back(*it);
     }
     return types;
   }
 
  private:
-  grpc::mutex mu_;
-  std::unordered_map<grpc::string, std::unique_ptr<CredentialTypeProvider> >
-      added_secure_types_;
+  std::mutex mu_;
+  std::vector<grpc::string> added_secure_type_names_;
+  std::vector<std::unique_ptr<CredentialTypeProvider>>
+      added_secure_type_providers_;
 };
 
-gpr_once g_once_init_provider = GPR_ONCE_INIT;
 CredentialsProvider* g_provider = nullptr;
-
-void CreateDefaultProvider() { g_provider = new DefaultCredentialsProvider; }
-
-CredentialsProvider* GetProvider() {
-  gpr_once_init(&g_once_init_provider, &CreateDefaultProvider);
-  return g_provider;
-}
 
 }  // namespace
 
-namespace grpc {
-namespace testing {
-
-void AddSecureType(const grpc::string& type,
-                   std::unique_ptr<CredentialTypeProvider> type_provider) {
-  GetProvider()->AddSecureType(type, std::move(type_provider));
+CredentialsProvider* GetCredentialsProvider() {
+  if (g_provider == nullptr) {
+    g_provider = new DefaultCredentialsProvider;
+  }
+  return g_provider;
 }
 
-std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-    const grpc::string& type, ChannelArguments* args) {
-  return GetProvider()->GetChannelCredentials(type, args);
-}
-
-std::shared_ptr<ServerCredentials> GetServerCredentials(
-    const grpc::string& type) {
-  return GetProvider()->GetServerCredentials(type);
-}
-
-std::vector<grpc::string> GetSecureCredentialsTypeList() {
-  return GetProvider()->GetSecureCredentialsTypeList();
+void SetCredentialsProvider(CredentialsProvider* provider) {
+  // For now, forbids overriding provider.
+  GPR_ASSERT(g_provider == nullptr);
+  g_provider = provider;
 }
 
 }  // namespace testing

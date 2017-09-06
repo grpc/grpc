@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -36,10 +21,9 @@
 #define _GNU_SOURCE
 #endif
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_NEED_UDP
-#ifdef GPR_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET
 
 #include "src/core/lib/iomgr/udp_server.h"
 
@@ -60,33 +44,50 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/iomgr/socket_factory_posix.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/support/string.h"
 
-#define INIT_PORT_CAP 2
-
 /* one listening port */
-typedef struct {
+typedef struct grpc_udp_listener grpc_udp_listener;
+struct grpc_udp_listener {
   int fd;
   grpc_fd *emfd;
   grpc_udp_server *server;
-  union {
-    uint8_t untyped[GRPC_MAX_SOCKADDR_SIZE];
-    struct sockaddr sockaddr;
-  } addr;
-  size_t addr_len;
+  grpc_resolved_address addr;
   grpc_closure read_closure;
+  grpc_closure write_closure;
+  // To be called when corresponding QuicGrpcServer closes all active
+  // connections.
+  grpc_closure orphan_fd_closure;
   grpc_closure destroyed_closure;
   grpc_udp_server_read_cb read_cb;
-} server_port;
+  grpc_udp_server_write_cb write_cb;
+  grpc_udp_server_orphan_cb orphan_cb;
+  // True if orphan_cb is trigered.
+  bool orphan_notified;
+
+  struct grpc_udp_listener *next;
+};
+
+struct shutdown_fd_args {
+  grpc_fd *fd;
+  gpr_mu *server_mu;
+};
 
 /* the overall server */
 struct grpc_udp_server {
   gpr_mu mu;
-  gpr_cv cv;
+
+  /* factory to use for creating and binding sockets, or NULL */
+  grpc_socket_factory *socket_factory;
 
   /* active port count: how many ports are actually still listening */
   size_t active_ports;
@@ -96,10 +97,10 @@ struct grpc_udp_server {
   /* is this server shutting down? (boolean) */
   int shutdown;
 
-  /* all listening ports */
-  server_port *ports;
-  size_t nports;
-  size_t port_capacity;
+  /* linked list of server ports */
+  grpc_udp_listener *head;
+  grpc_udp_listener *tail;
+  unsigned nports;
 
   /* shutdown callback */
   grpc_closure *shutdown_complete;
@@ -108,36 +109,73 @@ struct grpc_udp_server {
   grpc_pollset **pollsets;
   /* number of pollsets in the pollsets array */
   size_t pollset_count;
-  /* The parent grpc server */
-  grpc_server *grpc_server;
+  /* opaque object to pass to callbacks */
+  void *user_data;
 };
 
-grpc_udp_server *grpc_udp_server_create(void) {
+static grpc_socket_factory *get_socket_factory(const grpc_channel_args *args) {
+  if (args) {
+    const grpc_arg *arg = grpc_channel_args_find(args, GRPC_ARG_SOCKET_FACTORY);
+    if (arg) {
+      GPR_ASSERT(arg->type == GRPC_ARG_POINTER);
+      return arg->value.pointer.p;
+    }
+  }
+  return NULL;
+}
+
+grpc_udp_server *grpc_udp_server_create(const grpc_channel_args *args) {
   grpc_udp_server *s = gpr_malloc(sizeof(grpc_udp_server));
   gpr_mu_init(&s->mu);
-  gpr_cv_init(&s->cv);
+  s->socket_factory = get_socket_factory(args);
+  if (s->socket_factory) {
+    grpc_socket_factory_ref(s->socket_factory);
+  }
   s->active_ports = 0;
   s->destroyed_ports = 0;
   s->shutdown = 0;
-  s->ports = gpr_malloc(sizeof(server_port) * INIT_PORT_CAP);
+  s->head = NULL;
+  s->tail = NULL;
   s->nports = 0;
-  s->port_capacity = INIT_PORT_CAP;
 
   return s;
 }
 
+static void shutdown_fd(grpc_exec_ctx *exec_ctx, void *args,
+                        grpc_error *error) {
+  struct shutdown_fd_args *shutdown_args = (struct shutdown_fd_args *)args;
+  gpr_mu_lock(shutdown_args->server_mu);
+  grpc_fd_shutdown(exec_ctx, shutdown_args->fd, GRPC_ERROR_REF(error));
+  gpr_mu_unlock(shutdown_args->server_mu);
+  gpr_free(shutdown_args);
+}
+
+static void dummy_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  // No-op.
+}
+
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
-  grpc_exec_ctx_enqueue(exec_ctx, s->shutdown_complete, 1, NULL);
+  if (s->shutdown_complete != NULL) {
+    GRPC_CLOSURE_SCHED(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE);
+  }
 
   gpr_mu_destroy(&s->mu);
-  gpr_cv_destroy(&s->cv);
 
-  gpr_free(s->ports);
+  while (s->head) {
+    grpc_udp_listener *sp = s->head;
+    s->head = sp->next;
+    gpr_free(sp);
+  }
+
+  if (s->socket_factory) {
+    grpc_socket_factory_unref(s->socket_factory);
+  }
+
   gpr_free(s);
 }
 
 static void destroyed_port(grpc_exec_ctx *exec_ctx, void *server,
-                           bool success) {
+                           grpc_error *error) {
   grpc_udp_server *s = server;
   gpr_mu_lock(&s->mu);
   s->destroyed_ports++;
@@ -153,24 +191,30 @@ static void destroyed_port(grpc_exec_ctx *exec_ctx, void *server,
    events will be received on them - at this point it's safe to destroy
    things */
 static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
-  size_t i;
-
   /* delete ALL the things */
   gpr_mu_lock(&s->mu);
 
-  if (!s->shutdown) {
-    gpr_mu_unlock(&s->mu);
-    return;
-  }
+  GPR_ASSERT(s->shutdown);
 
-  if (s->nports) {
-    for (i = 0; i < s->nports; i++) {
-      server_port *sp = &s->ports[i];
-      grpc_unlink_if_unix_domain_socket(&sp->addr.sockaddr);
-      sp->destroyed_closure.cb = destroyed_port;
-      sp->destroyed_closure.cb_arg = s;
+  if (s->head) {
+    grpc_udp_listener *sp;
+    for (sp = s->head; sp; sp = sp->next) {
+      grpc_unlink_if_unix_domain_socket(&sp->addr);
+
+      GRPC_CLOSURE_INIT(&sp->destroyed_closure, destroyed_port, s,
+                        grpc_schedule_on_exec_ctx);
+      if (!sp->orphan_notified) {
+        /* Call the orphan_cb to signal that the FD is about to be closed and
+         * should no longer be used. Because at this point, all listening ports
+         * have been shutdown already, no need to shutdown again.*/
+        GRPC_CLOSURE_INIT(&sp->orphan_fd_closure, dummy_cb, sp->emfd,
+                          grpc_schedule_on_exec_ctx);
+        GPR_ASSERT(sp->orphan_cb);
+        sp->orphan_cb(exec_ctx, sp->emfd, &sp->orphan_fd_closure,
+                      sp->server->user_data);
+      }
       grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, NULL,
-                     "udp_listener_shutdown");
+                     false /* already_closed */, "udp_listener_shutdown");
     }
     gpr_mu_unlock(&s->mu);
   } else {
@@ -181,7 +225,7 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
 
 void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
                              grpc_closure *on_done) {
-  size_t i;
+  grpc_udp_listener *sp;
   gpr_mu_lock(&s->mu);
 
   GPR_ASSERT(!s->shutdown);
@@ -191,8 +235,16 @@ void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
 
   /* shutdown all fd's */
   if (s->active_ports) {
-    for (i = 0; i < s->nports; i++) {
-      grpc_fd_shutdown(exec_ctx, s->ports[i].emfd);
+    for (sp = s->head; sp; sp = sp->next) {
+      GPR_ASSERT(sp->orphan_cb);
+      struct shutdown_fd_args *args = gpr_malloc(sizeof(*args));
+      args->fd = sp->emfd;
+      args->server_mu = &s->mu;
+      GRPC_CLOSURE_INIT(&sp->orphan_fd_closure, shutdown_fd, args,
+                        grpc_schedule_on_exec_ctx);
+      sp->orphan_cb(exec_ctx, sp->emfd, &sp->orphan_fd_closure,
+                    sp->server->user_data);
+      sp->orphan_notified = true;
     }
     gpr_mu_unlock(&s->mu);
   } else {
@@ -201,28 +253,47 @@ void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
   }
 }
 
+static int bind_socket(grpc_socket_factory *socket_factory, int sockfd,
+                       const grpc_resolved_address *addr) {
+  return (socket_factory != NULL)
+             ? grpc_socket_factory_bind(socket_factory, sockfd, addr)
+             : bind(sockfd, (struct sockaddr *)addr->addr,
+                    (socklen_t)addr->len);
+}
+
 /* Prepare a recently-created socket for listening. */
-static int prepare_socket(int fd, const struct sockaddr *addr,
-                          size_t addr_len) {
-  struct sockaddr_storage sockname_temp;
-  socklen_t sockname_len;
+static int prepare_socket(grpc_socket_factory *socket_factory, int fd,
+                          const grpc_resolved_address *addr) {
+  grpc_resolved_address sockname_temp;
+  struct sockaddr *addr_ptr = (struct sockaddr *)addr->addr;
+  /* Set send/receive socket buffers to 1 MB */
+  int buffer_size_bytes = 1024 * 1024;
 
   if (fd < 0) {
     goto error;
   }
 
-  if (!grpc_set_socket_nonblocking(fd, 1) || !grpc_set_socket_cloexec(fd, 1)) {
-    gpr_log(GPR_ERROR, "Unable to configure socket %d: %s", fd,
-            strerror(errno));
+  if (grpc_set_socket_nonblocking(fd, 1) != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "Unable to set nonblocking %d: %s", fd, strerror(errno));
+    goto error;
+  }
+  if (grpc_set_socket_cloexec(fd, 1) != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "Unable to set cloexec %d: %s", fd, strerror(errno));
+    goto error;
   }
 
-  if (grpc_set_socket_ip_pktinfo_if_possible(fd) &&
-      addr->sa_family == AF_INET6) {
-    grpc_set_socket_ipv6_recvpktinfo_if_possible(fd);
+  if (grpc_set_socket_ip_pktinfo_if_possible(fd) != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "Unable to set ip_pktinfo.");
+    goto error;
+  } else if (addr_ptr->sa_family == AF_INET6) {
+    if (grpc_set_socket_ipv6_recvpktinfo_if_possible(fd) != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "Unable to set ipv6_recvpktinfo.");
+      goto error;
+    }
   }
 
-  GPR_ASSERT(addr_len < ~(socklen_t)0);
-  if (bind(fd, addr, (socklen_t)addr_len) < 0) {
+  GPR_ASSERT(addr->len < ~(socklen_t)0);
+  if (bind_socket(socket_factory, fd, addr) < 0) {
     char *addr_str;
     grpc_sockaddr_to_string(&addr_str, addr, 0);
     gpr_log(GPR_ERROR, "bind addr=%s: %s", addr_str, strerror(errno));
@@ -230,12 +301,26 @@ static int prepare_socket(int fd, const struct sockaddr *addr,
     goto error;
   }
 
-  sockname_len = sizeof(sockname_temp);
-  if (getsockname(fd, (struct sockaddr *)&sockname_temp, &sockname_len) < 0) {
+  sockname_temp.len = sizeof(struct sockaddr_storage);
+
+  if (getsockname(fd, (struct sockaddr *)sockname_temp.addr,
+                  (socklen_t *)&sockname_temp.len) < 0) {
     goto error;
   }
 
-  return grpc_sockaddr_get_port((struct sockaddr *)&sockname_temp);
+  if (grpc_set_socket_sndbuf(fd, buffer_size_bytes) != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "Failed to set send buffer size to %d bytes",
+            buffer_size_bytes);
+    goto error;
+  }
+
+  if (grpc_set_socket_rcvbuf(fd, buffer_size_bytes) != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "Failed to set receive buffer size to %d bytes",
+            buffer_size_bytes);
+    goto error;
+  }
+
+  return grpc_sockaddr_get_port(&sockname_temp);
 
 error:
   if (fd >= 0) {
@@ -245,12 +330,12 @@ error:
 }
 
 /* event manager callback when reads are ready */
-static void on_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
-  server_port *sp = arg;
+static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  grpc_udp_listener *sp = arg;
 
-  if (!success) {
-    gpr_mu_lock(&sp->server->mu);
-    if (0 == --sp->server->active_ports) {
+  gpr_mu_lock(&sp->server->mu);
+  if (error != GRPC_ERROR_NONE) {
+    if (0 == --sp->server->active_ports && sp->server->shutdown) {
       gpr_mu_unlock(&sp->server->mu);
       deactivated_all_ports(exec_ctx, sp->server);
     } else {
@@ -261,38 +346,69 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
 
   /* Tell the registered callback that data is available to read. */
   GPR_ASSERT(sp->read_cb);
-  sp->read_cb(exec_ctx, sp->emfd, sp->server->grpc_server);
+  sp->read_cb(exec_ctx, sp->emfd, sp->server->user_data);
 
   /* Re-arm the notification event so we get another chance to read. */
   grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
+  gpr_mu_unlock(&sp->server->mu);
+}
+
+static void on_write(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  grpc_udp_listener *sp = arg;
+
+  gpr_mu_lock(&(sp->server->mu));
+  if (error != GRPC_ERROR_NONE) {
+    if (0 == --sp->server->active_ports && sp->server->shutdown) {
+      gpr_mu_unlock(&sp->server->mu);
+      deactivated_all_ports(exec_ctx, sp->server);
+    } else {
+      gpr_mu_unlock(&sp->server->mu);
+    }
+    return;
+  }
+
+  /* Tell the registered callback that the socket is writeable. */
+  GPR_ASSERT(sp->write_cb);
+  sp->write_cb(exec_ctx, sp->emfd, sp->server->user_data);
+
+  /* Re-arm the notification event so we get another chance to write. */
+  grpc_fd_notify_on_write(exec_ctx, sp->emfd, &sp->write_closure);
+  gpr_mu_unlock(&sp->server->mu);
 }
 
 static int add_socket_to_server(grpc_udp_server *s, int fd,
-                                const struct sockaddr *addr, size_t addr_len,
-                                grpc_udp_server_read_cb read_cb) {
-  server_port *sp;
+                                const grpc_resolved_address *addr,
+                                grpc_udp_server_read_cb read_cb,
+                                grpc_udp_server_write_cb write_cb,
+                                grpc_udp_server_orphan_cb orphan_cb) {
+  grpc_udp_listener *sp;
   int port;
   char *addr_str;
   char *name;
 
-  port = prepare_socket(fd, addr, addr_len);
+  port = prepare_socket(s->socket_factory, fd, addr);
   if (port >= 0) {
-    grpc_sockaddr_to_string(&addr_str, (struct sockaddr *)&addr, 1);
+    grpc_sockaddr_to_string(&addr_str, addr, 1);
     gpr_asprintf(&name, "udp-server-listener:%s", addr_str);
     gpr_free(addr_str);
     gpr_mu_lock(&s->mu);
-    /* append it to the list under a lock */
-    if (s->nports == s->port_capacity) {
-      s->port_capacity *= 2;
-      s->ports = gpr_realloc(s->ports, sizeof(server_port) * s->port_capacity);
+    s->nports++;
+    sp = gpr_malloc(sizeof(grpc_udp_listener));
+    sp->next = NULL;
+    if (s->head == NULL) {
+      s->head = sp;
+    } else {
+      s->tail->next = sp;
     }
-    sp = &s->ports[s->nports++];
+    s->tail = sp;
     sp->server = s;
     sp->fd = fd;
     sp->emfd = grpc_fd_create(fd, name);
-    memcpy(sp->addr.untyped, addr, addr_len);
-    sp->addr_len = addr_len;
+    memcpy(&sp->addr, addr, sizeof(grpc_resolved_address));
     sp->read_cb = read_cb;
+    sp->write_cb = write_cb;
+    sp->orphan_cb = orphan_cb;
+    sp->orphan_notified = false;
     GPR_ASSERT(sp->emfd);
     gpr_mu_unlock(&s->mu);
     gpr_free(name);
@@ -301,35 +417,35 @@ static int add_socket_to_server(grpc_udp_server *s, int fd,
   return port;
 }
 
-int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
-                             size_t addr_len, grpc_udp_server_read_cb read_cb) {
+int grpc_udp_server_add_port(grpc_udp_server *s,
+                             const grpc_resolved_address *addr,
+                             grpc_udp_server_read_cb read_cb,
+                             grpc_udp_server_write_cb write_cb,
+                             grpc_udp_server_orphan_cb orphan_cb) {
+  grpc_udp_listener *sp;
   int allocated_port1 = -1;
   int allocated_port2 = -1;
-  unsigned i;
   int fd;
   grpc_dualstack_mode dsmode;
-  struct sockaddr_in6 addr6_v4mapped;
-  struct sockaddr_in wild4;
-  struct sockaddr_in6 wild6;
-  struct sockaddr_in addr4_copy;
-  struct sockaddr *allocated_addr = NULL;
-  struct sockaddr_storage sockname_temp;
-  socklen_t sockname_len;
+  grpc_resolved_address addr6_v4mapped;
+  grpc_resolved_address wild4;
+  grpc_resolved_address wild6;
+  grpc_resolved_address addr4_copy;
+  grpc_resolved_address *allocated_addr = NULL;
+  grpc_resolved_address sockname_temp;
   int port;
-
-  grpc_unlink_if_unix_domain_socket((struct sockaddr *)addr);
 
   /* Check if this is a wildcard port, and if so, try to keep the port the same
      as some previously created listener. */
   if (grpc_sockaddr_get_port(addr) == 0) {
-    for (i = 0; i < s->nports; i++) {
-      sockname_len = sizeof(sockname_temp);
-      if (0 == getsockname(s->ports[i].fd, (struct sockaddr *)&sockname_temp,
-                           &sockname_len)) {
-        port = grpc_sockaddr_get_port((struct sockaddr *)&sockname_temp);
+    for (sp = s->head; sp; sp = sp->next) {
+      sockname_temp.len = sizeof(struct sockaddr_storage);
+      if (0 == getsockname(sp->fd, (struct sockaddr *)sockname_temp.addr,
+                           (socklen_t *)&sockname_temp.len)) {
+        port = grpc_sockaddr_get_port(&sockname_temp);
         if (port > 0) {
-          allocated_addr = malloc(addr_len);
-          memcpy(allocated_addr, addr, addr_len);
+          allocated_addr = gpr_malloc(sizeof(grpc_resolved_address));
+          memcpy(allocated_addr, addr, sizeof(grpc_resolved_address));
           grpc_sockaddr_set_port(allocated_addr, port);
           addr = allocated_addr;
           break;
@@ -339,8 +455,7 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
   }
 
   if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {
-    addr = (const struct sockaddr *)&addr6_v4mapped;
-    addr_len = sizeof(addr6_v4mapped);
+    addr = &addr6_v4mapped;
   }
 
   /* Treat :: or 0.0.0.0 as a family-agnostic wildcard. */
@@ -348,32 +463,35 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
     grpc_sockaddr_make_wildcards(port, &wild4, &wild6);
 
     /* Try listening on IPv6 first. */
-    addr = (struct sockaddr *)&wild6;
-    addr_len = sizeof(wild6);
-    fd = grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode);
-    allocated_port1 = add_socket_to_server(s, fd, addr, addr_len, read_cb);
+    addr = &wild6;
+    // TODO(rjshade): Test and propagate the returned grpc_error*:
+    GRPC_ERROR_UNREF(grpc_create_dualstack_socket_using_factory(
+        s->socket_factory, addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd));
+    allocated_port1 =
+        add_socket_to_server(s, fd, addr, read_cb, write_cb, orphan_cb);
     if (fd >= 0 && dsmode == GRPC_DSMODE_DUALSTACK) {
       goto done;
     }
 
     /* If we didn't get a dualstack socket, also listen on 0.0.0.0. */
     if (port == 0 && allocated_port1 > 0) {
-      grpc_sockaddr_set_port((struct sockaddr *)&wild4, allocated_port1);
+      grpc_sockaddr_set_port(&wild4, allocated_port1);
     }
-    addr = (struct sockaddr *)&wild4;
-    addr_len = sizeof(wild4);
+    addr = &wild4;
   }
 
-  fd = grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode);
+  // TODO(rjshade): Test and propagate the returned grpc_error*:
+  GRPC_ERROR_UNREF(grpc_create_dualstack_socket_using_factory(
+      s->socket_factory, addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd));
   if (fd < 0) {
     gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
   }
   if (dsmode == GRPC_DSMODE_IPV4 &&
       grpc_sockaddr_is_v4mapped(addr, &addr4_copy)) {
-    addr = (struct sockaddr *)&addr4_copy;
-    addr_len = sizeof(addr4_copy);
+    addr = &addr4_copy;
   }
-  allocated_port2 = add_socket_to_server(s, fd, addr, addr_len, read_cb);
+  allocated_port2 =
+      add_socket_to_server(s, fd, addr, read_cb, write_cb, orphan_cb);
 
 done:
   gpr_free(allocated_addr);
@@ -381,29 +499,49 @@ done:
 }
 
 int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned port_index) {
-  return (port_index < s->nports) ? s->ports[port_index].fd : -1;
+  grpc_udp_listener *sp;
+  if (port_index >= s->nports) {
+    return -1;
+  }
+
+  for (sp = s->head; sp && port_index != 0; sp = sp->next) {
+    --port_index;
+  }
+  return sp->fd;
 }
 
 void grpc_udp_server_start(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
                            grpc_pollset **pollsets, size_t pollset_count,
-                           grpc_server *server) {
-  size_t i, j;
+                           void *user_data) {
+  size_t i;
   gpr_mu_lock(&s->mu);
+  grpc_udp_listener *sp;
   GPR_ASSERT(s->active_ports == 0);
   s->pollsets = pollsets;
-  s->grpc_server = server;
-  for (i = 0; i < s->nports; i++) {
-    for (j = 0; j < pollset_count; j++) {
-      grpc_pollset_add_fd(exec_ctx, pollsets[j], s->ports[i].emfd);
+  s->user_data = user_data;
+
+  sp = s->head;
+  while (sp != NULL) {
+    for (i = 0; i < pollset_count; i++) {
+      grpc_pollset_add_fd(exec_ctx, pollsets[i], sp->emfd);
     }
-    s->ports[i].read_closure.cb = on_read;
-    s->ports[i].read_closure.cb_arg = &s->ports[i];
-    grpc_fd_notify_on_read(exec_ctx, s->ports[i].emfd,
-                           &s->ports[i].read_closure);
-    s->active_ports++;
+    GRPC_CLOSURE_INIT(&sp->read_closure, on_read, sp,
+                      grpc_schedule_on_exec_ctx);
+    grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
+
+    GRPC_CLOSURE_INIT(&sp->write_closure, on_write, sp,
+                      grpc_schedule_on_exec_ctx);
+    grpc_fd_notify_on_write(exec_ctx, sp->emfd, &sp->write_closure);
+
+    /* Registered for both read and write callbacks: increment active_ports
+     * twice to account for this, and delay free-ing of memory until both
+     * on_read and on_write have fired. */
+    s->active_ports += 2;
+
+    sp = sp->next;
   }
+
   gpr_mu_unlock(&s->mu);
 }
 
-#endif
 #endif

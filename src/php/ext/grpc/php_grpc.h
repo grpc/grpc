@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -39,9 +24,6 @@
 
 extern zend_module_entry grpc_module_entry;
 #define phpext_grpc_ptr &grpc_module_entry
-
-#define PHP_GRPC_VERSION \
-  "0.1.0" /* Replace with version number for your extension */
 
 #ifdef PHP_WIN32
 #define PHP_GRPC_API __declspec(dllexport)
@@ -56,12 +38,9 @@ extern zend_module_entry grpc_module_entry;
 #endif
 
 #include "php.h"
-
+#include "php7_wrapper.h"
 #include "grpc/grpc.h"
-
-#define RETURN_DESTROY_ZVAL(val)                               \
-  RETURN_ZVAL(val, false /* Don't execute copy constructor */, \
-              true /* Dealloc original before returning */)
+#include "version.h"
 
 /* These are all function declarations */
 /* Code that runs at module initialization */
@@ -70,14 +49,16 @@ PHP_MINIT_FUNCTION(grpc);
 PHP_MSHUTDOWN_FUNCTION(grpc);
 /* Displays information about the module */
 PHP_MINFO_FUNCTION(grpc);
+/* Code that runs at request start */
+PHP_RINIT_FUNCTION(grpc);
 
 /*
-        Declare any global variables you may need between the BEGIN
-        and END macros here:
-
-ZEND_BEGIN_MODULE_GLOBALS(grpc)
-ZEND_END_MODULE_GLOBALS(grpc)
+  Declare any global variables you may need between the BEGIN
+  and END macros here:
 */
+ZEND_BEGIN_MODULE_GLOBALS(grpc)
+  zend_bool initialized;
+ZEND_END_MODULE_GLOBALS(grpc)
 
 /* In every utility function you add that needs to use variables
    in php_grpc_globals, call TSRMLS_FETCH(); after declaring other
@@ -94,5 +75,9 @@ ZEND_END_MODULE_GLOBALS(grpc)
 #else
 #define GRPC_G(v) (grpc_globals.v)
 #endif
+
+#define GRPC_STARTUP_FUNCTION(module)  ZEND_MINIT_FUNCTION(grpc_##module)
+#define GRPC_STARTUP(module)           \
+  ZEND_MODULE_STARTUP_N(grpc_##module)(INIT_FUNC_ARGS_PASSTHRU)
 
 #endif /* PHP_GRPC_H */

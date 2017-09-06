@@ -1,48 +1,35 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
-#include "src/core/lib/security/json_token.h"
+#include "src/core/lib/security/credentials/jwt/json_token.h"
 
 #include <openssl/evp.h>
 #include <string.h>
 
 #include <grpc/grpc_security.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/security/b64.h"
+#include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
+#include "src/core/lib/slice/b64.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
 /* This JSON key was generated with the GCE console and revoked immediately.
@@ -219,23 +206,25 @@ static void test_parse_json_key_failure_no_private_key(void) {
 
 static grpc_json *parse_json_part_from_jwt(const char *str, size_t len,
                                            char **scratchpad) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   char *b64;
   char *decoded;
   grpc_json *json;
-  gpr_slice slice;
+  grpc_slice slice;
   b64 = gpr_malloc(len + 1);
   strncpy(b64, str, len);
   b64[len] = '\0';
-  slice = grpc_base64_decode(b64, 1);
-  GPR_ASSERT(!GPR_SLICE_IS_EMPTY(slice));
-  decoded = gpr_malloc(GPR_SLICE_LENGTH(slice) + 1);
-  strncpy(decoded, (const char *)GPR_SLICE_START_PTR(slice),
-          GPR_SLICE_LENGTH(slice));
-  decoded[GPR_SLICE_LENGTH(slice)] = '\0';
+  slice = grpc_base64_decode(&exec_ctx, b64, 1);
+  GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(slice));
+  decoded = gpr_malloc(GRPC_SLICE_LENGTH(slice) + 1);
+  strncpy(decoded, (const char *)GRPC_SLICE_START_PTR(slice),
+          GRPC_SLICE_LENGTH(slice));
+  decoded[GRPC_SLICE_LENGTH(slice)] = '\0';
   json = grpc_json_parse_string(decoded);
   gpr_free(b64);
   *scratchpad = decoded;
-  gpr_slice_unref(slice);
+  grpc_slice_unref(slice);
+  grpc_exec_ctx_finish(&exec_ctx);
   return json;
 }
 
@@ -337,12 +326,14 @@ static void check_jwt_claim(grpc_json *claim, const char *expected_audience,
 static void check_jwt_signature(const char *b64_signature, RSA *rsa_key,
                                 const char *signed_data,
                                 size_t signed_data_size) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
   EVP_MD_CTX *md_ctx = EVP_MD_CTX_create();
   EVP_PKEY *key = EVP_PKEY_new();
 
-  gpr_slice sig = grpc_base64_decode(b64_signature, 1);
-  GPR_ASSERT(!GPR_SLICE_IS_EMPTY(sig));
-  GPR_ASSERT(GPR_SLICE_LENGTH(sig) == 128);
+  grpc_slice sig = grpc_base64_decode(&exec_ctx, b64_signature, 1);
+  GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(sig));
+  GPR_ASSERT(GRPC_SLICE_LENGTH(sig) == 128);
 
   GPR_ASSERT(md_ctx != NULL);
   GPR_ASSERT(key != NULL);
@@ -351,12 +342,14 @@ static void check_jwt_signature(const char *b64_signature, RSA *rsa_key,
   GPR_ASSERT(EVP_DigestVerifyInit(md_ctx, NULL, EVP_sha256(), NULL, key) == 1);
   GPR_ASSERT(EVP_DigestVerifyUpdate(md_ctx, signed_data, signed_data_size) ==
              1);
-  GPR_ASSERT(EVP_DigestVerifyFinal(md_ctx, GPR_SLICE_START_PTR(sig),
-                                   GPR_SLICE_LENGTH(sig)) == 1);
+  GPR_ASSERT(EVP_DigestVerifyFinal(md_ctx, GRPC_SLICE_START_PTR(sig),
+                                   GRPC_SLICE_LENGTH(sig)) == 1);
 
-  gpr_slice_unref(sig);
+  grpc_slice_unref_internal(&exec_ctx, sig);
   if (key != NULL) EVP_PKEY_free(key);
   if (md_ctx != NULL) EVP_MD_CTX_destroy(md_ctx);
+
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static char *service_account_creds_jwt_encode_and_sign(

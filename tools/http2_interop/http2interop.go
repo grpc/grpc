@@ -150,7 +150,8 @@ func testUnknownFrameType(ctx *HTTP2InteropCtx) error {
 	}
 
 	// Write a bunch of invalid frame types.
-	for ft := ContinuationFrameType + 1; ft != 0; ft++ {
+	// Frame number 11 is the upcoming ALTSVC frame, and should not be tested.
+	for ft := ContinuationFrameType + 2; ft != 0; ft++ {
 		fh := &UnknownFrame{
 			Header: FrameHeader{
 				Type: ft,

@@ -1,0 +1,269 @@
+[
+  {
+    "name": "metadata",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "buildNumber",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "buildUrl",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "jobName",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "gitCommit",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "gitActualCommit",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "created",
+        "type": "TIMESTAMP",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "scenario",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "name",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "clientConfig",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "numClients",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "serverConfig",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "numServers",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "warmupSeconds",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "benchmarkSeconds",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "latencies",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "clientStats",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+      {
+        "name": "latencies",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "timeElapsed",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "timeUser",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "timeSystem",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "cqPollCount",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "serverStats",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+      {
+        "name": "timeElapsed",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "timeUser",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "timeSystem",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "cqPollCount",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "serverCores",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "summary",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "qps",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "qpsPerServerCore",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "serverSystemTime",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "serverUserTime",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "clientSystemTime",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "clientUserTime",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "latency50",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "latency90",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "latency95",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "latency99",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "latency999",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "clientPollsPerRequest",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "serverPollsPerRequest",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "serverQueriesPerCpuSec",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "clientQueriesPerCpuSec",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "clientSuccess",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "serverSuccess",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "requestResults",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "serverCpuStats",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+      {
+        "name": "totalCpuTime",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "idleCpuTime",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "serverCpuUsage",
+    "type": "FLOAT",
+    "mode": "NULLABLE"
+  }
+]

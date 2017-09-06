@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *is % allowed in string
  */
 
@@ -40,13 +25,14 @@
 #include <gflags/gflags.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/grpc++.h>
-#include <grpc++/impl/thd.h>
+#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/interop/stress_interop_client.h"
+#include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
 
@@ -55,9 +41,6 @@ extern void gpr_default_log(gpr_log_func_args* args);
 }
 
 DEFINE_int32(metrics_port, 8081, "The metrics server port.");
-
-DEFINE_int32(metrics_collection_interval_secs, 5,
-             "How often (in seconds) should metrics be recorded.");
 
 DEFINE_int32(sleep_duration_ms, 0,
              "The duration (in millisec) between two"
@@ -69,8 +52,7 @@ DEFINE_int32(test_duration_secs, -1,
              " forcefully terminated.");
 
 DEFINE_string(server_addresses, "localhost:8080",
-              "The list of server"
-              " addresses in the format:\n"
+              "The list of server addresses. The format is: \n"
               " \"<name_1>:<port_1>,<name_2>:<port_1>...<name_N>:<port_N>\"\n"
               " Note: <name> can be servername or IP address.");
 
@@ -92,7 +74,16 @@ DEFINE_string(test_cases, "",
               "   large_compressed_unary\n"
               "   client_streaming\n"
               "   server_streaming\n"
+              "   server_compressed_streaming\n"
+              "   slow_consumer\n"
+              "   half_duplex\n"
+              "   ping_pong\n"
+              "   cancel_after_begin\n"
+              "   cancel_after_first_response\n"
+              "   timeout_on_sleeping_server\n"
               "   empty_stream\n"
+              "   status_code_and_message\n"
+              "   custom_metadata\n"
               " Example: \"empty_unary:20,large_unary:10,empty_stream:70\"\n"
               " The above will execute 'empty_unary', 20% of the time,"
               " 'large_unary', 10% of the time and 'empty_stream' the remaining"
@@ -103,6 +94,17 @@ DEFINE_int32(log_level, GPR_LOG_SEVERITY_INFO,
              "greater than or equal to the level set here will be logged. "
              "The choices are: 0 (GPR_LOG_SEVERITY_DEBUG), 1 "
              "(GPR_LOG_SEVERITY_INFO) and 2 (GPR_LOG_SEVERITY_ERROR)");
+
+DEFINE_bool(do_not_abort_on_transient_failures, true,
+            "If set to 'true', abort() is not called in case of transient "
+            "failures like temporary connection failures.");
+
+// Options from client.cc (for compatibility with interop test).
+// TODO(sreek): Consolidate overlapping options
+DEFINE_bool(use_tls, false, "Whether to use tls.");
+DEFINE_bool(use_test_ca, false, "False to use SSL roots for google");
+DEFINE_string(server_host_override, "foo.test.google.fr",
+              "Override the server host which is sent in HTTP header");
 
 using grpc::testing::kTestCaseList;
 using grpc::testing::MetricsService;
@@ -192,6 +194,12 @@ void LogParameterInfo(const std::vector<grpc::string>& addresses,
   gpr_log(GPR_INFO, "test_cases : %s", FLAGS_test_cases.c_str());
   gpr_log(GPR_INFO, "sleep_duration_ms: %d", FLAGS_sleep_duration_ms);
   gpr_log(GPR_INFO, "test_duration_secs: %d", FLAGS_test_duration_secs);
+  gpr_log(GPR_INFO, "num_channels_per_server: %d",
+          FLAGS_num_channels_per_server);
+  gpr_log(GPR_INFO, "num_stubs_per_channel: %d", FLAGS_num_stubs_per_channel);
+  gpr_log(GPR_INFO, "log_level: %d", FLAGS_log_level);
+  gpr_log(GPR_INFO, "do_not_abort_on_transient_failures: %s",
+          FLAGS_do_not_abort_on_transient_failures ? "true" : "false");
 
   int num = 0;
   for (auto it = addresses.begin(); it != addresses.end(); it++) {
@@ -230,7 +238,7 @@ int main(int argc, char** argv) {
 
   // Parse test cases and weights
   if (FLAGS_test_cases.length() == 0) {
-    gpr_log(GPR_ERROR, "Not running tests. The 'test_cases' string is empty");
+    gpr_log(GPR_ERROR, "No test cases supplied");
     return 1;
   }
 
@@ -248,7 +256,7 @@ int main(int argc, char** argv) {
 
   gpr_log(GPR_INFO, "Starting test(s)..");
 
-  std::vector<grpc::thread> test_threads;
+  std::vector<std::thread> test_threads;
 
   // Create and start the test threads.
   // Note that:
@@ -266,36 +274,39 @@ int main(int argc, char** argv) {
     // Create channel(s) for each server
     for (int channel_idx = 0; channel_idx < FLAGS_num_channels_per_server;
          channel_idx++) {
-      // TODO (sreek). This won't work for tests that require Authentication
-      std::shared_ptr<grpc::Channel> channel(
-          grpc::CreateChannel(*it, grpc::InsecureChannelCredentials()));
+      gpr_log(GPR_INFO, "Starting test with %s channel_idx=%d..", it->c_str(),
+              channel_idx);
+      std::shared_ptr<grpc::Channel> channel = grpc::CreateTestChannel(
+          *it, FLAGS_server_host_override, FLAGS_use_tls, !FLAGS_use_test_ca);
 
       // Create stub(s) for each channel
       for (int stub_idx = 0; stub_idx < FLAGS_num_stubs_per_channel;
            stub_idx++) {
         StressTestInteropClient* client = new StressTestInteropClient(
             ++thread_idx, *it, channel, test_selector, FLAGS_test_duration_secs,
-            FLAGS_sleep_duration_ms, FLAGS_metrics_collection_interval_secs);
+            FLAGS_sleep_duration_ms, FLAGS_do_not_abort_on_transient_failures);
 
-        bool is_already_created;
-        // Gauge name
+        bool is_already_created = false;
+        // QpsGauge name
         std::snprintf(buffer, sizeof(buffer),
                       "/stress_test/server_%d/channel_%d/stub_%d/qps",
                       server_idx, channel_idx, stub_idx);
 
-        test_threads.emplace_back(grpc::thread(
+        test_threads.emplace_back(std::thread(
             &StressTestInteropClient::MainLoop, client,
-            metrics_service.CreateGauge(buffer, &is_already_created)));
+            metrics_service.CreateQpsGauge(buffer, &is_already_created)));
 
-        // The Gauge should not have been already created
+        // The QpsGauge should not have been already created
         GPR_ASSERT(!is_already_created);
       }
     }
   }
 
   // Start metrics server before waiting for the stress test threads
-  std::unique_ptr<grpc::Server> metrics_server =
-      metrics_service.StartServer(FLAGS_metrics_port);
+  std::unique_ptr<grpc::Server> metrics_server;
+  if (FLAGS_metrics_port > 0) {
+    metrics_server = metrics_service.StartServer(FLAGS_metrics_port);
+  }
 
   // Wait for the stress test threads to complete
   for (auto it = test_threads.begin(); it != test_threads.end(); it++) {
