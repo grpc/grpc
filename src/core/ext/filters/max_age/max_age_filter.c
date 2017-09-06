@@ -273,7 +273,7 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
 static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {
-  channel_data* chand = (channel_data *) elem->channel_data;
+  channel_data* chand = (channel_data*)elem->channel_data;
   decrease_call_count(exec_ctx, chand);
 }
 
