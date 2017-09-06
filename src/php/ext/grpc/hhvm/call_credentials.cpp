@@ -78,8 +78,7 @@ void PluginMetadataInfo::setInfo(CallCredentialsData* const pCallCredentials,
 typename PluginMetadataInfo::MetaDataInfo
 PluginMetadataInfo::getInfo(CallCredentialsData* const pCallCredentials)
 {
-    MetaDataInfo metaDataInfo{ std::shared_ptr<MetadataPromise>{ nullptr },
-                               std::thread::id{ 0 } };
+    MetaDataInfo metaDataInfo{};
     {
         std::lock_guard<std::mutex> lock{ m_Lock };
         auto itrFind = m_MetaDataMap.find(pCallCredentials);
@@ -238,30 +237,47 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 // This work done in this function MUST be done on the same thread as the HHVM call request
 void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
                             grpc_credentials_plugin_metadata_cb cb,
-                            void *user_data)
+                            void *user_data, std::mutex& metadataMutex,
+                            const bool& callCancelled)
 {
     HHVM_TRACE_SCOPE("CallCredentials plugin_do_get_metadata") // Degug Trace
 
-    Object returnObj { SystemLib::AllocStdClassObject() };
+    Object returnObj{ SystemLib::AllocStdClassObject() };
     returnObj.o_set("service_url", String(context.service_url, CopyString));
     returnObj.o_set("method_name", String(context.method_name, CopyString));
 
     plugin_state* const pState{ reinterpret_cast<plugin_state *>(ptr) };
 
-    Variant retval{ vm_call_user_func(pState->callback, make_packed_array(returnObj)) };
-    if (!retval.isArray())
+    Variant retVal{};
     {
-        SystemLib::throwInvalidArgumentExceptionObject("Callback return value expected an array.");
+        // check if call cancelled from timeout before performing callback function
+        std::lock_guard<std::mutex> lock{ metadataMutex };
+        if (!callCancelled)
+        {
+            retVal = Variant{ vm_call_user_func(pState->callback, make_packed_array(returnObj)) };
+            if (!retVal.isArray())
+            {
+                SystemLib::throwInvalidArgumentExceptionObject("Callback return value expected an array.");
+            }
+        }
     }
 
     grpc_status_code code{ GRPC_STATUS_OK };
     MetadataArray metadata;
-    if (!metadata.init(retval.toArray()))
+    if (!retVal.isNull())
     {
-        code = GRPC_STATUS_INVALID_ARGUMENT;
+        if (!metadata.init(retVal.toArray()))
+        {
+            code = GRPC_STATUS_INVALID_ARGUMENT;
+        }
+    }
+    else
+    {
+        // call was cancelled before metadata routine called because of timeout
+        code = GRPC_STATUS_DEADLINE_EXCEEDED;
     }
 
-    /* Pass control back to core */
+    // Pass control back to core
     cb(user_data, metadata.data(), metadata.size(), code, nullptr);
 }
 
@@ -277,7 +293,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
     PluginMetadataInfo& pluginMetaDataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
     PluginMetadataInfo::MetaDataInfo metaDataInfo{ pluginMetaDataInfo.getInfo(pCallCrendentials) };
 
-    MetadataPromise* const pMetaDataPromise{ std::get<0>(metaDataInfo).get() };
+    MetadataPromise* const pMetaDataPromise{ metaDataInfo.metadataPromise() };
     if (!pMetaDataPromise)
     {
         // failed to get promise associated with call credentials.  This can happen if the call timed
@@ -285,13 +301,14 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
         return;
     }
 
-    std::thread::id callThreadId{ std::get<1>(metaDataInfo) };
+    const std::thread::id& callThreadId{ metaDataInfo.threadId() };
     if (callThreadId == std::this_thread::get_id())
     {
         HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata same thread") // Degug Trace
         plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data,
                                            true };
-        plugin_do_get_metadata(ptr, context, cb, user_data);
+        plugin_do_get_metadata(ptr, context, cb, user_data, *(metaDataInfo.metadataMutex()),
+                               *(metaDataInfo.callCancelled()));
         pMetaDataPromise->set_value(std::move(params));
     }
     else

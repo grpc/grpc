@@ -105,7 +105,59 @@ class PluginMetadataInfo
 {
 public:
     // typedefs
-    typedef std::tuple<std::shared_ptr<MetadataPromise>, std::thread::id> MetaDataInfo;
+    typedef class MetadataInfo
+    {
+    public:
+        // constructors/destructors
+        MetadataInfo(const std::shared_ptr<MetadataPromise>& pMetadataPromise = std::shared_ptr<MetadataPromise>{ nullptr },
+                     const std::shared_ptr<std::mutex>& pMetadataMutex = std::shared_ptr<std::mutex>{ nullptr },
+                     const std::shared_ptr<bool>& pCallCancelled = std::shared_ptr<bool>{ nullptr },
+                     const std::thread::id& threadId = std::thread::id{ 0 }) :
+            m_pMetadataPromise{ pMetadataPromise }, m_pMetadataMutex{ pMetadataMutex }, m_pCallCancelled{ pCallCancelled },
+            m_ThreadId{ threadId } {}
+        ~MetadataInfo(void) = default;
+        MetadataInfo(const MetadataInfo&) = delete;
+        MetadataInfo(MetadataInfo&& otherMetadataInfo) :
+            m_pMetadataPromise{ std::move(otherMetadataInfo.m_pMetadataPromise) },
+            m_pMetadataMutex{ std::move(otherMetadataInfo.m_pMetadataMutex) },
+            m_pCallCancelled{ std::move(otherMetadataInfo.m_pCallCancelled) },
+            m_ThreadId{ std::move(otherMetadataInfo.m_ThreadId) } {};
+        MetadataInfo& operator=(const MetadataInfo&) = delete;
+        MetadataInfo& operator=(MetadataInfo&& rhsMetadataInfo)
+        {
+            if (this != &rhsMetadataInfo)
+            {
+                MetadataInfo tempMetadataInfo{ std::move(rhsMetadataInfo) };
+                swap(tempMetadataInfo);
+            }
+            return *this;
+        }
+
+        // interface functions
+        MetadataPromise* const metadataPromise(void) { return m_pMetadataPromise.get(); }
+        std::mutex* const metadataMutex(void) { return m_pMetadataMutex.get(); }
+        const bool* const callCancelled(void) const { return m_pCallCancelled.get(); }
+        const std::thread::id& threadId(void) const { return m_ThreadId; }
+
+    private:
+        // member variables
+        std::shared_ptr<MetadataPromise> m_pMetadataPromise;
+        std::shared_ptr<std::mutex> m_pMetadataMutex;
+        std::shared_ptr<bool> m_pCallCancelled;
+        std::thread::id m_ThreadId;
+
+    private:
+        // helper functions
+        void swap(MetadataInfo& otherMetadataInfo)
+        {
+            // swap by move
+            std::swap(m_pMetadataPromise, otherMetadataInfo.m_pMetadataPromise);
+            std::swap(m_pMetadataMutex, otherMetadataInfo.m_pMetadataMutex);
+            std::swap(m_pCallCancelled, otherMetadataInfo.m_pCallCancelled);
+            std::swap(m_ThreadId, otherMetadataInfo.m_ThreadId);
+        }
+
+    } MetaDataInfo;
 
     // constructors/destructors
     ~PluginMetadataInfo(void);
@@ -132,7 +184,8 @@ private:
 
 void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
                             grpc_credentials_plugin_metadata_cb cb,
-                            void *user_data);
+                            void *user_data, std::mutex& metadataMutex,
+                            const bool& callCancelled);
 }
 
 #endif /* NET_GRPC_HHVM_GRPC_CALL_CREDENTIALS_H_ */

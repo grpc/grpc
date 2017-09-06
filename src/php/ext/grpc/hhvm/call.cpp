@@ -62,13 +62,15 @@ Class* const CallData::getClass(void)
 
 CallData::CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_pCallCredentials{ nullptr },
     m_pChannel{ nullptr }, m_Timeout{ 0 },
-    m_pMetadataPromise{ std::make_shared<MetadataPromise>() }
+    m_pMetadataPromise{ std::make_shared<MetadataPromise>() },
+    m_pMetadataMutex{ std::make_shared<std::mutex>() }, m_pCallCancelled{ std::make_shared<bool>(false) }
 {
 }
 
 CallData::CallData(grpc_call* const call, const bool owned, const int32_t timeoutMs) :
     m_pCall{ call }, m_Owned{ owned }, m_pCallCredentials{ nullptr }, m_pChannel{ nullptr },
-    m_Timeout{ timeoutMs }, m_pMetadataPromise{ std::make_shared<MetadataPromise>() }
+    m_Timeout{ timeoutMs }, m_pMetadataPromise{ std::make_shared<MetadataPromise>() },
+    m_pMetadataMutex{ std::make_shared<std::mutex>() }, m_pCallCancelled{ std::make_shared<bool>(false) }
 {
 }
 
@@ -93,8 +95,6 @@ void CallData::destroy(void)
     {
         if (m_Owned)
         {
-            // cancel the call
-            //grpc_call_cancel(m_pCall, nullptr);
             // destroy call
             grpc_call_unref(m_pCall);
             m_Owned = false;
@@ -514,7 +514,9 @@ Object HHVM_METHOD(Call, startBatch,
     if (credentialedCall)
     {
         PluginMetadataInfo& pluginMetadataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
-        PluginMetadataInfo::MetaDataInfo metaDataInfo{ std::shared_ptr<MetadataPromise>{ pCallData->getSharedPromise() },
+        PluginMetadataInfo::MetaDataInfo metaDataInfo{ pCallData->sharedPromise(),
+                                                       pCallData->sharedMutex(),
+                                                       pCallData->sharedCancelled(),
                                                        std::this_thread::get_id() };
         pluginMetadataInfo.setInfo(pCallData->callCredentials(), std::move(metaDataInfo));
     }
@@ -529,9 +531,13 @@ Object HHVM_METHOD(Call, startBatch,
             PluginMetadataInfo& pluginMetadataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
             pluginMetadataInfo.deleteInfo(pCallData->callCredentials());
         }
+        {
+            // set call cancelled shared flag
+            std::lock_guard<std::mutex> lock{ pCallData->metadataMutex() };
+            pCallData->callCancelled()=true;
+        }
         callFailed = true;
     };
-
 
     static std::mutex s_StartBatchMutex;
     {
@@ -550,9 +556,8 @@ Object HHVM_METHOD(Call, startBatch,
     }
 
     grpc_event event (grpc_completion_queue_next(pCallData->queue()->queue(),
-                                                 /*gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN)*/
-                                                 gpr_inf_future(GPR_CLOCK_REALTIME),
-                                                  nullptr));
+                                                 gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN),
+                                                 nullptr));
     if (event.type != GRPC_OP_COMPLETE || event.tag != pCallData->call())
     {
         // failed so clean up and return empty object
@@ -568,7 +573,7 @@ Object HHVM_METHOD(Call, startBatch,
     if (credentialedCall && !callFailed)
     {
         // wait on the plugin_get_metadata to complete
-        auto getPluginMetadataFuture = pCallData->getPromise().get_future();
+        auto getPluginMetadataFuture = pCallData->metadataPromise().get_future();
         std::future_status status{ getPluginMetadataFuture.wait_for(std::chrono::milliseconds{ pCallData->getTimeout() }) };
         if (status == std::future_status::timeout)
         {
@@ -583,7 +588,9 @@ Object HHVM_METHOD(Call, startBatch,
             {
                 // call the plugin in this thread if it wasn't completed already
                 plugin_do_get_metadata(metaDataParams.ptr, metaDataParams.context,
-                                       metaDataParams.cb, metaDataParams.user_data);
+                                       metaDataParams.cb, metaDataParams.user_data,
+                                       pCallData->metadataMutex(),
+                                       pCallData->callCancelled());
             }
         }
     }
