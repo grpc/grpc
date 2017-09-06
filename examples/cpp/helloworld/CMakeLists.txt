@@ -29,7 +29,7 @@ add_custom_command(
       OUTPUT "${hw_grpc_srcs}" "${hw_grpc_hdrs}"
       COMMAND protobuf::protoc
       ARGS --grpc_out "${CMAKE_CURRENT_BINARY_DIR}" -I "${hw_proto_path}"
-        --plugin=protoc-gen-grpc="${gRPC_CPP_PLUGIN_EXECUTABLE}"
+        --plugin=protoc-gen-grpc=$<TARGET_FILE:gRPC::grpc_cpp_plugin>
         "${hw_proto}"
       DEPENDS "${hw_proto}")
 
