@@ -693,6 +693,8 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.c",
         "src/core/lib/transport/transport.c",
         "src/core/lib/transport/transport_op_string.c",
+        "src/core/lib/debug/stats.c",
+        "src/core/lib/debug/stats_data.c",
     ],
     hdrs = [
         "src/core/lib/channel/channel_args.h",
@@ -811,6 +813,8 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
+        "src/core/lib/debug/stats.h",
+        "src/core/lib/debug/stats_data.h",
     ],
     external_deps = [
         "zlib",

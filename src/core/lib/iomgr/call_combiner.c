@@ -155,6 +155,18 @@ void grpc_call_combiner_set_notify_on_cancel(grpc_exec_ctx* exec_ctx,
           gpr_log(GPR_DEBUG, "call_combiner=%p: setting notify_on_cancel=%p",
                   call_combiner, closure);
         }
+        // If we replaced an earlier closure, invoke the original
+        // closure with GRPC_ERROR_NONE.  This allows callers to clean
+        // up any resources they may be holding for the callback.
+        if (original_state != 0) {
+          closure = (grpc_closure*)original_state;
+          if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
+            gpr_log(GPR_DEBUG,
+                    "call_combiner=%p: scheduling old cancel callback=%p",
+                    call_combiner, closure);
+          }
+          GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
+        }
         break;
       }
     }

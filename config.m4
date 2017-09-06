@@ -96,6 +96,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
+    src/core/lib/debug/stats.c \
+    src/core/lib/debug/stats_data.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \

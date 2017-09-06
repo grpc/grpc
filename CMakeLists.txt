@@ -91,6 +91,8 @@ if (MSVC)
   add_definitions(/wd4065 /wd4506)
   # TODO(jtattermusch): revisit C4267 occurrences throughout the code
   add_definitions(/wd4267)
+  # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
+  add_definitions(/wd4987 /wd4774 /wd4819 /wd4996 /wd4619)
 endif()
 
 if (gRPC_USE_PROTO_LITE)
@@ -960,6 +962,8 @@ add_library(grpc
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1312,6 +1316,8 @@ add_library(grpc_cronet
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1632,6 +1638,8 @@ add_library(grpc_test_util
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1896,6 +1904,8 @@ add_library(grpc_test_util_unsecure
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -2146,6 +2156,8 @@ add_library(grpc_unsecure
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -2848,6 +2860,8 @@ add_library(grpc++_cronet
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c

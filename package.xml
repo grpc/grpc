@@ -272,6 +272,8 @@
     <file baseinstalldir="/" name="src/core/lib/compression/algorithm_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/stream_compression.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/stats.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/stats_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/format_request.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.h" role="src" />
@@ -384,6 +386,10 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h" role="src" />
+    <file baseinstalldir="/" name="third_party/nanopb/pb.h" role="src" />
+    <file baseinstalldir="/" name="third_party/nanopb/pb_common.h" role="src" />
+    <file baseinstalldir="/" name="third_party/nanopb/pb_decode.h" role="src" />
+    <file baseinstalldir="/" name="third_party/nanopb/pb_encode.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
@@ -422,6 +428,8 @@
     <file baseinstalldir="/" name="src/core/lib/compression/compression.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/stream_compression.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/stats.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/stats_data.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/format_request.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.c" role="src" />
