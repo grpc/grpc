@@ -104,17 +104,25 @@ grpc_error *grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
 }
 
 grpc_error *grpc_set_socket_sndbuf(int fd, int buffer_size_bytes) {
+#ifndef GRPC_HAVE_NO_SETSOCKOPT
   return 0 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
                          sizeof(buffer_size_bytes))
              ? GRPC_ERROR_NONE
              : GRPC_OS_ERROR(errno, "setsockopt(SO_SNDBUF)");
+#else
+  return GRPC_ERROR_NONE;
+#endif
 }
 
 grpc_error *grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes) {
+#ifndef GRPC_HAVE_NO_SETSOCKOPT
   return 0 == setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
                          sizeof(buffer_size_bytes))
              ? GRPC_ERROR_NONE
              : GRPC_OS_ERROR(errno, "setsockopt(SO_RCVBUF)");
+#else
+  return GRPC_ERROR_NONE;
+#endif
 }
 
 /* set a socket to close on exec */
@@ -139,6 +147,7 @@ grpc_error *grpc_set_socket_cloexec(int fd, int close_on_exec) {
 
 /* set a socket to reuse old addresses */
 grpc_error *grpc_set_socket_reuse_addr(int fd, int reuse) {
+#ifndef GRPC_HAVE_NO_SETSOCKOPT
   int val = (reuse != 0);
   int newval;
   socklen_t intlen = sizeof(newval);
@@ -151,7 +160,7 @@ grpc_error *grpc_set_socket_reuse_addr(int fd, int reuse) {
   if ((newval != 0) != val) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set SO_REUSEADDR");
   }
-
+#endif
   return GRPC_ERROR_NONE;
 }
 
@@ -180,6 +189,7 @@ grpc_error *grpc_set_socket_reuse_port(int fd, int reuse) {
 
 /* disable nagle */
 grpc_error *grpc_set_socket_low_latency(int fd, int low_latency) {
+#ifndef GRPC_HAVE_NO_SETSOCKOPT
   int val = (low_latency != 0);
   int newval;
   socklen_t intlen = sizeof(newval);
@@ -201,6 +211,7 @@ grpc_error *grpc_set_socket_with_mutator(int fd, grpc_socket_mutator *mutator) {
   if (!grpc_socket_mutator_mutate_fd(mutator, fd)) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("grpc_socket_mutator failed.");
   }
+#endif
   return GRPC_ERROR_NONE;
 }
 
@@ -208,6 +219,7 @@ static gpr_once g_probe_ipv6_once = GPR_ONCE_INIT;
 static int g_ipv6_loopback_available;
 
 static void probe_ipv6_once(void) {
+#ifndef GRPC_DISABLE_IPV6_PROBE
   int fd = socket(AF_INET6, SOCK_STREAM, 0);
   g_ipv6_loopback_available = 0;
   if (fd < 0) {
@@ -225,6 +237,9 @@ static void probe_ipv6_once(void) {
     }
     close(fd);
   }
+#else
+  g_ipv6_loopback_available = 1;
+#endif
 }
 
 int grpc_ipv6_loopback_available(void) {
@@ -238,6 +253,7 @@ int grpc_ipv6_loopback_available(void) {
 int grpc_forbid_dualstack_sockets_for_testing = 0;
 
 static int set_socket_dualstack(int fd) {
+#ifndef GRPC_HAVE_NO_SETSOCKOPT
   if (!grpc_forbid_dualstack_sockets_for_testing) {
     const int off = 0;
     return 0 == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
@@ -247,6 +263,9 @@ static int set_socket_dualstack(int fd) {
     setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on));
     return 0;
   }
+#else
+ return 1;
+#endif
 }
 
 static grpc_error *error_for_fd(int fd, const grpc_resolved_address *addr) {
