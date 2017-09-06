@@ -162,8 +162,8 @@ int MetadataCredentialsPluginWrapper::GetMetadata(
     void* wrapper, grpc_auth_metadata_context context,
     grpc_credentials_plugin_metadata_cb cb, void* user_data,
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
-    size_t *num_creds_md, grpc_status_code *status,
-    const char **error_details) {
+    size_t* num_creds_md, grpc_status_code* status,
+    const char** error_details) {
   GPR_ASSERT(wrapper);
   MetadataCredentialsPluginWrapper* w =
       reinterpret_cast<MetadataCredentialsPluginWrapper*>(wrapper);
@@ -200,8 +200,8 @@ void UnrefMetadata(const std::vector<grpc_metadata>& md) {
 
 void MetadataCredentialsPluginWrapper::InvokePlugin(
     grpc_auth_metadata_context context, grpc_credentials_plugin_metadata_cb cb,
-    void* user_data, grpc_metadata creds_md[4], size_t *num_creds_md,
-    grpc_status_code *status_code, const char **error_details) {
+    void* user_data, grpc_metadata creds_md[4], size_t* num_creds_md,
+    grpc_status_code* status_code, const char** error_details) {
   std::multimap<grpc::string, grpc::string> metadata;
 
   // const_cast is safe since the SecureAuthContext does not take owndership and

@@ -1033,7 +1033,7 @@ static int grpcsharp_get_metadata_handler(
       (grpcsharp_metadata_interceptor_func)(intptr_t)state;
   interceptor(state, context.service_url, context.method_name, cb, user_data,
               0);
-  return 0;  /* Asynchronous return. */
+  return 0; /* Asynchronous return. */
 }
 
 static void grpcsharp_metadata_credentials_destroy_handler(void *state) {
