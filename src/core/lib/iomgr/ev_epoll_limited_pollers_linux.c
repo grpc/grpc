@@ -40,6 +40,7 @@
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -931,24 +932,12 @@ static int fd_wrapped_fd(grpc_fd *fd) {
 
 static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                       grpc_closure *on_done, int *release_fd,
-                      const char *reason) {
-  bool is_fd_closed = false;
+                      bool already_closed, const char *reason) {
   grpc_error *error = GRPC_ERROR_NONE;
   polling_island *unref_pi = NULL;
 
   gpr_mu_lock(&fd->po.mu);
   fd->on_done_closure = on_done;
-
-  /* If release_fd is not NULL, we should be relinquishing control of the file
-     descriptor fd->fd (but we still own the grpc_fd structure). */
-  if (release_fd != NULL) {
-    *release_fd = fd->fd;
-  } else {
-    close(fd->fd);
-    is_fd_closed = true;
-  }
-
-  fd->orphaned = true;
 
   /* Remove the active status but keep referenced. We want this grpc_fd struct
      to be alive (and not added to freelist) until the end of this function */
@@ -964,12 +953,22 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
        before doing this.) */
   if (fd->po.pi != NULL) {
     polling_island *pi_latest = polling_island_lock(fd->po.pi);
-    polling_island_remove_fd_locked(pi_latest, fd, is_fd_closed, &error);
+    polling_island_remove_fd_locked(pi_latest, fd, already_closed, &error);
     gpr_mu_unlock(&pi_latest->mu);
 
     unref_pi = fd->po.pi;
     fd->po.pi = NULL;
   }
+
+  /* If release_fd is not NULL, we should be relinquishing control of the file
+     descriptor fd->fd (but we still own the grpc_fd structure). */
+  if (release_fd != NULL) {
+    *release_fd = fd->fd;
+  } else {
+    close(fd->fd);
+  }
+
+  fd->orphaned = true;
 
   GRPC_CLOSURE_SCHED(exec_ctx, fd->on_done_closure, GRPC_ERROR_REF(error));
 
@@ -1008,12 +1007,12 @@ static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_error *why) {
 
 static void fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                               grpc_closure *closure) {
-  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure);
+  grpc_lfev_notify_on(exec_ctx, &fd->read_closure, closure, "read");
 }
 
 static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_closure *closure) {
-  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure);
+  grpc_lfev_notify_on(exec_ctx, &fd->write_closure, closure, "write");
 }
 
 /*******************************************************************************
@@ -1224,7 +1223,7 @@ static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
 
 static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                                grpc_pollset *notifier) {
-  grpc_lfev_set_ready(exec_ctx, &fd->read_closure);
+  grpc_lfev_set_ready(exec_ctx, &fd->read_closure, "read");
 
   /* Note, it is possible that fd_become_readable might be called twice with
      different 'notifier's when an fd becomes readable and it is in two epoll
@@ -1236,7 +1235,7 @@ static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 }
 
 static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
-  grpc_lfev_set_ready(exec_ctx, &fd->write_closure);
+  grpc_lfev_set_ready(exec_ctx, &fd->write_closure, "write");
 }
 
 static void pollset_release_polling_island(grpc_exec_ctx *exec_ctx,
@@ -1288,7 +1287,8 @@ static void pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
 }
 
 /* NOTE: This function may modify 'now' */
-static bool acquire_polling_lease(grpc_pollset_worker *worker,
+static bool acquire_polling_lease(grpc_exec_ctx *exec_ctx,
+                                  grpc_pollset_worker *worker,
                                   polling_island *pi, gpr_timespec deadline,
                                   gpr_timespec *now) {
   bool is_lease_acquired = false;
@@ -1308,6 +1308,7 @@ static bool acquire_polling_lease(grpc_pollset_worker *worker,
     } else {
       struct timespec sigwait_timeout = millis_to_timespec(timeout_ms);
       GRPC_SCHEDULING_START_BLOCKING_REGION;
+      GRPC_STATS_INC_SYSCALL_WAIT(exec_ctx);
       ret = sigtimedwait(&g_wakeup_sig_set, NULL, &sigwait_timeout);
       GRPC_SCHEDULING_END_BLOCKING_REGION;
     }
@@ -1380,7 +1381,7 @@ static void pollset_do_epoll_pwait(grpc_exec_ctx *exec_ctx, int epoll_fd,
                                    sigset_t *sig_mask, grpc_error **error) {
   /* Only g_max_pollers_per_pi threads can be doing polling in parallel.
      If we cannot get a lease, we cannot continue to do epoll_pwait() */
-  if (!acquire_polling_lease(worker, pi, deadline, &now)) {
+  if (!acquire_polling_lease(exec_ctx, worker, pi, deadline, &now)) {
     return;
   }
 
@@ -1393,6 +1394,7 @@ static void pollset_do_epoll_pwait(grpc_exec_ctx *exec_ctx, int epoll_fd,
   int timeout_ms = poll_deadline_to_millis_timeout(deadline, now);
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
+  GRPC_STATS_INC_SYSCALL_POLL(exec_ctx);
   ep_rv =
       epoll_pwait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms, sig_mask);
   GRPC_SCHEDULING_END_BLOCKING_REGION;

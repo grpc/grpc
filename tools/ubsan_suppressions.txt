@@ -5,5 +5,7 @@ nonnull-attribute:rsa_blinding_get
 nonnull-attribute:ssl_copy_key_material
 alignment:CRYPTO_cbc128_encrypt
 alignment:CRYPTO_gcm128_encrypt
+alignment:poly1305_block_copy
 nonnull-attribute:google::protobuf::*
 alignment:google::protobuf::*
+nonnull-attribute:_tr_stored_block

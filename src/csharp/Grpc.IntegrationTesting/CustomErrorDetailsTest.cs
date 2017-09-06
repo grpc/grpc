@@ -42,7 +42,7 @@ namespace Grpc.IntegrationTesting
         Channel channel;
         TestService.TestServiceClient client;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void Init()
         {
             // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
@@ -57,7 +57,7 @@ namespace Grpc.IntegrationTesting
             client = new TestService.TestServiceClient(channel);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void Cleanup()
         {
             channel.ShutdownAsync().Wait();
@@ -65,7 +65,7 @@ namespace Grpc.IntegrationTesting
         }
 
         [Test]
-        public async Task UnaryCall()
+        public async Task ErrorDetailsFromCallObject()
         {
             var call = client.UnaryCallAsync(new SimpleRequest { ResponseSize = 10 });
 
@@ -83,7 +83,24 @@ namespace Grpc.IntegrationTesting
             }
         }
 
-        private DebugInfo GetDebugInfo(Metadata trailers)
+        [Test]
+        public async Task ErrorDetailsFromRpcException()
+        {
+            try
+            {
+                await client.UnaryCallAsync(new SimpleRequest { ResponseSize = 10 });
+                Assert.Fail();
+            }
+            catch (RpcException e)
+            {
+                Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
+                var debugInfo = GetDebugInfo(e.Trailers);
+                Assert.AreEqual(debugInfo.Detail, ExceptionDetail);
+                Assert.IsNotEmpty(debugInfo.StackEntries);
+            }
+        }
+
+        private static DebugInfo GetDebugInfo(Metadata trailers)
         {
             var entry = trailers.First((e) => e.Key == DebugInfoTrailerName);
             return DebugInfo.Parser.ParseFrom(entry.ValueBytes);
@@ -91,7 +108,7 @@ namespace Grpc.IntegrationTesting
 
         private class CustomErrorDetailsTestServiceImpl : TestService.TestServiceBase
         {
-            public override async Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
+            public override Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
             {
                 try
                 {

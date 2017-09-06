@@ -35,6 +35,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -114,7 +115,8 @@ static void session_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg, /*session */
                                 bool success) {
   session *se = arg;
   server *sv = se->sv;
-  grpc_fd_orphan(exec_ctx, se->em_fd, NULL, NULL, "a");
+  grpc_fd_orphan(exec_ctx, se->em_fd, NULL, NULL, false /* already_closed */,
+                 "a");
   gpr_free(se);
   /* Start to shutdown listen fd. */
   grpc_fd_shutdown(exec_ctx, sv->em_fd,
@@ -171,7 +173,8 @@ static void listen_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg /*server */,
                                int success) {
   server *sv = arg;
 
-  grpc_fd_orphan(exec_ctx, sv->em_fd, NULL, NULL, "b");
+  grpc_fd_orphan(exec_ctx, sv->em_fd, NULL, NULL, false /* already_closed */,
+                 "b");
 
   gpr_mu_lock(g_mu);
   sv->done = 1;
@@ -291,7 +294,8 @@ static void client_init(client *cl) {
 static void client_session_shutdown_cb(grpc_exec_ctx *exec_ctx,
                                        void *arg /*client */, int success) {
   client *cl = arg;
-  grpc_fd_orphan(exec_ctx, cl->em_fd, NULL, NULL, "c");
+  grpc_fd_orphan(exec_ctx, cl->em_fd, NULL, NULL, false /* already_closed */,
+                 "c");
   cl->done = 1;
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
@@ -511,7 +515,7 @@ static void test_grpc_fd_change(void) {
   GPR_ASSERT(b.cb_that_ran == second_read_callback);
   gpr_mu_unlock(g_mu);
 
-  grpc_fd_orphan(&exec_ctx, em_fd, NULL, NULL, "d");
+  grpc_fd_orphan(&exec_ctx, em_fd, NULL, NULL, false /* already_closed */, "d");
   grpc_exec_ctx_finish(&exec_ctx);
   destroy_change_data(&a);
   destroy_change_data(&b);
@@ -527,8 +531,7 @@ int main(int argc, char **argv) {
   grpc_closure destroyed;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
-  grpc_iomgr_init(&exec_ctx);
-  grpc_iomgr_start(&exec_ctx);
+  grpc_init();
   g_pollset = gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(g_pollset, &g_mu);
   test_grpc_fd();
@@ -538,8 +541,8 @@ int main(int argc, char **argv) {
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_flush(&exec_ctx);
   gpr_free(g_pollset);
-  grpc_iomgr_shutdown(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
+  grpc_shutdown();
   return 0;
 }
 

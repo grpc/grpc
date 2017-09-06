@@ -33,6 +33,7 @@ CONFIG = [
     'host',
     'grpc-timeout',
     'grpc-internal-encoding-request',
+    'grpc-internal-stream-encoding-request',
     'grpc-payload-bin',
     ':path',
     'grpc-encoding',
@@ -89,6 +90,8 @@ CONFIG = [
     ('authorization', ''),
     ('cache-control', ''),
     ('content-disposition', ''),
+    ('content-encoding', 'identity'),
+    ('content-encoding', 'gzip'),
     ('content-encoding', ''),
     ('content-language', ''),
     ('content-length', ''),
@@ -129,26 +132,33 @@ CONFIG = [
     ('www-authenticate', ''),
 ]
 
+# Entries marked with is_default=True are ignored when counting
+# non-default initial metadata that prevents the chttp2 server from
+# sending a Trailers-Only response.
 METADATA_BATCH_CALLOUTS = [
-    ':path',
-    ':method',
-    ':status',
-    ':authority',
-    ':scheme',
-    'te',
-    'grpc-message',
-    'grpc-status',
-    'grpc-payload-bin',
-    'grpc-encoding',
-    'grpc-accept-encoding',
-    'grpc-server-stats-bin',
-    'grpc-tags-bin',
-    'grpc-trace-bin',
-    'content-type',
-    'grpc-internal-encoding-request',
-    'user-agent',
-    'host',
-    'lb-token',
+    # (name, is_default)
+    (':path', True),
+    (':method', True),
+    (':status', True),
+    (':authority', True),
+    (':scheme', True),
+    ('te', True),
+    ('grpc-message', True),
+    ('grpc-status', True),
+    ('grpc-payload-bin', True),
+    ('grpc-encoding', True),
+    ('grpc-accept-encoding', True),
+    ('grpc-server-stats-bin', True),
+    ('grpc-tags-bin', True),
+    ('grpc-trace-bin', True),
+    ('content-type', True),
+    ('content-encoding', True),
+    ('accept-encoding', True),
+    ('grpc-internal-encoding-request', True),
+    ('grpc-internal-stream-encoding-request', True),
+    ('user-agent', True),
+    ('host', True),
+    ('lb-token', True),
 ]
 
 COMPRESSION_ALGORITHMS = [
@@ -157,6 +167,10 @@ COMPRESSION_ALGORITHMS = [
     'gzip',
 ]
 
+STREAM_COMPRESSION_ALGORITHMS = [
+    'identity',
+    'gzip',
+]
 
 # utility: mangle the name of a config
 def mangle(elem, name=None):
@@ -225,7 +239,7 @@ all_elems = list()
 static_userdata = {}
 # put metadata batch callouts first, to make the check of if a static metadata
 # string is a callout trivial
-for elem in METADATA_BATCH_CALLOUTS:
+for elem, _ in METADATA_BATCH_CALLOUTS:
   if elem not in all_strs:
     all_strs.append(elem)
 for elem in CONFIG:
@@ -250,6 +264,18 @@ for mask in range(1, 1 << len(COMPRESSION_ALGORITHMS)):
   if elem not in all_elems:
     all_elems.append(elem)
   compression_elems.append(elem)
+  static_userdata[elem] = 1 + (mask | 1)
+stream_compression_elems = []
+for mask in range(1, 1 << len(STREAM_COMPRESSION_ALGORITHMS)):
+  val = ','.join(STREAM_COMPRESSION_ALGORITHMS[alg]
+                 for alg in range(0, len(STREAM_COMPRESSION_ALGORITHMS))
+                 if (1 << alg) & mask)
+  elem = ('accept-encoding', val)
+  if val not in all_strs:
+    all_strs.append(val)
+  if elem not in all_elems:
+    all_elems.append(elem)
+  stream_compression_elems.append(elem)
   static_userdata[elem] = 1 + (mask | 1)
 
 # output configuration
@@ -350,7 +376,7 @@ def slice_def(i):
 
 
 # validate configuration
-for elem in METADATA_BATCH_CALLOUTS:
+for elem, _ in METADATA_BATCH_CALLOUTS:
   assert elem in all_strs
 
 print >> H, '#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs)
@@ -518,7 +544,7 @@ for a, b in all_elems:
 print >> C, '};'
 
 print >> H, 'typedef enum {'
-for elem in METADATA_BATCH_CALLOUTS:
+for elem, _ in METADATA_BATCH_CALLOUTS:
   print >> H, '  %s,' % mangle(elem, 'batch').upper()
 print >> H, '  GRPC_BATCH_CALLOUTS_COUNT'
 print >> H, '} grpc_metadata_batch_callouts_index;'
@@ -526,7 +552,7 @@ print >> H
 print >> H, 'typedef union {'
 print >> H, '  struct grpc_linked_mdelem *array[GRPC_BATCH_CALLOUTS_COUNT];'
 print >> H, '  struct {'
-for elem in METADATA_BATCH_CALLOUTS:
+for elem, _ in METADATA_BATCH_CALLOUTS:
   print >> H, '  struct grpc_linked_mdelem *%s;' % mangle(elem, '').lower()
 print >> H, '  } named;'
 print >> H, '} grpc_metadata_batch_callouts;'
@@ -534,6 +560,14 @@ print >> H
 print >> H, '#define GRPC_BATCH_INDEX_OF(slice) \\'
 print >> H, '  (GRPC_IS_STATIC_METADATA_STRING((slice)) ? (grpc_metadata_batch_callouts_index)GPR_CLAMP(GRPC_STATIC_METADATA_INDEX((slice)), 0, GRPC_BATCH_CALLOUTS_COUNT) : GRPC_BATCH_CALLOUTS_COUNT)'
 print >> H
+print >> H, ('extern bool grpc_static_callout_is_default['
+             'GRPC_BATCH_CALLOUTS_COUNT];')
+print >> H
+print >> C, 'bool grpc_static_callout_is_default[GRPC_BATCH_CALLOUTS_COUNT] = {'
+for elem, is_default in METADATA_BATCH_CALLOUTS:
+  print >> C, '  %s, // %s' % (str(is_default).lower(), elem)
+print >> C, '};'
+print >> C
 
 print >> H, 'extern const uint8_t grpc_static_accept_encoding_metadata[%d];' % (
     1 << len(COMPRESSION_ALGORITHMS))
@@ -544,6 +578,16 @@ print >> C, '};'
 print >> C
 
 print >> H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
+print >> H
+
+print >> H, 'extern const uint8_t grpc_static_accept_stream_encoding_metadata[%d];' % (
+    1 << len(STREAM_COMPRESSION_ALGORITHMS))
+print >> C, 'const uint8_t grpc_static_accept_stream_encoding_metadata[%d] = {' % (
+    1 << len(STREAM_COMPRESSION_ALGORITHMS))
+print >> C, '0,%s' % ','.join('%d' % md_idx(elem) for elem in stream_compression_elems)
+print >> C, '};'
+
+print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
 
 print >> H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
 

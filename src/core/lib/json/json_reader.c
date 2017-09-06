@@ -178,6 +178,7 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
             json_reader_string_clear(reader);
             reader->state = GRPC_JSON_STATE_VALUE_END;
           /* The missing break here is intentional. */
+          /* fallthrough */
 
           case GRPC_JSON_STATE_VALUE_END:
           case GRPC_JSON_STATE_OBJECT_KEY_BEGIN:

@@ -60,6 +60,7 @@
    int gpr_atm_no_barrier_cas(gpr_atm *p, gpr_atm o, gpr_atm n);
    int gpr_atm_acq_cas(gpr_atm *p, gpr_atm o, gpr_atm n);
    int gpr_atm_rel_cas(gpr_atm *p, gpr_atm o, gpr_atm n);
+   int gpr_atm_full_cas(gpr_atm *p, gpr_atm o, gpr_atm n);
 
    // Atomically, set *p=n and return the old value of *p
    gpr_atm gpr_atm_full_xchg(gpr_atm *p, gpr_atm n);

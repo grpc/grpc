@@ -38,9 +38,12 @@ struct grpc_pollset {
 namespace grpc {
 namespace testing {
 
+auto& force_library_initialization = Library::get();
+
 static void* g_tag = (void*)(intptr_t)10;  // Some random number
 static grpc_completion_queue* g_cq;
 static grpc_event_engine_vtable g_vtable;
+static const grpc_event_engine_vtable* g_old_vtable;
 
 static void pollset_shutdown(grpc_exec_ctx* exec_ctx, grpc_pollset* ps,
                              grpc_closure* closure) {
@@ -72,12 +75,12 @@ static grpc_error* pollset_work(grpc_exec_ctx* exec_ctx, grpc_pollset* ps,
                                 grpc_pollset_worker** worker, gpr_timespec now,
                                 gpr_timespec deadline) {
   if (gpr_time_cmp(deadline, gpr_time_0(GPR_CLOCK_MONOTONIC)) == 0) {
-    gpr_log(GPR_ERROR, "no-op");
+    gpr_log(GPR_DEBUG, "no-op");
     return GRPC_ERROR_NONE;
   }
 
   gpr_mu_unlock(&ps->mu);
-  grpc_cq_begin_op(g_cq, g_tag);
+  GPR_ASSERT(grpc_cq_begin_op(g_cq, g_tag));
   grpc_cq_end_op(exec_ctx, g_cq, g_tag, GRPC_ERROR_NONE, cq_done_cb, NULL,
                  (grpc_cq_completion*)gpr_malloc(sizeof(grpc_cq_completion)));
   grpc_exec_ctx_flush(exec_ctx);
@@ -98,7 +101,12 @@ static void init_engine_vtable() {
 
 static void setup() {
   grpc_init();
+
+  /* Override the event engine with our test event engine (g_vtable); but before
+   * that, save the current event engine in g_old_vtable. We will have to set
+   * g_old_vtable back before calling grpc_shutdown() */
   init_engine_vtable();
+  g_old_vtable = grpc_get_event_engine_test_only();
   grpc_set_event_engine_test_only(&g_vtable);
 
   g_cq = grpc_completion_queue_create_for_next(NULL);
@@ -115,6 +123,10 @@ static void teardown() {
   }
 
   grpc_completion_queue_destroy(g_cq);
+
+  /* Restore the old event engine before calling grpc_shutdown */
+  grpc_set_event_engine_test_only(g_old_vtable);
+  grpc_shutdown();
 }
 
 /* A few notes about Multi-threaded benchmarks:

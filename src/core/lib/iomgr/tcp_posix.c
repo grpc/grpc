@@ -40,6 +40,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/profiling/timers.h"
@@ -59,7 +60,7 @@ typedef GRPC_MSG_IOVLEN_TYPE msg_iovlen_type;
 typedef size_t msg_iovlen_type;
 #endif
 
-grpc_tracer_flag grpc_tcp_trace = GRPC_TRACER_INITIALIZER(false);
+grpc_tracer_flag grpc_tcp_trace = GRPC_TRACER_INITIALIZER(false, "tcp");
 
 typedef struct {
   grpc_endpoint base;
@@ -156,7 +157,7 @@ static void tcp_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
 static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   grpc_fd_orphan(exec_ctx, tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
-                 "tcp_unref_orphan");
+                 false /* already_closed */, "tcp_unref_orphan");
   grpc_slice_buffer_destroy_internal(exec_ctx, &tcp->last_read_buffer);
   grpc_resource_user_unref(exec_ctx, tcp->resource_user);
   gpr_free(tcp->peer_string);
@@ -258,6 +259,7 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
 
   GPR_TIMER_BEGIN("recvmsg", 0);
   do {
+    GRPC_STATS_INC_SYSCALL_READ(exec_ctx);
     read_bytes = recvmsg(tcp->fd, &msg, 0);
   } while (read_bytes < 0 && errno == EINTR);
   GPR_TIMER_END("recvmsg", read_bytes >= 0);
@@ -361,7 +363,8 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
 /* returns true if done, false if pending; if returning true, *error is set */
 #define MAX_WRITE_IOVEC 1000
-static bool tcp_flush(grpc_tcp *tcp, grpc_error **error) {
+static bool tcp_flush(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
+                      grpc_error **error) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];
   msg_iovlen_type iov_size;
@@ -403,6 +406,7 @@ static bool tcp_flush(grpc_tcp *tcp, grpc_error **error) {
     GPR_TIMER_BEGIN("sendmsg", 1);
     do {
       /* TODO(klempner): Cork if this is a partial write */
+      GRPC_STATS_INC_SYSCALL_WRITE(exec_ctx);
       sent_length = sendmsg(tcp->fd, &msg, SENDMSG_FLAGS);
     } while (sent_length < 0 && errno == EINTR);
     GPR_TIMER_END("sendmsg", 0);
@@ -459,7 +463,7 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
     return;
   }
 
-  if (!tcp_flush(tcp, &error)) {
+  if (!tcp_flush(exec_ctx, tcp, &error)) {
     if (GRPC_TRACER_ON(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "write: delayed");
     }
@@ -510,7 +514,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   tcp->outgoing_slice_idx = 0;
   tcp->outgoing_byte_idx = 0;
 
-  if (!tcp_flush(tcp, &error)) {
+  if (!tcp_flush(exec_ctx, tcp, &error)) {
     TCP_REF(tcp, "write");
     tcp->write_cb = cb;
     if (GRPC_TRACER_ON(grpc_tcp_trace)) {

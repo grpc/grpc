@@ -106,6 +106,8 @@ extern void ping(grpc_end2end_test_config config);
 extern void ping_pre_init(void);
 extern void ping_pong_streaming(grpc_end2end_test_config config);
 extern void ping_pong_streaming_pre_init(void);
+extern void proxy_auth(grpc_end2end_test_config config);
+extern void proxy_auth_pre_init(void);
 extern void registered_call(grpc_end2end_test_config config);
 extern void registered_call_pre_init(void);
 extern void request_with_flags(grpc_end2end_test_config config);
@@ -128,6 +130,12 @@ extern void simple_metadata(grpc_end2end_test_config config);
 extern void simple_metadata_pre_init(void);
 extern void simple_request(grpc_end2end_test_config config);
 extern void simple_request_pre_init(void);
+extern void stream_compression_compressed_payload(grpc_end2end_test_config config);
+extern void stream_compression_compressed_payload_pre_init(void);
+extern void stream_compression_payload(grpc_end2end_test_config config);
+extern void stream_compression_payload_pre_init(void);
+extern void stream_compression_ping_pong_streaming(grpc_end2end_test_config config);
+extern void stream_compression_ping_pong_streaming_pre_init(void);
 extern void streaming_error_response(grpc_end2end_test_config config);
 extern void streaming_error_response_pre_init(void);
 extern void trailing_metadata(grpc_end2end_test_config config);
@@ -181,6 +189,7 @@ void grpc_end2end_tests_pre_init(void) {
   payload_pre_init();
   ping_pre_init();
   ping_pong_streaming_pre_init();
+  proxy_auth_pre_init();
   registered_call_pre_init();
   request_with_flags_pre_init();
   request_with_payload_pre_init();
@@ -192,6 +201,9 @@ void grpc_end2end_tests_pre_init(void) {
   simple_delayed_request_pre_init();
   simple_metadata_pre_init();
   simple_request_pre_init();
+  stream_compression_compressed_payload_pre_init();
+  stream_compression_payload_pre_init();
+  stream_compression_ping_pong_streaming_pre_init();
   streaming_error_response_pre_init();
   trailing_metadata_pre_init();
   workaround_cronet_compression_pre_init();
@@ -244,6 +256,7 @@ void grpc_end2end_tests(int argc, char **argv,
     payload(config);
     ping(config);
     ping_pong_streaming(config);
+    proxy_auth(config);
     registered_call(config);
     request_with_flags(config);
     request_with_payload(config);
@@ -255,6 +268,9 @@ void grpc_end2end_tests(int argc, char **argv,
     simple_delayed_request(config);
     simple_metadata(config);
     simple_request(config);
+    stream_compression_compressed_payload(config);
+    stream_compression_payload(config);
+    stream_compression_ping_pong_streaming(config);
     streaming_error_response(config);
     trailing_metadata(config);
     workaround_cronet_compression(config);
@@ -416,6 +432,10 @@ void grpc_end2end_tests(int argc, char **argv,
       ping_pong_streaming(config);
       continue;
     }
+    if (0 == strcmp("proxy_auth", argv[i])) {
+      proxy_auth(config);
+      continue;
+    }
     if (0 == strcmp("registered_call", argv[i])) {
       registered_call(config);
       continue;
@@ -458,6 +478,18 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("simple_request", argv[i])) {
       simple_request(config);
+      continue;
+    }
+    if (0 == strcmp("stream_compression_compressed_payload", argv[i])) {
+      stream_compression_compressed_payload(config);
+      continue;
+    }
+    if (0 == strcmp("stream_compression_payload", argv[i])) {
+      stream_compression_payload(config);
+      continue;
+    }
+    if (0 == strcmp("stream_compression_ping_pong_streaming", argv[i])) {
+      stream_compression_ping_pong_streaming(config);
       continue;
     }
     if (0 == strcmp("streaming_error_response", argv[i])) {

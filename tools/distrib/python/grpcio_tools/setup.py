@@ -37,6 +37,18 @@ sys.path.insert(0, os.path.abspath('.'))
 import protoc_lib_deps
 import grpc_version
 
+CLASSIFIERS = [
+    'Development Status :: 5 - Production/Stable',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 2',
+    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.4',
+    'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.6',
+    'License :: OSI Approved :: Apache Software License',
+],
+
 PY3 = sys.version_info.major == 3
 
 # Environment variable to determine whether or not the Cython extension should
@@ -62,9 +74,9 @@ if EXTRA_ENV_COMPILE_ARGS is None:
       # envvars) without adding yet more GRPC-specific envvars.
       # See https://sourceforge.net/p/mingw-w64/bugs/363/
       if '32' in platform.architecture()[0]:
-        EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime32 -D_timeb=__timeb32 -D_ftime_s=_ftime32_s'
+        EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime32 -D_timeb=__timeb32 -D_ftime_s=_ftime32_s -D_hypot=hypot'
       else:
-        EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime64 -D_timeb=__timeb64'
+        EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime64 -D_timeb=__timeb64 -D_hypot=hypot'
     else:
       # We need to statically link the C++ Runtime, only the C runtime is
       # available dynamically
@@ -193,6 +205,7 @@ setuptools.setup(
   author_email='grpc-io@googlegroups.com',
   url='https://grpc.io',
   license='Apache License 2.0',
+  classifiers=CLASSIFIERS,
   ext_modules=extension_modules(),
   packages=setuptools.find_packages('.'),
   install_requires=[

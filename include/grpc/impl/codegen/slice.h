@@ -62,7 +62,12 @@ typedef struct grpc_slice_refcount {
   struct grpc_slice_refcount *sub_refcount;
 } grpc_slice_refcount;
 
-#define GRPC_SLICE_INLINED_SIZE (sizeof(size_t) + sizeof(uint8_t *) - 1)
+/* Inlined half of grpc_slice is allowed to expand the size of the overall type
+   by this many bytes */
+#define GRPC_SLICE_INLINE_EXTRA_SIZE sizeof(void *)
+
+#define GRPC_SLICE_INLINED_SIZE \
+  (sizeof(size_t) + sizeof(uint8_t *) - 1 + GRPC_SLICE_INLINE_EXTRA_SIZE)
 
 /** A grpc_slice s, if initialized, represents the byte range
    s.bytes[0..s.length-1].
@@ -75,12 +80,12 @@ typedef struct grpc_slice_refcount {
    of data that is copied by value. */
 struct grpc_slice {
   struct grpc_slice_refcount *refcount;
-  union {
-    struct {
+  union grpc_slice_data {
+    struct grpc_slice_refcounted {
       uint8_t *bytes;
       size_t length;
     } refcounted;
-    struct {
+    struct grpc_slice_inlined {
       uint8_t length;
       uint8_t bytes[GRPC_SLICE_INLINED_SIZE];
     } inlined;

@@ -26,17 +26,10 @@
 
 namespace grpc_php_generator {
 
-inline grpc::string GetPHPServiceFilename(
-    const grpc::protobuf::FileDescriptor *file,
-    const grpc::protobuf::ServiceDescriptor *service) {
-  std::vector<grpc::string> tokens =
-      grpc_generator::tokenize(file->package(), ".");
-  std::ostringstream oss;
-  for (unsigned int i = 0; i < tokens.size(); i++) {
-    oss << (i == 0 ? "" : "/")
-        << grpc_generator::CapitalizeFirstLetter(tokens[i]);
-  }
-  return oss.str() + "/" + service->name() + "Client.php";
+inline grpc::string GetPHPServiceClassname(
+    const grpc::protobuf::ServiceDescriptor *service,
+    const grpc::string &class_suffix) {
+  return service->name() + (class_suffix == "" ? "Client" : class_suffix);
 }
 
 // ReplaceAll replaces all instances of search with replace in s.
@@ -48,6 +41,25 @@ inline grpc::string ReplaceAll(grpc::string s, const grpc::string &search,
     pos += replace.length();
   }
   return s;
+}
+
+inline grpc::string GetPHPServiceFilename(
+    const grpc::protobuf::FileDescriptor *file,
+    const grpc::protobuf::ServiceDescriptor *service,
+    const grpc::string &class_suffix) {
+  std::ostringstream oss;
+  if (file->options().has_php_namespace()) {
+    oss << ReplaceAll(file->options().php_namespace(), "\\", "/");
+  } else {
+    std::vector<grpc::string> tokens =
+        grpc_generator::tokenize(file->package(), ".");
+    for (unsigned int i = 0; i < tokens.size(); i++) {
+      oss << (i == 0 ? "" : "/")
+          << grpc_generator::CapitalizeFirstLetter(tokens[i]);
+    }
+  }
+  return oss.str() + "/" + GetPHPServiceClassname(service, class_suffix) +
+         ".php";
 }
 
 // Get leading or trailing comments in a string. Comment lines start with "// ".

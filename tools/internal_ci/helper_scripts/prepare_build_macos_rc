@@ -15,6 +15,8 @@
 
 # Source this rc script to prepare the environment for macos builds
 
+tools/internal_ci/helper_scripts/gen_report_index.sh
+
 sudo launchctl limit maxfiles unlimited unlimited
 
 # show current maxfiles
@@ -25,6 +27,9 @@ ulimit -n 10000
 # show current limits
 ulimit -a
 
+# Add GCP credentials for BQ access
+pip install google-api-python-client --user python
+export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
 
 # required to build protobuf
 brew install gflags
@@ -47,8 +52,9 @@ pod repo update  # needed by python
 
 # python
 brew install coreutils  # we need grealpath
-sudo pip install virtualenv
-sudo pip install -U six tox setuptools
+pip install virtualenv --user python
+pip install -U six tox setuptools --user python
+export PYTHONPATH=/Library/Python/3.4/site-packages
 
 # python 3.4
 wget -q https://www.python.org/ftp/python/3.4.4/python-3.4.4-macosx10.6.pkg

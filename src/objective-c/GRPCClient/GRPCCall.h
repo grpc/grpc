@@ -167,7 +167,7 @@ extern id const kGRPCTrailersKey;
  * The authority for the RPC. If nil, the default authority will be used. This property must be nil
  * when Cronet transport is enabled.
  */
-@property (atomic, readwrite) NSString *serverName;
+@property (atomic, copy, readwrite) NSString *serverName;
 
 /**
  * The container of the request headers of an RPC conforms to this protocol, which is a subset of

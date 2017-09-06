@@ -62,13 +62,19 @@ fi
 # on OSX use md5 instead of sha1sum
 if which sha1sum > /dev/null;
 then
-  BASE_IMAGE=${BASE_NAME}_base:`sha1sum tools/dockerfile/interoptest/$BASE_NAME/Dockerfile | cut -f1 -d\ `
+  BASE_IMAGE=${BASE_NAME}_`sha1sum tools/dockerfile/interoptest/$BASE_NAME/Dockerfile | cut -f1 -d\ `
 else
-  BASE_IMAGE=${BASE_NAME}_base:`md5 -r tools/dockerfile/interoptest/$BASE_NAME/Dockerfile | cut -f1 -d\ `
+  BASE_IMAGE=${BASE_NAME}_`md5 -r tools/dockerfile/interoptest/$BASE_NAME/Dockerfile | cut -f1 -d\ `
 fi
 
-# Make sure base docker image has been built. Should be instantaneous if so.
-docker build -t $BASE_IMAGE --force-rm=true tools/dockerfile/interoptest/$BASE_NAME || exit $?
+if [ "$DOCKERHUB_ORGANIZATION" != "" ]
+then
+  BASE_IMAGE=$DOCKERHUB_ORGANIZATION/$BASE_IMAGE
+  docker pull $BASE_IMAGE
+else
+  # Make sure docker image has been built. Should be instantaneous if so.
+  docker build -t $BASE_IMAGE --force-rm=true tools/dockerfile/interoptest/$BASE_NAME || exit $?
+fi
 
 # Create a local branch so the child Docker script won't complain
 git branch -f jenkins-docker

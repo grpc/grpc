@@ -25,7 +25,8 @@
 
 def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
                     external_deps = [], deps = [], standalone = False,
-                    language = "C++", testonly = False, visibility = None):
+                    language = "C++", testonly = False, visibility = None,
+                    alwayslink = 0):
   copts = []
   if language.upper() == "C":
     copts = ["-std=c99"]
@@ -40,7 +41,8 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
     linkopts = ["-pthread"],
     includes = [
         "include"
-    ]
+    ],
+    alwayslink = alwayslink,
   )
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
@@ -52,7 +54,7 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
 
 load("//:bazel/cc_grpc_library.bzl", "cc_grpc_library")
 
-def grpc_proto_library(name, srcs = [], deps = [], well_known_protos = None,
+def grpc_proto_library(name, srcs = [], deps = [], well_known_protos = False,
                        has_services = True, use_external = False, generate_mock = False):
   cc_grpc_library(
     name = name,
@@ -78,7 +80,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     linkopts = ["-pthread"],
   )
 
-def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False):
+def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = []):
   copts = []
   if language.upper() == "C":
     copts = ["-std=c99"]
@@ -91,15 +93,31 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     linkshared = linkshared,
     deps = deps + ["//external:" + dep for dep in external_deps],
     copts = copts,
-    linkopts = ["-pthread"],
+    linkopts = ["-pthread"] + linkopts,
   )
 
 def grpc_generate_one_off_targets():
-    pass
+  pass
 
 def grpc_sh_test(name, srcs, args = [], data = []):
-    native.sh_test(
-        name = name,
-        srcs = srcs,
-        args = args,
-        data = data)
+  native.sh_test(
+    name = name,
+    srcs = srcs,
+    args = args,
+    data = data)
+
+def grpc_package(name, visibility = "private", features = []):
+  if visibility == "tests":
+    visibility = ["//test:__subpackages__"]
+  elif visibility == "public":
+    visibility = ["//visibility:public"]
+  elif visibility == "private":
+    visibility = []
+  else:
+    fail("Unknown visibility " + visibility)
+
+  if len(visibility) != 0:
+    native.package(
+      default_visibility = visibility,
+      features = features
+    )

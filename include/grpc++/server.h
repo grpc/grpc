@@ -95,6 +95,9 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
     return health_check_service_.get();
   }
 
+  /// Establish a channel for in-process communication
+  std::shared_ptr<Channel> InProcessChannel(const ChannelArguments& args);
+
  private:
   friend class AsyncGenericService;
   friend class ServerBuilder;
@@ -156,7 +159,7 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   ///
   /// \param addr The address to try to bind to the server (eg, localhost:1234,
   /// 192.168.1.1:31416, [::1]:27182, etc.).
-  /// \params creds The credentials associated with the server.
+  /// \param creds The credentials associated with the server.
   ///
   /// \return bound port number on success, 0 on failure.
   ///
@@ -172,8 +175,7 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   /// \param num_cqs How many completion queues does \a cqs hold.
   void Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
 
-  void PerformOpsOnCall(internal::CallOpSetInterface* ops,
-                        internal::Call* call) override;
+  void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) override;
 
   void ShutdownInternal(gpr_timespec deadline) override;
 

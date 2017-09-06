@@ -14,13 +14,15 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+
+grpc_package(name = "test/cpp/common")
 
 grpc_cc_test(
     name = "alarm_cpp_test",
     srcs = ["alarm_cpp_test.cc"],
     deps = [
-        "//:grpc++",
+        "//:grpc++_unsecure",
         "//test/core/util:gpr_test_util",
     ],
     external_deps = [

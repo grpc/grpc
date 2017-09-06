@@ -44,12 +44,10 @@ struct grpc_byte_buffer;
 namespace grpc {
 
 class ByteBuffer;
-class CompletionQueue;
-extern CoreCodegenInterface* g_core_codegen_interface;
-
-namespace internal {
 class Call;
 class CallHook;
+class CompletionQueue;
+extern CoreCodegenInterface* g_core_codegen_interface;
 
 const char kBinaryErrorDetailsKey[] = "grpc-status-details-bin";
 
@@ -78,7 +76,6 @@ inline grpc_metadata* FillMetadataArray(
   }
   return metadata_array;
 }
-}  // namespace internal
 
 /// Per-message write options.
 class WriteOptions {
@@ -194,7 +191,6 @@ class WriteOptions {
   bool last_message_;
 };
 
-namespace internal {
 /// Default argument for CallOpSet. I is unused by the class, but can be
 /// used for generating multiple names for the same thing.
 template <int I>
@@ -208,12 +204,14 @@ class CallOpSendInitialMetadata {
  public:
   CallOpSendInitialMetadata() : send_(false) {
     maybe_compression_level_.is_set = false;
+    maybe_stream_compression_level_.is_set = false;
   }
 
   void SendInitialMetadata(
       const std::multimap<grpc::string, grpc::string>& metadata,
       uint32_t flags) {
     maybe_compression_level_.is_set = false;
+    maybe_stream_compression_level_.is_set = false;
     send_ = true;
     flags_ = flags;
     initial_metadata_ =
@@ -223,6 +221,11 @@ class CallOpSendInitialMetadata {
   void set_compression_level(grpc_compression_level level) {
     maybe_compression_level_.is_set = true;
     maybe_compression_level_.level = level;
+  }
+
+  void set_stream_compression_level(grpc_stream_compression_level level) {
+    maybe_stream_compression_level_.is_set = true;
+    maybe_stream_compression_level_.level = level;
   }
 
  protected:
@@ -240,6 +243,12 @@ class CallOpSendInitialMetadata {
       op->data.send_initial_metadata.maybe_compression_level.level =
           maybe_compression_level_.level;
     }
+    op->data.send_initial_metadata.maybe_stream_compression_level.is_set =
+        maybe_stream_compression_level_.is_set;
+    if (maybe_stream_compression_level_.is_set) {
+      op->data.send_initial_metadata.maybe_stream_compression_level.level =
+          maybe_stream_compression_level_.level;
+    }
   }
   void FinishOp(bool* status) {
     if (!send_) return;
@@ -255,11 +264,15 @@ class CallOpSendInitialMetadata {
     bool is_set;
     grpc_compression_level level;
   } maybe_compression_level_;
+  struct {
+    bool is_set;
+    grpc_stream_compression_level level;
+  } maybe_stream_compression_level_;
 };
 
 class CallOpSendMessage {
  public:
-  CallOpSendMessage() : send_buf_(nullptr), own_buf_(false) {}
+  CallOpSendMessage() : send_buf_(nullptr) {}
 
   /// Send \a message using \a options for the write. The \a options are cleared
   /// after use.
@@ -282,20 +295,25 @@ class CallOpSendMessage {
     write_options_.Clear();
   }
   void FinishOp(bool* status) {
-    if (own_buf_) g_core_codegen_interface->grpc_byte_buffer_destroy(send_buf_);
+    g_core_codegen_interface->grpc_byte_buffer_destroy(send_buf_);
     send_buf_ = nullptr;
   }
 
  private:
   grpc_byte_buffer* send_buf_;
   WriteOptions write_options_;
-  bool own_buf_;
 };
 
 template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
-  return SerializationTraits<M>::Serialize(message, &send_buf_, &own_buf_);
+  bool own_buf;
+  Status result =
+      SerializationTraits<M>::Serialize(message, &send_buf_, &own_buf);
+  if (!own_buf) {
+    send_buf_ = g_core_codegen_interface->grpc_byte_buffer_copy(send_buf_);
+  }
+  return result;
 }
 
 template <class M>
@@ -353,6 +371,28 @@ class CallOpRecvMessage {
   bool allow_not_getting_message_;
 };
 
+namespace CallOpGenericRecvMessageHelper {
+class DeserializeFunc {
+ public:
+  virtual Status Deserialize(grpc_byte_buffer* buf) = 0;
+  virtual ~DeserializeFunc() {}
+};
+
+template <class R>
+class DeserializeFuncType final : public DeserializeFunc {
+ public:
+  DeserializeFuncType(R* message) : message_(message) {}
+  Status Deserialize(grpc_byte_buffer* buf) override {
+    return SerializationTraits<R>::Deserialize(buf, message_);
+  }
+
+  ~DeserializeFuncType() override {}
+
+ private:
+  R* message_;  // Not a managed pointer because management is external to this
+};
+}  // namespace CallOpGenericRecvMessageHelper
+
 class CallOpGenericRecvMessage {
  public:
   CallOpGenericRecvMessage()
@@ -360,9 +400,11 @@ class CallOpGenericRecvMessage {
 
   template <class R>
   void RecvMessage(R* message) {
-    deserialize_ = [message](grpc_byte_buffer* buf) -> Status {
-      return SerializationTraits<R>::Deserialize(buf, message);
-    };
+    // Use an explicit base class pointer to avoid resolution error in the
+    // following unique_ptr::reset for some old implementations.
+    CallOpGenericRecvMessageHelper::DeserializeFunc* func =
+        new CallOpGenericRecvMessageHelper::DeserializeFuncType<R>(message);
+    deserialize_.reset(func);
   }
 
   // Do not change status if no message is received.
@@ -385,7 +427,7 @@ class CallOpGenericRecvMessage {
     if (recv_buf_) {
       if (*status) {
         got_message = true;
-        *status = deserialize_(recv_buf_).ok();
+        *status = deserialize_->Deserialize(recv_buf_).ok();
       } else {
         got_message = false;
         g_core_codegen_interface->grpc_byte_buffer_destroy(recv_buf_);
@@ -396,12 +438,11 @@ class CallOpGenericRecvMessage {
         *status = false;
       }
     }
-    deserialize_ = DeserializeFunc();
+    deserialize_.reset();
   }
 
  private:
-  typedef std::function<Status(grpc_byte_buffer*)> DeserializeFunc;
-  DeserializeFunc deserialize_;
+  std::unique_ptr<CallOpGenericRecvMessageHelper::DeserializeFunc> deserialize_;
   grpc_byte_buffer* recv_buf_;
   bool allow_not_getting_message_;
 };
@@ -548,14 +589,6 @@ class CallOpClientRecvStatus {
   grpc_slice error_message_;
 };
 
-/// TODO(vjpai): Remove the existence of CallOpSetCollectionInterface
-/// and references to it. This code is deprecated-on-arrival and is
-/// only added for users that bypassed the code-generator.
-class CallOpSetCollectionInterface {
- public:
-  virtual ~CallOpSetCollectionInterface() {}
-};
-
 /// An abstract collection of call ops, used to generate the
 /// grpc_call_op structure to pass down to the lower layers,
 /// and as it is-a CompletionQueueTag, also massages the final
@@ -566,18 +599,6 @@ class CallOpSetInterface : public CompletionQueueTag {
   /// Fills in grpc_op, starting from ops[*nops] and moving
   /// upwards.
   virtual void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) = 0;
-
-  /// TODO(vjpai): Remove the SetCollection method and comment. This is only
-  /// a short-term workaround for users that bypassed the code generator
-  /// Mark this as belonging to a collection if needed
-  void SetCollection(std::shared_ptr<CallOpSetCollectionInterface> collection) {
-    collection_ = collection;
-  }
-
- protected:
-  /// TODO(vjpai): Remove the collection_ field once the idea of bypassing the
-  /// code generator is forbidden. This is already deprecated
-  std::shared_ptr<CallOpSetCollectionInterface> collection_;
 };
 
 /// Primary implementaiton of CallOpSetInterface.
@@ -618,13 +639,7 @@ class CallOpSet : public CallOpSetInterface,
     this->Op6::FinishOp(status);
     *tag = return_tag_;
 
-    // TODO(vjpai): Remove the reference to collection_ once the idea of
-    // bypassing the code generator is forbidden. It is already deprecated
-    grpc_call* call = call_;
-    collection_.reset();
-
-    g_core_codegen_interface->grpc_call_unref(call);
-
+    g_core_codegen_interface->grpc_call_unref(call_);
     return true;
   }
 
@@ -682,7 +697,7 @@ class Call final {
   grpc_call* call_;
   int max_receive_message_size_;
 };
-}  // namespace internal
+
 }  // namespace grpc
 
 #endif  // GRPCXX_IMPL_CODEGEN_CALL_H

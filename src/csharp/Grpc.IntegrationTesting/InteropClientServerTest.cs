@@ -38,7 +38,7 @@ namespace Grpc.IntegrationTesting
         Channel channel;
         TestService.TestServiceClient client;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void Init()
         {
             // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
@@ -58,7 +58,7 @@ namespace Grpc.IntegrationTesting
             client = new TestService.TestServiceClient(channel);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void Cleanup()
         {
             channel.ShutdownAsync().Wait();

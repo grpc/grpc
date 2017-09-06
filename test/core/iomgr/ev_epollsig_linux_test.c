@@ -26,6 +26,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
@@ -79,7 +80,8 @@ static void test_fd_cleanup(grpc_exec_ctx *exec_ctx, test_fd *tfds,
                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_fd_cleanup"));
     grpc_exec_ctx_flush(exec_ctx);
 
-    grpc_fd_orphan(exec_ctx, tfds[i].fd, NULL, &release_fd, "test_fd_cleanup");
+    grpc_fd_orphan(exec_ctx, tfds[i].fd, NULL, &release_fd,
+                   false /* already_closed */, "test_fd_cleanup");
     grpc_exec_ctx_flush(exec_ctx);
 
     GPR_ASSERT(release_fd == tfds[i].inner_fd);
@@ -294,7 +296,8 @@ static void test_threading(void) {
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_fd_shutdown(&exec_ctx, shared.wakeup_desc, GRPC_ERROR_CANCELLED);
-    grpc_fd_orphan(&exec_ctx, shared.wakeup_desc, NULL, NULL, "done");
+    grpc_fd_orphan(&exec_ctx, shared.wakeup_desc, NULL, NULL,
+                   false /* already_closed */, "done");
     grpc_pollset_shutdown(&exec_ctx, shared.pollset,
                           GRPC_CLOSURE_CREATE(destroy_pollset, shared.pollset,
                                               grpc_schedule_on_exec_ctx));
@@ -306,9 +309,8 @@ static void test_threading(void) {
 int main(int argc, char **argv) {
   const char *poll_strategy = NULL;
   grpc_test_init(argc, argv);
+  grpc_init();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_iomgr_init(&exec_ctx);
-  grpc_iomgr_start(&exec_ctx);
 
   poll_strategy = grpc_get_poll_strategy_name();
   if (poll_strategy != NULL && strcmp(poll_strategy, "epollsig") == 0) {
@@ -321,8 +323,8 @@ int main(int argc, char **argv) {
             poll_strategy);
   }
 
-  grpc_iomgr_shutdown(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
+  grpc_shutdown();
   return 0;
 }
 #else /* defined(GRPC_LINUX_EPOLL) */

@@ -30,9 +30,8 @@ namespace grpc {
 class Channel;
 class ClientContext;
 class CompletionQueue;
-
-namespace internal {
 class RpcMethod;
+
 /// Wrapper that performs a blocking unary call
 template <class InputMessage, class OutputMessage>
 Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
@@ -68,7 +67,6 @@ Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
   return status;
 }
 
-}  // namespace internal
 }  // namespace grpc
 
 #endif  // GRPCXX_IMPL_CODEGEN_CLIENT_UNARY_CALL_H

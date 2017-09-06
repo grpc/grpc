@@ -76,9 +76,8 @@ grpc::string Channel::GetServiceConfigJSON() const {
                              &channel_info.service_config_json);
 }
 
-internal::Call Channel::CreateCall(const internal::RpcMethod& method,
-                                   ClientContext* context,
-                                   CompletionQueue* cq) {
+Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
+                         CompletionQueue* cq) {
   const bool kRegistered = method.channel_tag() && context->authority().empty();
   grpc_call* c_call = NULL;
   if (kRegistered) {
@@ -110,11 +109,10 @@ internal::Call Channel::CreateCall(const internal::RpcMethod& method,
   }
   grpc_census_call_set_context(c_call, context->census_context());
   context->set_call(c_call, shared_from_this());
-  return internal::Call(c_call, this, cq);
+  return Call(c_call, this, cq);
 }
 
-void Channel::PerformOpsOnCall(internal::CallOpSetInterface* ops,
-                               internal::Call* call) {
+void Channel::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
   static const size_t MAX_OPS = 8;
   size_t nops = 0;
   grpc_op cops[MAX_OPS];
@@ -133,7 +131,7 @@ grpc_connectivity_state Channel::GetState(bool try_to_connect) {
 }
 
 namespace {
-class TagSaver final : public internal::CompletionQueueTag {
+class TagSaver final : public CompletionQueueTag {
  public:
   explicit TagSaver(void* tag) : tag_(tag) {}
   ~TagSaver() override {}

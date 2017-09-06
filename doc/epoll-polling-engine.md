@@ -5,7 +5,7 @@ Sree Kuchibhotla (sreek@) [May - 2016]
 
 > Status: As of June 2016, this change is implemented and merged.
 
-> * The bulk of the functionality is in: [ev_poll_linux.c](https://github.com/grpc/grpc/blob/master/src/core/lib/iomgr/ev_epoll_linux.c)
+> * The bulk of the functionality is in: [ev_epollsig_linux.c](https://github.com/grpc/grpc/blob/master/src/core/lib/iomgr/ev_epollsig_linux.c)
 > * Pull request: https://github.com/grpc/grpc/pull/6803
 
 ## 1. Introduction

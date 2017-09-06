@@ -214,10 +214,12 @@ PHP_METHOD(Call, __construct) {
     return;
   }
   wrapped_grpc_channel *channel = Z_WRAPPED_GRPC_CHANNEL_P(channel_obj);
-  if (channel->wrapped == NULL) {
+  gpr_mu_lock(&channel->wrapper->mu);
+  if (channel->wrapper->wrapped == NULL) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "Call cannot be constructed from a closed Channel",
                          1 TSRMLS_CC);
+    gpr_mu_unlock(&channel->wrapper->mu);
     return;
   }
   add_property_zval(getThis(), "channel", channel_obj);
@@ -226,13 +228,15 @@ PHP_METHOD(Call, __construct) {
   grpc_slice host_slice = host_override != NULL ?
       grpc_slice_from_copied_string(host_override) : grpc_empty_slice();
   call->wrapped =
-    grpc_channel_create_call(channel->wrapped, NULL, GRPC_PROPAGATE_DEFAULTS,
+    grpc_channel_create_call(channel->wrapper->wrapped, NULL,
+                             GRPC_PROPAGATE_DEFAULTS,
                              completion_queue, method_slice,
                              host_override != NULL ? &host_slice : NULL,
                              deadline->wrapped, NULL);
   grpc_slice_unref(method_slice);
   grpc_slice_unref(host_slice);
   call->owned = true;
+  gpr_mu_unlock(&channel->wrapper->mu);
 }
 
 /**

@@ -14,13 +14,13 @@
 
 licenses(["notice"])  # Apache v2
 
-package(default_visibility = ["//visibility:public"])
+load("//bazel:grpc_build_system.bzl", "grpc_proto_library", "grpc_package")
 
-load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
+grpc_package(name = "status", visibility = "public")
 
 grpc_proto_library(
     name = "status_proto",
     srcs = ["status.proto"],
     has_services = False,
-    well_known_protos = "@com_google_protobuf//:well_known_protos",
+    well_known_protos = True,
 )

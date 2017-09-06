@@ -12,9 +12,8 @@ def cc_grpc_library(name, srcs, deps, proto_only, well_known_protos, generate_mo
       srcs: a single proto_library, which wraps the .proto files with services.
       deps: a list of C++ proto_library (or cc_proto_library) which provides
         the compiled code of any message that the services depend on.
-      well_known_protos: The target from protobuf library that exports well
-        known protos. Currently it will only work if the value is
-        "@com_google_protobuf//:well_known_protos"
+      well_known_protos: Should this library additionally depend on well known
+        protos
       use_external: When True the grpc deps are prefixed with //external. This
         allows grpc to be used as a dependency in other bazel projects.
       generate_mock: When true GMOCk code for client stub is generated.
