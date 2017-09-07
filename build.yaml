@@ -200,6 +200,7 @@ filegroups:
   - src/core/lib/http/format_request.c
   - src/core/lib/http/httpcli.c
   - src/core/lib/http/parser.c
+  - src/core/lib/iomgr/call_combiner.c
   - src/core/lib/iomgr/closure.c
   - src/core/lib/iomgr/combiner.c
   - src/core/lib/iomgr/endpoint.c
@@ -208,8 +209,6 @@ filegroups:
   - src/core/lib/iomgr/endpoint_pair_windows.c
   - src/core/lib/iomgr/error.c
   - src/core/lib/iomgr/ev_epoll1_linux.c
-  - src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
-  - src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
   - src/core/lib/iomgr/ev_epollex_linux.c
   - src/core/lib/iomgr/ev_epollsig_linux.c
   - src/core/lib/iomgr/ev_poll_posix.c
@@ -352,6 +351,7 @@ filegroups:
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h
+  - src/core/lib/iomgr/call_combiner.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/endpoint.h
@@ -359,8 +359,6 @@ filegroups:
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/ev_epoll1_linux.h
-  - src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h
-  - src/core/lib/iomgr/ev_epoll_thread_pool_linux.h
   - src/core/lib/iomgr/ev_epollex_linux.h
   - src/core/lib/iomgr/ev_epollsig_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
@@ -750,6 +748,7 @@ filegroups:
   - test/core/util/trickle_endpoint.c
   deps:
   - gpr_test_util
+  - gpr
   uses:
   - grpc_base
   - grpc_client_channel
@@ -924,6 +923,14 @@ filegroups:
   - third_party/nanopb/pb_common.h
   - third_party/nanopb/pb_decode.h
   - third_party/nanopb/pb_encode.h
+- name: transport_security_test_lib
+  build: test
+  headers:
+  - test/core/tsi/transport_security_test_lib.h
+  src:
+  - test/core/tsi/transport_security_test_lib.c
+  deps:
+  - grpc
 - name: tsi
   headers:
   - src/core/tsi/fake_transport_security.h
@@ -2045,6 +2052,21 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: fake_transport_security_test
+  build: test
+  language: c
+  src:
+  - test/core/tsi/fake_transport_security_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+  - grpc
+  filegroups:
+  - transport_security_test_lib
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: fd_conservation_posix_test
   build: test
   language: c
@@ -2343,6 +2365,16 @@ targets:
   language: c
   src:
   - test/core/channel/channel_args_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: grpc_channel_stack_builder_test
+  build: test
+  language: c
+  src:
+  - test/core/channel/channel_stack_builder_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -3116,6 +3148,21 @@ targets:
   corpus_dirs:
   - test/core/security/corpus/ssl_server_corpus
   maxlen: 2048
+- name: ssl_transport_security_test
+  build: test
+  language: c
+  src:
+  - test/core/tsi/ssl_transport_security_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+  - grpc
+  filegroups:
+  - transport_security_test_lib
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: status_conversion_test
   build: test
   language: c

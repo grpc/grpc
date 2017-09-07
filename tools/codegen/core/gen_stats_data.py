@@ -110,12 +110,12 @@ def gen_bucket_code(histogram):
   done_unmapped = False
   first_nontrivial = None
   first_unmapped = None
-  while len(bounds) < histogram.buckets:
-    if len(bounds) == histogram.buckets - 1:
+  while len(bounds) < histogram.buckets + 1:
+    if len(bounds) == histogram.buckets:
       nextb = int(histogram.max)
     else:
       mul = math.pow(float(histogram.max) / bounds[-1],
-                     1.0 / (histogram.buckets - len(bounds)))
+                     1.0 / (histogram.buckets + 1 - len(bounds)))
       nextb = int(math.ceil(bounds[-1] * mul))
     if nextb <= bounds[-1] + 1:
       nextb = bounds[-1] + 1
@@ -155,7 +155,7 @@ def gen_bucket_code(histogram):
       code += 'return;\n'
       code += '}\n'
     code += 'GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_%s, '% histogram.name.upper()
-    code += 'grpc_stats_histo_find_bucket_slow((exec_ctx), value, grpc_stats_table_%d, %d));\n' % (bounds_idx, len(bounds))
+    code += 'grpc_stats_histo_find_bucket_slow((exec_ctx), value, grpc_stats_table_%d, %d));\n' % (bounds_idx, histogram.buckets)
   return (code, bounds_idx)
 
 # utility: print a big comment block into a set of files

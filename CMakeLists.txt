@@ -421,6 +421,9 @@ add_dependencies(buildtests_c ev_epollsig_linux_test)
 endif()
 add_dependencies(buildtests_c fake_resolver_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c fake_transport_security_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c fd_conservation_posix_test)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -458,6 +461,7 @@ add_dependencies(buildtests_c grpc_auth_context_test)
 add_dependencies(buildtests_c grpc_b64_test)
 add_dependencies(buildtests_c grpc_byte_buffer_reader_test)
 add_dependencies(buildtests_c grpc_channel_args_test)
+add_dependencies(buildtests_c grpc_channel_stack_builder_test)
 add_dependencies(buildtests_c grpc_channel_stack_test)
 add_dependencies(buildtests_c grpc_completion_queue_test)
 add_dependencies(buildtests_c grpc_completion_queue_threading_test)
@@ -529,6 +533,9 @@ add_dependencies(buildtests_c sockaddr_resolver_test)
 add_dependencies(buildtests_c sockaddr_utils_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c socket_utils_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c ssl_transport_security_test)
 endif()
 add_dependencies(buildtests_c status_conversion_test)
 add_dependencies(buildtests_c stream_compression_test)
@@ -968,6 +975,7 @@ add_library(grpc
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
+  src/core/lib/iomgr/call_combiner.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
@@ -976,8 +984,6 @@ add_library(grpc
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
-  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
-  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
   src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
@@ -1319,6 +1325,7 @@ add_library(grpc_cronet
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
+  src/core/lib/iomgr/call_combiner.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
@@ -1327,8 +1334,6 @@ add_library(grpc_cronet
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
-  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
-  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
   src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
@@ -1638,6 +1643,7 @@ add_library(grpc_test_util
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
+  src/core/lib/iomgr/call_combiner.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
@@ -1646,8 +1652,6 @@ add_library(grpc_test_util
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
-  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
-  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
   src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
@@ -1901,6 +1905,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
+  src/core/lib/iomgr/call_combiner.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
@@ -1909,8 +1914,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
-  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
-  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
   src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
@@ -2150,6 +2153,7 @@ add_library(grpc_unsecure
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
+  src/core/lib/iomgr/call_combiner.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
@@ -2158,8 +2162,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
-  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
-  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
   src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
@@ -2913,6 +2915,7 @@ add_library(grpc++_cronet
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
+  src/core/lib/iomgr/call_combiner.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
@@ -2921,8 +2924,6 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
-  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
-  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
   src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
@@ -6030,6 +6031,39 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
+add_executable(fake_transport_security_test
+  test/core/tsi/fake_transport_security_test.c
+  test/core/tsi/transport_security_test_lib.c
+)
+
+
+target_include_directories(fake_transport_security_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(fake_transport_security_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr_test_util
+  gpr
+  grpc
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
 add_executable(fd_conservation_posix_test
   test/core/iomgr/fd_conservation_posix_test.c
 )
@@ -6967,6 +7001,37 @@ target_include_directories(grpc_channel_args_test
 )
 
 target_link_libraries(grpc_channel_args_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(grpc_channel_stack_builder_test
+  test/core/channel/channel_stack_builder_test.c
+)
+
+
+target_include_directories(grpc_channel_stack_builder_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(grpc_channel_stack_builder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -8770,6 +8835,39 @@ target_link_libraries(socket_utils_test
   grpc
   gpr_test_util
   gpr
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+add_executable(ssl_transport_security_test
+  test/core/tsi/ssl_transport_security_test.c
+  test/core/tsi/transport_security_test_lib.c
+)
+
+
+target_include_directories(ssl_transport_security_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(ssl_transport_security_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr_test_util
+  gpr
+  grpc
 )
 
 endif()
