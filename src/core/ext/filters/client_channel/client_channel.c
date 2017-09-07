@@ -1298,7 +1298,7 @@ static void retry_committed(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
   if (calld->num_send_message_ops > 0) {
     grpc_byte_stream_cache_destroy(exec_ctx, &calld->initial_send_message);
   }
-  for (int i = 0; i < (int)calld->num_send_message_ops - 2; ++i) {
+  for (int i = 0; i < (int)calld->num_send_message_ops - 1; ++i) {
     grpc_byte_stream_cache_destroy(exec_ctx, &calld->send_messages[i]);
   }
   if (calld->send_trailing_metadata_storage != NULL) {
