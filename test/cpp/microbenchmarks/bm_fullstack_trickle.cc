@@ -105,7 +105,7 @@ class TrickledCHTTP2 : public EndpointPairFixture {
             (double)state.iterations());
   }
 
-  void Log(int64_t iteration) GPR_ATTRIBUTE_NO_TSAN {
+  void Log(int64_t iteration) {
     auto now = gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), start_);
     grpc_chttp2_transport* client =
         reinterpret_cast<grpc_chttp2_transport*>(client_transport_);

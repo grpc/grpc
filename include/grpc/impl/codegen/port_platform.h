@@ -409,10 +409,4 @@ typedef unsigned __int64 uint64_t;
 #define CENSUSAPI GRPCAPI
 #endif
 
-#if defined(__has_feature)
-#if __has_feature(thread_sanitizer)
-#define GPR_ATTRIBUTE_NO_TSAN __attribute__((no_sanitize("thread")))
-#endif
-#endif
-
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */
