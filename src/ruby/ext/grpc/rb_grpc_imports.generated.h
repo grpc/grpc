@@ -260,6 +260,9 @@ extern grpc_channel_num_external_connectivity_watchers_type grpc_channel_num_ext
 typedef void(*grpc_channel_watch_connectivity_state_type)(grpc_channel *channel, grpc_connectivity_state last_observed_state, gpr_timespec deadline, grpc_completion_queue *cq, void *tag);
 extern grpc_channel_watch_connectivity_state_type grpc_channel_watch_connectivity_state_import;
 #define grpc_channel_watch_connectivity_state grpc_channel_watch_connectivity_state_import
+typedef int(*grpc_channel_support_connectivity_watcher_type)(grpc_channel *channel);
+extern grpc_channel_support_connectivity_watcher_type grpc_channel_support_connectivity_watcher_import;
+#define grpc_channel_support_connectivity_watcher grpc_channel_support_connectivity_watcher_import
 typedef grpc_call *(*grpc_channel_create_call_type)(grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask, grpc_completion_queue *completion_queue, grpc_slice method, const grpc_slice *host, gpr_timespec deadline, void *reserved);
 extern grpc_channel_create_call_type grpc_channel_create_call_import;
 #define grpc_channel_create_call grpc_channel_create_call_import
