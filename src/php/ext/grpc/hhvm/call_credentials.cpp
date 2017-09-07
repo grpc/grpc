@@ -284,27 +284,13 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
         return;
     }
 
-    std::mutex& metaDataMutex{ *(metaDataInfo.metadataMutex()) };
-    const bool& callCancelled{ *(metaDataInfo.callCancelled()) };
     const std::thread::id& callThreadId{ metaDataInfo.threadId() };
     if (callThreadId == std::this_thread::get_id())
     {
         HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata same thread") // Degug Trace
         plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data,
                                            true };
-        {
-            // check if call cancelled from timeout before performing callback function
-            std::lock_guard<std::mutex> lock{ metaDataMutex };
-            if (!callCancelled)
-            {
-                plugin_do_get_metadata(ptr, context, cb, user_data);
-            }
-            else
-            {
-                // call was cancelled
-                return;
-            }
-        }
+        plugin_do_get_metadata(ptr, context, cb, user_data);
         pMetaDataPromise->set_value(std::move(params));
     }
     else
