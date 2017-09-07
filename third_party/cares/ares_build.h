@@ -192,8 +192,13 @@
 #endif
 
 /* Data type definition of ares_ssize_t. */
+/* gRPC Manuel edit here!
+ * Possibly include <_mingw.h> header to define __int64 type under mingw */
 #ifdef _WIN32
 #  ifdef _WIN64
+#    ifdef __MINGW32__
+#      include <_mingw.h>
+#    endif
 #    define CARES_TYPEOF_ARES_SSIZE_T __int64
 #  else
 #    define CARES_TYPEOF_ARES_SSIZE_T long
