@@ -1732,11 +1732,12 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
                 grpc_stream_compression_context_create(
                     s->stream_decompression_method);
           }
-          if (!grpc_stream_decompress(s->stream_decompression_ctx,
-                                      &s->unprocessed_incoming_frames_buffer,
-                                      &s->decompressed_data_buffer, NULL,
-                                      GRPC_HEADER_SIZE_IN_BYTES - s->decompressed_header_bytes,
-                                      &end_of_context)) {
+          if (!grpc_stream_decompress(
+                  s->stream_decompression_ctx,
+                  &s->unprocessed_incoming_frames_buffer,
+                  &s->decompressed_data_buffer, NULL,
+                  GRPC_HEADER_SIZE_IN_BYTES - s->decompressed_header_bytes,
+                  &end_of_context)) {
             grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
                                                        &s->frame_storage);
             grpc_slice_buffer_reset_and_unref_internal(
@@ -1749,8 +1750,8 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
               s->decompressed_header_bytes = 0;
             }
             error = grpc_deframe_unprocessed_incoming_frames(
-                exec_ctx, &s->data_parser, s, &s->decompressed_data_buffer, NULL,
-                s->recv_message);
+                exec_ctx, &s->data_parser, s, &s->decompressed_data_buffer,
+                NULL, s->recv_message);
             if (end_of_context) {
               grpc_stream_compression_context_destroy(
                   s->stream_decompression_ctx);
@@ -1759,7 +1760,8 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
           }
         } else {
           error = grpc_deframe_unprocessed_incoming_frames(
-              exec_ctx, &s->data_parser, s, &s->unprocessed_incoming_frames_buffer, NULL, s->recv_message);
+              exec_ctx, &s->data_parser, s,
+              &s->unprocessed_incoming_frames_buffer, NULL, s->recv_message);
         }
         if (error != GRPC_ERROR_NONE) {
           s->seen_error = true;
@@ -1798,9 +1800,8 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_exec_ctx *exec_ctx,
     }
     bool pending_data = s->pending_byte_stream ||
                         s->unprocessed_incoming_frames_buffer.length > 0;
-    if (s->read_closed &&
-        s->frame_storage.length > 0 && !pending_data && !s->seen_error &&
-        s->recv_trailing_metadata_finished != NULL) {
+    if (s->read_closed && s->frame_storage.length > 0 && !pending_data &&
+        !s->seen_error && s->recv_trailing_metadata_finished != NULL) {
       /* Maybe some SYNC_FLUSH data is left in frame_storage. Consume them and
        * maybe decompress the next 5 bytes in the stream. */
       bool end_of_context;
@@ -2700,8 +2701,8 @@ static grpc_error *incoming_byte_stream_pull(grpc_exec_ctx *exec_ctx,
       }
       if (!grpc_stream_decompress(s->stream_decompression_ctx,
                                   &s->unprocessed_incoming_frames_buffer,
-                                  &s->decompressed_data_buffer, NULL, MAX_SIZE_T,
-                                  &end_of_context)) {
+                                  &s->decompressed_data_buffer, NULL,
+                                  MAX_SIZE_T, &end_of_context)) {
         error =
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Stream decompression error.");
         return error;

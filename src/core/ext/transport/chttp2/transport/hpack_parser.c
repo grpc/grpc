@@ -1660,8 +1660,11 @@ static void parse_stream_compression_md(grpc_exec_ctx *exec_ctx,
                                         grpc_chttp2_stream *s,
                                         grpc_metadata_batch *initial_metadata) {
   if (initial_metadata->idx.named.content_encoding == NULL ||
-      grpc_stream_compression_method_parse(GRPC_MDVALUE(initial_metadata->idx.named.content_encoding->md), false, &s->stream_decompression_method) == 0) {
-    s->stream_decompression_method = GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS;
+      grpc_stream_compression_method_parse(
+          GRPC_MDVALUE(initial_metadata->idx.named.content_encoding->md), false,
+          &s->stream_decompression_method) == 0) {
+    s->stream_decompression_method =
+        GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS;
   }
 }
 
