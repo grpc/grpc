@@ -1008,6 +1008,7 @@ grpc_auth_context_test: $(BINDIR)/$(CONFIG)/grpc_auth_context_test
 grpc_b64_test: $(BINDIR)/$(CONFIG)/grpc_b64_test
 grpc_byte_buffer_reader_test: $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test
 grpc_channel_args_test: $(BINDIR)/$(CONFIG)/grpc_channel_args_test
+grpc_channel_stack_builder_test: $(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test
 grpc_channel_stack_test: $(BINDIR)/$(CONFIG)/grpc_channel_stack_test
 grpc_completion_queue_test: $(BINDIR)/$(CONFIG)/grpc_completion_queue_test
 grpc_completion_queue_threading_test: $(BINDIR)/$(CONFIG)/grpc_completion_queue_threading_test
@@ -1398,6 +1399,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/grpc_b64_test \
   $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test \
   $(BINDIR)/$(CONFIG)/grpc_channel_args_test \
+  $(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test \
   $(BINDIR)/$(CONFIG)/grpc_channel_stack_test \
   $(BINDIR)/$(CONFIG)/grpc_completion_queue_test \
   $(BINDIR)/$(CONFIG)/grpc_completion_queue_threading_test \
@@ -1849,6 +1851,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test || ( echo test grpc_byte_buffer_reader_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_channel_args_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_channel_args_test || ( echo test grpc_channel_args_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_channel_stack_builder_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test || ( echo test grpc_channel_stack_builder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_channel_stack_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_channel_stack_test || ( echo test grpc_channel_stack_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_completion_queue_test"
@@ -10700,6 +10704,38 @@ deps_grpc_channel_args_test: $(GRPC_CHANNEL_ARGS_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GRPC_CHANNEL_ARGS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+GRPC_CHANNEL_STACK_BUILDER_TEST_SRC = \
+    test/core/channel/channel_stack_builder_test.c \
+
+GRPC_CHANNEL_STACK_BUILDER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CHANNEL_STACK_BUILDER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test: $(GRPC_CHANNEL_STACK_BUILDER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_CHANNEL_STACK_BUILDER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/channel/channel_stack_builder_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_grpc_channel_stack_builder_test: $(GRPC_CHANNEL_STACK_BUILDER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GRPC_CHANNEL_STACK_BUILDER_TEST_OBJS:.o=.dep)
 endif
 endif
 
