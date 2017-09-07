@@ -78,7 +78,9 @@ def get_bqtest_data(limit=None):
   bq = big_query_utils.create_big_query()
   query = """
 SELECT
-  filtered_test_name, SUM(result != 'PASSED' AND result != 'SKIPPED') > 0 as flaky, AVG(cpu_measured) as cpu
+  filtered_test_name,
+  SUM(result != 'PASSED' AND result != 'SKIPPED') > 0 as flaky,
+  MAX(cpu_measured) as cpu
   FROM (
   SELECT
     REGEXP_REPLACE(test_name, r'/\d+', '') AS filtered_test_name,
