@@ -16,9 +16,15 @@
  *
  */
 
-#ifndef GRPC_BYTE_BUFFER_READER_H
-#define GRPC_BYTE_BUFFER_READER_H
+#ifndef GRPC_MESSAGE_SEGMENT_H
+#define GRPC_MESSAGE_SEGMENT_H
 
-#include <grpc/impl/codegen/byte_buffer_reader.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif /* GRPC_BYTE_BUFFER_READER_H */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* GRPC_MESSAGE_SEGMENT */

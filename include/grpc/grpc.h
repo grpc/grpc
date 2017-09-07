@@ -21,7 +21,6 @@
 
 #include <grpc/status.h>
 
-#include <grpc/byte_buffer.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/propagation_bits.h>
@@ -354,7 +353,7 @@ GRPCAPI void *grpc_server_register_method(
 GRPCAPI grpc_call_error grpc_server_request_registered_call(
     grpc_server *server, void *registered_method, grpc_call **call,
     gpr_timespec *deadline, grpc_metadata_array *request_metadata,
-    grpc_byte_buffer **optional_payload,
+    uint32_t *optional_payload_length, grpc_rdseg **optional_payload,
     grpc_completion_queue *cq_bound_to_call,
     grpc_completion_queue *cq_for_notification, void *tag_new);
 

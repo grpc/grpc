@@ -24,6 +24,7 @@
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/exec_ctx_fwd.h>
 #include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/impl/codegen/message_segment.h>
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/impl/codegen/status.h>
 
@@ -32,25 +33,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef enum {
-  GRPC_BB_RAW
-  /** Future types may include GRPC_BB_PROTOBUF, etc. */
-} grpc_byte_buffer_type;
-
-typedef struct grpc_byte_buffer {
-  void *reserved;
-  grpc_byte_buffer_type type;
-  union grpc_byte_buffer_data {
-    struct /* internal */ {
-      void *reserved[8];
-    } reserved;
-    struct grpc_compressed_buffer {
-      grpc_compression_algorithm compression;
-      grpc_slice_buffer slice_buffer;
-    } raw;
-  } data;
-} grpc_byte_buffer;
 
 /** Completion Queues enable notification of the completion of
  * asynchronous actions. */
@@ -480,8 +462,6 @@ typedef enum {
   GRPC_OP_RECV_CLOSE_ON_SERVER
 } grpc_op_type;
 
-struct grpc_byte_buffer;
-
 /** Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT
    which has no arguments) */
 typedef struct grpc_op {
@@ -511,12 +491,8 @@ typedef struct grpc_op {
       } maybe_stream_compression_level;
     } send_initial_metadata;
     struct grpc_op_send_message {
-      /** This op takes ownership of the slices in send_message.  After
-       * a call completes, the contents of send_message are not guaranteed
-       * and likely empty.  The original owner should still call
-       * grpc_byte_buffer_destroy() on this object however.
-       */
-      struct grpc_byte_buffer *send_message;
+      uint32_t message_length;
+      grpc_wrseg *optional_first_segment;
     } send_message;
     struct grpc_op_send_status_from_server {
       size_t trailing_metadata_count;
@@ -539,7 +515,8 @@ typedef struct grpc_op {
         call grpc_byte_buffer_destroy on this value, or reuse it in a future op.
        */
     struct grpc_op_recv_message {
-      struct grpc_byte_buffer **recv_message;
+      uint32_t *message_length;
+      grpc_rdseg *optional_first_segment;
     } recv_message;
     struct grpc_op_recv_status_on_client {
       /** ownership of the array is with the caller, but ownership of the
@@ -558,6 +535,9 @@ typedef struct grpc_op {
     } recv_close_on_server;
   } data;
 } grpc_op;
+
+void grpc_call_continue_read(grpc_call *call, grpc_rdseg *rdseg, void *tag);
+void grpc_call_continue_write(grpc_call *call, grpc_wrseg *wrseg, void *tag);
 
 /** Information requested from the channel. */
 typedef struct {
