@@ -144,9 +144,9 @@ class Config(object):
     if not flaky and shortname and shortname in flaky_tests:
       print('Setting %s to flaky' % shortname)
       flaky = True
-    if shortname in test_times:
-      print('Update CPU cost for %s: %f -> %f' % (shortname, cpu_cost, test_times[shortname]))
-      cpu_cost = test_times[shortname]
+    if shortname in shortname_to_cpu:
+      print('Update CPU cost for %s: %f -> %f' % (shortname, cpu_cost, shortname_to_cpu[shortname]))
+      cpu_cost = shortname_to_cpu[shortname]
     return jobset.JobSpec(cmdline=self.tool_prefix + cmdline,
                           shortname=shortname,
                           environ=actual_environ,
@@ -1260,12 +1260,12 @@ argp.add_argument('--disable_auto_set_flakes', default=False, const=True, action
 args = argp.parse_args()
 
 flaky_tests = set()
-test_times = {}
+shortname_to_cpu = {}
 if not args.disable_auto_set_flakes:
   try:
     for test in get_bqtest_data():
       if test.flaky: flaky_tests.add(test.name)
-      if test.cpu > 0: test_times[test.name] = test.cpu
+      if test.cpu > 0: shortname_to_cpu[test.name] = test.cpu
   except:
     print("Unexpected error getting flaky tests:", sys.exc_info()[0])
 
