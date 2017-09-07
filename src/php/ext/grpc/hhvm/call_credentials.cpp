@@ -298,6 +298,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
             if (!callCancelled)
             {
                 plugin_do_get_metadata(ptr, context, cb, user_data);
+                pMetaDataPromise->set_value(std::move(params));
             }
             else
             {
@@ -305,7 +306,6 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
                 return;
             }
         }
-        pMetaDataPromise->set_value(std::move(params));
     }
     else
     {
