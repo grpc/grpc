@@ -44,9 +44,11 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   tsi_frame_protector *fake_write_protector =
       tsi_create_fake_frame_protector(NULL);
   tsi_zero_copy_grpc_protector *fake_read_zero_copy_protector =
-      tsi_create_fake_zero_copy_grpc_protector(NULL);
+      use_zero_copy_protector ? tsi_create_fake_zero_copy_grpc_protector(NULL)
+                              : NULL;
   tsi_zero_copy_grpc_protector *fake_write_zero_copy_protector =
-      tsi_create_fake_zero_copy_grpc_protector(NULL);
+      use_zero_copy_protector ? tsi_create_fake_zero_copy_grpc_protector(NULL)
+                              : NULL;
   grpc_endpoint_test_fixture f;
   grpc_endpoint_pair tcp;
 
@@ -59,12 +61,9 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   grpc_endpoint_add_to_pollset(&exec_ctx, tcp.server, g_pollset);
 
   if (leftover_nslices == 0) {
-    f.client_ep =
-        use_zero_copy_protector
-            ? grpc_secure_endpoint_create(NULL, fake_read_zero_copy_protector,
-                                          tcp.client, NULL, 0)
-            : grpc_secure_endpoint_create(fake_read_protector, NULL, tcp.client,
-                                          NULL, 0);
+    f.client_ep = grpc_secure_endpoint_create(fake_read_protector,
+                                              fake_read_zero_copy_protector,
+                                              tcp.client, NULL, 0);
   } else {
     unsigned i;
     tsi_result result;
@@ -105,22 +104,16 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     } while (still_pending_size > 0);
     encrypted_leftover = grpc_slice_from_copied_buffer(
         (const char *)encrypted_buffer, total_buffer_size - buffer_size);
-    f.client_ep =
-        use_zero_copy_protector
-            ? grpc_secure_endpoint_create(NULL, fake_read_zero_copy_protector,
-                                          tcp.client, &encrypted_leftover, 1)
-            : grpc_secure_endpoint_create(fake_read_protector, NULL, tcp.client,
-                                          &encrypted_leftover, 1);
+    f.client_ep = grpc_secure_endpoint_create(
+        fake_read_protector, fake_read_zero_copy_protector, tcp.client,
+        &encrypted_leftover, 1);
     grpc_slice_unref(encrypted_leftover);
     gpr_free(encrypted_buffer);
   }
 
-  f.server_ep =
-      use_zero_copy_protector
-          ? grpc_secure_endpoint_create(NULL, fake_write_zero_copy_protector,
-                                        tcp.server, NULL, 0)
-          : grpc_secure_endpoint_create(fake_write_protector, NULL, tcp.server,
-                                        NULL, 0);
+  f.server_ep = grpc_secure_endpoint_create(fake_write_protector,
+                                            fake_write_zero_copy_protector,
+                                            tcp.server, NULL, 0);
   grpc_exec_ctx_finish(&exec_ctx);
   return f;
 }
