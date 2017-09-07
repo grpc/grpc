@@ -840,7 +840,7 @@ grpc_cc_library(
         "grpc_deadline_filter",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
-        "grpc_load_reporting",
+        "grpc_server_load_reporting",
         "grpc_max_age_filter",
         "grpc_message_size_filter",
         "grpc_resolver_dns_ares",
@@ -1084,14 +1084,14 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_load_reporting",
+    name = "grpc_server_load_reporting",
     srcs = [
-        "src/core/ext/filters/load_reporting/load_reporting_filter.c",
-        "src/core/ext/filters/load_reporting/load_reporting_plugin.c",
+        "src/core/ext/filters/load_reporting/server_load_reporting_filter.c",
+        "src/core/ext/filters/load_reporting/server_load_reporting_plugin.c",
     ],
     hdrs = [
-        "src/core/ext/filters/load_reporting/load_reporting_filter.h",
-        "src/core/ext/filters/load_reporting/load_reporting_plugin.h",
+        "src/core/ext/filters/load_reporting/server_load_reporting_filter.h",
+        "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h",
     ],
     language = "c",
     deps = [

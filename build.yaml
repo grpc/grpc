@@ -587,16 +587,6 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
-- name: grpc_load_reporting
-  headers:
-  - src/core/ext/filters/load_reporting/load_reporting_filter.h
-  - src/core/ext/filters/load_reporting/load_reporting_plugin.h
-  src:
-  - src/core/ext/filters/load_reporting/load_reporting_filter.c
-  - src/core/ext/filters/load_reporting/load_reporting_plugin.c
-  plugin: grpc_load_reporting_plugin
-  uses:
-  - grpc_base
 - name: grpc_max_age_filter
   headers:
   - src/core/ext/filters/max_age/max_age_filter.h
@@ -707,6 +697,16 @@ filegroups:
   - src/core/ext/filters/workarounds/workaround_utils.h
   src:
   - src/core/ext/filters/workarounds/workaround_utils.c
+  uses:
+  - grpc_base
+- name: grpc_server_load_reporting
+  headers:
+  - src/core/ext/filters/load_reporting/server_load_reporting_filter.h
+  - src/core/ext/filters/load_reporting/server_load_reporting_plugin.h
+  src:
+  - src/core/ext/filters/load_reporting/server_load_reporting_filter.c
+  - src/core/ext/filters/load_reporting/server_load_reporting_plugin.c
+  plugin: grpc_server_load_reporting_plugin
   uses:
   - grpc_base
 - name: grpc_test_util_base
@@ -1152,7 +1152,7 @@ libs:
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_resolver_fake
-  - grpc_load_reporting
+  - grpc_server_load_reporting
   - grpc_secure
   - census
   - grpc_max_age_filter
@@ -1178,7 +1178,7 @@ libs:
   - grpc_base
   - grpc_transport_cronet_client_secure
   - grpc_transport_chttp2_client_secure
-  - grpc_load_reporting
+  - grpc_server_load_reporting
   generate_plugin_registry: true
   platforms:
   - linux
@@ -1252,7 +1252,7 @@ libs:
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_resolver_fake
-  - grpc_load_reporting
+  - grpc_server_load_reporting
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin

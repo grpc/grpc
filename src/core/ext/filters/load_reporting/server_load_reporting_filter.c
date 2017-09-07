@@ -24,8 +24,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/ext/filters/load_reporting/load_reporting_filter.h"
-#include "src/core/ext/filters/load_reporting/load_reporting_plugin.h"
+#include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
+#include "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -213,7 +213,7 @@ static void lr_start_transport_stream_op_batch(
   GPR_TIMER_END("lr_start_transport_stream_op_batch", 0);
 }
 
-const grpc_channel_filter grpc_load_reporting_filter = {
+const grpc_channel_filter grpc_server_load_reporting_filter = {
     lr_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),

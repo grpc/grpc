@@ -28,7 +28,7 @@
 #include <grpc/support/useful.h>
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
-#include "src/core/ext/filters/load_reporting/load_reporting_plugin.h"
+#include "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
