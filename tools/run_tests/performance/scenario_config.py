@@ -1021,6 +1021,7 @@ LANGUAGES = {
     'node' : NodeLanguage(),
     'node_express': NodeExpressLanguage(),
     'ruby' : RubyLanguage(),
+    'php' : PhpLanguage(),
     'java' : JavaLanguage(),
     'python' : PythonLanguage(),
     'go' : GoLanguage(),
