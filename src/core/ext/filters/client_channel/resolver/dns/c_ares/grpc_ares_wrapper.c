@@ -179,8 +179,8 @@ static void on_hostbyname_done_cb(void *arg, int status, int timeouts,
           ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
           gpr_log(GPR_DEBUG,
                   "c-ares resolver gets a AF_INET6 result: \n"
-                  "  addr: %s\n  port: %d\n  sin6_scope_id: %d\n",
-                  output, ntohs(hr->port), addr.sin6_scope_id);
+                  "  addr: %s\n  port: %d\n  sin6_scope_id: %u\n",
+                  output, ntohs(hr->port), (unsigned int)addr.sin6_scope_id);
           break;
         }
         case AF_INET: {

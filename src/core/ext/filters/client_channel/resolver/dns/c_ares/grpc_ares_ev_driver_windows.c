@@ -241,7 +241,7 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
           char *fd_name;
           gpr_asprintf(&fd_name, "ares_ev_driver-%" PRIuPTR, i);
           fdn = gpr_malloc(sizeof(fd_node));
-          gpr_log(GPR_DEBUG, "new fd: %d", socks[i]);
+          gpr_log(GPR_DEBUG, "new socket: 0x%" PRIxPTR, (uintptr_t)socks[i]);
           fdn->grpc_winsocket = grpc_winsocket_create(socks[i], fd_name);
           fdn->ev_driver = ev_driver;
           fdn->readable_registered = false;
@@ -271,11 +271,13 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
         // comes to shove.
         if (ARES_GETSOCK_READABLE(socks_bitmask, i) &&
             !fdn->readable_registered) {
+          grpc_ares_ev_driver_ref(ev_driver);
           GRPC_CLOSURE_SCHED(exec_ctx, &fdn->read_closure, GRPC_ERROR_NONE);
           fdn->readable_registered = true;
         }
         if (ARES_GETSOCK_WRITABLE(socks_bitmask, i) &&
             !fdn->writable_registered) {
+          grpc_ares_ev_driver_ref(ev_driver);
           GRPC_CLOSURE_SCHED(exec_ctx, &fdn->write_closure, GRPC_ERROR_NONE);
           fdn->writable_registered = true;
         }
