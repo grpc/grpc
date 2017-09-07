@@ -41,6 +41,8 @@
 - histogram: tcp_read_iov_size
   max: 1024
   buckets: 64
+- counter: tcp_backup_pollers_created
+- counter: tcp_backup_poller_polls
 # chttp2
 - counter: http2_op_batches
 - counter: http2_op_cancel

@@ -138,6 +138,7 @@ static void run_poller(grpc_exec_ctx *exec_ctx, void *bp,
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_timespec deadline =
       gpr_time_add(now, gpr_time_from_seconds(10, GPR_TIMESPAN));
+  GRPC_STATS_INC_TCP_BACKUP_POLLER_POLLS(exec_ctx);
   GRPC_LOG_IF_ERROR("backup_poller:pollset_work",
                     grpc_pollset_work(exec_ctx, BACKUP_POLLER_POLLSET(p), NULL,
                                       now, deadline));
@@ -186,6 +187,7 @@ static void cover_self(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
             2 + (int)old_count);
   }
   if (old_count == 0) {
+    GRPC_STATS_INC_TCP_BACKUP_POLLERS_CREATED(exec_ctx);
     p = (backup_poller *)gpr_malloc(sizeof(*p) + grpc_pollset_size());
     if (GRPC_TRACER_ON(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "BACKUP_POLLER:%p create", p);
