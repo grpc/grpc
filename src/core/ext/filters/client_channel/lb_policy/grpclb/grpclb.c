@@ -1179,35 +1179,56 @@ static int glb_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                            "won't work without it. Failing"));
     return 0;
   }
-
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
-  bool pick_done;
-
+  bool pick_done = false;
   if (glb_policy->rr_policy != NULL) {
-    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
-      gpr_log(GPR_INFO, "grpclb %p about to PICK from RR %p",
-              (void *)glb_policy, (void *)glb_policy->rr_policy);
+    const grpc_connectivity_state rr_connectivity_state =
+        grpc_lb_policy_check_connectivity_locked(exec_ctx,
+                                                 glb_policy->rr_policy, NULL);
+    // The glb_policy->rr_policy may have transition to SHUTDOWN but the
+    // callback registered to capture this event
+    // (glb_rr_connectivity_changed_locked) may not have been invoked yet. We
+    // need to make sure we aren't trying to pick from a RR policy instance
+    // that's in shutdown.
+    if (rr_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
+      if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+        gpr_log(GPR_INFO,
+                "grpclb %p NOT picking from from RR %p: RR conn state=%s",
+                (void *)glb_policy, (void *)glb_policy->rr_policy,
+                grpc_connectivity_state_name(rr_connectivity_state));
+      }
+      // Attempt to switch over to a pending update.
+      rr_handover_locked(exec_ctx, glb_policy);
+      add_pending_pick(&glb_policy->pending_picks, pick_args, target, context,
+                       on_complete);
+      pick_done = false;
+    } else {  // RR not in shutdown
+      if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+        gpr_log(GPR_INFO, "grpclb %p about to PICK from RR %p",
+                (void *)glb_policy, (void *)glb_policy->rr_policy);
+      }
+      GRPC_LB_POLICY_REF(glb_policy->rr_policy, "glb_pick");
+
+      wrapped_rr_closure_arg *wc_arg =
+          gpr_zalloc(sizeof(wrapped_rr_closure_arg));
+
+      GRPC_CLOSURE_INIT(&wc_arg->wrapper_closure, wrapped_rr_closure, wc_arg,
+                        grpc_schedule_on_exec_ctx);
+      wc_arg->rr_policy = glb_policy->rr_policy;
+      wc_arg->target = target;
+      wc_arg->context = context;
+      GPR_ASSERT(glb_policy->client_stats != NULL);
+      wc_arg->client_stats =
+          grpc_grpclb_client_stats_ref(glb_policy->client_stats);
+      wc_arg->wrapped_closure = on_complete;
+      wc_arg->lb_token_mdelem_storage = pick_args->lb_token_mdelem_storage;
+      wc_arg->initial_metadata = pick_args->initial_metadata;
+      wc_arg->free_when_done = wc_arg;
+      pick_done =
+          pick_from_internal_rr_locked(exec_ctx, glb_policy, pick_args,
+                                       false /* force_async */, target, wc_arg);
     }
-    GRPC_LB_POLICY_REF(glb_policy->rr_policy, "glb_pick");
-
-    wrapped_rr_closure_arg *wc_arg = gpr_zalloc(sizeof(wrapped_rr_closure_arg));
-
-    GRPC_CLOSURE_INIT(&wc_arg->wrapper_closure, wrapped_rr_closure, wc_arg,
-                      grpc_schedule_on_exec_ctx);
-    wc_arg->rr_policy = glb_policy->rr_policy;
-    wc_arg->target = target;
-    wc_arg->context = context;
-    GPR_ASSERT(glb_policy->client_stats != NULL);
-    wc_arg->client_stats =
-        grpc_grpclb_client_stats_ref(glb_policy->client_stats);
-    wc_arg->wrapped_closure = on_complete;
-    wc_arg->lb_token_mdelem_storage = pick_args->lb_token_mdelem_storage;
-    wc_arg->initial_metadata = pick_args->initial_metadata;
-    wc_arg->free_when_done = wc_arg;
-    pick_done =
-        pick_from_internal_rr_locked(exec_ctx, glb_policy, pick_args,
-                                     false /* force_async */, target, wc_arg);
-  } else {
+  } else {  // glb_policy->rr_policy == NULL
     if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
       gpr_log(GPR_DEBUG,
               "No RR policy in grpclb instance %p. Adding to grpclb's pending "
@@ -1216,11 +1237,10 @@ static int glb_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     }
     add_pending_pick(&glb_policy->pending_picks, pick_args, target, context,
                      on_complete);
-
+    pick_done = false;
     if (!glb_policy->started_picking) {
       start_picking_locked(exec_ctx, glb_policy);
     }
-    pick_done = false;
   }
   return pick_done;
 }

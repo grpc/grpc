@@ -420,10 +420,11 @@ static int rr_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                           grpc_call_context_element *context, void **user_data,
                           grpc_closure *on_complete) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
-  GPR_ASSERT(!p->shutdown);
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
-    gpr_log(GPR_INFO, "[RR %p] Trying to pick", (void *)pol);
+    gpr_log(GPR_INFO, "[RR %p] Trying to pick (shutdown: %d)", (void *)pol,
+            p->shutdown);
   }
+  GPR_ASSERT(!p->shutdown);
   if (p->subchannel_list != NULL) {
     const size_t next_ready_index = get_next_ready_subchannel_index_locked(p);
     if (next_ready_index < p->subchannel_list->num_subchannels) {
@@ -534,7 +535,12 @@ static grpc_connectivity_state update_lb_connectivity_status_locked(
                                 GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
                                 "rr_shutdown");
     p->shutdown = true;
-    new_state = GRPC_CHANNEL_SHUTDOWN;
+    if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
+      new_state = GRPC_CHANNEL_SHUTDOWN;
+      gpr_log(GPR_INFO,
+              "[RR %p] Shutting down: all subchannels have gone into shutdown",
+              (void *)p);
+    }
   } else if (subchannel_list->num_transient_failures ==
              p->subchannel_list->num_subchannels) { /* 4) TRANSIENT_FAILURE */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
@@ -755,6 +761,10 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     return;
   }
   grpc_lb_addresses *addresses = arg->value.pointer.p;
+  if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
+    gpr_log(GPR_INFO, "[RR %p] Update with %lu addressees (shutdown: %d)",
+            (void *)p, (unsigned long)addresses->num_addresses, p->shutdown);
+  }
   rr_subchannel_list *subchannel_list =
       rr_subchannel_list_create(p, addresses->num_addresses);
   if (addresses->num_addresses == 0) {
