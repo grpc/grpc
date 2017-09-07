@@ -244,7 +244,7 @@ class ClientWriterInterface : public ClientStreamingInterface,
                               public WriterInterface<W> {
  public:
   /// Half close writing from the client. (signal that the stream of messages
-  /// coming from the clinet is complete).
+  /// coming from the client is complete).
   /// Blocks until currently-pending writes are completed.
   /// Thread safe with respect to \a ReaderInterface::Read operations only
   ///
@@ -375,7 +375,7 @@ class ClientReaderWriterInterface : public ClientStreamingInterface,
   virtual void WaitForInitialMetadata() = 0;
 
   /// Half close writing from the client. (signal that the stream of messages
-  /// coming from the clinet is complete).
+  /// coming from the client is complete).
   /// Blocks until currently-pending writes are completed.
   /// Thread-safe with respect to \a ReaderInterface::Read
   ///

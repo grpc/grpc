@@ -109,8 +109,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll1_linux.c \
-    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
-    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
     src/core/lib/iomgr/ev_epollex_linux.c \
     src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
