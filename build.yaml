@@ -2359,6 +2359,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: grpc_channel_stack_builder_test
+  build: test
+  language: c
+  src:
+  - test/core/channel/channel_stack_builder_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_channel_stack_test
   build: test
   language: c
