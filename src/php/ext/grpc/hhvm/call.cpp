@@ -62,13 +62,15 @@ Class* const CallData::getClass(void)
 
 CallData::CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_pCallCredentials{ nullptr },
     m_pChannel{ nullptr }, m_Timeout{ 0 },
-    m_pMetadataPromise{ std::make_shared<MetadataPromise>() }
+    m_pMetadataPromise{ std::make_shared<MetadataPromise>() },
+    m_pMetadataMutex{ std::make_shared<std::mutex>() }, m_pCallCancelled{ std::make_shared<bool>(false) }
 {
 }
 
 CallData::CallData(grpc_call* const call, const bool owned, const int32_t timeoutMs) :
     m_pCall{ call }, m_Owned{ owned }, m_pCallCredentials{ nullptr }, m_pChannel{ nullptr },
-    m_Timeout{ timeoutMs }, m_pMetadataPromise{ std::make_shared<MetadataPromise>() }
+    m_Timeout{ timeoutMs }, m_pMetadataPromise{ std::make_shared<MetadataPromise>() },
+    m_pMetadataMutex{ std::make_shared<std::mutex>() }, m_pCallCancelled{ std::make_shared<bool>(false) }
 {
 }
 
@@ -513,6 +515,8 @@ Object HHVM_METHOD(Call, startBatch,
     {
         PluginMetadataInfo& pluginMetadataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
         PluginMetadataInfo::MetaDataInfo metaDataInfo{ pCallData->sharedPromise(),
+                                                       pCallData->sharedMutex(),
+                                                       pCallData->sharedCancelled(),
                                                        std::this_thread::get_id() };
         pluginMetadataInfo.setInfo(pCallData->callCredentials(), std::move(metaDataInfo));
     }
@@ -526,6 +530,11 @@ Object HHVM_METHOD(Call, startBatch,
         {
             PluginMetadataInfo& pluginMetadataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
             pluginMetadataInfo.deleteInfo(pCallData->callCredentials());
+        }
+        {
+            // set call cancelled shared flag
+            std::lock_guard<std::mutex> lock{ pCallData->metadataMutex() };
+            pCallData->callCancelled()=true;
         }
         // cancel the call with the server
         grpc_call_cancel_with_status(pCallData->call(), GRPC_STATUS_DEADLINE_EXCEEDED,
