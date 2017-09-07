@@ -237,8 +237,7 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 // This work done in this function MUST be done on the same thread as the HHVM call request
 void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
                             grpc_credentials_plugin_metadata_cb cb,
-                            void *user_data, std::mutex& metadataMutex,
-                            const bool& callCancelled)
+                            void *user_data)
 {
     HHVM_TRACE_SCOPE("CallCredentials plugin_do_get_metadata") // Degug Trace
 
@@ -248,33 +247,17 @@ void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
 
     plugin_state* const pState{ reinterpret_cast<plugin_state *>(ptr) };
 
-    Variant retVal{};
+    Variant retVal{ vm_call_user_func(pState->callback, make_packed_array(returnObj)) };
+    if (!retVal.isArray())
     {
-        // check if call cancelled from timeout before performing callback function
-        std::lock_guard<std::mutex> lock{ metadataMutex };
-        if (!callCancelled)
-        {
-            retVal = Variant{ vm_call_user_func(pState->callback, make_packed_array(returnObj)) };
-            if (!retVal.isArray())
-            {
-                SystemLib::throwInvalidArgumentExceptionObject("Callback return value expected an array.");
-            }
-        }
+        SystemLib::throwInvalidArgumentExceptionObject("Callback return value expected an array.");
     }
 
     grpc_status_code code{ GRPC_STATUS_OK };
     MetadataArray metadata;
-    if (!retVal.isNull())
+    if (!metadata.init(retVal.toArray()))
     {
-        if (!metadata.init(retVal.toArray()))
-        {
-            code = GRPC_STATUS_INVALID_ARGUMENT;
-        }
-    }
-    else
-    {
-        // call was cancelled before metadata routine called because of timeout
-        code = GRPC_STATUS_DEADLINE_EXCEEDED;
+        code = GRPC_STATUS_INVALID_ARGUMENT;
     }
 
     // Pass control back to core
@@ -301,14 +284,27 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
         return;
     }
 
+    std::mutex& metaDataMutex{ *(metaDataInfo.metadataMutex()) };
+    const bool& callCancelled{ *(metaDataInfo.callCancelled()) };
     const std::thread::id& callThreadId{ metaDataInfo.threadId() };
     if (callThreadId == std::this_thread::get_id())
     {
         HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata same thread") // Degug Trace
         plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data,
                                            true };
-        plugin_do_get_metadata(ptr, context, cb, user_data, *(metaDataInfo.metadataMutex()),
-                               *(metaDataInfo.callCancelled()));
+        {
+            // check if call cancelled from timeout before performing callback function
+            std::lock_guard<std::mutex> lock{ metaDataMutex };
+            if (!callCancelled)
+            {
+                plugin_do_get_metadata(ptr, context, cb, user_data);
+            }
+            else
+            {
+                // call was cancelled
+                return;
+            }
+        }
         pMetaDataPromise->set_value(std::move(params));
     }
     else

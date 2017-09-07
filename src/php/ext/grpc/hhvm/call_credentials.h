@@ -184,8 +184,7 @@ private:
 
 void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
                             grpc_credentials_plugin_metadata_cb cb,
-                            void *user_data, std::mutex& metadataMutex,
-                            const bool& callCancelled);
+                            void *user_data);
 }
 
 #endif /* NET_GRPC_HHVM_GRPC_CALL_CREDENTIALS_H_ */

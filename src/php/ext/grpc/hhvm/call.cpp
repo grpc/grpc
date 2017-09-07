@@ -588,9 +588,7 @@ Object HHVM_METHOD(Call, startBatch,
             {
                 // call the plugin in this thread if it wasn't completed already
                 plugin_do_get_metadata(metaDataParams.ptr, metaDataParams.context,
-                                       metaDataParams.cb, metaDataParams.user_data,
-                                       pCallData->metadataMutex(),
-                                       pCallData->callCancelled());
+                                       metaDataParams.cb, metaDataParams.user_data);
             }
         }
     }

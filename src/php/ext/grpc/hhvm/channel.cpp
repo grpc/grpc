@@ -117,11 +117,8 @@ bool ChannelArgs::init(const Array& argsArray)
     std::vector<std::pair<const char*, const char*>> channelArgs;
     if (elements > 0)
     {
-        #if HHVM_VERSION_MAJOR >= 3 && HHVM_VERSION_MINOR >= 19 || HHVM_VERSION_MAJOR > 3
-            m_ChannelArgs.args = (grpc_arg *) req::calloc_untyped(argsArray.size(), sizeof(grpc_arg));
-        #else
-            m_ChannelArgs.args = (grpc_arg *) req::calloc(argsArray.size(), sizeof(grpc_arg));
-        #endif
+        m_ChannelArgs.args = req::calloc_raw_array<grpc_arg>(argsArray.size());
+        m_ChannelArgs.num_args = argsArray.size();
 
         size_t count{ 0 };
         for (ArrayIter iter(argsArray); iter; ++iter, ++count)
@@ -169,10 +166,7 @@ bool ChannelArgs::init(const Array& argsArray)
                 destroyArgs();
                 return false;
             }
-
         }
-
-        m_ChannelArgs.num_args = count;
     }
 
     // sort the channel arguments via key then value
@@ -206,7 +200,7 @@ void ChannelArgs::destroyArgs(void)
     // destroy channel args
     if (m_ChannelArgs.args)
     {
-        req::free(m_ChannelArgs.args);
+        req::destroy_raw_array(m_ChannelArgs.args, m_ChannelArgs.num_args);
         m_ChannelArgs.args = nullptr;
     }
     m_ChannelArgs.num_args = 0;
