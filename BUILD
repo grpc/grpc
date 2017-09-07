@@ -577,6 +577,7 @@ grpc_cc_library(
         "src/core/lib/http/format_request.c",
         "src/core/lib/http/httpcli.c",
         "src/core/lib/http/parser.c",
+        "src/core/lib/iomgr/call_combiner.c",
         "src/core/lib/iomgr/closure.c",
         "src/core/lib/iomgr/combiner.c",
         "src/core/lib/iomgr/endpoint.c",
@@ -585,8 +586,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/endpoint_pair_windows.c",
         "src/core/lib/iomgr/error.c",
         "src/core/lib/iomgr/ev_epoll1_linux.c",
-        "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c",
-        "src/core/lib/iomgr/ev_epoll_thread_pool_linux.c",
         "src/core/lib/iomgr/ev_epollex_linux.c",
         "src/core/lib/iomgr/ev_epollsig_linux.c",
         "src/core/lib/iomgr/ev_poll_posix.c",
@@ -709,6 +708,7 @@ grpc_cc_library(
         "src/core/lib/http/format_request.h",
         "src/core/lib/http/httpcli.h",
         "src/core/lib/http/parser.h",
+        "src/core/lib/iomgr/call_combiner.h",
         "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/combiner.h",
         "src/core/lib/iomgr/endpoint.h",
@@ -716,8 +716,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/error.h",
         "src/core/lib/iomgr/error_internal.h",
         "src/core/lib/iomgr/ev_epoll1_linux.h",
-        "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h",
-        "src/core/lib/iomgr/ev_epoll_thread_pool_linux.h",
         "src/core/lib/iomgr/ev_epollex_linux.h",
         "src/core/lib/iomgr/ev_epollsig_linux.h",
         "src/core/lib/iomgr/ev_poll_posix.h",
@@ -1598,6 +1596,21 @@ grpc_cc_library(
     language = "c",
     deps = [
         "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_core_stats",
+    srcs = [
+        "src/cpp/util/core_stats.cc",
+    ],
+    hdrs = [
+        "src/cpp/util/core_stats.h",
+    ],
+    language = "c++",
+    deps = [
+        ":grpc++",
+        "//src/proto/grpc/core:stats_proto",
     ],
 )
 
