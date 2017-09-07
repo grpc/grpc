@@ -514,6 +514,8 @@ struct grpc_chttp2_stream {
   /** Are we buffering writes on this stream? If yes, we won't become writable
       until there's enough queued up in the flow_controlled_buffer */
   bool write_buffering;
+  /** Has trailing metadata been received. */
+  bool received_trailing_metadata;
 
   /** the error that resulted in this stream being read-closed */
   grpc_error *read_closed_error;
