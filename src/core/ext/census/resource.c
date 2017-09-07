@@ -87,7 +87,7 @@ static bool validate_string(pb_istream_t *stream, const pb_field_t *field,
         gpr_log(GPR_INFO, "Zero-length Resource name.");
         return false;
       }
-      vresource->name = gpr_malloc(stream->bytes_left + 1);
+      vresource->name = (char *)gpr_malloc(stream->bytes_left + 1);
       vresource->name[stream->bytes_left] = '\0';
       if (!pb_read(stream, (uint8_t *)vresource->name, stream->bytes_left)) {
         return false;
@@ -106,7 +106,7 @@ static bool validate_string(pb_istream_t *stream, const pb_field_t *field,
       if (stream->bytes_left == 0) {
         return true;
       }
-      vresource->description = gpr_malloc(stream->bytes_left + 1);
+      vresource->description = (char *)gpr_malloc(stream->bytes_left + 1);
       vresource->description[stream->bytes_left] = '\0';
       if (!pb_read(stream, (uint8_t *)vresource->description,
                    stream->bytes_left)) {
@@ -134,7 +134,8 @@ static bool validate_units_helper(pb_istream_t *stream, int *count,
     // Have to allocate a new array of values. Normal case is 0 or 1, so
     // this should normally not be an issue.
     google_census_Resource_BasicUnit *new_bup =
-        gpr_malloc((size_t)*count * sizeof(google_census_Resource_BasicUnit));
+        (google_census_Resource_BasicUnit *)gpr_malloc(
+            (size_t)*count * sizeof(google_census_Resource_BasicUnit));
     if (*count != 1) {
       memcpy(new_bup, *bup,
              (size_t)(*count - 1) * sizeof(google_census_Resource_BasicUnit));
@@ -207,7 +208,8 @@ size_t allocate_resource(void) {
   // Expand resources if needed.
   if (n_resources == n_defined_resources) {
     size_t new_n_resources = n_resources ? n_resources * 2 : 2;
-    resource **new_resources = gpr_malloc(new_n_resources * sizeof(resource *));
+    resource **new_resources =
+        (resource **)gpr_malloc(new_n_resources * sizeof(resource *));
     if (n_resources != 0) {
       memcpy(new_resources, resources, n_resources * sizeof(resource *));
     }
@@ -226,7 +228,7 @@ size_t allocate_resource(void) {
     }
   }
   GPR_ASSERT(id < n_resources && resources[id] == NULL);
-  resources[id] = gpr_malloc(sizeof(resource));
+  resources[id] = (resource *)gpr_malloc(sizeof(resource));
   memset(resources[id], 0, sizeof(resource));
   n_defined_resources++;
   next_id = (id + 1) % n_resources;
@@ -276,22 +278,24 @@ int32_t define_resource(const resource *base) {
   gpr_mu_lock(&resource_lock);
   size_t id = allocate_resource();
   size_t len = strlen(base->name) + 1;
-  resources[id]->name = gpr_malloc(len);
+  resources[id]->name = (char *)gpr_malloc(len);
   memcpy(resources[id]->name, base->name, len);
   if (base->description) {
     len = strlen(base->description) + 1;
-    resources[id]->description = gpr_malloc(len);
+    resources[id]->description = (char *)gpr_malloc(len);
     memcpy(resources[id]->description, base->description, len);
   }
   resources[id]->prefix = base->prefix;
   resources[id]->n_numerators = base->n_numerators;
   len = (size_t)base->n_numerators * sizeof(*base->numerators);
-  resources[id]->numerators = gpr_malloc(len);
+  resources[id]->numerators =
+      (google_census_Resource_BasicUnit *)gpr_malloc(len);
   memcpy(resources[id]->numerators, base->numerators, len);
   resources[id]->n_denominators = base->n_denominators;
   if (base->n_denominators != 0) {
     len = (size_t)base->n_denominators * sizeof(*base->denominators);
-    resources[id]->denominators = gpr_malloc(len);
+    resources[id]->denominators =
+        (google_census_Resource_BasicUnit *)gpr_malloc(len);
     memcpy(resources[id]->denominators, base->denominators, len);
   }
   gpr_mu_unlock(&resource_lock);

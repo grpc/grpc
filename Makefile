@@ -976,6 +976,7 @@ endpoint_pair_test: $(BINDIR)/$(CONFIG)/endpoint_pair_test
 error_test: $(BINDIR)/$(CONFIG)/error_test
 ev_epollsig_linux_test: $(BINDIR)/$(CONFIG)/ev_epollsig_linux_test
 fake_resolver_test: $(BINDIR)/$(CONFIG)/fake_resolver_test
+fake_transport_security_test: $(BINDIR)/$(CONFIG)/fake_transport_security_test
 fd_conservation_posix_test: $(BINDIR)/$(CONFIG)/fd_conservation_posix_test
 fd_posix_test: $(BINDIR)/$(CONFIG)/fd_posix_test
 fling_client: $(BINDIR)/$(CONFIG)/fling_client
@@ -1007,6 +1008,7 @@ grpc_auth_context_test: $(BINDIR)/$(CONFIG)/grpc_auth_context_test
 grpc_b64_test: $(BINDIR)/$(CONFIG)/grpc_b64_test
 grpc_byte_buffer_reader_test: $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test
 grpc_channel_args_test: $(BINDIR)/$(CONFIG)/grpc_channel_args_test
+grpc_channel_stack_builder_test: $(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test
 grpc_channel_stack_test: $(BINDIR)/$(CONFIG)/grpc_channel_stack_test
 grpc_completion_queue_test: $(BINDIR)/$(CONFIG)/grpc_completion_queue_test
 grpc_completion_queue_threading_test: $(BINDIR)/$(CONFIG)/grpc_completion_queue_threading_test
@@ -1075,6 +1077,7 @@ sockaddr_resolver_test: $(BINDIR)/$(CONFIG)/sockaddr_resolver_test
 sockaddr_utils_test: $(BINDIR)/$(CONFIG)/sockaddr_utils_test
 socket_utils_test: $(BINDIR)/$(CONFIG)/socket_utils_test
 ssl_server_fuzzer: $(BINDIR)/$(CONFIG)/ssl_server_fuzzer
+ssl_transport_security_test: $(BINDIR)/$(CONFIG)/ssl_transport_security_test
 status_conversion_test: $(BINDIR)/$(CONFIG)/status_conversion_test
 stream_compression_test: $(BINDIR)/$(CONFIG)/stream_compression_test
 stream_owned_slice_test: $(BINDIR)/$(CONFIG)/stream_owned_slice_test
@@ -1366,6 +1369,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/error_test \
   $(BINDIR)/$(CONFIG)/ev_epollsig_linux_test \
   $(BINDIR)/$(CONFIG)/fake_resolver_test \
+  $(BINDIR)/$(CONFIG)/fake_transport_security_test \
   $(BINDIR)/$(CONFIG)/fd_conservation_posix_test \
   $(BINDIR)/$(CONFIG)/fd_posix_test \
   $(BINDIR)/$(CONFIG)/fling_client \
@@ -1394,6 +1398,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/grpc_b64_test \
   $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test \
   $(BINDIR)/$(CONFIG)/grpc_channel_args_test \
+  $(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test \
   $(BINDIR)/$(CONFIG)/grpc_channel_stack_test \
   $(BINDIR)/$(CONFIG)/grpc_completion_queue_test \
   $(BINDIR)/$(CONFIG)/grpc_completion_queue_threading_test \
@@ -1448,6 +1453,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/sockaddr_resolver_test \
   $(BINDIR)/$(CONFIG)/sockaddr_utils_test \
   $(BINDIR)/$(CONFIG)/socket_utils_test \
+  $(BINDIR)/$(CONFIG)/ssl_transport_security_test \
   $(BINDIR)/$(CONFIG)/status_conversion_test \
   $(BINDIR)/$(CONFIG)/stream_compression_test \
   $(BINDIR)/$(CONFIG)/stream_owned_slice_test \
@@ -1788,6 +1794,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/ev_epollsig_linux_test || ( echo test ev_epollsig_linux_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fake_resolver_test"
 	$(Q) $(BINDIR)/$(CONFIG)/fake_resolver_test || ( echo test fake_resolver_test failed ; exit 1 )
+	$(E) "[RUN]     Testing fake_transport_security_test"
+	$(Q) $(BINDIR)/$(CONFIG)/fake_transport_security_test || ( echo test fake_transport_security_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fd_conservation_posix_test"
 	$(Q) $(BINDIR)/$(CONFIG)/fd_conservation_posix_test || ( echo test fd_conservation_posix_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fd_posix_test"
@@ -1840,6 +1848,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test || ( echo test grpc_byte_buffer_reader_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_channel_args_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_channel_args_test || ( echo test grpc_channel_args_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_channel_stack_builder_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test || ( echo test grpc_channel_stack_builder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_channel_stack_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_channel_stack_test || ( echo test grpc_channel_stack_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_completion_queue_test"
@@ -1936,6 +1946,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/sockaddr_utils_test || ( echo test sockaddr_utils_test failed ; exit 1 )
 	$(E) "[RUN]     Testing socket_utils_test"
 	$(Q) $(BINDIR)/$(CONFIG)/socket_utils_test || ( echo test socket_utils_test failed ; exit 1 )
+	$(E) "[RUN]     Testing ssl_transport_security_test"
+	$(Q) $(BINDIR)/$(CONFIG)/ssl_transport_security_test || ( echo test ssl_transport_security_test failed ; exit 1 )
 	$(E) "[RUN]     Testing status_conversion_test"
 	$(Q) $(BINDIR)/$(CONFIG)/status_conversion_test || ( echo test status_conversion_test failed ; exit 1 )
 	$(E) "[RUN]     Testing stream_compression_test"
@@ -2809,6 +2821,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/string_util.h \
     include/grpc/support/subprocess.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
@@ -2827,6 +2840,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -2905,9 +2919,12 @@ LIBGRPC_SRC = \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
+    src/core/lib/debug/stats.c \
+    src/core/lib/debug/stats_data.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
+    src/core/lib/iomgr/call_combiner.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
@@ -2916,8 +2933,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll1_linux.c \
-    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
-    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
     src/core/lib/iomgr/ev_epollex_linux.c \
     src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
@@ -3170,6 +3185,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -3251,9 +3267,12 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
+    src/core/lib/debug/stats.c \
+    src/core/lib/debug/stats_data.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
+    src/core/lib/iomgr/call_combiner.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
@@ -3262,8 +3281,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll1_linux.c \
-    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
-    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
     src/core/lib/iomgr/ev_epollex_linux.c \
     src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
@@ -3474,6 +3491,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -3564,9 +3582,12 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
+    src/core/lib/debug/stats.c \
+    src/core/lib/debug/stats_data.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
+    src/core/lib/iomgr/call_combiner.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
@@ -3575,8 +3596,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll1_linux.c \
-    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
-    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
     src/core/lib/iomgr/ev_epollex_linux.c \
     src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
@@ -3749,6 +3768,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -3813,9 +3833,12 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
+    src/core/lib/debug/stats.c \
+    src/core/lib/debug/stats_data.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
+    src/core/lib/iomgr/call_combiner.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
@@ -3824,8 +3847,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll1_linux.c \
-    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
-    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
     src/core/lib/iomgr/ev_epollex_linux.c \
     src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
@@ -3998,6 +4019,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -4035,9 +4057,12 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
+    src/core/lib/debug/stats.c \
+    src/core/lib/debug/stats_data.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
+    src/core/lib/iomgr/call_combiner.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
@@ -4046,8 +4071,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll1_linux.c \
-    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
-    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
     src/core/lib/iomgr/ev_epollex_linux.c \
     src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
@@ -4268,6 +4291,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -4505,6 +4529,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/string_util.h \
     include/grpc/support/subprocess.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
@@ -4523,6 +4548,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -4714,9 +4740,12 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
+    src/core/lib/debug/stats.c \
+    src/core/lib/debug/stats_data.c \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
+    src/core/lib/iomgr/call_combiner.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
@@ -4725,8 +4754,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_epoll1_linux.c \
-    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
-    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
     src/core/lib/iomgr/ev_epollex_linux.c \
     src/core/lib/iomgr/ev_epollsig_linux.c \
     src/core/lib/iomgr/ev_poll_posix.c \
@@ -4943,6 +4970,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/string_util.h \
     include/grpc/support/subprocess.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
@@ -4961,6 +4989,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -5381,6 +5410,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -5495,6 +5525,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -5651,6 +5682,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/string_util.h \
     include/grpc/support/subprocess.h \
     include/grpc/support/sync.h \
+    include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
@@ -5669,6 +5701,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_custom.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
@@ -9575,6 +9608,41 @@ endif
 endif
 
 
+FAKE_TRANSPORT_SECURITY_TEST_SRC = \
+    test/core/tsi/fake_transport_security_test.c \
+    test/core/tsi/transport_security_test_lib.c \
+
+FAKE_TRANSPORT_SECURITY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FAKE_TRANSPORT_SECURITY_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/fake_transport_security_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/fake_transport_security_test: $(FAKE_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(FAKE_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/fake_transport_security_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/fake_transport_security_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/transport_security_test_lib.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_fake_transport_security_test: $(FAKE_TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(FAKE_TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 FD_CONSERVATION_POSIX_TEST_SRC = \
     test/core/iomgr/fd_conservation_posix_test.c \
 
@@ -10563,6 +10631,38 @@ deps_grpc_channel_args_test: $(GRPC_CHANNEL_ARGS_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GRPC_CHANNEL_ARGS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+GRPC_CHANNEL_STACK_BUILDER_TEST_SRC = \
+    test/core/channel/channel_stack_builder_test.c \
+
+GRPC_CHANNEL_STACK_BUILDER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CHANNEL_STACK_BUILDER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test: $(GRPC_CHANNEL_STACK_BUILDER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_CHANNEL_STACK_BUILDER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/channel/channel_stack_builder_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_grpc_channel_stack_builder_test: $(GRPC_CHANNEL_STACK_BUILDER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GRPC_CHANNEL_STACK_BUILDER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -12743,6 +12843,41 @@ endif
 endif
 
 
+SSL_TRANSPORT_SECURITY_TEST_SRC = \
+    test/core/tsi/ssl_transport_security_test.c \
+    test/core/tsi/transport_security_test_lib.c \
+
+SSL_TRANSPORT_SECURITY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SSL_TRANSPORT_SECURITY_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/ssl_transport_security_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/ssl_transport_security_test: $(SSL_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SSL_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/ssl_transport_security_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/ssl_transport_security_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/transport_security_test_lib.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_ssl_transport_security_test: $(SSL_TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SSL_TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 STATUS_CONVERSION_TEST_SRC = \
     test/core/transport/status_conversion_test.c \
 
@@ -13975,17 +14110,17 @@ $(BINDIR)/$(CONFIG)/bm_fullstack_trickle: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/bm_fullstack_trickle: $(PROTOBUF_DEP) $(BM_FULLSTACK_TRICKLE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/bm_fullstack_trickle: $(PROTOBUF_DEP) $(BM_FULLSTACK_TRICKLE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(BM_FULLSTACK_TRICKLE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_fullstack_trickle
+	$(Q) $(LDXX) $(LDFLAGS) $(BM_FULLSTACK_TRICKLE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_fullstack_trickle
 
 endif
 
 endif
 
 $(BM_FULLSTACK_TRICKLE_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
-$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_fullstack_trickle.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_fullstack_trickle.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
 deps_bm_fullstack_trickle: $(BM_FULLSTACK_TRICKLE_OBJS:.o=.dep)
 

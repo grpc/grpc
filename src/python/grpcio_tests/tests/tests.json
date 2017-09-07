@@ -10,6 +10,7 @@
   "protoc_plugin.beta_python_plugin_test.PythonPluginTest",
   "reflection._reflection_servicer_test.ReflectionServicerTest",
   "testing._client_test.ClientTest",
+  "testing._server_test.FirstServiceServicerTest",
   "testing._time_test.StrictFakeTimeTest",
   "testing._time_test.StrictRealTimeTest",
   "unit._api_test.AllTest",
