@@ -62,7 +62,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     size_t still_pending_size;
     size_t total_buffer_size = 8192;
     size_t buffer_size = total_buffer_size;
-    uint8_t *encrypted_buffer = gpr_malloc(buffer_size);
+    uint8_t *encrypted_buffer = (uint8_t *)gpr_malloc(buffer_size);
     uint8_t *cur = encrypted_buffer;
     grpc_slice encrypted_leftover;
     for (i = 0; i < leftover_nslices; i++) {
@@ -172,7 +172,7 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
                             grpc_error *error) {
-  grpc_pollset_destroy(exec_ctx, p);
+  grpc_pollset_destroy(exec_ctx, (grpc_pollset *)p);
 }
 
 int main(int argc, char **argv) {
@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
   grpc_init();
-  g_pollset = gpr_zalloc(grpc_pollset_size());
+  g_pollset = (grpc_pollset *)gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(g_pollset, &g_mu);
   grpc_endpoint_tests(configs[0], g_pollset, g_mu);
   test_leftover(configs[1], 1);

@@ -22,6 +22,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/http2_errors.h"
@@ -116,20 +117,24 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
                          &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
   grpc_slice_buffer_add(&t->outbuf,
                         grpc_chttp2_ping_create(false, pq->inflight_id));
+  GRPC_STATS_INC_HTTP2_PINGS_SENT(exec_ctx);
   t->ping_state.last_ping_sent_time = now;
   t->ping_state.pings_before_data_required -=
       (t->ping_state.pings_before_data_required != 0);
 }
 
-static void update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+static bool update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                         grpc_chttp2_stream *s, int64_t send_bytes,
-                        grpc_chttp2_write_cb **list, grpc_error *error) {
+                        grpc_chttp2_write_cb **list, int64_t *ctr,
+                        grpc_error *error) {
+  bool sched_any = false;
   grpc_chttp2_write_cb *cb = *list;
   *list = NULL;
-  s->flow_controlled_bytes_written += send_bytes;
+  *ctr += send_bytes;
   while (cb) {
     grpc_chttp2_write_cb *next = cb->next;
-    if (cb->call_at_byte <= s->flow_controlled_bytes_written) {
+    if (cb->call_at_byte <= *ctr) {
+      sched_any = true;
       finish_write_cb(exec_ctx, t, s, cb, GRPC_ERROR_REF(error));
     } else {
       add_to_write_list(list, cb);
@@ -137,6 +142,7 @@ static void update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     cb = next;
   }
   GRPC_ERROR_UNREF(error);
+  return sched_any;
 }
 
 static bool stream_ref_if_not_destroyed(gpr_refcount *r) {
@@ -161,6 +167,8 @@ static bool is_default_initial_metadata(grpc_metadata_batch *initial_metadata) {
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
   grpc_chttp2_stream *s;
+
+  GRPC_STATS_INC_HTTP2_WRITES_BEGUN(exec_ctx);
 
   GPR_TIMER_BEGIN("grpc_chttp2_begin_write", 0);
 
@@ -192,13 +200,13 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     }
   }
 
-  bool partial_write = false;
+  grpc_chttp2_begin_write_result result = {false, false, false};
 
   /* for each grpc_chttp2_stream that's become writable, frame it's data
      (according to available window sizes) and add to the output buffer */
   while (true) {
     if (t->outbuf.length > target_write_size(t)) {
-      partial_write = true;
+      result.partial = true;
       break;
     }
 
@@ -242,7 +250,6 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             .stats = &s->stats.outgoing};
         grpc_chttp2_encode_header(exec_ctx, &t->hpack_compressor, NULL, 0,
                                   s->send_initial_metadata, &hopt, &t->outbuf);
-        now_writing = true;
         t->ping_state.pings_before_data_required =
             t->ping_policy.max_pings_without_data;
         if (!t->is_client) {
@@ -269,6 +276,10 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       s->send_initial_metadata = NULL;
       s->sent_initial_metadata = true;
       sent_initial_metadata = true;
+      result.early_results_scheduled = true;
+      grpc_chttp2_complete_closure_step(
+          exec_ctx, t, s, &s->send_initial_metadata_finished, GRPC_ERROR_NONE,
+          "send_initial_metadata_finished");
     }
     /* send any window updates */
     uint32_t stream_announce = grpc_chttp2_flowctl_maybe_send_stream_update(
@@ -302,6 +313,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
         if (max_outgoing > 0) {
           bool is_last_data_frame = false;
           bool is_last_frame = false;
+          size_t sending_bytes_before = s->sending_bytes;
           if (s->stream_compression_send_enabled) {
             while ((s->flow_controlled_buffer.length > 0 ||
                     s->compressed_data_buffer->length > 0) &&
@@ -369,6 +381,11 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                                                     &s->stats.outgoing));
             }
           }
+          result.early_results_scheduled |=
+              update_list(exec_ctx, t, s,
+                          (int64_t)(s->sending_bytes - sending_bytes_before),
+                          &s->on_flow_controlled_cbs,
+                          &s->flow_controlled_bytes_flowed, GRPC_ERROR_NONE);
           now_writing = true;
           if (s->flow_controlled_buffer.length > 0 ||
               (s->stream_compression_send_enabled &&
@@ -420,6 +437,10 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                               s->id, GRPC_HTTP2_NO_ERROR, &s->stats.outgoing));
         }
         now_writing = true;
+        result.early_results_scheduled = true;
+        grpc_chttp2_complete_closure_step(
+            exec_ctx, t, s, &s->send_trailing_metadata_finished,
+            GRPC_ERROR_NONE, "send_trailing_metadata_finished");
       }
     }
 
@@ -461,9 +482,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
 
   GPR_TIMER_END("grpc_chttp2_begin_write", 0);
 
-  return t->outbuf.count > 0 ? (partial_write ? GRPC_CHTTP2_PARTIAL_WRITE
-                                              : GRPC_CHTTP2_FULL_WRITE)
-                             : GRPC_CHTTP2_NOTHING_TO_WRITE;
+  result.writing = t->outbuf.count > 0;
+  return result;
 }
 
 void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
@@ -472,20 +492,13 @@ void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_chttp2_stream *s;
 
   while (grpc_chttp2_list_pop_writing_stream(t, &s)) {
-    if (s->sent_initial_metadata) {
-      grpc_chttp2_complete_closure_step(
-          exec_ctx, t, s, &s->send_initial_metadata_finished,
-          GRPC_ERROR_REF(error), "send_initial_metadata_finished");
-    }
     if (s->sending_bytes != 0) {
       update_list(exec_ctx, t, s, (int64_t)s->sending_bytes,
-                  &s->on_write_finished_cbs, GRPC_ERROR_REF(error));
+                  &s->on_write_finished_cbs, &s->flow_controlled_bytes_written,
+                  GRPC_ERROR_REF(error));
       s->sending_bytes = 0;
     }
     if (s->sent_trailing_metadata) {
-      grpc_chttp2_complete_closure_step(
-          exec_ctx, t, s, &s->send_trailing_metadata_finished,
-          GRPC_ERROR_REF(error), "send_trailing_metadata_finished");
       grpc_chttp2_mark_stream_closed(exec_ctx, t, s, !t->is_client, 1,
                                      GRPC_ERROR_REF(error));
     }

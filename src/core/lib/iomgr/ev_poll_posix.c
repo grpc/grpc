@@ -988,6 +988,10 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       r = grpc_poll_function(pfds, pfd_count, timeout);
       GRPC_SCHEDULING_END_BLOCKING_REGION;
 
+      if (GRPC_TRACER_ON(grpc_polling_trace)) {
+        gpr_log(GPR_DEBUG, "%p poll=%d", pollset, r);
+      }
+
       if (r < 0) {
         if (errno != EINTR) {
           work_combine_error(&error, GRPC_OS_ERROR(errno, "poll"));
@@ -1008,6 +1012,9 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
         }
       } else {
         if (pfds[0].revents & POLLIN_CHECK) {
+          if (GRPC_TRACER_ON(grpc_polling_trace)) {
+            gpr_log(GPR_DEBUG, "%p: got_wakeup", pollset);
+          }
           work_combine_error(
               &error, grpc_wakeup_fd_consume_wakeup(&worker.wakeup_fd->fd));
         }
@@ -1015,6 +1022,11 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
           if (watchers[i].fd == NULL) {
             fd_end_poll(exec_ctx, &watchers[i], 0, 0, NULL);
           } else {
+            if (GRPC_TRACER_ON(grpc_polling_trace)) {
+              gpr_log(GPR_DEBUG, "%p got_event: %d r:%d w:%d [%d]", pollset,
+                      pfds[i].fd, (pfds[i].revents & POLLIN_CHECK) != 0,
+                      (pfds[i].revents & POLLOUT_CHECK) != 0, pfds[i].revents);
+            }
             fd_end_poll(exec_ctx, &watchers[i], pfds[i].revents & POLLIN_CHECK,
                         pfds[i].revents & POLLOUT_CHECK, pollset);
           }
