@@ -56,3 +56,12 @@ bool grpc_status_from_string(const char* status_str, grpc_status_code* status) {
   }
   return false;
 }
+
+const char *grpc_status_string(grpc_status_code status) {
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(g_status_string_entries); ++i) {
+    if (g_status_string_entries[i].status == status) {
+      return g_status_string_entries[i].str;
+    }
+  }
+  return "UNKNOWN";
+}

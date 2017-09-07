@@ -27,4 +27,7 @@
 /// corresponding status value and returns true.
 bool grpc_status_from_string(const char* status_str, grpc_status_code* status);
 
+/// Returns the string form of \a status, or "UNKNWON" if invalid.
+const char *grpc_status_string(grpc_status_code status);
+
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_STATUS_STRING_H */
