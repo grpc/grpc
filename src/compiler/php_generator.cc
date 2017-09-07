@@ -33,7 +33,7 @@ using std::map;
 namespace grpc_php_generator {
 namespace {
 
-grpc::string MessageIdentifierName(const grpc::string &name) {
+grpc::string ConvertToPhpNamespace(const grpc::string &name) {
   std::vector<grpc::string> tokens = grpc_generator::tokenize(name, ".");
   std::ostringstream oss;
   for (unsigned int i = 0; i < tokens.size(); i++) {
@@ -43,14 +43,32 @@ grpc::string MessageIdentifierName(const grpc::string &name) {
   return oss.str();
 }
 
+grpc::string PackageName(const FileDescriptor *file) {
+  if (file->options().has_php_namespace()) {
+    return file->options().php_namespace();
+  } else {
+    return ConvertToPhpNamespace(file->package());
+  }
+}
+
+grpc::string MessageIdentifierName(const grpc::string &name, const FileDescriptor *file) {
+  std::vector<grpc::string> tokens = grpc_generator::tokenize(name, ".");
+  std::ostringstream oss;
+  oss << PackageName(file)
+      << "\\"
+      << grpc_generator::CapitalizeFirstLetter(tokens[tokens.size() - 1]);
+  return oss.str();
+}
+
+
 void PrintMethod(const MethodDescriptor *method, Printer *out) {
   const Descriptor *input_type = method->input_type();
   const Descriptor *output_type = method->output_type();
   map<grpc::string, grpc::string> vars;
   vars["service_name"] = method->service()->full_name();
   vars["name"] = method->name();
-  vars["input_type_id"] = MessageIdentifierName(input_type->full_name());
-  vars["output_type_id"] = MessageIdentifierName(output_type->full_name());
+  vars["input_type_id"] = MessageIdentifierName(input_type->full_name(), input_type->file());
+  vars["output_type_id"] = MessageIdentifierName(output_type->full_name(), output_type->file());
 
   out->Print("/**\n");
   out->Print(GetPHPComments(method, " *").c_str());
@@ -149,12 +167,7 @@ grpc::string GenerateFile(const FileDescriptor *file,
     }
 
     map<grpc::string, grpc::string> vars;
-    grpc::string php_namespace;
-    if (file->options().has_php_namespace()) {
-      php_namespace = file->options().php_namespace();
-    } else {
-      php_namespace = MessageIdentifierName(file->package());
-    }
+    grpc::string php_namespace = PackageName(file);
     vars["package"] = php_namespace;
     out.Print(vars, "namespace $package$;\n\n");
 
