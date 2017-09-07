@@ -198,11 +198,6 @@ void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
                                     then_schedule_closure);
 }
 
-char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
-                              grpc_transport *transport) {
-  return transport->vtable->get_peer(exec_ctx, transport);
-}
-
 grpc_endpoint *grpc_transport_get_endpoint(grpc_exec_ctx *exec_ctx,
                                            grpc_transport *transport) {
   return transport->vtable->get_endpoint(exec_ctx, transport);
@@ -215,24 +210,24 @@ grpc_endpoint *grpc_transport_get_endpoint(grpc_exec_ctx *exec_ctx,
 // is a function that must always unref cancel_error
 // though it lives in lib, it handles transport stream ops sure
 // it's grpc_transport_stream_op_batch_finish_with_failure
-
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_exec_ctx *exec_ctx, grpc_transport_stream_op_batch *batch,
-    grpc_error *error) {
+    grpc_error *error, grpc_call_combiner *call_combiner) {
   if (batch->send_message) {
     grpc_byte_stream_destroy(exec_ctx,
                              batch->payload->send_message.send_message);
   }
   if (batch->recv_message) {
-    GRPC_CLOSURE_SCHED(exec_ctx,
-                       batch->payload->recv_message.recv_message_ready,
-                       GRPC_ERROR_REF(error));
+    GRPC_CALL_COMBINER_START(exec_ctx, call_combiner,
+                             batch->payload->recv_message.recv_message_ready,
+                             GRPC_ERROR_REF(error),
+                             "failing recv_message_ready");
   }
   if (batch->recv_initial_metadata) {
-    GRPC_CLOSURE_SCHED(
-        exec_ctx,
+    GRPC_CALL_COMBINER_START(
+        exec_ctx, call_combiner,
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
-        GRPC_ERROR_REF(error));
+        GRPC_ERROR_REF(error), "failing recv_initial_metadata_ready");
   }
   GRPC_CLOSURE_SCHED(exec_ctx, batch->on_complete, error);
   if (batch->cancel_stream) {

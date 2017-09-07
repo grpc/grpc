@@ -625,6 +625,7 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
           *s->trailing_metadata_available = true;
         }
         t->hpack_parser.on_header = on_trailing_header;
+        s->received_trailing_metadata = true;
       } else {
         GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing initial_metadata"));
         t->hpack_parser.on_header = on_initial_header;
@@ -633,6 +634,7 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
     case 1:
       GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing trailing_metadata"));
       t->hpack_parser.on_header = on_trailing_header;
+      s->received_trailing_metadata = true;
       break;
     case 2:
       gpr_log(GPR_ERROR, "too many header frames received");

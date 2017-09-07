@@ -310,6 +310,7 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State &state) {
   Stream s(&f);
   grpc_transport_stream_op_batch op;
   grpc_transport_stream_op_batch_payload op_payload;
+  memset(&op_payload, 0, sizeof(op_payload));
   std::unique_ptr<Closure> start;
   std::unique_ptr<Closure> done;
 
@@ -361,6 +362,7 @@ static void BM_TransportEmptyOp(benchmark::State &state) {
   s.Init(state);
   grpc_transport_stream_op_batch op;
   grpc_transport_stream_op_batch_payload op_payload;
+  memset(&op_payload, 0, sizeof(op_payload));
   auto reset_op = [&]() {
     memset(&op, 0, sizeof(op));
     op.payload = &op_payload;
@@ -394,6 +396,7 @@ static void BM_TransportStreamSend(benchmark::State &state) {
   s->Init(state);
   grpc_transport_stream_op_batch op;
   grpc_transport_stream_op_batch_payload op_payload;
+  memset(&op_payload, 0, sizeof(op_payload));
   auto reset_op = [&]() {
     memset(&op, 0, sizeof(op));
     op.payload = &op_payload;
@@ -525,6 +528,7 @@ static void BM_TransportStreamRecv(benchmark::State &state) {
   Stream s(&f);
   s.Init(state);
   grpc_transport_stream_op_batch_payload op_payload;
+  memset(&op_payload, 0, sizeof(op_payload));
   grpc_transport_stream_op_batch op;
   grpc_byte_stream *recv_stream;
   grpc_slice incoming_data = CreateIncomingDataSlice(state.range(0), 16384);
