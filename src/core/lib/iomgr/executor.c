@@ -185,7 +185,11 @@ static void executor_thread(void *arg) {
 static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_error *error, bool is_short) {
   bool retry_push;
-  GRPC_STATS_INC_EXECUTOR_SCHEDULED_ITEMS(exec_ctx);
+  if (is_short) {
+    GRPC_STATS_INC_EXECUTOR_SCHEDULED_SHORT_ITEMS(exec_ctx);
+  } else {
+    GRPC_STATS_INC_EXECUTOR_SCHEDULED_LONG_ITEMS(exec_ctx);
+  }
   do {
     retry_push = false;
     size_t cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
@@ -259,6 +263,9 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                     &g_thread_state[cur_thread_count], &opt);
       }
       gpr_spinlock_unlock(&g_adding_thread_lock);
+    }
+    if (retry_push) {
+      GRPC_STATS_INC_EXECUTOR_PUSH_RETRIES(exec_ctx);
     }
   } while (retry_push);
 }

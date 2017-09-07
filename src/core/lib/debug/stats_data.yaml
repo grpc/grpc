@@ -61,7 +61,10 @@
 - counter: combiner_locks_scheduled_final_items
 - counter: combiner_locks_offloaded
 # executor
-- counter: executor_scheduled_items
+- counter: executor_scheduled_short_items
+- counter: executor_scheduled_long_items
 - counter: executor_scheduled_to_self
 - counter: executor_wakeup_initiated
 - counter: executor_queue_drained
+- counter: executor_push_retries
+

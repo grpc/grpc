@@ -44,10 +44,12 @@ const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "combiner_locks_scheduled_items",
     "combiner_locks_scheduled_final_items",
     "combiner_locks_offloaded",
-    "executor_scheduled_items",
+    "executor_scheduled_short_items",
+    "executor_scheduled_long_items",
     "executor_scheduled_to_self",
     "executor_wakeup_initiated",
     "executor_queue_drained",
+    "executor_push_retries",
 };
 const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
     "tcp_write_size", "tcp_write_iov_size", "tcp_read_size",
