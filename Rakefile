@@ -85,6 +85,7 @@ task 'dlls' do
   env += 'SYSTEM=MINGW32 '
   env += 'EMBED_ZLIB=true '
   env += 'BUILDDIR=/tmp '
+  env += 'EMBED_OPENSSL=true '
   env += "V=#{verbose} "
   out = GrpcBuildConfig::CORE_WINDOWS_DLL
 
