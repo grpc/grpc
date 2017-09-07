@@ -536,6 +536,9 @@ Object HHVM_METHOD(Call, startBatch,
             std::lock_guard<std::mutex> lock{ pCallData->metadataMutex() };
             pCallData->callCancelled()=true;
         }
+        // cancel the call with the server
+        grpc_call_cancel_with_status(pCallData->call(), GRPC_STATUS_DEADLINE_EXCEEDED,
+                                     "RPC Call Timeout Exceeded", nullptr);
         callFailed = true;
     };
 
