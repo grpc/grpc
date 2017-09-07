@@ -37,6 +37,16 @@ def fuss_with_metadata(metadata):
         return _fuss(tuple(metadata))
 
 
+def rpc_names(service_descriptors):
+    rpc_names_to_descriptors = {}
+    for service_descriptor in service_descriptors:
+        for method_descriptor in service_descriptor.methods_by_name.values():
+            rpc_name = '/{}/{}'.format(
+                service_descriptor.full_name, method_descriptor.name)
+            rpc_names_to_descriptors[rpc_name] = method_descriptor
+    return rpc_names_to_descriptors
+
+
 class ChannelRpcRead(
         collections.namedtuple(
             'ChannelRpcRead',
@@ -89,4 +99,62 @@ class ChannelHandler(six.with_metaclass(abc.ABCMeta)):
     def invoke_rpc(
             self, method_full_rpc_name, invocation_metadata, requests,
             requests_closed, timeout):
+        raise NotImplementedError()
+
+
+class ServerRpcRead(
+        collections.namedtuple('ServerRpcRead',
+                               ('request', 'requests_closed', 'terminated',))):
+    pass
+
+
+REQUESTS_CLOSED = ServerRpcRead(None, True, False)
+TERMINATED = ServerRpcRead(None, False, True)
+
+
+class ServerRpcHandler(six.with_metaclass(abc.ABCMeta)):
+
+    @abc.abstractmethod
+    def send_initial_metadata(self, initial_metadata):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def take_request(self):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def add_response(self, response):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def send_termination(self, trailing_metadata, code, details):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def add_termination_callback(self, callback):
+        raise NotImplementedError()
+
+
+class Serverish(six.with_metaclass(abc.ABCMeta)):
+
+    @abc.abstractmethod
+    def invoke_unary_unary(
+            self, method_descriptor, handler, invocation_metadata, request,
+            deadline):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def invoke_unary_stream(
+            self, method_descriptor, handler, invocation_metadata, request,
+            deadline):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def invoke_stream_unary(
+            self, method_descriptor, handler, invocation_metadata, deadline):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def invoke_stream_stream(
+            self, method_descriptor, handler, invocation_metadata, deadline):
         raise NotImplementedError()
