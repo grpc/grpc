@@ -1757,6 +1757,9 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
               s->stream_decompression_ctx = NULL;
             }
           }
+        } else {
+          error = grpc_deframe_unprocessed_incoming_frames(
+              exec_ctx, &s->data_parser, s, &s->unprocessed_incoming_frames_buffer, NULL, s->recv_message);
         }
         if (error != GRPC_ERROR_NONE) {
           s->seen_error = true;
