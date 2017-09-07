@@ -180,16 +180,18 @@ class ClientLbEnd2endTest : public ::testing::Test {
     std::unique_ptr<Server> server_;
     MyTestServiceImpl service_;
     std::unique_ptr<std::thread> thread_;
+    bool server_ready_ = false;
 
     explicit ServerData(const grpc::string& server_host, int port = 0) {
       port_ = port > 0 ? port : grpc_pick_unused_port_or_die();
       gpr_log(GPR_INFO, "starting server on port %d", port_);
       std::mutex mu;
+      std::unique_lock<std::mutex> lock(mu);
       std::condition_variable cond;
       thread_.reset(new std::thread(
           std::bind(&ServerData::Start, this, server_host, &mu, &cond)));
-      std::unique_lock<std::mutex> lock(mu);
-      cond.wait(lock);
+      cond.wait(lock, [this] { return server_ready_; });
+      server_ready_ = false;
       gpr_log(GPR_INFO, "server startup complete");
     }
 
@@ -203,6 +205,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       builder.RegisterService(&service_);
       server_ = builder.BuildAndStart();
       std::lock_guard<std::mutex> lock(*mu);
+      server_ready_ = true;
       cond->notify_one();
     }
 

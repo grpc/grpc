@@ -250,7 +250,7 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   msg.msg_name = NULL;
   msg.msg_namelen = 0;
   msg.msg_iov = iov;
-  msg.msg_iovlen = tcp->incoming_buffer->count;
+  msg.msg_iovlen = (msg_iovlen_type)tcp->incoming_buffer->count;
   msg.msg_control = NULL;
   msg.msg_controllen = 0;
   msg.msg_flags = 0;

@@ -56,36 +56,37 @@ const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
     "tcp_read_offer",     "tcp_read_iov_size",  "http2_send_message_size",
     "server_cqs_checked",
 };
-const int grpc_stats_table_0[64] = {
-    0,       1,       2,       3,       4,       6,        8,        11,
-    15,      20,      26,      34,      44,      57,       74,       96,
-    124,     160,     206,     265,     341,     439,      565,      727,
-    935,     1202,    1546,    1988,    2556,    3286,     4225,     5432,
-    6983,    8977,    11540,   14834,   19069,   24513,    31510,    40505,
-    52067,   66929,   86033,   110590,  142157,  182734,   234893,   301940,
-    388125,  498910,  641316,  824370,  1059674, 1362141,  1750943,  2250722,
-    2893155, 3718960, 4780478, 6144988, 7898976, 10153611, 13051794, 16777216};
+const int grpc_stats_table_0[65] = {
+    0,       1,       2,       3,       4,       6,       8,        11,
+    15,      20,      26,      34,      44,      57,      73,       94,
+    121,     155,     199,     255,     327,     419,     537,      688,
+    881,     1128,    1444,    1848,    2365,    3026,    3872,     4954,
+    6338,    8108,    10373,   13270,   16976,   21717,   27782,    35541,
+    45467,   58165,   74409,   95189,   121772,  155778,  199281,   254933,
+    326126,  417200,  533707,  682750,  873414,  1117323, 1429345,  1828502,
+    2339127, 2992348, 3827987, 4896985, 6264509, 8013925, 10251880, 13114801,
+    16777216};
 const uint8_t grpc_stats_table_1[87] = {
-    0,  0,  1,  1,  2,  3,  3,  4,  4,  5,  6,  6,  7,  8,  8,  9,  10, 10,
-    11, 12, 12, 13, 14, 14, 15, 16, 17, 17, 18, 19, 19, 20, 21, 21, 22, 23,
-    24, 24, 25, 25, 26, 27, 28, 28, 29, 30, 30, 31, 32, 33, 33, 34, 35, 35,
-    36, 36, 37, 38, 39, 39, 40, 41, 41, 42, 43, 44, 44, 45, 46, 46, 47, 47,
-    48, 49, 50, 50, 51, 52, 52, 53, 54, 55, 55, 56, 57, 57, 58};
-const int grpc_stats_table_2[64] = {
-    0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  13,
-    15,  17,  19,  21,  23,  25,  28,  31,  34,  37,  41,  45,  49,
-    54,  59,  64,  70,  76,  83,  90,  98,  106, 115, 125, 136, 147,
-    159, 172, 186, 201, 218, 236, 255, 276, 299, 323, 349, 377, 408,
-    441, 477, 515, 556, 601, 649, 701, 757, 817, 881, 950, 1024};
-const uint8_t grpc_stats_table_3[104] = {
-    0,  0,  0,  1,  1,  1,  1,  2,  2,  2,  3,  3,  4,  4,  5,  5,  6,  6,
-    7,  7,  7,  8,  8,  8,  9,  9,  10, 11, 11, 12, 12, 13, 13, 14, 14, 14,
-    15, 15, 16, 16, 16, 17, 18, 18, 19, 20, 20, 21, 21, 22, 22, 23, 23, 24,
-    24, 24, 25, 25, 26, 27, 28, 28, 29, 29, 30, 30, 31, 31, 32, 32, 33, 33,
-    34, 34, 35, 36, 36, 37, 38, 38, 39, 39, 40, 40, 41, 41, 42, 42, 42, 43,
-    44, 45, 45, 46, 47, 47, 48, 48, 49, 49, 50, 50, 51, 51};
-const int grpc_stats_table_4[8] = {0, 1, 2, 4, 8, 16, 32, 64};
-const uint8_t grpc_stats_table_5[4] = {0, 1, 2, 3};
+    0,  0,  1,  1,  2,  3,  3,  4,  4,  5,  6,  6,  7,  8,  8,  9,  10, 11,
+    11, 12, 13, 13, 14, 15, 15, 16, 17, 17, 18, 19, 20, 20, 21, 22, 22, 23,
+    24, 25, 25, 26, 27, 27, 28, 29, 29, 30, 31, 31, 32, 33, 34, 34, 35, 36,
+    36, 37, 38, 39, 39, 40, 41, 41, 42, 43, 44, 44, 45, 45, 46, 47, 48, 48,
+    49, 50, 51, 51, 52, 53, 53, 54, 55, 56, 56, 57, 58, 58, 59};
+const int grpc_stats_table_2[65] = {
+    0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,
+    14,  16,  18,  20,  22,  24,  27,  30,  33,  36,  39,  43,  47,
+    51,  56,  61,  66,  72,  78,  85,  92,  100, 109, 118, 128, 139,
+    151, 164, 178, 193, 209, 226, 244, 264, 285, 308, 333, 359, 387,
+    418, 451, 486, 524, 565, 609, 656, 707, 762, 821, 884, 952, 1024};
+const uint8_t grpc_stats_table_3[102] = {
+    0,  0,  0,  1,  1,  1,  1,  2,  2,  3,  3,  4,  4,  5,  5,  6,  6,
+    6,  7,  7,  7,  8,  8,  9,  9,  10, 11, 11, 12, 12, 13, 13, 14, 14,
+    14, 15, 15, 16, 16, 17, 17, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23,
+    23, 24, 24, 24, 25, 26, 27, 27, 28, 28, 29, 29, 30, 30, 31, 31, 32,
+    32, 33, 33, 34, 35, 35, 36, 37, 37, 38, 38, 39, 39, 40, 40, 41, 41,
+    42, 42, 43, 44, 44, 45, 46, 46, 47, 48, 48, 49, 49, 50, 50, 51, 51};
+const int grpc_stats_table_4[9] = {0, 1, 2, 4, 7, 13, 23, 39, 64};
+const uint8_t grpc_stats_table_5[9] = {0, 0, 1, 2, 2, 3, 4, 4, 5};
 void grpc_stats_inc_tcp_write_size(grpc_exec_ctx *exec_ctx, int value) {
   value = GPR_CLAMP(value, 0, 16777216);
   if (value < 5) {
@@ -98,7 +99,7 @@ void grpc_stats_inc_tcp_write_size(grpc_exec_ctx *exec_ctx, int value) {
     uint64_t uint;
   } _val, _bkt;
   _val.dbl = value;
-  if (_val.uint < 4682617712558473216ull) {
+  if (_val.uint < 4683743612465315840ull) {
     int bucket =
         grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
     _bkt.dbl = grpc_stats_table_0[bucket];
@@ -113,7 +114,7 @@ void grpc_stats_inc_tcp_write_size(grpc_exec_ctx *exec_ctx, int value) {
 }
 void grpc_stats_inc_tcp_write_iov_size(grpc_exec_ctx *exec_ctx, int value) {
   value = GPR_CLAMP(value, 0, 1024);
-  if (value < 12) {
+  if (value < 13) {
     GRPC_STATS_INC_HISTOGRAM((exec_ctx),
                              GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE, value);
     return;
@@ -123,9 +124,9 @@ void grpc_stats_inc_tcp_write_iov_size(grpc_exec_ctx *exec_ctx, int value) {
     uint64_t uint;
   } _val, _bkt;
   _val.dbl = value;
-  if (_val.uint < 4637300241308057600ull) {
+  if (_val.uint < 4637863191261478912ull) {
     int bucket =
-        grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 48)] + 12;
+        grpc_stats_table_3[((_val.uint - 4623507967449235456ull) >> 48)] + 13;
     _bkt.dbl = grpc_stats_table_2[bucket];
     bucket -= (_val.uint < _bkt.uint);
     GRPC_STATS_INC_HISTOGRAM((exec_ctx),
@@ -148,7 +149,7 @@ void grpc_stats_inc_tcp_read_size(grpc_exec_ctx *exec_ctx, int value) {
     uint64_t uint;
   } _val, _bkt;
   _val.dbl = value;
-  if (_val.uint < 4682617712558473216ull) {
+  if (_val.uint < 4683743612465315840ull) {
     int bucket =
         grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
     _bkt.dbl = grpc_stats_table_0[bucket];
@@ -173,7 +174,7 @@ void grpc_stats_inc_tcp_read_offer(grpc_exec_ctx *exec_ctx, int value) {
     uint64_t uint;
   } _val, _bkt;
   _val.dbl = value;
-  if (_val.uint < 4682617712558473216ull) {
+  if (_val.uint < 4683743612465315840ull) {
     int bucket =
         grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
     _bkt.dbl = grpc_stats_table_0[bucket];
@@ -188,7 +189,7 @@ void grpc_stats_inc_tcp_read_offer(grpc_exec_ctx *exec_ctx, int value) {
 }
 void grpc_stats_inc_tcp_read_iov_size(grpc_exec_ctx *exec_ctx, int value) {
   value = GPR_CLAMP(value, 0, 1024);
-  if (value < 12) {
+  if (value < 13) {
     GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
                              value);
     return;
@@ -198,9 +199,9 @@ void grpc_stats_inc_tcp_read_iov_size(grpc_exec_ctx *exec_ctx, int value) {
     uint64_t uint;
   } _val, _bkt;
   _val.dbl = value;
-  if (_val.uint < 4637300241308057600ull) {
+  if (_val.uint < 4637863191261478912ull) {
     int bucket =
-        grpc_stats_table_3[((_val.uint - 4622945017495814144ull) >> 48)] + 12;
+        grpc_stats_table_3[((_val.uint - 4623507967449235456ull) >> 48)] + 13;
     _bkt.dbl = grpc_stats_table_2[bucket];
     bucket -= (_val.uint < _bkt.uint);
     GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
@@ -224,7 +225,7 @@ void grpc_stats_inc_http2_send_message_size(grpc_exec_ctx *exec_ctx,
     uint64_t uint;
   } _val, _bkt;
   _val.dbl = value;
-  if (_val.uint < 4682617712558473216ull) {
+  if (_val.uint < 4683743612465315840ull) {
     int bucket =
         grpc_stats_table_1[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
     _bkt.dbl = grpc_stats_table_0[bucket];
@@ -250,9 +251,9 @@ void grpc_stats_inc_server_cqs_checked(grpc_exec_ctx *exec_ctx, int value) {
     uint64_t uint;
   } _val, _bkt;
   _val.dbl = value;
-  if (_val.uint < 4627448617123184640ull) {
+  if (_val.uint < 4625196817309499392ull) {
     int bucket =
-        grpc_stats_table_5[((_val.uint - 4613937818241073152ull) >> 52)] + 3;
+        grpc_stats_table_5[((_val.uint - 4613937818241073152ull) >> 51)] + 3;
     _bkt.dbl = grpc_stats_table_4[bucket];
     bucket -= (_val.uint < _bkt.uint);
     GRPC_STATS_INC_HISTOGRAM((exec_ctx),
