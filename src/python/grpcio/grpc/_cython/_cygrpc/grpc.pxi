@@ -374,6 +374,10 @@ cdef extern from "grpc/grpc.h":
 
 cdef extern from "grpc/grpc_security.h":
 
+  # Declare this as an enum, this is the only way to make it a const in
+  # cython
+  enum: GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX
+
   ctypedef enum grpc_ssl_roots_override_result:
     GRPC_SSL_ROOTS_OVERRIDE_OK
     GRPC_SSL_ROOTS_OVERRIDE_FAILED_PERMANENTLY
