@@ -3868,10 +3868,9 @@
     "ci_platforms": [
       "linux", 
       "mac", 
-      "posix", 
-      "windows"
+      "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
@@ -3881,8 +3880,7 @@
     "platforms": [
       "linux", 
       "mac", 
-      "posix", 
-      "windows"
+      "posix"
     ]
   }, 
   {
@@ -3899,54 +3897,12 @@
     "flaky": false, 
     "gtest": true, 
     "language": "c++", 
-    "name": "server_builder_test", 
+    "name": "server_cq_test", 
     "platforms": [
       "linux", 
       "mac", 
       "posix", 
       "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "gtest": true, 
-    "language": "c++", 
-    "name": "server_context_test_spouse_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "gtest": true, 
-    "language": "c++", 
-    "name": "server_crash_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
     ]
   }, 
   {
