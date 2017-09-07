@@ -940,6 +940,9 @@ static void write_action_begin_locked(grpc_exec_ctx *exec_ctx, void *gt,
   if (r.writing) {
     grpc_closure_scheduler *scheduler =
         write_scheduler(t, r.early_results_scheduled, r.partial);
+    if (scheduler != grpc_schedule_on_exec_ctx) {
+      GRPC_STATS_INC_HTTP2_WRITES_OFFLOADED(exec_ctx);
+    }
     set_write_state(
         exec_ctx, t, r.partial ? GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE
                                : GRPC_CHTTP2_WRITE_STATE_WRITING,

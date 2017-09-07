@@ -57,6 +57,7 @@
   buckets: 64
 - counter: http2_pings_sent
 - counter: http2_writes_begun
+- counter: http2_writes_offloaded
 # combiner locks
 - counter: combiner_locks_initiated
 - counter: combiner_locks_scheduled_items

@@ -42,6 +42,7 @@ const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "http2_op_recv_trailing_metadata",
     "http2_pings_sent",
     "http2_writes_begun",
+    "http2_writes_offloaded",
     "combiner_locks_initiated",
     "combiner_locks_scheduled_items",
     "combiner_locks_scheduled_final_items",
