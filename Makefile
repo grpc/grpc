@@ -2941,6 +2941,7 @@ LIBGRPC_SRC = \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
+    src/core/lib/iomgr/call_combiner.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
@@ -3288,6 +3289,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
+    src/core/lib/iomgr/call_combiner.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
@@ -3602,6 +3604,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
+    src/core/lib/iomgr/call_combiner.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
@@ -3852,6 +3855,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
+    src/core/lib/iomgr/call_combiner.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
@@ -4075,6 +4079,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
+    src/core/lib/iomgr/call_combiner.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
@@ -4809,6 +4814,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
+    src/core/lib/iomgr/call_combiner.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/combiner.c \
     src/core/lib/iomgr/endpoint.c \
