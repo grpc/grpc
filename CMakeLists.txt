@@ -91,6 +91,8 @@ if (MSVC)
   add_definitions(/wd4065 /wd4506)
   # TODO(jtattermusch): revisit C4267 occurrences throughout the code
   add_definitions(/wd4267)
+  # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
+  add_definitions(/wd4987 /wd4774 /wd4819 /wd4996 /wd4619)
 endif()
 
 if (gRPC_USE_PROTO_LITE)
@@ -419,6 +421,9 @@ add_dependencies(buildtests_c ev_epollsig_linux_test)
 endif()
 add_dependencies(buildtests_c fake_resolver_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c fake_transport_security_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c fd_conservation_posix_test)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -528,6 +533,9 @@ add_dependencies(buildtests_c sockaddr_resolver_test)
 add_dependencies(buildtests_c sockaddr_utils_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c socket_utils_test)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c ssl_transport_security_test)
 endif()
 add_dependencies(buildtests_c status_conversion_test)
 add_dependencies(buildtests_c stream_compression_test)
@@ -868,6 +876,7 @@ foreach(_hdr
   include/grpc/support/string_util.h
   include/grpc/support/subprocess.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
   include/grpc/support/sync_windows.h
@@ -886,6 +895,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -959,6 +969,8 @@ add_library(grpc
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1261,6 +1273,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -1307,6 +1320,8 @@ add_library(grpc_cronet
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1567,6 +1582,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -1623,6 +1639,8 @@ add_library(grpc_test_util
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -1843,6 +1861,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -1883,6 +1902,8 @@ add_library(grpc_test_util_unsecure
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -2103,6 +2124,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -2129,6 +2151,8 @@ add_library(grpc_unsecure
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -2398,6 +2422,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -2662,6 +2687,7 @@ foreach(_hdr
   include/grpc/support/string_util.h
   include/grpc/support/subprocess.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
   include/grpc/support/sync_windows.h
@@ -2680,6 +2706,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -2825,6 +2852,8 @@ add_library(grpc++_cronet
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
@@ -3093,6 +3122,7 @@ foreach(_hdr
   include/grpc/support/string_util.h
   include/grpc/support/subprocess.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
   include/grpc/support/sync_windows.h
@@ -3111,6 +3141,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -3548,6 +3579,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -3687,6 +3719,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -3840,6 +3873,7 @@ foreach(_hdr
   include/grpc/support/string_util.h
   include/grpc/support/subprocess.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
   include/grpc/support/sync_windows.h
@@ -3858,6 +3892,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -5934,6 +5969,39 @@ target_link_libraries(fake_resolver_test
   gpr
 )
 
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+add_executable(fake_transport_security_test
+  test/core/tsi/fake_transport_security_test.c
+  test/core/tsi/transport_security_test_lib.c
+)
+
+
+target_include_directories(fake_transport_security_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(fake_transport_security_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr_test_util
+  gpr
+  grpc
+)
+
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -8709,6 +8777,39 @@ target_link_libraries(socket_utils_test
   grpc
   gpr_test_util
   gpr
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+add_executable(ssl_transport_security_test
+  test/core/tsi/ssl_transport_security_test.c
+  test/core/tsi/transport_security_test_lib.c
+)
+
+
+target_include_directories(ssl_transport_security_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(ssl_transport_security_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr_test_util
+  gpr
+  grpc
 )
 
 endif()

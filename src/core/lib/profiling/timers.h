@@ -94,7 +94,7 @@ class ProfileScope {
  public:
   ProfileScope(const char *desc, bool important, const char *file, int line)
       : desc_(desc) {
-    gpr_timer_begin((desc_, important ? 1 : 0, file, line);
+    gpr_timer_begin(desc_, important ? 1 : 0, file, line);
   }
   ~ProfileScope() { gpr_timer_end(desc_, 0, "n/a", 0); }
 
