@@ -28,6 +28,7 @@
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/support/spinlock.h"
 
@@ -168,6 +169,7 @@ static void executor_thread(void *arg) {
       gpr_mu_unlock(&ts->mu);
       break;
     }
+    GRPC_STATS_INC_EXECUTOR_QUEUE_DRAINED(&exec_ctx);
     grpc_closure_list exec = ts->elems;
     ts->elems = (grpc_closure_list)GRPC_CLOSURE_LIST_INIT;
     gpr_mu_unlock(&ts->mu);
@@ -183,6 +185,7 @@ static void executor_thread(void *arg) {
 static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_error *error, bool is_short) {
   bool retry_push;
+  GRPC_STATS_INC_EXECUTOR_SCHEDULED_ITEMS(exec_ctx);
   do {
     retry_push = false;
     size_t cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
@@ -201,6 +204,8 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
     thread_state *ts = (thread_state *)gpr_tls_get(&g_this_thread_state);
     if (ts == NULL) {
       ts = &g_thread_state[GPR_HASH_POINTER(exec_ctx, cur_thread_count)];
+    } else {
+      GRPC_STATS_INC_EXECUTOR_SCHEDULED_TO_SELF(exec_ctx);
     }
     thread_state *orig_ts = ts;
 
@@ -232,6 +237,7 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
         continue;
       }
       if (grpc_closure_list_empty(ts->elems)) {
+        GRPC_STATS_INC_EXECUTOR_WAKEUP_INITIATED(exec_ctx);
         gpr_cv_signal(&ts->cv);
       }
       grpc_closure_list_append(&ts->elems, closure, error);

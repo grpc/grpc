@@ -1597,4 +1597,19 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "grpc++_core_stats",
+    srcs = [
+        "src/cpp/util/core_stats.cc",
+    ],
+    hdrs = [
+        "src/cpp/util/core_stats.h",
+    ],
+    language = "c++",
+    deps = [
+        ":grpc++",
+        "//src/proto/grpc/core:stats_proto",
+    ],
+)
+
 grpc_generate_one_off_targets()
