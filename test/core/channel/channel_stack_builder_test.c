@@ -59,10 +59,6 @@ static void channel_func(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
   GRPC_CLOSURE_SCHED(exec_ctx, op->on_consumed, GRPC_ERROR_NONE);
 }
 
-static char *get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
-  return gpr_strdup("peer");
-}
-
 bool g_replacement_fn_called = false;
 bool g_original_fn_called = false;
 void set_arg_once_fn(grpc_channel_stack *channel_stack,
@@ -94,7 +90,6 @@ const grpc_channel_filter replacement_filter = {
     0,
     channel_init_func,
     channel_destroy_func,
-    get_peer,
     grpc_channel_next_get_info,
     "filter_name"};
 
@@ -108,7 +103,6 @@ const grpc_channel_filter original_filter = {
     0,
     channel_init_func,
     channel_destroy_func,
-    get_peer,
     grpc_channel_next_get_info,
     "filter_name"};
 
