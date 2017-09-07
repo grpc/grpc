@@ -95,7 +95,6 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_transport_stream_op_batch *batch = (grpc_transport_stream_op_batch *)arg;
   grpc_call_element *elem = batch->handler_private.extra_arg;
   call_data *calld = elem->call_data;
-  grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner, NULL);
   reset_auth_metadata_context(&calld->auth_md_context);
   grpc_error *error = GRPC_ERROR_REF(input_error);
   if (error == GRPC_ERROR_NONE) {
@@ -228,7 +227,6 @@ static void on_host_checked(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_transport_stream_op_batch *batch = (grpc_transport_stream_op_batch *)arg;
   grpc_call_element *elem = batch->handler_private.extra_arg;
   call_data *calld = elem->call_data;
-  grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner, NULL);
   if (error == GRPC_ERROR_NONE) {
     send_security_metadata(exec_ctx, elem, batch);
   } else {
@@ -318,14 +316,6 @@ static void auth_start_transport_stream_op_batch(
         on_host_checked(exec_ctx, batch, error);
         GRPC_ERROR_UNREF(error);
       } else {
-// FIXME: if grpc_channel_security_connector_check_call_host() invokes
-// the callback in this thread before returning, then we'll call
-// grpc_call_combiner_set_notify_on_cancel() to set it "back" to NULL
-// *before* we call this to set it to the cancel function.
-// Can't just do this before calling
-// grpc_channel_security_connector_check_call_host(), because then the
-// cancellation might be invoked before we actually send the request.
-// May need to fix the credentials plugin API to deal with this.
         // Async return; register cancellation closure with call combiner.
         GRPC_CALL_STACK_REF(calld->owning_call, "cancel_check_call_host");
         grpc_call_combiner_set_notify_on_cancel(

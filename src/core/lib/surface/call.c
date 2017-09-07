@@ -594,6 +594,12 @@ void grpc_call_unref(grpc_call *c) {
   if (cancel) {
     cancel_with_error(&exec_ctx, c, STATUS_FROM_API_OVERRIDE,
                       GRPC_ERROR_CANCELLED);
+  } else {
+    // Unset the call combiner cancellation closure.  This has the
+    // effect of scheduling the previously set cancellation closure, if
+    // any, so that it can release any internal references it may be
+    // holding to the call stack.
+    grpc_call_combiner_set_notify_on_cancel(&exec_ctx, &c->call_combiner, NULL);
   }
   GRPC_CALL_INTERNAL_UNREF(&exec_ctx, c, "destroy");
   grpc_exec_ctx_finish(&exec_ctx);

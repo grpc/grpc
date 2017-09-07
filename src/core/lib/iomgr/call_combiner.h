@@ -87,20 +87,28 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
                              const char* reason);
 #endif
 
-/// Tells \a call_combiner to schedule \a closure when
+/// Registers \a closure to be invoked by \a call_combiner when
 /// grpc_call_combiner_cancel() is called.
 ///
-/// If grpc_call_combiner_cancel() was previously called, \a closure will be
-/// scheduled immediately.
+/// Once a closure is registered, it will always be scheduled exactly
+/// once; this allows the closure to hold references that will be freed
+/// regardless of whether or not the call was cancelled.  If a cancellation
+/// does occur, the closure will be scheduled with the cancellation error;
+/// otherwise, it will be scheduled with GRPC_ERROR_NONE.
+///
+/// The closure will be scheduled in the following cases:
+/// - If grpc_call_combiner_cancel() was called prior to registering the
+///   closure, it will be scheduled immediately with the cancelation error.
+/// - If grpc_call_combiner_cancel() is called after registering the
+///   closure, the closure will be scheduled with the cancellation error.
+/// - If grpc_call_combiner_set_notify_on_cancel() is called again to
+///   register a new cancellation closure, the previous cancellation
+///   closure will be scheduled with GRPC_ERROR_NONE.
 ///
 /// If \a closure is NULL, then no closure will be invoked on
 /// cancellation; this effectively unregisters the previously set closure.
-///
-/// If a closure was set via a previous call to
-/// grpc_call_combiner_set_notify_on_cancel(), the previous closure will be
-/// scheduled immediately with GRPC_ERROR_NONE.  This ensures that
-/// \a closure will be scheduled exactly once, which allows callers to clean
-/// up resources they may be holding for the callback.
+/// However, most filters will not need to explicitly unregister their
+/// callbacks, as this is done automatically when the call is destroyed.
 void grpc_call_combiner_set_notify_on_cancel(grpc_exec_ctx* exec_ctx,
                                              grpc_call_combiner* call_combiner,
                                              grpc_closure* closure);

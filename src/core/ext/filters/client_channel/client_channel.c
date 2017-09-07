@@ -1085,10 +1085,9 @@ static void pick_after_resolver_result_cancel_locked(grpc_exec_ctx *exec_ctx,
   // it's safe to call subchannel_ready_locked() here -- we are
   // essentially calling it here instead of calling it in
   // pick_after_resolver_result_done_locked().
-  subchannel_ready_locked(
-      exec_ctx, elem,
-      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Pick cancelled",
-                                                       &error, 1));
+  subchannel_ready_locked(exec_ctx, elem,
+                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                              "Pick cancelled", &error, 1));
 }
 
 static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
@@ -1107,8 +1106,6 @@ static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
   grpc_call_element *elem = args->elem;
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
-  grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner,
-                                          NULL);
   if (error != GRPC_ERROR_NONE) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver failed to return data",
@@ -1179,7 +1176,6 @@ static void pick_callback_done_locked(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: pick completed asynchronously",
             chand, calld);
   }
-  grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner, NULL);
   GPR_ASSERT(calld->lb_policy != NULL);
   GRPC_LB_POLICY_UNREF(exec_ctx, calld->lb_policy, "pick_subchannel");
   calld->lb_policy = NULL;
