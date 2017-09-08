@@ -369,7 +369,7 @@ Object HHVM_METHOD(Call, startBatch,
 
     size_t op_num{ 0 };
     bool sending_initial_metadata{ false };
-    for (ArrayIter iter(actions); iter; ++iter, ++op_num)
+    for (ArrayIter iter(actions); iter && (op_num < maxActions); ++iter, ++op_num)
     {
         Variant key{ iter.first() };
         Variant value{ iter.second() };
