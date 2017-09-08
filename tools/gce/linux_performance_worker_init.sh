@@ -128,6 +128,12 @@ ruby -v
 # Install bundler (prerequisite for gRPC Ruby)
 gem install bundler
 
+# PHP dependencies
+sudo apt-get install -y php php-dev phpunit php-pear unzip zlib1g-dev
+curl -sS https://getcomposer.org/installer | php
+sudo mv composer.phar /usr/local/bin/composer
+
+
 # Java dependencies - nothing as we already have Java JDK 8
 
 # Go dependencies
