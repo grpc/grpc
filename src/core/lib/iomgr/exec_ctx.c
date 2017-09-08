@@ -104,16 +104,23 @@ static void exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
 }
 
-static gpr_timespec g_start_time;
+static gpr_timespec
+    g_start_time[GPR_TIMESPAN + 1];  // assumes GPR_TIMESPAN is the
+                                     // last enum value in
+                                     // gpr_clock_type
 
 void grpc_exec_ctx_global_init(void) {
-  g_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  for (int i = 0; i < GPR_TIMESPAN; i++) {
+    g_start_time[i] = gpr_now((gpr_clock_type)i);
+  }
+  // allows uniform treatment in conversion functions
+  g_start_time[GPR_TIMESPAN] = gpr_time_0(GPR_TIMESPAN);
 }
 
 void grpc_exec_ctx_global_shutdown(void) {}
 
 static gpr_atm timespec_to_atm_round_down(gpr_timespec ts) {
-  ts = gpr_time_sub(ts, g_start_time);
+  ts = gpr_time_sub(ts, g_start_time[ts.clock_type]);
   double x =
       GPR_MS_PER_SEC * (double)ts.tv_sec + (double)ts.tv_nsec / GPR_NS_PER_MS;
   if (x < 0) return 0;
@@ -122,7 +129,7 @@ static gpr_atm timespec_to_atm_round_down(gpr_timespec ts) {
 }
 
 static gpr_atm timespec_to_atm_round_up(gpr_timespec ts) {
-  ts = gpr_time_sub(ts, g_start_time);
+  ts = gpr_time_sub(ts, g_start_time[ts.clock_type]);
   double x = GPR_MS_PER_SEC * (double)ts.tv_sec +
              (double)ts.tv_nsec / GPR_NS_PER_MS +
              (double)(GPR_NS_PER_SEC - 1) / (double)GPR_NS_PER_SEC;
@@ -145,18 +152,19 @@ void grpc_exec_ctx_invalidate_now(grpc_exec_ctx *exec_ctx) {
 
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis,
                                      gpr_clock_type clock_type) {
-  return gpr_time_add(gpr_convert_clock_type(g_start_time, clock_type),
+  if (clock_type == GPR_TIMESPAN) {
+    return gpr_time_from_millis(millis, GPR_TIMESPAN);
+  }
+  return gpr_time_add(g_start_time[clock_type],
                       gpr_time_from_millis(millis, GPR_TIMESPAN));
 }
 
 grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec ts) {
-  return timespec_to_atm_round_down(
-      gpr_convert_clock_type(ts, g_start_time.clock_type));
+  return timespec_to_atm_round_down(ts);
 }
 
 grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts) {
-  return timespec_to_atm_round_up(
-      gpr_convert_clock_type(ts, g_start_time.clock_type));
+  return timespec_to_atm_round_up(ts);
 }
 
 static const grpc_closure_scheduler_vtable exec_ctx_scheduler_vtable = {
