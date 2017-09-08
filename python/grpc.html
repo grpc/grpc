@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc package &mdash; grpcio 1.3.0 documentation</title>
+  <title>grpc package &mdash; grpcio 1.6.0 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="grpcio 1.3.0 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 1.6.0 documentation" href="index.html"/>
         <link rel="next" title="grpc.beta package" href="grpc.beta.html"/>
         <link rel="prev" title="Welcome to grpcio’s documentation!" href="index.html"/> 
 
@@ -66,7 +66,7 @@
             
             
               <div class="version">
-                1.3.0
+                1.6.0
               </div>
             
           
@@ -279,16 +279,15 @@ immediately.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
-<dt>True if the computation has not yet begun, will not be allowed to take</dt>
-<dd>place, and determination of both was possible without blocking. False
-under all other circumstances including but not limited to the
-computation’s already having begun, the computation’s already having
-finished, and the computation’s having been scheduled for execution on a
-remote system for which a determination of whether or not it commenced
-before being cancelled cannot be made without blocking.</dd>
-</dl>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Returns True if the computation was canceled.
+Returns False under all other circumstances, for example:
+1. computation has begun and could not be canceled.
+2. computation has finished
+3. computation is scheduled for execution and it is impossible to<blockquote>
+<div>determine its state without blocking.</div></blockquote>
 </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
 </tr>
 </tbody>
 </table>
@@ -303,13 +302,13 @@ before being cancelled cannot be made without blocking.</dd>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
-<dt>True if the computation was cancelled any time before its result became</dt>
-<dd>immediately available. False under all other circumstances including but
-not limited to this object’s cancel method not having been called and
-the computation’s result having become immediately available.</dd>
-</dl>
-</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Returns True if the computation was cancelled before its result became
+available.
+False under all other circumstances, for example:
+1. computation was not cancelled.
+2. computation’s result is available.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
 </tr>
 </tbody>
 </table>
@@ -324,12 +323,12 @@ the computation’s result having become immediately available.</dd>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
-<dt>True if the computation is known to have either completed or have been</dt>
-<dd>unscheduled or interrupted. False if the computation may possibly be
-executing or scheduled to execute later.</dd>
-</dl>
-</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Returns True if the computation already executed or was cancelled.
+Returns False if the computation is scheduled for execution or currently
+executing.
+This is exactly opposite of the running() method’s result.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
 </tr>
 </tbody>
 </table>
@@ -345,17 +344,12 @@ executing or scheduled to execute later.</dd>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>timeout</strong> – The length of time in seconds to wait for the computation to
-terminate or be cancelled, or None if this method should block until
-the computation is terminated or is cancelled no matter how long that
-takes.</p>
+terminate or be cancelled. If None, the call will block until the
+computations’s termination.</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
-<dt>The exception raised by the computation, or None if the computation did</dt>
-<dd><p class="first last">not raise an exception.</p>
-</dd>
-</dl>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The exception raised by the computation, or None if the computation did
+not raise an exception.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
@@ -372,15 +366,15 @@ not terminate within the allotted time.</li>
 <dl class="method">
 <dt id="grpc.Future.result">
 <code class="descname">result</code><span class="sig-paren">(</span><em>timeout=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Future.result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Future.result" title="Permalink to this definition">¶</a></dt>
-<dd><p>Accesses the outcome of the computation or raises its exception.</p>
+<dd><p>Returns the result of the computation or raises its exception.</p>
 <p>This method may return immediately or may block.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>timeout</strong> – The length of time in seconds to wait for the computation to
-finish or be cancelled, or None if this method should block until the
-computation has finished or is cancelled no matter how long that takes.</p>
+finish or be cancelled. If None, the call will block until the
+computations’s termination.</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The return value of the computation.</p>
@@ -408,12 +402,11 @@ the same exception.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
-<dt>True if the computation is scheduled to take place in the future or is</dt>
-<dd>taking place now, or False if the computation took place in the past or
-was cancelled.</dd>
-</dl>
-</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Returns True if the computation is scheduled for execution or currently
+executing.
+Returns False if the computation already executed or was cancelled.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
 </tr>
 </tbody>
 </table>
@@ -429,17 +422,12 @@ was cancelled.</dd>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>timeout</strong> – The length of time in seconds to wait for the computation to
-terminate or be cancelled, or None if this method should block until
-the computation is terminated or is cancelled no matter how long that
-takes.</p>
+terminate or be cancelled. If None, the call will block until the
+computations’s termination.</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
-<dt>The traceback of the exception raised by the computation, or None if the</dt>
-<dd><p class="first last">computation did not raise an exception.</p>
-</dd>
-</dl>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The traceback of the exception raised by the computation, or None if the
+computation did not raise an exception.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
@@ -493,27 +481,27 @@ recover.</p>
 
 <dl class="attribute">
 <dt>
-<code class="descname">CONNECTING</code><em class="property"> = (1, ‘connecting’)</em></dt>
+<code class="descname">CONNECTING</code><em class="property"> = (1, 'connecting')</em></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt>
-<code class="descname">IDLE</code><em class="property"> = (0, ‘idle’)</em></dt>
+<code class="descname">IDLE</code><em class="property"> = (0, 'idle')</em></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt>
-<code class="descname">READY</code><em class="property"> = (2, ‘ready’)</em></dt>
+<code class="descname">READY</code><em class="property"> = (2, 'ready')</em></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt>
-<code class="descname">SHUTDOWN</code><em class="property"> = (4, ‘shutdown’)</em></dt>
+<code class="descname">SHUTDOWN</code><em class="property"> = (4, 'shutdown')</em></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt>
-<code class="descname">TRANSIENT_FAILURE</code><em class="property"> = (3, ‘transient failure’)</em></dt>
+<code class="descname">TRANSIENT_FAILURE</code><em class="property"> = (3, 'transient failure')</em></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -525,87 +513,87 @@ recover.</p>
 <p>Mirrors grpc_status_code in the gRPC Core.</p>
 <dl class="attribute">
 <dt id="grpc.StatusCode.ABORTED">
-<code class="descname">ABORTED</code><em class="property"> = (10, ‘aborted’)</em><a class="headerlink" href="#grpc.StatusCode.ABORTED" title="Permalink to this definition">¶</a></dt>
+<code class="descname">ABORTED</code><em class="property"> = (10, 'aborted')</em><a class="headerlink" href="#grpc.StatusCode.ABORTED" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.StatusCode.ALREADY_EXISTS">
-<code class="descname">ALREADY_EXISTS</code><em class="property"> = (6, ‘already exists’)</em><a class="headerlink" href="#grpc.StatusCode.ALREADY_EXISTS" title="Permalink to this definition">¶</a></dt>
+<code class="descname">ALREADY_EXISTS</code><em class="property"> = (6, 'already exists')</em><a class="headerlink" href="#grpc.StatusCode.ALREADY_EXISTS" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.StatusCode.CANCELLED">
-<code class="descname">CANCELLED</code><em class="property"> = (1, ‘cancelled’)</em><a class="headerlink" href="#grpc.StatusCode.CANCELLED" title="Permalink to this definition">¶</a></dt>
+<code class="descname">CANCELLED</code><em class="property"> = (1, 'cancelled')</em><a class="headerlink" href="#grpc.StatusCode.CANCELLED" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.StatusCode.DATA_LOSS">
-<code class="descname">DATA_LOSS</code><em class="property"> = (15, ‘data loss’)</em><a class="headerlink" href="#grpc.StatusCode.DATA_LOSS" title="Permalink to this definition">¶</a></dt>
+<code class="descname">DATA_LOSS</code><em class="property"> = (15, 'data loss')</em><a class="headerlink" href="#grpc.StatusCode.DATA_LOSS" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.StatusCode.DEADLINE_EXCEEDED">
-<code class="descname">DEADLINE_EXCEEDED</code><em class="property"> = (4, ‘deadline exceeded’)</em><a class="headerlink" href="#grpc.StatusCode.DEADLINE_EXCEEDED" title="Permalink to this definition">¶</a></dt>
+<code class="descname">DEADLINE_EXCEEDED</code><em class="property"> = (4, 'deadline exceeded')</em><a class="headerlink" href="#grpc.StatusCode.DEADLINE_EXCEEDED" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.StatusCode.FAILED_PRECONDITION">
-<code class="descname">FAILED_PRECONDITION</code><em class="property"> = (9, ‘failed precondition’)</em><a class="headerlink" href="#grpc.StatusCode.FAILED_PRECONDITION" title="Permalink to this definition">¶</a></dt>
+<code class="descname">FAILED_PRECONDITION</code><em class="property"> = (9, 'failed precondition')</em><a class="headerlink" href="#grpc.StatusCode.FAILED_PRECONDITION" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.StatusCode.INTERNAL">
-<code class="descname">INTERNAL</code><em class="property"> = (13, ‘internal’)</em><a class="headerlink" href="#grpc.StatusCode.INTERNAL" title="Permalink to this definition">¶</a></dt>
+<code class="descname">INTERNAL</code><em class="property"> = (13, 'internal')</em><a class="headerlink" href="#grpc.StatusCode.INTERNAL" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.StatusCode.INVALID_ARGUMENT">
-<code class="descname">INVALID_ARGUMENT</code><em class="property"> = (3, ‘invalid argument’)</em><a class="headerlink" href="#grpc.StatusCode.INVALID_ARGUMENT" title="Permalink to this definition">¶</a></dt>
+<code class="descname">INVALID_ARGUMENT</code><em class="property"> = (3, 'invalid argument')</em><a class="headerlink" href="#grpc.StatusCode.INVALID_ARGUMENT" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.StatusCode.NOT_FOUND">
-<code class="descname">NOT_FOUND</code><em class="property"> = (5, ‘not found’)</em><a class="headerlink" href="#grpc.StatusCode.NOT_FOUND" title="Permalink to this definition">¶</a></dt>
+<code class="descname">NOT_FOUND</code><em class="property"> = (5, 'not found')</em><a class="headerlink" href="#grpc.StatusCode.NOT_FOUND" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.StatusCode.OK">
-<code class="descname">OK</code><em class="property"> = (0, ‘ok’)</em><a class="headerlink" href="#grpc.StatusCode.OK" title="Permalink to this definition">¶</a></dt>
+<code class="descname">OK</code><em class="property"> = (0, 'ok')</em><a class="headerlink" href="#grpc.StatusCode.OK" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.StatusCode.OUT_OF_RANGE">
-<code class="descname">OUT_OF_RANGE</code><em class="property"> = (11, ‘out of range’)</em><a class="headerlink" href="#grpc.StatusCode.OUT_OF_RANGE" title="Permalink to this definition">¶</a></dt>
+<code class="descname">OUT_OF_RANGE</code><em class="property"> = (11, 'out of range')</em><a class="headerlink" href="#grpc.StatusCode.OUT_OF_RANGE" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.StatusCode.PERMISSION_DENIED">
-<code class="descname">PERMISSION_DENIED</code><em class="property"> = (7, ‘permission denied’)</em><a class="headerlink" href="#grpc.StatusCode.PERMISSION_DENIED" title="Permalink to this definition">¶</a></dt>
+<code class="descname">PERMISSION_DENIED</code><em class="property"> = (7, 'permission denied')</em><a class="headerlink" href="#grpc.StatusCode.PERMISSION_DENIED" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.StatusCode.RESOURCE_EXHAUSTED">
-<code class="descname">RESOURCE_EXHAUSTED</code><em class="property"> = (8, ‘resource exhausted’)</em><a class="headerlink" href="#grpc.StatusCode.RESOURCE_EXHAUSTED" title="Permalink to this definition">¶</a></dt>
+<code class="descname">RESOURCE_EXHAUSTED</code><em class="property"> = (8, 'resource exhausted')</em><a class="headerlink" href="#grpc.StatusCode.RESOURCE_EXHAUSTED" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.StatusCode.UNAUTHENTICATED">
-<code class="descname">UNAUTHENTICATED</code><em class="property"> = (16, ‘unauthenticated’)</em><a class="headerlink" href="#grpc.StatusCode.UNAUTHENTICATED" title="Permalink to this definition">¶</a></dt>
+<code class="descname">UNAUTHENTICATED</code><em class="property"> = (16, 'unauthenticated')</em><a class="headerlink" href="#grpc.StatusCode.UNAUTHENTICATED" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.StatusCode.UNAVAILABLE">
-<code class="descname">UNAVAILABLE</code><em class="property"> = (14, ‘unavailable’)</em><a class="headerlink" href="#grpc.StatusCode.UNAVAILABLE" title="Permalink to this definition">¶</a></dt>
+<code class="descname">UNAVAILABLE</code><em class="property"> = (14, 'unavailable')</em><a class="headerlink" href="#grpc.StatusCode.UNAVAILABLE" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.StatusCode.UNIMPLEMENTED">
-<code class="descname">UNIMPLEMENTED</code><em class="property"> = (12, ‘unimplemented’)</em><a class="headerlink" href="#grpc.StatusCode.UNIMPLEMENTED" title="Permalink to this definition">¶</a></dt>
+<code class="descname">UNIMPLEMENTED</code><em class="property"> = (12, 'unimplemented')</em><a class="headerlink" href="#grpc.StatusCode.UNIMPLEMENTED" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.StatusCode.UNKNOWN">
-<code class="descname">UNKNOWN</code><em class="property"> = (2, ‘unknown’)</em><a class="headerlink" href="#grpc.StatusCode.UNKNOWN" title="Permalink to this definition">¶</a></dt>
+<code class="descname">UNKNOWN</code><em class="property"> = (2, 'unknown')</em><a class="headerlink" href="#grpc.StatusCode.UNKNOWN" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -632,12 +620,11 @@ recover.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>callback</strong> – A no-parameter callable to be called on RPC termination.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
-<dt>True if the callback was added and will be called later; False if the</dt>
-<dd>callback was not added and will not later be called (because the RPC
-already terminated or some other reason).</dd>
-</dl>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if the callback was added and will be called later; False if the
+callback was not added and will not be called (because the RPC
+already terminated or some other reason).</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
 </tr>
 </tbody>
 </table>
@@ -654,6 +641,16 @@ already terminated or some other reason).</dd>
 <dt id="grpc.RpcContext.is_active">
 <code class="descname">is_active</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#RpcContext.is_active"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.RpcContext.is_active" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describes whether the RPC is active or has terminated.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if RPC is active, False otherwise.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -682,7 +679,7 @@ out, or None if no deadline was specified for the RPC.</td>
 <dl class="method">
 <dt id="grpc.Call.code">
 <code class="descname">code</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Call.code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Call.code" title="Permalink to this definition">¶</a></dt>
-<dd><p>Accesses the status code emitted by the service-side of the RPC.</p>
+<dd><p>Accesses the status code sent by the server.</p>
 <p>This method blocks until the value is available.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -697,7 +694,7 @@ out, or None if no deadline was specified for the RPC.</td>
 <dl class="method">
 <dt id="grpc.Call.details">
 <code class="descname">details</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Call.details"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Call.details" title="Permalink to this definition">¶</a></dt>
-<dd><p>Accesses the details value emitted by the service-side of the RPC.</p>
+<dd><p>Accesses the details sent by the server.</p>
 <p>This method blocks until the value is available.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -712,7 +709,7 @@ out, or None if no deadline was specified for the RPC.</td>
 <dl class="method">
 <dt id="grpc.Call.initial_metadata">
 <code class="descname">initial_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Call.initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Call.initial_metadata" title="Permalink to this definition">¶</a></dt>
-<dd><p>Accesses the initial metadata from the service-side of the RPC.</p>
+<dd><p>Accesses the initial metadata sent by the server.</p>
 <p>This method blocks until the value is available.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -727,7 +724,7 @@ out, or None if no deadline was specified for the RPC.</td>
 <dl class="method">
 <dt id="grpc.Call.trailing_metadata">
 <code class="descname">trailing_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Call.trailing_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Call.trailing_metadata" title="Permalink to this definition">¶</a></dt>
-<dd><p>Accesses the trailing metadata from the service-side of the RPC.</p>
+<dd><p>Accesses the trailing metadata sent by the server.</p>
 <p>This method blocks until the value is available.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -745,16 +742,21 @@ out, or None if no deadline was specified for the RPC.</td>
 <dt id="grpc.ChannelCredentials">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">ChannelCredentials</code><span class="sig-paren">(</span><em>credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ChannelCredentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ChannelCredentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>A value encapsulating the data required to create a secure Channel.</p>
+<p>An encapsulation of the data required to create a secure Channel.</p>
 <p>This class has no supported interface - it exists to define the type of its
-instances and its instances exist to be passed to other functions.</p>
+instances and its instances exist to be passed to other functions. For
+example, ssl_channel_credentials returns an instance, and secure_channel
+consumes an instance of this class.</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="grpc.CallCredentials">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">CallCredentials</code><span class="sig-paren">(</span><em>credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#CallCredentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.CallCredentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>A value encapsulating data asserting an identity over a channel.</p>
+<dl class="docutils">
+<dt>An encapsulation of the data required to assert an identity over a</dt>
+<dd>channel.</dd>
+</dl>
 <p>A CallCredentials may be composed with ChannelCredentials to always assert
 identity for every call over that Channel.</p>
 <p>This class has no supported interface - it exists to define the type of its
@@ -788,7 +790,10 @@ instances and its instances exist to be passed to other functions.</p>
 <dl class="method">
 <dt id="grpc.AuthMetadataPluginCallback.__call__">
 <code class="descname">__call__</code><span class="sig-paren">(</span><em>metadata</em>, <em>error</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#AuthMetadataPluginCallback.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.AuthMetadataPluginCallback.__call__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Inform the gRPC runtime of the metadata to construct a CallCredentials.</p>
+<dd><dl class="docutils">
+<dt>Inform the gRPC runtime of the metadata to construct a</dt>
+<dd>CallCredentials.</dd>
+</dl>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -837,7 +842,7 @@ or asynchronously.</li>
 <dt id="grpc.ServerCredentials">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">ServerCredentials</code><span class="sig-paren">(</span><em>credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServerCredentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServerCredentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>A value encapsulating the data required to open a secure port on a Server.</p>
+<p>An encapsulation of the data required to open a secure port on a Server.</p>
 <p>This class has no supported interface - it exists to define the type of its
 instances and its instances exist to be passed to other functions.</p>
 </dd></dl>
@@ -846,7 +851,7 @@ instances and its instances exist to be passed to other functions.</p>
 <dt id="grpc.UnaryUnaryMultiCallable">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">UnaryUnaryMultiCallable</code><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Affords invoking a unary-unary RPC.</p>
+<p>Affords invoking a unary-unary RPC from client-side.</p>
 <dl class="method">
 <dt id="grpc.UnaryUnaryMultiCallable.__call__">
 <code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
@@ -893,14 +898,10 @@ service-side of the RPC.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
-<dt>An object that is both a Call for the RPC and a Future. In the event of</dt>
-<dd><p class="first last">RPC completion, the return Call-Future’s result value will be the
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An object that is both a Call for the RPC and a Future. In the event of
+RPC completion, the return Call-Future’s result value will be the
 response message of the RPC. Should the event terminate with non-OK
 status, the returned Call-Future’s exception value will be an RpcError.</p>
-</dd>
-</dl>
-</p>
 </td>
 </tr>
 </tbody>
@@ -942,7 +943,7 @@ metadata, status code, and details.</p>
 <dt id="grpc.UnaryStreamMultiCallable">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">UnaryStreamMultiCallable</code><a class="reference internal" href="_modules/grpc.html#UnaryStreamMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryStreamMultiCallable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Affords invoking a unary-stream RPC.</p>
+<p>Affords invoking a unary-stream RPC from client-side.</p>
 <dl class="method">
 <dt id="grpc.UnaryStreamMultiCallable.__call__">
 <code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
@@ -953,20 +954,17 @@ metadata, status code, and details.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>request</strong> – The request value for the RPC.</li>
-<li><strong>timeout</strong> – An optional duration of time in seconds to allow for the RPC.</li>
+<li><strong>timeout</strong> – An optional duration of time in seconds to allow for the RPC.
+If None, the timeout is considered infinite.</li>
 <li><strong>metadata</strong> – An optional <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
-<dt>An object that is both a Call for the RPC and an iterator of response</dt>
-<dd><p class="first last">values. Drawing response values from the returned Call-iterator may
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An object that is both a Call for the RPC and an iterator of response
+values. Drawing response values from the returned Call-iterator may
 raise RpcError indicating termination of the RPC with non-OK status.</p>
-</dd>
-</dl>
-</p>
 </td>
 </tr>
 </tbody>
@@ -979,7 +977,7 @@ raise RpcError indicating termination of the RPC with non-OK status.</p>
 <dt id="grpc.StreamUnaryMultiCallable">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">StreamUnaryMultiCallable</code><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Affords invoking a stream-unary RPC in any call style.</p>
+<p>Affords invoking a stream-unary RPC from client-side.</p>
 <dl class="method">
 <dt id="grpc.StreamUnaryMultiCallable.__call__">
 <code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
@@ -990,7 +988,8 @@ raise RpcError indicating termination of the RPC with non-OK status.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>request_iterator</strong> – An iterator that yields request values for the RPC.</li>
-<li><strong>timeout</strong> – An optional duration of time in seconds to allow for the RPC.</li>
+<li><strong>timeout</strong> – An optional duration of time in seconds to allow for the RPC.
+If None, the timeout is considered infinite.</li>
 <li><strong>metadata</strong> – Optional <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
@@ -1001,8 +1000,8 @@ service-side of the RPC.</li>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.RpcError" title="grpc.RpcError"><code class="xref py py-exc docutils literal"><span class="pre">RpcError</span></code></a> – Indicating that the RPC terminated with non-OK status. The
-raised RpcError will also be a Call for the RPC affording the RPC’s
-metadata, status code, and details.</p>
+raised RpcError will also implement grpc.Call, affording methods
+such as metadata, code, and details.</p>
 </td>
 </tr>
 </tbody>
@@ -1012,28 +1011,25 @@ metadata, status code, and details.</p>
 <dl class="method">
 <dt id="grpc.StreamUnaryMultiCallable.future">
 <code class="descname">future</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.future" title="Permalink to this definition">¶</a></dt>
-<dd><p>Asynchronously invokes the underlying RPC.</p>
+<dd><p>Asynchronously invokes the underlying RPC on the client.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>request_iterator</strong> – An iterator that yields request values for the RPC.</li>
-<li><strong>timeout</strong> – An optional duration of time in seconds to allow for the RPC.</li>
+<li><strong>timeout</strong> – An optional duration of time in seconds to allow for the RPC.
+If None, the timeout is considered infinite.</li>
 <li><strong>metadata</strong> – Optional <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
-<dt>An object that is both a Call for the RPC and a Future. In the event of</dt>
-<dd><p class="first last">RPC completion, the return Call-Future’s result value will be the
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An object that is both a Call for the RPC and a Future. In the event of
+RPC completion, the return Call-Future’s result value will be the
 response message of the RPC. Should the event terminate with non-OK
 status, the returned Call-Future’s exception value will be an RpcError.</p>
-</dd>
-</dl>
-</p>
 </td>
 </tr>
 </tbody>
@@ -1043,21 +1039,22 @@ status, the returned Call-Future’s exception value will be an RpcError.</p>
 <dl class="method">
 <dt id="grpc.StreamUnaryMultiCallable.with_call">
 <code class="descname">with_call</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.with_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.with_call" title="Permalink to this definition">¶</a></dt>
-<dd><p>Synchronously invokes the underlying RPC.</p>
+<dd><p>Synchronously invokes the underlying RPC on the client.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>request_iterator</strong> – An iterator that yields request values for the RPC.</li>
-<li><strong>timeout</strong> – An optional duration of time in seconds to allow for the RPC.</li>
+<li><strong>timeout</strong> – An optional duration of time in seconds to allow for the RPC.
+If None, the timeout is considered infinite.</li>
 <li><strong>metadata</strong> – Optional <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The response value for the RPC and a Call for the RPC.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The response value for the RPC and a Call object for the RPC.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.RpcError" title="grpc.RpcError"><code class="xref py py-exc docutils literal"><span class="pre">RpcError</span></code></a> – Indicating that the RPC terminated with non-OK status. The
@@ -1075,31 +1072,28 @@ metadata, status code, and details.</p>
 <dt id="grpc.StreamStreamMultiCallable">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">StreamStreamMultiCallable</code><a class="reference internal" href="_modules/grpc.html#StreamStreamMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamStreamMultiCallable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Affords invoking a stream-stream RPC in any call style.</p>
+<p>Affords invoking a stream-stream RPC on client-side.</p>
 <dl class="method">
 <dt id="grpc.StreamStreamMultiCallable.__call__">
 <code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Invokes the underlying RPC.</p>
+<dd><p>Invokes the underlying RPC on the client.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>request_iterator</strong> – An iterator that yields request values for the RPC.</li>
-<li><strong>timeout</strong> – An optional duration of time in seconds to allow for the RPC.</li>
+<li><strong>timeout</strong> – An optional duration of time in seconds to allow for the RPC.
+if not specified the timeout is considered infinite.</li>
 <li><strong>metadata</strong> – Optional <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
-<dt>An object that is both a Call for the RPC and an iterator of response</dt>
-<dd><p class="first last">values. Drawing response values from the returned Call-iterator may
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An object that is both a Call for the RPC and an iterator of response
+values. Drawing response values from the returned Call-iterator may
 raise RpcError indicating termination of the RPC with non-OK status.</p>
-</dd>
-</dl>
-</p>
 </td>
 </tr>
 </tbody>
@@ -1112,7 +1106,7 @@ raise RpcError indicating termination of the RPC with non-OK status.</p>
 <dt id="grpc.Channel">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">Channel</code><a class="reference internal" href="_modules/grpc.html#Channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Affords RPC invocation via generic methods.</p>
+<p>Affords RPC invocation via generic methods on client-side.</p>
 <dl class="method">
 <dt id="grpc.Channel.stream_stream">
 <code class="descname">stream_stream</code><span class="sig-paren">(</span><em>method</em>, <em>request_serializer=None</em>, <em>response_deserializer=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Channel.stream_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel.stream_stream" title="Permalink to this definition">¶</a></dt>
@@ -1164,20 +1158,24 @@ message. Response goes undeserialized in case None is passed.</li>
 <dl class="method">
 <dt id="grpc.Channel.subscribe">
 <code class="descname">subscribe</code><span class="sig-paren">(</span><em>callback</em>, <em>try_to_connect=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Channel.subscribe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel.subscribe" title="Permalink to this definition">¶</a></dt>
-<dd><p>Subscribes to this Channel’s connectivity.</p>
+<dd><p>Subscribe to this Channel’s connectivity state machine.</p>
+<p>A Channel may be in any of the states described by ChannelConnectivity.
+This method allows application to monitor the state transitions.
+The typical use case is to debug or gain better visibility into gRPC
+runtime’s state.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>callback</strong> – A callable to be invoked and passed a ChannelConnectivity value
-describing this Channel’s connectivity. The callable will be invoked
-immediately upon subscription and again for every change to this
-Channel’s connectivity thereafter until it is unsubscribed or this
+<li><strong>callback</strong> – A callable to be invoked with ChannelConnectivity argument.
+ChannelConnectivity describes current state of the channel.
+The callable will be invoked immediately upon subscription and again for
+every change to ChannelConnectivity until it is unsubscribed or this
 Channel object goes out of scope.</li>
 <li><strong>try_to_connect</strong> – A boolean indicating whether or not this Channel should
-attempt to connect if it is not already connected and ready to conduct
-RPCs.</li>
+attempt to connect immediately. If set to False, gRPC runtime decides
+when to connect.</li>
 </ul>
 </td>
 </tr>
@@ -1236,7 +1234,7 @@ message. Response goes undeserialized in case None is passed.</li>
 <dl class="method">
 <dt id="grpc.Channel.unsubscribe">
 <code class="descname">unsubscribe</code><span class="sig-paren">(</span><em>callback</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Channel.unsubscribe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel.unsubscribe" title="Permalink to this definition">¶</a></dt>
-<dd><p>Unsubscribes a callback from this Channel’s connectivity.</p>
+<dd><p>Unsubscribes a subscribed callback from this Channel’s connectivity.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1256,9 +1254,23 @@ been passed to its “subscribe” method.</td>
 <dd><p>Bases: <a class="reference internal" href="#grpc.RpcContext" title="grpc.RpcContext"><code class="xref py py-class docutils literal"><span class="pre">grpc.RpcContext</span></code></a></p>
 <p>A context object passed to method implementations.</p>
 <dl class="method">
+<dt id="grpc.ServicerContext.auth_context">
+<code class="descname">auth_context</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.auth_context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.auth_context" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the auth context for the call.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A map of strings to an iterable of bytes for each auth property.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="grpc.ServicerContext.invocation_metadata">
 <code class="descname">invocation_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.invocation_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.invocation_metadata" title="Permalink to this definition">¶</a></dt>
-<dd><p>Accesses the metadata from the invocation-side of the RPC.</p>
+<dd><p>Accesses the metadata from the sent by the client.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1277,7 +1289,46 @@ been passed to its “subscribe” method.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A string identifying the peer that invoked the RPC being serviced.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A string identifying the peer that invoked the RPC being serviced.
+The string format is determined by gRPC runtime.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.ServicerContext.peer_identities">
+<code class="descname">peer_identities</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.peer_identities"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.peer_identities" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets one or more peer identity(s).</p>
+<blockquote>
+<div><p>Equivalent to
+servicer_context.auth_context().get(</p>
+<blockquote>
+<div>servicer_context.peer_identity_key())</div></blockquote>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">An iterable of the identities, or None if the call is not authenticated.
+Each identity is returned as a raw bytes type.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.ServicerContext.peer_identity_key">
+<code class="descname">peer_identity_key</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.peer_identity_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.peer_identity_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>The auth property used to identify the peer.</p>
+<p>For example, “x509_common_name” or “x509_subject_alternative_name” are
+used to identify an SSL peer.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The auth property (string) that indicates the
+peer identity, or None if the call is not authenticated.</td>
 </tr>
 </tbody>
 </table>
@@ -1286,9 +1337,9 @@ been passed to its “subscribe” method.</td>
 <dl class="method">
 <dt id="grpc.ServicerContext.send_initial_metadata">
 <code class="descname">send_initial_metadata</code><span class="sig-paren">(</span><em>initial_metadata</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.send_initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.send_initial_metadata" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sends the initial metadata value to the invocation-side of the RPC.</p>
-<p>This method need not be called by method implementations if they have no
-service-side initial metadata to transmit.</p>
+<dd><p>Sends the initial metadata value to the client.</p>
+<p>This method need not be called by implementations if they have no
+metadata to add to what the gRPC runtime will transmit.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1302,15 +1353,14 @@ service-side initial metadata to transmit.</p>
 <dl class="method">
 <dt id="grpc.ServicerContext.set_code">
 <code class="descname">set_code</code><span class="sig-paren">(</span><em>code</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.set_code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.set_code" title="Permalink to this definition">¶</a></dt>
-<dd><p>Accepts the status code of the RPC.</p>
+<dd><p>Sets the value to be used as status code upon RPC completion.</p>
 <p>This method need not be called by method implementations if they wish the
 gRPC runtime to determine the status code of the RPC.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>code</strong> – A StatusCode value to be transmitted to the invocation side of the
-RPC as the status code of the RPC.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>code</strong> – A StatusCode object to be sent to the client.</td>
 </tr>
 </tbody>
 </table>
@@ -1319,15 +1369,14 @@ RPC as the status code of the RPC.</td>
 <dl class="method">
 <dt id="grpc.ServicerContext.set_details">
 <code class="descname">set_details</code><span class="sig-paren">(</span><em>details</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.set_details"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.set_details" title="Permalink to this definition">¶</a></dt>
-<dd><p>Accepts the service-side details of the RPC.</p>
+<dd><p>Sets the value to be used as detail string upon RPC completion.</p>
 <p>This method need not be called by method implementations if they have no
 details to transmit.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>details</strong> – A string to be transmitted to the invocation side of the RPC as
-the status details of the RPC.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>details</strong> – An arbitrary string to be sent to the client upon completion.</td>
 </tr>
 </tbody>
 </table>
@@ -1336,9 +1385,9 @@ the status details of the RPC.</td>
 <dl class="method">
 <dt id="grpc.ServicerContext.set_trailing_metadata">
 <code class="descname">set_trailing_metadata</code><span class="sig-paren">(</span><em>trailing_metadata</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.set_trailing_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.set_trailing_metadata" title="Permalink to this definition">¶</a></dt>
-<dd><p>Accepts the trailing metadata value of the RPC.</p>
-<p>This method need not be called by method implementations if they have no
-service-side trailing metadata to transmit.</p>
+<dd><p>Sends the trailing metadata for the RPC.</p>
+<p>This method need not be called by implementations if they have no
+metadata to add to what the gRPC runtime will transmit.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1437,7 +1486,7 @@ non-None if request_streaming and response_streaming are both True.</p>
 <dl class="attribute">
 <dt id="grpc.HandlerCallDetails.invocation_metadata">
 <code class="descname">invocation_metadata</code><a class="headerlink" href="#grpc.HandlerCallDetails.invocation_metadata" title="Permalink to this definition">¶</a></dt>
-<dd><p>The <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a> from the invocation side of the RPC.</p>
+<dd><p>The <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a> sent by the client.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1450,18 +1499,15 @@ non-None if request_streaming and response_streaming are both True.</p>
 <dl class="method">
 <dt id="grpc.GenericRpcHandler.service">
 <code class="descname">service</code><span class="sig-paren">(</span><em>handler_call_details</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#GenericRpcHandler.service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.GenericRpcHandler.service" title="Permalink to this definition">¶</a></dt>
-<dd><p>Services an RPC (or not).</p>
+<dd><p>Returns the handler for servicing the RPC.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>handler_call_details</strong> – A HandlerCallDetails describing the RPC.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
-<dt>An RpcMethodHandler with which the RPC may be serviced, or None to</dt>
-<dd>indicate that this object will not be servicing the RPC.</dd>
-</dl>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An RpcMethodHandler with which the RPC may be serviced if the
+implementation chooses to service this RPC, or None otherwise.</td>
 </tr>
 </tbody>
 </table>
@@ -1475,14 +1521,14 @@ non-None if request_streaming and response_streaming are both True.</p>
 <dd><p>Bases: <a class="reference internal" href="#grpc.GenericRpcHandler" title="grpc.GenericRpcHandler"><code class="xref py py-class docutils literal"><span class="pre">grpc.GenericRpcHandler</span></code></a></p>
 <p>An implementation of RPC methods belonging to a service.</p>
 <p>A service handles RPC methods with structured names of the form
-‘/Service.Name/Service.MethodX’, where ‘Service.Name’ is the value
-returned by service_name(), and ‘Service.MethodX’ is the service method
-name.  A service can have multiple service methods names, but only a single
+‘/Service.Name/Service.Method’, where ‘Service.Name’ is the value
+returned by service_name(), and ‘Service.Method’ is the method
+name.  A service can have multiple method names, but only a single
 service name.</p>
 <dl class="method">
 <dt id="grpc.ServiceRpcHandler.service_name">
 <code class="descname">service_name</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServiceRpcHandler.service_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServiceRpcHandler.service_name" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns this services name.</p>
+<dd><p>Returns this service’s name.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1509,8 +1555,11 @@ service name.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>generic_rpc_handlers</strong> – An iterable of GenericRpcHandlers that will be used
-to service RPCs after this Server is started.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>generic_rpc_handlers</strong> – An iterable of GenericRpcHandlers that will be used</li>
+<li><strong>service RPCs.</strong> (<em>to</em>) – </li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1519,21 +1568,23 @@ to service RPCs after this Server is started.</td>
 <dl class="method">
 <dt id="grpc.Server.add_insecure_port">
 <code class="descname">add_insecure_port</code><span class="sig-paren">(</span><em>address</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Server.add_insecure_port"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Server.add_insecure_port" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reserves a port for insecure RPC service once this Server becomes active.</p>
-<p>This method may only be called before calling this Server’s start method is
-called.</p>
+<dd><p>Opens an insecure port for accepting RPCs.</p>
+<p>This method may only be called before starting the server.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> – The address for which to open a port.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>address</strong> – The address for which to open a port.</li>
+<li><strong>the port is 0</strong><strong>, or </strong><strong>not specified in the address</strong><strong>, </strong><strong>then gRPC runtime</strong> (<em>if</em>) – </li>
+<li><strong>choose a port.</strong> (<em>will</em>) – </li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
-<dt>An integer port on which RPCs will be serviced after this link has been</dt>
-<dd>started. This is typically the same number as the port number contained
-in the passed address, but will likely be different if the port number
-contained in the passed address was zero.</dd>
-</dl>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">An integer port on which server will accept RPC requests.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">integer</p>
 </td>
 </tr>
 </tbody>
@@ -1543,27 +1594,24 @@ contained in the passed address was zero.</dd>
 <dl class="method">
 <dt id="grpc.Server.add_secure_port">
 <code class="descname">add_secure_port</code><span class="sig-paren">(</span><em>address</em>, <em>server_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Server.add_secure_port"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Server.add_secure_port" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reserves a port for secure RPC service after this Server becomes active.</p>
-<p>This method may only be called before calling this Server’s start method is
-called.</p>
+<dd><p>Opens a secure port for accepting RPCs.</p>
+<p>This method may only be called before starting the server.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>address</strong> – The address for which to open a port.</li>
-<li><strong>server_credentials</strong> – A ServerCredentials.</li>
+<li><strong>address</strong> – The address for which to open a port.
+if the port is 0, or not specified in the address, then gRPC runtime
+will choose a port.</li>
+<li><strong>server_credentials</strong> – A ServerCredentials object.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
-<dt>An integer port on which RPCs will be serviced after this link has been</dt>
-<dd><p class="first last">started. This is typically the same number as the port number contained
-in the passed address, but will likely be different if the port number
-contained in the passed address was zero.</p>
-</dd>
-</dl>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">An integer port on which server will accept RPC requests.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">integer</p>
 </td>
 </tr>
 </tbody>
@@ -1573,42 +1621,34 @@ contained in the passed address was zero.</p>
 <dl class="method">
 <dt id="grpc.Server.start">
 <code class="descname">start</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Server.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Server.start" title="Permalink to this definition">¶</a></dt>
-<dd><p>Starts this Server’s service of RPCs.</p>
-<p>This method may only be called while the server is not serving RPCs (i.e. it
-is not idempotent).</p>
+<dd><p>Starts this Server.</p>
+<p>This method may only be called once. (i.e. it is not idempotent).</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="grpc.Server.stop">
 <code class="descname">stop</code><span class="sig-paren">(</span><em>grace</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Server.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Server.stop" title="Permalink to this definition">¶</a></dt>
-<dd><p>Stops this Server’s service of RPCs.</p>
-<p>All calls to this method immediately stop service of new RPCs. When existing
-RPCs are aborted is controlled by the grace period parameter passed to this
-method.</p>
-<p>This method may be called at any time and is idempotent. Passing a smaller
-grace value than has been passed in a previous call will have the effect of
-stopping the Server sooner. Passing a larger grace value than has been
-passed in a previous call will not have the effect of stopping the server
-later.</p>
-<p>This method does not block for any significant length of time. If None is
-passed as the grace value, existing RPCs are immediately aborted and this
-method blocks until this Server is completely stopped.</p>
+<dd><p>Stops this Server.</p>
+<p>This method immediately stop service of new RPCs in all cases.
+If a grace period is specified, this method returns immediately
+and all RPCs active at the end of the grace period are aborted.</p>
+<p>If a grace period is not specified, then all existing RPCs are
+teriminated immediately and the this method blocks until the last
+RPC handler terminates.</p>
+<p>This method is idempotent and may be called at any time. Passing a smaller
+grace value in subsequentcall will have the effect of stopping the Server
+sooner. Passing a larger grace value in subsequent call <em>will not</em> have the
+effect of stopping the server later (i.e. the most restrictive grace
+value is used).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>grace</strong> – A duration of time in seconds or None. If a duration of time in
-seconds, the time to allow existing RPCs to complete before being
-aborted by this Server’s stopping. If None, all RPCs will be aborted
-immediately and this method will block until this Server is completely
-stopped.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>grace</strong> – A duration of time in seconds or None.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A threading.Event that will be set when this Server has completely
-stopped. The returned event may not be set until after the full grace
-period (if some ongoing RPC continues for the full length of the period)
-of it may be set much sooner (such as if this Server had no RPCs underway
-at the time it was stopped or if all RPCs that it had underway completed
-very early in the grace period).</td>
+stopped, i.e. when running RPCs either complete or are aborted and
+all handlers have terminated.</td>
 </tr>
 </tbody>
 </table>
@@ -1625,19 +1665,14 @@ very early in the grace period).</td>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>behavior</strong> – The implementation of an RPC method as a callable behavior taking
-a single request value and returning a single response value.</li>
-<li><strong>request_deserializer</strong> – An optional request deserialization behavior.</li>
-<li><strong>response_serializer</strong> – An optional response serialization behavior.</li>
+<li><strong>behavior</strong> – The implementation of an RPC that accepts one request and returns</li>
+<li><strong>response.</strong> (<em>one</em>) – </li>
+<li><strong>request_deserializer</strong> – An optional behavior for request deserialization.</li>
+<li><strong>response_serializer</strong> – An optional behavior for response serialization.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
-<dt>An RpcMethodHandler for a unary-unary RPC method constructed from the given</dt>
-<dd><p class="first last">parameters.</p>
-</dd>
-</dl>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An RpcMethodHandler object that is typically used by grpc.Server.</p>
 </td>
 </tr>
 </tbody>
@@ -1653,19 +1688,14 @@ a single request value and returning a single response value.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>behavior</strong> – The implementation of an RPC method as a callable behavior taking
-a single request value and returning an iterator of response values.</li>
-<li><strong>request_deserializer</strong> – An optional request deserialization behavior.</li>
-<li><strong>response_serializer</strong> – An optional response serialization behavior.</li>
+<li><strong>behavior</strong> – The implementation of an RPC that accepts one request and returns
+an iterator of response values.</li>
+<li><strong>request_deserializer</strong> – An optional behavior for request deserialization.</li>
+<li><strong>response_serializer</strong> – An optional behavior for response serialization.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
-<dt>An RpcMethodHandler for a unary-stream RPC method constructed from the</dt>
-<dd><p class="first last">given parameters.</p>
-</dd>
-</dl>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An RpcMethodHandler object that is typically used by grpc.Server.</p>
 </td>
 </tr>
 </tbody>
@@ -1681,19 +1711,14 @@ a single request value and returning an iterator of response values.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>behavior</strong> – The implementation of an RPC method as a callable behavior taking
-an iterator of request values and returning a single response value.</li>
-<li><strong>request_deserializer</strong> – An optional request deserialization behavior.</li>
-<li><strong>response_serializer</strong> – An optional response serialization behavior.</li>
+<li><strong>behavior</strong> – The implementation of an RPC that accepts an iterator of request</li>
+<li><strong>and returns a single response value.</strong> (<em>values</em>) – </li>
+<li><strong>request_deserializer</strong> – An optional behavior for request deserialization.</li>
+<li><strong>response_serializer</strong> – An optional behavior for response serialization.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
-<dt>An RpcMethodHandler for a stream-unary RPC method constructed from the</dt>
-<dd><p class="first last">given parameters.</p>
-</dd>
-</dl>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An RpcMethodHandler object that is typically used by grpc.Server.</p>
 </td>
 </tr>
 </tbody>
@@ -1709,20 +1734,14 @@ an iterator of request values and returning a single response value.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>behavior</strong> – The implementation of an RPC method as a callable behavior taking
-an iterator of request values and returning an iterator of response
-values.</li>
-<li><strong>request_deserializer</strong> – An optional request deserialization behavior.</li>
-<li><strong>response_serializer</strong> – An optional response serialization behavior.</li>
+<li><strong>behavior</strong> – The implementation of an RPC that accepts an iterator of request</li>
+<li><strong>and returns an iterator of response values.</strong> (<em>values</em>) – </li>
+<li><strong>request_deserializer</strong> – An optional behavior for request deserialization.</li>
+<li><strong>response_serializer</strong> – An optional behavior for response serialization.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
-<dt>An RpcMethodHandler for a stream-stream RPC method constructed from the</dt>
-<dd><p class="first last">given parameters.</p>
-</dd>
-</dl>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An RpcMethodHandler object that is typically used by grpc.Server.</p>
 </td>
 </tr>
 </tbody>
@@ -1732,19 +1751,20 @@ values.</li>
 <dl class="function">
 <dt id="grpc.method_handlers_generic_handler">
 <code class="descclassname">grpc.</code><code class="descname">method_handlers_generic_handler</code><span class="sig-paren">(</span><em>service</em>, <em>method_handlers</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#method_handlers_generic_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.method_handlers_generic_handler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a grpc.GenericRpcHandler from RpcMethodHandlers.</p>
+<dd><p>Creates a GenericRpcHandler from RpcMethodHandlers.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>service</strong> – A service name to be used for the given method handlers.</li>
-<li><strong>method_handlers</strong> – A dictionary from method name to RpcMethodHandler
-implementing the named method.</li>
+<li><strong>service</strong> – The name of the service that is implemented by the method_handlers.</li>
+<li><strong>method_handlers</strong> – A dictionary that maps method names to corresponding</li>
+<li><strong>RpcMethodHandler.</strong> – </li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A GenericRpcHandler constructed from the given parameters.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A GenericRpcHandler. This is typically added to the grpc.Server object
+with add_generic_rpc_handlers() before starting the server.</p>
 </td>
 </tr>
 </tbody>
@@ -1760,12 +1780,12 @@ implementing the named method.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>root_certificates</strong> – The PEM-encoded root certificates or unset to ask for
-them to be retrieved from a default location.</li>
-<li><strong>private_key</strong> – The PEM-encoded private key to use or unset if no private key
-should be used.</li>
-<li><strong>certificate_chain</strong> – The PEM-encoded certificate chain to use or unset if no
-certificate chain should be used.</li>
+<li><strong>root_certificates</strong> – The PEM-encoded root certificates as a byte string,</li>
+<li><strong>None to retrieve them from a default location chosen by gRPC runtime.</strong> (<em>or</em>) – </li>
+<li><strong>private_key</strong> – The PEM-encoded private key as a byte string, or None if no</li>
+<li><strong>key should be used.</strong> (<em>private</em>) – </li>
+<li><strong>certificate_chain</strong> – The PEM-encoded certificate chain as a byte string</li>
+<li><strong>use</strong><strong> or </strong><strong>or None if no certificate chain should be used.</strong> (<em>to</em>) – </li>
 </ul>
 </td>
 </tr>
@@ -1785,9 +1805,8 @@ certificate chain should be used.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>metadata_plugin</strong> – An AuthMetadataPlugin to use as the authentication behavior
-in the created CallCredentials.</li>
-<li><strong>name</strong> – A name for the plugin.</li>
+<li><strong>metadata_plugin</strong> – An AuthMetadataPlugin to use for authentication.</li>
+<li><strong>name</strong> – An optional name for the plugin.</li>
 </ul>
 </td>
 </tr>
@@ -1807,7 +1826,8 @@ in the created CallCredentials.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>access_token</strong> – A string to place directly in the http request
-authorization header, ie “authorization: Bearer &lt;access_token&gt;”.</td>
+authorization header, for example
+“authorization: Bearer &lt;access_token&gt;”.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A CallCredentials.</td>
 </tr>
@@ -1840,17 +1860,13 @@ authorization header, ie “authorization: Bearer &lt;access_token&gt;”.</td>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>channel_credentials</strong> – A ChannelCredentials.</li>
+<li><strong>channel_credentials</strong> – A ChannelCredentials object.</li>
 <li><strong>*call_credentials</strong> – One or more CallCredentials objects.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
-<dt>A ChannelCredentials composed of the given ChannelCredentials and</dt>
-<dd><p class="first last">CallCredentials objects.</p>
-</dd>
-</dl>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A ChannelCredentials composed of the given ChannelCredentials and
+CallCredentials objects.</p>
 </td>
 </tr>
 </tbody>
@@ -1866,19 +1882,19 @@ authorization header, ie “authorization: Bearer &lt;access_token&gt;”.</td>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>private_key_certificate_chain_pairs</strong> – A nonempty sequence each element of
-which is a pair the first element of which is a PEM-encoded private key
-and the second element of which is the corresponding PEM-encoded
-certificate chain.</li>
-<li><strong>root_certificates</strong> – PEM-encoded client root certificates to be used for
-verifying authenticated clients. If omitted, require_client_auth must also
-be omitted or be False.</li>
-<li><strong>require_client_auth</strong> – A boolean indicating whether or not to require clients
-to be authenticated. May only be True if root_certificates is not None.</li>
+<li><strong>private_key_certificate_chain_pairs</strong> – A list of pairs of the form
+[PEM-encoded private key, PEM-encoded certificate chain].</li>
+<li><strong>root_certificates</strong> – An optional byte string of PEM-encoded client root
+certificates that the server will use to verify client authentication.
+If omitted, require_client_auth must also be False.</li>
+<li><strong>require_client_auth</strong> – A boolean indicating whether or not to require
+clients to be authenticated. May only be True if root_certificates
+is not None.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A ServerCredentials for use with an SSL-enabled Server.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A ServerCredentials for use with an SSL-enabled Server. Typically, this
+object is an argument to add_secure_port() method during server setup.</p>
 </td>
 </tr>
 </tbody>
@@ -1888,21 +1904,17 @@ to be authenticated. May only be True if root_certificates is not None.</li>
 <dl class="function">
 <dt id="grpc.channel_ready_future">
 <code class="descclassname">grpc.</code><code class="descname">channel_ready_future</code><span class="sig-paren">(</span><em>channel</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#channel_ready_future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.channel_ready_future" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a Future tracking when a Channel is ready.</p>
-<p>Cancelling the returned Future does not tell the given Channel to abandon
-attempts it may have been making to connect; cancelling merely deactivates the
-returned Future’s subscription to the given Channel’s connectivity.</p>
+<dd><p>Creates a Future that tracks when a Channel is ready.</p>
+<p>Cancelling the Future does not affect the channel’s state machine.
+It merely decouples the Future from channel state machine.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>channel</strong> – A Channel.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>channel</strong> – A Channel object.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
-<dt>A Future that matures when the given Channel has connectivity</dt>
-<dd>ChannelConnectivity.READY.</dd>
-</dl>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A Future object that matures when the channel connectivity is
+ChannelConnectivity.READY.</td>
 </tr>
 </tbody>
 </table>
@@ -1917,13 +1929,13 @@ returned Future’s subscription to the given Channel’s connectivity.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>target</strong> – The target to which to connect.</li>
-<li><strong>options</strong> – A sequence of string-value pairs according to which to configure
-the created channel.</li>
+<li><strong>target</strong> – The server address</li>
+<li><strong>options</strong> – An optional list of key-value pairs (channel args in gRPC runtime)</li>
+<li><strong>configure the channel.</strong> (<em>to</em>) – </li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A Channel to the target through which RPCs may be conducted.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A Channel object.</p>
 </td>
 </tr>
 </tbody>
@@ -1939,14 +1951,14 @@ the created channel.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>target</strong> – The target to which to connect.</li>
+<li><strong>target</strong> – The server address.</li>
 <li><strong>credentials</strong> – A ChannelCredentials instance.</li>
-<li><strong>options</strong> – A sequence of string-value pairs according to which to configure
-the created channel.</li>
+<li><strong>options</strong> – An optional list of key-value pairs (channel args in gRPC runtime)</li>
+<li><strong>configure the channel.</strong> (<em>to</em>) – </li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A Channel to the target through which RPCs may be conducted.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A Channel object.</p>
 </td>
 </tr>
 </tbody>
@@ -1962,22 +1974,20 @@ the created channel.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>thread_pool</strong> – A futures.ThreadPoolExecutor to be used by the returned Server
-to service RPCs.</li>
-<li><strong>handlers</strong> – An optional sequence of GenericRpcHandlers to be used to service
-RPCs after the returned Server is started. These handlers need not be the
-only handlers the server will use to service RPCs; other handlers may
-later be added by calling add_generic_rpc_handlers any time before the
-returned Server is started.</li>
-<li><strong>options</strong> – A sequence of string-value pairs according to which to configure
-the created server.</li>
+<li><strong>thread_pool</strong> – A futures.ThreadPoolExecutor to be used by the Server
+to execute RPC handlers.</li>
+<li><strong>handlers</strong> – An optional list of GenericRpcHandlers used for executing RPCs.
+More handlers may be added by calling add_generic_rpc_handlers any time
+before the server is started.</li>
+<li><strong>options</strong> – An optional list of key-value pairs (channel args in gRPC runtime)</li>
+<li><strong>configure the channel.</strong> (<em>to</em>) – </li>
 <li><strong>maximum_concurrent_rpcs</strong> – The maximum number of concurrent RPCs this server
-will service before returning status RESOURCE_EXHAUSTED, or None to
+will service before returning RESOURCE_EXHAUSTED status, or None to
 indicate no limit.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A Server with which RPCs can be serviced.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A Server object.</p>
 </td>
 </tr>
 </tbody>
@@ -2046,7 +2056,7 @@ the key must end with ‘-bin’, i.e.
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.3.0',
+            VERSION:'1.6.0',
             LANGUAGE:'en',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
