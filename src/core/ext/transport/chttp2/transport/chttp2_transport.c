@@ -2596,7 +2596,7 @@ static void reset_byte_stream(grpc_exec_ctx *exec_ctx, void *arg,
     GRPC_ERROR_UNREF(s->byte_stream_error);
     s->byte_stream_error = GRPC_ERROR_NONE;
     grpc_chttp2_cancel_stream(exec_ctx, s->t, s, GRPC_ERROR_REF(error));
-    s->byte_stream_error = error;
+    s->byte_stream_error = GRPC_ERROR_REF(error);
   }
 }
 
