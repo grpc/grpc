@@ -65,11 +65,13 @@ EXPORTS
     grpc_completion_queue_shutdown
     grpc_completion_queue_destroy
     grpc_alarm_create
+    grpc_alarm_set
     grpc_alarm_cancel
     grpc_alarm_destroy
     grpc_channel_check_connectivity_state
     grpc_channel_num_external_connectivity_watchers
     grpc_channel_watch_connectivity_state
+    grpc_channel_support_connectivity_watcher
     grpc_channel_create_call
     grpc_channel_ping
     grpc_channel_register_call

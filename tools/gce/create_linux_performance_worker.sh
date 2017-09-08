@@ -34,7 +34,7 @@ gcloud compute instances create $INSTANCE_NAME \
     --zone "$ZONE" \
     --machine-type $MACHINE_TYPE \
     --image-project ubuntu-os-cloud \
-    --image-family ubuntu-1610 \
+    --image-family ubuntu-1704 \
     --boot-disk-size 300 \
     --scopes https://www.googleapis.com/auth/bigquery
 
