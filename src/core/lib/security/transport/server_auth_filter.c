@@ -97,7 +97,6 @@ static void on_md_processing_done_inner(grpc_exec_ctx *exec_ctx,
                                         grpc_error *error) {
   call_data *calld = elem->call_data;
   grpc_transport_stream_op_batch *batch = calld->recv_initial_metadata_batch;
-  grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner, NULL);
   /* TODO(jboeuf): Implement support for response_md. */
   if (response_md != NULL && num_response_md > 0) {
     gpr_log(GPR_INFO,
@@ -152,11 +151,13 @@ static void cancel_call(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_call_element *elem = (grpc_call_element *)arg;
   call_data *calld = elem->call_data;
   // If the result was not already processed, invoke the callback now.
-  if (gpr_atm_full_cas(&calld->state, (gpr_atm)STATE_INIT,
+  if (error != GRPC_ERROR_NONE &&
+      gpr_atm_full_cas(&calld->state, (gpr_atm)STATE_INIT,
                        (gpr_atm)STATE_CANCELLED)) {
     on_md_processing_done_inner(exec_ctx, elem, NULL, 0, NULL, 0,
                                 GRPC_ERROR_REF(error));
   }
+  GRPC_CALL_STACK_UNREF(exec_ctx, calld->owning_call, "cancel_call");
 }
 
 static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
@@ -169,6 +170,7 @@ static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
     if (chand->creds != NULL && chand->creds->processor.process != NULL) {
       // We're calling out to the application, so we need to make sure
       // to drop the call combiner early if we get cancelled.
+      GRPC_CALL_STACK_REF(calld->owning_call, "cancel_call");
       GRPC_CLOSURE_INIT(&calld->cancel_closure, cancel_call, elem,
                         grpc_schedule_on_exec_ctx);
       grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner,

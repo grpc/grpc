@@ -26,9 +26,11 @@
 #include <functional>
 #include <vector>
 
+extern "C" {
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/metadata_batch.h"
+}
 
 /// An interface to define filters.
 ///
@@ -191,6 +193,15 @@ class TransportStreamOpBatch {
   void set_send_message(grpc_byte_stream *send_message) {
     op_->send_message = true;
     op_->payload->send_message.send_message = send_message;
+  }
+
+  grpc_byte_stream **recv_message() const {
+    return op_->recv_message ? op_->payload->recv_message.recv_message
+                             : nullptr;
+  }
+  void set_recv_message(grpc_byte_stream **recv_message) {
+    op_->recv_message = true;
+    op_->payload->recv_message.recv_message = recv_message;
   }
 
   census_context *get_census_context() const {

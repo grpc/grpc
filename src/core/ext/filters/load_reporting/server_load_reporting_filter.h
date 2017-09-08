@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2016 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_EV_EPOLL_LIMITED_POLLERS_LINUX_H
-#define GRPC_CORE_LIB_IOMGR_EV_EPOLL_LIMITED_POLLERS_LINUX_H
+#ifndef GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_SERVER_LOAD_REPORTING_FILTER_H
+#define GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_SERVER_LOAD_REPORTING_FILTER_H
 
-#include "src/core/lib/iomgr/ev_posix.h"
-#include "src/core/lib/iomgr/port.h"
+#include "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
+#include "src/core/lib/channel/channel_stack.h"
 
-const grpc_event_engine_vtable *grpc_init_epoll_limited_pollers_linux(
-    bool explicitly_requested);
+extern const grpc_channel_filter grpc_server_load_reporting_filter;
 
-#endif /* GRPC_CORE_LIB_IOMGR_EV_EPOLL_LIMITED_POLLERS_LINUX_H */
+#endif /* GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_SERVER_LOAD_REPORTING_FILTER_H \
+          */

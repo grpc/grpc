@@ -87,11 +87,28 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
                              const char* reason);
 #endif
 
-/// Tells \a call_combiner to invoke \a closure when
-/// grpc_call_combiner_cancel() is called.  If grpc_call_combiner_cancel()
-/// was previously called, \a closure will be invoked immediately.
+/// Registers \a closure to be invoked by \a call_combiner when
+/// grpc_call_combiner_cancel() is called.
+///
+/// Once a closure is registered, it will always be scheduled exactly
+/// once; this allows the closure to hold references that will be freed
+/// regardless of whether or not the call was cancelled.  If a cancellation
+/// does occur, the closure will be scheduled with the cancellation error;
+/// otherwise, it will be scheduled with GRPC_ERROR_NONE.
+///
+/// The closure will be scheduled in the following cases:
+/// - If grpc_call_combiner_cancel() was called prior to registering the
+///   closure, it will be scheduled immediately with the cancelation error.
+/// - If grpc_call_combiner_cancel() is called after registering the
+///   closure, the closure will be scheduled with the cancellation error.
+/// - If grpc_call_combiner_set_notify_on_cancel() is called again to
+///   register a new cancellation closure, the previous cancellation
+///   closure will be scheduled with GRPC_ERROR_NONE.
+///
 /// If \a closure is NULL, then no closure will be invoked on
 /// cancellation; this effectively unregisters the previously set closure.
+/// However, most filters will not need to explicitly unregister their
+/// callbacks, as this is done automatically when the call is destroyed.
 void grpc_call_combiner_set_notify_on_cancel(grpc_exec_ctx* exec_ctx,
                                              grpc_call_combiner* call_combiner,
                                              grpc_closure* closure);

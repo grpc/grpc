@@ -28,6 +28,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/call_combiner.h"
@@ -119,6 +120,7 @@ void grpc_init(void) {
   gpr_mu_lock(&g_init_mu);
   if (++g_initializations == 1) {
     gpr_time_init();
+    grpc_stats_init();
     grpc_slice_intern_init();
     grpc_mdctx_global_init();
     grpc_channel_init_init();
@@ -188,6 +190,7 @@ void grpc_shutdown(void) {
     grpc_mdctx_global_shutdown(&exec_ctx);
     grpc_handshaker_factory_registry_shutdown(&exec_ctx);
     grpc_slice_intern_shutdown();
+    grpc_stats_shutdown();
   }
   gpr_mu_unlock(&g_init_mu);
   grpc_exec_ctx_finish(&exec_ctx);
