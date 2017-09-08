@@ -28,11 +28,12 @@
 
 grpc_lb_addresses* grpc_lb_addresses_create(
     size_t num_addresses, const grpc_lb_user_data_vtable* user_data_vtable) {
-  grpc_lb_addresses* addresses = gpr_zalloc(sizeof(grpc_lb_addresses));
+  grpc_lb_addresses* addresses =
+      (grpc_lb_addresses*)gpr_zalloc(sizeof(grpc_lb_addresses));
   addresses->num_addresses = num_addresses;
   addresses->user_data_vtable = user_data_vtable;
   const size_t addresses_size = sizeof(grpc_lb_address) * num_addresses;
-  addresses->addresses = gpr_zalloc(addresses_size);
+  addresses->addresses = (grpc_lb_address*)gpr_zalloc(addresses_size);
   return addresses;
 }
 

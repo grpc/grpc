@@ -82,8 +82,8 @@ typedef struct channel_data {
 
 static bool skip_compression(grpc_call_element *elem, uint32_t flags,
                              bool has_compression_algorithm) {
-  call_data *calld = elem->call_data;
-  channel_data *channeld = elem->channel_data;
+  call_data *calld = (call_data *)elem->call_data;
+  channel_data *channeld = (channel_data *)elem->channel_data;
 
   if (flags & (GRPC_WRITE_NO_COMPRESS | GRPC_WRITE_INTERNAL_COMPRESS)) {
     return true;
@@ -106,8 +106,8 @@ static grpc_error *process_send_initial_metadata(
 static grpc_error *process_send_initial_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_metadata_batch *initial_metadata, bool *has_compression_algorithm) {
-  call_data *calld = elem->call_data;
-  channel_data *channeld = elem->channel_data;
+  call_data *calld = (call_data *)elem->call_data;
+  channel_data *channeld = (channel_data *)elem->channel_data;
   *has_compression_algorithm = false;
   grpc_stream_compression_algorithm stream_compression_algorithm =
       GRPC_STREAM_COMPRESS_NONE;
@@ -285,7 +285,7 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
 static void fail_send_message_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
                                                      void *arg,
                                                      grpc_error *error) {
-  call_data *calld = arg;
+  call_data *calld = (call_data *)arg;
   if (calld->send_message_batch != NULL) {
     grpc_transport_stream_op_batch_finish_with_failure(
         exec_ctx, calld->send_message_batch, GRPC_ERROR_REF(error),
@@ -374,7 +374,7 @@ static void start_send_message_batch(grpc_exec_ctx *exec_ctx, void *arg,
 static void compress_start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *batch) {
-  call_data *calld = elem->call_data;
+  call_data *calld = (call_data *)elem->call_data;
   GPR_TIMER_BEGIN("compress_start_transport_stream_op_batch", 0);
   // Handle cancel_stream.
   if (batch->cancel_stream) {
@@ -473,7 +473,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
                               grpc_closure *ignored) {
-  call_data *calld = elem->call_data;
+  call_data *calld = (call_data *)elem->call_data;
   grpc_slice_buffer_destroy_internal(exec_ctx, &calld->slices);
   GRPC_ERROR_UNREF(calld->cancel_error);
 }
@@ -482,7 +482,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_channel_element *elem,
                                      grpc_channel_element_args *args) {
-  channel_data *channeld = elem->channel_data;
+  channel_data *channeld = (channel_data *)elem->channel_data;
 
   /* Configuration for message compression */
   channeld->enabled_algorithms_bitset =

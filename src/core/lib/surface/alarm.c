@@ -80,12 +80,12 @@ static void alarm_unref_dbg(grpc_alarm *alarm, const char *reason,
 
 static void alarm_end_completion(grpc_exec_ctx *exec_ctx, void *arg,
                                  grpc_cq_completion *c) {
-  grpc_alarm *alarm = arg;
+  grpc_alarm *alarm = (grpc_alarm *)arg;
   GRPC_ALARM_UNREF(alarm, "dequeue-end-op");
 }
 
 static void alarm_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  grpc_alarm *alarm = arg;
+  grpc_alarm *alarm = (grpc_alarm *)arg;
 
   /* We are queuing an op on completion queue. This means, the alarm's structure
      cannot be destroyed until the op is dequeued. Adding an extra ref
@@ -96,7 +96,7 @@ static void alarm_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 }
 
 grpc_alarm *grpc_alarm_create(void *reserved) {
-  grpc_alarm *alarm = gpr_malloc(sizeof(grpc_alarm));
+  grpc_alarm *alarm = (grpc_alarm *)gpr_malloc(sizeof(grpc_alarm));
 
 #ifndef NDEBUG
   if (GRPC_TRACER_ON(grpc_trace_alarm_refcount)) {

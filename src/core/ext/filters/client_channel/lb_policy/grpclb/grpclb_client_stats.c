@@ -42,7 +42,8 @@ struct grpc_grpclb_client_stats {
 };
 
 grpc_grpclb_client_stats* grpc_grpclb_client_stats_create() {
-  grpc_grpclb_client_stats* client_stats = gpr_zalloc(sizeof(*client_stats));
+  grpc_grpclb_client_stats* client_stats =
+      (grpc_grpclb_client_stats*)gpr_zalloc(sizeof(*client_stats));
   gpr_ref_init(&client_stats->refs, 1);
   return client_stats;
 }
@@ -88,7 +89,8 @@ void grpc_grpclb_client_stats_add_call_dropped_locked(
   // Record the drop.
   if (client_stats->drop_token_counts == NULL) {
     client_stats->drop_token_counts =
-        gpr_zalloc(sizeof(grpc_grpclb_dropped_call_counts));
+        (grpc_grpclb_dropped_call_counts*)gpr_zalloc(
+            sizeof(grpc_grpclb_dropped_call_counts));
   }
   grpc_grpclb_dropped_call_counts* drop_token_counts =
       client_stats->drop_token_counts;
@@ -103,9 +105,9 @@ void grpc_grpclb_client_stats_add_call_dropped_locked(
   while (new_num_entries < drop_token_counts->num_entries + 1) {
     new_num_entries *= 2;
   }
-  drop_token_counts->token_counts =
-      gpr_realloc(drop_token_counts->token_counts,
-                  new_num_entries * sizeof(grpc_grpclb_drop_token_count));
+  drop_token_counts->token_counts = (grpc_grpclb_drop_token_count*)gpr_realloc(
+      drop_token_counts->token_counts,
+      new_num_entries * sizeof(grpc_grpclb_drop_token_count));
   grpc_grpclb_drop_token_count* new_entry =
       &drop_token_counts->token_counts[drop_token_counts->num_entries++];
   new_entry->token = gpr_strdup(token);
