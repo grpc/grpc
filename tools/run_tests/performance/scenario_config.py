@@ -797,7 +797,7 @@ class RubyLanguage:
     return 'ruby'
 
 
-class PhpLanguage:
+class Php7Language:
 
   def __init__(self):
     pass
@@ -1021,7 +1021,7 @@ LANGUAGES = {
     'node' : NodeLanguage(),
     'node_express': NodeExpressLanguage(),
     'ruby' : RubyLanguage(),
-    'php' : PhpLanguage(),
+    'php7' : Php7Language(),
     'java' : JavaLanguage(),
     'python' : PythonLanguage(),
     'go' : GoLanguage(),

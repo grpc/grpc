@@ -24,6 +24,8 @@ root=`pwd`
 export GRPC_LIB_SUBDIR=libs/$CONFIG
 export CFLAGS="-Wno-parentheses-equality"
 
+mv libs/opt/libgrpc.so.5.0.0-dev tmp
+
 # build php
 cd src/php
 
@@ -34,4 +36,5 @@ if [ "$CONFIG" != "gcov" ] ; then
 else
   ./configure --enable-grpc=$root --enable-coverage
 fi
+mv $root/tmp libgrpc.so.5.0.0-dev
 make
