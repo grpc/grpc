@@ -230,6 +230,10 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
       }
       gpr_mu_lock(&ts->mu);
       if (ts->queued_long_job) {
+        // if there's a long job queued, we never queue anything else to this
+        // queue (since long jobs can take 'infinite' time and we need to
+        // guarantee no starvation)
+        // ... spin through queues and try again
         gpr_mu_unlock(&ts->mu);
         size_t idx = (size_t)(ts - g_thread_state);
         ts = &g_thread_state[(idx + 1) % cur_thread_count];
