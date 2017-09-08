@@ -28,8 +28,8 @@
 
 <header>
     
-        <h2>
-            <span class="ancestors"><a href="grpc.html">grpc</a>.</span>Server</h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>
+            <span class="ancestors"><a href="grpc.html">grpc</a>.</span>Server<span class="signature">(options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h2>
         
     
 </header>
@@ -41,7 +41,9 @@
 
     
 
+    
     <h4 class="name" id="Server"><span class="type-signature"></span>new Server<span class="signature">(options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -155,7 +157,7 @@ incoming requests to those handlers</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line746">line 746</a>
+        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line731">line 731</a>
     </li></ul></dd>
     
 
@@ -165,6 +167,8 @@ incoming requests to those handlers</p>
 
     
 </dl>
+
+
 
 
 
@@ -198,23 +202,19 @@ server.start();</code></pre>
 
     
 
-     
-
     
 
     
 
     
-        <h3 class="subsection-title">Methods</h3>
+
+    
+        <h3 class="subsection-title">Members</h3>
 
         
             
+<h4 class="name" id="addProtoService"><span class="type-signature"></span>addProtoService<span class="type-signature"></span></h4>
 
-    
-
-    <h4 class="name" id="addProtoService"><span class="type-signature"></span>addProtoService<span class="signature">(service, implementation)</span><span class="type-signature"></span></h4>
-
-    
 
 
 
@@ -222,85 +222,6 @@ server.start();</code></pre>
     <p>Add a proto service to the server, with a corresponding implementation</p>
 </div>
 
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>service</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Protobuf.Reflect.Service</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The proto service descriptor</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>implementation</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object.&lt;String, <a href="grpc.Server.html#~handleCall">grpc.Server~handleCall</a>></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Map of method
-    names to method implementation for the provided service.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
 
 
 
@@ -338,7 +259,7 @@ server.start();</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line949">line 949</a>
+        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line929">line 929</a>
     </li></ul></dd>
     
 
@@ -354,22 +275,20 @@ server.start();</code></pre>
 
 
 
+        
+    
 
-
-
-
-
-
-
-
-
+    
+        <h3 class="subsection-title">Methods</h3>
 
         
             
 
     
 
+    
     <h4 class="name" id="addService"><span class="type-signature"></span>addService<span class="signature">(service, implementation)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -493,7 +412,7 @@ server.start();</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line885">line 885</a>
+        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line870">line 870</a>
     </li></ul></dd>
     
 
@@ -519,12 +438,16 @@ server.start();</code></pre>
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="bind"><span class="type-signature"></span>bind<span class="signature">(port, creds)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -650,7 +573,7 @@ insecure credentials object</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line978">line 978</a>
+        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line958">line 958</a>
     </li></ul></dd>
     
 
@@ -676,12 +599,16 @@ insecure credentials object</p>
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="forceShutdown"><span class="type-signature"></span>forceShutdown<span class="signature">()</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -735,7 +662,7 @@ any outstanding tryShutdown callbacks.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line855">line 855</a>
+        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line840">line 840</a>
     </li></ul></dd>
     
 
@@ -761,12 +688,16 @@ any outstanding tryShutdown callbacks.</p>
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="register"><span class="type-signature"></span>register<span class="signature">(name, handler, serialize, deserialize, type)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+    
 
     
 
@@ -961,7 +892,7 @@ a handler for the given method. Returns true on success</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line824">line 824</a>
+        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line809">line 809</a>
     </li></ul></dd>
     
 
@@ -1010,12 +941,16 @@ a handler for the given method. Returns true on success</p>
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="start"><span class="type-signature"></span>start<span class="signature">()</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -1066,7 +1001,7 @@ a handler for the given method. Returns true on success</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line756">line 756</a>
+        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line741">line 741</a>
     </li></ul></dd>
     
 
@@ -1092,12 +1027,16 @@ a handler for the given method. Returns true on success</p>
 
 
 
+
+
         
             
 
     
 
+    
     <h4 class="name" id="tryShutdown"><span class="type-signature"></span>tryShutdown<span class="signature">(callback)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -1200,7 +1139,7 @@ is idempotent with itself and forceShutdown.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line845">line 845</a>
+        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line830">line 830</a>
     </li></ul></dd>
     
 
@@ -1210,6 +1149,8 @@ is idempotent with itself and forceShutdown.</p>
 
     
 </dl>
+
+
 
 
 
@@ -1237,7 +1178,9 @@ is idempotent with itself and forceShutdown.</p>
 
     
 
+    
     <h4 class="name" id="~handleBidiStreamingCall"><span class="type-signature"></span>handleBidiStreamingCall<span class="signature">(call)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -1337,7 +1280,7 @@ is idempotent with itself and forceShutdown.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line700">line 700</a>
+        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line685">line 685</a>
     </li></ul></dd>
     
 
@@ -1347,6 +1290,8 @@ is idempotent with itself and forceShutdown.</p>
 
     
 </dl>
+
+
 
 
 
@@ -1428,7 +1373,7 @@ is idempotent with itself and forceShutdown.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line803">line 803</a>
+        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line788">line 788</a>
     </li></ul></dd>
     
 
@@ -1449,7 +1394,9 @@ is idempotent with itself and forceShutdown.</p>
 
     
 
+    
     <h4 class="name" id="~handleClientStreamingCall"><span class="type-signature"></span>handleClientStreamingCall<span class="signature">(call, callback)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -1573,7 +1520,7 @@ is idempotent with itself and forceShutdown.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line660">line 660</a>
+        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line645">line 645</a>
     </li></ul></dd>
     
 
@@ -1599,12 +1546,16 @@ is idempotent with itself and forceShutdown.</p>
 
 
 
+
+
             
                 
 
     
 
+    
     <h4 class="name" id="~handleServerStreamingCall"><span class="type-signature"></span>handleServerStreamingCall<span class="signature">(call)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -1704,7 +1655,7 @@ is idempotent with itself and forceShutdown.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line620">line 620</a>
+        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line605">line 605</a>
     </li></ul></dd>
     
 
@@ -1730,12 +1681,16 @@ is idempotent with itself and forceShutdown.</p>
 
 
 
+
+
             
                 
 
     
 
+    
     <h4 class="name" id="~handleUnaryCall"><span class="type-signature"></span>handleUnaryCall<span class="signature">(call, callback)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -1859,7 +1814,7 @@ is idempotent with itself and forceShutdown.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line564">line 564</a>
+        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line549">line 549</a>
     </li></ul></dd>
     
 
@@ -1885,12 +1840,16 @@ is idempotent with itself and forceShutdown.</p>
 
 
 
+
+
             
                 
 
     
 
+    
     <h4 class="name" id="~sendUnaryData"><span class="type-signature"></span>sendUnaryData<span class="signature">(error, value, trailer<span class="signature-attributes">opt</span>, flags<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    
 
     
 
@@ -2099,7 +2058,7 @@ responses.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line553">line 553</a>
+        <a href="src_server.js.html">src/server.js</a>, <a href="src_server.js.html#line538">line 538</a>
     </li></ul></dd>
     
 
@@ -2109,6 +2068,8 @@ responses.</p>
 
     
 </dl>
+
+
 
 
 
@@ -2145,7 +2106,7 @@ responses.</p>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Wed Jun 28 2017 09:44:06 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.3</a> on Fri Sep 08 2017 11:10:31 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>

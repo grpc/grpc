@@ -78,6 +78,10 @@ article dl {
     margin-bottom: 40px;
 }
 
+article img {
+  max-width: 100%;
+}
+
 section
 {
     display: block;
@@ -218,8 +222,8 @@ thead tr
 th { border-right: 1px solid #aaa; }
 tr > th:last-child { border-right: 1px solid #ddd; }
 
-.ancestors { color: #999; }
-.ancestors a
+.ancestors, .attribs { color: #999; }
+.ancestors a, .attribs a
 {
     color: #999 !important;
     text-decoration: none;
