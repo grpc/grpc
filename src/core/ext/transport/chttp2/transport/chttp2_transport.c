@@ -938,6 +938,12 @@ static void write_action_begin_locked(grpc_exec_ctx *exec_ctx, void *gt,
     r = grpc_chttp2_begin_write(exec_ctx, t);
   }
   if (r.writing) {
+    if (r.partial) {
+      GRPC_STATS_INC_HTTP2_PARTIAL_WRITES(exec_ctx);
+    }
+    if (!t->is_first_write_in_batch) {
+      GRPC_STATS_INC_HTTP2_WRITES_CONTINUED(exec_ctx);
+    }
     grpc_closure_scheduler *scheduler =
         write_scheduler(t, r.early_results_scheduled, r.partial);
     if (scheduler != grpc_schedule_on_exec_ctx) {

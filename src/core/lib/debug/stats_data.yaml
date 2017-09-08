@@ -58,6 +58,8 @@
 - counter: http2_pings_sent
 - counter: http2_writes_begun
 - counter: http2_writes_offloaded
+- counter: http2_writes_continued
+- counter: http2_partial_writes
 # combiner locks
 - counter: combiner_locks_initiated
 - counter: combiner_locks_scheduled_items
@@ -70,4 +72,3 @@
 - counter: executor_wakeup_initiated
 - counter: executor_queue_drained
 - counter: executor_push_retries
-
