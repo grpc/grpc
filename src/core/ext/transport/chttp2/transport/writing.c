@@ -168,6 +168,13 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
   grpc_chttp2_stream *s;
 
+  /* stats histogram counters: we increment these throughout this function,
+     and at the end publish to the central stats histograms */
+  int flow_control_writes = 0;
+  int initial_metadata_writes = 0;
+  int trailing_metadata_writes = 0;
+  int message_writes = 0;
+
   GRPC_STATS_INC_HTTP2_WRITES_BEGUN(exec_ctx);
 
   GPR_TIMER_BEGIN("grpc_chttp2_begin_write", 0);
@@ -181,6 +188,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     t->force_send_settings = 0;
     t->dirtied_local_settings = 0;
     t->sent_local_settings = 1;
+    GRPC_STATS_INC_HTTP2_SETTINGS_WRITES(exec_ctx);
   }
 
   /* simple writes are queued to qbuf, and flushed here */
@@ -257,6 +265,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
               gpr_inf_past(GPR_CLOCK_MONOTONIC);
           t->ping_recv_state.ping_strikes = 0;
         }
+        initial_metadata_writes++;
       } else {
         GRPC_CHTTP2_IF_TRACING(
             gpr_log(GPR_INFO, "not sending initial_metadata (Trailers-Only)"));
@@ -272,6 +281,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
               [num_extra_headers_for_trailing_metadata++] =
                   &s->send_initial_metadata->idx.named.content_type->md;
         }
+        trailing_metadata_writes++;
       }
       s->send_initial_metadata = NULL;
       s->sent_initial_metadata = true;
@@ -295,6 +305,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             gpr_inf_past(GPR_CLOCK_MONOTONIC);
         t->ping_recv_state.ping_strikes = 0;
       }
+      flow_control_writes++;
     }
     if (sent_initial_metadata) {
       /* send any body bytes, if allowed by flow control */
@@ -393,6 +404,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing:fork");
             grpc_chttp2_list_add_writable_stream(t, s);
           }
+          message_writes++;
         } else if (t->flow_control.remote_window == 0) {
           grpc_chttp2_list_add_stalled_by_transport(t, s);
           now_writing = true;
@@ -428,6 +440,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                                     num_extra_headers_for_trailing_metadata,
                                     s->send_trailing_metadata, &hopt,
                                     &t->outbuf);
+          trailing_metadata_writes++;
         }
         s->send_trailing_metadata = NULL;
         s->sent_trailing_metadata = true;
@@ -445,6 +458,14 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     }
 
     if (now_writing) {
+      GRPC_STATS_INC_HTTP2_SEND_INITIAL_METADATA_PER_WRITE(
+          exec_ctx, initial_metadata_writes);
+      GRPC_STATS_INC_HTTP2_SEND_MESSAGE_PER_WRITE(exec_ctx, message_writes);
+      GRPC_STATS_INC_HTTP2_SEND_TRAILING_METADATA_PER_WRITE(
+          exec_ctx, trailing_metadata_writes);
+      GRPC_STATS_INC_HTTP2_SEND_FLOWCTL_PER_WRITE(exec_ctx,
+                                                  flow_control_writes);
+
       if (!grpc_chttp2_list_add_writing_stream(t, s)) {
         /* already in writing list: drop ref */
         GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:already_writing");

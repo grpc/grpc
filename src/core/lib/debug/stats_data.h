@@ -42,6 +42,7 @@ typedef enum {
   GRPC_STATS_COUNTER_HTTP2_OP_RECV_INITIAL_METADATA,
   GRPC_STATS_COUNTER_HTTP2_OP_RECV_MESSAGE,
   GRPC_STATS_COUNTER_HTTP2_OP_RECV_TRAILING_METADATA,
+  GRPC_STATS_COUNTER_HTTP2_SETTINGS_WRITES,
   GRPC_STATS_COUNTER_HTTP2_PINGS_SENT,
   GRPC_STATS_COUNTER_HTTP2_WRITES_BEGUN,
   GRPC_STATS_COUNTER_HTTP2_WRITES_OFFLOADED,
@@ -68,6 +69,10 @@ typedef enum {
   GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,
   GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
+  GRPC_STATS_HISTOGRAM_HTTP2_SEND_INITIAL_METADATA_PER_WRITE,
+  GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_PER_WRITE,
+  GRPC_STATS_HISTOGRAM_HTTP2_SEND_TRAILING_METADATA_PER_WRITE,
+  GRPC_STATS_HISTOGRAM_HTTP2_SEND_FLOWCTL_PER_WRITE,
   GRPC_STATS_HISTOGRAM_COUNT
 } grpc_stats_histograms;
 extern const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT];
@@ -85,7 +90,15 @@ typedef enum {
   GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE_BUCKETS = 64,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE_FIRST_SLOT = 320,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_BUCKETS = 384
+  GRPC_STATS_HISTOGRAM_HTTP2_SEND_INITIAL_METADATA_PER_WRITE_FIRST_SLOT = 384,
+  GRPC_STATS_HISTOGRAM_HTTP2_SEND_INITIAL_METADATA_PER_WRITE_BUCKETS = 64,
+  GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_PER_WRITE_FIRST_SLOT = 448,
+  GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_PER_WRITE_BUCKETS = 64,
+  GRPC_STATS_HISTOGRAM_HTTP2_SEND_TRAILING_METADATA_PER_WRITE_FIRST_SLOT = 512,
+  GRPC_STATS_HISTOGRAM_HTTP2_SEND_TRAILING_METADATA_PER_WRITE_BUCKETS = 64,
+  GRPC_STATS_HISTOGRAM_HTTP2_SEND_FLOWCTL_PER_WRITE_FIRST_SLOT = 576,
+  GRPC_STATS_HISTOGRAM_HTTP2_SEND_FLOWCTL_PER_WRITE_BUCKETS = 64,
+  GRPC_STATS_HISTOGRAM_BUCKETS = 640
 } grpc_stats_histogram_constants;
 #define GRPC_STATS_INC_CLIENT_CALLS_CREATED(exec_ctx) \
   GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED)
@@ -126,6 +139,8 @@ typedef enum {
 #define GRPC_STATS_INC_HTTP2_OP_RECV_TRAILING_METADATA(exec_ctx) \
   GRPC_STATS_INC_COUNTER((exec_ctx),                             \
                          GRPC_STATS_COUNTER_HTTP2_OP_RECV_TRAILING_METADATA)
+#define GRPC_STATS_INC_HTTP2_SETTINGS_WRITES(exec_ctx) \
+  GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_HTTP2_SETTINGS_WRITES)
 #define GRPC_STATS_INC_HTTP2_PINGS_SENT(exec_ctx) \
   GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_HTTP2_PINGS_SENT)
 #define GRPC_STATS_INC_HTTP2_WRITES_BEGUN(exec_ctx) \
@@ -182,10 +197,27 @@ void grpc_stats_inc_tcp_read_offer_iov_size(grpc_exec_ctx *exec_ctx, int x);
 #define GRPC_STATS_INC_HTTP2_SEND_MESSAGE_SIZE(exec_ctx, value) \
   grpc_stats_inc_http2_send_message_size((exec_ctx), (int)(value))
 void grpc_stats_inc_http2_send_message_size(grpc_exec_ctx *exec_ctx, int x);
-extern const int grpc_stats_histo_buckets[6];
-extern const int grpc_stats_histo_start[6];
-extern const int *const grpc_stats_histo_bucket_boundaries[6];
-extern void (*const grpc_stats_inc_histogram[6])(grpc_exec_ctx *exec_ctx,
+#define GRPC_STATS_INC_HTTP2_SEND_INITIAL_METADATA_PER_WRITE(exec_ctx, value) \
+  grpc_stats_inc_http2_send_initial_metadata_per_write((exec_ctx), (int)(value))
+void grpc_stats_inc_http2_send_initial_metadata_per_write(
+    grpc_exec_ctx *exec_ctx, int x);
+#define GRPC_STATS_INC_HTTP2_SEND_MESSAGE_PER_WRITE(exec_ctx, value) \
+  grpc_stats_inc_http2_send_message_per_write((exec_ctx), (int)(value))
+void grpc_stats_inc_http2_send_message_per_write(grpc_exec_ctx *exec_ctx,
                                                  int x);
+#define GRPC_STATS_INC_HTTP2_SEND_TRAILING_METADATA_PER_WRITE(exec_ctx, value) \
+  grpc_stats_inc_http2_send_trailing_metadata_per_write((exec_ctx),            \
+                                                        (int)(value))
+void grpc_stats_inc_http2_send_trailing_metadata_per_write(
+    grpc_exec_ctx *exec_ctx, int x);
+#define GRPC_STATS_INC_HTTP2_SEND_FLOWCTL_PER_WRITE(exec_ctx, value) \
+  grpc_stats_inc_http2_send_flowctl_per_write((exec_ctx), (int)(value))
+void grpc_stats_inc_http2_send_flowctl_per_write(grpc_exec_ctx *exec_ctx,
+                                                 int x);
+extern const int grpc_stats_histo_buckets[10];
+extern const int grpc_stats_histo_start[10];
+extern const int *const grpc_stats_histo_bucket_boundaries[10];
+extern void (*const grpc_stats_inc_histogram[10])(grpc_exec_ctx *exec_ctx,
+                                                  int x);
 
 #endif /* GRPC_CORE_LIB_DEBUG_STATS_DATA_H */
