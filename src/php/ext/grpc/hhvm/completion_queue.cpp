@@ -55,14 +55,22 @@ CompletionQueue::~CompletionQueue(void)
 
 std::unique_ptr<CompletionQueue> CompletionQueue::getClientQueue(void)
 {
-    // Each client gets a completion queue for the thread it is running in
-    return std::unique_ptr<CompletionQueue>{ new CompletionQueue{} };
+    // Each client gets a completion queue
+    static std::mutex queueMutex;
+    {
+        std::unique_lock<std::mutex> lock{ queueMutex };
+        return std::unique_ptr<CompletionQueue>{ new CompletionQueue{} };
+    }
 }
 
 std::unique_ptr<CompletionQueue> CompletionQueue::getServerQueue(void)
 {
-    // Each server gets a completion queue for the thread it is running in
-    return std::unique_ptr<CompletionQueue>{ new CompletionQueue{} };
+    // Each server gets a completion queue
+    static std::mutex queueMutex;
+    {
+        std::unique_lock<std::mutex> lock{ queueMutex };
+        return std::unique_ptr<CompletionQueue>{ new CompletionQueue{} };
+    }
 }
 
 
