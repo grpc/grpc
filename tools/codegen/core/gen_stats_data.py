@@ -19,13 +19,30 @@ import ctypes
 import math
 import sys
 import yaml
+import json
 
 with open('src/core/lib/debug/stats_data.yaml') as f:
   attrs = yaml.load(f.read())
 
+REQUIRED_FIELDS = ['name', 'doc']
+
+def make_type(name, fields):
+  return (collections.namedtuple(name, ' '.join(list(set(REQUIRED_FIELDS + fields)))), [])
+
+def c_str(s, encoding='ascii'):
+   if isinstance(s, unicode):
+      s = s.encode(encoding)
+   result = ''
+   for c in s:
+      if not (32 <= ord(c) < 127) or c in ('\\', '"'):
+         result += '\\%03o' % ord(c)
+      else:
+         result += c
+   return '"' + result + '"'
+
 types = (
-  (collections.namedtuple('Counter', 'name'), []),
-  (collections.namedtuple('Histogram', 'name max buckets'), []),
+  make_type('Counter', []),
+  make_type('Histogram', ['max', 'buckets']),
 )
 
 inst_map = dict((t[0].__name__, t[1]) for t in types)
@@ -200,6 +217,8 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
     print >>H, "} grpc_stats_%ss;" % (typename.lower())
     print >>H, "extern const char *grpc_stats_%s_name[GRPC_STATS_%s_COUNT];" % (
         typename.lower(), typename.upper())
+    print >>H, "extern const char *grpc_stats_%s_doc[GRPC_STATS_%s_COUNT];" % (
+        typename.lower(), typename.upper())
 
   histo_start = []
   histo_buckets = []
@@ -269,8 +288,14 @@ with open('src/core/lib/debug/stats_data.c', 'w') as C:
     print >>C, "const char *grpc_stats_%s_name[GRPC_STATS_%s_COUNT] = {" % (
         typename.lower(), typename.upper())
     for inst in instances:
-      print >>C, "  \"%s\"," % inst.name
+      print >>C, "  %s," % c_str(inst.name)
     print >>C, "};"
+    print >>C, "const char *grpc_stats_%s_doc[GRPC_STATS_%s_COUNT] = {" % (
+        typename.lower(), typename.upper())
+    for inst in instances:
+      print >>C, "  %s," % c_str(inst.doc)
+    print >>C, "};"
+
   for i, tbl in enumerate(static_tables):
     print >>C, "const %s grpc_stats_table_%d[%d] = {%s};" % (
         tbl[0], i, len(tbl[1]), ','.join('%s' % x for x in tbl[1]))

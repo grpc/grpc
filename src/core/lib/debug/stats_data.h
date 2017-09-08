@@ -59,6 +59,7 @@ typedef enum {
   GRPC_STATS_COUNTER_COUNT
 } grpc_stats_counters;
 extern const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT];
+extern const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT];
 typedef enum {
   GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE,
   GRPC_STATS_HISTOGRAM_POLL_EVENTS_RETURNED,
@@ -66,11 +67,12 @@ typedef enum {
   GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
   GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
   GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,
-  GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
+  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
   GRPC_STATS_HISTOGRAM_COUNT
 } grpc_stats_histograms;
 extern const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT];
+extern const char *grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT];
 typedef enum {
   GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE_FIRST_SLOT = 0,
   GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE_BUCKETS = 64,
@@ -84,8 +86,8 @@ typedef enum {
   GRPC_STATS_HISTOGRAM_TCP_READ_SIZE_BUCKETS = 64,
   GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_FIRST_SLOT = 384,
   GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE_FIRST_SLOT = 448,
-  GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE_BUCKETS = 64,
+  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE_FIRST_SLOT = 448,
+  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE_BUCKETS = 64,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE_FIRST_SLOT = 512,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE_BUCKETS = 64,
   GRPC_STATS_HISTOGRAM_BUCKETS = 576
@@ -182,9 +184,9 @@ void grpc_stats_inc_tcp_read_size(grpc_exec_ctx *exec_ctx, int x);
 #define GRPC_STATS_INC_TCP_READ_OFFER(exec_ctx, value) \
   grpc_stats_inc_tcp_read_offer((exec_ctx), (int)(value))
 void grpc_stats_inc_tcp_read_offer(grpc_exec_ctx *exec_ctx, int x);
-#define GRPC_STATS_INC_TCP_READ_IOV_SIZE(exec_ctx, value) \
-  grpc_stats_inc_tcp_read_iov_size((exec_ctx), (int)(value))
-void grpc_stats_inc_tcp_read_iov_size(grpc_exec_ctx *exec_ctx, int x);
+#define GRPC_STATS_INC_TCP_READ_OFFER_IOV_SIZE(exec_ctx, value) \
+  grpc_stats_inc_tcp_read_offer_iov_size((exec_ctx), (int)(value))
+void grpc_stats_inc_tcp_read_offer_iov_size(grpc_exec_ctx *exec_ctx, int x);
 #define GRPC_STATS_INC_HTTP2_SEND_MESSAGE_SIZE(exec_ctx, value) \
   grpc_stats_inc_http2_send_message_size((exec_ctx), (int)(value))
 void grpc_stats_inc_http2_send_message_size(grpc_exec_ctx *exec_ctx, int x);
