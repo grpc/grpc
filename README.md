@@ -27,14 +27,14 @@ Libraries in different languages may be in different states of development. We a
 
 | Language                | Source                              | Status  |
 |-------------------------|-------------------------------------|---------|
-| Shared C [core library] | [src/core](src/core)                | 1.0     |
-| C++                     | [src/cpp](src/cpp)                  | 1.0     |
-| Ruby                    | [src/ruby](src/ruby)                | 1.0     |
-| NodeJS                  | [src/node](src/node)                | 1.0     |
-| Python                  | [src/python](src/python)            | 1.0     |
-| PHP                     | [src/php](src/php)                  | 1.0     |
-| C#                      | [src/csharp](src/csharp)            | 1.0     |
-| Objective-C             | [src/objective-c](src/objective-c)  | 1.0     |
+| Shared C [core library] | [src/core](src/core)                | 1.6     |
+| C++                     | [src/cpp](src/cpp)                  | 1.6     |
+| Ruby                    | [src/ruby](src/ruby)                | 1.6     |
+| NodeJS                  | [src/node](src/node)                | 1.6     |
+| Python                  | [src/python](src/python)            | 1.6     |
+| PHP                     | [src/php](src/php)                  | 1.6     |
+| C#                      | [src/csharp](src/csharp)            | 1.6     |
+| Objective-C             | [src/objective-c](src/objective-c)  | 1.6     |
 
 Java source code is in the [grpc-java](http://github.com/grpc/grpc-java)
 repository. Go source code is in the

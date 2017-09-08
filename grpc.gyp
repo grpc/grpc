@@ -459,8 +459,8 @@
         'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c',
         'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c',
         'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c',
-        'src/core/ext/filters/load_reporting/load_reporting.c',
-        'src/core/ext/filters/load_reporting/load_reporting_filter.c',
+        'src/core/ext/filters/load_reporting/server_load_reporting_filter.c',
+        'src/core/ext/filters/load_reporting/server_load_reporting_plugin.c',
         'src/core/ext/census/base_resources.c',
         'src/core/ext/census/context.c',
         'src/core/ext/census/gen/census.pb.c',
@@ -1111,8 +1111,8 @@
         'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c',
         'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c',
         'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c',
-        'src/core/ext/filters/load_reporting/load_reporting.c',
-        'src/core/ext/filters/load_reporting/load_reporting_filter.c',
+        'src/core/ext/filters/load_reporting/server_load_reporting_filter.c',
+        'src/core/ext/filters/load_reporting/server_load_reporting_plugin.c',
         'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c',
         'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c',
         'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c',
@@ -1223,6 +1223,17 @@
         'src/cpp/util/string_ref.cc',
         'src/cpp/util/time_cc.cc',
         'src/cpp/codegen/codegen_init.cc',
+      ],
+    },
+    {
+      'target_name': 'grpc++_core_stats',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc++',
+      ],
+      'sources': [
+        'src/proto/grpc/core/stats.proto',
+        'src/cpp/util/core_stats.cc',
       ],
     },
     {
@@ -1507,6 +1518,7 @@
       'dependencies': [
         'grpc_test_util',
         'grpc++_test_util',
+        'grpc++_core_stats',
         'grpc++',
         'grpc',
       ],

@@ -69,17 +69,22 @@ _POLLING_STRATEGIES = {
 }
 
 
-def get_flaky_tests(limit=None):
+BigQueryTestData = collections.namedtuple('BigQueryTestData', 'name flaky cpu')
+
+
+def get_bqtest_data(limit=None):
   import big_query_utils
 
   bq = big_query_utils.create_big_query()
   query = """
 SELECT
   filtered_test_name,
+  SUM(result != 'PASSED' AND result != 'SKIPPED') > 0 as flaky,
+  MAX(cpu_measured) as cpu
   FROM (
   SELECT
     REGEXP_REPLACE(test_name, r'/\d+', '') AS filtered_test_name,
-    result
+    result, cpu_measured
   FROM
     [grpc-testing:jenkins_test_results.aggregate_results]
   WHERE
@@ -89,15 +94,15 @@ SELECT
 GROUP BY
   filtered_test_name
 HAVING
-  SUM(result != 'PASSED' AND result != 'SKIPPED') > 0"""
+  flaky OR cpu > 0"""
   if limit:
     query += " limit {}".format(limit)
   query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)
   page = bq.jobs().getQueryResults(
       pageToken=None,
       **query_job['jobReference']).execute(num_retries=3)
-  flake_names = [row['f'][0]['v'] for row in page['rows']]
-  return flake_names
+  test_data = [BigQueryTestData(row['f'][0]['v'], row['f'][1]['v'] == 'true', float(row['f'][2]['v'])) for row in page['rows']]
+  return test_data
 
 
 def platform_string():
@@ -141,6 +146,9 @@ class Config(object):
     if not flaky and shortname and shortname in flaky_tests:
       print('Setting %s to flaky' % shortname)
       flaky = True
+    if shortname in shortname_to_cpu:
+      print('Update CPU cost for %s: %f -> %f' % (shortname, cpu_cost, shortname_to_cpu[shortname]))
+      cpu_cost = shortname_to_cpu[shortname]
     return jobset.JobSpec(cmdline=self.tool_prefix + cmdline,
                           shortname=shortname,
                           environ=actual_environ,
@@ -1254,9 +1262,12 @@ argp.add_argument('--disable_auto_set_flakes', default=False, const=True, action
 args = argp.parse_args()
 
 flaky_tests = set()
+shortname_to_cpu = {}
 if not args.disable_auto_set_flakes:
   try:
-    flaky_tests = set(get_flaky_tests())
+    for test in get_bqtest_data():
+      if test.flaky: flaky_tests.add(test.name)
+      if test.cpu > 0: shortname_to_cpu[test.name] = test.cpu
   except:
     print("Unexpected error getting flaky tests:", sys.exc_info()[0])
 
@@ -1519,7 +1530,7 @@ def _build_and_run(
     # When running on travis, we want out test runs to be as similar as possible
     # for reproducibility purposes.
     if args.travis and args.max_time <= 0:
-      massaged_one_run = sorted(one_run, key=lambda x: x.shortname)
+      massaged_one_run = sorted(one_run, key=lambda x: x.cpu_cost)
     else:
       # whereas otherwise, we want to shuffle things up to give all tests a
       # chance to run.

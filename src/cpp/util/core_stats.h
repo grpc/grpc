@@ -16,12 +16,20 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_LOAD_REPORTING_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_LOAD_REPORTING_FILTER_H
+#ifndef GRPC_INTERNAL_CPP_UTIL_CORE_STATS_H
+#define GRPC_INTERNAL_CPP_UTIL_CORE_STATS_H
 
-#include "src/core/ext/filters/load_reporting/load_reporting.h"
-#include "src/core/lib/channel/channel_stack.h"
+#include "src/proto/grpc/core/stats.pb.h"
 
-extern const grpc_channel_filter grpc_load_reporting_filter;
+extern "C" {
+#include "src/core/lib/debug/stats.h"
+}
 
-#endif /* GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_LOAD_REPORTING_FILTER_H */
+namespace grpc {
+
+void CoreStatsToProto(const grpc_stats_data& core, grpc::core::Stats* proto);
+void ProtoToCoreStats(const grpc::core::Stats& proto, grpc_stats_data* core);
+
+}  // namespace grpc
+
+#endif  // GRPC_INTERNAL_CPP_UTIL_CORE_STATS_H

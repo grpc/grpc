@@ -44,7 +44,9 @@ static void alarm_ref(grpc_alarm *alarm) { gpr_ref(&alarm->refs); }
 static void alarm_unref(grpc_alarm *alarm) {
   if (gpr_unref(&alarm->refs)) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    GRPC_CQ_INTERNAL_UNREF(&exec_ctx, alarm->cq, "alarm");
+    if (alarm->cq != NULL) {
+      GRPC_CQ_INTERNAL_UNREF(&exec_ctx, alarm->cq, "alarm");
+    }
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_free(alarm);
   }
@@ -93,12 +95,8 @@ static void alarm_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
                  (void *)alarm, &alarm->completion);
 }
 
-grpc_alarm *grpc_alarm_create(grpc_completion_queue *cq, gpr_timespec deadline,
-                              void *tag) {
+grpc_alarm *grpc_alarm_create(void *reserved) {
   grpc_alarm *alarm = gpr_malloc(sizeof(grpc_alarm));
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-
-  gpr_ref_init(&alarm->refs, 1);
 
 #ifndef NDEBUG
   if (GRPC_TRACER_ON(grpc_trace_alarm_refcount)) {
@@ -106,26 +104,35 @@ grpc_alarm *grpc_alarm_create(grpc_completion_queue *cq, gpr_timespec deadline,
   }
 #endif
 
+  gpr_ref_init(&alarm->refs, 1);
+  grpc_timer_init_unset(&alarm->alarm);
+  alarm->cq = NULL;
+  GRPC_CLOSURE_INIT(&alarm->on_alarm, alarm_cb, alarm,
+                    grpc_schedule_on_exec_ctx);
+  return alarm;
+}
+
+void grpc_alarm_set(grpc_alarm *alarm, grpc_completion_queue *cq,
+                    gpr_timespec deadline, void *tag, void *reserved) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
   GRPC_CQ_INTERNAL_REF(cq, "alarm");
   alarm->cq = cq;
   alarm->tag = tag;
 
   GPR_ASSERT(grpc_cq_begin_op(cq, tag));
-  GRPC_CLOSURE_INIT(&alarm->on_alarm, alarm_cb, alarm,
-                    grpc_schedule_on_exec_ctx);
   grpc_timer_init(&exec_ctx, &alarm->alarm,
                   grpc_timespec_to_millis_round_up(deadline), &alarm->on_alarm);
   grpc_exec_ctx_finish(&exec_ctx);
-  return alarm;
 }
 
-void grpc_alarm_cancel(grpc_alarm *alarm) {
+void grpc_alarm_cancel(grpc_alarm *alarm, void *reserved) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_timer_cancel(&exec_ctx, &alarm->alarm);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-void grpc_alarm_destroy(grpc_alarm *alarm) {
-  grpc_alarm_cancel(alarm);
+void grpc_alarm_destroy(grpc_alarm *alarm, void *reserved) {
+  grpc_alarm_cancel(alarm, reserved);
   GRPC_ALARM_UNREF(alarm, "alarm_destroy");
 }
