@@ -19,6 +19,9 @@
 /* Definition to make a library symbol externally visible. */
 #define CARES_SYMBOL_SCOPE_EXTERN __attribute__ ((__visibility__ ("default")))
 
+/* the signed version of size_t */
+#define CARES_TYPEOF_ARES_SSIZE_T ssize_t
+
 /* Use resolver library to configure cares */
 /* #undef CARES_USE_LIBRESOLV */
 
@@ -445,27 +448,6 @@
 
 /* Define to the function return type for send. */
 #define SEND_TYPE_RETV ssize_t
-
-/* The size of `int', as computed by sizeof. */
-#define SIZEOF_INT 4
-
-/* The size of `long', as computed by sizeof. */
-#define SIZEOF_LONG 4
-
-/* The size of `short', as computed by sizeof. */
-#define SIZEOF_SHORT 2
-
-/* The size of `size_t', as computed by sizeof. */
-#define SIZEOF_SIZE_T 4
-
-/* The size of `struct in6_addr', as computed by sizeof. */
-#define SIZEOF_STRUCT_IN6_ADDR 16
-
-/* The size of `struct in_addr', as computed by sizeof. */
-#define SIZEOF_STRUCT_IN_ADDR 4
-
-/* The size of `time_t', as computed by sizeof. */
-#define SIZEOF_TIME_T 4
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1

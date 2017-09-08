@@ -289,9 +289,9 @@ class CLanguage(object):
                  _ROOT + '/src/core/tsi/test_creds/ca.pem',
              'GRPC_POLL_STRATEGY': polling_strategy,
              'GRPC_VERBOSITY': 'DEBUG'}
-        resolver = os.environ.get('GRPC_DNS_RESOLVER', None);
-        if resolver:
-          env['GRPC_DNS_RESOLVER'] = resolver
+        # resolver = os.environ.get('GRPC_DNS_RESOLVER', /None);
+        # if resolver:
+        env['GRPC_DNS_RESOLVER'] = 'ares'
         shortname_ext = '' if polling_strategy=='all' else ' GRPC_POLL_STRATEGY=%s' % polling_strategy
         timeout_scaling = 1
         if polling_strategy == 'poll-cv':
