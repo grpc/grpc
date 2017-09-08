@@ -21,6 +21,10 @@
 
 #include "src/core/tsi/transport_security_interface.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define TSI_TEST_TINY_HANDSHAKE_BUFFER_SIZE 32
 #define TSI_TEST_SMALL_HANDSHAKE_BUFFER_SIZE 128
 #define TSI_TEST_SMALL_READ_BUFFER_ALLOCATED_SIZE 41
@@ -56,7 +60,7 @@ typedef struct tsi_test_fixture_vtable {
   void (*setup_handshakers)(tsi_test_fixture *fixture);
   void (*check_handshaker_peers)(tsi_test_fixture *fixture);
   void (*destruct)(tsi_test_fixture *fixture);
-} tranport_security_test_vtable;
+} tsi_test_fixture_vtable;
 
 struct tsi_test_fixture {
   const struct tsi_test_fixture_vtable *vtable;
@@ -162,4 +166,7 @@ void tsi_test_do_handshake(tsi_test_fixture *fixture);
    the client and server switching its role. */
 void tsi_test_do_round_trip(tsi_test_fixture *fixture);
 
+#ifdef __cplusplus
+}
+#endif
 #endif  // GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H_
