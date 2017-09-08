@@ -247,8 +247,6 @@
         'src/core/lib/iomgr/endpoint_pair_windows.c',
         'src/core/lib/iomgr/error.c',
         'src/core/lib/iomgr/ev_epoll1_linux.c',
-        'src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c',
-        'src/core/lib/iomgr/ev_epoll_thread_pool_linux.c',
         'src/core/lib/iomgr/ev_epollex_linux.c',
         'src/core/lib/iomgr/ev_epollsig_linux.c',
         'src/core/lib/iomgr/ev_poll_posix.c',
@@ -550,8 +548,6 @@
         'src/core/lib/iomgr/endpoint_pair_windows.c',
         'src/core/lib/iomgr/error.c',
         'src/core/lib/iomgr/ev_epoll1_linux.c',
-        'src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c',
-        'src/core/lib/iomgr/ev_epoll_thread_pool_linux.c',
         'src/core/lib/iomgr/ev_epollex_linux.c',
         'src/core/lib/iomgr/ev_epollsig_linux.c',
         'src/core/lib/iomgr/ev_poll_posix.c',
@@ -758,8 +754,6 @@
         'src/core/lib/iomgr/endpoint_pair_windows.c',
         'src/core/lib/iomgr/error.c',
         'src/core/lib/iomgr/ev_epoll1_linux.c',
-        'src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c',
-        'src/core/lib/iomgr/ev_epoll_thread_pool_linux.c',
         'src/core/lib/iomgr/ev_epollex_linux.c',
         'src/core/lib/iomgr/ev_epollsig_linux.c',
         'src/core/lib/iomgr/ev_poll_posix.c',
@@ -951,8 +945,6 @@
         'src/core/lib/iomgr/endpoint_pair_windows.c',
         'src/core/lib/iomgr/error.c',
         'src/core/lib/iomgr/ev_epoll1_linux.c',
-        'src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c',
-        'src/core/lib/iomgr/ev_epoll_thread_pool_linux.c',
         'src/core/lib/iomgr/ev_epollex_linux.c',
         'src/core/lib/iomgr/ev_epollsig_linux.c',
         'src/core/lib/iomgr/ev_poll_posix.c',
@@ -1239,6 +1231,17 @@
       ],
     },
     {
+      'target_name': 'grpc++_core_stats',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc++',
+      ],
+      'sources': [
+        'src/proto/grpc/core/stats.proto',
+        'src/cpp/util/core_stats.cc',
+      ],
+    },
+    {
       'target_name': 'grpc++_error_details',
       'type': 'static_library',
       'dependencies': [
@@ -1520,6 +1523,7 @@
       'dependencies': [
         'grpc_test_util',
         'grpc++_test_util',
+        'grpc++_core_stats',
         'grpc++',
         'grpc',
       ],

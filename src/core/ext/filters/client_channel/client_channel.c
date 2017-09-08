@@ -2345,10 +2345,6 @@ static void pick_after_resolver_result_cancel_locked(grpc_exec_ctx *exec_ctx,
     gpr_free(args);
     return;
   }
-  args->finished = true;
-  grpc_call_element *elem = args->elem;
-  channel_data *chand = elem->channel_data;
-  call_data *calld = elem->call_data;
   // If we don't yet have a resolver result, then a closure for
   // pick_after_resolver_result_done_locked() will have been added to
   // chand->waiting_for_resolver_result_closures, and it may not be invoked
@@ -2356,6 +2352,10 @@ static void pick_after_resolver_result_cancel_locked(grpc_exec_ctx *exec_ctx,
   // finished, so that when pick_after_resolver_result_done_locked()
   // is called, it will be a no-op.  We also immediately invoke
   // async_pick_done_locked() to propagate the error back to the caller.
+  args->finished = true;
+  grpc_call_element *elem = args->elem;
+  channel_data *chand = elem->channel_data;
+  call_data *calld = elem->call_data;
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
     gpr_log(GPR_DEBUG,
             "chand=%p calld=%p: cancelling pick waiting for resolver result",

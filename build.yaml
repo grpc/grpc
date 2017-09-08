@@ -12,7 +12,7 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 4.0.0-dev
+  core_version: 5.0.0-dev
   g_stands_for: gambit
   version: 1.7.0-dev
 filegroups:
@@ -209,8 +209,6 @@ filegroups:
   - src/core/lib/iomgr/endpoint_pair_windows.c
   - src/core/lib/iomgr/error.c
   - src/core/lib/iomgr/ev_epoll1_linux.c
-  - src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
-  - src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
   - src/core/lib/iomgr/ev_epollex_linux.c
   - src/core/lib/iomgr/ev_epollsig_linux.c
   - src/core/lib/iomgr/ev_poll_posix.c
@@ -362,8 +360,6 @@ filegroups:
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/ev_epoll1_linux.h
-  - src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h
-  - src/core/lib/iomgr/ev_epoll_thread_pool_linux.h
   - src/core/lib/iomgr/ev_epollex_linux.h
   - src/core/lib/iomgr/ev_epollsig_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
@@ -756,6 +752,7 @@ filegroups:
   - test/core/util/trickle_endpoint.c
   deps:
   - gpr_test_util
+  - gpr
   uses:
   - grpc_base
   - grpc_client_channel
@@ -930,6 +927,14 @@ filegroups:
   - third_party/nanopb/pb_common.h
   - third_party/nanopb/pb_decode.h
   - third_party/nanopb/pb_encode.h
+- name: transport_security_test_lib
+  build: test
+  headers:
+  - test/core/tsi/transport_security_test_lib.h
+  src:
+  - test/core/tsi/transport_security_test_lib.c
+  deps:
+  - grpc
 - name: tsi
   headers:
   - src/core/tsi/fake_transport_security.h
@@ -1329,6 +1334,16 @@ libs:
   - grpc++_codegen_base_src
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
+- name: grpc++_core_stats
+  build: private
+  language: c++
+  public_headers:
+  - src/cpp/util/core_stats.h
+  src:
+  - src/proto/grpc/core/stats.proto
+  - src/cpp/util/core_stats.cc
+  deps:
+  - grpc++
 - name: grpc++_cronet
   build: all
   language: c++
@@ -1671,6 +1686,7 @@ libs:
   deps:
   - grpc_test_util
   - grpc++_test_util
+  - grpc++_core_stats
   - grpc++
   - grpc
 - name: grpc_csharp_ext
@@ -2040,6 +2056,21 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: fake_transport_security_test
+  build: test
+  language: c
+  src:
+  - test/core/tsi/fake_transport_security_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+  - grpc
+  filegroups:
+  - transport_security_test_lib
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: fd_conservation_posix_test
   build: test
   language: c
@@ -2338,6 +2369,16 @@ targets:
   language: c
   src:
   - test/core/channel/channel_args_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: grpc_channel_stack_builder_test
+  build: test
+  language: c
+  src:
+  - test/core/channel/channel_stack_builder_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -3111,6 +3152,21 @@ targets:
   corpus_dirs:
   - test/core/security/corpus/ssl_server_corpus
   maxlen: 2048
+- name: ssl_transport_security_test
+  build: test
+  language: c
+  src:
+  - test/core/tsi/ssl_transport_security_test.c
+  deps:
+  - gpr_test_util
+  - gpr
+  - grpc
+  filegroups:
+  - transport_security_test_lib
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: status_conversion_test
   build: test
   language: c
@@ -3569,6 +3625,8 @@ targets:
 - name: bm_fullstack_streaming_ping_pong
   build: test
   language: c++
+  headers:
+  - test/cpp/microbenchmarks/fullstack_streaming_ping_pong.h
   src:
   - test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc
   deps:
@@ -3594,6 +3652,8 @@ targets:
 - name: bm_fullstack_streaming_pump
   build: test
   language: c++
+  headers:
+  - test/cpp/microbenchmarks/fullstack_streaming_pump.h
   src:
   - test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc
   deps:
@@ -3645,6 +3705,8 @@ targets:
 - name: bm_fullstack_unary_ping_pong
   build: test
   language: c++
+  headers:
+  - test/cpp/microbenchmarks/fullstack_unary_ping_pong.h
   src:
   - test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc
   deps:
@@ -3802,6 +3864,7 @@ targets:
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_full.cc
   deps:
+  - grpc++_core_stats
   - grpc++
   - grpc
   - gpr
@@ -3819,6 +3882,7 @@ targets:
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_minimal.cc
   deps:
+  - grpc++_core_stats
   - grpc
   - gpr
   filegroups:
@@ -4309,6 +4373,7 @@ targets:
   - test/cpp/qps/qps_json_driver.cc
   deps:
   - qps
+  - grpc++_core_stats
   - grpc++_test_util
   - grpc_test_util
   - grpc++
@@ -4324,6 +4389,7 @@ targets:
   - test/cpp/qps/qps_openloop_test.cc
   deps:
   - qps
+  - grpc++_core_stats
   - grpc++_test_util
   - grpc_test_util
   - grpc++
@@ -4346,6 +4412,7 @@ targets:
   - test/cpp/qps/worker.cc
   deps:
   - qps
+  - grpc++_core_stats
   - grpc++_test_util
   - grpc_test_util
   - grpc++
@@ -4409,6 +4476,7 @@ targets:
   - test/cpp/qps/secure_sync_unary_ping_pong_test.cc
   deps:
   - qps
+  - grpc++_core_stats
   - grpc++_test_util
   - grpc_test_util
   - grpc++
@@ -4518,6 +4586,18 @@ targets:
   - grpc++_test_util
   - grpc_test_util
   - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: stats_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/debug/stats_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
   - grpc
   - gpr_test_util
   - gpr

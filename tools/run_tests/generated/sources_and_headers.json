@@ -541,6 +541,23 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "transport_security_test_lib"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "fake_transport_security_test", 
+    "src": [
+      "test/core/tsi/fake_transport_security_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -1013,6 +1030,23 @@
     "name": "grpc_channel_args_test", 
     "src": [
       "test/core/channel/channel_args_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "grpc_channel_stack_builder_test", 
+    "src": [
+      "test/core/channel/channel_stack_builder_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2168,6 +2202,23 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "transport_security_test_lib"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "ssl_transport_security_test", 
+    "src": [
+      "test/core/tsi/ssl_transport_security_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2739,12 +2790,15 @@
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/cpp/microbenchmarks/fullstack_streaming_ping_pong.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "bm_fullstack_streaming_ping_pong", 
     "src": [
-      "test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc"
+      "test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc", 
+      "test/cpp/microbenchmarks/fullstack_streaming_ping_pong.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2760,12 +2814,15 @@
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/cpp/microbenchmarks/fullstack_streaming_pump.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "bm_fullstack_streaming_pump", 
     "src": [
-      "test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc"
+      "test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc", 
+      "test/cpp/microbenchmarks/fullstack_streaming_pump.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2803,12 +2860,15 @@
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/cpp/microbenchmarks/fullstack_unary_ping_pong.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "bm_fullstack_unary_ping_pong", 
     "src": [
-      "test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc"
+      "test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc", 
+      "test/cpp/microbenchmarks/fullstack_unary_ping_pong.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2969,7 +3029,8 @@
       "gpr", 
       "grpc", 
       "grpc++", 
-      "grpc++_codegen_base"
+      "grpc++_codegen_base", 
+      "grpc++_core_stats"
     ], 
     "headers": [
       "src/proto/grpc/testing/control.grpc.pb.h", 
@@ -3002,7 +3063,8 @@
       "gpr", 
       "grpc", 
       "grpc++_codegen_base", 
-      "grpc++_codegen_base_src"
+      "grpc++_codegen_base_src", 
+      "grpc++_core_stats"
     ], 
     "headers": [
       "src/proto/grpc/testing/control.grpc.pb.h", 
@@ -3702,6 +3764,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_core_stats", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
@@ -3723,6 +3786,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_core_stats", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
@@ -3744,6 +3808,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_core_stats", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
@@ -3851,6 +3916,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_core_stats", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
@@ -4009,6 +4075,24 @@
     "name": "shutdown_test", 
     "src": [
       "test/cpp/end2end/shutdown_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "stats_test", 
+    "src": [
+      "test/core/debug/stats_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -6024,6 +6108,26 @@
   }, 
   {
     "deps": [
+      "grpc++"
+    ], 
+    "headers": [
+      "src/cpp/util/core_stats.h", 
+      "src/proto/grpc/core/stats.grpc.pb.h", 
+      "src/proto/grpc/core/stats.pb.h", 
+      "src/proto/grpc/core/stats_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc++_core_stats", 
+    "src": [
+      "src/cpp/util/core_stats.cc", 
+      "src/cpp/util/core_stats.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
       "census", 
       "gpr", 
       "grpc", 
@@ -6518,6 +6622,7 @@
     "deps": [
       "grpc", 
       "grpc++", 
+      "grpc++_core_stats", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
@@ -7838,8 +7943,6 @@
       "src/core/lib/iomgr/endpoint_pair_windows.c", 
       "src/core/lib/iomgr/error.c", 
       "src/core/lib/iomgr/ev_epoll1_linux.c", 
-      "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c", 
-      "src/core/lib/iomgr/ev_epoll_thread_pool_linux.c", 
       "src/core/lib/iomgr/ev_epollex_linux.c", 
       "src/core/lib/iomgr/ev_epollsig_linux.c", 
       "src/core/lib/iomgr/ev_poll_posix.c", 
@@ -7992,8 +8095,6 @@
       "src/core/lib/iomgr/error.h", 
       "src/core/lib/iomgr/error_internal.h", 
       "src/core/lib/iomgr/ev_epoll1_linux.h", 
-      "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h", 
-      "src/core/lib/iomgr/ev_epoll_thread_pool_linux.h", 
       "src/core/lib/iomgr/ev_epollex_linux.h", 
       "src/core/lib/iomgr/ev_epollsig_linux.h", 
       "src/core/lib/iomgr/ev_poll_posix.h", 
@@ -8126,8 +8227,6 @@
       "src/core/lib/iomgr/error.h", 
       "src/core/lib/iomgr/error_internal.h", 
       "src/core/lib/iomgr/ev_epoll1_linux.h", 
-      "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h", 
-      "src/core/lib/iomgr/ev_epoll_thread_pool_linux.h", 
       "src/core/lib/iomgr/ev_epollex_linux.h", 
       "src/core/lib/iomgr/ev_epollsig_linux.h", 
       "src/core/lib/iomgr/ev_poll_posix.h", 
@@ -9114,6 +9213,23 @@
     "language": "c", 
     "name": "nanopb_headers", 
     "src": [], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "grpc"
+    ], 
+    "headers": [
+      "test/core/tsi/transport_security_test_lib.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "transport_security_test_lib", 
+    "src": [
+      "test/core/tsi/transport_security_test_lib.c", 
+      "test/core/tsi/transport_security_test_lib.h"
+    ], 
     "third_party": false, 
     "type": "filegroup"
   }, 

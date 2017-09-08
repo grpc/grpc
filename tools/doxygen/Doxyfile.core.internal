@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 4.0.0-dev
+PROJECT_NUMBER         = 5.0.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1110,10 +1110,6 @@ src/core/lib/iomgr/error.h \
 src/core/lib/iomgr/error_internal.h \
 src/core/lib/iomgr/ev_epoll1_linux.c \
 src/core/lib/iomgr/ev_epoll1_linux.h \
-src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
-src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h \
-src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
-src/core/lib/iomgr/ev_epoll_thread_pool_linux.h \
 src/core/lib/iomgr/ev_epollex_linux.c \
 src/core/lib/iomgr/ev_epollex_linux.h \
 src/core/lib/iomgr/ev_epollsig_linux.c \
