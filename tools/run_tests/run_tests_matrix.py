@@ -248,13 +248,12 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               extra_args=extra_args,
                               extra_envs={'GRPC_DNS_RESOLVER': 'ares'})
 
-  # TODO(zyc): Turn on this test after adding c-ares support on windows.
   # C with the c-ares DNS resolver on Windonws
-  # test_jobs += _generate_jobs(languages=['c'],
-  #                             configs=['dbg'], platforms=['windows'],
-  #                             labels=['portability', 'corelang'],
-  #                             extra_args=extra_args,
-  #                             extra_envs={'GRPC_DNS_RESOLVER': 'ares'})
+  test_jobs += _generate_jobs(languages=['c'],
+                              configs=['dbg'], platforms=['windows'],
+                              labels=['portability', 'corelang'],
+                              extra_args=extra_args,
+                              extra_envs={'GRPC_DNS_RESOLVER': 'ares'})
 
   # C and C++ build with cmake on Linux
   # TODO(jtattermusch): some of the tests are failing, so we force --build_only
