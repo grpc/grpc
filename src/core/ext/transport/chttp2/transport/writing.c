@@ -386,6 +386,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
           if (is_last_frame) {
             s->send_trailing_metadata = NULL;
             s->sent_trailing_metadata = true;
+            grpc_chttp2_mark_stream_closed(exec_ctx, t, s, !t->is_client, 1,
+                                           GRPC_ERROR_NONE);
             if (!t->is_client && !s->read_closed) {
               grpc_slice_buffer_add(&t->outbuf, grpc_chttp2_rst_stream_create(
                                                     s->id, GRPC_HTTP2_NO_ERROR,
@@ -444,6 +446,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
         }
         s->send_trailing_metadata = NULL;
         s->sent_trailing_metadata = true;
+        grpc_chttp2_mark_stream_closed(exec_ctx, t, s, !t->is_client, 1,
+                                       GRPC_ERROR_NONE);
         if (!t->is_client && !s->read_closed) {
           grpc_slice_buffer_add(
               &t->outbuf, grpc_chttp2_rst_stream_create(
@@ -518,10 +522,6 @@ void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                   &s->on_write_finished_cbs, &s->flow_controlled_bytes_written,
                   GRPC_ERROR_REF(error));
       s->sending_bytes = 0;
-    }
-    if (s->sent_trailing_metadata) {
-      grpc_chttp2_mark_stream_closed(exec_ctx, t, s, !t->is_client, 1,
-                                     GRPC_ERROR_REF(error));
     }
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:end");
   }
