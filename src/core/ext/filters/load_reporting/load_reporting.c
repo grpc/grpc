@@ -42,7 +42,7 @@ static bool maybe_add_load_reporting_filter(grpc_exec_ctx *exec_ctx,
                                             void *arg) {
   const grpc_channel_args *args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
-  const grpc_channel_filter *filter = arg;
+  const grpc_channel_filter *filter = (const grpc_channel_filter *)arg;
   grpc_channel_stack_builder_iterator *it =
       grpc_channel_stack_builder_iterator_find(builder, filter->name);
   const bool already_has_load_reporting_filter =
