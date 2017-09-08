@@ -2790,12 +2790,15 @@
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/cpp/microbenchmarks/fullstack_streaming_ping_pong.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "bm_fullstack_streaming_ping_pong", 
     "src": [
-      "test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc"
+      "test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc", 
+      "test/cpp/microbenchmarks/fullstack_streaming_ping_pong.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2811,12 +2814,15 @@
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/cpp/microbenchmarks/fullstack_streaming_pump.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "bm_fullstack_streaming_pump", 
     "src": [
-      "test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc"
+      "test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc", 
+      "test/cpp/microbenchmarks/fullstack_streaming_pump.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2854,12 +2860,15 @@
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/cpp/microbenchmarks/fullstack_unary_ping_pong.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "bm_fullstack_unary_ping_pong", 
     "src": [
-      "test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc"
+      "test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc", 
+      "test/cpp/microbenchmarks/fullstack_unary_ping_pong.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5890,7 +5899,6 @@
       "grpc_lb_policy_grpclb_secure", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
-      "grpc_load_reporting", 
       "grpc_max_age_filter", 
       "grpc_message_size_filter", 
       "grpc_resolver_dns_ares", 
@@ -5899,6 +5907,7 @@
       "grpc_resolver_sockaddr", 
       "grpc_secure", 
       "grpc_server_backward_compatibility", 
+      "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_chttp2_server_insecure", 
@@ -5920,7 +5929,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_load_reporting", 
+      "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_cronet_client_secure"
     ], 
@@ -5997,7 +6006,6 @@
       "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
-      "grpc_load_reporting", 
       "grpc_max_age_filter", 
       "grpc_message_size_filter", 
       "grpc_resolver_dns_ares", 
@@ -6005,6 +6013,7 @@
       "grpc_resolver_fake", 
       "grpc_resolver_sockaddr", 
       "grpc_server_backward_compatibility", 
+      "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_server_insecure", 
       "grpc_transport_inproc", 
@@ -8565,27 +8574,6 @@
       "grpc_base"
     ], 
     "headers": [
-      "src/core/ext/filters/load_reporting/load_reporting.h", 
-      "src/core/ext/filters/load_reporting/load_reporting_filter.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c", 
-    "name": "grpc_load_reporting", 
-    "src": [
-      "src/core/ext/filters/load_reporting/load_reporting.c", 
-      "src/core/ext/filters/load_reporting/load_reporting.h", 
-      "src/core/ext/filters/load_reporting/load_reporting_filter.c", 
-      "src/core/ext/filters/load_reporting/load_reporting_filter.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc_base"
-    ], 
-    "headers": [
       "src/core/ext/filters/max_age/max_age_filter.h"
     ], 
     "is_filegroup": true, 
@@ -8786,6 +8774,27 @@
     "src": [
       "src/core/ext/filters/workarounds/workaround_utils.c", 
       "src/core/ext/filters/workarounds/workaround_utils.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [
+      "src/core/ext/filters/load_reporting/server_load_reporting_filter.h", 
+      "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_server_load_reporting", 
+    "src": [
+      "src/core/ext/filters/load_reporting/server_load_reporting_filter.c", 
+      "src/core/ext/filters/load_reporting/server_load_reporting_filter.h", 
+      "src/core/ext/filters/load_reporting/server_load_reporting_plugin.c", 
+      "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

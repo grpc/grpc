@@ -65,6 +65,7 @@ EXPORTS
     grpc_completion_queue_shutdown
     grpc_completion_queue_destroy
     grpc_alarm_create
+    grpc_alarm_set
     grpc_alarm_cancel
     grpc_alarm_destroy
     grpc_channel_check_connectivity_state

@@ -51,10 +51,52 @@ const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "server_requested_calls",
     "server_slowpath_requests_queued",
 };
+const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
+    "Number of client side calls created by this process",
+    "Number of server side calls created by this process",
+    "Number of polling syscalls (epoll_wait, poll, etc) made by this process",
+    "Number of sleeping syscalls made by this process",
+    "Number of times histogram increments went through the slow (binary "
+    "search) path",
+    "Number of write syscalls (or equivalent - eg sendmsg) made by this "
+    "process",
+    "Number of read syscalls (or equivalent - eg recvmsg) made by this process",
+    "Number of batches received by HTTP2 transport",
+    "Number of cancelations received by HTTP2 transport",
+    "Number of batches containing send initial metadata",
+    "Number of batches containing send message",
+    "Number of batches containing send trailing metadata",
+    "Number of batches containing receive initial metadata",
+    "Number of batches containing receive message",
+    "Number of batches containing receive trailing metadata",
+    "Number of HTTP2 pings sent by process", "Number of HTTP2 writes initiated",
+    "Number of combiner lock entries by process (first items queued to a "
+    "combiner)",
+    "Number of items scheduled against combiner locks",
+    "Number of final items scheduled against combiner locks",
+    "Number of combiner locks offloaded to different threads",
+    "Number of closures scheduled against the executor (gRPC thread pool)",
+    "Number of closures scheduled by the executor to the executor",
+    "Number of thread wakeups initiated within the executor",
+    "Number of times an executor queue was drained",
+    "How many calls were requested (not necessarily received) by the server",
+    "How many times was the server slow path taken (indicates too few "
+    "outstanding requests)",
+};
 const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
-    "tcp_write_size",     "tcp_write_iov_size", "tcp_read_size",
-    "tcp_read_offer",     "tcp_read_iov_size",  "http2_send_message_size",
+    "tcp_write_size",     "tcp_write_iov_size",      "tcp_read_size",
+    "tcp_read_offer",     "tcp_read_offer_iov_size", "http2_send_message_size",
     "server_cqs_checked",
+};
+const char *grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT] = {
+    "Number of bytes offered to each syscall_write",
+    "Number of byte segments offered to each syscall_write",
+    "Number of bytes received by each syscall_read",
+    "Number of bytes offered to each syscall_read",
+    "Number of byte segments offered to each syscall_read",
+    "Size of messages received by HTTP2 transport",
+    "How many completion queues were checked looking for a CQ that had "
+    "requested the incoming call",
 };
 const int grpc_stats_table_0[65] = {
     0,       1,       2,       3,       4,       6,       8,        11,
@@ -187,11 +229,12 @@ void grpc_stats_inc_tcp_read_offer(grpc_exec_ctx *exec_ctx, int value) {
                            grpc_stats_histo_find_bucket_slow(
                                (exec_ctx), value, grpc_stats_table_0, 64));
 }
-void grpc_stats_inc_tcp_read_iov_size(grpc_exec_ctx *exec_ctx, int value) {
+void grpc_stats_inc_tcp_read_offer_iov_size(grpc_exec_ctx *exec_ctx,
+                                            int value) {
   value = GPR_CLAMP(value, 0, 1024);
   if (value < 13) {
-    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
-                             value);
+    GRPC_STATS_INC_HISTOGRAM(
+        (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE, value);
     return;
   }
   union {
@@ -204,11 +247,12 @@ void grpc_stats_inc_tcp_read_iov_size(grpc_exec_ctx *exec_ctx, int value) {
         grpc_stats_table_3[((_val.uint - 4623507967449235456ull) >> 48)] + 13;
     _bkt.dbl = grpc_stats_table_2[bucket];
     bucket -= (_val.uint < _bkt.uint);
-    GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
-                             bucket);
+    GRPC_STATS_INC_HISTOGRAM(
+        (exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE, bucket);
     return;
   }
-  GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_TCP_READ_IOV_SIZE,
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx),
+                           GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE,
                            grpc_stats_histo_find_bucket_slow(
                                (exec_ctx), value, grpc_stats_table_2, 64));
 }
@@ -271,7 +315,10 @@ const int *const grpc_stats_histo_bucket_boundaries[7] = {
     grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_0,
     grpc_stats_table_4};
 void (*const grpc_stats_inc_histogram[7])(grpc_exec_ctx *exec_ctx, int x) = {
-    grpc_stats_inc_tcp_write_size,    grpc_stats_inc_tcp_write_iov_size,
-    grpc_stats_inc_tcp_read_size,     grpc_stats_inc_tcp_read_offer,
-    grpc_stats_inc_tcp_read_iov_size, grpc_stats_inc_http2_send_message_size,
+    grpc_stats_inc_tcp_write_size,
+    grpc_stats_inc_tcp_write_iov_size,
+    grpc_stats_inc_tcp_read_size,
+    grpc_stats_inc_tcp_read_offer,
+    grpc_stats_inc_tcp_read_offer_iov_size,
+    grpc_stats_inc_http2_send_message_size,
     grpc_stats_inc_server_cqs_checked};
