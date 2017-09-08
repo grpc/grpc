@@ -143,21 +143,24 @@ GRPCAPI void grpc_completion_queue_shutdown(grpc_completion_queue *cq);
     drained and no threads are executing grpc_completion_queue_next */
 GRPCAPI void grpc_completion_queue_destroy(grpc_completion_queue *cq);
 
-/** Create a completion queue alarm instance associated to \a cq.
+/** Create a completion queue alarm instance */
+GRPCAPI grpc_alarm *grpc_alarm_create(void *reserved);
+
+/** Set a completion queue alarm instance associated to \a cq.
  *
  * Once the alarm expires (at \a deadline) or it's cancelled (see \a
  * grpc_alarm_cancel), an event with tag \a tag will be added to \a cq. If the
  * alarm expired, the event's success bit will be true, false otherwise (ie,
  * upon cancellation). */
-GRPCAPI grpc_alarm *grpc_alarm_create(grpc_completion_queue *cq,
-                                      gpr_timespec deadline, void *tag);
+GRPCAPI void grpc_alarm_set(grpc_alarm *alarm, grpc_completion_queue *cq,
+                            gpr_timespec deadline, void *tag, void *reserved);
 
 /** Cancel a completion queue alarm. Calling this function over an alarm that
  * has already fired has no effect. */
-GRPCAPI void grpc_alarm_cancel(grpc_alarm *alarm);
+GRPCAPI void grpc_alarm_cancel(grpc_alarm *alarm, void *reserved);
 
 /** Destroy the given completion queue alarm, cancelling it in the process. */
-GRPCAPI void grpc_alarm_destroy(grpc_alarm *alarm);
+GRPCAPI void grpc_alarm_destroy(grpc_alarm *alarm, void *reserved);
 
 /** Check the connectivity state of a channel. */
 GRPCAPI grpc_connectivity_state grpc_channel_check_connectivity_state(
