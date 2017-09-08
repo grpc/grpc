@@ -1,12 +1,12 @@
 var searchData=
 [
-  ['index',['index',['../structcensus__context__iterator.html#a1d3bd63edb21b2c2692610f9440b0111',1,'census_context_iterator::index()'],['../structgrpc__auth__property__iterator.html#ac2b2a0501f097562a6d8856e3da5e7e6',1,'grpc_auth_property_iterator::index()'],['../structgrpc__byte__buffer__reader.html#a948b75a404899c348fc6a52e1a6e63cb',1,'grpc_byte_buffer_reader::index()']]],
+  ['index',['index',['../structcensus__context__iterator.html#a1d3bd63edb21b2c2692610f9440b0111',1,'census_context_iterator::index()'],['../structgrpc__auth__property__iterator.html#ac2b2a0501f097562a6d8856e3da5e7e6',1,'grpc_auth_property_iterator::index()'],['../uniongrpc__byte__buffer__reader_1_1grpc__byte__buffer__reader__current.html#a75e9e86942ca6b95cba101775f7c15ea',1,'grpc_byte_buffer_reader::grpc_byte_buffer_reader_current::index()']]],
   ['inited',['inited',['../structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a',1,'gpr_gcc_thread_local']]],
-  ['inlined',['inlined',['../structgrpc__slice.html#a11faeefc4356e324b379ef03f528cf0c',1,'grpc_slice::inlined()'],['../structgrpc__slice__buffer.html#a27c76a4e972a41ab5ac6504c4426fab9',1,'grpc_slice_buffer::inlined()']]],
-  ['integer',['integer',['../structgrpc__arg.html#a6871bfca9c52e7f56abbd71c81d97554',1,'grpc_arg']]],
-  ['internal_5fdata',['internal_data',['../structgrpc__metadata.html#aba09cd6e090d511fe4ade0706f55e006',1,'grpc_metadata']]],
+  ['inlined',['inlined',['../uniongrpc__slice_1_1grpc__slice__data.html#add6546143f511291a173ed5bb85e66f5',1,'grpc_slice::grpc_slice_data::inlined()'],['../structgrpc__slice__buffer.html#a27c76a4e972a41ab5ac6504c4426fab9',1,'grpc_slice_buffer::inlined()']]],
+  ['integer',['integer',['../uniongrpc__arg_1_1grpc__arg__value.html#aada65cd74c1358967cc52bb42bae99e8',1,'grpc_arg::grpc_arg_value']]],
+  ['internal_5fdata',['internal_data',['../structgrpc__metadata.html#af57c3b2e391435caff04793bf30243f0',1,'grpc_metadata']]],
   ['internationalization_2emd',['internationalization.md',['../internationalization_8md.html',1,'']]],
   ['interop_2dtest_2ddescriptions_2emd',['interop-test-descriptions.md',['../interop-test-descriptions_8md.html',1,'']]],
-  ['is_5fset',['is_set',['../structgrpc__compression__options.html#ab7db56f98efd9efecc135ca8a6c99765',1,'grpc_compression_options::is_set()'],['../structgrpc__op.html#aaf3faa71e11b8211bc6f1c25870fb80b',1,'grpc_op::is_set()']]],
+  ['is_5fset',['is_set',['../structgrpc__compression__options_1_1grpc__compression__options__default__level.html#ac870ba7683a8da44a3bfb3086553fc60',1,'grpc_compression_options::grpc_compression_options_default_level::is_set()'],['../structgrpc__compression__options_1_1grpc__compression__options__default__algorithm.html#a2cb65e409b0c08519a43812baf000888',1,'grpc_compression_options::grpc_compression_options_default_algorithm::is_set()'],['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__initial__metadata_1_1grpc__op__send__initialaea3b3a42c7d59f33d8b29d9f8d06219.html#ae7b5c487af58eeee763326b2374aa3fe',1,'grpc_op::grpc_op_data::grpc_op_send_initial_metadata::grpc_op_send_initial_metadata_maybe_compression_level::is_set()']]],
   ['interoperability_20test_20case_20descriptions',['Interoperability Test Case Descriptions',['../md_doc_interop-test-descriptions.html',1,'']]]
 ];

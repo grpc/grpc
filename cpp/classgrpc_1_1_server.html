@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -122,6 +122,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a770438f57b505a18906327f497ce9a0f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_health_check_service_interface.html">HealthCheckServiceInterface</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server.html#a770438f57b505a18906327f497ce9a0f">GetHealthCheckService</a> () const </td></tr>
 <tr class="memdesc:a770438f57b505a18906327f497ce9a0f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the health check service.  <a href="#a770438f57b505a18906327f497ce9a0f">More...</a><br/></td></tr>
 <tr class="separator:a770438f57b505a18906327f497ce9a0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad48818dac08e28a2ea3694d1f5462c6b"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server.html#ad48818dac08e28a2ea3694d1f5462c6b">InProcessChannel</a> (const <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;args)</td></tr>
+<tr class="memdesc:ad48818dac08e28a2ea3694d1f5462c6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Establish a channel for in-process communication.  <a href="#ad48818dac08e28a2ea3694d1f5462c6b">More...</a><br/></td></tr>
+<tr class="separator:ad48818dac08e28a2ea3694d1f5462c6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1_server_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_server_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_server_interface.html">grpc::ServerInterface</a></td></tr>
 <tr class="memitem:a9908106bf62f6146eedbfa0dcce21b1a inherit pub_methods_classgrpc_1_1_server_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a9908106bf62f6146eedbfa0dcce21b1a">~ServerInterface</a> ()</td></tr>
 <tr class="separator:a9908106bf62f6146eedbfa0dcce21b1a inherit pub_methods_classgrpc_1_1_server_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -219,6 +222,24 @@ Additional Inherited Members</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Returns the health check service. </p>
+
+</div>
+</div>
+<a class="anchor" id="ad48818dac08e28a2ea3694d1f5462c6b"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_channel.html">Channel</a>&gt; grpc::Server::InProcessChannel </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;&#160;</td>
+          <td class="paramname"><em>args</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Establish a channel for in-process communication. </p>
 
 </div>
 </div>
@@ -344,7 +365,7 @@ Additional Inherited Members</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

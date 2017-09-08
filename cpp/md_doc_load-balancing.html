@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -114,7 +114,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <ol type="1">
 <li>On startup, the gRPC client issues a <a class="el" href="naming_8md.html">name resolution</a> request for the server name. The name will resolve to one or more IP addresses, each of which will indicate whether it is a server address or a load balancer address, and a <a class="el" href="service__config_8md.html">service config</a> that indicates which client-side load-balancing policy to use (e.g., <code>round_robin</code> or <code>grpclb</code>).</li>
 <li>The client instantiates the load balancing policy.<ul>
-<li>Note: If all addresses returned by the resolver are balancer addresses, then the client will use the <code>grpclb</code> policy, regardless of what load-balancing policy was requested by the service config. Otherwise, the client will use the load-balancing policy requested by the service config. If no load-balancing policy is requested by the service config, then the client will default to a policy that picks the first available server address.</li>
+<li>Note: If any one of the addresses returned by the resolver is a balancer address, then the client will use the <code>grpclb</code> policy, regardless of what load-balancing policy was requested by the service config. Otherwise, the client will use the load-balancing policy requested by the service config. If no load-balancing policy is requested by the service config, then the client will default to a policy that picks the first available server address.</li>
 </ul>
 </li>
 <li>The load balancing policy creates a subchannel to each server address.<ul>
@@ -138,7 +138,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

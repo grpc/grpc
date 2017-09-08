@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -86,6 +86,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-attribs">Data Fields</a>  </div>
   <div class="headertitle">
 <div class="title">grpc_slice Struct Reference</div>  </div>
@@ -97,99 +98,29 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <p><code>#include &lt;<a class="el" href="grpc_2impl_2codegen_2slice_8h_source.html">slice.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">union &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="uniongrpc__slice_1_1grpc__slice__data.html">grpc_slice_data</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Data Fields</h2></td></tr>
 <tr class="memitem:a467ef319d024f1897c7ff3bdadb78493"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structgrpc__slice__refcount.html">grpc_slice_refcount</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice.html#a467ef319d024f1897c7ff3bdadb78493">refcount</a></td></tr>
 <tr class="separator:a467ef319d024f1897c7ff3bdadb78493"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0a22e065d4ac61183038e1b90367d685"><td class="memItemLeft" >union {</td></tr>
-<tr class="memitem:a2937561cd9052ea6ea4c36ae9b9a796d"><td class="memItemLeft" >&#160;&#160;&#160;struct {</td></tr>
-<tr class="memitem:ac2e85442f060ca3e57bf43aaf611146c"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;uint8_t *&#160;&#160;&#160;<a class="el" href="structgrpc__slice.html#a2906db76ad7ddaba549ccf723f361c6d">bytes</a></td></tr>
-<tr class="separator:ac2e85442f060ca3e57bf43aaf611146c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6fd02a5cdc0d652776c92fb5f1aeeadf"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;size_t&#160;&#160;&#160;<a class="el" href="structgrpc__slice.html#a009b6a19b442f8f4fa1858a37aac31fd">length</a></td></tr>
-<tr class="separator:a6fd02a5cdc0d652776c92fb5f1aeeadf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2937561cd9052ea6ea4c36ae9b9a796d"><td class="memItemLeft" valign="top">&#160;&#160;&#160;}&#160;&#160;&#160;<a class="el" href="structgrpc__slice.html#aa73144570344881e795cc3ce85e219f5">refcounted</a></td></tr>
-<tr class="separator:a2937561cd9052ea6ea4c36ae9b9a796d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8d6e42d399087275eeddfe3c61655bba"><td class="memItemLeft" >&#160;&#160;&#160;struct {</td></tr>
-<tr class="memitem:a6786d0f067e3a0a5a708eda70620e4a7"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;uint8_t&#160;&#160;&#160;<a class="el" href="structgrpc__slice.html#ac7fc18f903b510ccb4eea00df42c0181">length</a></td></tr>
-<tr class="separator:a6786d0f067e3a0a5a708eda70620e4a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af1abb149ab1706df15b15046369aeb43"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;uint8_t&#160;&#160;&#160;<a class="el" href="structgrpc__slice.html#ab907f771b5785a1ebeb24679d503facf">bytes</a> [(sizeof(size_t)+sizeof(uint8_t *)-1)]</td></tr>
-<tr class="separator:af1abb149ab1706df15b15046369aeb43"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8d6e42d399087275eeddfe3c61655bba"><td class="memItemLeft" valign="top">&#160;&#160;&#160;}&#160;&#160;&#160;<a class="el" href="structgrpc__slice.html#acacecc8ac0431fd02eb9e1b6c667250a">inlined</a></td></tr>
-<tr class="separator:a8d6e42d399087275eeddfe3c61655bba"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0a22e065d4ac61183038e1b90367d685"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice.html#a0a22e065d4ac61183038e1b90367d685">data</a></td></tr>
-<tr class="separator:a0a22e065d4ac61183038e1b90367d685"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6eb5c7533d3e14d4867ffcc1c906456e"><td class="memItemLeft" align="right" valign="top">union <a class="el" href="uniongrpc__slice_1_1grpc__slice__data.html">grpc_slice::grpc_slice_data</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice.html#a6eb5c7533d3e14d4867ffcc1c906456e">data</a></td></tr>
+<tr class="separator:a6eb5c7533d3e14d4867ffcc1c906456e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a> s, if initialized, represents the byte range s.bytes[0..s.length-1]. </p>
-<p>It can have an associated ref count which has a destruction routine to be run when the ref count reaches zero (see grpc_slice_new() and grp_slice_unref()). Multiple <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a> values may share a ref count.</p>
+<p>It can have an associated ref count which has a destruction routine to be run when the ref count reaches zero (see <a class="el" href="grpc_2slice_8h.html#a85704b2e5f1c8d70e728e86ad6d1ca0a" title="Create a slice pointing at some data. ">grpc_slice_new()</a> and grp_slice_unref()). Multiple <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a> values may share a ref count.</p>
 <p>If the slice does not have a refcount, it represents an inlined small piece of data that is copied by value. </p>
 </div><h2 class="groupheader">Field Documentation</h2>
-<a class="anchor" id="a2906db76ad7ddaba549ccf723f361c6d"></a>
+<a class="anchor" id="a6eb5c7533d3e14d4867ffcc1c906456e"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">uint8_t* grpc_slice::bytes</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="ab907f771b5785a1ebeb24679d503facf"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">uint8_t grpc_slice::bytes[(sizeof(size_t)+sizeof(uint8_t *)-1)]</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a0a22e065d4ac61183038e1b90367d685"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">union { ... }   grpc_slice::data</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="acacecc8ac0431fd02eb9e1b6c667250a"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">struct { ... }   grpc_slice::inlined</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a009b6a19b442f8f4fa1858a37aac31fd"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">size_t grpc_slice::length</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="ac7fc18f903b510ccb4eea00df42c0181"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">uint8_t grpc_slice::length</td>
+          <td class="memname">union <a class="el" href="uniongrpc__slice_1_1grpc__slice__data.html">grpc_slice::grpc_slice_data</a>  grpc_slice::data</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -208,25 +139,13 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="aa73144570344881e795cc3ce85e219f5"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">struct { ... }   grpc_slice::refcounted</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li>include/grpc/impl/codegen/<a class="el" href="grpc_2impl_2codegen_2slice_8h_source.html">slice.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -238,7 +238,7 @@ Friends</h2></td></tr>
 <li>Initial and trailing metadata coming from the server.</li>
 <li>Get performance metrics (ie, census).</li>
 </ul>
-<p>Context settings are only relevant to the call they are invoked with, that is to say, they aren't sticky. Some of these settings, such as the compression options, can be made persistant at channel construction time (see <em><a class="el" href="namespacegrpc.html#a4a5c8a2c77389604feaa5d38cdd7b8d3" title="Create a new custom Channel pointing to target. ">grpc::CreateCustomChannel</a></em>).</p>
+<p>Context settings are only relevant to the call they are invoked with, that is to say, they aren't sticky. Some of these settings, such as the compression options, can be made persistent at channel construction time (see <em><a class="el" href="namespacegrpc.html#a4a5c8a2c77389604feaa5d38cdd7b8d3" title="Create a new custom Channel pointing to target. ">grpc::CreateCustomChannel</a></em>).</p>
 <dl class="section warning"><dt>Warning</dt><dd><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a> instances should <em>not</em> be reused across rpcs. </dd></dl>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="acabbcf3c160a0628da8a9274b10f54b9"></a>
@@ -628,7 +628,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>EXPERIMENTAL: Set this request to be cacheable. </p>
-<p>If set, grpc is free to use the HTTP GET verb for sending the request, with the possibility of receiving a cached respone. </p>
+<p>If set, grpc is free to use the HTTP GET verb for sending the request, with the possibility of receiving a cached response. </p>
 
 </div>
 </div>
@@ -706,7 +706,7 @@ Friends</h2></td></tr>
 
 <p>Set credentials for the client call. </p>
 <p>A credentials object encapsulates all the state needed by a client to authenticate with a server and make various assertions, e.g., about the client’s identity, role, or whether it is authorized to make a particular call.</p>
-<dl class="section see"><dt>See Also</dt><dd><a href="http://www.grpc.io/docs/guides/auth.html">http://www.grpc.io/docs/guides/auth.html</a> </dd></dl>
+<dl class="section see"><dt>See Also</dt><dd><a href="https://grpc.io/docs/guides/auth.html">https://grpc.io/docs/guides/auth.html</a> </dd></dl>
 
 </div>
 </div>
@@ -1199,7 +1199,7 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

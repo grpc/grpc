@@ -90,33 +90,39 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>vtable for the AVL tree The optional user_data is propagated from the top level gpr_avl_XXX API.  
+ <a href="structgpr__avl__vtable.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="avl_8h_source.html">avl.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Data Fields</h2></td></tr>
-<tr class="memitem:a26419b9ee0bbef85074b00390c8e6383"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgpr__avl__vtable.html#a26419b9ee0bbef85074b00390c8e6383">destroy_key</a> )(void *key)</td></tr>
-<tr class="memdesc:a26419b9ee0bbef85074b00390c8e6383"><td class="mdescLeft">&#160;</td><td class="mdescRight">destroy a key  <a href="#a26419b9ee0bbef85074b00390c8e6383">More...</a><br/></td></tr>
-<tr class="separator:a26419b9ee0bbef85074b00390c8e6383"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaf2b05b749fa808f45b50e5b20d959ac"><td class="memItemLeft" align="right" valign="top">void *(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgpr__avl__vtable.html#aaf2b05b749fa808f45b50e5b20d959ac">copy_key</a> )(void *key)</td></tr>
-<tr class="memdesc:aaf2b05b749fa808f45b50e5b20d959ac"><td class="mdescLeft">&#160;</td><td class="mdescRight">copy a key, returning new value  <a href="#aaf2b05b749fa808f45b50e5b20d959ac">More...</a><br/></td></tr>
-<tr class="separator:aaf2b05b749fa808f45b50e5b20d959ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a66727a55e5deb998ba07b96fab8e53d9"><td class="memItemLeft" align="right" valign="top">long(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgpr__avl__vtable.html#a66727a55e5deb998ba07b96fab8e53d9">compare_keys</a> )(void *key1, void *key2)</td></tr>
-<tr class="memdesc:a66727a55e5deb998ba07b96fab8e53d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">compare key1, key2; return &lt;0 if key1 &lt; key2, &gt;0 if key1 &gt; key2, 0 if key1 == key2  <a href="#a66727a55e5deb998ba07b96fab8e53d9">More...</a><br/></td></tr>
-<tr class="separator:a66727a55e5deb998ba07b96fab8e53d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4f6fba448a509db9d50f8574425f408e"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgpr__avl__vtable.html#a4f6fba448a509db9d50f8574425f408e">destroy_value</a> )(void *value)</td></tr>
-<tr class="memdesc:a4f6fba448a509db9d50f8574425f408e"><td class="mdescLeft">&#160;</td><td class="mdescRight">destroy a value  <a href="#a4f6fba448a509db9d50f8574425f408e">More...</a><br/></td></tr>
-<tr class="separator:a4f6fba448a509db9d50f8574425f408e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a92e4dbcc6b3a3964dfe12f51e81f3fbd"><td class="memItemLeft" align="right" valign="top">void *(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgpr__avl__vtable.html#a92e4dbcc6b3a3964dfe12f51e81f3fbd">copy_value</a> )(void *value)</td></tr>
-<tr class="memdesc:a92e4dbcc6b3a3964dfe12f51e81f3fbd"><td class="mdescLeft">&#160;</td><td class="mdescRight">copy a value  <a href="#a92e4dbcc6b3a3964dfe12f51e81f3fbd">More...</a><br/></td></tr>
-<tr class="separator:a92e4dbcc6b3a3964dfe12f51e81f3fbd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad3ca97e89b38b01177ca5ffd77c366d7"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgpr__avl__vtable.html#ad3ca97e89b38b01177ca5ffd77c366d7">destroy_key</a> )(void *key, void *user_data)</td></tr>
+<tr class="memdesc:ad3ca97e89b38b01177ca5ffd77c366d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">destroy a key  <a href="#ad3ca97e89b38b01177ca5ffd77c366d7">More...</a><br/></td></tr>
+<tr class="separator:ad3ca97e89b38b01177ca5ffd77c366d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a56276298eae1bf8af62ab1c2c6e32d9b"><td class="memItemLeft" align="right" valign="top">void *(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgpr__avl__vtable.html#a56276298eae1bf8af62ab1c2c6e32d9b">copy_key</a> )(void *key, void *user_data)</td></tr>
+<tr class="memdesc:a56276298eae1bf8af62ab1c2c6e32d9b"><td class="mdescLeft">&#160;</td><td class="mdescRight">copy a key, returning new value  <a href="#a56276298eae1bf8af62ab1c2c6e32d9b">More...</a><br/></td></tr>
+<tr class="separator:a56276298eae1bf8af62ab1c2c6e32d9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a301cd22fe0ac08797b9ae86318cae798"><td class="memItemLeft" align="right" valign="top">long(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgpr__avl__vtable.html#a301cd22fe0ac08797b9ae86318cae798">compare_keys</a> )(void *key1, void *key2, void *user_data)</td></tr>
+<tr class="memdesc:a301cd22fe0ac08797b9ae86318cae798"><td class="mdescLeft">&#160;</td><td class="mdescRight">compare key1, key2; return &lt;0 if key1 &lt; key2, &gt;0 if key1 &gt; key2, 0 if key1 == key2  <a href="#a301cd22fe0ac08797b9ae86318cae798">More...</a><br/></td></tr>
+<tr class="separator:a301cd22fe0ac08797b9ae86318cae798"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaaf0cee2aa90353bd8f2281389af5242"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgpr__avl__vtable.html#aaaf0cee2aa90353bd8f2281389af5242">destroy_value</a> )(void *value, void *user_data)</td></tr>
+<tr class="memdesc:aaaf0cee2aa90353bd8f2281389af5242"><td class="mdescLeft">&#160;</td><td class="mdescRight">destroy a value  <a href="#aaaf0cee2aa90353bd8f2281389af5242">More...</a><br/></td></tr>
+<tr class="separator:aaaf0cee2aa90353bd8f2281389af5242"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1e377245680d18ef2fd8e25db3d7a38d"><td class="memItemLeft" align="right" valign="top">void *(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgpr__avl__vtable.html#a1e377245680d18ef2fd8e25db3d7a38d">copy_value</a> )(void *value, void *user_data)</td></tr>
+<tr class="memdesc:a1e377245680d18ef2fd8e25db3d7a38d"><td class="mdescLeft">&#160;</td><td class="mdescRight">copy a value  <a href="#a1e377245680d18ef2fd8e25db3d7a38d">More...</a><br/></td></tr>
+<tr class="separator:a1e377245680d18ef2fd8e25db3d7a38d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Field Documentation</h2>
-<a class="anchor" id="a66727a55e5deb998ba07b96fab8e53d9"></a>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>vtable for the AVL tree The optional user_data is propagated from the top level gpr_avl_XXX API. </p>
+<p>From the same API call, multiple vtable functions may be called multiple times. </p>
+</div><h2 class="groupheader">Field Documentation</h2>
+<a class="anchor" id="a301cd22fe0ac08797b9ae86318cae798"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">long(* gpr_avl_vtable::compare_keys)(void *key1, void *key2)</td>
+          <td class="memname">long(* gpr_avl_vtable::compare_keys)(void *key1, void *key2, void *user_data)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -125,12 +131,12 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="aaf2b05b749fa808f45b50e5b20d959ac"></a>
+<a class="anchor" id="a56276298eae1bf8af62ab1c2c6e32d9b"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void*(* gpr_avl_vtable::copy_key)(void *key)</td>
+          <td class="memname">void*(* gpr_avl_vtable::copy_key)(void *key, void *user_data)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -139,12 +145,12 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a92e4dbcc6b3a3964dfe12f51e81f3fbd"></a>
+<a class="anchor" id="a1e377245680d18ef2fd8e25db3d7a38d"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void*(* gpr_avl_vtable::copy_value)(void *value)</td>
+          <td class="memname">void*(* gpr_avl_vtable::copy_value)(void *value, void *user_data)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -153,12 +159,12 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a26419b9ee0bbef85074b00390c8e6383"></a>
+<a class="anchor" id="ad3ca97e89b38b01177ca5ffd77c366d7"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void(* gpr_avl_vtable::destroy_key)(void *key)</td>
+          <td class="memname">void(* gpr_avl_vtable::destroy_key)(void *key, void *user_data)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -167,12 +173,12 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a4f6fba448a509db9d50f8574425f408e"></a>
+<a class="anchor" id="aaaf0cee2aa90353bd8f2281389af5242"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void(* gpr_avl_vtable::destroy_value)(void *value)</td>
+          <td class="memname">void(* gpr_avl_vtable::destroy_value)(void *value, void *user_data)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -187,7 +193,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

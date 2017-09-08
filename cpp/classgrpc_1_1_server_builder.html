@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -159,9 +159,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aefdac3407920a99d119c946d255b100c"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#aefdac3407920a99d119c946d255b100c">AddChannelArgument</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;arg, const T &amp;value)</td></tr>
 <tr class="memdesc:aefdac3407920a99d119c946d255b100c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a channel argument (an escape hatch to tuning core library parameters directly)  <a href="#aefdac3407920a99d119c946d255b100c">More...</a><br/></td></tr>
 <tr class="separator:aefdac3407920a99d119c946d255b100c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acc75463f5d82b7774a83a4073d904f90"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#acc75463f5d82b7774a83a4073d904f90">AddListeningPort</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;addr, std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt; creds, int *selected_port=nullptr)</td></tr>
-<tr class="memdesc:acc75463f5d82b7774a83a4073d904f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enlists an endpoint <em>addr</em> (port with an optional IP address) to bind the <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">grpc::Server</a></em> object to be created to.  <a href="#acc75463f5d82b7774a83a4073d904f90">More...</a><br/></td></tr>
-<tr class="separator:acc75463f5d82b7774a83a4073d904f90"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5bf2d8c40e6b4ca170b9ee927d4db326"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a5bf2d8c40e6b4ca170b9ee927d4db326">AddListeningPort</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;addr_uri, std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt; creds, int *selected_port=nullptr)</td></tr>
+<tr class="memdesc:a5bf2d8c40e6b4ca170b9ee927d4db326"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enlists an endpoint <em>addr</em> (port with an optional IP address) to bind the <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">grpc::Server</a></em> object to be created to.  <a href="#a5bf2d8c40e6b4ca170b9ee927d4db326">More...</a><br/></td></tr>
+<tr class="separator:a5bf2d8c40e6b4ca170b9ee927d4db326"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a960d55977e1aef56fd7b582037a01bbd"><td class="memItemLeft" align="right" valign="top">std::unique_ptr<br class="typebreak"/>
 &lt; <a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a960d55977e1aef56fd7b582037a01bbd">AddCompletionQueue</a> (bool is_frequently_polled=true)</td></tr>
 <tr class="memdesc:a960d55977e1aef56fd7b582037a01bbd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a completion queue for handling asynchronous services.  <a href="#a960d55977e1aef56fd7b582037a01bbd">More...</a><br/></td></tr>
@@ -169,7 +169,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:af284cd39b185043e8e92405c1ae0f310"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_server.html">Server</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#af284cd39b185043e8e92405c1ae0f310">BuildAndStart</a> ()</td></tr>
 <tr class="memdesc:af284cd39b185043e8e92405c1ae0f310"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a running server which is ready for processing calls.  <a href="#af284cd39b185043e8e92405c1ae0f310">More...</a><br/></td></tr>
 <tr class="separator:af284cd39b185043e8e92405c1ae0f310"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a01715acec890fe4ddc91340bae5ead8c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a01715acec890fe4ddc91340bae5ead8c">EnableWorkaround</a> (grpc_workaround_list id)</td></tr>
+<tr class="memitem:a01715acec890fe4ddc91340bae5ead8c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a01715acec890fe4ddc91340bae5ead8c">EnableWorkaround</a> (<a class="el" href="workaround__list_8h.html#ade8be35fce7415c7234ac22d8b9ad9d2">grpc_workaround_list</a> id)</td></tr>
 <tr class="memdesc:a01715acec890fe4ddc91340bae5ead8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable a server workaround.  <a href="#a01715acec890fe4ddc91340bae5ead8c">More...</a><br/></td></tr>
 <tr class="separator:a01715acec890fe4ddc91340bae5ead8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -312,7 +312,7 @@ template&lt;class T &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="acc75463f5d82b7774a83a4073d904f90"></a>
+<a class="anchor" id="a5bf2d8c40e6b4ca170b9ee927d4db326"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -320,7 +320,7 @@ template&lt;class T &gt; </div>
           <td class="memname"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a>&amp; grpc::ServerBuilder::AddListeningPort </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
-          <td class="paramname"><em>addr</em>, </td>
+          <td class="paramname"><em>addr_uri</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -346,7 +346,7 @@ template&lt;class T &gt; </div>
 <p>It can be invoked multiple times.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">addr</td><td>The address to try to bind to the server (eg, localhost:1234, 192.168.1.1:31416, [::1]:27182, etc.).  creds The credentials associated with the server. </td></tr>
+    <tr><td class="paramname">addr_uri</td><td>The address to try to bind to the server in URI form. If the scheme name is omitted, "dns:///" is assumed. Valid values include dns:///localhost:1234, / 192.168.1.1:31416, dns:///[::1]:27182, etc.).  creds The credentials associated with the server. </td></tr>
     <tr><td class="paramname">selected_port[out]</td><td>If not <code>nullptr</code>, gets populated with the port number bound to the <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">grpc::Server</a></em> for the corresponding endpoint after it is successfully bound, 0 otherwise. </td></tr>
   </table>
   </dd>
@@ -378,7 +378,7 @@ template&lt;class T &gt; </div>
         <tr>
           <td class="memname"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a>&amp; grpc::ServerBuilder::EnableWorkaround </td>
           <td>(</td>
-          <td class="paramtype">grpc_workaround_list&#160;</td>
+          <td class="paramtype"><a class="el" href="workaround__list_8h.html#ade8be35fce7415c7234ac22d8b9ad9d2">grpc_workaround_list</a>&#160;</td>
           <td class="paramname"><em>id</em></td><td>)</td>
           <td></td>
         </tr>
@@ -753,7 +753,7 @@ template&lt;class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

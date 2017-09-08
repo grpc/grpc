@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -108,6 +108,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aa6c0bc180d800973956b13c793bbac9a"><td class="memTemplItemLeft" align="right" valign="top">&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_alarm.html#aa6c0bc180d800973956b13c793bbac9a">Alarm</a> (<a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *cq, const T &amp;deadline, void *tag)</td></tr>
 <tr class="memdesc:aa6c0bc180d800973956b13c793bbac9a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a completion queue alarm instance associated to <em>cq</em>.  <a href="#aa6c0bc180d800973956b13c793bbac9a">More...</a><br/></td></tr>
 <tr class="separator:aa6c0bc180d800973956b13c793bbac9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aea1258cecd23533bf292f17b71124f66"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_alarm.html#aea1258cecd23533bf292f17b71124f66">Alarm</a> (const <a class="el" href="classgrpc_1_1_alarm.html">Alarm</a> &amp;)=delete</td></tr>
+<tr class="memdesc:aea1258cecd23533bf292f17b71124f66"><td class="mdescLeft">&#160;</td><td class="mdescRight">Alarms aren't copyable.  <a href="#aea1258cecd23533bf292f17b71124f66">More...</a><br/></td></tr>
+<tr class="separator:aea1258cecd23533bf292f17b71124f66"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c46dacfd26561470f0901cec2686f49"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_alarm.html">Alarm</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_alarm.html#a4c46dacfd26561470f0901cec2686f49">operator=</a> (const <a class="el" href="classgrpc_1_1_alarm.html">Alarm</a> &amp;)=delete</td></tr>
+<tr class="separator:a4c46dacfd26561470f0901cec2686f49"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad75ad87050d7ad9b2f66dbd6ef0da056"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_alarm.html#ad75ad87050d7ad9b2f66dbd6ef0da056">Alarm</a> (<a class="el" href="classgrpc_1_1_alarm.html">Alarm</a> &amp;&amp;rhs)</td></tr>
+<tr class="memdesc:ad75ad87050d7ad9b2f66dbd6ef0da056"><td class="mdescLeft">&#160;</td><td class="mdescRight">Alarms are movable.  <a href="#ad75ad87050d7ad9b2f66dbd6ef0da056">More...</a><br/></td></tr>
+<tr class="separator:ad75ad87050d7ad9b2f66dbd6ef0da056"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a47545b12ace3607ed259225e38eade46"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_alarm.html">Alarm</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_alarm.html#a47545b12ace3607ed259225e38eade46">operator=</a> (<a class="el" href="classgrpc_1_1_alarm.html">Alarm</a> &amp;&amp;rhs)</td></tr>
+<tr class="separator:a47545b12ace3607ed259225e38eade46"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab78846507ce33312823afcebe78a1215"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_alarm.html#ab78846507ce33312823afcebe78a1215">~Alarm</a> ()</td></tr>
 <tr class="memdesc:ab78846507ce33312823afcebe78a1215"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroy the given completion queue alarm, cancelling it in the process.  <a href="#ab78846507ce33312823afcebe78a1215">More...</a><br/></td></tr>
 <tr class="separator:ab78846507ce33312823afcebe78a1215"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -164,6 +174,58 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="aea1258cecd23533bf292f17b71124f66"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">grpc::Alarm::Alarm </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classgrpc_1_1_alarm.html">Alarm</a> &amp;&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">delete</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Alarms aren't copyable. </p>
+
+</div>
+</div>
+<a class="anchor" id="ad75ad87050d7ad9b2f66dbd6ef0da056"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">grpc::Alarm::Alarm </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_alarm.html">Alarm</a> &amp;&amp;&#160;</td>
+          <td class="paramname"><em>rhs</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Alarms are movable. </p>
+
+</div>
+</div>
 <a class="anchor" id="ab78846507ce33312823afcebe78a1215"></a>
 <div class="memitem">
 <div class="memproto">
@@ -216,13 +278,61 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="a4c46dacfd26561470f0901cec2686f49"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_alarm.html">Alarm</a>&amp; grpc::Alarm::operator= </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classgrpc_1_1_alarm.html">Alarm</a> &amp;&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">delete</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a47545b12ace3607ed259225e38eade46"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_alarm.html">Alarm</a>&amp; grpc::Alarm::operator= </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_alarm.html">Alarm</a> &amp;&amp;&#160;</td>
+          <td class="paramname"><em>rhs</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpc++/<a class="el" href="alarm_8h_source.html">alarm.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

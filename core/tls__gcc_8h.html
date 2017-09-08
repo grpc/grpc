@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_692cef9a660803f4b5efbe2b781d2071.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_a8e30387f66bf56f1146fa5d3496d838.html">include</a></li><li class="navelem"><a class="el" href="dir_f93e102bce67c94e5a77dcd42507568e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_f6ce077e8fd33d16d09ec0399b2cff44.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -134,7 +134,7 @@ Macros</h2></td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line"><span class="keyword">static</span> <span class="keywordtype">bool</span> name##_inited = <span class="keyword">false</span>; \</div>
 <div class="line">  static __thread <span class="keyword">struct </span><a class="code" href="structgpr__gcc__thread__local.html">gpr_gcc_thread_local</a> name = {0, &amp;(name##_inited)}</div>
-<div class="ttc" id="structgpr__gcc__thread__local_html"><div class="ttname"><a href="structgpr__gcc__thread__local.html">gpr_gcc_thread_local</a></div><div class="ttdoc">Thread local storage based on gcc compiler primitives. </div><div class="ttdef"><b>Definition:</b> tls_gcc.h:46</div></div>
+<div class="ttc" id="structgpr__gcc__thread__local_html"><div class="ttname"><a href="structgpr__gcc__thread__local.html">gpr_gcc_thread_local</a></div><div class="ttdoc">Thread local storage based on gcc compiler primitives. </div><div class="ttdef"><b>Definition:</b> tls_gcc.h:31</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -155,8 +155,8 @@ Macros</h2></td></tr>
 <div class="line"><a class="code" href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">    GPR_ASSERT</a>(*((tls)-&gt;<a class="code" href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">inited</a>)); \</div>
 <div class="line">    *((tls)-&gt;<a class="code" href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">inited</a>) = <span class="keyword">false</span>;     \</div>
 <div class="line">  } <span class="keywordflow">while</span> (0)</div>
-<div class="ttc" id="structgpr__gcc__thread__local_html_ad549a50f4ba75b666e9e1d8b58fb693a"><div class="ttname"><a href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">gpr_gcc_thread_local::inited</a></div><div class="ttdeci">bool * inited</div><div class="ttdef"><b>Definition:</b> tls_gcc.h:48</div></div>
-<div class="ttc" id="log_8h_html_a6ccf52ff690655cc22cd9d053650876f"><div class="ttname"><a href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a></div><div class="ttdeci">#define GPR_ASSERT(x)</div><div class="ttdoc">abort() the process if x is zero, having written a line to the log. </div><div class="ttdef"><b>Definition:</b> log.h:106</div></div>
+<div class="ttc" id="structgpr__gcc__thread__local_html_ad549a50f4ba75b666e9e1d8b58fb693a"><div class="ttname"><a href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">gpr_gcc_thread_local::inited</a></div><div class="ttdeci">bool * inited</div><div class="ttdef"><b>Definition:</b> tls_gcc.h:33</div></div>
+<div class="ttc" id="log_8h_html_a6ccf52ff690655cc22cd9d053650876f"><div class="ttname"><a href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a></div><div class="ttdeci">#define GPR_ASSERT(x)</div><div class="ttdoc">abort() the process if x is zero, having written a line to the log. </div><div class="ttdef"><b>Definition:</b> log.h:91</div></div>
 </div><!-- fragment -->
 <p>It is allowed to call gpr_tls_init after gpr_tls_destroy is called. </p>
 
@@ -179,9 +179,9 @@ Macros</h2></td></tr>
 <div class="line"><a class="code" href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">    GPR_ASSERT</a>(*((tls)-&gt;<a class="code" href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">inited</a>)); \</div>
 <div class="line">    (tls)-&gt;<a class="code" href="structgpr__gcc__thread__local.html#ab3d5e3ce7529dc976b72794797c25e56">value</a>;                 \</div>
 <div class="line">  })</div>
-<div class="ttc" id="structgpr__gcc__thread__local_html_ad549a50f4ba75b666e9e1d8b58fb693a"><div class="ttname"><a href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">gpr_gcc_thread_local::inited</a></div><div class="ttdeci">bool * inited</div><div class="ttdef"><b>Definition:</b> tls_gcc.h:48</div></div>
-<div class="ttc" id="log_8h_html_a6ccf52ff690655cc22cd9d053650876f"><div class="ttname"><a href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a></div><div class="ttdeci">#define GPR_ASSERT(x)</div><div class="ttdoc">abort() the process if x is zero, having written a line to the log. </div><div class="ttdef"><b>Definition:</b> log.h:106</div></div>
-<div class="ttc" id="structgpr__gcc__thread__local_html_ab3d5e3ce7529dc976b72794797c25e56"><div class="ttname"><a href="structgpr__gcc__thread__local.html#ab3d5e3ce7529dc976b72794797c25e56">gpr_gcc_thread_local::value</a></div><div class="ttdeci">intptr_t value</div><div class="ttdef"><b>Definition:</b> tls_gcc.h:47</div></div>
+<div class="ttc" id="structgpr__gcc__thread__local_html_ad549a50f4ba75b666e9e1d8b58fb693a"><div class="ttname"><a href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">gpr_gcc_thread_local::inited</a></div><div class="ttdeci">bool * inited</div><div class="ttdef"><b>Definition:</b> tls_gcc.h:33</div></div>
+<div class="ttc" id="log_8h_html_a6ccf52ff690655cc22cd9d053650876f"><div class="ttname"><a href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a></div><div class="ttdeci">#define GPR_ASSERT(x)</div><div class="ttdoc">abort() the process if x is zero, having written a line to the log. </div><div class="ttdef"><b>Definition:</b> log.h:91</div></div>
+<div class="ttc" id="structgpr__gcc__thread__local_html_ab3d5e3ce7529dc976b72794797c25e56"><div class="ttname"><a href="structgpr__gcc__thread__local.html#ab3d5e3ce7529dc976b72794797c25e56">gpr_gcc_thread_local::value</a></div><div class="ttdeci">intptr_t value</div><div class="ttdef"><b>Definition:</b> tls_gcc.h:32</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -202,8 +202,8 @@ Macros</h2></td></tr>
 <div class="line"><a class="code" href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">    GPR_ASSERT</a>(*((tls)-&gt;<a class="code" href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">inited</a>) == <span class="keyword">false</span>); \</div>
 <div class="line">    *((tls)-&gt;<a class="code" href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">inited</a>) = <span class="keyword">true</span>;               \</div>
 <div class="line">  } <span class="keywordflow">while</span> (0)</div>
-<div class="ttc" id="structgpr__gcc__thread__local_html_ad549a50f4ba75b666e9e1d8b58fb693a"><div class="ttname"><a href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">gpr_gcc_thread_local::inited</a></div><div class="ttdeci">bool * inited</div><div class="ttdef"><b>Definition:</b> tls_gcc.h:48</div></div>
-<div class="ttc" id="log_8h_html_a6ccf52ff690655cc22cd9d053650876f"><div class="ttname"><a href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a></div><div class="ttdeci">#define GPR_ASSERT(x)</div><div class="ttdoc">abort() the process if x is zero, having written a line to the log. </div><div class="ttdef"><b>Definition:</b> log.h:106</div></div>
+<div class="ttc" id="structgpr__gcc__thread__local_html_ad549a50f4ba75b666e9e1d8b58fb693a"><div class="ttname"><a href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">gpr_gcc_thread_local::inited</a></div><div class="ttdeci">bool * inited</div><div class="ttdef"><b>Definition:</b> tls_gcc.h:33</div></div>
+<div class="ttc" id="log_8h_html_a6ccf52ff690655cc22cd9d053650876f"><div class="ttname"><a href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a></div><div class="ttdeci">#define GPR_ASSERT(x)</div><div class="ttdoc">abort() the process if x is zero, having written a line to the log. </div><div class="ttdef"><b>Definition:</b> log.h:91</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -234,16 +234,16 @@ Macros</h2></td></tr>
 <div class="line"><a class="code" href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">    GPR_ASSERT</a>(*((tls)-&gt;<a class="code" href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">inited</a>));   \</div>
 <div class="line">    (tls)-&gt;<a class="code" href="structgpr__gcc__thread__local.html#ab3d5e3ce7529dc976b72794797c25e56">value</a> = (new_value);     \</div>
 <div class="line">  } <span class="keywordflow">while</span> (0)</div>
-<div class="ttc" id="structgpr__gcc__thread__local_html_ad549a50f4ba75b666e9e1d8b58fb693a"><div class="ttname"><a href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">gpr_gcc_thread_local::inited</a></div><div class="ttdeci">bool * inited</div><div class="ttdef"><b>Definition:</b> tls_gcc.h:48</div></div>
-<div class="ttc" id="log_8h_html_a6ccf52ff690655cc22cd9d053650876f"><div class="ttname"><a href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a></div><div class="ttdeci">#define GPR_ASSERT(x)</div><div class="ttdoc">abort() the process if x is zero, having written a line to the log. </div><div class="ttdef"><b>Definition:</b> log.h:106</div></div>
-<div class="ttc" id="structgpr__gcc__thread__local_html_ab3d5e3ce7529dc976b72794797c25e56"><div class="ttname"><a href="structgpr__gcc__thread__local.html#ab3d5e3ce7529dc976b72794797c25e56">gpr_gcc_thread_local::value</a></div><div class="ttdeci">intptr_t value</div><div class="ttdef"><b>Definition:</b> tls_gcc.h:47</div></div>
+<div class="ttc" id="structgpr__gcc__thread__local_html_ad549a50f4ba75b666e9e1d8b58fb693a"><div class="ttname"><a href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">gpr_gcc_thread_local::inited</a></div><div class="ttdeci">bool * inited</div><div class="ttdef"><b>Definition:</b> tls_gcc.h:33</div></div>
+<div class="ttc" id="log_8h_html_a6ccf52ff690655cc22cd9d053650876f"><div class="ttname"><a href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a></div><div class="ttdeci">#define GPR_ASSERT(x)</div><div class="ttdoc">abort() the process if x is zero, having written a line to the log. </div><div class="ttdef"><b>Definition:</b> log.h:91</div></div>
+<div class="ttc" id="structgpr__gcc__thread__local_html_ab3d5e3ce7529dc976b72794797c25e56"><div class="ttname"><a href="structgpr__gcc__thread__local.html#ab3d5e3ce7529dc976b72794797c25e56">gpr_gcc_thread_local::value</a></div><div class="ttdeci">intptr_t value</div><div class="ttdef"><b>Definition:</b> tls_gcc.h:32</div></div>
 </div><!-- fragment -->
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

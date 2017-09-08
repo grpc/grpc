@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_a8e30387f66bf56f1146fa5d3496d838.html">include</a></li><li class="navelem"><a class="el" href="dir_f93e102bce67c94e5a77dcd42507568e.html">grpc</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -92,102 +92,87 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <a href="byte__buffer_8h.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/*</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright 2015, Google Inc.</span></div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * All rights reserved.</span></div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * Redistribution and use in source and binary forms, with or without</span></div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"> * modification, are permitted provided that the following conditions are</span></div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment"> * met:</span></div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment"> *     * Redistributions of source code must retain the above copyright</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment"> * notice, this list of conditions and the following disclaimer.</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment"> *     * Redistributions in binary form must reproduce the above</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment"> * copyright notice, this list of conditions and the following disclaimer</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment"> * in the documentation and/or other materials provided with the</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment"> * distribution.</span></div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment"> *     * Neither the name of Google Inc. nor the names of its</span></div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment"> * contributors may be used to endorse or promote products derived from</span></div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment"> * this software without specific prior written permission.</span></div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment"> * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment"> * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span></div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment"> * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment"> * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment"> * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment"> * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment"> * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="comment"> * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="comment"> * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="comment"> * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="comment"> * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span></div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="comment"> */</span></div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#ifndef GRPC_BYTE_BUFFER_H</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_BYTE_BUFFER_H</span></div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc__types_8h.html">grpc/impl/codegen/grpc_types.h</a>&gt;</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="slice__buffer_8h.html">grpc/slice_buffer.h</a>&gt;</span></div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *<a class="code" href="byte__buffer_8h.html#a5ab72d6615ee89c975c46ad4e50c1387">grpc_raw_byte_buffer_create</a>(<a class="code" href="structgrpc__slice.html">grpc_slice</a> *slices,</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                                                      <span class="keywordtype">size_t</span> nslices);</div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright 2015 gRPC authors.</span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span></div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * you may not use this file except in compliance with the License.</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"> * You may obtain a copy of the License at</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment"> *     http://www.apache.org/licenses/LICENSE-2.0</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment"> * Unless required by applicable law or agreed to in writing, software</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment"> * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment"> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment"> * See the License for the specific language governing permissions and</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment"> * limitations under the License.</span></div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment"> */</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#ifndef GRPC_BYTE_BUFFER_H</span></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_BYTE_BUFFER_H</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc__types_8h.html">grpc/impl/codegen/grpc_types.h</a>&gt;</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="slice__buffer_8h.html">grpc/slice_buffer.h</a>&gt;</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *<a class="code" href="byte__buffer_8h.html#a5ab72d6615ee89c975c46ad4e50c1387">grpc_raw_byte_buffer_create</a>(<a class="code" href="structgrpc__slice.html">grpc_slice</a> *slices,</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;                                                      <span class="keywordtype">size_t</span> nslices);</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *<a class="code" href="byte__buffer_8h.html#a49ca36baa74fa2f9ae0c615bf53cec7d">grpc_raw_compressed_byte_buffer_create</a>(</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <a class="code" href="structgrpc__slice.html">grpc_slice</a> *slices, <span class="keywordtype">size_t</span> nslices, <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> compression);</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *<a class="code" href="byte__buffer_8h.html#a4ebb8f0714bee2c84fed0be62d0dc259">grpc_byte_buffer_copy</a>(<a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *bb);</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *<a class="code" href="byte__buffer_8h.html#a49ca36baa74fa2f9ae0c615bf53cec7d">grpc_raw_compressed_byte_buffer_create</a>(</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    <a class="code" href="structgrpc__slice.html">grpc_slice</a> *slices, <span class="keywordtype">size_t</span> nslices, <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> compression);</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *<a class="code" href="byte__buffer_8h.html#a4ebb8f0714bee2c84fed0be62d0dc259">grpc_byte_buffer_copy</a>(<a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *bb);</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">size_t</span> <a class="code" href="byte__buffer_8h.html#a9532c0f54de763057e185a950368b0bb">grpc_byte_buffer_length</a>(<a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *bb);</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">void</span> <a class="code" href="byte__buffer_8h.html#a32c878db8b0a48035ce777844360a6f0">grpc_byte_buffer_destroy</a>(<a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *byte_buffer);</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="keyword">struct </span><a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a>;</div>
+<div class="line"><a name="l00059"></a><span class="lineno"><a class="line" href="byte__buffer_8h.html#a16143f22ea46cc7fa6b53e6cb30715f1">   59</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span><a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> <a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a>;</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">int</span> <a class="code" href="byte__buffer_8h.html#affd8fb29176a60c44fe704983fa87406">grpc_byte_buffer_reader_init</a>(<a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader,</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;                                         <a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *buffer);</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">size_t</span> <a class="code" href="byte__buffer_8h.html#a9532c0f54de763057e185a950368b0bb">grpc_byte_buffer_length</a>(<a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *bb);</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">void</span> <a class="code" href="byte__buffer_8h.html#ae28a4ce16b0d8ddd506f1df3fcb3c619">grpc_byte_buffer_reader_destroy</a>(<a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader);</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">void</span> <a class="code" href="byte__buffer_8h.html#a32c878db8b0a48035ce777844360a6f0">grpc_byte_buffer_destroy</a>(<a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *byte_buffer);</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="keyword">struct </span><a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a>;</div>
-<div class="line"><a name="l00074"></a><span class="lineno"><a class="line" href="byte__buffer_8h.html#a16143f22ea46cc7fa6b53e6cb30715f1">   74</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span><a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> <a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a>;</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">int</span> <a class="code" href="byte__buffer_8h.html#affd8fb29176a60c44fe704983fa87406">grpc_byte_buffer_reader_init</a>(<a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader,</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                                         <a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *buffer);</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">void</span> <a class="code" href="byte__buffer_8h.html#ae28a4ce16b0d8ddd506f1df3fcb3c619">grpc_byte_buffer_reader_destroy</a>(<a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader);</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">int</span> <a class="code" href="byte__buffer_8h.html#a8352c7f73cf930c8195e547bd1a5a242">grpc_byte_buffer_reader_next</a>(<a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader,</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;                                         <a class="code" href="structgrpc__slice.html">grpc_slice</a> *slice);</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="code" href="structgrpc__slice.html">grpc_slice</a></div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<a class="code" href="byte__buffer_8h.html#a4cbf1eb762ea3c6c08bcfc46201c7691">grpc_byte_buffer_reader_readall</a>(<a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader);</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *<a class="code" href="byte__buffer_8h.html#ac7407c6fa60073adb166ca4f3cfbc8e7">grpc_raw_byte_buffer_from_reader</a>(</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader);</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<span class="preprocessor"></span>}</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_BYTE_BUFFER_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">int</span> <a class="code" href="byte__buffer_8h.html#a8352c7f73cf930c8195e547bd1a5a242">grpc_byte_buffer_reader_next</a>(<a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader,</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;                                         <a class="code" href="structgrpc__slice.html">grpc_slice</a> *slice);</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="code" href="structgrpc__slice.html">grpc_slice</a></div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<a class="code" href="byte__buffer_8h.html#a4cbf1eb762ea3c6c08bcfc46201c7691">grpc_byte_buffer_reader_readall</a>(<a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader);</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<a class="code" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *<a class="code" href="byte__buffer_8h.html#ac7407c6fa60073adb166ca4f3cfbc8e7">grpc_raw_byte_buffer_from_reader</a>(</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    <a class="code" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader);</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="preprocessor"></span>}</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_BYTE_BUFFER_H */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="byte__buffer_8h_html_ae28a4ce16b0d8ddd506f1df3fcb3c619"><div class="ttname"><a href="byte__buffer_8h.html#ae28a4ce16b0d8ddd506f1df3fcb3c619">grpc_byte_buffer_reader_destroy</a></div><div class="ttdeci">GRPCAPI void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader)</div><div class="ttdoc">Cleanup and destroy reader. </div></div>
 <div class="ttc" id="byte__buffer_8h_html_a5ab72d6615ee89c975c46ad4e50c1387"><div class="ttname"><a href="byte__buffer_8h.html#a5ab72d6615ee89c975c46ad4e50c1387">grpc_raw_byte_buffer_create</a></div><div class="ttdeci">GRPCAPI grpc_byte_buffer * grpc_raw_byte_buffer_create(grpc_slice *slices, size_t nslices)</div><div class="ttdoc">Returns a RAW byte buffer instance over the given slices (up to nslices). </div></div>
-<div class="ttc" id="structgrpc__slice_html"><div class="ttname"><a href="structgrpc__slice.html">grpc_slice</a></div><div class="ttdoc">A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...</div><div class="ttdef"><b>Definition:</b> slice.h:91</div></div>
+<div class="ttc" id="structgrpc__slice_html"><div class="ttname"><a href="structgrpc__slice.html">grpc_slice</a></div><div class="ttdoc">A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...</div><div class="ttdef"><b>Definition:</b> slice.h:76</div></div>
 <div class="ttc" id="byte__buffer_8h_html_a4ebb8f0714bee2c84fed0be62d0dc259"><div class="ttname"><a href="byte__buffer_8h.html#a4ebb8f0714bee2c84fed0be62d0dc259">grpc_byte_buffer_copy</a></div><div class="ttdeci">GRPCAPI grpc_byte_buffer * grpc_byte_buffer_copy(grpc_byte_buffer *bb)</div><div class="ttdoc">Copies input byte buffer bb. </div></div>
 <div class="ttc" id="grpc__types_8h_html"><div class="ttname"><a href="grpc__types_8h.html">grpc_types.h</a></div></div>
-<div class="ttc" id="structgrpc__byte__buffer_html"><div class="ttname"><a href="structgrpc__byte__buffer.html">grpc_byte_buffer</a></div><div class="ttdef"><b>Definition:</b> grpc_types.h:56</div></div>
+<div class="ttc" id="structgrpc__byte__buffer_html"><div class="ttname"><a href="structgrpc__byte__buffer.html">grpc_byte_buffer</a></div><div class="ttdef"><b>Definition:</b> grpc_types.h:41</div></div>
 <div class="ttc" id="byte__buffer_8h_html_a9532c0f54de763057e185a950368b0bb"><div class="ttname"><a href="byte__buffer_8h.html#a9532c0f54de763057e185a950368b0bb">grpc_byte_buffer_length</a></div><div class="ttdeci">GRPCAPI size_t grpc_byte_buffer_length(grpc_byte_buffer *bb)</div><div class="ttdoc">Returns the size of the given byte buffer, in bytes. </div></div>
 <div class="ttc" id="byte__buffer_8h_html_a8352c7f73cf930c8195e547bd1a5a242"><div class="ttname"><a href="byte__buffer_8h.html#a8352c7f73cf930c8195e547bd1a5a242">grpc_byte_buffer_reader_next</a></div><div class="ttdeci">GRPCAPI int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader, grpc_slice *slice)</div><div class="ttdoc">Updates slice with the next piece of data from from reader and returns. </div></div>
 <div class="ttc" id="byte__buffer_8h_html_affd8fb29176a60c44fe704983fa87406"><div class="ttname"><a href="byte__buffer_8h.html#affd8fb29176a60c44fe704983fa87406">grpc_byte_buffer_reader_init</a></div><div class="ttdeci">GRPCAPI int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader, grpc_byte_buffer *buffer)</div><div class="ttdoc">Initialize reader to read over buffer. </div></div>
 <div class="ttc" id="byte__buffer_8h_html_a32c878db8b0a48035ce777844360a6f0"><div class="ttname"><a href="byte__buffer_8h.html#a32c878db8b0a48035ce777844360a6f0">grpc_byte_buffer_destroy</a></div><div class="ttdeci">GRPCAPI void grpc_byte_buffer_destroy(grpc_byte_buffer *byte_buffer)</div><div class="ttdoc">Destroys byte_buffer deallocating all its memory. </div></div>
-<div class="ttc" id="compression__types_8h_html_ab9de0f68bfb1ef8ed09bd00643db14c9"><div class="ttname"><a href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a></div><div class="ttdeci">grpc_compression_algorithm</div><div class="ttdoc">The various compression algorithms supported by gRPC. </div><div class="ttdef"><b>Definition:</b> compression_types.h:71</div></div>
-<div class="ttc" id="impl_2codegen_2port__platform_8h_html_a2865c3b28ea7db75be4c725adb1edc7d"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a></div><div class="ttdeci">#define GRPCAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:420</div></div>
+<div class="ttc" id="compression__types_8h_html_ab9de0f68bfb1ef8ed09bd00643db14c9"><div class="ttname"><a href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a></div><div class="ttdeci">grpc_compression_algorithm</div><div class="ttdoc">The various compression algorithms supported by gRPC. </div><div class="ttdef"><b>Definition:</b> compression_types.h:56</div></div>
+<div class="ttc" id="impl_2codegen_2port__platform_8h_html_a2865c3b28ea7db75be4c725adb1edc7d"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a></div><div class="ttdeci">#define GRPCAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:405</div></div>
 <div class="ttc" id="slice__buffer_8h_html"><div class="ttname"><a href="slice__buffer_8h.html">slice_buffer.h</a></div></div>
 <div class="ttc" id="byte__buffer_8h_html_ac7407c6fa60073adb166ca4f3cfbc8e7"><div class="ttname"><a href="byte__buffer_8h.html#ac7407c6fa60073adb166ca4f3cfbc8e7">grpc_raw_byte_buffer_from_reader</a></div><div class="ttdeci">GRPCAPI grpc_byte_buffer * grpc_raw_byte_buffer_from_reader(grpc_byte_buffer_reader *reader)</div><div class="ttdoc">Returns a RAW byte buffer instance from the output of reader. </div></div>
-<div class="ttc" id="structgrpc__byte__buffer__reader_html"><div class="ttname"><a href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a></div><div class="ttdef"><b>Definition:</b> byte_buffer_reader.h:43</div></div>
+<div class="ttc" id="structgrpc__byte__buffer__reader_html"><div class="ttname"><a href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a></div><div class="ttdef"><b>Definition:</b> byte_buffer_reader.h:28</div></div>
 <div class="ttc" id="byte__buffer_8h_html_a4cbf1eb762ea3c6c08bcfc46201c7691"><div class="ttname"><a href="byte__buffer_8h.html#a4cbf1eb762ea3c6c08bcfc46201c7691">grpc_byte_buffer_reader_readall</a></div><div class="ttdeci">GRPCAPI grpc_slice grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader *reader)</div><div class="ttdoc">Merge all data from reader into single slice. </div></div>
 <div class="ttc" id="byte__buffer_8h_html_a49ca36baa74fa2f9ae0c615bf53cec7d"><div class="ttname"><a href="byte__buffer_8h.html#a49ca36baa74fa2f9ae0c615bf53cec7d">grpc_raw_compressed_byte_buffer_create</a></div><div class="ttdeci">GRPCAPI grpc_byte_buffer * grpc_raw_compressed_byte_buffer_create(grpc_slice *slices, size_t nslices, grpc_compression_algorithm compression)</div><div class="ttdoc">Returns a compressed RAW byte buffer instance over the given slices (up to nslices). </div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

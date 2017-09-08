@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -93,81 +93,66 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <a href="auth__metadata__processor_8h.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/*</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright 2015, Google Inc.</span></div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * All rights reserved.</span></div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * Redistribution and use in source and binary forms, with or without</span></div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"> * modification, are permitted provided that the following conditions are</span></div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment"> * met:</span></div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment"> *     * Redistributions of source code must retain the above copyright</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment"> * notice, this list of conditions and the following disclaimer.</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment"> *     * Redistributions in binary form must reproduce the above</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment"> * copyright notice, this list of conditions and the following disclaimer</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment"> * in the documentation and/or other materials provided with the</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment"> * distribution.</span></div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment"> *     * Neither the name of Google Inc. nor the names of its</span></div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment"> * contributors may be used to endorse or promote products derived from</span></div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment"> * this software without specific prior written permission.</span></div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment"> * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment"> * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span></div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment"> * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment"> * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment"> * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment"> * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment"> * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="comment"> * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="comment"> * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="comment"> * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="comment"> * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span></div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="comment"> */</span></div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#ifndef GRPCXX_SECURITY_AUTH_METADATA_PROCESSOR_H</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPCXX_SECURITY_AUTH_METADATA_PROCESSOR_H</span></div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;map&gt;</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="security_2auth__context_8h.html">grpc++/security/auth_context.h</a>&gt;</span></div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_09_09_2support_2status_8h.html">grpc++/support/status.h</a>&gt;</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2string__ref_8h.html">grpc++/support/string_ref.h</a>&gt;</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keyword">namespace </span>grpc {</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;</div>
-<div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="classgrpc_1_1_auth_metadata_processor.html">   48</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_auth_metadata_processor.html">AuthMetadataProcessor</a> {</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; <span class="keyword">public</span>:</div>
-<div class="line"><a name="l00050"></a><span class="lineno"><a class="line" href="classgrpc_1_1_auth_metadata_processor.html#a0c5846f57c862880f0f6db29577bb9e5">   50</a></span>&#160;  <span class="keyword">typedef</span> std::multimap&lt;grpc::string_ref, grpc::string_ref&gt; <a class="code" href="classgrpc_1_1_auth_metadata_processor.html#a0c5846f57c862880f0f6db29577bb9e5">InputMetadata</a>;</div>
-<div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="classgrpc_1_1_auth_metadata_processor.html#a809ec4913c189b392be05338acebb69a">   51</a></span>&#160;  <span class="keyword">typedef</span> std::multimap&lt;grpc::string, grpc::string&gt; <a class="code" href="classgrpc_1_1_auth_metadata_processor.html#a809ec4913c189b392be05338acebb69a">OutputMetadata</a>;</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;</div>
-<div class="line"><a name="l00053"></a><span class="lineno"><a class="line" href="classgrpc_1_1_auth_metadata_processor.html#ae64e2159109378600eb17f613ec4bbeb">   53</a></span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1_auth_metadata_processor.html#ae64e2159109378600eb17f613ec4bbeb">~AuthMetadataProcessor</a>() {}</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;</div>
-<div class="line"><a name="l00057"></a><span class="lineno"><a class="line" href="classgrpc_1_1_auth_metadata_processor.html#a6cfe6ac34d5a25f14a5528462077243c">   57</a></span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classgrpc_1_1_auth_metadata_processor.html#a6cfe6ac34d5a25f14a5528462077243c">IsBlocking</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <span class="keyword">true</span>; }</div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright 2015 gRPC authors.</span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span></div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * you may not use this file except in compliance with the License.</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"> * You may obtain a copy of the License at</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment"> *     http://www.apache.org/licenses/LICENSE-2.0</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment"> * Unless required by applicable law or agreed to in writing, software</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment"> * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment"> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment"> * See the License for the specific language governing permissions and</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment"> * limitations under the License.</span></div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment"> */</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#ifndef GRPCXX_SECURITY_AUTH_METADATA_PROCESSOR_H</span></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPCXX_SECURITY_AUTH_METADATA_PROCESSOR_H</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;map&gt;</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="security_2auth__context_8h.html">grpc++/security/auth_context.h</a>&gt;</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_09_09_2support_2status_8h.html">grpc++/support/status.h</a>&gt;</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2string__ref_8h.html">grpc++/support/string_ref.h</a>&gt;</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="keyword">namespace </span>grpc {</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;</div>
+<div class="line"><a name="l00033"></a><span class="lineno"><a class="line" href="classgrpc_1_1_auth_metadata_processor.html">   33</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_auth_metadata_processor.html">AuthMetadataProcessor</a> {</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; <span class="keyword">public</span>:</div>
+<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="classgrpc_1_1_auth_metadata_processor.html#a0c5846f57c862880f0f6db29577bb9e5">   35</a></span>&#160;  <span class="keyword">typedef</span> std::multimap&lt;grpc::string_ref, grpc::string_ref&gt; <a class="code" href="classgrpc_1_1_auth_metadata_processor.html#a0c5846f57c862880f0f6db29577bb9e5">InputMetadata</a>;</div>
+<div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="classgrpc_1_1_auth_metadata_processor.html#a809ec4913c189b392be05338acebb69a">   36</a></span>&#160;  <span class="keyword">typedef</span> std::multimap&lt;grpc::string, grpc::string&gt; <a class="code" href="classgrpc_1_1_auth_metadata_processor.html#a809ec4913c189b392be05338acebb69a">OutputMetadata</a>;</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;</div>
+<div class="line"><a name="l00038"></a><span class="lineno"><a class="line" href="classgrpc_1_1_auth_metadata_processor.html#ae64e2159109378600eb17f613ec4bbeb">   38</a></span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1_auth_metadata_processor.html#ae64e2159109378600eb17f613ec4bbeb">~AuthMetadataProcessor</a>() {}</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;</div>
+<div class="line"><a name="l00042"></a><span class="lineno"><a class="line" href="classgrpc_1_1_auth_metadata_processor.html#a6cfe6ac34d5a25f14a5528462077243c">   42</a></span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classgrpc_1_1_auth_metadata_processor.html#a6cfe6ac34d5a25f14a5528462077243c">IsBlocking</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <span class="keyword">true</span>; }</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1_status.html">Status</a> <a class="code" href="classgrpc_1_1_auth_metadata_processor.html#adc0db66aa261c59bd29f81c53f466303">Process</a>(<span class="keyword">const</span> <a class="code" href="classgrpc_1_1_auth_metadata_processor.html#a0c5846f57c862880f0f6db29577bb9e5">InputMetadata</a>&amp; auth_metadata,</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                         <a class="code" href="classgrpc_1_1_auth_context.html">AuthContext</a>* context,</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;                         <a class="code" href="classgrpc_1_1_auth_metadata_processor.html#a809ec4913c189b392be05338acebb69a">OutputMetadata</a>* consumed_auth_metadata,</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;                         <a class="code" href="classgrpc_1_1_auth_metadata_processor.html#a809ec4913c189b392be05338acebb69a">OutputMetadata</a>* response_metadata) = 0;</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;};</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1_status.html">Status</a> <a class="code" href="classgrpc_1_1_auth_metadata_processor.html#adc0db66aa261c59bd29f81c53f466303">Process</a>(<span class="keyword">const</span> <a class="code" href="classgrpc_1_1_auth_metadata_processor.html#a0c5846f57c862880f0f6db29577bb9e5">InputMetadata</a>&amp; auth_metadata,</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                         <a class="code" href="classgrpc_1_1_auth_context.html">AuthContext</a>* context,</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                         <a class="code" href="classgrpc_1_1_auth_metadata_processor.html#a809ec4913c189b392be05338acebb69a">OutputMetadata</a>* consumed_auth_metadata,</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;                         <a class="code" href="classgrpc_1_1_auth_metadata_processor.html#a809ec4913c189b392be05338acebb69a">OutputMetadata</a>* response_metadata) = 0;</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;};</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;}  <span class="comment">// namespace grpc</span></div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="preprocessor">#endif  // GRPCXX_SECURITY_AUTH_METADATA_PROCESSOR_H</span></div>
-<div class="ttc" id="classgrpc_1_1_auth_metadata_processor_html_a809ec4913c189b392be05338acebb69a"><div class="ttname"><a href="classgrpc_1_1_auth_metadata_processor.html#a809ec4913c189b392be05338acebb69a">grpc::AuthMetadataProcessor::OutputMetadata</a></div><div class="ttdeci">std::multimap&lt; grpc::string, grpc::string &gt; OutputMetadata</div><div class="ttdef"><b>Definition:</b> auth_metadata_processor.h:51</div></div>
-<div class="ttc" id="classgrpc_1_1_auth_metadata_processor_html_a6cfe6ac34d5a25f14a5528462077243c"><div class="ttname"><a href="classgrpc_1_1_auth_metadata_processor.html#a6cfe6ac34d5a25f14a5528462077243c">grpc::AuthMetadataProcessor::IsBlocking</a></div><div class="ttdeci">virtual bool IsBlocking() const </div><div class="ttdoc">If this method returns true, the Process function will be scheduled in a different thread from the on...</div><div class="ttdef"><b>Definition:</b> auth_metadata_processor.h:57</div></div>
-<div class="ttc" id="classgrpc_1_1_auth_context_html"><div class="ttname"><a href="classgrpc_1_1_auth_context.html">grpc::AuthContext</a></div><div class="ttdoc">Class encapsulating the Authentication Information. </div><div class="ttdef"><b>Definition:</b> auth_context.h:80</div></div>
-<div class="ttc" id="classgrpc_1_1_auth_metadata_processor_html"><div class="ttname"><a href="classgrpc_1_1_auth_metadata_processor.html">grpc::AuthMetadataProcessor</a></div><div class="ttdoc">Interface allowing custom server-side authorization based on credentials encoded in metadata...</div><div class="ttdef"><b>Definition:</b> auth_metadata_processor.h:48</div></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="preprocessor">#endif  // GRPCXX_SECURITY_AUTH_METADATA_PROCESSOR_H</span></div>
+<div class="ttc" id="classgrpc_1_1_auth_metadata_processor_html_a809ec4913c189b392be05338acebb69a"><div class="ttname"><a href="classgrpc_1_1_auth_metadata_processor.html#a809ec4913c189b392be05338acebb69a">grpc::AuthMetadataProcessor::OutputMetadata</a></div><div class="ttdeci">std::multimap&lt; grpc::string, grpc::string &gt; OutputMetadata</div><div class="ttdef"><b>Definition:</b> auth_metadata_processor.h:36</div></div>
+<div class="ttc" id="classgrpc_1_1_auth_metadata_processor_html_a6cfe6ac34d5a25f14a5528462077243c"><div class="ttname"><a href="classgrpc_1_1_auth_metadata_processor.html#a6cfe6ac34d5a25f14a5528462077243c">grpc::AuthMetadataProcessor::IsBlocking</a></div><div class="ttdeci">virtual bool IsBlocking() const </div><div class="ttdoc">If this method returns true, the Process function will be scheduled in a different thread from the on...</div><div class="ttdef"><b>Definition:</b> auth_metadata_processor.h:42</div></div>
+<div class="ttc" id="classgrpc_1_1_auth_context_html"><div class="ttname"><a href="classgrpc_1_1_auth_context.html">grpc::AuthContext</a></div><div class="ttdoc">Class encapsulating the Authentication Information. </div><div class="ttdef"><b>Definition:</b> auth_context.h:65</div></div>
+<div class="ttc" id="classgrpc_1_1_auth_metadata_processor_html"><div class="ttname"><a href="classgrpc_1_1_auth_metadata_processor.html">grpc::AuthMetadataProcessor</a></div><div class="ttdoc">Interface allowing custom server-side authorization based on credentials encoded in metadata...</div><div class="ttdef"><b>Definition:</b> auth_metadata_processor.h:33</div></div>
 <div class="ttc" id="support_2string__ref_8h_html"><div class="ttname"><a href="support_2string__ref_8h.html">string_ref.h</a></div></div>
-<div class="ttc" id="classgrpc_1_1_auth_metadata_processor_html_ae64e2159109378600eb17f613ec4bbeb"><div class="ttname"><a href="classgrpc_1_1_auth_metadata_processor.html#ae64e2159109378600eb17f613ec4bbeb">grpc::AuthMetadataProcessor::~AuthMetadataProcessor</a></div><div class="ttdeci">virtual ~AuthMetadataProcessor()</div><div class="ttdef"><b>Definition:</b> auth_metadata_processor.h:53</div></div>
+<div class="ttc" id="classgrpc_1_1_auth_metadata_processor_html_ae64e2159109378600eb17f613ec4bbeb"><div class="ttname"><a href="classgrpc_1_1_auth_metadata_processor.html#ae64e2159109378600eb17f613ec4bbeb">grpc::AuthMetadataProcessor::~AuthMetadataProcessor</a></div><div class="ttdeci">virtual ~AuthMetadataProcessor()</div><div class="ttdef"><b>Definition:</b> auth_metadata_processor.h:38</div></div>
 <div class="ttc" id="classgrpc_1_1_auth_metadata_processor_html_adc0db66aa261c59bd29f81c53f466303"><div class="ttname"><a href="classgrpc_1_1_auth_metadata_processor.html#adc0db66aa261c59bd29f81c53f466303">grpc::AuthMetadataProcessor::Process</a></div><div class="ttdeci">virtual Status Process(const InputMetadata &amp;auth_metadata, AuthContext *context, OutputMetadata *consumed_auth_metadata, OutputMetadata *response_metadata)=0</div><div class="ttdoc">context is read/write: it contains the properties of the channel peer and it is the job of the Proces...</div></div>
-<div class="ttc" id="classgrpc_1_1_status_html"><div class="ttname"><a href="classgrpc_1_1_status.html">grpc::Status</a></div><div class="ttdoc">Did it work? If it didn&#39;t, why? </div><div class="ttdef"><b>Definition:</b> status.h:45</div></div>
+<div class="ttc" id="classgrpc_1_1_status_html"><div class="ttname"><a href="classgrpc_1_1_status.html">grpc::Status</a></div><div class="ttdoc">Did it work? If it didn&#39;t, why? </div><div class="ttdef"><b>Definition:</b> status.h:30</div></div>
 <div class="ttc" id="grpc_09_09_2support_2status_8h_html"><div class="ttname"><a href="grpc_09_09_2support_2status_8h.html">status.h</a></div></div>
-<div class="ttc" id="classgrpc_1_1_auth_metadata_processor_html_a0c5846f57c862880f0f6db29577bb9e5"><div class="ttname"><a href="classgrpc_1_1_auth_metadata_processor.html#a0c5846f57c862880f0f6db29577bb9e5">grpc::AuthMetadataProcessor::InputMetadata</a></div><div class="ttdeci">std::multimap&lt; grpc::string_ref, grpc::string_ref &gt; InputMetadata</div><div class="ttdef"><b>Definition:</b> auth_metadata_processor.h:50</div></div>
+<div class="ttc" id="classgrpc_1_1_auth_metadata_processor_html_a0c5846f57c862880f0f6db29577bb9e5"><div class="ttname"><a href="classgrpc_1_1_auth_metadata_processor.html#a0c5846f57c862880f0f6db29577bb9e5">grpc::AuthMetadataProcessor::InputMetadata</a></div><div class="ttdeci">std::multimap&lt; grpc::string_ref, grpc::string_ref &gt; InputMetadata</div><div class="ttdef"><b>Definition:</b> auth_metadata_processor.h:35</div></div>
 <div class="ttc" id="security_2auth__context_8h_html"><div class="ttname"><a href="security_2auth__context_8h.html">auth_context.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

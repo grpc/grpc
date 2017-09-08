@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -86,27 +86,30 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-attribs">Data Fields</a>  </div>
   <div class="headertitle">
 <div class="title">grpc_byte_buffer_reader Struct Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="byte__buffer__reader_8h_source.html">byte_buffer_reader.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="impl_2codegen_2byte__buffer__reader_8h_source.html">byte_buffer_reader.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">union &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="uniongrpc__byte__buffer__reader_1_1grpc__byte__buffer__reader__current.html">grpc_byte_buffer_reader_current</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Different current objects correspond to different types of byte buffers.  <a href="uniongrpc__byte__buffer__reader_1_1grpc__byte__buffer__reader__current.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Data Fields</h2></td></tr>
 <tr class="memitem:a07ca3cca38d293d97f8acf423ae281e3"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__byte__buffer__reader.html#a07ca3cca38d293d97f8acf423ae281e3">buffer_in</a></td></tr>
 <tr class="separator:a07ca3cca38d293d97f8acf423ae281e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a30ea22e64f0d746881daa5955e7ab48e"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__byte__buffer__reader.html#a30ea22e64f0d746881daa5955e7ab48e">buffer_out</a></td></tr>
 <tr class="separator:a30ea22e64f0d746881daa5955e7ab48e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acebe9b66a2fb35a613f9342de0f6ca91"><td class="memItemLeft" >union {</td></tr>
-<tr class="memitem:a3427ea158d527baf5747013eec5245c4"><td class="memItemLeft" >&#160;&#160;&#160;unsigned&#160;&#160;&#160;<a class="el" href="structgrpc__byte__buffer__reader.html#a948b75a404899c348fc6a52e1a6e63cb">index</a></td></tr>
-<tr class="memdesc:a3427ea158d527baf5747013eec5245c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Index into a slice buffer's array of slices.  <a href="#a3427ea158d527baf5747013eec5245c4">More...</a><br/></td></tr>
-<tr class="separator:a3427ea158d527baf5747013eec5245c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acebe9b66a2fb35a613f9342de0f6ca91"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__byte__buffer__reader.html#acebe9b66a2fb35a613f9342de0f6ca91">current</a></td></tr>
-<tr class="memdesc:acebe9b66a2fb35a613f9342de0f6ca91"><td class="mdescLeft">&#160;</td><td class="mdescRight">Different current objects correspond to different types of byte buffers.  <a href="#acebe9b66a2fb35a613f9342de0f6ca91">More...</a><br/></td></tr>
-<tr class="separator:acebe9b66a2fb35a613f9342de0f6ca91"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab4b5af3d89b38da03dfde50c50e9e199"><td class="memItemLeft" align="right" valign="top">union <br class="typebreak"/>
+<a class="el" href="uniongrpc__byte__buffer__reader_1_1grpc__byte__buffer__reader__current.html">grpc_byte_buffer_reader::grpc_byte_buffer_reader_current</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__byte__buffer__reader.html#ab4b5af3d89b38da03dfde50c50e9e199">current</a></td></tr>
+<tr class="separator:ab4b5af3d89b38da03dfde50c50e9e199"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Field Documentation</h2>
 <a class="anchor" id="a07ca3cca38d293d97f8acf423ae281e3"></a>
@@ -133,41 +136,25 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="acebe9b66a2fb35a613f9342de0f6ca91"></a>
+<a class="anchor" id="ab4b5af3d89b38da03dfde50c50e9e199"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">union { ... }   grpc_byte_buffer_reader::current</td>
+          <td class="memname">union <a class="el" href="uniongrpc__byte__buffer__reader_1_1grpc__byte__buffer__reader__current.html">grpc_byte_buffer_reader::grpc_byte_buffer_reader_current</a>  grpc_byte_buffer_reader::current</td>
         </tr>
       </table>
 </div><div class="memdoc">
-
-<p>Different current objects correspond to different types of byte buffers. </p>
-
-</div>
-</div>
-<a class="anchor" id="a948b75a404899c348fc6a52e1a6e63cb"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">unsigned grpc_byte_buffer_reader::index</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Index into a slice buffer's array of slices. </p>
 
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>include/grpc/impl/codegen/<a class="el" href="byte__buffer__reader_8h_source.html">byte_buffer_reader.h</a></li>
+<li>include/grpc/impl/codegen/<a class="el" href="impl_2codegen_2byte__buffer__reader_8h_source.html">byte_buffer_reader.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

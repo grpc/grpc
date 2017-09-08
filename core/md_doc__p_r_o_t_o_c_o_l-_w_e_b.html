@@ -80,8 +80,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">gRPC Web </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p>gRPC-Web provides a JS client library that supports the same API as gRPC-Node to access a gRPC service. Due to browser limitation, the Web client library implements a different protocol than the <a href="http://www.grpc.io/docs/guides/wire.html">native gRPC protocol</a>. This protocol is designed to make it easy for a proxy to translate between the protocols as this is the most likely deployment model.</p>
-<p>This document lists the differences between the two protocols. To help tracking future revisions, this document describes a delta with the protocol details specified in the <a href="http://www.grpc.io/docs/guides/wire.html">native gRPC protocol</a>.</p>
+<div class="textblock"><p>gRPC-Web provides a JS client library that supports the same API as gRPC-Node to access a gRPC service. Due to browser limitation, the Web client library implements a different protocol than the <a href="https://grpc.io/docs/guides/wire.html">native gRPC protocol</a>. This protocol is designed to make it easy for a proxy to translate between the protocols as this is the most likely deployment model.</p>
+<p>This document lists the differences between the two protocols. To help tracking future revisions, this document describes a delta with the protocol details specified in the <a href="https://grpc.io/docs/guides/wire.html">native gRPC protocol</a>.</p>
 <h1>Design goals</h1>
 <p>For the gRPC-Web protocol, we have decided on the following design goals:</p>
 <ul>
@@ -94,7 +94,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>evolve over time, mainly to optimize for browser clients or support web-specific features such as CORS, XSRF</li>
 <li>become optional (in 1-2 years) when browsers are able to speak the native gRPC protocol via the new <a href="https://github.com/whatwg/fetch">whatwg fetch/streams API</a></li>
 </ul>
-<h1>Protocol differences vs <a href="http://www.grpc.io/docs/guides/wire.html">gRPC over HTTP2</a></h1>
+<h1>Protocol differences vs <a href="https://grpc.io/docs/guides/wire.html">gRPC over HTTP2</a></h1>
 <p>Content-Type</p>
 <ol type="1">
 <li>application/grpc-web<ul>
@@ -117,13 +117,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>use EOF (end of body) to close the stream <hr/>
 </li>
 </ol>
-<p>HTTP/2 related behavior (specified in <a href="http://www.grpc.io/docs/guides/wire.html">gRPC over HTTP2</a>)</p>
+<p>HTTP/2 related behavior (specified in <a href="https://grpc.io/docs/guides/wire.html">gRPC over HTTP2</a>)</p>
 <ol type="1">
 <li>stream-id is not supported or used</li>
 <li>go-away is not supported or used <hr/>
 </li>
 </ol>
-<p>Message framing (vs. <a href="http://www.grpc.io/docs/guides/wire.html#http2-transport-mapping">http2-transport-mapping</a>)</p>
+<p>Message framing (vs. <a href="https://grpc.io/docs/guides/wire.html#http2-transport-mapping">http2-transport-mapping</a>)</p>
 <ol type="1">
 <li>Response status encoded as part of the response body<ul>
 <li>Key-value pairs encoded as a HTTP/1 headers block (without the terminating newline), per <a href="https://tools.ietf.org/html/rfc7230#section-3.2">https://tools.ietf.org/html/rfc7230#section-3.2</a> ``` key1: foo<br/>
@@ -143,7 +143,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p>User Agent</p>
 <ul>
 <li>Do NOT use User-Agent header (which is to be set by browsers, by default)</li>
-<li>Use X-User-Agent: grpc-web-javascript/0.1 (follow the same format as specified in <a href="http://www.grpc.io/docs/guides/wire.html">gRPC over HTTP2</a>) <hr/>
+<li>Use X-User-Agent: grpc-web-javascript/0.1 (follow the same format as specified in <a href="https://grpc.io/docs/guides/wire.html">gRPC over HTTP2</a>) <hr/>
 </li>
 </ul>
 <p>Text-encoded (response) streams</p>
@@ -220,7 +220,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
