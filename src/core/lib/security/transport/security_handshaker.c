@@ -156,7 +156,7 @@ static void on_peer_checked_inner(grpc_exec_ctx *exec_ctx,
                                             "Frame protector creation failed"),
                                         result);
       security_handshake_failed_locked(exec_ctx, h, error);
-      goto done;
+      return;
     }
   }
   // Get unused bytes.
