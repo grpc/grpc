@@ -72,7 +72,7 @@ void ServerData::init(grpc_server* const pServer)
     m_pServer = pServer;
 
     // create completion queue for server
-    m_pComletionQueue = CompletionQueue::getServerQueue();
+    CompletionQueue::getServerQueue(m_pComletionQueue);
 }
 
 void ServerData::destroy(void)

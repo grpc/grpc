@@ -272,7 +272,8 @@ void HHVM_METHOD(Call, __construct,
     Slice host_slice{ !host_override.isNull() && host_override.isString() ?
                        host_override.toString() : String{} };
 
-    std::unique_ptr<CompletionQueue> pCompletionQueue{ CompletionQueue::getClientQueue() };
+    std::unique_ptr<CompletionQueue> pCompletionQueue{ nullptr };
+    CompletionQueue::getClientQueue(pCompletionQueue);
 
     grpc_call* const pCall{ grpc_channel_create_call(pChannelData->channel(),
                                                      nullptr, GRPC_PROPAGATE_DEFAULTS,

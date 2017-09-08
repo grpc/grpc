@@ -53,23 +53,23 @@ CompletionQueue::~CompletionQueue(void)
     grpc_completion_queue_destroy(m_pCompletionQueue);
 }
 
-std::unique_ptr<CompletionQueue> CompletionQueue::getClientQueue(void)
+void CompletionQueue::getClientQueue(std::unique_ptr<CompletionQueue>& pCompletionQueue)
 {
     // Each client gets a completion queue
     static std::mutex queueMutex;
     {
         std::unique_lock<std::mutex> lock{ queueMutex };
-        return std::unique_ptr<CompletionQueue>{ new CompletionQueue{} };
+        pCompletionQueue.reset(new CompletionQueue{});
     }
 }
 
-std::unique_ptr<CompletionQueue> CompletionQueue::getServerQueue(void)
+void CompletionQueue::getServerQueue(std::unique_ptr<CompletionQueue>& pCompletionQueue)
 {
     // Each server gets a completion queue
     static std::mutex queueMutex;
     {
         std::unique_lock<std::mutex> lock{ queueMutex };
-        return std::unique_ptr<CompletionQueue>{ new CompletionQueue{} };
+        pCompletionQueue.reset(new CompletionQueue{});
     }
 }
 

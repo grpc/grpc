@@ -42,8 +42,8 @@ class CompletionQueue
     grpc_completion_queue* const queue(void) { return m_pCompletionQueue; };
 
     // singleton accessor and factory function
-    static std::unique_ptr<CompletionQueue> getClientQueue(void);
-    static std::unique_ptr<CompletionQueue> getServerQueue(void);
+    static void getClientQueue(std::unique_ptr<CompletionQueue>& pCompletionQueue);
+    static void getServerQueue(std::unique_ptr<CompletionQueue>& pCompletionQueue);
 
 private:
     // private constructor
