@@ -32,6 +32,7 @@
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/tsi/transport_security_grpc.h"
 
 #define GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE 256
 
@@ -133,16 +134,30 @@ static void on_peer_checked_inner(grpc_exec_ctx *exec_ctx,
     security_handshake_failed_locked(exec_ctx, h, GRPC_ERROR_REF(error));
     return;
   }
-  // Create frame protector.
-  tsi_frame_protector *protector;
-  tsi_result result = tsi_handshaker_result_create_frame_protector(
-      h->handshaker_result, NULL, &protector);
-  if (result != TSI_OK) {
+  // Create zero-copy frame protector, if implemented.
+  tsi_zero_copy_grpc_protector *zero_copy_protector = NULL;
+  tsi_result result = tsi_handshaker_result_create_zero_copy_grpc_protector(
+      h->handshaker_result, NULL, &zero_copy_protector);
+  if (result != TSI_OK && result != TSI_UNIMPLEMENTED) {
     error = grpc_set_tsi_error_result(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Frame protector creation failed"),
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Zero-copy frame protector creation failed"),
         result);
     security_handshake_failed_locked(exec_ctx, h, error);
     return;
+  }
+  // Create frame protector if zero-copy frame protector is NULL.
+  tsi_frame_protector *protector = NULL;
+  if (zero_copy_protector == NULL) {
+    result = tsi_handshaker_result_create_frame_protector(h->handshaker_result,
+                                                          NULL, &protector);
+    if (result != TSI_OK) {
+      error = grpc_set_tsi_error_result(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                            "Frame protector creation failed"),
+                                        result);
+      security_handshake_failed_locked(exec_ctx, h, error);
+      goto done;
+    }
   }
   // Get unused bytes.
   const unsigned char *unused_bytes = NULL;
@@ -153,12 +168,12 @@ static void on_peer_checked_inner(grpc_exec_ctx *exec_ctx,
   if (unused_bytes_size > 0) {
     grpc_slice slice =
         grpc_slice_from_copied_buffer((char *)unused_bytes, unused_bytes_size);
-    h->args->endpoint =
-        grpc_secure_endpoint_create(protector, h->args->endpoint, &slice, 1);
+    h->args->endpoint = grpc_secure_endpoint_create(
+        protector, zero_copy_protector, h->args->endpoint, &slice, 1);
     grpc_slice_unref_internal(exec_ctx, slice);
   } else {
-    h->args->endpoint =
-        grpc_secure_endpoint_create(protector, h->args->endpoint, NULL, 0);
+    h->args->endpoint = grpc_secure_endpoint_create(
+        protector, zero_copy_protector, h->args->endpoint, NULL, 0);
   }
   tsi_handshaker_result_destroy(h->handshaker_result);
   h->handshaker_result = NULL;

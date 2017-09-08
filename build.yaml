@@ -12,7 +12,7 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 4.0.0-dev
+  core_version: 5.0.0-dev
   g_stands_for: gambit
   version: 1.7.0-dev
 filegroups:
@@ -590,16 +590,6 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
-- name: grpc_load_reporting
-  headers:
-  - src/core/ext/filters/load_reporting/load_reporting.h
-  - src/core/ext/filters/load_reporting/load_reporting_filter.h
-  src:
-  - src/core/ext/filters/load_reporting/load_reporting.c
-  - src/core/ext/filters/load_reporting/load_reporting_filter.c
-  plugin: grpc_load_reporting_plugin
-  uses:
-  - grpc_base
 - name: grpc_max_age_filter
   headers:
   - src/core/ext/filters/max_age/max_age_filter.h
@@ -710,6 +700,16 @@ filegroups:
   - src/core/ext/filters/workarounds/workaround_utils.h
   src:
   - src/core/ext/filters/workarounds/workaround_utils.c
+  uses:
+  - grpc_base
+- name: grpc_server_load_reporting
+  headers:
+  - src/core/ext/filters/load_reporting/server_load_reporting_filter.h
+  - src/core/ext/filters/load_reporting/server_load_reporting_plugin.h
+  src:
+  - src/core/ext/filters/load_reporting/server_load_reporting_filter.c
+  - src/core/ext/filters/load_reporting/server_load_reporting_plugin.c
+  plugin: grpc_server_load_reporting_plugin
   uses:
   - grpc_base
 - name: grpc_test_util_base
@@ -1164,7 +1164,7 @@ libs:
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_resolver_fake
-  - grpc_load_reporting
+  - grpc_server_load_reporting
   - grpc_secure
   - census
   - grpc_max_age_filter
@@ -1190,7 +1190,7 @@ libs:
   - grpc_base
   - grpc_transport_cronet_client_secure
   - grpc_transport_chttp2_client_secure
-  - grpc_load_reporting
+  - grpc_server_load_reporting
   generate_plugin_registry: true
   platforms:
   - linux
@@ -1264,7 +1264,7 @@ libs:
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_resolver_fake
-  - grpc_load_reporting
+  - grpc_server_load_reporting
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
@@ -3621,6 +3621,8 @@ targets:
 - name: bm_fullstack_streaming_ping_pong
   build: test
   language: c++
+  headers:
+  - test/cpp/microbenchmarks/fullstack_streaming_ping_pong.h
   src:
   - test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc
   deps:
@@ -3646,6 +3648,8 @@ targets:
 - name: bm_fullstack_streaming_pump
   build: test
   language: c++
+  headers:
+  - test/cpp/microbenchmarks/fullstack_streaming_pump.h
   src:
   - test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc
   deps:
@@ -3697,6 +3701,8 @@ targets:
 - name: bm_fullstack_unary_ping_pong
   build: test
   language: c++
+  headers:
+  - test/cpp/microbenchmarks/fullstack_unary_ping_pong.h
   src:
   - test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc
   deps:
