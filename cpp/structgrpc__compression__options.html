@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -86,6 +86,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-attribs">Data Fields</a>  </div>
   <div class="headertitle">
 <div class="title">grpc_compression_options Struct Reference</div>  </div>
@@ -94,68 +95,49 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <p><code>#include &lt;<a class="el" href="compression__types_8h_source.html">compression_types.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__compression__options_1_1grpc__compression__options__default__algorithm.html">grpc_compression_options_default_algorithm</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The default channel compression algorithm.  <a href="structgrpc__compression__options_1_1grpc__compression__options__default__algorithm.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__compression__options_1_1grpc__compression__options__default__level.html">grpc_compression_options_default_level</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The default channel compression level.  <a href="structgrpc__compression__options_1_1grpc__compression__options__default__level.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Data Fields</h2></td></tr>
 <tr class="memitem:a2b584aa8b7ee684f145c75a5035ed800"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__compression__options.html#a2b584aa8b7ee684f145c75a5035ed800">enabled_algorithms_bitset</a></td></tr>
 <tr class="memdesc:a2b584aa8b7ee684f145c75a5035ed800"><td class="mdescLeft">&#160;</td><td class="mdescRight">All algs are enabled by default.  <a href="#a2b584aa8b7ee684f145c75a5035ed800">More...</a><br/></td></tr>
 <tr class="separator:a2b584aa8b7ee684f145c75a5035ed800"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a51539f51120a4aacbae75d5bc9ab62a7"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:aa258b344e0b40f2d7a88dd4e90fed77e"><td class="memItemLeft" >&#160;&#160;&#160;int&#160;&#160;&#160;<a class="el" href="structgrpc__compression__options.html#ab7db56f98efd9efecc135ca8a6c99765">is_set</a></td></tr>
-<tr class="separator:aa258b344e0b40f2d7a88dd4e90fed77e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac3f1b8c02bc0254ce54679e6b1cf77b6"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a>&#160;&#160;&#160;<a class="el" href="structgrpc__compression__options.html#a2c8a5692fbb7b1778bb34edc8d8c5cdb">level</a></td></tr>
-<tr class="separator:ac3f1b8c02bc0254ce54679e6b1cf77b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a51539f51120a4aacbae75d5bc9ab62a7"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__compression__options.html#a51539f51120a4aacbae75d5bc9ab62a7">default_level</a></td></tr>
-<tr class="memdesc:a51539f51120a4aacbae75d5bc9ab62a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">The default channel compression level.  <a href="#a51539f51120a4aacbae75d5bc9ab62a7">More...</a><br/></td></tr>
-<tr class="separator:a51539f51120a4aacbae75d5bc9ab62a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a04a323bd83f6651f5d8cb798dae98a10"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:a6686dd38fef306073305cdca0329c2e1"><td class="memItemLeft" >&#160;&#160;&#160;int&#160;&#160;&#160;<a class="el" href="structgrpc__compression__options.html#ab7db56f98efd9efecc135ca8a6c99765">is_set</a></td></tr>
-<tr class="separator:a6686dd38fef306073305cdca0329c2e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7ca2ed6422467861cfc205c653faaf57"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a>&#160;&#160;&#160;<a class="el" href="structgrpc__compression__options.html#a030be28c632dea1b2fbfb4219fef8e10">algorithm</a></td></tr>
-<tr class="separator:a7ca2ed6422467861cfc205c653faaf57"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a04a323bd83f6651f5d8cb798dae98a10"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__compression__options.html#a04a323bd83f6651f5d8cb798dae98a10">default_algorithm</a></td></tr>
-<tr class="memdesc:a04a323bd83f6651f5d8cb798dae98a10"><td class="mdescLeft">&#160;</td><td class="mdescRight">The default channel compression algorithm.  <a href="#a04a323bd83f6651f5d8cb798dae98a10">More...</a><br/></td></tr>
-<tr class="separator:a04a323bd83f6651f5d8cb798dae98a10"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a13e56a1d6b97fe62dbc431891d8248a7"><td class="memItemLeft" align="right" valign="top">struct <br class="typebreak"/>
+<a class="el" href="structgrpc__compression__options_1_1grpc__compression__options__default__level.html">grpc_compression_options::grpc_compression_options_default_level</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__compression__options.html#a13e56a1d6b97fe62dbc431891d8248a7">default_level</a></td></tr>
+<tr class="separator:a13e56a1d6b97fe62dbc431891d8248a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a438ec959f43629585f3a05ea946b8603"><td class="memItemLeft" align="right" valign="top">struct <br class="typebreak"/>
+<a class="el" href="structgrpc__compression__options_1_1grpc__compression__options__default__algorithm.html">grpc_compression_options::grpc_compression_options_default_algorithm</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__compression__options.html#a438ec959f43629585f3a05ea946b8603">default_algorithm</a></td></tr>
+<tr class="separator:a438ec959f43629585f3a05ea946b8603"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Field Documentation</h2>
-<a class="anchor" id="a030be28c632dea1b2fbfb4219fef8e10"></a>
+<a class="anchor" id="a438ec959f43629585f3a05ea946b8603"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> grpc_compression_options::algorithm</td>
+          <td class="memname">struct <a class="el" href="structgrpc__compression__options_1_1grpc__compression__options__default__algorithm.html">grpc_compression_options::grpc_compression_options_default_algorithm</a>  grpc_compression_options::default_algorithm</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 </div>
 </div>
-<a class="anchor" id="a04a323bd83f6651f5d8cb798dae98a10"></a>
+<a class="anchor" id="a13e56a1d6b97fe62dbc431891d8248a7"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">struct { ... }   grpc_compression_options::default_algorithm</td>
+          <td class="memname">struct <a class="el" href="structgrpc__compression__options_1_1grpc__compression__options__default__level.html">grpc_compression_options::grpc_compression_options_default_level</a>  grpc_compression_options::default_level</td>
         </tr>
       </table>
 </div><div class="memdoc">
-
-<p>The default channel compression algorithm. </p>
-<p>It'll be used in the absence of call specific settings. This option corresponds to the channel argument key behind <em>GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM</em>. </p>
-
-</div>
-</div>
-<a class="anchor" id="a51539f51120a4aacbae75d5bc9ab62a7"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">struct { ... }   grpc_compression_options::default_level</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>The default channel compression level. </p>
-<p>It'll be used in the absence of call specific settings. This option corresponds to the channel argument key behind <em>GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL</em>. If present, takes precedence over <em>default_algorithm</em>. TODO(dgq): currently only available for server channels. </p>
 
 </div>
 </div>
@@ -174,37 +156,13 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ab7db56f98efd9efecc135ca8a6c99765"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int grpc_compression_options::is_set</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a2c8a5692fbb7b1778bb34edc8d8c5cdb"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a> grpc_compression_options::level</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li>include/grpc/impl/codegen/<a class="el" href="compression__types_8h_source.html">compression_types.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

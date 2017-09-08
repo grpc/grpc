@@ -2,6 +2,7 @@ var searchData=
 [
   ['serializationtraits',['SerializationTraits',['../classgrpc_1_1_serialization_traits.html',1,'grpc']]],
   ['serializationtraits_3c_20bytebuffer_2c_20void_20_3e',['SerializationTraits&lt; ByteBuffer, void &gt;',['../classgrpc_1_1_serialization_traits_3_01_byte_buffer_00_01void_01_4.html',1,'grpc']]],
+  ['serializationtraits_3c_20t_2c_20typename_20std_3a_3aenable_5fif_3c_20std_3a_3ais_5fbase_5fof_3c_20grpc_3a_3aprotobuf_3a_3amessage_2c_20t_20_3e_3a_3avalue_20_3e_3a_3atype_20_3e',['SerializationTraits&lt; T, typename std::enable_if&lt; std::is_base_of&lt; grpc::protobuf::Message, T &gt;::value &gt;::type &gt;',['../classgrpc_1_1_serialization_traits_3_01_t_00_01typename_01std_1_1enable__if_3_01std_1_1is__base_42903f95c85f031c7724191271564901.html',1,'grpc']]],
   ['server',['Server',['../classgrpc_1_1_server.html',1,'grpc']]],
   ['serverasyncreader',['ServerAsyncReader',['../classgrpc_1_1_server_async_reader.html',1,'grpc']]],
   ['serverasyncreaderinterface',['ServerAsyncReaderInterface',['../classgrpc_1_1_server_async_reader_interface.html',1,'grpc']]],

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -93,95 +93,80 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <a href="codegen_2rpc__method_8h.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/*</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright 2015, Google Inc.</span></div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * All rights reserved.</span></div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * Redistribution and use in source and binary forms, with or without</span></div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"> * modification, are permitted provided that the following conditions are</span></div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment"> * met:</span></div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment"> *     * Redistributions of source code must retain the above copyright</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment"> * notice, this list of conditions and the following disclaimer.</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment"> *     * Redistributions in binary form must reproduce the above</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment"> * copyright notice, this list of conditions and the following disclaimer</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment"> * in the documentation and/or other materials provided with the</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment"> * distribution.</span></div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment"> *     * Neither the name of Google Inc. nor the names of its</span></div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment"> * contributors may be used to endorse or promote products derived from</span></div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment"> * this software without specific prior written permission.</span></div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment"> * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment"> * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span></div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment"> * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment"> * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment"> * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment"> * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment"> * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="comment"> * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="comment"> * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="comment"> * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="comment"> * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span></div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="comment"> */</span></div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#ifndef GRPCXX_IMPL_CODEGEN_RPC_METHOD_H</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPCXX_IMPL_CODEGEN_RPC_METHOD_H</span></div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="channel__interface_8h.html">grpc++/impl/codegen/channel_interface.h</a>&gt;</span></div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright 2015 gRPC authors.</span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span></div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * you may not use this file except in compliance with the License.</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"> * You may obtain a copy of the License at</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment"> *     http://www.apache.org/licenses/LICENSE-2.0</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment"> * Unless required by applicable law or agreed to in writing, software</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment"> * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment"> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment"> * See the License for the specific language governing permissions and</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment"> * limitations under the License.</span></div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment"> */</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#ifndef GRPCXX_IMPL_CODEGEN_RPC_METHOD_H</span></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPCXX_IMPL_CODEGEN_RPC_METHOD_H</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="channel__interface_8h.html">grpc++/impl/codegen/channel_interface.h</a>&gt;</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">namespace </span>grpc {</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;</div>
+<div class="line"><a name="l00029"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html">   29</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_rpc_method.html">RpcMethod</a> {</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; <span class="keyword">public</span>:</div>
+<div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">   31</a></span>&#160;  <span class="keyword">enum</span> <a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">RpcType</a> {</div>
+<div class="line"><a name="l00032"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a8f7dac3c5cdbdbb204e3d3dbab033c2e">   32</a></span>&#160;    <a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a8f7dac3c5cdbdbb204e3d3dbab033c2e">NORMAL_RPC</a> = 0,</div>
+<div class="line"><a name="l00033"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a93445bd936c37c2f089f8a9075ebcb2a">   33</a></span>&#160;    <a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a93445bd936c37c2f089f8a9075ebcb2a">CLIENT_STREAMING</a>,  <span class="comment">// request streaming</span></div>
+<div class="line"><a name="l00034"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a86f700048be78a1204139f70912f7775">   34</a></span>&#160;    <a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a86f700048be78a1204139f70912f7775">SERVER_STREAMING</a>,  <span class="comment">// response streaming</span></div>
+<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688ae482ab481fdc406d88adcdd088269894">   35</a></span>&#160;    <a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688ae482ab481fdc406d88adcdd088269894">BIDI_STREAMING</a></div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  };</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;</div>
+<div class="line"><a name="l00038"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#a06b42037718cf822a4b30d14668613f0">   38</a></span>&#160;  <a class="code" href="classgrpc_1_1_rpc_method.html#a06b42037718cf822a4b30d14668613f0">RpcMethod</a>(<span class="keyword">const</span> <span class="keywordtype">char</span>* <a class="code" href="classgrpc_1_1_rpc_method.html#a6fb4872e0af4c79faffe2bb30b2cafe3">name</a>, <a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">RpcType</a> type)</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;      : name_(name), method_type_(type), channel_tag_(NULL) {}</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keyword">namespace </span>grpc {</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;</div>
-<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html">   44</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_rpc_method.html">RpcMethod</a> {</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; <span class="keyword">public</span>:</div>
-<div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">   46</a></span>&#160;  <span class="keyword">enum</span> <a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">RpcType</a> {</div>
-<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a8f7dac3c5cdbdbb204e3d3dbab033c2e">   47</a></span>&#160;    <a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a8f7dac3c5cdbdbb204e3d3dbab033c2e">NORMAL_RPC</a> = 0,</div>
-<div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a93445bd936c37c2f089f8a9075ebcb2a">   48</a></span>&#160;    <a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a93445bd936c37c2f089f8a9075ebcb2a">CLIENT_STREAMING</a>,  <span class="comment">// request streaming</span></div>
-<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a86f700048be78a1204139f70912f7775">   49</a></span>&#160;    <a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a86f700048be78a1204139f70912f7775">SERVER_STREAMING</a>,  <span class="comment">// response streaming</span></div>
-<div class="line"><a name="l00050"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688ae482ab481fdc406d88adcdd088269894">   50</a></span>&#160;    <a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688ae482ab481fdc406d88adcdd088269894">BIDI_STREAMING</a></div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  };</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;</div>
-<div class="line"><a name="l00053"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#a06b42037718cf822a4b30d14668613f0">   53</a></span>&#160;  <a class="code" href="classgrpc_1_1_rpc_method.html#a06b42037718cf822a4b30d14668613f0">RpcMethod</a>(<span class="keyword">const</span> <span class="keywordtype">char</span>* <a class="code" href="classgrpc_1_1_rpc_method.html#a6fb4872e0af4c79faffe2bb30b2cafe3">name</a>, <a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">RpcType</a> type)</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;      : name_(name), method_type_(type), channel_tag_(NULL) {}</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;</div>
-<div class="line"><a name="l00056"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#af4be4b97022138385987eae380de5ddd">   56</a></span>&#160;  <a class="code" href="classgrpc_1_1_rpc_method.html#af4be4b97022138385987eae380de5ddd">RpcMethod</a>(<span class="keyword">const</span> <span class="keywordtype">char</span>* <a class="code" href="classgrpc_1_1_rpc_method.html#a6fb4872e0af4c79faffe2bb30b2cafe3">name</a>, <a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">RpcType</a> type,</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;            <span class="keyword">const</span> std::shared_ptr&lt;ChannelInterface&gt;&amp; channel)</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;      : name_(name),</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        method_type_(type),</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        channel_tag_(channel-&gt;RegisterMethod(name)) {}</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;</div>
-<div class="line"><a name="l00062"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#a6fb4872e0af4c79faffe2bb30b2cafe3">   62</a></span>&#160;  <span class="keyword">const</span> <span class="keywordtype">char</span>* <a class="code" href="classgrpc_1_1_rpc_method.html#a6fb4872e0af4c79faffe2bb30b2cafe3">name</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> name_; }</div>
-<div class="line"><a name="l00063"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#a1de5a64a1e57b5938c4733f9152291b6">   63</a></span>&#160;  <a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">RpcType</a> <a class="code" href="classgrpc_1_1_rpc_method.html#a1de5a64a1e57b5938c4733f9152291b6">method_type</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> method_type_; }</div>
-<div class="line"><a name="l00064"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#a4abec78d39e7bdba8c739bd4cdc064de">   64</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_rpc_method.html#a4abec78d39e7bdba8c739bd4cdc064de">SetMethodType</a>(<a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">RpcType</a> type) { method_type_ = type; }</div>
-<div class="line"><a name="l00065"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#a59527e676d274583ec6961fb3f4356b3">   65</a></span>&#160;  <span class="keywordtype">void</span>* <a class="code" href="classgrpc_1_1_rpc_method.html#a59527e676d274583ec6961fb3f4356b3">channel_tag</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> channel_tag_; }</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; <span class="keyword">private</span>:</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">char</span>* <span class="keyword">const</span> name_;</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">RpcType</a> method_type_;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  <span class="keywordtype">void</span>* <span class="keyword">const</span> channel_tag_;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;};</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;}  <span class="comment">// namespace grpc</span></div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="preprocessor">#endif  // GRPCXX_IMPL_CODEGEN_RPC_METHOD_H</span></div>
-<div class="ttc" id="classgrpc_1_1_rpc_method_html_ace95416ed07409e43059a0dfe9e23688a86f700048be78a1204139f70912f7775"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a86f700048be78a1204139f70912f7775">grpc::RpcMethod::SERVER_STREAMING</a></div><div class="ttdef"><b>Definition:</b> rpc_method.h:49</div></div>
-<div class="ttc" id="classgrpc_1_1_rpc_method_html_a4abec78d39e7bdba8c739bd4cdc064de"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#a4abec78d39e7bdba8c739bd4cdc064de">grpc::RpcMethod::SetMethodType</a></div><div class="ttdeci">void SetMethodType(RpcType type)</div><div class="ttdef"><b>Definition:</b> rpc_method.h:64</div></div>
-<div class="ttc" id="classgrpc_1_1_rpc_method_html_ace95416ed07409e43059a0dfe9e23688"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">grpc::RpcMethod::RpcType</a></div><div class="ttdeci">RpcType</div><div class="ttdef"><b>Definition:</b> rpc_method.h:46</div></div>
+<div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#af4be4b97022138385987eae380de5ddd">   41</a></span>&#160;  <a class="code" href="classgrpc_1_1_rpc_method.html#af4be4b97022138385987eae380de5ddd">RpcMethod</a>(<span class="keyword">const</span> <span class="keywordtype">char</span>* <a class="code" href="classgrpc_1_1_rpc_method.html#a6fb4872e0af4c79faffe2bb30b2cafe3">name</a>, <a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">RpcType</a> type,</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;            <span class="keyword">const</span> std::shared_ptr&lt;ChannelInterface&gt;&amp; channel)</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;      : name_(name),</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;        method_type_(type),</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;        channel_tag_(channel-&gt;RegisterMethod(name)) {}</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;</div>
+<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#a6fb4872e0af4c79faffe2bb30b2cafe3">   47</a></span>&#160;  <span class="keyword">const</span> <span class="keywordtype">char</span>* <a class="code" href="classgrpc_1_1_rpc_method.html#a6fb4872e0af4c79faffe2bb30b2cafe3">name</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> name_; }</div>
+<div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#a1de5a64a1e57b5938c4733f9152291b6">   48</a></span>&#160;  <a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">RpcType</a> <a class="code" href="classgrpc_1_1_rpc_method.html#a1de5a64a1e57b5938c4733f9152291b6">method_type</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> method_type_; }</div>
+<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#a4abec78d39e7bdba8c739bd4cdc064de">   49</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_rpc_method.html#a4abec78d39e7bdba8c739bd4cdc064de">SetMethodType</a>(<a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">RpcType</a> type) { method_type_ = type; }</div>
+<div class="line"><a name="l00050"></a><span class="lineno"><a class="line" href="classgrpc_1_1_rpc_method.html#a59527e676d274583ec6961fb3f4356b3">   50</a></span>&#160;  <span class="keywordtype">void</span>* <a class="code" href="classgrpc_1_1_rpc_method.html#a59527e676d274583ec6961fb3f4356b3">channel_tag</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> channel_tag_; }</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">char</span>* <span class="keyword">const</span> name_;</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <a class="code" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">RpcType</a> method_type_;</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  <span class="keywordtype">void</span>* <span class="keyword">const</span> channel_tag_;</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;};</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="preprocessor">#endif  // GRPCXX_IMPL_CODEGEN_RPC_METHOD_H</span></div>
+<div class="ttc" id="classgrpc_1_1_rpc_method_html_ace95416ed07409e43059a0dfe9e23688a86f700048be78a1204139f70912f7775"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a86f700048be78a1204139f70912f7775">grpc::RpcMethod::SERVER_STREAMING</a></div><div class="ttdef"><b>Definition:</b> rpc_method.h:34</div></div>
+<div class="ttc" id="classgrpc_1_1_rpc_method_html_a4abec78d39e7bdba8c739bd4cdc064de"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#a4abec78d39e7bdba8c739bd4cdc064de">grpc::RpcMethod::SetMethodType</a></div><div class="ttdeci">void SetMethodType(RpcType type)</div><div class="ttdef"><b>Definition:</b> rpc_method.h:49</div></div>
+<div class="ttc" id="classgrpc_1_1_rpc_method_html_ace95416ed07409e43059a0dfe9e23688"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">grpc::RpcMethod::RpcType</a></div><div class="ttdeci">RpcType</div><div class="ttdef"><b>Definition:</b> rpc_method.h:31</div></div>
 <div class="ttc" id="channel__interface_8h_html"><div class="ttname"><a href="channel__interface_8h.html">channel_interface.h</a></div></div>
-<div class="ttc" id="classgrpc_1_1_rpc_method_html_a1de5a64a1e57b5938c4733f9152291b6"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#a1de5a64a1e57b5938c4733f9152291b6">grpc::RpcMethod::method_type</a></div><div class="ttdeci">RpcType method_type() const </div><div class="ttdef"><b>Definition:</b> rpc_method.h:63</div></div>
-<div class="ttc" id="classgrpc_1_1_rpc_method_html_ace95416ed07409e43059a0dfe9e23688a93445bd936c37c2f089f8a9075ebcb2a"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a93445bd936c37c2f089f8a9075ebcb2a">grpc::RpcMethod::CLIENT_STREAMING</a></div><div class="ttdef"><b>Definition:</b> rpc_method.h:48</div></div>
-<div class="ttc" id="classgrpc_1_1_rpc_method_html_a59527e676d274583ec6961fb3f4356b3"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#a59527e676d274583ec6961fb3f4356b3">grpc::RpcMethod::channel_tag</a></div><div class="ttdeci">void * channel_tag() const </div><div class="ttdef"><b>Definition:</b> rpc_method.h:65</div></div>
-<div class="ttc" id="classgrpc_1_1_rpc_method_html"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html">grpc::RpcMethod</a></div><div class="ttdoc">Descriptor of an RPC method. </div><div class="ttdef"><b>Definition:</b> rpc_method.h:44</div></div>
-<div class="ttc" id="classgrpc_1_1_rpc_method_html_a06b42037718cf822a4b30d14668613f0"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#a06b42037718cf822a4b30d14668613f0">grpc::RpcMethod::RpcMethod</a></div><div class="ttdeci">RpcMethod(const char *name, RpcType type)</div><div class="ttdef"><b>Definition:</b> rpc_method.h:53</div></div>
-<div class="ttc" id="classgrpc_1_1_rpc_method_html_ace95416ed07409e43059a0dfe9e23688ae482ab481fdc406d88adcdd088269894"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688ae482ab481fdc406d88adcdd088269894">grpc::RpcMethod::BIDI_STREAMING</a></div><div class="ttdef"><b>Definition:</b> rpc_method.h:50</div></div>
-<div class="ttc" id="classgrpc_1_1_rpc_method_html_ace95416ed07409e43059a0dfe9e23688a8f7dac3c5cdbdbb204e3d3dbab033c2e"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a8f7dac3c5cdbdbb204e3d3dbab033c2e">grpc::RpcMethod::NORMAL_RPC</a></div><div class="ttdef"><b>Definition:</b> rpc_method.h:47</div></div>
-<div class="ttc" id="classgrpc_1_1_rpc_method_html_af4be4b97022138385987eae380de5ddd"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#af4be4b97022138385987eae380de5ddd">grpc::RpcMethod::RpcMethod</a></div><div class="ttdeci">RpcMethod(const char *name, RpcType type, const std::shared_ptr&lt; ChannelInterface &gt; &amp;channel)</div><div class="ttdef"><b>Definition:</b> rpc_method.h:56</div></div>
-<div class="ttc" id="classgrpc_1_1_rpc_method_html_a6fb4872e0af4c79faffe2bb30b2cafe3"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#a6fb4872e0af4c79faffe2bb30b2cafe3">grpc::RpcMethod::name</a></div><div class="ttdeci">const char * name() const </div><div class="ttdef"><b>Definition:</b> rpc_method.h:62</div></div>
+<div class="ttc" id="classgrpc_1_1_rpc_method_html_a1de5a64a1e57b5938c4733f9152291b6"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#a1de5a64a1e57b5938c4733f9152291b6">grpc::RpcMethod::method_type</a></div><div class="ttdeci">RpcType method_type() const </div><div class="ttdef"><b>Definition:</b> rpc_method.h:48</div></div>
+<div class="ttc" id="classgrpc_1_1_rpc_method_html_ace95416ed07409e43059a0dfe9e23688a93445bd936c37c2f089f8a9075ebcb2a"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a93445bd936c37c2f089f8a9075ebcb2a">grpc::RpcMethod::CLIENT_STREAMING</a></div><div class="ttdef"><b>Definition:</b> rpc_method.h:33</div></div>
+<div class="ttc" id="classgrpc_1_1_rpc_method_html_a59527e676d274583ec6961fb3f4356b3"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#a59527e676d274583ec6961fb3f4356b3">grpc::RpcMethod::channel_tag</a></div><div class="ttdeci">void * channel_tag() const </div><div class="ttdef"><b>Definition:</b> rpc_method.h:50</div></div>
+<div class="ttc" id="classgrpc_1_1_rpc_method_html"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html">grpc::RpcMethod</a></div><div class="ttdoc">Descriptor of an RPC method. </div><div class="ttdef"><b>Definition:</b> rpc_method.h:29</div></div>
+<div class="ttc" id="classgrpc_1_1_rpc_method_html_a06b42037718cf822a4b30d14668613f0"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#a06b42037718cf822a4b30d14668613f0">grpc::RpcMethod::RpcMethod</a></div><div class="ttdeci">RpcMethod(const char *name, RpcType type)</div><div class="ttdef"><b>Definition:</b> rpc_method.h:38</div></div>
+<div class="ttc" id="classgrpc_1_1_rpc_method_html_ace95416ed07409e43059a0dfe9e23688ae482ab481fdc406d88adcdd088269894"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688ae482ab481fdc406d88adcdd088269894">grpc::RpcMethod::BIDI_STREAMING</a></div><div class="ttdef"><b>Definition:</b> rpc_method.h:35</div></div>
+<div class="ttc" id="classgrpc_1_1_rpc_method_html_ace95416ed07409e43059a0dfe9e23688a8f7dac3c5cdbdbb204e3d3dbab033c2e"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688a8f7dac3c5cdbdbb204e3d3dbab033c2e">grpc::RpcMethod::NORMAL_RPC</a></div><div class="ttdef"><b>Definition:</b> rpc_method.h:32</div></div>
+<div class="ttc" id="classgrpc_1_1_rpc_method_html_af4be4b97022138385987eae380de5ddd"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#af4be4b97022138385987eae380de5ddd">grpc::RpcMethod::RpcMethod</a></div><div class="ttdeci">RpcMethod(const char *name, RpcType type, const std::shared_ptr&lt; ChannelInterface &gt; &amp;channel)</div><div class="ttdef"><b>Definition:</b> rpc_method.h:41</div></div>
+<div class="ttc" id="classgrpc_1_1_rpc_method_html_a6fb4872e0af4c79faffe2bb30b2cafe3"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html#a6fb4872e0af4c79faffe2bb30b2cafe3">grpc::RpcMethod::name</a></div><div class="ttdeci">const char * name() const </div><div class="ttdef"><b>Definition:</b> rpc_method.h:47</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_692cef9a660803f4b5efbe2b781d2071.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_a8e30387f66bf56f1146fa5d3496d838.html">include</a></li><li class="navelem"><a class="el" href="dir_f93e102bce67c94e5a77dcd42507568e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_f6ce077e8fd33d16d09ec0399b2cff44.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -104,6 +104,7 @@ Data Structures</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">internal node of an AVL tree  <a href="structgpr__avl__node.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgpr__avl__vtable.html">gpr_avl_vtable</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">vtable for the AVL tree The optional user_data is propagated from the top level gpr_avl_XXX API.  <a href="structgpr__avl__vtable.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgpr__avl.html">gpr_avl</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">"pointer" to an AVL tree - this is a reference counted object - use gpr_avl_ref to add a reference, gpr_avl_unref when done with a reference  <a href="structgpr__avl.html#details">More...</a><br/></td></tr>
@@ -115,6 +116,7 @@ Typedefs</h2></td></tr>
 <tr class="memdesc:a387f850dc2c55ba4e46c3f847e176ada"><td class="mdescLeft">&#160;</td><td class="mdescRight">internal node of an AVL tree  <a href="#a387f850dc2c55ba4e46c3f847e176ada">More...</a><br/></td></tr>
 <tr class="separator:a387f850dc2c55ba4e46c3f847e176ada"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7b4e175c2732d19931f686aeb7b4f570"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgpr__avl__vtable.html">gpr_avl_vtable</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="avl_8h.html#a7b4e175c2732d19931f686aeb7b4f570">gpr_avl_vtable</a></td></tr>
+<tr class="memdesc:a7b4e175c2732d19931f686aeb7b4f570"><td class="mdescLeft">&#160;</td><td class="mdescRight">vtable for the AVL tree The optional user_data is propagated from the top level gpr_avl_XXX API.  <a href="#a7b4e175c2732d19931f686aeb7b4f570">More...</a><br/></td></tr>
 <tr class="separator:a7b4e175c2732d19931f686aeb7b4f570"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a31a6a15570ecac89eadb97e13e6b73bd"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgpr__avl.html">gpr_avl</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="avl_8h.html#a31a6a15570ecac89eadb97e13e6b73bd">gpr_avl</a></td></tr>
 <tr class="memdesc:a31a6a15570ecac89eadb97e13e6b73bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">"pointer" to an AVL tree - this is a reference counted object - use gpr_avl_ref to add a reference, gpr_avl_unref when done with a reference  <a href="#a31a6a15570ecac89eadb97e13e6b73bd">More...</a><br/></td></tr>
@@ -123,26 +125,26 @@ Typedefs</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a1dab3c1a92471b256b82ca8bd8f96d88"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgpr__avl.html">gpr_avl</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="avl_8h.html#a1dab3c1a92471b256b82ca8bd8f96d88">gpr_avl_create</a> (const <a class="el" href="structgpr__avl__vtable.html">gpr_avl_vtable</a> *vtable)</td></tr>
-<tr class="memdesc:a1dab3c1a92471b256b82ca8bd8f96d88"><td class="mdescLeft">&#160;</td><td class="mdescRight">create an immutable AVL tree  <a href="#a1dab3c1a92471b256b82ca8bd8f96d88">More...</a><br/></td></tr>
+<tr class="memdesc:a1dab3c1a92471b256b82ca8bd8f96d88"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create an immutable AVL tree.  <a href="#a1dab3c1a92471b256b82ca8bd8f96d88">More...</a><br/></td></tr>
 <tr class="separator:a1dab3c1a92471b256b82ca8bd8f96d88"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac50be0a44f3077598aef8b93c230e611"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgpr__avl.html">gpr_avl</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="avl_8h.html#ac50be0a44f3077598aef8b93c230e611">gpr_avl_ref</a> (<a class="el" href="structgpr__avl.html">gpr_avl</a> avl)</td></tr>
-<tr class="memdesc:ac50be0a44f3077598aef8b93c230e611"><td class="mdescLeft">&#160;</td><td class="mdescRight">add a reference to an existing tree - returns the tree as a convenience  <a href="#ac50be0a44f3077598aef8b93c230e611">More...</a><br/></td></tr>
-<tr class="separator:ac50be0a44f3077598aef8b93c230e611"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1b7b8ca19940c4634efedcf7b300a2cc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="avl_8h.html#a1b7b8ca19940c4634efedcf7b300a2cc">gpr_avl_unref</a> (<a class="el" href="structgpr__avl.html">gpr_avl</a> avl)</td></tr>
-<tr class="memdesc:a1b7b8ca19940c4634efedcf7b300a2cc"><td class="mdescLeft">&#160;</td><td class="mdescRight">remove a reference to a tree - destroying it if there are no references left  <a href="#a1b7b8ca19940c4634efedcf7b300a2cc">More...</a><br/></td></tr>
-<tr class="separator:a1b7b8ca19940c4634efedcf7b300a2cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a58fe0294f7ed3d27b61a71a56a7bcc61"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgpr__avl.html">gpr_avl</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="avl_8h.html#a58fe0294f7ed3d27b61a71a56a7bcc61">gpr_avl_add</a> (<a class="el" href="structgpr__avl.html">gpr_avl</a> avl, void *key, void *value)</td></tr>
-<tr class="memdesc:a58fe0294f7ed3d27b61a71a56a7bcc61"><td class="mdescLeft">&#160;</td><td class="mdescRight">return a new tree with (key, value) added to avl.  <a href="#a58fe0294f7ed3d27b61a71a56a7bcc61">More...</a><br/></td></tr>
-<tr class="separator:a58fe0294f7ed3d27b61a71a56a7bcc61"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8480c3d62603f73005274b5c1ad55bb8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgpr__avl.html">gpr_avl</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="avl_8h.html#a8480c3d62603f73005274b5c1ad55bb8">gpr_avl_remove</a> (<a class="el" href="structgpr__avl.html">gpr_avl</a> avl, void *key)</td></tr>
-<tr class="memdesc:a8480c3d62603f73005274b5c1ad55bb8"><td class="mdescLeft">&#160;</td><td class="mdescRight">return a new tree with key deleted implicitly unrefs avl to allow easy chaining.  <a href="#a8480c3d62603f73005274b5c1ad55bb8">More...</a><br/></td></tr>
-<tr class="separator:a8480c3d62603f73005274b5c1ad55bb8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adfb9b46b5306de2954335b198a0b677f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="avl_8h.html#adfb9b46b5306de2954335b198a0b677f">gpr_avl_get</a> (<a class="el" href="structgpr__avl.html">gpr_avl</a> avl, void *key)</td></tr>
-<tr class="memdesc:adfb9b46b5306de2954335b198a0b677f"><td class="mdescLeft">&#160;</td><td class="mdescRight">lookup key, and return the associated value.  <a href="#adfb9b46b5306de2954335b198a0b677f">More...</a><br/></td></tr>
-<tr class="separator:adfb9b46b5306de2954335b198a0b677f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac62ad630e26daff28a7f161929a59365"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="avl_8h.html#ac62ad630e26daff28a7f161929a59365">gpr_avl_maybe_get</a> (<a class="el" href="structgpr__avl.html">gpr_avl</a> avl, void *key, void **value)</td></tr>
-<tr class="memdesc:ac62ad630e26daff28a7f161929a59365"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return 1 if avl contains key, 0 otherwise; if it has the key, sets *value to its value.  <a href="#ac62ad630e26daff28a7f161929a59365">More...</a><br/></td></tr>
-<tr class="separator:ac62ad630e26daff28a7f161929a59365"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aef295ada15917867e6e1649b99197830"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgpr__avl.html">gpr_avl</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="avl_8h.html#aef295ada15917867e6e1649b99197830">gpr_avl_ref</a> (<a class="el" href="structgpr__avl.html">gpr_avl</a> avl, void *user_data)</td></tr>
+<tr class="memdesc:aef295ada15917867e6e1649b99197830"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a reference to an existing tree - returns the tree as a convenience.  <a href="#aef295ada15917867e6e1649b99197830">More...</a><br/></td></tr>
+<tr class="separator:aef295ada15917867e6e1649b99197830"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeb1c9e0a533b8a25b593a806fa070f3f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="avl_8h.html#aeb1c9e0a533b8a25b593a806fa070f3f">gpr_avl_unref</a> (<a class="el" href="structgpr__avl.html">gpr_avl</a> avl, void *user_data)</td></tr>
+<tr class="memdesc:aeb1c9e0a533b8a25b593a806fa070f3f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Remove a reference to a tree - destroying it if there are no references left.  <a href="#aeb1c9e0a533b8a25b593a806fa070f3f">More...</a><br/></td></tr>
+<tr class="separator:aeb1c9e0a533b8a25b593a806fa070f3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a22f47f7f803e1c2e48df0fa8ce40eb47"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgpr__avl.html">gpr_avl</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="avl_8h.html#a22f47f7f803e1c2e48df0fa8ce40eb47">gpr_avl_add</a> (<a class="el" href="structgpr__avl.html">gpr_avl</a> avl, void *key, void *value, void *user_data)</td></tr>
+<tr class="memdesc:a22f47f7f803e1c2e48df0fa8ce40eb47"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new tree with (key, value) added to avl.  <a href="#a22f47f7f803e1c2e48df0fa8ce40eb47">More...</a><br/></td></tr>
+<tr class="separator:a22f47f7f803e1c2e48df0fa8ce40eb47"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af809cc603919889ef2f5da7bb46f9f1b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgpr__avl.html">gpr_avl</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="avl_8h.html#af809cc603919889ef2f5da7bb46f9f1b">gpr_avl_remove</a> (<a class="el" href="structgpr__avl.html">gpr_avl</a> avl, void *key, void *user_data)</td></tr>
+<tr class="memdesc:af809cc603919889ef2f5da7bb46f9f1b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a new tree with key deleted implicitly unrefs avl to allow easy chaining.  <a href="#af809cc603919889ef2f5da7bb46f9f1b">More...</a><br/></td></tr>
+<tr class="separator:af809cc603919889ef2f5da7bb46f9f1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ade8a64f68706a8539f14f863cb18d52b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="avl_8h.html#ade8a64f68706a8539f14f863cb18d52b">gpr_avl_get</a> (<a class="el" href="structgpr__avl.html">gpr_avl</a> avl, void *key, void *user_data)</td></tr>
+<tr class="memdesc:ade8a64f68706a8539f14f863cb18d52b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Lookup key, and return the associated value.  <a href="#ade8a64f68706a8539f14f863cb18d52b">More...</a><br/></td></tr>
+<tr class="separator:ade8a64f68706a8539f14f863cb18d52b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a25526da4bdaa6a799e36aa7c2e3e67fd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="avl_8h.html#a25526da4bdaa6a799e36aa7c2e3e67fd">gpr_avl_maybe_get</a> (<a class="el" href="structgpr__avl.html">gpr_avl</a> avl, void *key, void **value, void *user_data)</td></tr>
+<tr class="memdesc:a25526da4bdaa6a799e36aa7c2e3e67fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return 1 if avl contains key, 0 otherwise; if it has the key, sets *value to its value.  <a href="#a25526da4bdaa6a799e36aa7c2e3e67fd">More...</a><br/></td></tr>
+<tr class="separator:a25526da4bdaa6a799e36aa7c2e3e67fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a67437810e910a0b5eaf783d1e59f6299"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="avl_8h.html#a67437810e910a0b5eaf783d1e59f6299">gpr_avl_is_empty</a> (<a class="el" href="structgpr__avl.html">gpr_avl</a> avl)</td></tr>
 <tr class="memdesc:a67437810e910a0b5eaf783d1e59f6299"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return 1 if avl is empty, 0 otherwise.  <a href="#a67437810e910a0b5eaf783d1e59f6299">More...</a><br/></td></tr>
 <tr class="separator:a67437810e910a0b5eaf783d1e59f6299"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -186,10 +188,13 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>vtable for the AVL tree The optional user_data is propagated from the top level gpr_avl_XXX API. </p>
+<p>From the same API call, multiple vtable functions may be called multiple times. </p>
+
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="a58fe0294f7ed3d27b61a71a56a7bcc61"></a>
+<a class="anchor" id="a22f47f7f803e1c2e48df0fa8ce40eb47"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -209,7 +214,13 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>value</em>&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>user_data</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -219,8 +230,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>return a new tree with (key, value) added to avl. </p>
-<p>implicitly unrefs avl to allow easy chaining. if key exists in avl, the new tree's key entry updated (i.e. a duplicate is not created) </p>
+<p>Return a new tree with (key, value) added to avl. </p>
+<p>implicitly unrefs avl to allow easy chaining. if key exists in avl, the new tree's key entry updated (i.e. a duplicate is not created). The optional user_data will be passed to vtable functions. </p>
 
 </div>
 </div>
@@ -238,11 +249,11 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>create an immutable AVL tree </p>
+<p>Create an immutable AVL tree. </p>
 
 </div>
 </div>
-<a class="anchor" id="adfb9b46b5306de2954335b198a0b677f"></a>
+<a class="anchor" id="ade8a64f68706a8539f14f863cb18d52b"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -256,7 +267,13 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>key</em>&#160;</td>
+          <td class="paramname"><em>key</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>user_data</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -266,8 +283,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>lookup key, and return the associated value. </p>
-<p>does not mutate avl. returns NULL if key is not found. </p>
+<p>Lookup key, and return the associated value. </p>
+<p>Does not mutate avl. Returns NULL if key is not found. The optional user_data will be passed to vtable functions. </p>
 
 </div>
 </div>
@@ -289,7 +306,7 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ac62ad630e26daff28a7f161929a59365"></a>
+<a class="anchor" id="a25526da4bdaa6a799e36aa7c2e3e67fd"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -309,7 +326,13 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">void **&#160;</td>
-          <td class="paramname"><em>value</em>&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>user_data</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -320,10 +343,11 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Return 1 if avl contains key, 0 otherwise; if it has the key, sets *value to its value. </p>
+<p>THe optional user_data will be passed to vtable functions. </p>
 
 </div>
 </div>
-<a class="anchor" id="ac50be0a44f3077598aef8b93c230e611"></a>
+<a class="anchor" id="aef295ada15917867e6e1649b99197830"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -331,17 +355,28 @@ Functions</h2></td></tr>
           <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> <a class="el" href="structgpr__avl.html">gpr_avl</a> gpr_avl_ref </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structgpr__avl.html">gpr_avl</a>&#160;</td>
-          <td class="paramname"><em>avl</em></td><td>)</td>
+          <td class="paramname"><em>avl</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>user_data</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>add a reference to an existing tree - returns the tree as a convenience </p>
+<p>Add a reference to an existing tree - returns the tree as a convenience. </p>
+<p>The optional user_data will be passed to vtable functions. </p>
 
 </div>
 </div>
-<a class="anchor" id="a8480c3d62603f73005274b5c1ad55bb8"></a>
+<a class="anchor" id="af809cc603919889ef2f5da7bb46f9f1b"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -355,7 +390,13 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>key</em>&#160;</td>
+          <td class="paramname"><em>key</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>user_data</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -365,11 +406,12 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>return a new tree with key deleted implicitly unrefs avl to allow easy chaining. </p>
+<p>Return a new tree with key deleted implicitly unrefs avl to allow easy chaining. </p>
+<p>The optional user_data will be passed to vtable functions. </p>
 
 </div>
 </div>
-<a class="anchor" id="a1b7b8ca19940c4634efedcf7b300a2cc"></a>
+<a class="anchor" id="aeb1c9e0a533b8a25b593a806fa070f3f"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -377,20 +419,31 @@ Functions</h2></td></tr>
           <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_avl_unref </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structgpr__avl.html">gpr_avl</a>&#160;</td>
-          <td class="paramname"><em>avl</em></td><td>)</td>
+          <td class="paramname"><em>avl</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>user_data</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>remove a reference to a tree - destroying it if there are no references left </p>
+<p>Remove a reference to a tree - destroying it if there are no references left. </p>
+<p>The optional user_data will be passed to vtable functions. </p>
 
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

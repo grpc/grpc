@@ -10,6 +10,6 @@ var searchData=
   ['byte_5fbuffer_2eh',['byte_buffer.h',['../byte__buffer_8h.html',1,'']]],
   ['byte_5fbuffer_5freader_2eh',['byte_buffer_reader.h',['../impl_2codegen_2byte__buffer__reader_8h.html',1,'']]],
   ['byte_5fbuffer_5freader_2eh',['byte_buffer_reader.h',['../byte__buffer__reader_8h.html',1,'']]],
-  ['bytes',['bytes',['../structgrpc__slice.html#a2906db76ad7ddaba549ccf723f361c6d',1,'grpc_slice::bytes()'],['../structgrpc__slice.html#ab907f771b5785a1ebeb24679d503facf',1,'grpc_slice::bytes()']]],
+  ['bytes',['bytes',['../structgrpc__slice_1_1grpc__slice__data_1_1grpc__slice__refcounted.html#abeb23ef5c6395ccd04908b9d7227a566',1,'grpc_slice::grpc_slice_data::grpc_slice_refcounted::bytes()'],['../structgrpc__slice_1_1grpc__slice__data_1_1grpc__slice__inlined.html#a9d35eab95431c67f4326d931c1bda308',1,'grpc_slice::grpc_slice_data::grpc_slice_inlined::bytes()']]],
   ['binary_20logging',['Binary Logging',['../md_doc_binary-logging.html',1,'']]]
 ];

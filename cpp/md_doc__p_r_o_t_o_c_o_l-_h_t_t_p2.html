@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -101,7 +101,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li><b>Call-Definition</b> → Method Scheme Path TE [Authority] [Timeout] Content-Type [Message-Type] [Message-Encoding] [Message-Accept-Encoding] [User-Agent]</li>
 <li><b>Method</b> → ":method POST"</li>
 <li><b>Scheme</b> → ":scheme " ("http" / "https")</li>
-<li><b>Path</b> → ":path" {<em>path identifying method within exposed API</em>}</li>
+<li><b>Path</b> → ":path" "/" Service-Name "/" {<em>method name</em>}</li>
+<li><b>Service-Name</b> → {<em>IDL-specific service name</em>}</li>
 <li><b>Authority</b> → ":authority" {<em>virtual host name of authority</em>}</li>
 <li><b>TE</b> → "te" "trailers" # Used to detect incompatible proxies</li>
 <li><b>Timeout</b> → "grpc-timeout" TimeoutValue TimeoutUnit</li>
@@ -126,6 +127,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li><b>ASCII-Value</b> → 1*( x20-x7E ) ; space and printable ASCII</li>
 </ul>
 <p>HTTP2 requires that reserved headers, ones starting with ":" appear before all other headers. Additionally implementations should send <b>Timeout</b> immediately after the reserved headers and they should send the <b>Call-Definition</b> headers before sending <b>Custom-Metadata</b>.</p>
+<p>Some gRPC implementations may allow the <b>Path</b> format shown above to be overridden, but this functionality is strongly discouraged. gRPC does not go out of its way to break users that are using this kind of override, but we do not actively support it, and some functionality (e.g., service config support) will not work when the path is not of the form shown above.</p>
 <p>If <b>Timeout</b> is omitted a server should assume an infinite timeout. Client implementations are free to send a default minimum timeout based on their deployment requirements.</p>
 <p><b>Custom-Metadata</b> is an arbitrary set of key-value pairs defined by the application layer. Header names starting with "grpc-" but not listed here are reserved for future GRPC use and should not be used by applications as <b>Custom-Metadata</b>.</p>
 <p>Note that HTTP2 does not allow arbitrary octet sequences for header values so binary header values must be encoded using Base64 as per <a href="https://tools.ietf.org/html/rfc4648#section-4">https://tools.ietf.org/html/rfc4648#section-4</a>. Implementations MUST accept padded and un-padded values and should emit un-padded values. Applications define binary headers by having their names end with "-bin". Runtime libraries use this suffix to detect binary headers and properly apply base64 encoding &amp; decoding as headers are sent and received.</p>
@@ -227,9 +229,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <h6>Connection failure</h6>
 <p>If a detectable connection failure occurs on the client all calls will be closed with an UNAVAILABLE status. For servers open calls will be closed with a CANCELLED status.</p>
 <h3>Appendix A - GRPC for Protobuf</h3>
-<p>The service interfaces declared by protobuf are easily mapped onto GRPC by code generation extensions to protoc. The following defines the mapping to be used</p>
+<p>The service interfaces declared by protobuf are easily mapped onto GRPC by code generation extensions to protoc. The following defines the mapping to be used.</p>
 <ul>
-<li><b>Path</b> → / Service-Name / {<em>method name</em>}</li>
 <li><b>Service-Name</b> → ?( {<em>proto package name</em>} "." ) {<em>service name</em>}</li>
 <li><b>Message-Type</b> → {<em>fully qualified proto message name</em>}</li>
 <li><b>Content-Type</b> → "application/grpc+proto" </li>
@@ -237,7 +238,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

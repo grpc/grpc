@@ -84,6 +84,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-attribs">Data Fields</a>  </div>
   <div class="headertitle">
 <div class="title">grpc_op Struct Reference</div>  </div>
@@ -95,6 +96,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <p><code>#include &lt;<a class="el" href="grpc__types_8h_source.html">grpc_types.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">union &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="uniongrpc__op_1_1grpc__op__data.html">grpc_op_data</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Data Fields</h2></td></tr>
 <tr class="memitem:a702bcecc2462646b6740ed7c05f42115"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__types_8h.html#a41dc9abf9678decbfcef1a037e35939a">grpc_op_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op.html#a702bcecc2462646b6740ed7c05f42115">op</a></td></tr>
@@ -103,114 +109,21 @@ Data Fields</h2></td></tr>
 <tr class="memitem:a5b6e034719e0ac3cd6bcf5efbc7cb019"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op.html#a5b6e034719e0ac3cd6bcf5efbc7cb019">flags</a></td></tr>
 <tr class="memdesc:a5b6e034719e0ac3cd6bcf5efbc7cb019"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write flags bitset for grpc_begin_messages.  <a href="#a5b6e034719e0ac3cd6bcf5efbc7cb019">More...</a><br/></td></tr>
 <tr class="separator:a5b6e034719e0ac3cd6bcf5efbc7cb019"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7acd3f623bfe47799259036092b5d29c"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op.html#a7acd3f623bfe47799259036092b5d29c">reserved</a></td></tr>
-<tr class="memdesc:a7acd3f623bfe47799259036092b5d29c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reserved for future usage.  <a href="#a7acd3f623bfe47799259036092b5d29c">More...</a><br/></td></tr>
-<tr class="separator:a7acd3f623bfe47799259036092b5d29c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae6714d192571c7c0b61a0f951c282cdd"><td class="memItemLeft" >union {</td></tr>
-<tr class="memitem:a4cb6b0841f3d2716a568b445f2d8443f"><td class="memItemLeft" >&#160;&#160;&#160;struct {</td></tr>
-<tr class="memitem:ac2b4b2c38c4a6dc5305ac27430ea8d53"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;void *&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#a7acd3f623bfe47799259036092b5d29c">reserved</a> [8]</td></tr>
-<tr class="separator:ac2b4b2c38c4a6dc5305ac27430ea8d53"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4cb6b0841f3d2716a568b445f2d8443f"><td class="memItemLeft" valign="top">&#160;&#160;&#160;}&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#a61543eeae8fbb114dbb306dc0ea3db9d">reserved</a></td></tr>
-<tr class="memdesc:a4cb6b0841f3d2716a568b445f2d8443f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reserved for future usage.  <a href="#a4cb6b0841f3d2716a568b445f2d8443f">More...</a><br/></td></tr>
-<tr class="separator:a4cb6b0841f3d2716a568b445f2d8443f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeea49231e28d65dd6fecae88331e3905"><td class="memItemLeft" >&#160;&#160;&#160;struct {</td></tr>
-<tr class="memitem:af05914014351ece020beb4a61ffb1164"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;size_t&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#ac5983d0a5d60c26ca2d1b37d31ba2e2a">count</a></td></tr>
-<tr class="separator:af05914014351ece020beb4a61ffb1164"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7f31c7be2001689fab473b352899779c"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;<a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#a2e0f0c709658960593d5a36915c8d079">metadata</a></td></tr>
-<tr class="separator:a7f31c7be2001689fab473b352899779c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae981b49b51a60fe3243d6b68c56a8865"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;struct {</td></tr>
-<tr class="memitem:a282afa0beec666c78042b415e37b0fc3"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;uint8_t&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#aaf3faa71e11b8211bc6f1c25870fb80b">is_set</a></td></tr>
-<tr class="separator:a282afa0beec666c78042b415e37b0fc3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0984615d517fa1c1efef60405976294d"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;<a class="el" href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a>&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#a430343df21e9eabb3ea11faef798eb5a">level</a></td></tr>
-<tr class="separator:a0984615d517fa1c1efef60405976294d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae981b49b51a60fe3243d6b68c56a8865"><td class="memItemLeft" valign="top">&#160;&#160;&#160;&#160;&#160;&#160;}&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#a0cff15e5af3d9835f0be68887f2bc391">maybe_compression_level</a></td></tr>
-<tr class="memdesc:ae981b49b51a60fe3243d6b68c56a8865"><td class="mdescLeft">&#160;</td><td class="mdescRight">If <em>is_set</em>, <em>compression_level</em> will be used for the call.  <a href="#ae981b49b51a60fe3243d6b68c56a8865">More...</a><br/></td></tr>
-<tr class="separator:ae981b49b51a60fe3243d6b68c56a8865"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeea49231e28d65dd6fecae88331e3905"><td class="memItemLeft" valign="top">&#160;&#160;&#160;}&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#ac2e6c876e65f9adc5f18bc049224386d">send_initial_metadata</a></td></tr>
-<tr class="separator:aeea49231e28d65dd6fecae88331e3905"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa432470b71f15cd56381dd3c9a00305b"><td class="memItemLeft" >&#160;&#160;&#160;struct {</td></tr>
-<tr class="memitem:aad614c72afd3b1b593f34ed989983750"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;struct <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#ab61740bf5300c35c275e02d9d45a9c7b">send_message</a></td></tr>
-<tr class="separator:aad614c72afd3b1b593f34ed989983750"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa432470b71f15cd56381dd3c9a00305b"><td class="memItemLeft" valign="top">&#160;&#160;&#160;}&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#af955615a7586a7fb84717ff35ef820f7">send_message</a></td></tr>
-<tr class="separator:aa432470b71f15cd56381dd3c9a00305b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a38b7260385aa916a4ac4b4310856c306"><td class="memItemLeft" >&#160;&#160;&#160;struct {</td></tr>
-<tr class="memitem:a0e9a3947491fb5d6fad48cf7e1197eb7"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;size_t&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#a4b9454278c105e08d54142adff37b5ab">trailing_metadata_count</a></td></tr>
-<tr class="separator:a0e9a3947491fb5d6fad48cf7e1197eb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a69e37b69ddc033dafb8b02311e4f2cee"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;<a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#a521b48faec3b3f7646a877055f118d47">trailing_metadata</a></td></tr>
-<tr class="separator:a69e37b69ddc033dafb8b02311e4f2cee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6411837e0644a51c2fc9a04b11911e5a"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;<a class="el" href="impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a>&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#ae0d5a9db463391c0897914ef2d016b25">status</a></td></tr>
-<tr class="separator:a6411837e0644a51c2fc9a04b11911e5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5d1e0d4e5e0689f65899eec538101e0d"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;<a class="el" href="structgrpc__slice.html">grpc_slice</a> *&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#a8b2173ff9ae109e69441735772dcabfd">status_details</a></td></tr>
-<tr class="memdesc:a5d1e0d4e5e0689f65899eec538101e0d"><td class="mdescLeft">&#160;</td><td class="mdescRight">optional: set to NULL if no details need sending, non-NULL if they do pointer will not be retained past the start_batch call  <a href="#a5d1e0d4e5e0689f65899eec538101e0d">More...</a><br/></td></tr>
-<tr class="separator:a5d1e0d4e5e0689f65899eec538101e0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a38b7260385aa916a4ac4b4310856c306"><td class="memItemLeft" valign="top">&#160;&#160;&#160;}&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#a94ee6929a571f0d48daecf9972764104">send_status_from_server</a></td></tr>
-<tr class="separator:a38b7260385aa916a4ac4b4310856c306"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a39af2988304836a0c7360da5902c3e26"><td class="memItemLeft" >&#160;&#160;&#160;struct {</td></tr>
-<tr class="memitem:a414574ac0e0fb6f7a3dba9353c549cb3"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;<a class="el" href="structgrpc__metadata__array.html">grpc_metadata_array</a> *&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#a81ebfcab8db61dd485b88cafc51f2749">recv_initial_metadata</a></td></tr>
-<tr class="separator:a414574ac0e0fb6f7a3dba9353c549cb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a39af2988304836a0c7360da5902c3e26"><td class="memItemLeft" valign="top">&#160;&#160;&#160;}&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#a9ff2732c35e6a04ce433c4b1b96f76cb">recv_initial_metadata</a></td></tr>
-<tr class="memdesc:a39af2988304836a0c7360da5902c3e26"><td class="mdescLeft">&#160;</td><td class="mdescRight">ownership of the array is with the caller, but ownership of the elements stays with the call object (ie key, value members are owned by the call object, recv_initial_metadata-&gt;array is owned by the caller).  <a href="#a39af2988304836a0c7360da5902c3e26">More...</a><br/></td></tr>
-<tr class="separator:a39af2988304836a0c7360da5902c3e26"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aafc7716e1a73aa7d66aa3eedc32f9d93"><td class="memItemLeft" >&#160;&#160;&#160;struct {</td></tr>
-<tr class="memitem:af436b37473ee3480534eacda15b8155e"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;struct <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> **&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#a869c863c4d9fca1277fd9c809c0318b2">recv_message</a></td></tr>
-<tr class="separator:af436b37473ee3480534eacda15b8155e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aafc7716e1a73aa7d66aa3eedc32f9d93"><td class="memItemLeft" valign="top">&#160;&#160;&#160;}&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#a1478d6509da106f55e13d0ac29376679">recv_message</a></td></tr>
-<tr class="memdesc:aafc7716e1a73aa7d66aa3eedc32f9d93"><td class="mdescLeft">&#160;</td><td class="mdescRight">ownership of the byte buffer is moved to the caller; the caller must call grpc_byte_buffer_destroy on this value, or reuse it in a future op.  <a href="#aafc7716e1a73aa7d66aa3eedc32f9d93">More...</a><br/></td></tr>
-<tr class="separator:aafc7716e1a73aa7d66aa3eedc32f9d93"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa149851c33ee926d3f60646c81365005"><td class="memItemLeft" >&#160;&#160;&#160;struct {</td></tr>
-<tr class="memitem:a8600626a54f4c3232dafb662896aa913"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;<a class="el" href="structgrpc__metadata__array.html">grpc_metadata_array</a> *&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#abb4d84434a0b74283c8b5d8d6501baf1">trailing_metadata</a></td></tr>
-<tr class="memdesc:a8600626a54f4c3232dafb662896aa913"><td class="mdescLeft">&#160;</td><td class="mdescRight">ownership of the array is with the caller, but ownership of the elements stays with the call object (ie key, value members are owned by the call object, trailing_metadata-&gt;array is owned by the caller).  <a href="#a8600626a54f4c3232dafb662896aa913">More...</a><br/></td></tr>
-<tr class="separator:a8600626a54f4c3232dafb662896aa913"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0f897102b3573db9f497e44e1c62da63"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;<a class="el" href="impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> *&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#a70d62415f6768533c2190e53f1c5baf4">status</a></td></tr>
-<tr class="separator:a0f897102b3573db9f497e44e1c62da63"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adafab3b85b905f83e65c9d745cd2a167"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;<a class="el" href="structgrpc__slice.html">grpc_slice</a> *&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#a8b2173ff9ae109e69441735772dcabfd">status_details</a></td></tr>
-<tr class="separator:adafab3b85b905f83e65c9d745cd2a167"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa149851c33ee926d3f60646c81365005"><td class="memItemLeft" valign="top">&#160;&#160;&#160;}&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#a05341389759a9f6a3f24a9fca336a16d">recv_status_on_client</a></td></tr>
-<tr class="separator:aa149851c33ee926d3f60646c81365005"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6e1de0cc8d5d78172f9832f5cb029691"><td class="memItemLeft" >&#160;&#160;&#160;struct {</td></tr>
-<tr class="memitem:ad50acbb6360d1fb55eead2515ff208d7"><td class="memItemLeft" >&#160;&#160;&#160;&#160;&#160;&#160;int *&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#ae5a9717d4a69c46f343381596e223874">cancelled</a></td></tr>
-<tr class="memdesc:ad50acbb6360d1fb55eead2515ff208d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">out argument, set to 1 if the call failed in any way (seen as a cancellation on the server), or 0 if the call succeeded  <a href="#ad50acbb6360d1fb55eead2515ff208d7">More...</a><br/></td></tr>
-<tr class="separator:ad50acbb6360d1fb55eead2515ff208d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6e1de0cc8d5d78172f9832f5cb029691"><td class="memItemLeft" valign="top">&#160;&#160;&#160;}&#160;&#160;&#160;<a class="el" href="structgrpc__op.html#a94a99fe3a6c33447b417a5dc625d0457">recv_close_on_server</a></td></tr>
-<tr class="separator:a6e1de0cc8d5d78172f9832f5cb029691"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae6714d192571c7c0b61a0f951c282cdd"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op.html#ae6714d192571c7c0b61a0f951c282cdd">data</a></td></tr>
-<tr class="separator:ae6714d192571c7c0b61a0f951c282cdd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a58d279ba14f133153eb0ee801deb74f5"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op.html#a58d279ba14f133153eb0ee801deb74f5">reserved</a></td></tr>
+<tr class="memdesc:a58d279ba14f133153eb0ee801deb74f5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reserved for future usage.  <a href="#a58d279ba14f133153eb0ee801deb74f5">More...</a><br/></td></tr>
+<tr class="separator:a58d279ba14f133153eb0ee801deb74f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad00e45845155bb6317cec7ec6ad05bdf"><td class="memItemLeft" align="right" valign="top">union <a class="el" href="uniongrpc__op_1_1grpc__op__data.html">grpc_op::grpc_op_data</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op.html#ad00e45845155bb6317cec7ec6ad05bdf">data</a></td></tr>
+<tr class="separator:ad00e45845155bb6317cec7ec6ad05bdf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT which has no arguments) </p>
 </div><h2 class="groupheader">Field Documentation</h2>
-<a class="anchor" id="ae5a9717d4a69c46f343381596e223874"></a>
+<a class="anchor" id="ad00e45845155bb6317cec7ec6ad05bdf"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int* grpc_op::cancelled</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>out argument, set to 1 if the call failed in any way (seen as a cancellation on the server), or 0 if the call succeeded </p>
-
-</div>
-</div>
-<a class="anchor" id="ac5983d0a5d60c26ca2d1b37d31ba2e2a"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">size_t grpc_op::count</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="ae6714d192571c7c0b61a0f951c282cdd"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">union { ... }   grpc_op::data</td>
+          <td class="memname">union <a class="el" href="uniongrpc__op_1_1grpc__op__data.html">grpc_op::grpc_op_data</a>  grpc_op::data</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -231,57 +144,6 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="aaf3faa71e11b8211bc6f1c25870fb80b"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">uint8_t grpc_op::is_set</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a430343df21e9eabb3ea11faef798eb5a"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a> grpc_op::level</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a0cff15e5af3d9835f0be68887f2bc391"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">struct { ... }   grpc_op::maybe_compression_level</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>If <em>is_set</em>, <em>compression_level</em> will be used for the call. </p>
-<p>Otherwise, <em>compression_level</em> won't be considered </p>
-
-</div>
-</div>
-<a class="anchor" id="a2e0f0c709658960593d5a36915c8d079"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="structgrpc__metadata.html">grpc_metadata</a>* grpc_op::metadata</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a class="anchor" id="a702bcecc2462646b6740ed7c05f42115"></a>
 <div class="memitem">
 <div class="memproto">
@@ -296,233 +158,17 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a94a99fe3a6c33447b417a5dc625d0457"></a>
+<a class="anchor" id="a58d279ba14f133153eb0ee801deb74f5"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">struct { ... }   grpc_op::recv_close_on_server</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a81ebfcab8db61dd485b88cafc51f2749"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="structgrpc__metadata__array.html">grpc_metadata_array</a>* grpc_op::recv_initial_metadata</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a9ff2732c35e6a04ce433c4b1b96f76cb"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">struct { ... }   grpc_op::recv_initial_metadata</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>ownership of the array is with the caller, but ownership of the elements stays with the call object (ie key, value members are owned by the call object, recv_initial_metadata-&gt;array is owned by the caller). </p>
-<p>After the operation completes, call grpc_metadata_array_destroy on this value, or reuse it in a future op. </p>
-
-</div>
-</div>
-<a class="anchor" id="a869c863c4d9fca1277fd9c809c0318b2"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">struct <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a>** grpc_op::recv_message</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a1478d6509da106f55e13d0ac29376679"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">struct { ... }   grpc_op::recv_message</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>ownership of the byte buffer is moved to the caller; the caller must call grpc_byte_buffer_destroy on this value, or reuse it in a future op. </p>
-
-</div>
-</div>
-<a class="anchor" id="a05341389759a9f6a3f24a9fca336a16d"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">struct { ... }   grpc_op::recv_status_on_client</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a7acd3f623bfe47799259036092b5d29c"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void* grpc_op::reserved[8]</td>
+          <td class="memname">void* grpc_op::reserved</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p>Reserved for future usage. </p>
-
-</div>
-</div>
-<a class="anchor" id="a61543eeae8fbb114dbb306dc0ea3db9d"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">struct { ... }   grpc_op::reserved</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Reserved for future usage. </p>
-
-</div>
-</div>
-<a class="anchor" id="ac2e6c876e65f9adc5f18bc049224386d"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">struct { ... }   grpc_op::send_initial_metadata</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="ab61740bf5300c35c275e02d9d45a9c7b"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">struct <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a>* grpc_op::send_message</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="af955615a7586a7fb84717ff35ef820f7"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">struct { ... }   grpc_op::send_message</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a94ee6929a571f0d48daecf9972764104"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">struct { ... }   grpc_op::send_status_from_server</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="ae0d5a9db463391c0897914ef2d016b25"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> grpc_op::status</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a70d62415f6768533c2190e53f1c5baf4"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a>* grpc_op::status</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a8b2173ff9ae109e69441735772dcabfd"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="structgrpc__slice.html">grpc_slice</a>* grpc_op::status_details</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>optional: set to NULL if no details need sending, non-NULL if they do pointer will not be retained past the start_batch call </p>
-
-</div>
-</div>
-<a class="anchor" id="a521b48faec3b3f7646a877055f118d47"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="structgrpc__metadata.html">grpc_metadata</a>* grpc_op::trailing_metadata</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="abb4d84434a0b74283c8b5d8d6501baf1"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="structgrpc__metadata__array.html">grpc_metadata_array</a>* grpc_op::trailing_metadata</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>ownership of the array is with the caller, but ownership of the elements stays with the call object (ie key, value members are owned by the call object, trailing_metadata-&gt;array is owned by the caller). </p>
-<p>After the operation completes, call grpc_metadata_array_destroy on this value, or reuse it in a future op. </p>
-
-</div>
-</div>
-<a class="anchor" id="a4b9454278c105e08d54142adff37b5ab"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">size_t grpc_op::trailing_metadata_count</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
 
 </div>
 </div>
@@ -532,7 +178,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

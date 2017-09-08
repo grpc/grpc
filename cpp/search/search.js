@@ -12,7 +12,7 @@ var indexSectionsWithContent =
   2: "gs",
   3: "abcefghilmnprstuw",
   4: "abcdefghilmnoprstuvw~",
-  5: "abcdefghiklmnoprstuv",
+  5: "abcdefghiklmnoprstuvz",
   6: "acdfgimosz",
   7: "agnrs",
   8: "abcdfgimnoprstu",

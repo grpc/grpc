@@ -20,6 +20,8 @@ var searchData=
   ['_7eclientstreaminginterface',['~ClientStreamingInterface',['../classgrpc_1_1_client_streaming_interface.html#a312c9454c0f950e1c75b5c802bcbb00e',1,'grpc::ClientStreamingInterface']]],
   ['_7ecompletionqueue',['~CompletionQueue',['../classgrpc_1_1_completion_queue.html#aac07e9da5148c779cac51e1bf948c282',1,'grpc::CompletionQueue']]],
   ['_7ecompletionqueuetag',['~CompletionQueueTag',['../classgrpc_1_1_completion_queue_tag.html#a2cbf0212ed795c79f98c3421ed0cb4ab',1,'grpc::CompletionQueueTag']]],
+  ['_7edeserializefunc',['~DeserializeFunc',['../classgrpc_1_1_call_op_generic_recv_message_helper_1_1_deserialize_func.html#a5b08b2077f343e67aeb1ba2359ca50cd',1,'grpc::CallOpGenericRecvMessageHelper::DeserializeFunc']]],
+  ['_7edeserializefunctype',['~DeserializeFuncType',['../classgrpc_1_1_call_op_generic_recv_message_helper_1_1_deserialize_func_type.html#a33466d6288023295861a887d7d8320d8',1,'grpc::CallOpGenericRecvMessageHelper::DeserializeFuncType']]],
   ['_7eglobalcallbacks',['~GlobalCallbacks',['../classgrpc_1_1_client_context_1_1_global_callbacks.html#a875e2eb0b068575011ff5730f6242cd5',1,'grpc::ClientContext::GlobalCallbacks::~GlobalCallbacks()'],['../classgrpc_1_1_server_1_1_global_callbacks.html#a973f3f4d86d6bd0589419d0b798ed12d',1,'grpc::Server::GlobalCallbacks::~GlobalCallbacks()']]],
   ['_7egrpcbufferreader',['~GrpcBufferReader',['../classgrpc_1_1internal_1_1_grpc_buffer_reader.html#a5b8f11869c456df354a87dabfaec97f1',1,'grpc::internal::GrpcBufferReader']]],
   ['_7egrpcbufferwriter',['~GrpcBufferWriter',['../classgrpc_1_1internal_1_1_grpc_buffer_writer.html#a8a3b11e59164a65779749ab920c7ec30',1,'grpc::internal::GrpcBufferWriter']]],

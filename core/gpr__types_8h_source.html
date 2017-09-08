@@ -82,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_bda73758a0a4d8c0ff603a7983866e1c.html">include</a></li><li class="navelem"><a class="el" href="dir_8ae8e534eeef321a81935092729b7078.html">grpc</a></li><li class="navelem"><a class="el" href="dir_27c65f9b8b3387c47015966ca861342b.html">impl</a></li><li class="navelem"><a class="el" href="dir_2d2a7752fa77ea824010e525334e7867.html">codegen</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_a8e30387f66bf56f1146fa5d3496d838.html">include</a></li><li class="navelem"><a class="el" href="dir_f93e102bce67c94e5a77dcd42507568e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_659ae97ef5bbf397d65f88fc549b7461.html">impl</a></li><li class="navelem"><a class="el" href="dir_4c11e77fd81979dbb81b685ce26f5187.html">codegen</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -92,81 +92,66 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <a href="gpr__types_8h.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/*</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright 2016, Google Inc.</span></div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * All rights reserved.</span></div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * Redistribution and use in source and binary forms, with or without</span></div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"> * modification, are permitted provided that the following conditions are</span></div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment"> * met:</span></div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment"> *     * Redistributions of source code must retain the above copyright</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment"> * notice, this list of conditions and the following disclaimer.</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment"> *     * Redistributions in binary form must reproduce the above</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment"> * copyright notice, this list of conditions and the following disclaimer</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment"> * in the documentation and/or other materials provided with the</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment"> * distribution.</span></div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment"> *     * Neither the name of Google Inc. nor the names of its</span></div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment"> * contributors may be used to endorse or promote products derived from</span></div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment"> * this software without specific prior written permission.</span></div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment"> * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment"> * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span></div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment"> * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment"> * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment"> * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment"> * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment"> * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="comment"> * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="comment"> * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="comment"> * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="comment"> * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span></div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="comment"> */</span></div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#ifndef GRPC_IMPL_CODEGEN_GPR_TYPES_H</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_IMPL_CODEGEN_GPR_TYPES_H</span></div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="impl_2codegen_2port__platform_8h.html">grpc/impl/codegen/port_platform.h</a>&gt;</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#include &lt;stddef.h&gt;</span></div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281">   46</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">enum</span> {</div>
-<div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c">   48</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c">GPR_CLOCK_MONOTONIC</a> = 0,</div>
-<div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746">   51</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746">GPR_CLOCK_REALTIME</a>,</div>
-<div class="line"><a name="l00054"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6">   54</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6">GPR_CLOCK_PRECISE</a>,</div>
-<div class="line"><a name="l00057"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741">   57</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741">GPR_TIMESPAN</a></div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;} <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281">gpr_clock_type</a>;</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;</div>
-<div class="line"><a name="l00062"></a><span class="lineno"><a class="line" href="structgpr__timespec.html">   62</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span><a class="code" href="structgpr__timespec.html">gpr_timespec</a> {</div>
-<div class="line"><a name="l00063"></a><span class="lineno"><a class="line" href="structgpr__timespec.html#a6c4506fc66a7ee0a6bc87a9ae73a70cb">   63</a></span>&#160;  int64_t <a class="code" href="structgpr__timespec.html#a6c4506fc66a7ee0a6bc87a9ae73a70cb">tv_sec</a>;</div>
-<div class="line"><a name="l00064"></a><span class="lineno"><a class="line" href="structgpr__timespec.html#afff378cc8cba33300d81f4a406240ff0">   64</a></span>&#160;  int32_t <a class="code" href="structgpr__timespec.html#afff378cc8cba33300d81f4a406240ff0">tv_nsec</a>;</div>
-<div class="line"><a name="l00067"></a><span class="lineno"><a class="line" href="structgpr__timespec.html#a6dd26976820fa71a7c5a710d4c1845ff">   67</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281">gpr_clock_type</a> <a class="code" href="structgpr__timespec.html#a6dd26976820fa71a7c5a710d4c1845ff">clock_type</a>;</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;} <a class="code" href="gpr__types_8h.html#a7dd12c72fcf53ebecfdfc13632914c45">gpr_timespec</a>;</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="preprocessor"></span>}</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_GPR_TYPES_H */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="structgpr__timespec_html_afff378cc8cba33300d81f4a406240ff0"><div class="ttname"><a href="structgpr__timespec.html#afff378cc8cba33300d81f4a406240ff0">gpr_timespec::tv_nsec</a></div><div class="ttdeci">int32_t tv_nsec</div><div class="ttdef"><b>Definition:</b> gpr_types.h:64</div></div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright 2016 gRPC authors.</span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span></div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * you may not use this file except in compliance with the License.</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"> * You may obtain a copy of the License at</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment"> *     http://www.apache.org/licenses/LICENSE-2.0</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment"> * Unless required by applicable law or agreed to in writing, software</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment"> * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment"> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment"> * See the License for the specific language governing permissions and</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment"> * limitations under the License.</span></div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment"> */</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#ifndef GRPC_IMPL_CODEGEN_GPR_TYPES_H</span></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_IMPL_CODEGEN_GPR_TYPES_H</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="impl_2codegen_2port__platform_8h.html">grpc/impl/codegen/port_platform.h</a>&gt;</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;stddef.h&gt;</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281">   31</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">enum</span> {</div>
+<div class="line"><a name="l00033"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c">   33</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c">GPR_CLOCK_MONOTONIC</a> = 0,</div>
+<div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746">   36</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746">GPR_CLOCK_REALTIME</a>,</div>
+<div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6">   39</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6">GPR_CLOCK_PRECISE</a>,</div>
+<div class="line"><a name="l00042"></a><span class="lineno"><a class="line" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741">   42</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741">GPR_TIMESPAN</a></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;} <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281">gpr_clock_type</a>;</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;</div>
+<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="structgpr__timespec.html">   47</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span><a class="code" href="structgpr__timespec.html">gpr_timespec</a> {</div>
+<div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="structgpr__timespec.html#a6c4506fc66a7ee0a6bc87a9ae73a70cb">   48</a></span>&#160;  int64_t <a class="code" href="structgpr__timespec.html#a6c4506fc66a7ee0a6bc87a9ae73a70cb">tv_sec</a>;</div>
+<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="structgpr__timespec.html#afff378cc8cba33300d81f4a406240ff0">   49</a></span>&#160;  int32_t <a class="code" href="structgpr__timespec.html#afff378cc8cba33300d81f4a406240ff0">tv_nsec</a>;</div>
+<div class="line"><a name="l00052"></a><span class="lineno"><a class="line" href="structgpr__timespec.html#a6dd26976820fa71a7c5a710d4c1845ff">   52</a></span>&#160;  <a class="code" href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281">gpr_clock_type</a> <a class="code" href="structgpr__timespec.html#a6dd26976820fa71a7c5a710d4c1845ff">clock_type</a>;</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;} <a class="code" href="gpr__types_8h.html#a7dd12c72fcf53ebecfdfc13632914c45">gpr_timespec</a>;</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="preprocessor"></span>}</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_GPR_TYPES_H */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="structgpr__timespec_html_afff378cc8cba33300d81f4a406240ff0"><div class="ttname"><a href="structgpr__timespec.html#afff378cc8cba33300d81f4a406240ff0">gpr_timespec::tv_nsec</a></div><div class="ttdeci">int32_t tv_nsec</div><div class="ttdef"><b>Definition:</b> gpr_types.h:49</div></div>
 <div class="ttc" id="gpr__types_8h_html_a7dd12c72fcf53ebecfdfc13632914c45"><div class="ttname"><a href="gpr__types_8h.html#a7dd12c72fcf53ebecfdfc13632914c45">gpr_timespec</a></div><div class="ttdeci">struct gpr_timespec gpr_timespec</div><div class="ttdoc">Analogous to struct timespec. </div></div>
-<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741">GPR_TIMESPAN</a></div><div class="ttdoc">Unmeasurable clock type: no base, created by taking the difference between two times. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:57</div></div>
-<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c">GPR_CLOCK_MONOTONIC</a></div><div class="ttdoc">Monotonic clock. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:48</div></div>
-<div class="ttc" id="structgpr__timespec_html_a6dd26976820fa71a7c5a710d4c1845ff"><div class="ttname"><a href="structgpr__timespec.html#a6dd26976820fa71a7c5a710d4c1845ff">gpr_timespec::clock_type</a></div><div class="ttdeci">gpr_clock_type clock_type</div><div class="ttdoc">Against which clock was this time measured? (or GPR_TIMESPAN if this is a relative time meaure) ...</div><div class="ttdef"><b>Definition:</b> gpr_types.h:67</div></div>
-<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746">GPR_CLOCK_REALTIME</a></div><div class="ttdoc">Realtime clock. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:51</div></div>
-<div class="ttc" id="structgpr__timespec_html_a6c4506fc66a7ee0a6bc87a9ae73a70cb"><div class="ttname"><a href="structgpr__timespec.html#a6c4506fc66a7ee0a6bc87a9ae73a70cb">gpr_timespec::tv_sec</a></div><div class="ttdeci">int64_t tv_sec</div><div class="ttdef"><b>Definition:</b> gpr_types.h:63</div></div>
-<div class="ttc" id="structgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdoc">Analogous to struct timespec. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:62</div></div>
-<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281">gpr_clock_type</a></div><div class="ttdeci">gpr_clock_type</div><div class="ttdoc">The clocks we support. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:46</div></div>
+<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741">GPR_TIMESPAN</a></div><div class="ttdoc">Unmeasurable clock type: no base, created by taking the difference between two times. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:42</div></div>
+<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c">GPR_CLOCK_MONOTONIC</a></div><div class="ttdoc">Monotonic clock. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:33</div></div>
+<div class="ttc" id="structgpr__timespec_html_a6dd26976820fa71a7c5a710d4c1845ff"><div class="ttname"><a href="structgpr__timespec.html#a6dd26976820fa71a7c5a710d4c1845ff">gpr_timespec::clock_type</a></div><div class="ttdeci">gpr_clock_type clock_type</div><div class="ttdoc">Against which clock was this time measured? (or GPR_TIMESPAN if this is a relative time meaure) ...</div><div class="ttdef"><b>Definition:</b> gpr_types.h:52</div></div>
+<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746">GPR_CLOCK_REALTIME</a></div><div class="ttdoc">Realtime clock. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:36</div></div>
+<div class="ttc" id="structgpr__timespec_html_a6c4506fc66a7ee0a6bc87a9ae73a70cb"><div class="ttname"><a href="structgpr__timespec.html#a6c4506fc66a7ee0a6bc87a9ae73a70cb">gpr_timespec::tv_sec</a></div><div class="ttdeci">int64_t tv_sec</div><div class="ttdef"><b>Definition:</b> gpr_types.h:48</div></div>
+<div class="ttc" id="structgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdoc">Analogous to struct timespec. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:47</div></div>
+<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281">gpr_clock_type</a></div><div class="ttdeci">gpr_clock_type</div><div class="ttdoc">The clocks we support. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:31</div></div>
 <div class="ttc" id="impl_2codegen_2port__platform_8h_html"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html">port_platform.h</a></div></div>
-<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6">GPR_CLOCK_PRECISE</a></div><div class="ttdoc">CPU cycle time obtained by rdtsc instruction on x86 platforms. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:54</div></div>
+<div class="ttc" id="gpr__types_8h_html_a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6"><div class="ttname"><a href="gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6">GPR_CLOCK_PRECISE</a></div><div class="ttdoc">CPU cycle time obtained by rdtsc instruction on x86 platforms. </div><div class="ttdef"><b>Definition:</b> gpr_types.h:39</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -204,7 +204,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ol>
 <h3>server_compressed_unary</h3>
 <p>This test verifies the server can compress unary messages. It sends two unary requests, expecting the server's response to be compressed or not according to the <code>response_compressed</code> boolean.</p>
-<p>Whether compression was actually performed is determined by the compression bit in the response's message flags. <em>Note that some languages may not have access to the message flags</em>.</p>
+<p>Whether compression was actually performed is determined by the compression bit in the response's message flags. <em>Note that some languages may not have access to the message flags, in which case the client will be unable to verify that the <code>response_compressed</code> boolean is obeyed by the server</em>.</p>
 <p>Server features:</p>
 <ul>
 <li><a href="#unarycall">UnaryCall</a></li>
@@ -217,8 +217,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p class="startli">``` { response_compressed:{ value: false } response_size: 314159 payload:{ body: 271828 bytes of zeros } } ``` Client asserts:</p>
 <ul>
 <li>call was successful</li>
-<li>when <code>response_compressed</code> is true, the response MUST have the compressed message flag set.</li>
-<li>when <code>response_compressed</code> is false, the response MUST NOT have the compressed message flag set.</li>
+<li>if supported by the implementation, when <code>response_compressed</code> is true, the response MUST have the compressed message flag set.</li>
+<li>if supported by the implementation, when <code>response_compressed</code> is false, the response MUST NOT have the compressed message flag set.</li>
 <li>response payload body is 314159 bytes in size in both cases.</li>
 <li>clients are free to assert that the response payload body contents are zero and comparing the entire response message against a golden response</li>
 </ul>
@@ -257,7 +257,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p>Procedure:</p>
 <ol type="1">
 <li><p class="startli">Client calls <code>StreamingInputCall</code> and sends the following feature-probing <em>uncompressed</em> <code>StreamingInputCallRequest</code> message</p>
-<p class="startli">``` { expect_compressed:{ value: true } payload:{ body: 27182 bytes of zeros } } ``<code> If the call fails with</code>INVALID_ARGUMENT`, the test fails. Otherwise, we continue.</p>
+<p class="startli">``` { expect_compressed:{ value: true } payload:{ body: 27182 bytes of zeros } } ``<code> If the call does not fail with</code>INVALID_ARGUMENT`, the test fails. Otherwise, we continue.</p>
 </li>
 </ol>
 <ol type="1">
@@ -297,7 +297,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>clients are free to assert that the response payload body contents are zero and comparing the entire response messages against golden responses</li>
 </ul>
 <h3>server_compressed_streaming</h3>
-<p>This test verifies that the server can compress streaming messages and disable compression on individual messages.</p>
+<p>This test verifies that the server can compress streaming messages and disable compression on individual messages, expecting the server's response to be compressed or not according to the <code>response_compressed</code> boolean.</p>
+<p>Whether compression was actually performed is determined by the compression bit in the response's message flags. <em>Note that some languages may not have access to the message flags, in which case the client will be unable to verify that the <code>response_compressed</code> boolean is obeyed by the server</em>.</p>
 <p>Server features:</p>
 <ul>
 <li><a href="#streamingoutputcall">StreamingOutputCall</a></li>
@@ -311,8 +312,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <ul>
 <li>call was successful</li>
 <li>exactly two responses</li>
-<li>when <code>response_compressed</code> is false, the response's messages MUST NOT have the compressed message flag set.</li>
-<li>when <code>response_compressed</code> is true, the response's messages MUST have the compressed message flag set.</li>
+<li>if supported by the implementation, when <code>response_compressed</code> is false, the response's messages MUST NOT have the compressed message flag set.</li>
+<li>if supported by the implementation, when <code>response_compressed</code> is true, the response's messages MUST have the compressed message flag set.</li>
 <li>response payload bodies are sized (in order): 31415, 92653</li>
 <li>clients are free to assert that the response payload body contents are zero and comparing the entire response messages against golden responses</li>
 </ul>
@@ -674,7 +675,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

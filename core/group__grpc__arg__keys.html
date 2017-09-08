@@ -216,6 +216,9 @@ Macros</h2></td></tr>
 <tr class="memitem:gad60df744eb84ef55a371de9b8bd2373d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gad60df744eb84ef55a371de9b8bd2373d">GRPC_ARG_SERVICE_CONFIG</a>&#160;&#160;&#160;&quot;grpc.service_config&quot;</td></tr>
 <tr class="memdesc:gad60df744eb84ef55a371de9b8bd2373d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Service config data in JSON form.  <a href="#gad60df744eb84ef55a371de9b8bd2373d">More...</a><br/></td></tr>
 <tr class="separator:gad60df744eb84ef55a371de9b8bd2373d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaf3c9aad876ebaa5484a0cffd8d295244"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaf3c9aad876ebaa5484a0cffd8d295244">GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION</a>&#160;&#160;&#160;&quot;grpc.service_config_disable_resolution&quot;</td></tr>
+<tr class="memdesc:gaf3c9aad876ebaa5484a0cffd8d295244"><td class="mdescLeft">&#160;</td><td class="mdescRight">Disable looking up the service config via the name resolver.  <a href="#gaf3c9aad876ebaa5484a0cffd8d295244">More...</a><br/></td></tr>
+<tr class="separator:gaf3c9aad876ebaa5484a0cffd8d295244"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga72c2b475e218ecfd36bb7d3551d0295b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga72c2b475e218ecfd36bb7d3551d0295b">GRPC_ARG_LB_POLICY_NAME</a>&#160;&#160;&#160;&quot;grpc.lb_policy_name&quot;</td></tr>
 <tr class="memdesc:ga72c2b475e218ecfd36bb7d3551d0295b"><td class="mdescLeft">&#160;</td><td class="mdescRight">LB policy name.  <a href="#ga72c2b475e218ecfd36bb7d3551d0295b">More...</a><br/></td></tr>
 <tr class="separator:ga72c2b475e218ecfd36bb7d3551d0295b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -243,6 +246,9 @@ Macros</h2></td></tr>
 <tr class="memitem:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga618ddbf19fdd38d8f90b8f3d7cb5d481">GRPC_ARG_WORKAROUND_CRONET_COMPRESSION</a>&#160;&#160;&#160;&quot;grpc.workaround.cronet_compression&quot;</td></tr>
 <tr class="memdesc:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, grpc server's cronet compression workaround will be enabled.  <a href="#ga618ddbf19fdd38d8f90b8f3d7cb5d481">More...</a><br/></td></tr>
 <tr class="separator:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga5bbdfddb3afba6b330221d9adbecc778"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga5bbdfddb3afba6b330221d9adbecc778">GRPC_ARG_OPTIMIZATION_TARGET</a>&#160;&#160;&#160;&quot;grpc.optimization_target&quot;</td></tr>
+<tr class="memdesc:ga5bbdfddb3afba6b330221d9adbecc778"><td class="mdescLeft">&#160;</td><td class="mdescRight">String defining the optimization target for a channel.  <a href="#ga5bbdfddb3afba6b330221d9adbecc778">More...</a><br/></td></tr>
+<tr class="separator:ga5bbdfddb3afba6b330221d9adbecc778"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <p>Channel argument keys. </p>
@@ -783,6 +789,21 @@ Macros</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="ga5bbdfddb3afba6b330221d9adbecc778"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_OPTIMIZATION_TARGET&#160;&#160;&#160;&quot;grpc.optimization_target&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>String defining the optimization target for a channel. </p>
+<p>Can be: "latency" - attempt to minimize latency at the cost of throughput "blend" - try to balance latency and throughput "throughput" - attempt to maximize throughput at the expense of latency Defaults to "blend". In the current implementation "blend" is equivalent to "latency". </p>
+
+</div>
+</div>
 <a class="anchor" id="ga0732df2d9003e9ee1c01e50e41b5a8e2"></a>
 <div class="memitem">
 <div class="memproto">
@@ -839,7 +860,21 @@ Macros</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Service config data in JSON form. </p>
-<p>Not intended for use outside of tests. </p>
+<p>This value will be ignored if the name resolver returns a service config. </p>
+
+</div>
+</div>
+<a class="anchor" id="gaf3c9aad876ebaa5484a0cffd8d295244"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION&#160;&#160;&#160;&quot;grpc.service_config_disable_resolution&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Disable looking up the service config via the name resolver. </p>
 
 </div>
 </div>
@@ -1017,7 +1052,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

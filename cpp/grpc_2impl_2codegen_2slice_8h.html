@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -95,7 +95,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">slice.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;<a class="el" href="port__platform_8h_source.html">grpc/impl/codegen/port_platform.h</a>&gt;</code><br/>
+<div class="textblock"><code>#include &lt;<a class="el" href="impl_2codegen_2port__platform_8h_source.html">grpc/impl/codegen/port_platform.h</a>&gt;</code><br/>
 <code>#include &lt;stddef.h&gt;</code><br/>
 <code>#include &lt;<a class="el" href="exec__ctx__fwd_8h_source.html">grpc/impl/codegen/exec_ctx_fwd.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="gpr__slice_8h_source.html">grpc/impl/codegen/gpr_slice.h</a>&gt;</code><br/>
@@ -112,6 +112,12 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice.html">grpc_slice</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a> s, if initialized, represents the byte range s.bytes[0..s.length-1].  <a href="structgrpc__slice.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">union &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="uniongrpc__slice_1_1grpc__slice__data.html">grpc_slice::grpc_slice_data</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice_1_1grpc__slice__data_1_1grpc__slice__refcounted.html">grpc_slice::grpc_slice_data::grpc_slice_refcounted</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice_1_1grpc__slice__data_1_1grpc__slice__inlined.html">grpc_slice::grpc_slice_data::grpc_slice_inlined</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents an expandable array of slices, to be interpreted as a single item.  <a href="structgrpc__slice__buffer.html#details">More...</a><br/></td></tr>
@@ -315,7 +321,7 @@ Typedefs</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

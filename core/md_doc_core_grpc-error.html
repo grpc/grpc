@@ -119,10 +119,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p>This means that the error ownership is NOT transferred when a functions calls:</p>
 <p>```C c-&gt;cb(exec_ctx, c-&gt;cb_arg, err); ```</p>
 <p>The caller is still responsible for unref-ing the error.</p>
-<p>However, the above line is currently being phased out! It is safer to invoke callbacks with <code>grpc_closure_run</code> and <code>grpc_closure_sched</code>. These functions are not callbacks, so they will take ownership of the error passed to them.</p>
-<p>```C grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Some error occured"); grpc_closure_run(exec_ctx, cb, error); // current function no longer has ownership of the error ```</p>
+<p>However, the above line is currently being phased out! It is safer to invoke callbacks with <code>GRPC_CLOSURE_RUN</code> and <code>GRPC_CLOSURE_SCHED</code>. These functions are not callbacks, so they will take ownership of the error passed to them.</p>
+<p>```C grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Some error occured"); GRPC_CLOSURE_RUN(exec_ctx, cb, error); // current function no longer has ownership of the error ```</p>
 <p>If you schedule or run a closure, but still need ownership of the error, then you must explicitly take a reference.</p>
-<p>```C grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Some error occured"); grpc_closure_run(exec_ctx, cb, GRPC_ERROR_REF(error)); // do some other things with the error GRPC_ERROR_UNREF(error); ```</p>
+<p>```C grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Some error occured"); GRPC_CLOSURE_RUN(exec_ctx, cb, GRPC_ERROR_REF(error)); // do some other things with the error GRPC_ERROR_UNREF(error); ```</p>
 <p>Rule 2 is more important to keep in mind when <b>implementing</b> <code>grpc_closure</code> callback functions. You must keep in mind that you do not own the error, and must not unref it. More importantly, you cannot pass it to any function that would take ownership of the error, without explicitly taking ownership yourself. For example:</p>
 <p>```C void on_some_action(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) { // this would cause a crash, because some_function will unref the error, // and the caller of this callback will also unref it. some_function(error);</p>
 <p>// this callback function must take ownership, so it can give that // ownership to the function it is calling. some_function(GRPC_ERROR_REF(error)); } ```</p>
@@ -141,7 +141,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

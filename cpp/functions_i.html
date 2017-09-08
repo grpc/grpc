@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -104,6 +104,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="functions_u.html#index_u"><span>u</span></a></li>
       <li><a href="functions_v.html#index_v"><span>v</span></a></li>
       <li><a href="functions_w.html#index_w"><span>w</span></a></li>
+      <li><a href="functions_z.html#index_z"><span>z</span></a></li>
       <li><a href="functions_~.html#index_~"><span>~</span></a></li>
     </ul>
   </div>
@@ -126,12 +127,18 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="textblock">Here is a list of all struct and union fields with links to the structures/unions they belong to:</div>
 
 <h3><a class="anchor" id="index_i"></a>- i -</h3><ul>
+<li>IgnoreError()
+: <a class="el" href="classgrpc_1_1_status.html#a570f2a3a712ce6f60c730536101eaec0">grpc::Status</a>
+</li>
 <li>index
-: <a class="el" href="structgrpc__byte__buffer__reader.html#a948b75a404899c348fc6a52e1a6e63cb">grpc_byte_buffer_reader</a>
+: <a class="el" href="uniongrpc__byte__buffer__reader_1_1grpc__byte__buffer__reader__current.html#a75e9e86942ca6b95cba101775f7c15ea">grpc_byte_buffer_reader::grpc_byte_buffer_reader_current</a>
 </li>
 <li>init()
 : <a class="el" href="classgrpc_1_1_grpc_library_interface.html#a5ddb5274e494472bfbb9133b82be6575">grpc::GrpcLibraryInterface</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_grpc_library.html#a48c327d8dd2c004da8c7aa17174303b1">grpc::internal::GrpcLibrary</a>
+</li>
+<li>inited
+: <a class="el" href="structgpr__gcc__thread__local.html#ad549a50f4ba75b666e9e1d8b58fb693a">gpr_gcc_thread_local</a>
 </li>
 <li>initial_metadata_
 : <a class="el" href="classgrpc_1_1_call_op_send_initial_metadata.html#a032d474971352a0f3ca5b1a468fa5fd4">grpc::CallOpSendInitialMetadata</a>
@@ -146,17 +153,20 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classgrpc_1_1_server_builder_plugin.html#aae901e058799d699f029fd80f05b46d1">grpc::ServerBuilderPlugin</a>
 </li>
 <li>inlined
-: <a class="el" href="structgrpc__slice.html#acacecc8ac0431fd02eb9e1b6c667250a">grpc_slice</a>
+: <a class="el" href="uniongrpc__slice_1_1grpc__slice__data.html#add6546143f511291a173ed5bb85e66f5">grpc_slice::grpc_slice_data</a>
 , <a class="el" href="structgrpc__slice__buffer.html#a27c76a4e972a41ab5ac6504c4426fab9">grpc_slice_buffer</a>
+</li>
+<li>InProcessChannel()
+: <a class="el" href="classgrpc_1_1_server.html#ad48818dac08e28a2ea3694d1f5462c6b">grpc::Server</a>
 </li>
 <li>InputMetadata
 : <a class="el" href="classgrpc_1_1_auth_metadata_processor.html#a0c5846f57c862880f0f6db29577bb9e5">grpc::AuthMetadataProcessor</a>
 </li>
 <li>integer
-: <a class="el" href="structgrpc__arg.html#a6871bfca9c52e7f56abbd71c81d97554">grpc_arg</a>
+: <a class="el" href="uniongrpc__arg_1_1grpc__arg__value.html#aada65cd74c1358967cc52bb42bae99e8">grpc_arg::grpc_arg_value</a>
 </li>
 <li>internal_data
-: <a class="el" href="structgrpc__metadata.html#a77f070b472f188dc2627b6241af01c24">grpc_metadata</a>
+: <a class="el" href="structgrpc__metadata.html#a352863c8eb717bac574e42f62eaeb8c9">grpc_metadata</a>
 </li>
 <li>InternalAddPluginFactory()
 : <a class="el" href="classgrpc_1_1_server_builder.html#ae37fe433154b148b9ea9ccb17ac1488a">grpc::ServerBuilder</a>
@@ -170,8 +180,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>is_set
 : <a class="el" href="classgrpc_1_1_call_op_send_initial_metadata.html#a7fb9bccd2fa23e882728d0b7fde196b3">grpc::CallOpSendInitialMetadata</a>
 , <a class="el" href="classgrpc_1_1_server_builder.html#ab2b0b337e27ae80796675a3dd224ec3a">grpc::ServerBuilder</a>
-, <a class="el" href="structgrpc__compression__options.html#ab7db56f98efd9efecc135ca8a6c99765">grpc_compression_options</a>
-, <a class="el" href="structgrpc__op.html#aaf3faa71e11b8211bc6f1c25870fb80b">grpc_op</a>
+, <a class="el" href="structgrpc__compression__options_1_1grpc__compression__options__default__algorithm.html#a2cb65e409b0c08519a43812baf000888">grpc_compression_options::grpc_compression_options_default_algorithm</a>
+, <a class="el" href="structgrpc__compression__options_1_1grpc__compression__options__default__level.html#ac870ba7683a8da44a3bfb3086553fc60">grpc_compression_options::grpc_compression_options_default_level</a>
+, <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__initial__metadata_1_1grpc__op__send__initialaea3b3a42c7d59f33d8b29d9f8d06219.html#ae7b5c487af58eeee763326b2374aa3fe">grpc_op::grpc_op_data::grpc_op_send_initial_metadata::grpc_op_send_initial_metadata_maybe_compression_level</a>
 </li>
 <li>IsBlocking()
 : <a class="el" href="classgrpc_1_1_auth_metadata_processor.html#a6cfe6ac34d5a25f14a5528462077243c">grpc::AuthMetadataProcessor</a>
@@ -193,7 +204,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

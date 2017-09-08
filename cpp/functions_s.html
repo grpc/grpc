@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -104,6 +104,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="functions_u.html#index_u"><span>u</span></a></li>
       <li><a href="functions_v.html#index_v"><span>v</span></a></li>
       <li><a href="functions_w.html#index_w"><span>w</span></a></li>
+      <li><a href="functions_z.html#index_z"><span>z</span></a></li>
       <li><a href="functions_~.html#index_~"><span>~</span></a></li>
     </ul>
   </div>
@@ -136,13 +137,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classgrpc_1_1_call_op_send_initial_metadata.html#a2e867bf1e2a14f51fbda7ffe4a9d0e30">grpc::CallOpSendInitialMetadata</a>
 </li>
 <li>send_initial_metadata
-: <a class="el" href="structgrpc__op.html#a54c0ab92a5903acaf83be6b071bef6c4">grpc_op</a>
+: <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#ae6ef97451e551478d4e4e5c74f0ece2f">grpc_op::grpc_op_data</a>
 </li>
 <li>send_message
-: <a class="el" href="structgrpc__op.html#ab61740bf5300c35c275e02d9d45a9c7b">grpc_op</a>
+: <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__message.html#ac5710965e63672497b156855e096a759">grpc_op::grpc_op_data::grpc_op_send_message</a>
+, <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#a475ece8579e74caec4338c3e9221702c">grpc_op::grpc_op_data</a>
 </li>
 <li>send_status_from_server
-: <a class="el" href="structgrpc__op.html#ae152fff532e663348b2b499ed440cdd6">grpc_op</a>
+: <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#adc789e7a8a91b5f20a16a989e9150a0d">grpc_op::grpc_op_data</a>
 </li>
 <li>SendInitialMetadata()
 : <a class="el" href="classgrpc_1_1_call_op_send_initial_metadata.html#aacc9088991d2bea9bf0526cbd8237955">grpc::CallOpSendInitialMetadata</a>
@@ -167,6 +169,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </li>
 <li>Serialize()
 : <a class="el" href="classgrpc_1_1_serialization_traits_3_01_byte_buffer_00_01void_01_4.html#a142e6455c0e040332f57bd3a35eebd33">grpc::SerializationTraits&lt; ByteBuffer, void &gt;</a>
+, <a class="el" href="classgrpc_1_1_serialization_traits_3_01_t_00_01typename_01std_1_1enable__if_3_01std_1_1is__base_42903f95c85f031c7724191271564901.html#a9edbdbeb88f575f9e259fdb58c6c84d6">grpc::SerializationTraits&lt; T, typename std::enable_if&lt; std::is_base_of&lt; grpc::protobuf::Message, T &gt;::value &gt;::type &gt;</a>
 </li>
 <li>Server
 : <a class="el" href="classgrpc_1_1_async_generic_service.html#ac2055578ac48afabe5af487878450f68">grpc::AsyncGenericService</a>
@@ -373,7 +376,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#a1537a3ed35f0f19d7aa8193fd1a1a513">grpc::ChannelArguments</a>
 </li>
 <li>SetServingStatus()
-: <a class="el" href="classgrpc_1_1_health_check_service_interface.html#a2db64a471c343d96f4e8e191efce8c08">grpc::HealthCheckServiceInterface</a>
+: <a class="el" href="classgrpc_1_1_health_check_service_interface.html#a9d99470b4074938af24e5ae723301f80">grpc::HealthCheckServiceInterface</a>
 </li>
 <li>SetSocketMutator()
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#a520690f499be85159a20200ddb986a96">grpc::ChannelArguments</a>
@@ -390,6 +393,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>SetUserAgentPrefix()
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#a0d6080324cabd7ba0833b95c77c0c907">grpc::ChannelArguments</a>
 </li>
+<li>severity
+: <a class="el" href="structgpr__log__func__args.html#af0b4b9d8beace1cae0d1a24783d70ccc">gpr_log_func_args</a>
+</li>
 <li>Shutdown()
 : <a class="el" href="classgrpc_1_1_completion_queue.html#a40efddadd9073386fbcb4f46e8325670">grpc::CompletionQueue</a>
 </li>
@@ -401,7 +407,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 , <a class="el" href="classgrpc_1_1internal_1_1_grpc_library.html#a3877ce7da09f9be689733ae32db2c331">grpc::internal::GrpcLibrary</a>
 </li>
 <li>Shutdown()
-: <a class="el" href="classgrpc_1_1_server_interface.html#a6a1d337270116c95f387e0abf01f6c6c">grpc::ServerInterface</a>
+: <a class="el" href="classgrpc_1_1_server_interface.html#a644772d11101318f1424e595dee73ccf">grpc::ServerInterface</a>
 </li>
 <li>ShutdownInternal()
 : <a class="el" href="classgrpc_1_1_server_interface.html#a862fd9a2d64e66447d41d0aba40af2f9">grpc::ServerInterface</a>
@@ -414,16 +420,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_reader.html#a7aad5fe555993d8f86380e3b4c65db1c">grpc::internal::GrpcBufferReader</a>
 </li>
 <li>Slice()
-: <a class="el" href="classgrpc_1_1_slice.html#a0a6b936d72f7ae35f083d003d3e0c8a3">grpc::Slice</a>
-</li>
-<li>slice_
-: <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_reader.html#a74845b264add2937ff253114edb008cb">grpc::internal::GrpcBufferReader</a>
+: <a class="el" href="classgrpc_1_1_slice.html#a4ee777ba961557d8e0bc39c15e749a6e">grpc::Slice</a>
 </li>
 <li>slice_buffer
-: <a class="el" href="structgrpc__byte__buffer.html#ab551d5a2ca46d9bc3adc8bbc0f816590">grpc_byte_buffer</a>
-</li>
-<li>SliceBuffer()
-: <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#a31ade9a9f7d2483bd86d06850f549a1b">grpc::internal::GrpcBufferWriter</a>
+: <a class="el" href="structgrpc__byte__buffer_1_1grpc__byte__buffer__data_1_1grpc__compressed__buffer.html#a89f407381d073054e2227572dd920f37">grpc_byte_buffer::grpc_byte_buffer_data::grpc_compressed_buffer</a>
 </li>
 <li>slices
 : <a class="el" href="structgrpc__slice__buffer.html#ac37e9d19ec31eab8f429d2b4af908256">grpc_slice_buffer</a>
@@ -432,7 +432,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classgrpc_1_1_split_server_streaming_handler.html#a34297c5dbd6d21629f664f6cca9faa72">grpc::SplitServerStreamingHandler&lt; RequestType, ResponseType &gt;</a>
 </li>
 <li>SslServerCredentialsOptions()
-: <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html#a00650afd8a132f271b068d17da446679">grpc::SslServerCredentialsOptions</a>
+: <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html#ae85661f17b0dd9f4fc27275203e5f105">grpc::SslServerCredentialsOptions</a>
 </li>
 <li>Start()
 : <a class="el" href="classgrpc_1_1_server_interface.html#aa3931522a05cd6b2783b550b4066a7d9">grpc::ServerInterface</a>
@@ -443,20 +443,25 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>state
 : <a class="el" href="structgpr__event.html#a9eb43867719fcdf48f33df11cd138be9">gpr_event</a>
 </li>
+<li>STATIC_SLICE
+: <a class="el" href="classgrpc_1_1_slice.html#a61a6b4f8f10e5b90a99a5d09b8fdc498a162100d1059f54ba91c6803865effe10">grpc::Slice</a>
+</li>
+<li>StaticSlice
+: <a class="el" href="classgrpc_1_1_slice.html#a61a6b4f8f10e5b90a99a5d09b8fdc498">grpc::Slice</a>
+</li>
 <li>status()
 : <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_reader.html#ab695c69b23e443f3b4fcac666a075029">grpc::internal::GrpcBufferReader</a>
 </li>
 <li>Status()
-: <a class="el" href="classgrpc_1_1_status.html#a46537b45349a95126a16dcd67b5cf54c">grpc::Status</a>
+: <a class="el" href="classgrpc_1_1_status.html#aab429c8cea95c9f4c8b59293e6a6b9d1">grpc::Status</a>
 </li>
 <li>status
-: <a class="el" href="structgrpc__op.html#ae0d5a9db463391c0897914ef2d016b25">grpc_op</a>
-</li>
-<li>status_
-: <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_reader.html#a85a798cb005abf72d2bc0a6a04e4bf92">grpc::internal::GrpcBufferReader</a>
+: <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#a2118d693bf827b6098f6963ffedc0758">grpc_op::grpc_op_data::grpc_op_recv_status_on_client</a>
+, <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__status__from__server.html#ab4f0d42f69e3920aea595fd1e02da398">grpc_op::grpc_op_data::grpc_op_send_status_from_server</a>
 </li>
 <li>status_details
-: <a class="el" href="structgrpc__op.html#a8b2173ff9ae109e69441735772dcabfd">grpc_op</a>
+: <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#ac91a0142a9f4a7dc2bc4a186b08d237f">grpc_op::grpc_op_data::grpc_op_recv_status_on_client</a>
+, <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__status__from__server.html#aa2c7d136d26d0ed523239f911681f431">grpc_op::grpc_op_data::grpc_op_send_status_from_server</a>
 </li>
 <li>STEAL_REF
 : <a class="el" href="classgrpc_1_1_slice.html#a13fbbec0e9121a8b948d563f9730d75aae0777a96d69fe69aec2acd1f0f9cefb7">grpc::Slice</a>
@@ -471,10 +476,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classgrpc_1_1_streamed_unary_handler.html#afb1a2351f81a4b1f3ebfbdc6f454afac">grpc::StreamedUnaryHandler&lt; RequestType, ResponseType &gt;</a>
 </li>
 <li>string
-: <a class="el" href="structgrpc__arg.html#a05bc3701718db73608ef3598480e8fa8">grpc_arg</a>
+: <a class="el" href="uniongrpc__arg_1_1grpc__arg__value.html#afd7cc41a1d8dd36aba15faa4a6c426e2">grpc_arg::grpc_arg_value</a>
 </li>
 <li>string_ref()
-: <a class="el" href="classgrpc_1_1string__ref.html#a3b6c90d10321a5636a134be68f2f6f18">grpc::string_ref</a>
+: <a class="el" href="classgrpc_1_1string__ref.html#a10c3455e679004ab4c61708ce0403601">grpc::string_ref</a>
 </li>
 <li>sub_refcount
 : <a class="el" href="structgrpc__slice__refcount.html#a113ae62eac88e4180feb9ecc80e0f2f9">grpc_slice_refcount</a>
@@ -499,7 +504,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

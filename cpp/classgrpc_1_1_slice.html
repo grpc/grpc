@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -111,6 +111,9 @@ Public Types</h2></td></tr>
 <tr class="memitem:a13fbbec0e9121a8b948d563f9730d75a"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#a13fbbec0e9121a8b948d563f9730d75a">StealRef</a> { <a class="el" href="classgrpc_1_1_slice.html#a13fbbec0e9121a8b948d563f9730d75aae0777a96d69fe69aec2acd1f0f9cefb7">STEAL_REF</a>
  }</td></tr>
 <tr class="separator:a13fbbec0e9121a8b948d563f9730d75a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a61a6b4f8f10e5b90a99a5d09b8fdc498"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#a61a6b4f8f10e5b90a99a5d09b8fdc498">StaticSlice</a> { <a class="el" href="classgrpc_1_1_slice.html#a61a6b4f8f10e5b90a99a5d09b8fdc498a162100d1059f54ba91c6803865effe10">STATIC_SLICE</a>
+ }</td></tr>
+<tr class="separator:a61a6b4f8f10e5b90a99a5d09b8fdc498"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -126,12 +129,33 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:af3fece4a2e6c2be33631c295c5ea3418"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#af3fece4a2e6c2be33631c295c5ea3418">Slice</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> slice, <a class="el" href="classgrpc_1_1_slice.html#a13fbbec0e9121a8b948d563f9730d75a">StealRef</a>)</td></tr>
 <tr class="memdesc:af3fece4a2e6c2be33631c295c5ea3418"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a slice from <em>slice</em>, stealing a reference.  <a href="#af3fece4a2e6c2be33631c295c5ea3418">More...</a><br/></td></tr>
 <tr class="separator:af3fece4a2e6c2be33631c295c5ea3418"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac7fd05a7ad8edb55c163b544e7878bf9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#ac7fd05a7ad8edb55c163b544e7878bf9">Slice</a> (size_t len)</td></tr>
+<tr class="memdesc:ac7fd05a7ad8edb55c163b544e7878bf9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocate a slice of specified size.  <a href="#ac7fd05a7ad8edb55c163b544e7878bf9">More...</a><br/></td></tr>
+<tr class="separator:ac7fd05a7ad8edb55c163b544e7878bf9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad180398d3b0a83a1c8fbff9aed4aff48"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#ad180398d3b0a83a1c8fbff9aed4aff48">Slice</a> (const void *buf, size_t len)</td></tr>
+<tr class="memdesc:ad180398d3b0a83a1c8fbff9aed4aff48"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a slice from a copied buffer.  <a href="#ad180398d3b0a83a1c8fbff9aed4aff48">More...</a><br/></td></tr>
+<tr class="separator:ad180398d3b0a83a1c8fbff9aed4aff48"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2329ec18d0d60515dca1c0c29237822c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#a2329ec18d0d60515dca1c0c29237822c">Slice</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;str)</td></tr>
+<tr class="memdesc:a2329ec18d0d60515dca1c0c29237822c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a slice from a copied string.  <a href="#a2329ec18d0d60515dca1c0c29237822c">More...</a><br/></td></tr>
+<tr class="separator:a2329ec18d0d60515dca1c0c29237822c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ee777ba961557d8e0bc39c15e749a6e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#a4ee777ba961557d8e0bc39c15e749a6e">Slice</a> (const void *buf, size_t len, <a class="el" href="classgrpc_1_1_slice.html#a61a6b4f8f10e5b90a99a5d09b8fdc498">StaticSlice</a>)</td></tr>
+<tr class="memdesc:a4ee777ba961557d8e0bc39c15e749a6e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a slice from a static buffer.  <a href="#a4ee777ba961557d8e0bc39c15e749a6e">More...</a><br/></td></tr>
+<tr class="separator:a4ee777ba961557d8e0bc39c15e749a6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0a6b936d72f7ae35f083d003d3e0c8a3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#a0a6b936d72f7ae35f083d003d3e0c8a3">Slice</a> (const <a class="el" href="classgrpc_1_1_slice.html">Slice</a> &amp;other)</td></tr>
 <tr class="memdesc:a0a6b936d72f7ae35f083d003d3e0c8a3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copy constructor, adds a reference.  <a href="#a0a6b936d72f7ae35f083d003d3e0c8a3">More...</a><br/></td></tr>
 <tr class="separator:a0a6b936d72f7ae35f083d003d3e0c8a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac5a109779239ed4d3fd58e8124abdba1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_slice.html">Slice</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#ac5a109779239ed4d3fd58e8124abdba1">operator=</a> (<a class="el" href="classgrpc_1_1_slice.html">Slice</a> other)</td></tr>
 <tr class="memdesc:ac5a109779239ed4d3fd58e8124abdba1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Assignment, reference count is unchanged.  <a href="#ac5a109779239ed4d3fd58e8124abdba1">More...</a><br/></td></tr>
 <tr class="separator:ac5a109779239ed4d3fd58e8124abdba1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4168ed1092cd945f605335ab3081b3d9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#a4168ed1092cd945f605335ab3081b3d9">Slice</a> (void *buf, size_t len, void(*destroy)(void *), void *user_data)</td></tr>
+<tr class="memdesc:a4168ed1092cd945f605335ab3081b3d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a slice pointing at some data.  <a href="#a4168ed1092cd945f605335ab3081b3d9">More...</a><br/></td></tr>
+<tr class="separator:a4168ed1092cd945f605335ab3081b3d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb151a6538ee47812bbe0e98330c799e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#abb151a6538ee47812bbe0e98330c799e">Slice</a> (void *buf, size_t len, void(*destroy)(void *))</td></tr>
+<tr class="memdesc:abb151a6538ee47812bbe0e98330c799e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Specialization of above for common case where buf == user_data.  <a href="#abb151a6538ee47812bbe0e98330c799e">More...</a><br/></td></tr>
+<tr class="separator:abb151a6538ee47812bbe0e98330c799e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa015b3afa75bc3238c5e68147e4e3020"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#aa015b3afa75bc3238c5e68147e4e3020">Slice</a> (void *buf, size_t len, void(*destroy)(void *, size_t))</td></tr>
+<tr class="memdesc:aa015b3afa75bc3238c5e68147e4e3020"><td class="mdescLeft">&#160;</td><td class="mdescRight">Similar to the above but has a destroy that also takes slice length.  <a href="#aa015b3afa75bc3238c5e68147e4e3020">More...</a><br/></td></tr>
+<tr class="separator:aa015b3afa75bc3238c5e68147e4e3020"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa216fa6d6e98e5e2677b7d33fb4af724"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#aa216fa6d6e98e5e2677b7d33fb4af724">size</a> () const </td></tr>
 <tr class="memdesc:aa216fa6d6e98e5e2677b7d33fb4af724"><td class="mdescLeft">&#160;</td><td class="mdescRight">Byte size.  <a href="#aa216fa6d6e98e5e2677b7d33fb4af724">More...</a><br/></td></tr>
 <tr class="separator:aa216fa6d6e98e5e2677b7d33fb4af724"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -165,6 +189,22 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="ac1e8469bbb6dfa9ab9e646e0b48f5fe2a2ea965f79036dea69221557ec04580b2"></a>ADD_REF</em>&#160;</td><td class="fielddoc">
+</td></tr>
+</table>
+
+</div>
+</div>
+<a class="anchor" id="a61a6b4f8f10e5b90a99a5d09b8fdc498"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="classgrpc_1_1_slice.html#a61a6b4f8f10e5b90a99a5d09b8fdc498">grpc::Slice::StaticSlice</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a61a6b4f8f10e5b90a99a5d09b8fdc498a162100d1059f54ba91c6803865effe10"></a>STATIC_SLICE</em>&#160;</td><td class="fielddoc">
 </td></tr>
 </table>
 
@@ -277,6 +317,104 @@ Friends</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="ac7fd05a7ad8edb55c163b544e7878bf9"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">grpc::Slice::Slice </td>
+          <td>(</td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>len</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Allocate a slice of specified size. </p>
+
+</div>
+</div>
+<a class="anchor" id="ad180398d3b0a83a1c8fbff9aed4aff48"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">grpc::Slice::Slice </td>
+          <td>(</td>
+          <td class="paramtype">const void *&#160;</td>
+          <td class="paramname"><em>buf</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>len</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Construct a slice from a copied buffer. </p>
+
+</div>
+</div>
+<a class="anchor" id="a2329ec18d0d60515dca1c0c29237822c"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">grpc::Slice::Slice </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
+          <td class="paramname"><em>str</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Construct a slice from a copied string. </p>
+
+</div>
+</div>
+<a class="anchor" id="a4ee777ba961557d8e0bc39c15e749a6e"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">grpc::Slice::Slice </td>
+          <td>(</td>
+          <td class="paramtype">const void *&#160;</td>
+          <td class="paramname"><em>buf</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>len</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_slice.html#a61a6b4f8f10e5b90a99a5d09b8fdc498">StaticSlice</a>&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Construct a slice from a static buffer. </p>
+
+</div>
+</div>
 <a class="anchor" id="a0a6b936d72f7ae35f083d003d3e0c8a3"></a>
 <div class="memitem">
 <div class="memproto">
@@ -292,6 +430,123 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Copy constructor, adds a reference. </p>
+
+</div>
+</div>
+<a class="anchor" id="a4168ed1092cd945f605335ab3081b3d9"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">grpc::Slice::Slice </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>buf</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>len</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void(*)(void *)&#160;</td>
+          <td class="paramname"><em>destroy</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>user_data</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Create a slice pointing at some data. </p>
+<p>Calls malloc to allocate a refcount for the object, and arranges that destroy will be called with the user data pointer passed in at destruction. Can be the same as buf or different (e.g., if data is part of a larger structure that must be destroyed when the data is no longer needed) </p>
+
+</div>
+</div>
+<a class="anchor" id="abb151a6538ee47812bbe0e98330c799e"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">grpc::Slice::Slice </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>buf</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>len</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void(*)(void *)&#160;</td>
+          <td class="paramname"><em>destroy</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Specialization of above for common case where buf == user_data. </p>
+
+</div>
+</div>
+<a class="anchor" id="aa015b3afa75bc3238c5e68147e4e3020"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">grpc::Slice::Slice </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>buf</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>len</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void(*)(void *, size_t)&#160;</td>
+          <td class="paramname"><em>destroy</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Similar to the above but has a destroy that also takes slice length. </p>
 
 </div>
 </div>
@@ -449,7 +704,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

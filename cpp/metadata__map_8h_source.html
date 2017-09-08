@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -93,95 +93,80 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <a href="metadata__map_8h.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/*</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment">*</span></div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment">* Copyright 2015, Google Inc.</span></div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment">* All rights reserved.</span></div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment">*</span></div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">* Redistribution and use in source and binary forms, with or without</span></div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment">* modification, are permitted provided that the following conditions are</span></div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment">* met:</span></div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment">*</span></div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment">*     * Redistributions of source code must retain the above copyright</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment">* notice, this list of conditions and the following disclaimer.</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment">*     * Redistributions in binary form must reproduce the above</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment">* copyright notice, this list of conditions and the following disclaimer</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment">* in the documentation and/or other materials provided with the</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment">* distribution.</span></div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment">*     * Neither the name of Google Inc. nor the names of its</span></div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment">* contributors may be used to endorse or promote products derived from</span></div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment">* this software without specific prior written permission.</span></div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment">*</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment">* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment">* &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span></div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment">* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment">* A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment">* OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment">* SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment">* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="comment">* DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="comment">* THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="comment">* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="comment">* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span></div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="comment">*</span></div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="comment">*/</span></div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment">* Copyright 2015 gRPC authors.</span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment">*</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment">* Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span></div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">* you may not use this file except in compliance with the License.</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment">* You may obtain a copy of the License at</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment">*</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment">*     http://www.apache.org/licenses/LICENSE-2.0</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment">*</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment">* Unless required by applicable law or agreed to in writing, software</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment">* distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment">* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment">* See the License for the specific language governing permissions and</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment">* limitations under the License.</span></div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment">*</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment">*/</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#ifndef GRPCXX_IMPL_CODEGEN_METADATA_MAP_H</span></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPCXX_IMPL_CODEGEN_METADATA_MAP_H</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_09_09_2impl_2codegen_2slice_8h.html">grpc++/impl/codegen/slice.h</a>&gt;</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="keyword">namespace </span>grpc {</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;</div>
+<div class="line"><a name="l00026"></a><span class="lineno"><a class="line" href="classgrpc_1_1_metadata_map.html">   26</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_metadata_map.html">MetadataMap</a> {</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; <span class="keyword">public</span>:</div>
+<div class="line"><a name="l00028"></a><span class="lineno"><a class="line" href="classgrpc_1_1_metadata_map.html#acf482481ebacb8e2c4191e3dd38b2ea9">   28</a></span>&#160;  <a class="code" href="classgrpc_1_1_metadata_map.html#acf482481ebacb8e2c4191e3dd38b2ea9">MetadataMap</a>() { memset(&amp;arr_, 0, <span class="keyword">sizeof</span>(arr_)); }</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;</div>
+<div class="line"><a name="l00030"></a><span class="lineno"><a class="line" href="classgrpc_1_1_metadata_map.html#acc2a7fb797559ea648ea2ffd4c33ef10">   30</a></span>&#160;  <a class="code" href="classgrpc_1_1_metadata_map.html#acc2a7fb797559ea648ea2ffd4c33ef10">~MetadataMap</a>() {</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <a class="code" href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">g_core_codegen_interface</a>-&gt;<a class="code" href="classgrpc_1_1_core_codegen_interface.html#ae5775b07ed2350b1e6b77bfe694526eb">grpc_metadata_array_destroy</a>(&amp;arr_);</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  }</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#ifndef GRPCXX_IMPL_CODEGEN_METADATA_MAP_H</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPCXX_IMPL_CODEGEN_METADATA_MAP_H</span></div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_09_09_2impl_2codegen_2slice_8h.html">grpc++/impl/codegen/slice.h</a>&gt;</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="keyword">namespace </span>grpc {</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;</div>
-<div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="classgrpc_1_1_metadata_map.html">   41</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_metadata_map.html">MetadataMap</a> {</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; <span class="keyword">public</span>:</div>
-<div class="line"><a name="l00043"></a><span class="lineno"><a class="line" href="classgrpc_1_1_metadata_map.html#acf482481ebacb8e2c4191e3dd38b2ea9">   43</a></span>&#160;  <a class="code" href="classgrpc_1_1_metadata_map.html#acf482481ebacb8e2c4191e3dd38b2ea9">MetadataMap</a>() { memset(&amp;arr_, 0, <span class="keyword">sizeof</span>(arr_)); }</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;</div>
-<div class="line"><a name="l00045"></a><span class="lineno"><a class="line" href="classgrpc_1_1_metadata_map.html#acc2a7fb797559ea648ea2ffd4c33ef10">   45</a></span>&#160;  <a class="code" href="classgrpc_1_1_metadata_map.html#acc2a7fb797559ea648ea2ffd4c33ef10">~MetadataMap</a>() {</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <a class="code" href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">g_core_codegen_interface</a>-&gt;<a class="code" href="classgrpc_1_1_core_codegen_interface.html#ae5775b07ed2350b1e6b77bfe694526eb">grpc_metadata_array_destroy</a>(&amp;arr_);</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  }</div>
+<div class="line"><a name="l00034"></a><span class="lineno"><a class="line" href="classgrpc_1_1_metadata_map.html#a019866e13032a8ad251e5519acd2fa2d">   34</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_metadata_map.html#a019866e13032a8ad251e5519acd2fa2d">FillMap</a>() {</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; arr_.<a class="code" href="structgrpc__metadata__array.html#a314ce51b22a5934cc672f3736d44b9e4">count</a>; i++) {</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;      <span class="comment">// TODO(yangg) handle duplicates?</span></div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;      map_.insert(std::pair&lt;grpc::string_ref, grpc::string_ref&gt;(</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;          <a class="code" href="namespacegrpc.html#a1e21a88e0fbe61d11824bc0109aa1378">StringRefFromSlice</a>(&amp;arr_.<a class="code" href="structgrpc__metadata__array.html#ac930a0cc901913fafcd09ca9cca156fe">metadata</a>[i].<a class="code" href="structgrpc__metadata.html#a97e0b57621fa9ae74f15e833bece37a6">key</a>),</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;          <a class="code" href="namespacegrpc.html#a1e21a88e0fbe61d11824bc0109aa1378">StringRefFromSlice</a>(&amp;arr_.<a class="code" href="structgrpc__metadata__array.html#ac930a0cc901913fafcd09ca9cca156fe">metadata</a>[i].<a class="code" href="structgrpc__metadata.html#ac49b42fcfe8ff2a31d371b878ce07ca7">value</a>)));</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    }</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  }</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;</div>
+<div class="line"><a name="l00043"></a><span class="lineno"><a class="line" href="classgrpc_1_1_metadata_map.html#ab2094f6d46c7d4b87182111a96ed06e4">   43</a></span>&#160;  std::multimap&lt;grpc::string_ref, grpc::string_ref&gt; *<a class="code" href="classgrpc_1_1_metadata_map.html#ab2094f6d46c7d4b87182111a96ed06e4">map</a>() { <span class="keywordflow">return</span> &amp;map_; }</div>
+<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="classgrpc_1_1_metadata_map.html#a3f2e6c00f7306d4611c4670c767da2ac">   44</a></span>&#160;  <span class="keyword">const</span> std::multimap&lt;grpc::string_ref, grpc::string_ref&gt; *<a class="code" href="classgrpc_1_1_metadata_map.html#a3f2e6c00f7306d4611c4670c767da2ac">map</a>()<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keywordflow">return</span> &amp;map_;</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  }</div>
+<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="classgrpc_1_1_metadata_map.html#ab557acdd258dfdfd93194ec0e0311576">   47</a></span>&#160;  <a class="code" href="structgrpc__metadata__array.html">grpc_metadata_array</a> *<a class="code" href="classgrpc_1_1_metadata_map.html#ab557acdd258dfdfd93194ec0e0311576">arr</a>() { <span class="keywordflow">return</span> &amp;arr_; }</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;</div>
-<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="classgrpc_1_1_metadata_map.html#a019866e13032a8ad251e5519acd2fa2d">   49</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_metadata_map.html#a019866e13032a8ad251e5519acd2fa2d">FillMap</a>() {</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; arr_.<a class="code" href="structgrpc__metadata__array.html#a314ce51b22a5934cc672f3736d44b9e4">count</a>; i++) {</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;      <span class="comment">// TODO(yangg) handle duplicates?</span></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;      map_.insert(std::pair&lt;grpc::string_ref, grpc::string_ref&gt;(</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;          <a class="code" href="namespacegrpc.html#a1e21a88e0fbe61d11824bc0109aa1378">StringRefFromSlice</a>(&amp;arr_.<a class="code" href="structgrpc__metadata__array.html#ac930a0cc901913fafcd09ca9cca156fe">metadata</a>[i].<a class="code" href="structgrpc__metadata.html#a97e0b57621fa9ae74f15e833bece37a6">key</a>),</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;          <a class="code" href="namespacegrpc.html#a1e21a88e0fbe61d11824bc0109aa1378">StringRefFromSlice</a>(&amp;arr_.<a class="code" href="structgrpc__metadata__array.html#ac930a0cc901913fafcd09ca9cca156fe">metadata</a>[i].<a class="code" href="structgrpc__metadata.html#ac49b42fcfe8ff2a31d371b878ce07ca7">value</a>)));</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    }</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  }</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;</div>
-<div class="line"><a name="l00058"></a><span class="lineno"><a class="line" href="classgrpc_1_1_metadata_map.html#ab2094f6d46c7d4b87182111a96ed06e4">   58</a></span>&#160;  std::multimap&lt;grpc::string_ref, grpc::string_ref&gt; *<a class="code" href="classgrpc_1_1_metadata_map.html#ab2094f6d46c7d4b87182111a96ed06e4">map</a>() { <span class="keywordflow">return</span> &amp;map_; }</div>
-<div class="line"><a name="l00059"></a><span class="lineno"><a class="line" href="classgrpc_1_1_metadata_map.html#a3f2e6c00f7306d4611c4670c767da2ac">   59</a></span>&#160;  <span class="keyword">const</span> std::multimap&lt;grpc::string_ref, grpc::string_ref&gt; *<a class="code" href="classgrpc_1_1_metadata_map.html#a3f2e6c00f7306d4611c4670c767da2ac">map</a>()<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keywordflow">return</span> &amp;map_;</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  }</div>
-<div class="line"><a name="l00062"></a><span class="lineno"><a class="line" href="classgrpc_1_1_metadata_map.html#ab557acdd258dfdfd93194ec0e0311576">   62</a></span>&#160;  <a class="code" href="structgrpc__metadata__array.html">grpc_metadata_array</a> *<a class="code" href="classgrpc_1_1_metadata_map.html#ab557acdd258dfdfd93194ec0e0311576">arr</a>() { <span class="keywordflow">return</span> &amp;arr_; }</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; <span class="keyword">private</span>:</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <a class="code" href="structgrpc__metadata__array.html">grpc_metadata_array</a> arr_;</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  std::multimap&lt;grpc::string_ref, grpc::string_ref&gt; map_;</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;};</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;}  <span class="comment">// namespace grpc</span></div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="preprocessor">#endif  // GRPCXX_IMPL_CODEGEN_METADATA_MAP_H</span></div>
-<div class="ttc" id="classgrpc_1_1_metadata_map_html_a3f2e6c00f7306d4611c4670c767da2ac"><div class="ttname"><a href="classgrpc_1_1_metadata_map.html#a3f2e6c00f7306d4611c4670c767da2ac">grpc::MetadataMap::map</a></div><div class="ttdeci">const std::multimap&lt; grpc::string_ref, grpc::string_ref &gt; * map() const </div><div class="ttdef"><b>Definition:</b> metadata_map.h:59</div></div>
-<div class="ttc" id="namespacegrpc_html_a1e21a88e0fbe61d11824bc0109aa1378"><div class="ttname"><a href="namespacegrpc.html#a1e21a88e0fbe61d11824bc0109aa1378">grpc::StringRefFromSlice</a></div><div class="ttdeci">grpc::string_ref StringRefFromSlice(const grpc_slice *slice)</div><div class="ttdef"><b>Definition:</b> slice.h:42</div></div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <a class="code" href="structgrpc__metadata__array.html">grpc_metadata_array</a> arr_;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  std::multimap&lt;grpc::string_ref, grpc::string_ref&gt; map_;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;};</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="preprocessor">#endif  // GRPCXX_IMPL_CODEGEN_METADATA_MAP_H</span></div>
+<div class="ttc" id="classgrpc_1_1_metadata_map_html_a3f2e6c00f7306d4611c4670c767da2ac"><div class="ttname"><a href="classgrpc_1_1_metadata_map.html#a3f2e6c00f7306d4611c4670c767da2ac">grpc::MetadataMap::map</a></div><div class="ttdeci">const std::multimap&lt; grpc::string_ref, grpc::string_ref &gt; * map() const </div><div class="ttdef"><b>Definition:</b> metadata_map.h:44</div></div>
+<div class="ttc" id="namespacegrpc_html_a1e21a88e0fbe61d11824bc0109aa1378"><div class="ttname"><a href="namespacegrpc.html#a1e21a88e0fbe61d11824bc0109aa1378">grpc::StringRefFromSlice</a></div><div class="ttdeci">grpc::string_ref StringRefFromSlice(const grpc_slice *slice)</div><div class="ttdef"><b>Definition:</b> slice.h:27</div></div>
 <div class="ttc" id="classgrpc_1_1_core_codegen_interface_html_ae5775b07ed2350b1e6b77bfe694526eb"><div class="ttname"><a href="classgrpc_1_1_core_codegen_interface.html#ae5775b07ed2350b1e6b77bfe694526eb">grpc::CoreCodegenInterface::grpc_metadata_array_destroy</a></div><div class="ttdeci">virtual void grpc_metadata_array_destroy(grpc_metadata_array *array)=0</div></div>
-<div class="ttc" id="classgrpc_1_1_metadata_map_html_ab557acdd258dfdfd93194ec0e0311576"><div class="ttname"><a href="classgrpc_1_1_metadata_map.html#ab557acdd258dfdfd93194ec0e0311576">grpc::MetadataMap::arr</a></div><div class="ttdeci">grpc_metadata_array * arr()</div><div class="ttdef"><b>Definition:</b> metadata_map.h:62</div></div>
-<div class="ttc" id="structgrpc__metadata_html_a97e0b57621fa9ae74f15e833bece37a6"><div class="ttname"><a href="structgrpc__metadata.html#a97e0b57621fa9ae74f15e833bece37a6">grpc_metadata::key</a></div><div class="ttdeci">grpc_slice key</div><div class="ttdoc">the key, value values are expected to line up with grpc_mdelem: if changing them, update metadata...</div><div class="ttdef"><b>Definition:</b> grpc_types.h:387</div></div>
-<div class="ttc" id="structgrpc__metadata_html_ac49b42fcfe8ff2a31d371b878ce07ca7"><div class="ttname"><a href="structgrpc__metadata.html#ac49b42fcfe8ff2a31d371b878ce07ca7">grpc_metadata::value</a></div><div class="ttdeci">grpc_slice value</div><div class="ttdef"><b>Definition:</b> grpc_types.h:388</div></div>
-<div class="ttc" id="classgrpc_1_1_metadata_map_html"><div class="ttname"><a href="classgrpc_1_1_metadata_map.html">grpc::MetadataMap</a></div><div class="ttdef"><b>Definition:</b> metadata_map.h:41</div></div>
-<div class="ttc" id="structgrpc__metadata__array_html"><div class="ttname"><a href="structgrpc__metadata__array.html">grpc_metadata_array</a></div><div class="ttdef"><b>Definition:</b> grpc_types.h:427</div></div>
-<div class="ttc" id="classgrpc_1_1_metadata_map_html_a019866e13032a8ad251e5519acd2fa2d"><div class="ttname"><a href="classgrpc_1_1_metadata_map.html#a019866e13032a8ad251e5519acd2fa2d">grpc::MetadataMap::FillMap</a></div><div class="ttdeci">void FillMap()</div><div class="ttdef"><b>Definition:</b> metadata_map.h:49</div></div>
-<div class="ttc" id="structgrpc__metadata__array_html_ac930a0cc901913fafcd09ca9cca156fe"><div class="ttname"><a href="structgrpc__metadata__array.html#ac930a0cc901913fafcd09ca9cca156fe">grpc_metadata_array::metadata</a></div><div class="ttdeci">grpc_metadata * metadata</div><div class="ttdef"><b>Definition:</b> grpc_types.h:430</div></div>
-<div class="ttc" id="classgrpc_1_1_metadata_map_html_ab2094f6d46c7d4b87182111a96ed06e4"><div class="ttname"><a href="classgrpc_1_1_metadata_map.html#ab2094f6d46c7d4b87182111a96ed06e4">grpc::MetadataMap::map</a></div><div class="ttdeci">std::multimap&lt; grpc::string_ref, grpc::string_ref &gt; * map()</div><div class="ttdef"><b>Definition:</b> metadata_map.h:58</div></div>
-<div class="ttc" id="namespacegrpc_html_abbcecc18dae64c65df0b6d9aa8bf67a8"><div class="ttname"><a href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">grpc::g_core_codegen_interface</a></div><div class="ttdeci">CoreCodegenInterface * g_core_codegen_interface</div><div class="ttdef"><b>Definition:</b> call.h:64</div></div>
-<div class="ttc" id="classgrpc_1_1_metadata_map_html_acf482481ebacb8e2c4191e3dd38b2ea9"><div class="ttname"><a href="classgrpc_1_1_metadata_map.html#acf482481ebacb8e2c4191e3dd38b2ea9">grpc::MetadataMap::MetadataMap</a></div><div class="ttdeci">MetadataMap()</div><div class="ttdef"><b>Definition:</b> metadata_map.h:43</div></div>
-<div class="ttc" id="structgrpc__metadata__array_html_a314ce51b22a5934cc672f3736d44b9e4"><div class="ttname"><a href="structgrpc__metadata__array.html#a314ce51b22a5934cc672f3736d44b9e4">grpc_metadata_array::count</a></div><div class="ttdeci">size_t count</div><div class="ttdef"><b>Definition:</b> grpc_types.h:428</div></div>
+<div class="ttc" id="classgrpc_1_1_metadata_map_html_ab557acdd258dfdfd93194ec0e0311576"><div class="ttname"><a href="classgrpc_1_1_metadata_map.html#ab557acdd258dfdfd93194ec0e0311576">grpc::MetadataMap::arr</a></div><div class="ttdeci">grpc_metadata_array * arr()</div><div class="ttdef"><b>Definition:</b> metadata_map.h:47</div></div>
+<div class="ttc" id="structgrpc__metadata_html_a97e0b57621fa9ae74f15e833bece37a6"><div class="ttname"><a href="structgrpc__metadata.html#a97e0b57621fa9ae74f15e833bece37a6">grpc_metadata::key</a></div><div class="ttdeci">grpc_slice key</div><div class="ttdoc">the key, value values are expected to line up with grpc_mdelem: if changing them, update metadata...</div><div class="ttdef"><b>Definition:</b> grpc_types.h:386</div></div>
+<div class="ttc" id="structgrpc__metadata_html_ac49b42fcfe8ff2a31d371b878ce07ca7"><div class="ttname"><a href="structgrpc__metadata.html#ac49b42fcfe8ff2a31d371b878ce07ca7">grpc_metadata::value</a></div><div class="ttdeci">grpc_slice value</div><div class="ttdef"><b>Definition:</b> grpc_types.h:387</div></div>
+<div class="ttc" id="classgrpc_1_1_metadata_map_html"><div class="ttname"><a href="classgrpc_1_1_metadata_map.html">grpc::MetadataMap</a></div><div class="ttdef"><b>Definition:</b> metadata_map.h:26</div></div>
+<div class="ttc" id="structgrpc__metadata__array_html"><div class="ttname"><a href="structgrpc__metadata__array.html">grpc_metadata_array</a></div><div class="ttdef"><b>Definition:</b> grpc_types.h:426</div></div>
+<div class="ttc" id="classgrpc_1_1_metadata_map_html_a019866e13032a8ad251e5519acd2fa2d"><div class="ttname"><a href="classgrpc_1_1_metadata_map.html#a019866e13032a8ad251e5519acd2fa2d">grpc::MetadataMap::FillMap</a></div><div class="ttdeci">void FillMap()</div><div class="ttdef"><b>Definition:</b> metadata_map.h:34</div></div>
+<div class="ttc" id="structgrpc__metadata__array_html_ac930a0cc901913fafcd09ca9cca156fe"><div class="ttname"><a href="structgrpc__metadata__array.html#ac930a0cc901913fafcd09ca9cca156fe">grpc_metadata_array::metadata</a></div><div class="ttdeci">grpc_metadata * metadata</div><div class="ttdef"><b>Definition:</b> grpc_types.h:429</div></div>
+<div class="ttc" id="classgrpc_1_1_metadata_map_html_ab2094f6d46c7d4b87182111a96ed06e4"><div class="ttname"><a href="classgrpc_1_1_metadata_map.html#ab2094f6d46c7d4b87182111a96ed06e4">grpc::MetadataMap::map</a></div><div class="ttdeci">std::multimap&lt; grpc::string_ref, grpc::string_ref &gt; * map()</div><div class="ttdef"><b>Definition:</b> metadata_map.h:43</div></div>
+<div class="ttc" id="namespacegrpc_html_abbcecc18dae64c65df0b6d9aa8bf67a8"><div class="ttname"><a href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">grpc::g_core_codegen_interface</a></div><div class="ttdeci">CoreCodegenInterface * g_core_codegen_interface</div><div class="ttdef"><b>Definition:</b> call.h:49</div></div>
+<div class="ttc" id="classgrpc_1_1_metadata_map_html_acf482481ebacb8e2c4191e3dd38b2ea9"><div class="ttname"><a href="classgrpc_1_1_metadata_map.html#acf482481ebacb8e2c4191e3dd38b2ea9">grpc::MetadataMap::MetadataMap</a></div><div class="ttdeci">MetadataMap()</div><div class="ttdef"><b>Definition:</b> metadata_map.h:28</div></div>
+<div class="ttc" id="structgrpc__metadata__array_html_a314ce51b22a5934cc672f3736d44b9e4"><div class="ttname"><a href="structgrpc__metadata__array.html#a314ce51b22a5934cc672f3736d44b9e4">grpc_metadata_array::count</a></div><div class="ttdeci">size_t count</div><div class="ttdef"><b>Definition:</b> grpc_types.h:427</div></div>
 <div class="ttc" id="grpc_09_09_2impl_2codegen_2slice_8h_html"><div class="ttname"><a href="grpc_09_09_2impl_2codegen_2slice_8h.html">slice.h</a></div></div>
-<div class="ttc" id="classgrpc_1_1_metadata_map_html_acc2a7fb797559ea648ea2ffd4c33ef10"><div class="ttname"><a href="classgrpc_1_1_metadata_map.html#acc2a7fb797559ea648ea2ffd4c33ef10">grpc::MetadataMap::~MetadataMap</a></div><div class="ttdeci">~MetadataMap()</div><div class="ttdef"><b>Definition:</b> metadata_map.h:45</div></div>
+<div class="ttc" id="classgrpc_1_1_metadata_map_html_acc2a7fb797559ea648ea2ffd4c33ef10"><div class="ttname"><a href="classgrpc_1_1_metadata_map.html#acc2a7fb797559ea648ea2ffd4c33ef10">grpc::MetadataMap::~MetadataMap</a></div><div class="ttdeci">~MetadataMap()</div><div class="ttdef"><b>Definition:</b> metadata_map.h:30</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:07 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

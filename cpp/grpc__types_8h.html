@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -96,7 +96,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">grpc_types.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;<a class="el" href="port__platform_8h_source.html">grpc/impl/codegen/port_platform.h</a>&gt;</code><br/>
+<div class="textblock"><code>#include &lt;<a class="el" href="impl_2codegen_2port__platform_8h_source.html">grpc/impl/codegen/port_platform.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="compression__types_8h_source.html">grpc/impl/codegen/compression_types.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="exec__ctx__fwd_8h_source.html">grpc/impl/codegen/exec_ctx_fwd.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="gpr__types_8h_source.html">grpc/impl/codegen/gpr_types.h</a>&gt;</code><br/>
@@ -110,10 +110,18 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">union &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="uniongrpc__byte__buffer_1_1grpc__byte__buffer__data.html">grpc_byte_buffer::grpc_byte_buffer_data</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__byte__buffer_1_1grpc__byte__buffer__data_1_1grpc__compressed__buffer.html">grpc_byte_buffer::grpc_byte_buffer_data::grpc_compressed_buffer</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__arg__pointer__vtable.html">grpc_arg_pointer_vtable</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__arg.html">grpc_arg</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A single argument...  <a href="structgrpc__arg.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">union &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="uniongrpc__arg_1_1grpc__arg__value.html">grpc_arg::grpc_arg_value</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__arg_1_1grpc__arg__value_1_1grpc__arg__pointer.html">grpc_arg::grpc_arg_value::grpc_arg_pointer</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__channel__args.html">grpc_channel_args</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">An array of arguments that can be passed around.  <a href="structgrpc__channel__args.html#details">More...</a><br/></td></tr>
@@ -130,6 +138,27 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op.html">grpc_op</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT which has no arguments)  <a href="structgrpc__op.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">union &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="uniongrpc__op_1_1grpc__op__data.html">grpc_op::grpc_op_data</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__initial__metadata.html">grpc_op::grpc_op_data::grpc_op_send_initial_metadata</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__initial__metadata_1_1grpc__op__send__initialaea3b3a42c7d59f33d8b29d9f8d06219.html">grpc_op::grpc_op_data::grpc_op_send_initial_metadata::grpc_op_send_initial_metadata_maybe_compression_level</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">If <em>is_set</em>, <em>compression_level</em> will be used for the call.  <a href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__initial__metadata_1_1grpc__op__send__initialaea3b3a42c7d59f33d8b29d9f8d06219.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__message.html">grpc_op::grpc_op_data::grpc_op_send_message</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__status__from__server.html">grpc_op::grpc_op_data::grpc_op_send_status_from_server</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__initial__metadata.html">grpc_op::grpc_op_data::grpc_op_recv_initial_metadata</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">ownership of the array is with the caller, but ownership of the elements stays with the call object (ie key, value members are owned by the call object, recv_initial_metadata-&gt;array is owned by the caller).  <a href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__initial__metadata.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__message.html">grpc_op::grpc_op_data::grpc_op_recv_message</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">ownership of the byte buffer is moved to the caller; the caller must call grpc_byte_buffer_destroy on this value, or reuse it in a future op.  <a href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__message.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html">grpc_op::grpc_op_data::grpc_op_recv_status_on_client</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__close__on__server.html">grpc_op::grpc_op_data::grpc_op_recv_close_on_server</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__channel__info.html">grpc_channel_info</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Information requested from the channel.  <a href="structgrpc__channel__info.html#details">More...</a><br/></td></tr>
@@ -258,6 +287,9 @@ Macros</h2></td></tr>
 <tr class="memitem:gad60df744eb84ef55a371de9b8bd2373d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gad60df744eb84ef55a371de9b8bd2373d">GRPC_ARG_SERVICE_CONFIG</a>&#160;&#160;&#160;&quot;grpc.service_config&quot;</td></tr>
 <tr class="memdesc:gad60df744eb84ef55a371de9b8bd2373d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Service config data in JSON form.  <a href="group__grpc__arg__keys.html#gad60df744eb84ef55a371de9b8bd2373d">More...</a><br/></td></tr>
 <tr class="separator:gad60df744eb84ef55a371de9b8bd2373d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaf3c9aad876ebaa5484a0cffd8d295244"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaf3c9aad876ebaa5484a0cffd8d295244">GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION</a>&#160;&#160;&#160;&quot;grpc.service_config_disable_resolution&quot;</td></tr>
+<tr class="memdesc:gaf3c9aad876ebaa5484a0cffd8d295244"><td class="mdescLeft">&#160;</td><td class="mdescRight">Disable looking up the service config via the name resolver.  <a href="group__grpc__arg__keys.html#gaf3c9aad876ebaa5484a0cffd8d295244">More...</a><br/></td></tr>
+<tr class="separator:gaf3c9aad876ebaa5484a0cffd8d295244"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga72c2b475e218ecfd36bb7d3551d0295b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga72c2b475e218ecfd36bb7d3551d0295b">GRPC_ARG_LB_POLICY_NAME</a>&#160;&#160;&#160;&quot;grpc.lb_policy_name&quot;</td></tr>
 <tr class="memdesc:ga72c2b475e218ecfd36bb7d3551d0295b"><td class="mdescLeft">&#160;</td><td class="mdescRight">LB policy name.  <a href="group__grpc__arg__keys.html#ga72c2b475e218ecfd36bb7d3551d0295b">More...</a><br/></td></tr>
 <tr class="separator:ga72c2b475e218ecfd36bb7d3551d0295b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -285,6 +317,9 @@ Macros</h2></td></tr>
 <tr class="memitem:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga618ddbf19fdd38d8f90b8f3d7cb5d481">GRPC_ARG_WORKAROUND_CRONET_COMPRESSION</a>&#160;&#160;&#160;&quot;grpc.workaround.cronet_compression&quot;</td></tr>
 <tr class="memdesc:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, grpc server's cronet compression workaround will be enabled.  <a href="group__grpc__arg__keys.html#ga618ddbf19fdd38d8f90b8f3d7cb5d481">More...</a><br/></td></tr>
 <tr class="separator:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga5bbdfddb3afba6b330221d9adbecc778"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga5bbdfddb3afba6b330221d9adbecc778">GRPC_ARG_OPTIMIZATION_TARGET</a>&#160;&#160;&#160;&quot;grpc.optimization_target&quot;</td></tr>
+<tr class="memdesc:ga5bbdfddb3afba6b330221d9adbecc778"><td class="mdescLeft">&#160;</td><td class="mdescRight">String defining the optimization target for a channel.  <a href="group__grpc__arg__keys.html#ga5bbdfddb3afba6b330221d9adbecc778">More...</a><br/></td></tr>
+<tr class="separator:ga5bbdfddb3afba6b330221d9adbecc778"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4e5d829393a2ad7a98e53c4856057220"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__types_8h.html#a4e5d829393a2ad7a98e53c4856057220">GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH</a>&#160;&#160;&#160;-1</td></tr>
 <tr class="memdesc:a4e5d829393a2ad7a98e53c4856057220"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default send/receive message size limits in bytes.  <a href="#a4e5d829393a2ad7a98e53c4856057220">More...</a><br/></td></tr>
 <tr class="separator:a4e5d829393a2ad7a98e53c4856057220"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -403,7 +438,8 @@ Enumerations</h2></td></tr>
 <br/>
 &#160;&#160;<a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785bade52e850722f80804d90881ac125706f">GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE</a>, 
 <a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba906d5d530b249b5b853595e424ec400b">GRPC_CALL_ERROR_BATCH_TOO_BIG</a>, 
-<a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba598dd6646d1a7c88d4bbef1490953ee3">GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH</a>
+<a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba598dd6646d1a7c88d4bbef1490953ee3">GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH</a>, 
+<a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba21448119e545f7a9679d40a6ddde1774">GRPC_CALL_ERROR_COMPLETION_QUEUE_SHUTDOWN</a>
 <br/>
  }</td></tr>
 <tr class="memdesc:a0d5a8bdd6d53d209cacea4b6fa5d785b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Result of a grpc call.  <a href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785b">More...</a><br/></td></tr>
@@ -537,11 +573,11 @@ Enumerations</h2></td></tr>
 <div class="line"><a class="code" href="grpc__types_8h.html#a7978c09a9933e7b858c65c1b03eb5b2b">   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST</a> |             <a class="code" href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">\</a></div>
 <div class="line"><a class="code" href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</a> | <a class="code" href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">\</a></div>
 <div class="line"><a class="code" href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">   GRPC_INITIAL_METADATA_CORKED</a>)</div>
-<div class="ttc" id="grpc__types_8h_html_afa71c451716eca6c8d38fb71d66c0bbb"><div class="ttname"><a href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</div><div class="ttdoc">Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set by the calling application...</div><div class="ttdef"><b>Definition:</b> grpc_types.h:371</div></div>
-<div class="ttc" id="grpc__types_8h_html_a1175f30479912922d006387536d2c46c"><div class="ttname"><a href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">GRPC_INITIAL_METADATA_CORKED</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_CORKED</div><div class="ttdoc">Signal that the initial metadata should be corked. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:373</div></div>
-<div class="ttc" id="grpc__types_8h_html_a7978c09a9933e7b858c65c1b03eb5b2b"><div class="ttname"><a href="grpc__types_8h.html#a7978c09a9933e7b858c65c1b03eb5b2b">GRPC_INITIAL_METADATA_CACHEABLE_REQUEST</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_CACHEABLE_REQUEST</div><div class="ttdoc">Signal that the call is cacheable. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:368</div></div>
-<div class="ttc" id="grpc__types_8h_html_a9606180fd0950a1514522fbe535edf49"><div class="ttname"><a href="grpc__types_8h.html#a9606180fd0950a1514522fbe535edf49">GRPC_INITIAL_METADATA_WAIT_FOR_READY</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_WAIT_FOR_READY</div><div class="ttdoc">Signal that the call should not return UNAVAILABLE before it has started. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:366</div></div>
-<div class="ttc" id="grpc__types_8h_html_a3b9e262e1a797030f62bccfe7b42ce01"><div class="ttname"><a href="grpc__types_8h.html#a3b9e262e1a797030f62bccfe7b42ce01">GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</div><div class="ttdoc">Initial metadata flags. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:364</div></div>
+<div class="ttc" id="grpc__types_8h_html_afa71c451716eca6c8d38fb71d66c0bbb"><div class="ttname"><a href="grpc__types_8h.html#afa71c451716eca6c8d38fb71d66c0bbb">GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET</div><div class="ttdoc">Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set by the calling application...</div><div class="ttdef"><b>Definition:</b> grpc_types.h:370</div></div>
+<div class="ttc" id="grpc__types_8h_html_a1175f30479912922d006387536d2c46c"><div class="ttname"><a href="grpc__types_8h.html#a1175f30479912922d006387536d2c46c">GRPC_INITIAL_METADATA_CORKED</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_CORKED</div><div class="ttdoc">Signal that the initial metadata should be corked. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:372</div></div>
+<div class="ttc" id="grpc__types_8h_html_a7978c09a9933e7b858c65c1b03eb5b2b"><div class="ttname"><a href="grpc__types_8h.html#a7978c09a9933e7b858c65c1b03eb5b2b">GRPC_INITIAL_METADATA_CACHEABLE_REQUEST</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_CACHEABLE_REQUEST</div><div class="ttdoc">Signal that the call is cacheable. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:367</div></div>
+<div class="ttc" id="grpc__types_8h_html_a9606180fd0950a1514522fbe535edf49"><div class="ttname"><a href="grpc__types_8h.html#a9606180fd0950a1514522fbe535edf49">GRPC_INITIAL_METADATA_WAIT_FOR_READY</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_WAIT_FOR_READY</div><div class="ttdoc">Signal that the call should not return UNAVAILABLE before it has started. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:365</div></div>
+<div class="ttc" id="grpc__types_8h_html_a3b9e262e1a797030f62bccfe7b42ce01"><div class="ttname"><a href="grpc__types_8h.html#a3b9e262e1a797030f62bccfe7b42ce01">GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</div><div class="ttdoc">Initial metadata flags. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:363</div></div>
 </div><!-- fragment -->
 <p>Mask of all valid flags. </p>
 
@@ -951,6 +987,9 @@ Enumerations</h2></td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a0d5a8bdd6d53d209cacea4b6fa5d785ba598dd6646d1a7c88d4bbef1490953ee3"></a>GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH</em>&#160;</td><td class="fielddoc">
 <p>payload type requested is not the type registered </p>
 </td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a0d5a8bdd6d53d209cacea4b6fa5d785ba21448119e545f7a9679d40a6ddde1774"></a>GRPC_CALL_ERROR_COMPLETION_QUEUE_SHUTDOWN</em>&#160;</td><td class="fielddoc">
+<p>completion queue has been shutdown </p>
+</td></tr>
 </table>
 
 </div>
@@ -993,10 +1032,10 @@ Enumerations</h2></td></tr>
 <p>Specifies the type of APIs to use to pop events from the completion queue. </p>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a1d6272e15d32381a9ffa027cefd60bf8a3fccd6237614f711bfc1999438ed2676"></a>GRPC_CQ_NEXT</em>&#160;</td><td class="fielddoc">
-<p>Events are popped out by calling grpc_completion_queue_next() API ONLY. </p>
+<p>Events are popped out by calling <a class="el" href="grpc_8h.html#ab43d55077bcbeb324044d3dcd26a5c80" title="Blocks until an event is available, the completion queue is being shut down, or deadline is reached...">grpc_completion_queue_next()</a> API ONLY. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a1d6272e15d32381a9ffa027cefd60bf8a7ddd2051625309ecc657b658c021476a"></a>GRPC_CQ_PLUCK</em>&#160;</td><td class="fielddoc">
-<p>Events are popped out by calling grpc_completion_queue_pluck() API ONLY. </p>
+<p>Events are popped out by calling <a class="el" href="grpc_8h.html#a0292bf7a0c794771cd66766dc4b8276c" title="Blocks until an event with tag &#39;tag&#39; is available, the completion queue is being shutdown or deadline...">grpc_completion_queue_pluck()</a> API ONLY. </p>
 </td></tr>
 </table>
 
@@ -1014,7 +1053,7 @@ Enumerations</h2></td></tr>
 
 <p>Completion queues internally MAY maintain a set of file descriptors in a structure called 'pollset'. </p>
 <p>This enum specifies if a completion queue has an associated pollset and any restrictions on the type of file descriptors that can be present in the pollset.</p>
-<p>I/O progress can only be made when grpc_completion_queue_next() or grpc_completion_queue_pluck() are called on the completion queue (unless the grpc_cq_polling_type is GRPC_CQ_NON_POLLING) and hence it is very important to actively call these APIs </p>
+<p>I/O progress can only be made when <a class="el" href="grpc_8h.html#ab43d55077bcbeb324044d3dcd26a5c80" title="Blocks until an event is available, the completion queue is being shut down, or deadline is reached...">grpc_completion_queue_next()</a> or <a class="el" href="grpc_8h.html#a0292bf7a0c794771cd66766dc4b8276c" title="Blocks until an event with tag &#39;tag&#39; is available, the completion queue is being shutdown or deadline...">grpc_completion_queue_pluck()</a> are called on the completion queue (unless the grpc_cq_polling_type is GRPC_CQ_NON_POLLING) and hence it is very important to actively call these APIs </p>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a6f3d3ec662c2a8ac669c98163d511343afc366f1bf1fc412fafd97557bc0160c8"></a>GRPC_CQ_DEFAULT_POLLING</em>&#160;</td><td class="fielddoc">
 <p>The completion queue will have an associated pollset and there is no restriction on the type of file descriptors the pollset may contain. </p>
@@ -1024,7 +1063,7 @@ Enumerations</h2></td></tr>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a6f3d3ec662c2a8ac669c98163d511343a30fe3e6720c740094d5295546e9bb849"></a>GRPC_CQ_NON_POLLING</em>&#160;</td><td class="fielddoc">
 <p>The completion queue will not have an associated pollset. </p>
-<p>Note that grpc_completion_queue_next() or grpc_completion_queue_pluck() MUST still be called to pop events from the completion queue; it is not required to call them actively to make I/O progress </p>
+<p>Note that <a class="el" href="grpc_8h.html#ab43d55077bcbeb324044d3dcd26a5c80" title="Blocks until an event is available, the completion queue is being shut down, or deadline is reached...">grpc_completion_queue_next()</a> or <a class="el" href="grpc_8h.html#a0292bf7a0c794771cd66766dc4b8276c" title="Blocks until an event with tag &#39;tag&#39; is available, the completion queue is being shutdown or deadline...">grpc_completion_queue_pluck()</a> MUST still be called to pop events from the completion queue; it is not required to call them actively to make I/O progress </p>
 </td></tr>
 </table>
 
@@ -1079,7 +1118,7 @@ Enumerations</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

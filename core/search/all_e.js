@@ -1,9 +1,9 @@
 var searchData=
 [
   ['pending_5fapi_5fcleanups',['pending_api_cleanups',['../md_doc_core_pending_api_cleanups.html',1,'']]],
-  ['p',['p',['../structgrpc__arg.html#aab5d11432a11b03a53e5d959d9a5328d',1,'grpc_arg']]],
+  ['p',['p',['../structgrpc__arg_1_1grpc__arg__value_1_1grpc__arg__pointer.html#ae710895cf375541f68bcf2c46940c63e',1,'grpc_arg::grpc_arg_value::grpc_arg_pointer']]],
   ['pending_5fapi_5fcleanups_2emd',['pending_api_cleanups.md',['../pending__api__cleanups_8md.html',1,'']]],
-  ['pointer',['pointer',['../structgrpc__arg.html#a769bb810d9ebef427e0c8751de46a429',1,'grpc_arg']]],
+  ['pointer',['pointer',['../uniongrpc__arg_1_1grpc__arg__value.html#aed77f552b492a65ec44d848589b57570',1,'grpc_arg::grpc_arg_value']]],
   ['port_5fplatform_2eh',['port_platform.h',['../impl_2codegen_2port__platform_8h.html',1,'']]],
   ['port_5fplatform_2eh',['port_platform.h',['../support_2port__platform_8h.html',1,'']]],
   ['private_5fkey',['private_key',['../structgrpc__ssl__pem__key__cert__pair.html#a2d4e3bdbc59d906bc9ca8b873120fd72',1,'grpc_ssl_pem_key_cert_pair']]],

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.4.0</span>
+   &#160;<span id="projectnumber">1.6.0</span>
    </div>
   </td>
  </tr>
@@ -125,6 +125,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a1f5b65c54d4e6dd502897e36040714dc"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_status.html#a1f5b65c54d4e6dd502897e36040714dc">ok</a> () const </td></tr>
 <tr class="memdesc:a1f5b65c54d4e6dd502897e36040714dc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Is the status OK?  <a href="#a1f5b65c54d4e6dd502897e36040714dc">More...</a><br/></td></tr>
 <tr class="separator:a1f5b65c54d4e6dd502897e36040714dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a570f2a3a712ce6f60c730536101eaec0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_status.html#a570f2a3a712ce6f60c730536101eaec0">IgnoreError</a> () const </td></tr>
+<tr class="separator:a570f2a3a712ce6f60c730536101eaec0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
@@ -197,6 +199,7 @@ Static Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Construct an instance with associated <em>code</em> and <em>error_message</em>. </p>
+<p>It is an error to construct an OK status with non-empty <em>error_message</em>. </p>
 
 </div>
 </div>
@@ -239,6 +242,7 @@ Static Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Construct an instance with <em>code</em>, <em>error_message</em> and <em>error_details</em>. </p>
+<p>It is an error to construct an OK status with non-empty <em>error_message</em> and/or <em>error_details</em>. </p>
 
 </div>
 </div>
@@ -318,6 +322,29 @@ Static Public Attributes</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a570f2a3a712ce6f60c730536101eaec0"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::Status::IgnoreError </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a1f5b65c54d4e6dd502897e36040714dc"></a>
 <div class="memitem">
 <div class="memproto">
@@ -394,7 +421,7 @@ Static Public Attributes</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jun 21 2017 14:13:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 8 2017 09:46:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
