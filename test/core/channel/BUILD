@@ -12,16 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+
+grpc_package(name = "test/core/channel")
 
 licenses(["notice"])  # Apache v2
-
-package(
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
-)
 
 grpc_cc_test(
     name = "channel_args_test",
@@ -38,6 +33,18 @@ grpc_cc_test(
 grpc_cc_test(
     name = "channel_stack_test",
     srcs = ["channel_stack_test.c"],
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "channel_stack_builder_test",
+    srcs = ["channel_stack_builder_test.c"],
     language = "C",
     deps = [
         "//:gpr",

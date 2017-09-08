@@ -91,6 +91,8 @@ if (MSVC)
   add_definitions(/wd4065 /wd4506)
   # TODO(jtattermusch): revisit C4267 occurrences throughout the code
   add_definitions(/wd4267)
+  # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
+  add_definitions(/wd4987 /wd4774 /wd4819 /wd4996 /wd4619)
 endif()
 
 if (gRPC_USE_PROTO_LITE)
@@ -459,6 +461,7 @@ add_dependencies(buildtests_c grpc_auth_context_test)
 add_dependencies(buildtests_c grpc_b64_test)
 add_dependencies(buildtests_c grpc_byte_buffer_reader_test)
 add_dependencies(buildtests_c grpc_channel_args_test)
+add_dependencies(buildtests_c grpc_channel_stack_builder_test)
 add_dependencies(buildtests_c grpc_channel_stack_test)
 add_dependencies(buildtests_c grpc_completion_queue_test)
 add_dependencies(buildtests_c grpc_completion_queue_threading_test)
@@ -760,6 +763,7 @@ endif()
 add_dependencies(buildtests_cxx server_crash_test_client)
 add_dependencies(buildtests_cxx server_request_call_test)
 add_dependencies(buildtests_cxx shutdown_test)
+add_dependencies(buildtests_cxx stats_test)
 add_dependencies(buildtests_cxx status_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx streaming_throughput_test)
@@ -873,6 +877,7 @@ foreach(_hdr
   include/grpc/support/string_util.h
   include/grpc/support/subprocess.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
   include/grpc/support/sync_windows.h
@@ -891,6 +896,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -964,9 +970,12 @@ add_library(grpc
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
+  src/core/lib/iomgr/call_combiner.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
@@ -975,8 +984,6 @@ add_library(grpc
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
-  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
-  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
   src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
@@ -1189,8 +1196,8 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c
-  src/core/ext/filters/load_reporting/load_reporting.c
-  src/core/ext/filters/load_reporting/load_reporting_filter.c
+  src/core/ext/filters/load_reporting/server_load_reporting_filter.c
+  src/core/ext/filters/load_reporting/server_load_reporting_plugin.c
   src/core/ext/census/base_resources.c
   src/core/ext/census/context.c
   src/core/ext/census/gen/census.pb.c
@@ -1266,6 +1273,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -1312,9 +1320,12 @@ add_library(grpc_cronet
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
+  src/core/lib/iomgr/call_combiner.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
@@ -1323,8 +1334,6 @@ add_library(grpc_cronet
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
-  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
-  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
   src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
@@ -1514,8 +1523,8 @@ add_library(grpc_cronet
   src/core/tsi/transport_security.c
   src/core/tsi/transport_security_adapter.c
   src/core/ext/transport/chttp2/client/chttp2_connector.c
-  src/core/ext/filters/load_reporting/load_reporting.c
-  src/core/ext/filters/load_reporting/load_reporting_filter.c
+  src/core/ext/filters/load_reporting/server_load_reporting_filter.c
+  src/core/ext/filters/load_reporting/server_load_reporting_plugin.c
   src/core/plugin_registry/grpc_cronet_plugin_registry.c
 )
 
@@ -1572,6 +1581,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -1628,9 +1638,12 @@ add_library(grpc_test_util
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
+  src/core/lib/iomgr/call_combiner.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
@@ -1639,8 +1652,6 @@ add_library(grpc_test_util
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
-  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
-  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
   src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
@@ -1848,6 +1859,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -1888,9 +1900,12 @@ add_library(grpc_test_util_unsecure
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
+  src/core/lib/iomgr/call_combiner.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
@@ -1899,8 +1914,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
-  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
-  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
   src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
@@ -2108,6 +2121,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -2134,9 +2148,12 @@ add_library(grpc_unsecure
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
+  src/core/lib/iomgr/call_combiner.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
@@ -2145,8 +2162,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
-  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
-  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
   src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
@@ -2316,8 +2331,8 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c
-  src/core/ext/filters/load_reporting/load_reporting.c
-  src/core/ext/filters/load_reporting/load_reporting_filter.c
+  src/core/ext/filters/load_reporting/server_load_reporting_filter.c
+  src/core/ext/filters/load_reporting/server_load_reporting_plugin.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c
@@ -2403,6 +2418,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -2667,6 +2683,7 @@ foreach(_hdr
   include/grpc/support/string_util.h
   include/grpc/support/subprocess.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
   include/grpc/support/sync_windows.h
@@ -2685,6 +2702,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -2755,6 +2773,68 @@ if (gRPC_INSTALL)
   )
 endif()
 
+if (gRPC_BUILD_TESTS)
+
+add_library(grpc++_core_stats
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.grpc.pb.h
+  src/cpp/util/core_stats.cc
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc++_core_stats PROPERTIES COMPILE_PDB_NAME "grpc++_core_stats"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_core_stats.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/core/stats.proto
+)
+
+target_include_directories(grpc++_core_stats
+  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_INCLUDE_DIR}
+  PRIVATE ${BENCHMARK}/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(grpc++_core_stats
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++
+)
+
+foreach(_hdr
+  src/cpp/util/core_stats.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+endif (gRPC_BUILD_TESTS)
 
 add_library(grpc++_cronet
   src/cpp/client/cronet_credentials.cc
@@ -2830,9 +2910,12 @@ add_library(grpc++_cronet
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/debug/stats.c
+  src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
   src/core/lib/http/httpcli.c
   src/core/lib/http/parser.c
+  src/core/lib/iomgr/call_combiner.c
   src/core/lib/iomgr/closure.c
   src/core/lib/iomgr/combiner.c
   src/core/lib/iomgr/endpoint.c
@@ -2841,8 +2924,6 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
   src/core/lib/iomgr/ev_epoll1_linux.c
-  src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
-  src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
   src/core/lib/iomgr/ev_epollex_linux.c
   src/core/lib/iomgr/ev_epollsig_linux.c
   src/core/lib/iomgr/ev_poll_posix.c
@@ -3098,6 +3179,7 @@ foreach(_hdr
   include/grpc/support/string_util.h
   include/grpc/support/subprocess.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
   include/grpc/support/sync_windows.h
@@ -3116,6 +3198,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -3553,6 +3636,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -3692,6 +3776,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -3845,6 +3930,7 @@ foreach(_hdr
   include/grpc/support/string_util.h
   include/grpc/support/subprocess.h
   include/grpc/support/sync.h
+  include/grpc/support/sync_custom.h
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
   include/grpc/support/sync_windows.h
@@ -3863,6 +3949,7 @@ foreach(_hdr
   include/grpc/impl/codegen/gpr_types.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
+  include/grpc/impl/codegen/sync_custom.h
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
@@ -4573,6 +4660,7 @@ target_link_libraries(qps
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++_test_util
+  grpc++_core_stats
   grpc++
   grpc
 )
@@ -4857,6 +4945,9 @@ add_library(end2end_tests
   test/core/end2end/tests/simple_delayed_request.c
   test/core/end2end/tests/simple_metadata.c
   test/core/end2end/tests/simple_request.c
+  test/core/end2end/tests/stream_compression_compressed_payload.c
+  test/core/end2end/tests/stream_compression_payload.c
+  test/core/end2end/tests/stream_compression_ping_pong_streaming.c
   test/core/end2end/tests/streaming_error_response.c
   test/core/end2end/tests/trailing_metadata.c
   test/core/end2end/tests/workaround_cronet_compression.c
@@ -4957,6 +5048,9 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/simple_delayed_request.c
   test/core/end2end/tests/simple_metadata.c
   test/core/end2end/tests/simple_request.c
+  test/core/end2end/tests/stream_compression_compressed_payload.c
+  test/core/end2end/tests/stream_compression_payload.c
+  test/core/end2end/tests/stream_compression_ping_pong_streaming.c
   test/core/end2end/tests/streaming_error_response.c
   test/core/end2end/tests/trailing_metadata.c
   test/core/end2end/tests/workaround_cronet_compression.c
@@ -6907,6 +7001,37 @@ target_include_directories(grpc_channel_args_test
 )
 
 target_link_libraries(grpc_channel_args_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(grpc_channel_stack_builder_test
+  test/core/channel/channel_stack_builder_test.c
+)
+
+
+target_include_directories(grpc_channel_stack_builder_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(grpc_channel_stack_builder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -9975,6 +10100,7 @@ target_link_libraries(bm_fullstack_trickle
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -10434,6 +10560,7 @@ target_include_directories(codegen_test_full
 target_link_libraries(codegen_test_full
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_core_stats
   grpc++
   grpc
   gpr
@@ -10509,6 +10636,7 @@ target_include_directories(codegen_test_minimal
 target_link_libraries(codegen_test_minimal
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_core_stats
   grpc
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
@@ -12080,6 +12208,7 @@ target_link_libraries(qps_json_driver
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   qps
+  grpc++_core_stats
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -12125,6 +12254,7 @@ target_link_libraries(qps_openloop_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   qps
+  grpc++_core_stats
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -12170,6 +12300,7 @@ target_link_libraries(qps_worker
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   qps
+  grpc++_core_stats
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -12387,6 +12518,7 @@ target_link_libraries(secure_sync_unary_ping_pong_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   qps
+  grpc++_core_stats
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -12715,6 +12847,47 @@ target_link_libraries(shutdown_test
   grpc++_test_util
   grpc_test_util
   grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(stats_test
+  test/core/debug/stats_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(stats_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_BUILD_INCLUDE_DIR}
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CARES_PLATFORM_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(stats_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
   grpc
   gpr_test_util
   gpr

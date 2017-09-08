@@ -209,17 +209,37 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                                 extra_args=extra_args,
                                 inner_jobs=inner_jobs)
 
-  # portability C on Windows
-  for arch in ['x86', 'x64']:
-    for compiler in ['vs2013', 'vs2015']:
-      test_jobs += _generate_jobs(languages=['c'],
-                                  configs=['dbg'],
-                                  platforms=['windows'],
-                                  arch=arch,
-                                  compiler=compiler,
-                                  labels=['portability', 'corelang'],
-                                  extra_args=extra_args,
-                                  inner_jobs=inner_jobs)
+  # portability C on Windows 64-bit (x86 is the default)
+  test_jobs += _generate_jobs(languages=['c'],
+                              configs=['dbg'],
+                              platforms=['windows'],
+                              arch='x64',
+                              compiler='default',
+                              labels=['portability', 'corelang'],
+                              extra_args=extra_args,
+                              inner_jobs=inner_jobs)
+
+  # portability C++ on Windows
+  # TODO(jtattermusch): some of the tests are failing, so we force --build_only
+  test_jobs += _generate_jobs(languages=['c++'],
+                              configs=['dbg'],
+                              platforms=['windows'],
+                              arch='default',
+                              compiler='default',
+                              labels=['portability', 'corelang'],
+                              extra_args=extra_args + ['--build_only'],
+                              inner_jobs=inner_jobs)
+
+  # portability C and C++ on Windows using VS2017 (build only)
+  # TODO(jtattermusch): some of the tests are failing, so we force --build_only
+  test_jobs += _generate_jobs(languages=['c', 'c++'],
+                              configs=['dbg'],
+                              platforms=['windows'],
+                              arch='x64',
+                              compiler='cmake_vs2017',
+                              labels=['portability', 'corelang'],
+                              extra_args=extra_args + ['--build_only'],
+                              inner_jobs=inner_jobs)
 
   # C and C++ with the c-ares DNS resolver on Linux
   test_jobs += _generate_jobs(languages=['c', 'c++'],
@@ -236,12 +256,12 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
   #                             extra_args=extra_args,
   #                             extra_envs={'GRPC_DNS_RESOLVER': 'ares'})
 
-  # cmake build for C and C++
+  # C and C++ build with cmake on Linux
   # TODO(jtattermusch): some of the tests are failing, so we force --build_only
   # to make sure it's buildable at least.
   test_jobs += _generate_jobs(languages=['c', 'c++'],
                               configs=['dbg'],
-                              platforms=['linux', 'windows'],
+                              platforms=['linux'],
                               arch='default',
                               compiler='cmake',
                               labels=['portability', 'corelang'],

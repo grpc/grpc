@@ -39,6 +39,10 @@ namespace Grpc.Core.Logging
         /// <summary>
         /// Error severity.
         /// </summary>
-        Error
+        Error,
+        /// <summary>
+        /// Logging is off.
+        /// </summary>
+        Off = int.MaxValue
     }
 }

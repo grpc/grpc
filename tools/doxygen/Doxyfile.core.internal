@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 4.0.0-dev
+PROJECT_NUMBER         = 5.0.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -827,6 +827,8 @@ include/grpc/impl/codegen/slice.h \
 include/grpc/impl/codegen/status.h \
 include/grpc/impl/codegen/sync.h \
 include/grpc/impl/codegen/sync.h \
+include/grpc/impl/codegen/sync_custom.h \
+include/grpc/impl/codegen/sync_custom.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
@@ -853,6 +855,7 @@ include/grpc/support/port_platform.h \
 include/grpc/support/string_util.h \
 include/grpc/support/subprocess.h \
 include/grpc/support/sync.h \
+include/grpc/support/sync_custom.h \
 include/grpc/support/sync_generic.h \
 include/grpc/support/sync_posix.h \
 include/grpc/support/sync_windows.h \
@@ -976,10 +979,10 @@ src/core/ext/filters/http/message_compress/message_compress_filter.c \
 src/core/ext/filters/http/message_compress/message_compress_filter.h \
 src/core/ext/filters/http/server/http_server_filter.c \
 src/core/ext/filters/http/server/http_server_filter.h \
-src/core/ext/filters/load_reporting/load_reporting.c \
-src/core/ext/filters/load_reporting/load_reporting.h \
-src/core/ext/filters/load_reporting/load_reporting_filter.c \
-src/core/ext/filters/load_reporting/load_reporting_filter.h \
+src/core/ext/filters/load_reporting/server_load_reporting_filter.c \
+src/core/ext/filters/load_reporting/server_load_reporting_filter.h \
+src/core/ext/filters/load_reporting/server_load_reporting_plugin.c \
+src/core/ext/filters/load_reporting/server_load_reporting_plugin.h \
 src/core/ext/filters/max_age/max_age_filter.c \
 src/core/ext/filters/max_age/max_age_filter.h \
 src/core/ext/filters/message_size/message_size_filter.c \
@@ -1074,6 +1077,10 @@ src/core/lib/compression/message_compress.c \
 src/core/lib/compression/message_compress.h \
 src/core/lib/compression/stream_compression.c \
 src/core/lib/compression/stream_compression.h \
+src/core/lib/debug/stats.c \
+src/core/lib/debug/stats.h \
+src/core/lib/debug/stats_data.c \
+src/core/lib/debug/stats_data.h \
 src/core/lib/debug/trace.c \
 src/core/lib/debug/trace.h \
 src/core/lib/http/format_request.c \
@@ -1084,6 +1091,8 @@ src/core/lib/http/httpcli_security_connector.c \
 src/core/lib/http/parser.c \
 src/core/lib/http/parser.h \
 src/core/lib/iomgr/README.md \
+src/core/lib/iomgr/call_combiner.c \
+src/core/lib/iomgr/call_combiner.h \
 src/core/lib/iomgr/closure.c \
 src/core/lib/iomgr/closure.h \
 src/core/lib/iomgr/combiner.c \
@@ -1099,10 +1108,6 @@ src/core/lib/iomgr/error.h \
 src/core/lib/iomgr/error_internal.h \
 src/core/lib/iomgr/ev_epoll1_linux.c \
 src/core/lib/iomgr/ev_epoll1_linux.h \
-src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
-src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h \
-src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
-src/core/lib/iomgr/ev_epoll_thread_pool_linux.h \
 src/core/lib/iomgr/ev_epollex_linux.c \
 src/core/lib/iomgr/ev_epollex_linux.h \
 src/core/lib/iomgr/ev_epollsig_linux.c \
@@ -1330,7 +1335,6 @@ src/core/lib/support/sync.c \
 src/core/lib/support/sync_posix.c \
 src/core/lib/support/sync_windows.c \
 src/core/lib/support/thd.c \
-src/core/lib/support/thd_internal.h \
 src/core/lib/support/thd_posix.c \
 src/core/lib/support/thd_windows.c \
 src/core/lib/support/time.c \
@@ -1424,9 +1428,13 @@ src/core/tsi/transport_security_adapter.h \
 src/core/tsi/transport_security_grpc.c \
 src/core/tsi/transport_security_grpc.h \
 src/core/tsi/transport_security_interface.h \
+third_party/nanopb/pb.h \
 third_party/nanopb/pb_common.c \
+third_party/nanopb/pb_common.h \
 third_party/nanopb/pb_decode.c \
-third_party/nanopb/pb_encode.c
+third_party/nanopb/pb_decode.h \
+third_party/nanopb/pb_encode.c \
+third_party/nanopb/pb_encode.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

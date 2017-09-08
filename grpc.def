@@ -39,11 +39,14 @@ EXPORTS
     census_record_values
     grpc_compression_algorithm_parse
     grpc_compression_algorithm_name
+    grpc_stream_compression_algorithm_name
     grpc_compression_algorithm_for_level
+    grpc_stream_compression_algorithm_for_level
     grpc_compression_options_init
     grpc_compression_options_enable_algorithm
     grpc_compression_options_disable_algorithm
     grpc_compression_options_is_algorithm_enabled
+    grpc_compression_options_is_stream_compression_algorithm_enabled
     grpc_metadata_array_init
     grpc_metadata_array_destroy
     grpc_call_details_init
@@ -62,11 +65,13 @@ EXPORTS
     grpc_completion_queue_shutdown
     grpc_completion_queue_destroy
     grpc_alarm_create
+    grpc_alarm_set
     grpc_alarm_cancel
     grpc_alarm_destroy
     grpc_channel_check_connectivity_state
     grpc_channel_num_external_connectivity_watchers
     grpc_channel_watch_connectivity_state
+    grpc_channel_support_connectivity_watcher
     grpc_channel_create_call
     grpc_channel_ping
     grpc_channel_register_call

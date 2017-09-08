@@ -22,13 +22,9 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- Fixed some memory leaks #9559, #10996
-- Disabled cares dependency from gRPC C Core #10940
-- De-coupled protobuf dependency #11112
-- Fixed extension reported version #10842
-- Added config.w32 for Windows support #8161
-- Fixed PHP distrib test after cc files were added #11193
-- Fixed protoc plugin comment escape bug #11025
+- Channel are now by default persistent #11878
+- Some bug fixes from 1.4 branch #12109, #12123
+- Fixed hang bug when fork() was used #11814
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -73,6 +69,7 @@
     <file baseinstalldir="/" name="include/grpc/support/string_util.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/subprocess.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/sync_custom.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync_windows.h" role="src" />
@@ -91,6 +88,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_custom.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
@@ -109,7 +107,6 @@
     <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_windows.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/thd_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/time_precise.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/tmpfile.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.c" role="src" />
@@ -174,6 +171,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_custom.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
@@ -273,9 +271,12 @@
     <file baseinstalldir="/" name="src/core/lib/compression/algorithm_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/stream_compression.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/stats.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/stats_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/format_request.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/call_combiner.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/closure.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.h" role="src" />
@@ -283,8 +284,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/error.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/error_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll1_linux.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll_thread_pool_linux.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epollex_linux.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epollsig_linux.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_poll_posix.h" role="src" />
@@ -383,11 +382,15 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h" role="src" />
+    <file baseinstalldir="/" name="third_party/nanopb/pb.h" role="src" />
+    <file baseinstalldir="/" name="third_party/nanopb/pb_common.h" role="src" />
+    <file baseinstalldir="/" name="third_party/nanopb/pb_decode.h" role="src" />
+    <file baseinstalldir="/" name="third_party/nanopb/pb_encode.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/load_reporting.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/load_reporting_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/server_load_reporting_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/server_load_reporting_plugin.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/aggregation.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/base_resources.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/census_interface.h" role="src" />
@@ -421,9 +424,12 @@
     <file baseinstalldir="/" name="src/core/lib/compression/compression.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/stream_compression.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/stats.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/stats_data.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/format_request.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/call_combiner.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/closure.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.c" role="src" />
@@ -432,8 +438,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/error.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll1_linux.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll_thread_pool_linux.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epollex_linux.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epollsig_linux.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_poll_posix.c" role="src" />
@@ -646,8 +650,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/load_reporting.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/load_reporting_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/server_load_reporting_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/server_load_reporting_plugin.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/base_resources.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/context.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.c" role="src" />

@@ -39,6 +39,7 @@ some configuration as environment variables that can be set.
   gRPC C core is processing requests via debug logs. Available tracers include:
   - api - traces api calls to the C core
   - bdp_estimator - traces behavior of bdp estimation logic
+  - call_combiner - traces call combiner state
   - call_error - traces the possible errors contributing to final call status
   - channel - traces operations on the C core channel stack
   - client_channel - traces client channel activity, including resolver
@@ -113,3 +114,11 @@ some configuration as environment variables that can be set.
   - native (default)- a DNS resolver based around getaddrinfo(), creates a new thread to
     perform name resolution
   - ares - a DNS resolver based around the c-ares library
+
+* GRPC_DISABLE_CHANNEL_CONNECTIVITY_WATCHER
+  The channel connectivity watcher uses one extra thread to check the channel
+  state every 500 ms on the client side. It can help reconnect disconnected
+  client channels (mostly due to idleness), so that the next RPC on this channel
+  won't fail. Set to 1 to turn off this watcher and save a thread. Please note
+  this is a temporary work-around, it will be removed in the future once we have
+  support for automatically reestablishing failed connections.

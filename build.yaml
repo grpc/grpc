@@ -12,7 +12,7 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 4.0.0-dev
+  core_version: 5.0.0-dev
   g_stands_for: gambit
   version: 1.7.0-dev
 filegroups:
@@ -126,6 +126,7 @@ filegroups:
   - include/grpc/support/string_util.h
   - include/grpc/support/subprocess.h
   - include/grpc/support/sync.h
+  - include/grpc/support/sync_custom.h
   - include/grpc/support/sync_generic.h
   - include/grpc/support/sync_posix.h
   - include/grpc/support/sync_windows.h
@@ -152,7 +153,6 @@ filegroups:
   - src/core/lib/support/stack_lockfree.h
   - src/core/lib/support/string.h
   - src/core/lib/support/string_windows.h
-  - src/core/lib/support/thd_internal.h
   - src/core/lib/support/time_precise.h
   - src/core/lib/support/tmpfile.h
   uses:
@@ -167,6 +167,7 @@ filegroups:
   - include/grpc/impl/codegen/gpr_types.h
   - include/grpc/impl/codegen/port_platform.h
   - include/grpc/impl/codegen/sync.h
+  - include/grpc/impl/codegen/sync_custom.h
   - include/grpc/impl/codegen/sync_generic.h
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
@@ -194,9 +195,12 @@ filegroups:
   - src/core/lib/compression/compression.c
   - src/core/lib/compression/message_compress.c
   - src/core/lib/compression/stream_compression.c
+  - src/core/lib/debug/stats.c
+  - src/core/lib/debug/stats_data.c
   - src/core/lib/http/format_request.c
   - src/core/lib/http/httpcli.c
   - src/core/lib/http/parser.c
+  - src/core/lib/iomgr/call_combiner.c
   - src/core/lib/iomgr/closure.c
   - src/core/lib/iomgr/combiner.c
   - src/core/lib/iomgr/endpoint.c
@@ -205,8 +209,6 @@ filegroups:
   - src/core/lib/iomgr/endpoint_pair_windows.c
   - src/core/lib/iomgr/error.c
   - src/core/lib/iomgr/ev_epoll1_linux.c
-  - src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c
-  - src/core/lib/iomgr/ev_epoll_thread_pool_linux.c
   - src/core/lib/iomgr/ev_epollex_linux.c
   - src/core/lib/iomgr/ev_epollsig_linux.c
   - src/core/lib/iomgr/ev_poll_posix.c
@@ -344,9 +346,12 @@ filegroups:
   - src/core/lib/compression/algorithm_metadata.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/compression/stream_compression.h
+  - src/core/lib/debug/stats.h
+  - src/core/lib/debug/stats_data.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h
+  - src/core/lib/iomgr/call_combiner.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/endpoint.h
@@ -354,8 +359,6 @@ filegroups:
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/ev_epoll1_linux.h
-  - src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h
-  - src/core/lib/iomgr/ev_epoll_thread_pool_linux.h
   - src/core/lib/iomgr/ev_epollex_linux.h
   - src/core/lib/iomgr/ev_epollsig_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
@@ -587,16 +590,6 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
-- name: grpc_load_reporting
-  headers:
-  - src/core/ext/filters/load_reporting/load_reporting.h
-  - src/core/ext/filters/load_reporting/load_reporting_filter.h
-  src:
-  - src/core/ext/filters/load_reporting/load_reporting.c
-  - src/core/ext/filters/load_reporting/load_reporting_filter.c
-  plugin: grpc_load_reporting_plugin
-  uses:
-  - grpc_base
 - name: grpc_max_age_filter
   headers:
   - src/core/ext/filters/max_age/max_age_filter.h
@@ -707,6 +700,16 @@ filegroups:
   - src/core/ext/filters/workarounds/workaround_utils.h
   src:
   - src/core/ext/filters/workarounds/workaround_utils.c
+  uses:
+  - grpc_base
+- name: grpc_server_load_reporting
+  headers:
+  - src/core/ext/filters/load_reporting/server_load_reporting_filter.h
+  - src/core/ext/filters/load_reporting/server_load_reporting_plugin.h
+  src:
+  - src/core/ext/filters/load_reporting/server_load_reporting_filter.c
+  - src/core/ext/filters/load_reporting/server_load_reporting_plugin.c
+  plugin: grpc_server_load_reporting_plugin
   uses:
   - grpc_base
 - name: grpc_test_util_base
@@ -912,7 +915,7 @@ filegroups:
   - third_party/nanopb/pb_common.c
   - third_party/nanopb/pb_decode.c
   - third_party/nanopb/pb_encode.c
-  filegroups:
+  uses:
   - nanopb_headers
 - name: nanopb_headers
   headers:
@@ -1161,7 +1164,7 @@ libs:
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_resolver_fake
-  - grpc_load_reporting
+  - grpc_server_load_reporting
   - grpc_secure
   - census
   - grpc_max_age_filter
@@ -1187,7 +1190,7 @@ libs:
   - grpc_base
   - grpc_transport_cronet_client_secure
   - grpc_transport_chttp2_client_secure
-  - grpc_load_reporting
+  - grpc_server_load_reporting
   generate_plugin_registry: true
   platforms:
   - linux
@@ -1261,7 +1264,7 @@ libs:
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_resolver_fake
-  - grpc_load_reporting
+  - grpc_server_load_reporting
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
@@ -1327,6 +1330,16 @@ libs:
   - grpc++_codegen_base_src
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
+- name: grpc++_core_stats
+  build: private
+  language: c++
+  public_headers:
+  - src/cpp/util/core_stats.h
+  src:
+  - src/proto/grpc/core/stats.proto
+  - src/cpp/util/core_stats.cc
+  deps:
+  - grpc++
 - name: grpc++_cronet
   build: all
   language: c++
@@ -1669,6 +1682,7 @@ libs:
   deps:
   - grpc_test_util
   - grpc++_test_util
+  - grpc++_core_stats
   - grpc++
   - grpc
 - name: grpc_csharp_ext
@@ -2351,6 +2365,16 @@ targets:
   language: c
   src:
   - test/core/channel/channel_args_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: grpc_channel_stack_builder_test
+  build: test
+  language: c
+  src:
+  - test/core/channel/channel_stack_builder_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -3597,6 +3621,8 @@ targets:
 - name: bm_fullstack_streaming_ping_pong
   build: test
   language: c++
+  headers:
+  - test/cpp/microbenchmarks/fullstack_streaming_ping_pong.h
   src:
   - test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc
   deps:
@@ -3622,6 +3648,8 @@ targets:
 - name: bm_fullstack_streaming_pump
   build: test
   language: c++
+  headers:
+  - test/cpp/microbenchmarks/fullstack_streaming_pump.h
   src:
   - test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc
   deps:
@@ -3658,6 +3686,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   args:
   - --benchmark_min_time=0
   defaults: benchmark
@@ -3672,6 +3701,8 @@ targets:
 - name: bm_fullstack_unary_ping_pong
   build: test
   language: c++
+  headers:
+  - test/cpp/microbenchmarks/fullstack_unary_ping_pong.h
   src:
   - test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc
   deps:
@@ -3829,6 +3860,7 @@ targets:
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_full.cc
   deps:
+  - grpc++_core_stats
   - grpc++
   - grpc
   - gpr
@@ -3846,6 +3878,7 @@ targets:
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_minimal.cc
   deps:
+  - grpc++_core_stats
   - grpc
   - gpr
   filegroups:
@@ -4336,6 +4369,7 @@ targets:
   - test/cpp/qps/qps_json_driver.cc
   deps:
   - qps
+  - grpc++_core_stats
   - grpc++_test_util
   - grpc_test_util
   - grpc++
@@ -4351,6 +4385,7 @@ targets:
   - test/cpp/qps/qps_openloop_test.cc
   deps:
   - qps
+  - grpc++_core_stats
   - grpc++_test_util
   - grpc_test_util
   - grpc++
@@ -4373,6 +4408,7 @@ targets:
   - test/cpp/qps/worker.cc
   deps:
   - qps
+  - grpc++_core_stats
   - grpc++_test_util
   - grpc_test_util
   - grpc++
@@ -4436,6 +4472,7 @@ targets:
   - test/cpp/qps/secure_sync_unary_ping_pong_test.cc
   deps:
   - qps
+  - grpc++_core_stats
   - grpc++_test_util
   - grpc_test_util
   - grpc++
@@ -4545,6 +4582,18 @@ targets:
   - grpc++_test_util
   - grpc_test_util
   - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: stats_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/debug/stats_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
   - grpc
   - gpr_test_util
   - gpr

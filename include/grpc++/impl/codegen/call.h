@@ -204,12 +204,14 @@ class CallOpSendInitialMetadata {
  public:
   CallOpSendInitialMetadata() : send_(false) {
     maybe_compression_level_.is_set = false;
+    maybe_stream_compression_level_.is_set = false;
   }
 
   void SendInitialMetadata(
       const std::multimap<grpc::string, grpc::string>& metadata,
       uint32_t flags) {
     maybe_compression_level_.is_set = false;
+    maybe_stream_compression_level_.is_set = false;
     send_ = true;
     flags_ = flags;
     initial_metadata_ =
@@ -219,6 +221,11 @@ class CallOpSendInitialMetadata {
   void set_compression_level(grpc_compression_level level) {
     maybe_compression_level_.is_set = true;
     maybe_compression_level_.level = level;
+  }
+
+  void set_stream_compression_level(grpc_stream_compression_level level) {
+    maybe_stream_compression_level_.is_set = true;
+    maybe_stream_compression_level_.level = level;
   }
 
  protected:
@@ -236,6 +243,12 @@ class CallOpSendInitialMetadata {
       op->data.send_initial_metadata.maybe_compression_level.level =
           maybe_compression_level_.level;
     }
+    op->data.send_initial_metadata.maybe_stream_compression_level.is_set =
+        maybe_stream_compression_level_.is_set;
+    if (maybe_stream_compression_level_.is_set) {
+      op->data.send_initial_metadata.maybe_stream_compression_level.level =
+          maybe_stream_compression_level_.level;
+    }
   }
   void FinishOp(bool* status) {
     if (!send_) return;
@@ -251,11 +264,15 @@ class CallOpSendInitialMetadata {
     bool is_set;
     grpc_compression_level level;
   } maybe_compression_level_;
+  struct {
+    bool is_set;
+    grpc_stream_compression_level level;
+  } maybe_stream_compression_level_;
 };
 
 class CallOpSendMessage {
  public:
-  CallOpSendMessage() : send_buf_(nullptr), own_buf_(false) {}
+  CallOpSendMessage() : send_buf_(nullptr) {}
 
   /// Send \a message using \a options for the write. The \a options are cleared
   /// after use.
@@ -278,20 +295,25 @@ class CallOpSendMessage {
     write_options_.Clear();
   }
   void FinishOp(bool* status) {
-    if (own_buf_) g_core_codegen_interface->grpc_byte_buffer_destroy(send_buf_);
+    g_core_codegen_interface->grpc_byte_buffer_destroy(send_buf_);
     send_buf_ = nullptr;
   }
 
  private:
   grpc_byte_buffer* send_buf_;
   WriteOptions write_options_;
-  bool own_buf_;
 };
 
 template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
-  return SerializationTraits<M>::Serialize(message, &send_buf_, &own_buf_);
+  bool own_buf;
+  Status result =
+      SerializationTraits<M>::Serialize(message, &send_buf_, &own_buf);
+  if (!own_buf) {
+    send_buf_ = g_core_codegen_interface->grpc_byte_buffer_copy(send_buf_);
+  }
+  return result;
 }
 
 template <class M>
