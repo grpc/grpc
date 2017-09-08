@@ -3621,6 +3621,8 @@ targets:
 - name: bm_fullstack_streaming_ping_pong
   build: test
   language: c++
+  headers:
+  - test/cpp/microbenchmarks/fullstack_streaming_ping_pong.h
   src:
   - test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc
   deps:
@@ -3646,6 +3648,8 @@ targets:
 - name: bm_fullstack_streaming_pump
   build: test
   language: c++
+  headers:
+  - test/cpp/microbenchmarks/fullstack_streaming_pump.h
   src:
   - test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc
   deps:
@@ -3697,6 +3701,8 @@ targets:
 - name: bm_fullstack_unary_ping_pong
   build: test
   language: c++
+  headers:
+  - test/cpp/microbenchmarks/fullstack_unary_ping_pong.h
   src:
   - test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc
   deps:

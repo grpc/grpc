@@ -2790,12 +2790,15 @@
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/cpp/microbenchmarks/fullstack_streaming_ping_pong.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "bm_fullstack_streaming_ping_pong", 
     "src": [
-      "test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc"
+      "test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc", 
+      "test/cpp/microbenchmarks/fullstack_streaming_ping_pong.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2811,12 +2814,15 @@
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/cpp/microbenchmarks/fullstack_streaming_pump.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "bm_fullstack_streaming_pump", 
     "src": [
-      "test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc"
+      "test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc", 
+      "test/cpp/microbenchmarks/fullstack_streaming_pump.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2854,12 +2860,15 @@
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/cpp/microbenchmarks/fullstack_unary_ping_pong.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "bm_fullstack_unary_ping_pong", 
     "src": [
-      "test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc"
+      "test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc", 
+      "test/cpp/microbenchmarks/fullstack_unary_ping_pong.h"
     ], 
     "third_party": false, 
     "type": "target"
