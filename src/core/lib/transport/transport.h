@@ -176,6 +176,9 @@ struct grpc_transport_stream_op_batch_payload {
 
   struct {
     grpc_metadata_batch *recv_initial_metadata;
+    // Flags are used only on the server side.  If non-null, will be set to
+    // a bitfield of the GRPC_INITIAL_METADATA_xxx macros (e.g., to
+    // indicate if the call is idempotent).
     uint32_t *recv_flags;
     /** Should be enqueued when initial metadata is ready to be processed. */
     grpc_closure *recv_initial_metadata_ready;

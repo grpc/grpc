@@ -1913,6 +1913,101 @@ static void start_retriable_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
                                   &batch_data->batch);
 }
 
+static void add_retriable_send_initial_metadata_op(
+    grpc_exec_ctx *exec_ctx, call_data *calld,
+    subchannel_call_retry_state *retry_state,
+    subchannel_batch_data *batch_data) {
+  batch_data->send_initial_metadata_storage = gpr_arena_alloc(
+      calld->arena,
+      sizeof(grpc_linked_mdelem) * calld->send_initial_metadata.list.count);
+  grpc_metadata_batch_copy(exec_ctx, &calld->send_initial_metadata,
+                           &batch_data->send_initial_metadata,
+                           batch_data->send_initial_metadata_storage);
+  retry_state->started_send_initial_metadata = true;
+  batch_data->batch.send_initial_metadata = true;
+  batch_data->batch.payload->send_initial_metadata.send_initial_metadata =
+      &batch_data->send_initial_metadata;
+  batch_data->batch.payload->send_initial_metadata.send_initial_metadata_flags =
+      calld->send_initial_metadata_flags;
+  batch_data->batch.payload->send_initial_metadata.peer_string =
+      calld->peer_string;
+}
+
+static void add_retriable_send_message_op(
+    grpc_exec_ctx *exec_ctx, call_data *calld,
+    subchannel_call_retry_state *retry_state,
+    subchannel_batch_data *batch_data) {
+  grpc_byte_stream_cache *cache =
+      get_send_message_cache(calld, retry_state->started_send_message_count);
+  ++retry_state->started_send_message_count;
+  grpc_caching_byte_stream_init(&batch_data->send_message, cache);
+  batch_data->batch.send_message = true;
+  batch_data->batch.payload->send_message.send_message =
+      (grpc_byte_stream *)&batch_data->send_message;
+}
+
+static void add_retriable_send_trailing_metadata_op(
+    grpc_exec_ctx *exec_ctx, call_data *calld,
+    subchannel_call_retry_state *retry_state,
+    subchannel_batch_data *batch_data) {
+  batch_data->send_trailing_metadata_storage = gpr_arena_alloc(
+      calld->arena,
+      sizeof(grpc_linked_mdelem) * calld->send_trailing_metadata.list.count);
+  grpc_metadata_batch_copy(exec_ctx, &calld->send_trailing_metadata,
+                           &batch_data->send_trailing_metadata,
+                           batch_data->send_trailing_metadata_storage);
+  retry_state->started_send_trailing_metadata = true;
+  batch_data->batch.send_trailing_metadata = true;
+  batch_data->batch.payload->send_trailing_metadata.send_trailing_metadata =
+      &batch_data->send_trailing_metadata;
+}
+
+static void add_retriable_recv_initial_metadata_op(
+    grpc_exec_ctx *exec_ctx, call_data *calld,
+    subchannel_call_retry_state *retry_state,
+    subchannel_batch_data *batch_data) {
+  retry_state->started_recv_initial_metadata = true;
+  batch_data->batch.recv_initial_metadata = true;
+  grpc_metadata_batch_init(&batch_data->recv_initial_metadata);
+  batch_data->batch.payload->recv_initial_metadata.recv_initial_metadata =
+      &batch_data->recv_initial_metadata;
+  batch_data->batch.payload->recv_initial_metadata.trailing_metadata_available =
+      &batch_data->trailing_metadata_available;
+  GRPC_CLOSURE_INIT(&batch_data->recv_initial_metadata_ready,
+                    recv_initial_metadata_ready, batch_data,
+                    grpc_schedule_on_exec_ctx);
+  batch_data->batch.payload->recv_initial_metadata.recv_initial_metadata_ready =
+      &batch_data->recv_initial_metadata_ready;
+}
+
+static void add_retriable_recv_message_op(
+    grpc_exec_ctx *exec_ctx, call_data *calld,
+    subchannel_call_retry_state *retry_state,
+    subchannel_batch_data *batch_data) {
+  retry_state->started_recv_message = true;
+  batch_data->batch.recv_message = true;
+  batch_data->batch.payload->recv_message.recv_message =
+      &batch_data->recv_message;
+  GRPC_CLOSURE_INIT(&batch_data->recv_message_ready, recv_message_ready,
+                    batch_data, grpc_schedule_on_exec_ctx);
+  batch_data->batch.payload->recv_message.recv_message_ready =
+      &batch_data->recv_message_ready;
+}
+
+static void add_retriable_recv_trailing_metadata_op(
+    grpc_exec_ctx *exec_ctx, call_data *calld,
+    subchannel_call_retry_state *retry_state,
+    subchannel_batch_data *batch_data) {
+  retry_state->started_recv_trailing_metadata = true;
+  batch_data->batch.recv_trailing_metadata = true;
+  grpc_metadata_batch_init(&batch_data->recv_trailing_metadata);
+  batch_data->batch.payload->recv_trailing_metadata.recv_trailing_metadata =
+      &batch_data->recv_trailing_metadata;
+  batch_data->batch.collect_stats = true;
+  batch_data->batch.payload->collect_stats.collect_stats =
+      &batch_data->collect_stats;
+}
+
 static void start_retriable_subchannel_batches(grpc_exec_ctx *exec_ctx,
                                                grpc_call_element *elem) {
   call_data *calld = (call_data *)elem->call_data;
@@ -1924,148 +2019,156 @@ static void start_retriable_subchannel_batches(grpc_exec_ctx *exec_ctx,
   subchannel_call_retry_state *retry_state =
       grpc_connected_subchannel_call_get_parent_data(calld->subchannel_call);
   // Do retry checks for new batches, if needed.
+  // Also check if we have pending send_* ops.
+  bool have_pending_send_initial_metadata = false;
+  bool have_pending_send_message = false;
+  bool have_pending_send_trailing_metadata = false;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
-    if (calld->pending_batches[i].batch != NULL) {
-      retry_checks_for_new_batch(exec_ctx, elem, &calld->pending_batches[i]);
+    pending_batch *pending = (pending_batch *)&calld->pending_batches[i];
+    if (pending->batch == NULL) continue;
+    retry_checks_for_new_batch(exec_ctx, elem, pending);
+    if (pending->batch->send_initial_metadata) {
+      have_pending_send_initial_metadata = true;
+    }
+    if (pending->batch->send_message) {
+      have_pending_send_message = true;
+    }
+    if (pending->batch->send_trailing_metadata) {
+      have_pending_send_trailing_metadata = true;
     }
   }
-// FIXME: update comment and array size when we figure out the right way
-// to structure the batches
-  // We split send and recv ops into two different batches.
-  subchannel_batch_data *batches[2];
+// FIXME: do we actually need to add 1 here?  i suspect that if there
+// are batches to replay, then we will definitely not have one of the
+// other batches...
+  // We can start up to 7 batches, one for each pending batch, plus one
+  // for replaying previously-returned send_* batches.
+  subchannel_batch_data *batches[GPR_ARRAY_SIZE(calld->pending_batches) + 1];
   size_t num_batches = 0;
-  // First, create a batch for send ops, if any.
-  // Note that we can't do this based on pending_batches, since we may
-  // have already reported batches with send ops back to the surface (at
-  // which point they are removed from the pending list) before deciding
-  // to retry.  Instead, we cache the data for send ops in calld.
-  subchannel_batch_data *send_batch_data = NULL;
+  // Replay previously-returned send_* ops if needed.
+  subchannel_batch_data *replay_batch_data = NULL;
   // send_initial_metadata.
   if (calld->seen_send_initial_metadata &&
-      !retry_state->started_send_initial_metadata) {
-    send_batch_data = batch_data_create(elem, 1);
-    send_batch_data->send_initial_metadata_storage = gpr_arena_alloc(
-        calld->arena,
-        sizeof(grpc_linked_mdelem) * calld->send_initial_metadata.list.count);
-    grpc_metadata_batch_copy(exec_ctx, &calld->send_initial_metadata,
-                             &send_batch_data->send_initial_metadata,
-                             send_batch_data->send_initial_metadata_storage);
-    retry_state->started_send_initial_metadata = true;
-    send_batch_data->batch.send_initial_metadata = true;
-    send_batch_data->batch.payload->send_initial_metadata.send_initial_metadata
-        = &send_batch_data->send_initial_metadata;
-    send_batch_data->batch.payload->send_initial_metadata
-        .send_initial_metadata_flags =
-            calld->send_initial_metadata_flags;
-    send_batch_data->batch.payload->send_initial_metadata.peer_string =
-        calld->peer_string;
+      !retry_state->started_send_initial_metadata &&
+      !have_pending_send_initial_metadata) {
+    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      gpr_log(GPR_DEBUG, "chand=%p calld=%p: replaying previously returned "
+                         "send_initial_metadata op",
+              chand, calld);
+    }
+    replay_batch_data = batch_data_create(elem, 1);
+    add_retriable_send_initial_metadata_op(exec_ctx, calld, retry_state,
+                                           replay_batch_data);
   }
   // send_message.
-  // Note that we can only have one send_message op pending at a time.
-  const bool have_pending_send_message_ops =
-      retry_state->started_send_message_count < calld->num_send_message_ops;
-  const bool send_message_op_pending =
+  // Note that we can only have one send_message op in flight at a time.
+  bool send_message_op_in_flight =
       retry_state->started_send_message_count <
       retry_state->completed_send_message_count;
-  if (have_pending_send_message_ops && !send_message_op_pending) {
-    if (send_batch_data == NULL) send_batch_data = batch_data_create(elem, 1);
-    grpc_byte_stream_cache *cache =
-        get_send_message_cache(calld, retry_state->started_send_message_count);
-    ++retry_state->started_send_message_count;
-    grpc_caching_byte_stream_init(&send_batch_data->send_message, cache);
-    send_batch_data->batch.send_message = true;
-    send_batch_data->batch.payload->send_message.send_message =
-        (grpc_byte_stream *)&send_batch_data->send_message;
+  if (retry_state->started_send_message_count <
+          calld->num_send_message_ops - have_pending_send_message &&
+      !send_message_op_in_flight) {
+    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      gpr_log(GPR_DEBUG, "chand=%p calld=%p: replaying previously returned "
+                         "send_message op",
+              chand, calld);
+    }
+    if (replay_batch_data == NULL) {
+      replay_batch_data = batch_data_create(elem, 1);
+    }
+    add_retriable_send_message_op(exec_ctx, calld, retry_state,
+                                  replay_batch_data);
+    send_message_op_in_flight = true;
   }
   // send_trailing_metadata.
-  // Note that we only add this op if we have no more pending
-  // send_message ops, since we can't send down any more send_message
-  // ops after send_trailing_metadata.
+  // Note that we only add this op if we have no more send_message ops
+  // to start, since we can't send down any more send_message ops after
+  // send_trailing_metadata.
   if (calld->seen_send_trailing_metadata &&
       retry_state->started_send_message_count == calld->num_send_message_ops &&
-      !retry_state->started_send_trailing_metadata) {
-    if (send_batch_data == NULL) send_batch_data = batch_data_create(elem, 1);
-    send_batch_data->send_trailing_metadata_storage = gpr_arena_alloc(
-        calld->arena,
-        sizeof(grpc_linked_mdelem) * calld->send_trailing_metadata.list.count);
-    grpc_metadata_batch_copy(exec_ctx, &calld->send_trailing_metadata,
-                             &send_batch_data->send_trailing_metadata,
-                             send_batch_data->send_trailing_metadata_storage);
-    retry_state->started_send_trailing_metadata = true;
-    send_batch_data->batch.send_trailing_metadata = true;
-    send_batch_data->batch.payload->send_trailing_metadata
-        .send_trailing_metadata =
-            &send_batch_data->send_trailing_metadata;
+      !retry_state->started_send_trailing_metadata &&
+      !have_pending_send_trailing_metadata) {
+    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      gpr_log(GPR_DEBUG, "chand=%p calld=%p: replaying previously returned "
+                         "send_trailing_metadata op",
+              chand, calld);
+    }
+    if (replay_batch_data == NULL) {
+      replay_batch_data = batch_data_create(elem, 1);
+    }
+    add_retriable_send_trailing_metadata_op(exec_ctx, calld, retry_state,
+                                            replay_batch_data);
   }
-  if (send_batch_data != NULL) batches[num_batches++] = send_batch_data;
-  // Now figure out what recv ops we have to send based on pending_batches.
-// FIXME: if on_complete is invoked before recv_message_ready or
-// recv_initial_metadata_ready, then those ops can always be sent down
-// with the send ops
-// FIXME: recv_trailing_metadata only needs to be separate if there are
-// pending send ops
+  if (replay_batch_data != NULL) batches[num_batches++] = replay_batch_data;
+  // Now add pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
     grpc_transport_stream_op_batch *batch = calld->pending_batches[i].batch;
     if (batch == NULL) continue;
+    // Create batch with the right number of callbacks.
     const bool start_recv_initial_metadata =
         batch->recv_initial_metadata &&
         !retry_state->started_recv_initial_metadata;
     const bool start_recv_message = batch->recv_message &&
                                     !retry_state->started_recv_message;
-    const bool start_recv_trailing_metadata =
-        batch->recv_trailing_metadata &&
-        !retry_state->started_recv_trailing_metadata;
-    if (!start_recv_initial_metadata && !start_recv_message &&
-        !start_recv_trailing_metadata) {
-      continue;
-    }
     const int num_callbacks = 1 + start_recv_initial_metadata +
                               start_recv_message;
-    subchannel_batch_data *batch_data = batch_data_create(elem, num_callbacks);
+    subchannel_batch_data *batch_data = NULL;
+    // send_initial_metadata.
+    if (calld->seen_send_initial_metadata &&
+        !retry_state->started_send_initial_metadata) {
+      batch_data = batch_data_create(elem, num_callbacks);
+      add_retriable_send_initial_metadata_op(exec_ctx, calld, retry_state,
+                                             batch_data);
+    }
+    // send_message.
+    if (retry_state->started_send_message_count < calld->num_send_message_ops &&
+        !send_message_op_in_flight) {
+      if (batch_data == NULL) {
+        batch_data = batch_data_create(elem, num_callbacks);
+      }
+      add_retriable_send_message_op(exec_ctx, calld, retry_state, batch_data);
+    }
+    // send_trailing_metadata.
+    // Note that we only add this op if we have no more send_message ops
+    // to start, since we can't send down any more send_message ops after
+    // send_trailing_metadata.
+    if (calld->seen_send_trailing_metadata &&
+        retry_state->started_send_message_count ==
+            calld->num_send_message_ops &&
+        !retry_state->started_send_trailing_metadata) {
+      if (batch_data == NULL) {
+        batch_data = batch_data_create(elem, num_callbacks);
+      }
+      add_retriable_send_trailing_metadata_op(exec_ctx, calld, retry_state,
+                                              batch_data);
+    }
     // recv_initial_metadata.
     if (start_recv_initial_metadata) {
-      retry_state->started_recv_initial_metadata = true;
-      batch_data->batch.recv_initial_metadata = true;
-      grpc_metadata_batch_init(&batch_data->recv_initial_metadata);
-      batch_data->batch.payload->recv_initial_metadata.recv_initial_metadata =
-          &batch_data->recv_initial_metadata;
-      batch_data->batch.payload->recv_initial_metadata.recv_flags =
-          calld->pending_batches[i].batch->payload
-              ->recv_initial_metadata.recv_flags;
-      batch_data->batch.payload->recv_initial_metadata
-          .trailing_metadata_available =
-              &batch_data->trailing_metadata_available;
-      GRPC_CLOSURE_INIT(&batch_data->recv_initial_metadata_ready,
-                        recv_initial_metadata_ready, batch_data,
-                        grpc_schedule_on_exec_ctx);
-      batch_data->batch.payload->recv_initial_metadata
-          .recv_initial_metadata_ready =
-              &batch_data->recv_initial_metadata_ready;
+      // recv_flags is only used on the server side.
+      GPR_ASSERT(batch->payload->recv_initial_metadata.recv_flags == NULL);
+      if (batch_data == NULL) {
+        batch_data = batch_data_create(elem, num_callbacks);
+      }
+      add_retriable_recv_initial_metadata_op(exec_ctx, calld, retry_state,
+                                             batch_data);
     }
     // recv_message.
     if (start_recv_message) {
-      retry_state->started_recv_message = true;
-      batch_data->batch.recv_message = true;
-      batch_data->batch.payload->recv_message.recv_message =
-          &batch_data->recv_message;
-      GRPC_CLOSURE_INIT(&batch_data->recv_message_ready, recv_message_ready,
-                        batch_data, grpc_schedule_on_exec_ctx);
-      batch_data->batch.payload->recv_message.recv_message_ready =
-          &batch_data->recv_message_ready;
+      if (batch_data == NULL) {
+        batch_data = batch_data_create(elem, num_callbacks);
+      }
+      add_retriable_recv_message_op(exec_ctx, calld, retry_state, batch_data);
     }
     // recv_trailing_metadata.
-    if (start_recv_trailing_metadata) {
-      retry_state->started_recv_trailing_metadata = true;
-      batch_data->batch.recv_trailing_metadata = true;
-      grpc_metadata_batch_init(&batch_data->recv_trailing_metadata);
-      batch_data->batch.payload->recv_trailing_metadata.recv_trailing_metadata =
-          &batch_data->recv_trailing_metadata;
+    if (batch->recv_trailing_metadata &&
+        !retry_state->started_recv_trailing_metadata) {
+      if (batch_data == NULL) {
+        batch_data = batch_data_create(elem, num_callbacks);
+      }
       GPR_ASSERT(calld->pending_batches[i].batch->collect_stats);
-      batch_data->batch.collect_stats = true;
-      batch_data->batch.payload->collect_stats.collect_stats =
-          &batch_data->collect_stats;
+      add_retriable_recv_trailing_metadata_op(exec_ctx, calld, retry_state,
+                                              batch_data);
     }
-    batches[num_batches++] = batch_data;
+    if (batch_data != NULL) batches[num_batches++] = batch_data;
   }
   // Start batches on subchannel call.
   // Note that the call combiner will be yielded for each batch that we
