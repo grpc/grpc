@@ -191,12 +191,6 @@ static void watcher_timer_init(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_free(wa);
 }
 
-int grpc_channel_support_connectivity_watcher(grpc_channel *channel) {
-  grpc_channel_element *client_channel_elem =
-      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
-  return client_channel_elem->filter != &grpc_client_channel_filter ? 0 : 1;
-}
-
 void grpc_channel_watch_connectivity_state(
     grpc_channel *channel, grpc_connectivity_state last_observed_state,
     gpr_timespec deadline, grpc_completion_queue *cq, void *tag) {

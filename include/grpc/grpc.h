@@ -181,9 +181,6 @@ GRPCAPI void grpc_channel_watch_connectivity_state(
     grpc_channel *channel, grpc_connectivity_state last_observed_state,
     gpr_timespec deadline, grpc_completion_queue *cq, void *tag);
 
-/** Check whether a grpc channel supports connectivity watcher */
-GRPCAPI int grpc_channel_support_connectivity_watcher(grpc_channel *channel);
-
 /** Create a call given a grpc_channel, in order to call 'method'. All
     completions are sent to 'completion_queue'. 'method' and 'host' need only
     live through the invocation of this function.

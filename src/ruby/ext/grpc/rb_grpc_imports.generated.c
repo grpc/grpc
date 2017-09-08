@@ -94,7 +94,6 @@ grpc_alarm_destroy_type grpc_alarm_destroy_import;
 grpc_channel_check_connectivity_state_type grpc_channel_check_connectivity_state_import;
 grpc_channel_num_external_connectivity_watchers_type grpc_channel_num_external_connectivity_watchers_import;
 grpc_channel_watch_connectivity_state_type grpc_channel_watch_connectivity_state_import;
-grpc_channel_support_connectivity_watcher_type grpc_channel_support_connectivity_watcher_import;
 grpc_channel_create_call_type grpc_channel_create_call_import;
 grpc_channel_ping_type grpc_channel_ping_import;
 grpc_channel_register_call_type grpc_channel_register_call_import;
@@ -402,7 +401,6 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_channel_check_connectivity_state_import = (grpc_channel_check_connectivity_state_type) GetProcAddress(library, "grpc_channel_check_connectivity_state");
   grpc_channel_num_external_connectivity_watchers_import = (grpc_channel_num_external_connectivity_watchers_type) GetProcAddress(library, "grpc_channel_num_external_connectivity_watchers");
   grpc_channel_watch_connectivity_state_import = (grpc_channel_watch_connectivity_state_type) GetProcAddress(library, "grpc_channel_watch_connectivity_state");
-  grpc_channel_support_connectivity_watcher_import = (grpc_channel_support_connectivity_watcher_type) GetProcAddress(library, "grpc_channel_support_connectivity_watcher");
   grpc_channel_create_call_import = (grpc_channel_create_call_type) GetProcAddress(library, "grpc_channel_create_call");
   grpc_channel_ping_import = (grpc_channel_ping_type) GetProcAddress(library, "grpc_channel_ping");
   grpc_channel_register_call_import = (grpc_channel_register_call_type) GetProcAddress(library, "grpc_channel_register_call");
