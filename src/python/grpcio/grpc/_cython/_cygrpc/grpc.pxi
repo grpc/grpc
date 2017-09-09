@@ -59,6 +59,7 @@ cdef extern from "grpc/grpc.h":
   grpc_slice grpc_slice_malloc(size_t length) nogil
   grpc_slice grpc_slice_from_copied_string(const char *source) nogil
   grpc_slice grpc_slice_from_copied_buffer(const char *source, size_t len) nogil
+  grpc_slice grpc_slice_copy(grpc_slice s) nogil
 
   # Declare functions for function-like macros (because Cython)...
   void *grpc_slice_start_ptr "GRPC_SLICE_START_PTR" (grpc_slice s) nogil
