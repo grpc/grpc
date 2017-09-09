@@ -117,7 +117,8 @@ void grpc_mdctx_global_init(void) {
     shard->count = 0;
     gpr_atm_no_barrier_store(&shard->free_estimate, 0);
     shard->capacity = INITIAL_SHARD_CAPACITY;
-    shard->elems = gpr_zalloc(sizeof(*shard->elems) * shard->capacity);
+    shard->elems = (interned_metadata **)gpr_zalloc(sizeof(*shard->elems) *
+                                                    shard->capacity);
   }
 }
 
@@ -204,7 +205,8 @@ static void grow_mdtab(mdtab_shard *shard) {
 
   GPR_TIMER_BEGIN("grow_mdtab", 0);
 
-  mdtab = gpr_zalloc(sizeof(interned_metadata *) * capacity);
+  mdtab =
+      (interned_metadata **)gpr_zalloc(sizeof(interned_metadata *) * capacity);
 
   for (i = 0; i < shard->capacity; i++) {
     for (md = shard->elems[i]; md; md = next) {
@@ -243,7 +245,8 @@ grpc_mdelem grpc_mdelem_create(
                               GRPC_MDELEM_STORAGE_EXTERNAL);
     }
 
-    allocated_metadata *allocated = gpr_malloc(sizeof(*allocated));
+    allocated_metadata *allocated =
+        (allocated_metadata *)gpr_malloc(sizeof(*allocated));
     allocated->key = grpc_slice_ref_internal(key);
     allocated->value = grpc_slice_ref_internal(value);
     gpr_atm_rel_store(&allocated->refcnt, 1);
@@ -292,7 +295,7 @@ grpc_mdelem grpc_mdelem_create(
   }
 
   /* not found: create a new pair */
-  md = gpr_malloc(sizeof(interned_metadata));
+  md = (interned_metadata *)gpr_malloc(sizeof(interned_metadata));
   gpr_atm_rel_store(&md->refcnt, 1);
   md->key = grpc_slice_ref_internal(key);
   md->value = grpc_slice_ref_internal(value);

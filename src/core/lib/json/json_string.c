@@ -63,19 +63,19 @@ typedef struct {
  * bytes at a time (or multiples thereof).
  */
 static void json_writer_output_check(void *userdata, size_t needed) {
-  json_writer_userdata *state = userdata;
+  json_writer_userdata *state = (json_writer_userdata *)userdata;
   if (state->free_space >= needed) return;
   needed -= state->free_space;
   /* Round up by 256 bytes. */
   needed = (needed + 0xff) & ~0xffU;
-  state->output = gpr_realloc(state->output, state->allocated + needed);
+  state->output = (char *)gpr_realloc(state->output, state->allocated + needed);
   state->free_space += needed;
   state->allocated += needed;
 }
 
 /* These are needed by the writer's implementation. */
 static void json_writer_output_char(void *userdata, char c) {
-  json_writer_userdata *state = userdata;
+  json_writer_userdata *state = (json_writer_userdata *)userdata;
   json_writer_output_check(userdata, 1);
   state->output[state->string_len++] = c;
   state->free_space--;
@@ -83,7 +83,7 @@ static void json_writer_output_char(void *userdata, char c) {
 
 static void json_writer_output_string_with_len(void *userdata, const char *str,
                                                size_t len) {
-  json_writer_userdata *state = userdata;
+  json_writer_userdata *state = (json_writer_userdata *)userdata;
   json_writer_output_check(userdata, len);
   memcpy(state->output + state->string_len, str, len);
   state->string_len += len;
@@ -99,7 +99,7 @@ static void json_writer_output_string(void *userdata, const char *str) {
  * the end of the current string, and advance our output pointer.
  */
 static void json_reader_string_clear(void *userdata) {
-  json_reader_userdata *state = userdata;
+  json_reader_userdata *state = (json_reader_userdata *)userdata;
   if (state->string) {
     GPR_ASSERT(state->string_ptr < state->input);
     *state->string_ptr++ = 0;
@@ -108,7 +108,7 @@ static void json_reader_string_clear(void *userdata) {
 }
 
 static void json_reader_string_add_char(void *userdata, uint32_t c) {
-  json_reader_userdata *state = userdata;
+  json_reader_userdata *state = (json_reader_userdata *)userdata;
   GPR_ASSERT(state->string_ptr < state->input);
   GPR_ASSERT(c <= 0xff);
   *state->string_ptr++ = (uint8_t)c;
@@ -149,7 +149,7 @@ static void json_reader_string_add_utf32(void *userdata, uint32_t c) {
  */
 static uint32_t json_reader_read_char(void *userdata) {
   uint32_t r;
-  json_reader_userdata *state = userdata;
+  json_reader_userdata *state = (json_reader_userdata *)userdata;
 
   if (state->remaining_input == 0) return GRPC_JSON_READ_CHAR_EOF;
 
@@ -168,7 +168,7 @@ static uint32_t json_reader_read_char(void *userdata) {
  * our tree-in-progress inside our opaque structure.
  */
 static grpc_json *json_create_and_link(void *userdata, grpc_json_type type) {
-  json_reader_userdata *state = userdata;
+  json_reader_userdata *state = (json_reader_userdata *)userdata;
   grpc_json *json = grpc_json_create(type);
 
   json->parent = state->current_container;
@@ -194,7 +194,7 @@ static grpc_json *json_create_and_link(void *userdata, grpc_json_type type) {
 }
 
 static void json_reader_container_begins(void *userdata, grpc_json_type type) {
-  json_reader_userdata *state = userdata;
+  json_reader_userdata *state = (json_reader_userdata *)userdata;
   grpc_json *container;
 
   GPR_ASSERT(type == GRPC_JSON_ARRAY || type == GRPC_JSON_OBJECT);
@@ -215,7 +215,7 @@ static void json_reader_container_begins(void *userdata, grpc_json_type type) {
  */
 static grpc_json_type json_reader_container_ends(void *userdata) {
   grpc_json_type container_type = GRPC_JSON_TOP_LEVEL;
-  json_reader_userdata *state = userdata;
+  json_reader_userdata *state = (json_reader_userdata *)userdata;
 
   GPR_ASSERT(state->current_container);
 
@@ -236,18 +236,18 @@ static grpc_json_type json_reader_container_ends(void *userdata) {
  * We'll keep it as a string, and leave it to the caller to evaluate it.
  */
 static void json_reader_set_key(void *userdata) {
-  json_reader_userdata *state = userdata;
+  json_reader_userdata *state = (json_reader_userdata *)userdata;
   state->key = state->string;
 }
 
 static void json_reader_set_string(void *userdata) {
-  json_reader_userdata *state = userdata;
+  json_reader_userdata *state = (json_reader_userdata *)userdata;
   grpc_json *json = json_create_and_link(userdata, GRPC_JSON_STRING);
   json->value = (char *)state->string;
 }
 
 static int json_reader_set_number(void *userdata) {
-  json_reader_userdata *state = userdata;
+  json_reader_userdata *state = (json_reader_userdata *)userdata;
   grpc_json *json = json_create_and_link(userdata, GRPC_JSON_NUMBER);
   json->value = (char *)state->string;
   return 1;

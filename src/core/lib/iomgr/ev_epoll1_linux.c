@@ -39,6 +39,7 @@
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/lockfree_event.h"
@@ -635,6 +636,7 @@ static grpc_error *do_epoll_wait(grpc_exec_ctx *exec_ctx, grpc_pollset *ps,
     GRPC_SCHEDULING_START_BLOCKING_REGION;
   }
   do {
+    GRPC_STATS_INC_SYSCALL_POLL(exec_ctx);
     r = epoll_wait(g_epoll_set.epfd, g_epoll_set.events, MAX_EPOLL_EVENTS,
                    timeout);
   } while (r < 0 && errno == EINTR);
@@ -696,22 +698,30 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
         gpr_mu_unlock(&pollset->mu);
         goto retry_lock_neighbourhood;
       }
-      pollset->seen_inactive = false;
-      if (neighbourhood->active_root == NULL) {
-        neighbourhood->active_root = pollset->next = pollset->prev = pollset;
-        /* TODO: sreek. Why would this worker state be other than UNKICKED
-         * here ? (since the worker isn't added to the pollset yet, there is no
-         * way it can be "found" by other threads to get kicked). */
 
-        /* If there is no designated poller, make this the designated poller */
-        if (worker->kick_state == UNKICKED &&
-            gpr_atm_no_barrier_cas(&g_active_poller, 0, (gpr_atm)worker)) {
-          SET_KICK_STATE(worker, DESIGNATED_POLLER);
+      /* In the brief time we released the pollset locks above, the worker MAY
+         have been kicked. In this case, the worker should get out of this
+         pollset ASAP and hence this should neither add the pollset to
+         neighbourhood nor mark the pollset as active.
+
+         On a side note, the only way a worker's kick state could have changed
+         at this point is if it were "kicked specifically". Since the worker has
+         not added itself to the pollset yet (by calling worker_insert()), it is
+         not visible in the "kick any" path yet */
+      if (worker->kick_state == UNKICKED) {
+        pollset->seen_inactive = false;
+        if (neighbourhood->active_root == NULL) {
+          neighbourhood->active_root = pollset->next = pollset->prev = pollset;
+          /* Make this the designated poller if there isn't one already */
+          if (worker->kick_state == UNKICKED &&
+              gpr_atm_no_barrier_cas(&g_active_poller, 0, (gpr_atm)worker)) {
+            SET_KICK_STATE(worker, DESIGNATED_POLLER);
+          }
+        } else {
+          pollset->next = neighbourhood->active_root;
+          pollset->prev = pollset->next->prev;
+          pollset->next->prev = pollset->prev->next = pollset;
         }
-      } else {
-        pollset->next = neighbourhood->active_root;
-        pollset->prev = pollset->next->prev;
-        pollset->next->prev = pollset->prev->next = pollset;
       }
     }
     if (is_reassigning) {
@@ -999,6 +1009,7 @@ static grpc_error *pollset_kick(grpc_pollset *pollset,
     gpr_log(GPR_ERROR, "%s", tmp);
     gpr_free(tmp);
   }
+
   if (specific_worker == NULL) {
     if (gpr_tls_get(&g_current_thread_pollset) != (intptr_t)pollset) {
       grpc_pollset_worker *root_worker = pollset->root_worker;
@@ -1074,7 +1085,11 @@ static grpc_error *pollset_kick(grpc_pollset *pollset,
       }
       goto done;
     }
-  } else if (specific_worker->kick_state == KICKED) {
+
+    GPR_UNREACHABLE_CODE(goto done);
+  }
+
+  if (specific_worker->kick_state == KICKED) {
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
       gpr_log(GPR_ERROR, " .. specific worker already kicked");
     }
@@ -1192,10 +1207,6 @@ static const grpc_event_engine_vtable vtable = {
  * Create epoll_fd (epoll_set_init() takes care of that) to make sure epoll
  * support is available */
 const grpc_event_engine_vtable *grpc_init_epoll1_linux(bool explicit_request) {
-  if (!explicit_request) {
-    return NULL;
-  }
-
   if (!grpc_has_wakeup_fd()) {
     return NULL;
   }

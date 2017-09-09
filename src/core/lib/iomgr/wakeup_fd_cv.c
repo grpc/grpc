@@ -42,7 +42,8 @@ static grpc_error* cv_fd_init(grpc_wakeup_fd* fd_info) {
   gpr_mu_lock(&g_cvfds.mu);
   if (!g_cvfds.free_fds) {
     newsize = GPR_MIN(g_cvfds.size * 2, g_cvfds.size + MAX_TABLE_RESIZE);
-    g_cvfds.cvfds = gpr_realloc(g_cvfds.cvfds, sizeof(fd_node) * newsize);
+    g_cvfds.cvfds =
+        (fd_node*)gpr_realloc(g_cvfds.cvfds, sizeof(fd_node) * newsize);
     for (i = g_cvfds.size; i < newsize; i++) {
       g_cvfds.cvfds[i].is_set = 0;
       g_cvfds.cvfds[i].cvs = NULL;

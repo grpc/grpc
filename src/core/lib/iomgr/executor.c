@@ -28,6 +28,7 @@
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/support/spinlock.h"
 
@@ -81,7 +82,8 @@ void grpc_executor_set_threading(grpc_exec_ctx *exec_ctx, bool threading) {
     g_max_threads = GPR_MAX(1, 2 * gpr_cpu_num_cores());
     gpr_atm_no_barrier_store(&g_cur_threads, 1);
     gpr_tls_init(&g_this_thread_state);
-    g_thread_state = gpr_zalloc(sizeof(thread_state) * g_max_threads);
+    g_thread_state =
+        (thread_state *)gpr_zalloc(sizeof(thread_state) * g_max_threads);
     for (size_t i = 0; i < g_max_threads; i++) {
       gpr_mu_init(&g_thread_state[i].mu);
       gpr_cv_init(&g_thread_state[i].cv);
@@ -128,7 +130,7 @@ void grpc_executor_shutdown(grpc_exec_ctx *exec_ctx) {
 }
 
 static void executor_thread(void *arg) {
-  thread_state *ts = arg;
+  thread_state *ts = (thread_state *)arg;
   gpr_tls_set(&g_this_thread_state, (intptr_t)ts);
 
   grpc_exec_ctx exec_ctx =
@@ -145,6 +147,7 @@ static void executor_thread(void *arg) {
       gpr_mu_unlock(&ts->mu);
       break;
     }
+    GRPC_STATS_INC_EXECUTOR_QUEUE_DRAINED(&exec_ctx);
     grpc_closure_list exec = ts->elems;
     ts->elems = (grpc_closure_list)GRPC_CLOSURE_LIST_INIT;
     gpr_mu_unlock(&ts->mu);
@@ -158,6 +161,7 @@ static void executor_thread(void *arg) {
 static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_error *error) {
   size_t cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
+  GRPC_STATS_INC_EXECUTOR_SCHEDULED_ITEMS(exec_ctx);
   if (cur_thread_count == 0) {
     grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
     return;
@@ -165,9 +169,12 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   thread_state *ts = (thread_state *)gpr_tls_get(&g_this_thread_state);
   if (ts == NULL) {
     ts = &g_thread_state[GPR_HASH_POINTER(exec_ctx, cur_thread_count)];
+  } else {
+    GRPC_STATS_INC_EXECUTOR_SCHEDULED_TO_SELF(exec_ctx);
   }
   gpr_mu_lock(&ts->mu);
   if (grpc_closure_list_empty(ts->elems)) {
+    GRPC_STATS_INC_EXECUTOR_WAKEUP_INITIATED(exec_ctx);
     gpr_cv_signal(&ts->cv);
   }
   grpc_closure_list_append(&ts->elems, closure, error);

@@ -541,6 +541,23 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "transport_security_test_lib"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "fake_transport_security_test", 
+    "src": [
+      "test/core/tsi/fake_transport_security_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -1013,6 +1030,23 @@
     "name": "grpc_channel_args_test", 
     "src": [
       "test/core/channel/channel_args_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "grpc_channel_stack_builder_test", 
+    "src": [
+      "test/core/channel/channel_stack_builder_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2168,6 +2202,23 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "transport_security_test_lib"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "ssl_transport_security_test", 
+    "src": [
+      "test/core/tsi/ssl_transport_security_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2739,12 +2790,15 @@
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/cpp/microbenchmarks/fullstack_streaming_ping_pong.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "bm_fullstack_streaming_ping_pong", 
     "src": [
-      "test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc"
+      "test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc", 
+      "test/cpp/microbenchmarks/fullstack_streaming_ping_pong.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2760,12 +2814,15 @@
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/cpp/microbenchmarks/fullstack_streaming_pump.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "bm_fullstack_streaming_pump", 
     "src": [
-      "test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc"
+      "test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc", 
+      "test/cpp/microbenchmarks/fullstack_streaming_pump.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2803,12 +2860,15 @@
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/cpp/microbenchmarks/fullstack_unary_ping_pong.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "bm_fullstack_unary_ping_pong", 
     "src": [
-      "test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc"
+      "test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc", 
+      "test/cpp/microbenchmarks/fullstack_unary_ping_pong.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2969,7 +3029,8 @@
       "gpr", 
       "grpc", 
       "grpc++", 
-      "grpc++_codegen_base"
+      "grpc++_codegen_base", 
+      "grpc++_core_stats"
     ], 
     "headers": [
       "src/proto/grpc/testing/control.grpc.pb.h", 
@@ -3002,7 +3063,8 @@
       "gpr", 
       "grpc", 
       "grpc++_codegen_base", 
-      "grpc++_codegen_base_src"
+      "grpc++_codegen_base_src", 
+      "grpc++_core_stats"
     ], 
     "headers": [
       "src/proto/grpc/testing/control.grpc.pb.h", 
@@ -3702,6 +3764,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_core_stats", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
@@ -3723,6 +3786,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_core_stats", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
@@ -3744,6 +3808,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_core_stats", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
@@ -3851,6 +3916,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_core_stats", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
@@ -4009,6 +4075,24 @@
     "name": "shutdown_test", 
     "src": [
       "test/cpp/end2end/shutdown_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "stats_test", 
+    "src": [
+      "test/core/debug/stats_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5815,7 +5899,6 @@
       "grpc_lb_policy_grpclb_secure", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
-      "grpc_load_reporting", 
       "grpc_max_age_filter", 
       "grpc_message_size_filter", 
       "grpc_resolver_dns_ares", 
@@ -5824,6 +5907,7 @@
       "grpc_resolver_sockaddr", 
       "grpc_secure", 
       "grpc_server_backward_compatibility", 
+      "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_chttp2_server_insecure", 
@@ -5845,7 +5929,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_load_reporting", 
+      "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_cronet_client_secure"
     ], 
@@ -5922,7 +6006,6 @@
       "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
-      "grpc_load_reporting", 
       "grpc_max_age_filter", 
       "grpc_message_size_filter", 
       "grpc_resolver_dns_ares", 
@@ -5930,6 +6013,7 @@
       "grpc_resolver_fake", 
       "grpc_resolver_sockaddr", 
       "grpc_server_backward_compatibility", 
+      "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_server_insecure", 
       "grpc_transport_inproc", 
@@ -6018,6 +6102,26 @@
       "src/cpp/server/insecure_server_credentials.cc", 
       "src/cpp/server/secure_server_credentials.cc", 
       "src/cpp/server/secure_server_credentials.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "grpc++"
+    ], 
+    "headers": [
+      "src/cpp/util/core_stats.h", 
+      "src/proto/grpc/core/stats.grpc.pb.h", 
+      "src/proto/grpc/core/stats.pb.h", 
+      "src/proto/grpc/core/stats_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc++_core_stats", 
+    "src": [
+      "src/cpp/util/core_stats.cc", 
+      "src/cpp/util/core_stats.h"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -6518,6 +6622,7 @@
     "deps": [
       "grpc", 
       "grpc++", 
+      "grpc++_core_stats", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
@@ -7822,9 +7927,12 @@
       "src/core/lib/compression/compression.c", 
       "src/core/lib/compression/message_compress.c", 
       "src/core/lib/compression/stream_compression.c", 
+      "src/core/lib/debug/stats.c", 
+      "src/core/lib/debug/stats_data.c", 
       "src/core/lib/http/format_request.c", 
       "src/core/lib/http/httpcli.c", 
       "src/core/lib/http/parser.c", 
+      "src/core/lib/iomgr/call_combiner.c", 
       "src/core/lib/iomgr/closure.c", 
       "src/core/lib/iomgr/combiner.c", 
       "src/core/lib/iomgr/endpoint.c", 
@@ -7833,8 +7941,6 @@
       "src/core/lib/iomgr/endpoint_pair_windows.c", 
       "src/core/lib/iomgr/error.c", 
       "src/core/lib/iomgr/ev_epoll1_linux.c", 
-      "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c", 
-      "src/core/lib/iomgr/ev_epoll_thread_pool_linux.c", 
       "src/core/lib/iomgr/ev_epollex_linux.c", 
       "src/core/lib/iomgr/ev_epollsig_linux.c", 
       "src/core/lib/iomgr/ev_poll_posix.c", 
@@ -7973,9 +8079,12 @@
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/message_compress.h", 
       "src/core/lib/compression/stream_compression.h", 
+      "src/core/lib/debug/stats.h", 
+      "src/core/lib/debug/stats_data.h", 
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
+      "src/core/lib/iomgr/call_combiner.h", 
       "src/core/lib/iomgr/closure.h", 
       "src/core/lib/iomgr/combiner.h", 
       "src/core/lib/iomgr/endpoint.h", 
@@ -7983,8 +8092,6 @@
       "src/core/lib/iomgr/error.h", 
       "src/core/lib/iomgr/error_internal.h", 
       "src/core/lib/iomgr/ev_epoll1_linux.h", 
-      "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h", 
-      "src/core/lib/iomgr/ev_epoll_thread_pool_linux.h", 
       "src/core/lib/iomgr/ev_epollex_linux.h", 
       "src/core/lib/iomgr/ev_epollsig_linux.h", 
       "src/core/lib/iomgr/ev_poll_posix.h", 
@@ -8103,9 +8210,12 @@
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/message_compress.h", 
       "src/core/lib/compression/stream_compression.h", 
+      "src/core/lib/debug/stats.h", 
+      "src/core/lib/debug/stats_data.h", 
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
+      "src/core/lib/iomgr/call_combiner.h", 
       "src/core/lib/iomgr/closure.h", 
       "src/core/lib/iomgr/combiner.h", 
       "src/core/lib/iomgr/endpoint.h", 
@@ -8113,8 +8223,6 @@
       "src/core/lib/iomgr/error.h", 
       "src/core/lib/iomgr/error_internal.h", 
       "src/core/lib/iomgr/ev_epoll1_linux.h", 
-      "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h", 
-      "src/core/lib/iomgr/ev_epoll_thread_pool_linux.h", 
       "src/core/lib/iomgr/ev_epollex_linux.h", 
       "src/core/lib/iomgr/ev_epollsig_linux.h", 
       "src/core/lib/iomgr/ev_poll_posix.h", 
@@ -8466,27 +8574,6 @@
       "grpc_base"
     ], 
     "headers": [
-      "src/core/ext/filters/load_reporting/load_reporting.h", 
-      "src/core/ext/filters/load_reporting/load_reporting_filter.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c", 
-    "name": "grpc_load_reporting", 
-    "src": [
-      "src/core/ext/filters/load_reporting/load_reporting.c", 
-      "src/core/ext/filters/load_reporting/load_reporting.h", 
-      "src/core/ext/filters/load_reporting/load_reporting_filter.c", 
-      "src/core/ext/filters/load_reporting/load_reporting_filter.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc_base"
-    ], 
-    "headers": [
       "src/core/ext/filters/max_age/max_age_filter.h"
     ], 
     "is_filegroup": true, 
@@ -8687,6 +8774,27 @@
     "src": [
       "src/core/ext/filters/workarounds/workaround_utils.c", 
       "src/core/ext/filters/workarounds/workaround_utils.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [
+      "src/core/ext/filters/load_reporting/server_load_reporting_filter.h", 
+      "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_server_load_reporting", 
+    "src": [
+      "src/core/ext/filters/load_reporting/server_load_reporting_filter.c", 
+      "src/core/ext/filters/load_reporting/server_load_reporting_filter.h", 
+      "src/core/ext/filters/load_reporting/server_load_reporting_plugin.c", 
+      "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9097,6 +9205,23 @@
     "language": "c", 
     "name": "nanopb_headers", 
     "src": [], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "grpc"
+    ], 
+    "headers": [
+      "test/core/tsi/transport_security_test_lib.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "transport_security_test_lib", 
+    "src": [
+      "test/core/tsi/transport_security_test_lib.c", 
+      "test/core/tsi/transport_security_test_lib.h"
+    ], 
     "third_party": false, 
     "type": "filegroup"
   }, 

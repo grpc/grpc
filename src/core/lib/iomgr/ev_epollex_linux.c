@@ -37,6 +37,7 @@
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/is_epollexclusive_available.h"
@@ -278,7 +279,7 @@ static void ref_by(grpc_fd *fd, int n) {
 }
 
 static void fd_destroy(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  grpc_fd *fd = arg;
+  grpc_fd *fd = (grpc_fd *)arg;
   /* Add the fd to the freelist */
   grpc_iomgr_unregister_object(&fd->iomgr_object);
   pollable_destroy(&fd->pollable);
@@ -339,7 +340,7 @@ static grpc_fd *fd_create(int fd, const char *name) {
   gpr_mu_unlock(&fd_freelist_mu);
 
   if (new_fd == NULL) {
-    new_fd = gpr_malloc(sizeof(grpc_fd));
+    new_fd = (grpc_fd *)gpr_malloc(sizeof(grpc_fd));
   }
 
   pollable_init(&new_fd->pollable, PO_FD);
@@ -555,7 +556,7 @@ static void pollset_maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
 static void do_kick_all(grpc_exec_ctx *exec_ctx, void *arg,
                         grpc_error *error_unused) {
   grpc_error *error = GRPC_ERROR_NONE;
-  grpc_pollset *pollset = arg;
+  grpc_pollset *pollset = (grpc_pollset *)arg;
   gpr_mu_lock(&pollset->pollable.po.mu);
   if (pollset->root_worker != NULL) {
     grpc_pollset_worker *worker = pollset->root_worker;
@@ -814,6 +815,7 @@ static grpc_error *pollset_epoll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   }
   int r;
   do {
+    GRPC_STATS_INC_SYSCALL_POLL(exec_ctx);
     r = epoll_wait(p->epfd, pollset->events, MAX_EPOLL_EVENTS, timeout);
   } while (r < 0 && errno == EINTR);
   if (timeout != 0) {
@@ -1010,7 +1012,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
 static void unref_fd_no_longer_poller(grpc_exec_ctx *exec_ctx, void *arg,
                                       grpc_error *error) {
-  grpc_fd *fd = arg;
+  grpc_fd *fd = (grpc_fd *)arg;
   UNREF_BY(exec_ctx, fd, 2, "pollset_pollable");
 }
 
@@ -1079,7 +1081,7 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
  */
 
 static grpc_pollset_set *pollset_set_create(void) {
-  grpc_pollset_set *pss = gpr_zalloc(sizeof(*pss));
+  grpc_pollset_set *pss = (grpc_pollset_set *)gpr_zalloc(sizeof(*pss));
   po_init(&pss->po, PO_POLLSET_SET);
   return pss;
 }
@@ -1241,7 +1243,7 @@ static void pg_broadcast(grpc_exec_ctx *exec_ctx, polling_group *from,
 static void pg_create(grpc_exec_ctx *exec_ctx, polling_obj **initial_po,
                       size_t initial_po_count) {
   /* assumes all polling objects in initial_po are locked */
-  polling_group *pg = gpr_malloc(sizeof(*pg));
+  polling_group *pg = (polling_group *)gpr_malloc(sizeof(*pg));
   po_init(&pg->po, PO_POLLING_GROUP);
   gpr_ref_init(&pg->refs, (int)initial_po_count);
   for (size_t i = 0; i < initial_po_count; i++) {
@@ -1351,7 +1353,7 @@ static void pg_merge(grpc_exec_ctx *exec_ctx, polling_group *a,
     gpr_mu_lock(&po->mu);
     if (unref_count == unref_cap) {
       unref_cap = GPR_MAX(8, 3 * unref_cap / 2);
-      unref = gpr_realloc(unref, unref_cap * sizeof(*unref));
+      unref = (polling_group **)gpr_realloc(unref, unref_cap * sizeof(*unref));
     }
     unref[unref_count++] = po->group;
     po->group = pg_ref(a);
