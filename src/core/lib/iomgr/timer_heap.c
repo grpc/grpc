@@ -74,8 +74,8 @@ static void maybe_shrink(grpc_timer_heap *heap) {
   if (heap->timer_count >= 8 &&
       heap->timer_count <= heap->timer_capacity / SHRINK_FULLNESS_FACTOR / 2) {
     heap->timer_capacity = heap->timer_count * SHRINK_FULLNESS_FACTOR;
-    heap->timers =
-        gpr_realloc(heap->timers, heap->timer_capacity * sizeof(grpc_timer *));
+    heap->timers = (grpc_timer **)gpr_realloc(
+        heap->timers, heap->timer_capacity * sizeof(grpc_timer *));
   }
 }
 
@@ -99,8 +99,8 @@ int grpc_timer_heap_add(grpc_timer_heap *heap, grpc_timer *timer) {
   if (heap->timer_count == heap->timer_capacity) {
     heap->timer_capacity =
         GPR_MAX(heap->timer_capacity + 1, heap->timer_capacity * 3 / 2);
-    heap->timers =
-        gpr_realloc(heap->timers, heap->timer_capacity * sizeof(grpc_timer *));
+    heap->timers = (grpc_timer **)gpr_realloc(
+        heap->timers, heap->timer_capacity * sizeof(grpc_timer *));
   }
   timer->heap_index = heap->timer_count;
   adjust_upwards(heap->timers, heap->timer_count, timer);

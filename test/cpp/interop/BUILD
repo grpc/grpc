@@ -14,14 +14,9 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
 
-package(
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
-)
+grpc_package(name = "test/cpp/interop")
 
 grpc_cc_library(
     name = "server_helper_lib",

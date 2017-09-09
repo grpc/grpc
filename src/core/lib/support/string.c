@@ -298,3 +298,17 @@ void *gpr_memrchr(const void *s, int c, size_t n) {
   }
   return NULL;
 }
+
+bool gpr_is_true(const char *s) {
+  size_t i;
+  if (s == NULL) {
+    return false;
+  }
+  static const char *truthy[] = {"yes", "true", "1"};
+  for (i = 0; i < GPR_ARRAY_SIZE(truthy); i++) {
+    if (0 == gpr_stricmp(s, truthy[i])) {
+      return true;
+    }
+  }
+  return false;
+}

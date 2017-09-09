@@ -143,6 +143,8 @@ void resource_quota_server(grpc_end2end_test_config config) {
       malloc(sizeof(grpc_call_details) * NUM_CALLS);
   grpc_status_code *status = malloc(sizeof(grpc_status_code) * NUM_CALLS);
   grpc_slice *details = malloc(sizeof(grpc_slice) * NUM_CALLS);
+  grpc_byte_buffer **request_payload =
+      malloc(sizeof(grpc_byte_buffer *) * NUM_CALLS);
   grpc_byte_buffer **request_payload_recv =
       malloc(sizeof(grpc_byte_buffer *) * NUM_CALLS);
   int *was_cancelled = malloc(sizeof(int) * NUM_CALLS);
@@ -156,9 +158,6 @@ void resource_quota_server(grpc_end2end_test_config config) {
   int deadline_exceeded = 0;
   int unavailable = 0;
 
-  grpc_byte_buffer *request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-
   grpc_op ops[6];
   grpc_op *op;
 
@@ -167,6 +166,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
     grpc_metadata_array_init(&trailing_metadata_recv[i]);
     grpc_metadata_array_init(&request_metadata_recv[i]);
     grpc_call_details_init(&call_details[i]);
+    request_payload[i] = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
     request_payload_recv[i] = NULL;
     was_cancelled[i] = 0;
   }
@@ -195,7 +195,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
     op->reserved = NULL;
     op++;
     op->op = GRPC_OP_SEND_MESSAGE;
-    op->data.send_message.send_message = request_payload;
+    op->data.send_message.send_message = request_payload[i];
     op->flags = 0;
     op->reserved = NULL;
     op++;
@@ -261,6 +261,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
       grpc_metadata_array_destroy(&trailing_metadata_recv[call_id]);
       grpc_call_unref(client_calls[call_id]);
       grpc_slice_unref(details[call_id]);
+      grpc_byte_buffer_destroy(request_payload[call_id]);
 
       pending_client_calls--;
     } else if (ev_tag < SERVER_RECV_BASE_TAG) {
@@ -351,7 +352,6 @@ void resource_quota_server(grpc_end2end_test_config config) {
           NUM_CALLS, cancelled_calls_on_server, cancelled_calls_on_client,
           deadline_exceeded, unavailable);
 
-  grpc_byte_buffer_destroy(request_payload);
   grpc_slice_unref(request_payload_slice);
   grpc_resource_quota_unref(resource_quota);
 
@@ -366,6 +366,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
   free(call_details);
   free(status);
   free(details);
+  free(request_payload);
   free(request_payload_recv);
   free(was_cancelled);
 }

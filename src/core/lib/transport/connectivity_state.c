@@ -148,7 +148,8 @@ bool grpc_connectivity_state_notify_on_state_change(
       GRPC_CLOSURE_SCHED(exec_ctx, notify,
                          GRPC_ERROR_REF(tracker->current_error));
     } else {
-      grpc_connectivity_state_watcher *w = gpr_malloc(sizeof(*w));
+      grpc_connectivity_state_watcher *w =
+          (grpc_connectivity_state_watcher *)gpr_malloc(sizeof(*w));
       w->current = current;
       w->notify = notify;
       w->next = tracker->watchers;

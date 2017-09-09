@@ -217,7 +217,7 @@ static int pf_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   if (!p->started_picking) {
     start_picking_locked(exec_ctx, p);
   }
-  pp = gpr_malloc(sizeof(*pp));
+  pp = (pending_pick *)gpr_malloc(sizeof(*pp));
   pp->next = p->pending_picks;
   pp->target = target;
   pp->initial_metadata_flags = pick_args->initial_metadata_flags;
@@ -296,8 +296,6 @@ static void stop_connectivity_watchers(grpc_exec_ctx *exec_ctx,
 static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                              const grpc_lb_policy_args *args) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)policy;
-  /* Find the number of backend addresses. We ignore balancer
-   * addresses, since we don't know how to handle them. */
   const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
@@ -316,12 +314,9 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     }
     return;
   }
-  const grpc_lb_addresses *addresses = arg->value.pointer.p;
-  size_t num_addrs = 0;
-  for (size_t i = 0; i < addresses->num_addresses; i++) {
-    if (!addresses->addresses[i].is_balancer) ++num_addrs;
-  }
-  if (num_addrs == 0) {
+  const grpc_lb_addresses *addresses =
+      (const grpc_lb_addresses *)arg->value.pointer.p;
+  if (addresses->num_addresses == 0) {
     // Empty update. Unsubscribe from all current subchannels and put the
     // channel in TRANSIENT_FAILURE.
     grpc_connectivity_state_set(
@@ -333,9 +328,10 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
   }
   if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO, "Pick First %p received update with %lu addresses",
-            (void *)p, (unsigned long)num_addrs);
+            (void *)p, (unsigned long)addresses->num_addresses);
   }
-  grpc_subchannel_args *sc_args = gpr_zalloc(sizeof(*sc_args) * num_addrs);
+  grpc_subchannel_args *sc_args =
+      gpr_zalloc(sizeof(*sc_args) * addresses->num_addresses);
   /* We remove the following keys in order for subchannel keys belonging to
    * subchannels point to the same address to match. */
   static const char *keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS,
@@ -344,7 +340,8 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
 
   /* Create list of subchannel args for new addresses in \a args. */
   for (size_t i = 0; i < addresses->num_addresses; i++) {
-    if (addresses->addresses[i].is_balancer) continue;
+    // If there were any balancer, we would have chosen grpclb policy instead.
+    GPR_ASSERT(!addresses->addresses[i].is_balancer);
     if (addresses->addresses[i].user_data != NULL) {
       gpr_log(GPR_ERROR,
               "This LB policy doesn't support user data. It will be ignored");
@@ -396,7 +393,8 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
       grpc_channel_args_destroy(exec_ctx, p->pending_update_args->args);
       gpr_free(p->pending_update_args);
     }
-    p->pending_update_args = gpr_zalloc(sizeof(*p->pending_update_args));
+    p->pending_update_args =
+        (grpc_lb_policy_args *)gpr_zalloc(sizeof(*p->pending_update_args));
     p->pending_update_args->client_channel_factory =
         args->client_channel_factory;
     p->pending_update_args->args = grpc_channel_args_copy(args->args);
@@ -460,7 +458,7 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
 
 static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                            grpc_error *error) {
-  pick_first_lb_policy *p = arg;
+  pick_first_lb_policy *p = (pick_first_lb_policy *)arg;
   grpc_subchannel *selected_subchannel;
   pending_pick *pp;
 
@@ -682,7 +680,7 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
                                          grpc_lb_policy_factory *factory,
                                          grpc_lb_policy_args *args) {
   GPR_ASSERT(args->client_channel_factory != NULL);
-  pick_first_lb_policy *p = gpr_zalloc(sizeof(*p));
+  pick_first_lb_policy *p = (pick_first_lb_policy *)gpr_zalloc(sizeof(*p));
   if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_DEBUG, "Pick First %p created.", (void *)p);
   }

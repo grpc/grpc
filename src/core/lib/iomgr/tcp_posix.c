@@ -40,6 +40,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/profiling/timers.h"
@@ -66,7 +67,6 @@ typedef struct {
   grpc_fd *em_fd;
   int fd;
   bool finished_edge;
-  msg_iovlen_type iov_size; /* Number of slices to allocate per read attempt */
   double target_length;
   double bytes_read_this_round;
   gpr_refcount refcount;
@@ -239,7 +239,6 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   size_t i;
 
   GPR_ASSERT(!tcp->finished_edge);
-  GPR_ASSERT(tcp->iov_size <= MAX_READ_IOVEC);
   GPR_ASSERT(tcp->incoming_buffer->count <= MAX_READ_IOVEC);
   GPR_TIMER_BEGIN("tcp_continue_read", 0);
 
@@ -251,13 +250,17 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   msg.msg_name = NULL;
   msg.msg_namelen = 0;
   msg.msg_iov = iov;
-  msg.msg_iovlen = tcp->iov_size;
+  msg.msg_iovlen = (msg_iovlen_type)tcp->incoming_buffer->count;
   msg.msg_control = NULL;
   msg.msg_controllen = 0;
   msg.msg_flags = 0;
 
+  GRPC_STATS_INC_TCP_READ_OFFER(exec_ctx, tcp->incoming_buffer->length);
+  GRPC_STATS_INC_TCP_READ_OFFER_IOV_SIZE(exec_ctx, tcp->incoming_buffer->count);
+
   GPR_TIMER_BEGIN("recvmsg", 0);
   do {
+    GRPC_STATS_INC_SYSCALL_READ(exec_ctx);
     read_bytes = recvmsg(tcp->fd, &msg, 0);
   } while (read_bytes < 0 && errno == EINTR);
   GPR_TIMER_END("recvmsg", read_bytes >= 0);
@@ -285,6 +288,7 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), tcp));
     TCP_UNREF(exec_ctx, tcp, "read");
   } else {
+    GRPC_STATS_INC_TCP_READ_SIZE(exec_ctx, read_bytes);
     add_to_estimate(tcp, (size_t)read_bytes);
     GPR_ASSERT((size_t)read_bytes <= tcp->incoming_buffer->length);
     if ((size_t)read_bytes < tcp->incoming_buffer->length) {
@@ -303,7 +307,7 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
 
 static void tcp_read_allocation_done(grpc_exec_ctx *exec_ctx, void *tcpp,
                                      grpc_error *error) {
-  grpc_tcp *tcp = tcpp;
+  grpc_tcp *tcp = (grpc_tcp *)tcpp;
   if (error != GRPC_ERROR_NONE) {
     grpc_slice_buffer_reset_and_unref_internal(exec_ctx, tcp->incoming_buffer);
     grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
@@ -361,7 +365,8 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
 /* returns true if done, false if pending; if returning true, *error is set */
 #define MAX_WRITE_IOVEC 1000
-static bool tcp_flush(grpc_tcp *tcp, grpc_error **error) {
+static bool tcp_flush(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
+                      grpc_error **error) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];
   msg_iovlen_type iov_size;
@@ -400,9 +405,13 @@ static bool tcp_flush(grpc_tcp *tcp, grpc_error **error) {
     msg.msg_controllen = 0;
     msg.msg_flags = 0;
 
+    GRPC_STATS_INC_TCP_WRITE_SIZE(exec_ctx, sending_length);
+    GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(exec_ctx, iov_size);
+
     GPR_TIMER_BEGIN("sendmsg", 1);
     do {
       /* TODO(klempner): Cork if this is a partial write */
+      GRPC_STATS_INC_SYSCALL_WRITE(exec_ctx);
       sent_length = sendmsg(tcp->fd, &msg, SENDMSG_FLAGS);
     } while (sent_length < 0 && errno == EINTR);
     GPR_TIMER_END("sendmsg", 0);
@@ -459,7 +468,7 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
     return;
   }
 
-  if (!tcp_flush(tcp, &error)) {
+  if (!tcp_flush(exec_ctx, tcp, &error)) {
     if (GRPC_TRACER_ON(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "write: delayed");
     }
@@ -510,7 +519,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   tcp->outgoing_slice_idx = 0;
   tcp->outgoing_byte_idx = 0;
 
-  if (!tcp_flush(tcp, &error)) {
+  if (!tcp_flush(exec_ctx, tcp, &error)) {
     TCP_REF(tcp, "write");
     tcp->write_cb = cb;
     if (GRPC_TRACER_ON(grpc_tcp_trace)) {
@@ -617,7 +626,6 @@ grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_fd *em_fd,
   tcp->min_read_chunk_size = tcp_min_read_chunk_size;
   tcp->max_read_chunk_size = tcp_max_read_chunk_size;
   tcp->bytes_read_this_round = 0;
-  tcp->iov_size = 1;
   tcp->finished_edge = true;
   /* paired with unref in grpc_tcp_destroy */
   gpr_ref_init(&tcp->refcount, 1);

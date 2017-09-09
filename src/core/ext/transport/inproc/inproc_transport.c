@@ -120,7 +120,7 @@ static void slice_buffer_list_append_entry(slice_buffer_list *l,
 }
 
 static grpc_slice_buffer *slice_buffer_list_append(slice_buffer_list *l) {
-  sb_list_entry *next = gpr_malloc(sizeof(*next));
+  sb_list_entry *next = (sb_list_entry *)gpr_malloc(sizeof(*next));
   grpc_slice_buffer_init(&next->sb);
   slice_buffer_list_append_entry(l, next);
   return &next->sb;
@@ -327,7 +327,8 @@ static grpc_error *fill_in_metadata(grpc_exec_ctx *exec_ctx, inproc_stream *s,
   grpc_error *error = GRPC_ERROR_NONE;
   for (grpc_linked_mdelem *elem = metadata->list.head;
        (elem != NULL) && (error == GRPC_ERROR_NONE); elem = elem->next) {
-    grpc_linked_mdelem *nelem = gpr_arena_alloc(s->arena, sizeof(*nelem));
+    grpc_linked_mdelem *nelem =
+        (grpc_linked_mdelem *)gpr_arena_alloc(s->arena, sizeof(*nelem));
     nelem->md = grpc_mdelem_from_slices(
         exec_ctx, grpc_slice_intern(GRPC_MDKEY(elem->md)),
         grpc_slice_intern(GRPC_MDVALUE(elem->md)));
@@ -531,12 +532,14 @@ static void fail_helper_locked(grpc_exec_ctx *exec_ctx, inproc_stream *s,
       // since it expects that as well as no error yet
       grpc_metadata_batch fake_md;
       grpc_metadata_batch_init(&fake_md);
-      grpc_linked_mdelem *path_md = gpr_arena_alloc(s->arena, sizeof(*path_md));
+      grpc_linked_mdelem *path_md =
+          (grpc_linked_mdelem *)gpr_arena_alloc(s->arena, sizeof(*path_md));
       path_md->md =
           grpc_mdelem_from_slices(exec_ctx, g_fake_path_key, g_fake_path_value);
       GPR_ASSERT(grpc_metadata_batch_link_tail(exec_ctx, &fake_md, path_md) ==
                  GRPC_ERROR_NONE);
-      grpc_linked_mdelem *auth_md = gpr_arena_alloc(s->arena, sizeof(*auth_md));
+      grpc_linked_mdelem *auth_md =
+          (grpc_linked_mdelem *)gpr_arena_alloc(s->arena, sizeof(*auth_md));
       auth_md->md =
           grpc_mdelem_from_slices(exec_ctx, g_fake_auth_key, g_fake_auth_value);
       GPR_ASSERT(grpc_metadata_batch_link_tail(exec_ctx, &fake_md, auth_md) ==
@@ -1172,8 +1175,8 @@ static void inproc_transports_create(grpc_exec_ctx *exec_ctx,
                                      grpc_transport **client_transport,
                                      const grpc_channel_args *client_args) {
   INPROC_LOG(GPR_DEBUG, "inproc_transports_create");
-  inproc_transport *st = gpr_zalloc(sizeof(*st));
-  inproc_transport *ct = gpr_zalloc(sizeof(*ct));
+  inproc_transport *st = (inproc_transport *)gpr_zalloc(sizeof(*st));
+  inproc_transport *ct = (inproc_transport *)gpr_zalloc(sizeof(*ct));
   // Share one lock between both sides since both sides get affected
   st->mu = ct->mu = gpr_malloc(sizeof(*st->mu));
   gpr_mu_init(&st->mu->mu);
@@ -1251,20 +1254,14 @@ static void set_pollset_set(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   // Nothing to do here
 }
 
-static char *get_peer(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
-  return gpr_strdup("inproc");
-}
-
 static grpc_endpoint *get_endpoint(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
   return NULL;
 }
 
 static const grpc_transport_vtable inproc_vtable = {
-    sizeof(inproc_stream), "inproc",
-    init_stream,           set_pollset,
-    set_pollset_set,       perform_stream_op,
-    perform_transport_op,  destroy_stream,
-    destroy_transport,     get_peer,
+    sizeof(inproc_stream), "inproc",        init_stream,
+    set_pollset,           set_pollset_set, perform_stream_op,
+    perform_transport_op,  destroy_stream,  destroy_transport,
     get_endpoint};
 
 /*******************************************************************************

@@ -77,6 +77,8 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
   uv_unref((uv_handle_t *)uv_timer);
 }
 
+void grpc_timer_init_unset(grpc_timer *timer) { timer->pending = 0; }
+
 void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
   GRPC_UV_ASSERT_SAME_THREAD();
   if (timer->pending) {

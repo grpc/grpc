@@ -823,6 +823,31 @@ grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {
      {.refcount = &grpc_static_metadata_refcounts[97],
       .data.refcounted = {g_bytes + 1040, 13}}},
 };
+bool grpc_static_callout_is_default[GRPC_BATCH_CALLOUTS_COUNT] = {
+    true,  // :path
+    true,  // :method
+    true,  // :status
+    true,  // :authority
+    true,  // :scheme
+    true,  // te
+    true,  // grpc-message
+    true,  // grpc-status
+    true,  // grpc-payload-bin
+    true,  // grpc-encoding
+    true,  // grpc-accept-encoding
+    true,  // grpc-server-stats-bin
+    true,  // grpc-tags-bin
+    true,  // grpc-trace-bin
+    true,  // content-type
+    true,  // content-encoding
+    true,  // accept-encoding
+    true,  // grpc-internal-encoding-request
+    true,  // grpc-internal-stream-encoding-request
+    true,  // user-agent
+    true,  // host
+    true,  // lb-token
+};
+
 const uint8_t grpc_static_accept_encoding_metadata[8] = {0,  76, 77, 78,
                                                          79, 80, 81, 82};
 

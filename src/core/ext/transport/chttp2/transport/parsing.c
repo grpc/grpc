@@ -402,7 +402,7 @@ static void free_timeout(void *p) { gpr_free(p); }
 
 static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
                               grpc_mdelem md) {
-  grpc_chttp2_transport *t = tp;
+  grpc_chttp2_transport *t = (grpc_chttp2_transport *)tp;
   grpc_chttp2_stream *s = t->incoming_stream;
 
   GPR_TIMER_BEGIN("on_initial_header", 0);
@@ -426,11 +426,12 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
   }
 
   if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
-    gpr_timespec *cached_timeout = grpc_mdelem_get_user_data(md, free_timeout);
+    gpr_timespec *cached_timeout =
+        (gpr_timespec *)grpc_mdelem_get_user_data(md, free_timeout);
     gpr_timespec timeout;
     if (cached_timeout == NULL) {
       /* not already parsed: parse it now, and store the result away */
-      cached_timeout = gpr_malloc(sizeof(gpr_timespec));
+      cached_timeout = (gpr_timespec *)gpr_malloc(sizeof(gpr_timespec));
       if (!grpc_http2_decode_timeout(GRPC_MDVALUE(md), cached_timeout)) {
         char *val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
         gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
@@ -482,7 +483,7 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
 
 static void on_trailing_header(grpc_exec_ctx *exec_ctx, void *tp,
                                grpc_mdelem md) {
-  grpc_chttp2_transport *t = tp;
+  grpc_chttp2_transport *t = (grpc_chttp2_transport *)tp;
   grpc_chttp2_stream *s = t->incoming_stream;
 
   GPR_TIMER_BEGIN("on_trailing_header", 0);
@@ -623,6 +624,7 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
           *s->trailing_metadata_available = true;
         }
         t->hpack_parser.on_header = on_trailing_header;
+        s->received_trailing_metadata = true;
       } else {
         GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing initial_metadata"));
         t->hpack_parser.on_header = on_initial_header;
@@ -631,6 +633,7 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
     case 1:
       GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing trailing_metadata"));
       t->hpack_parser.on_header = on_trailing_header;
+      s->received_trailing_metadata = true;
       break;
     case 2:
       gpr_log(GPR_ERROR, "too many header frames received");
