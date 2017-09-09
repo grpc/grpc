@@ -74,7 +74,7 @@ static const grpc_closure_scheduler_vtable finally_scheduler = {
 static void offload(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
 
 grpc_combiner *grpc_combiner_create(void) {
-  grpc_combiner *lock = gpr_zalloc(sizeof(*lock));
+  grpc_combiner *lock = (grpc_combiner *)gpr_zalloc(sizeof(*lock));
   gpr_ref_init(&lock->refs, 1);
   lock->scheduler.vtable = &scheduler;
   lock->finally_scheduler.vtable = &finally_scheduler;
@@ -194,7 +194,7 @@ static void move_next(grpc_exec_ctx *exec_ctx) {
 }
 
 static void offload(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  grpc_combiner *lock = arg;
+  grpc_combiner *lock = (grpc_combiner *)arg;
   push_last_on_exec_ctx(exec_ctx, lock);
 }
 

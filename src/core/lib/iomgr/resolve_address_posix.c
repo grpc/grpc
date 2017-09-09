@@ -112,13 +112,14 @@ static grpc_error *blocking_resolve_address_impl(
   }
 
   /* Success path: set addrs non-NULL, fill it in */
-  *addresses = gpr_malloc(sizeof(grpc_resolved_addresses));
+  *addresses =
+      (grpc_resolved_addresses *)gpr_malloc(sizeof(grpc_resolved_addresses));
   (*addresses)->naddrs = 0;
   for (resp = result; resp != NULL; resp = resp->ai_next) {
     (*addresses)->naddrs++;
   }
-  (*addresses)->addrs =
-      gpr_malloc(sizeof(grpc_resolved_address) * (*addresses)->naddrs);
+  (*addresses)->addrs = (grpc_resolved_address *)gpr_malloc(
+      sizeof(grpc_resolved_address) * (*addresses)->naddrs);
   i = 0;
   for (resp = result; resp != NULL; resp = resp->ai_next) {
     memcpy(&(*addresses)->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
@@ -153,7 +154,7 @@ typedef struct {
  * grpc_blocking_resolve_address */
 static void do_request_thread(grpc_exec_ctx *exec_ctx, void *rp,
                               grpc_error *error) {
-  request *r = rp;
+  request *r = (request *)rp;
   GRPC_CLOSURE_SCHED(
       exec_ctx, r->on_done,
       grpc_blocking_resolve_address(r->name, r->default_port, r->addrs_out));
@@ -174,7 +175,7 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                  grpc_pollset_set *interested_parties,
                                  grpc_closure *on_done,
                                  grpc_resolved_addresses **addrs) {
-  request *r = gpr_malloc(sizeof(request));
+  request *r = (request *)gpr_malloc(sizeof(request));
   GRPC_CLOSURE_INIT(&r->request_closure, do_request_thread, r,
                     grpc_executor_scheduler(GRPC_EXECUTOR_SHORT));
   r->name = gpr_strdup(name);
