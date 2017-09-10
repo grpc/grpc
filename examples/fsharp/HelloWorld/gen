@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -o pipefail
+set -e
+chmod +x packages/tooling/Grpc.Tools/tools/macosx_x64/protoc
+chmod +x packages/tooling/Grpc.Tools/tools/macosx_x64/grpc_csharp_plugin
+mkdir Greeter
+packages/tooling/Grpc.Tools/tools/macosx_x64/protoc \
+  -I../../protos \
+  --csharp_out Greeter \
+  --grpc_out Greeter ../../protos/helloworld.proto \
+  --plugin=protoc-gen-grpc=packages/tooling/Grpc.Tools/tools/macosx_x64/grpc_csharp_plugin

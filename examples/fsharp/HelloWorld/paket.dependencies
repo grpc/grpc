@@ -1,0 +1,10 @@
+source https://www.nuget.org/api/v2
+nuget Google.Protobuf ~> 3.4.0
+nuget Grpc ~> 1.6.0
+nuget FSharp.Core ~> 4
+
+group Tooling
+  source https://www.nuget.org/api/v2
+  nuget Froto.Parser
+  nuget Froto.Serialization
+  nuget Grpc.Tools
