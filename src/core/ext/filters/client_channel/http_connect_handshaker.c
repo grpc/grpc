@@ -309,7 +309,7 @@ static void http_connect_handshaker_do_handshake(
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(request));
   request.host = server_name;
-  request.http.method = "CONNECT";
+  request.http.method = (char*)"CONNECT";
   request.http.path = server_name;
   request.http.hdrs = headers;
   request.http.hdr_count = num_headers;

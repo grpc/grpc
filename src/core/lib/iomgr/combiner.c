@@ -81,7 +81,8 @@ grpc_combiner *grpc_combiner_create(void) {
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
   gpr_mpscq_init(&lock->queue);
   grpc_closure_list_init(&lock->final_list);
-  GRPC_CLOSURE_INIT(&lock->offload, offload, lock, grpc_executor_scheduler);
+  GRPC_CLOSURE_INIT(&lock->offload, offload, lock,
+                    grpc_executor_scheduler(GRPC_EXECUTOR_SHORT));
   GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG, "C:%p create", lock));
   return lock;
 }

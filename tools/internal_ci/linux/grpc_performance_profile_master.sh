@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,15 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_interop_tocloud.sh"
-# grpc_interop tests can take 6+ hours to complete.
-timeout_mins: 60
-action {
-  define_artifacts {
-    regex: "**/sponge_log.xml"
-    regex: "github/grpc/reports/**"
-  }
-}
+# Enter the gRPC repo root
+cd $(dirname $0)/../../..
+
+source tools/internal_ci/helper_scripts/prepare_build_linux_perf_rc
+
+tools/jenkins/run_performance_profile_hourly.sh || FAILED="true"
+
+# kill port_server.py to prevent the build from hanging
+ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi
+

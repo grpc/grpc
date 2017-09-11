@@ -159,7 +159,7 @@ typedef struct set_response_closure_arg {
 
 static void set_response_closure_fn(grpc_exec_ctx* exec_ctx, void* arg,
                                     grpc_error* error) {
-  set_response_closure_arg* closure_arg = arg;
+  set_response_closure_arg* closure_arg = (set_response_closure_arg*)arg;
   grpc_fake_resolver_response_generator* generator = closure_arg->generator;
   fake_resolver* r = generator->resolver;
   if (r->next_results != NULL) {
@@ -178,7 +178,8 @@ void grpc_fake_resolver_response_generator_set_response(
     grpc_exec_ctx* exec_ctx, grpc_fake_resolver_response_generator* generator,
     grpc_channel_args* next_response) {
   GPR_ASSERT(generator->resolver != NULL);
-  set_response_closure_arg* closure_arg = gpr_zalloc(sizeof(*closure_arg));
+  set_response_closure_arg* closure_arg =
+      (set_response_closure_arg*)gpr_zalloc(sizeof(*closure_arg));
   closure_arg->generator = generator;
   closure_arg->next_response = grpc_channel_args_copy(next_response);
   GRPC_CLOSURE_SCHED(exec_ctx,

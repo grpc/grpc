@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,15 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+# Source this rc script to prepare the environment for linux perf builds
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_interop_tocloud.sh"
-# grpc_interop tests can take 6+ hours to complete.
-timeout_mins: 60
-action {
-  define_artifacts {
-    regex: "**/sponge_log.xml"
-    regex: "github/grpc/reports/**"
-  }
-}
+# Need to increase open files limit and size for perf test
+ulimit -n 32768
+ulimit -c unlimited
+
+git submodule update --init

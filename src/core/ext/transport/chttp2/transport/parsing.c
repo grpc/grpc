@@ -106,7 +106,8 @@ grpc_error *grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
           return err;
         }
         ++cur;
-        ++t->deframe_state;
+        t->deframe_state =
+            (grpc_chttp2_deframe_transport_state)(1 + (int)t->deframe_state);
       }
       if (cur == end) {
         return GRPC_ERROR_NONE;
