@@ -59,43 +59,45 @@ static void test_no_jitter_backoff(void) {
   // x_1 = 2
   // x_n = 2**i + x_{i-1} ( = 2**(n+1) - 2 )
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  exec_ctx.now = 0;
+  exec_ctx.now_is_valid = true;
   grpc_millis next = grpc_backoff_begin(&exec_ctx, &backoff);
-  GPR_ASSERT(next - grpc_exec_ctx_now(&exec_ctx) == 2);
+  GPR_ASSERT(next == 2);
   exec_ctx.now = next;
   next = grpc_backoff_step(&exec_ctx, &backoff);
-  GPR_ASSERT(next - grpc_exec_ctx_now(&exec_ctx) == 6);
+  GPR_ASSERT(next == 6);
   exec_ctx.now = next;
   next = grpc_backoff_step(&exec_ctx, &backoff);
-  GPR_ASSERT(next - grpc_exec_ctx_now(&exec_ctx) == 14);
+  GPR_ASSERT(next == 14);
   exec_ctx.now = next;
   next = grpc_backoff_step(&exec_ctx, &backoff);
-  GPR_ASSERT(next - grpc_exec_ctx_now(&exec_ctx) == 30);
+  GPR_ASSERT(next == 30);
   exec_ctx.now = next;
   next = grpc_backoff_step(&exec_ctx, &backoff);
-  GPR_ASSERT(next - grpc_exec_ctx_now(&exec_ctx) == 62);
+  GPR_ASSERT(next == 62);
   exec_ctx.now = next;
   next = grpc_backoff_step(&exec_ctx, &backoff);
-  GPR_ASSERT(next - grpc_exec_ctx_now(&exec_ctx) == 126);
+  GPR_ASSERT(next == 126);
   exec_ctx.now = next;
   next = grpc_backoff_step(&exec_ctx, &backoff);
-  GPR_ASSERT(next - grpc_exec_ctx_now(&exec_ctx) == 254);
+  GPR_ASSERT(next == 254);
   exec_ctx.now = next;
   next = grpc_backoff_step(&exec_ctx, &backoff);
-  GPR_ASSERT(next - grpc_exec_ctx_now(&exec_ctx) == 510);
+  GPR_ASSERT(next == 510);
   exec_ctx.now = next;
   next = grpc_backoff_step(&exec_ctx, &backoff);
-  GPR_ASSERT(next - grpc_exec_ctx_now(&exec_ctx) == 1022);
+  GPR_ASSERT(next == 1022);
   exec_ctx.now = next;
   next = grpc_backoff_step(&exec_ctx, &backoff);
   // Hit the maximum timeout. From this point onwards, retries will increase
   // only by max timeout.
-  GPR_ASSERT(next - grpc_exec_ctx_now(&exec_ctx) == 1535);
+  GPR_ASSERT(next == 1535);
   exec_ctx.now = next;
   next = grpc_backoff_step(&exec_ctx, &backoff);
-  GPR_ASSERT(next - grpc_exec_ctx_now(&exec_ctx) == 2048);
+  GPR_ASSERT(next == 2048);
   exec_ctx.now = next;
   next = grpc_backoff_step(&exec_ctx, &backoff);
-  GPR_ASSERT(next - grpc_exec_ctx_now(&exec_ctx) == 2561);
+  GPR_ASSERT(next == 2561);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
