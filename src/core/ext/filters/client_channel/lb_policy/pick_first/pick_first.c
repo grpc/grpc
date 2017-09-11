@@ -217,7 +217,7 @@ static int pf_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   if (!p->started_picking) {
     start_picking_locked(exec_ctx, p);
   }
-  pp = gpr_malloc(sizeof(*pp));
+  pp = (pending_pick *)gpr_malloc(sizeof(*pp));
   pp->next = p->pending_picks;
   pp->target = target;
   pp->initial_metadata_flags = pick_args->initial_metadata_flags;
@@ -314,7 +314,8 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     }
     return;
   }
-  const grpc_lb_addresses *addresses = arg->value.pointer.p;
+  const grpc_lb_addresses *addresses =
+      (const grpc_lb_addresses *)arg->value.pointer.p;
   if (addresses->num_addresses == 0) {
     // Empty update. Unsubscribe from all current subchannels and put the
     // channel in TRANSIENT_FAILURE.
@@ -392,7 +393,8 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
       grpc_channel_args_destroy(exec_ctx, p->pending_update_args->args);
       gpr_free(p->pending_update_args);
     }
-    p->pending_update_args = gpr_zalloc(sizeof(*p->pending_update_args));
+    p->pending_update_args =
+        (grpc_lb_policy_args *)gpr_zalloc(sizeof(*p->pending_update_args));
     p->pending_update_args->client_channel_factory =
         args->client_channel_factory;
     p->pending_update_args->args = grpc_channel_args_copy(args->args);
@@ -456,7 +458,7 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
 
 static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                            grpc_error *error) {
-  pick_first_lb_policy *p = arg;
+  pick_first_lb_policy *p = (pick_first_lb_policy *)arg;
   grpc_subchannel *selected_subchannel;
   pending_pick *pp;
 
@@ -678,7 +680,7 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
                                          grpc_lb_policy_factory *factory,
                                          grpc_lb_policy_args *args) {
   GPR_ASSERT(args->client_channel_factory != NULL);
-  pick_first_lb_policy *p = gpr_zalloc(sizeof(*p));
+  pick_first_lb_policy *p = (pick_first_lb_policy *)gpr_zalloc(sizeof(*p));
   if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_DEBUG, "Pick First %p created.", (void *)p);
   }

@@ -86,13 +86,14 @@ grpc_channel_args *grpc_channel_args_copy_and_add_and_remove(
     }
   }
   // Create result.
-  grpc_channel_args *dst = gpr_malloc(sizeof(grpc_channel_args));
+  grpc_channel_args *dst =
+      (grpc_channel_args *)gpr_malloc(sizeof(grpc_channel_args));
   dst->num_args = num_args_to_copy + num_to_add;
   if (dst->num_args == 0) {
     dst->args = NULL;
     return dst;
   }
-  dst->args = gpr_malloc(sizeof(grpc_arg) * dst->num_args);
+  dst->args = (grpc_arg *)gpr_malloc(sizeof(grpc_arg) * dst->num_args);
   // Copy args from src that are not being removed.
   size_t dst_idx = 0;
   if (src != NULL) {
@@ -117,7 +118,7 @@ grpc_channel_args *grpc_channel_args_copy(const grpc_channel_args *src) {
 grpc_channel_args *grpc_channel_args_union(const grpc_channel_args *a,
                                            const grpc_channel_args *b) {
   const size_t max_out = (a->num_args + b->num_args);
-  grpc_arg *uniques = gpr_malloc(sizeof(*uniques) * max_out);
+  grpc_arg *uniques = (grpc_arg *)gpr_malloc(sizeof(*uniques) * max_out);
   for (size_t i = 0; i < a->num_args; ++i) uniques[i] = a->args[i];
 
   size_t uniques_idx = a->num_args;
@@ -160,24 +161,25 @@ static int cmp_arg(const grpc_arg *a, const grpc_arg *b) {
 /* stabilizing comparison function: since channel_args ordering matters for
  * keys with the same name, we need to preserve that ordering */
 static int cmp_key_stable(const void *ap, const void *bp) {
-  const grpc_arg *const *a = ap;
-  const grpc_arg *const *b = bp;
+  const grpc_arg *const *a = (const grpc_arg *const *)ap;
+  const grpc_arg *const *b = (const grpc_arg *const *)bp;
   int c = strcmp((*a)->key, (*b)->key);
   if (c == 0) c = GPR_ICMP(*a, *b);
   return c;
 }
 
 grpc_channel_args *grpc_channel_args_normalize(const grpc_channel_args *a) {
-  grpc_arg **args = gpr_malloc(sizeof(grpc_arg *) * a->num_args);
+  grpc_arg **args = (grpc_arg **)gpr_malloc(sizeof(grpc_arg *) * a->num_args);
   for (size_t i = 0; i < a->num_args; i++) {
     args[i] = &a->args[i];
   }
   if (a->num_args > 1)
     qsort(args, a->num_args, sizeof(grpc_arg *), cmp_key_stable);
 
-  grpc_channel_args *b = gpr_malloc(sizeof(grpc_channel_args));
+  grpc_channel_args *b =
+      (grpc_channel_args *)gpr_malloc(sizeof(grpc_channel_args));
   b->num_args = a->num_args;
-  b->args = gpr_malloc(sizeof(grpc_arg) * b->num_args);
+  b->args = (grpc_arg *)gpr_malloc(sizeof(grpc_arg) * b->num_args);
   for (size_t i = 0; i < a->num_args; i++) {
     b->args[i] = copy_arg(args[i]);
   }

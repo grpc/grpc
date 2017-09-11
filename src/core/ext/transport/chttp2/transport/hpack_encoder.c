@@ -536,7 +536,7 @@ void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor *c) {
   c->max_table_elems = c->cap_table_elems;
   c->max_usable_size = GRPC_CHTTP2_HPACKC_INITIAL_TABLE_SIZE;
   c->table_elem_size =
-      gpr_malloc(sizeof(*c->table_elem_size) * c->cap_table_elems);
+      (uint16_t *)gpr_malloc(sizeof(*c->table_elem_size) * c->cap_table_elems);
   memset(c->table_elem_size, 0,
          sizeof(*c->table_elem_size) * c->cap_table_elems);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(c->entries_keys); i++) {
@@ -564,7 +564,8 @@ void grpc_chttp2_hpack_compressor_set_max_usable_size(
 }
 
 static void rebuild_elems(grpc_chttp2_hpack_compressor *c, uint32_t new_cap) {
-  uint16_t *table_elem_size = gpr_malloc(sizeof(*table_elem_size) * new_cap);
+  uint16_t *table_elem_size =
+      (uint16_t *)gpr_malloc(sizeof(*table_elem_size) * new_cap);
   uint32_t i;
 
   memset(table_elem_size, 0, sizeof(*table_elem_size) * new_cap);
