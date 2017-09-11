@@ -212,7 +212,7 @@ bool grpc_channel_stack_builder_prepend_filter(
 static void add_after(filter_node *before, const grpc_channel_filter *filter,
                       grpc_post_filter_create_init_func post_init_func,
                       void *user_data) {
-  filter_node *new = gpr_malloc(sizeof(*new));
+  filter_node *new = (filter_node *)gpr_malloc(sizeof(*new));
   new->next = before->next;
   new->prev = before;
   new->next->prev = new->prev->next = new;

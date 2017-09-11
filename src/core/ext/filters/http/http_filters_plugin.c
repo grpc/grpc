@@ -44,7 +44,7 @@ static bool maybe_add_optional_filter(grpc_exec_ctx *exec_ctx,
                                       grpc_channel_stack_builder *builder,
                                       void *arg) {
   if (!is_building_http_like_transport(builder)) return true;
-  optional_filter *filtarg = arg;
+  optional_filter *filtarg = (optional_filter *)arg;
   const grpc_channel_args *channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   bool enable = grpc_channel_arg_get_bool(
