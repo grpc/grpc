@@ -141,12 +141,14 @@ static long compare_server_name(void* key1, void* key2, void* unused) {
 }
 
 static void destroy_server_retry_throttle_data(void* value, void* unused) {
-  grpc_server_retry_throttle_data* throttle_data = value;
+  grpc_server_retry_throttle_data* throttle_data =
+      (grpc_server_retry_throttle_data*)value;
   grpc_server_retry_throttle_data_unref(throttle_data);
 }
 
 static void* copy_server_retry_throttle_data(void* value, void* unused) {
-  grpc_server_retry_throttle_data* throttle_data = value;
+  grpc_server_retry_throttle_data* throttle_data =
+      (grpc_server_retry_throttle_data*)value;
   return grpc_server_retry_throttle_data_ref(throttle_data);
 }
 

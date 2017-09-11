@@ -45,11 +45,12 @@ static void maybe_embiggen(grpc_slice_buffer *sb) {
       sb->capacity = GROW(sb->capacity);
       GPR_ASSERT(sb->capacity > slice_count);
       if (sb->base_slices == sb->inlined) {
-        sb->base_slices = gpr_malloc(sb->capacity * sizeof(grpc_slice));
+        sb->base_slices =
+            (grpc_slice *)gpr_malloc(sb->capacity * sizeof(grpc_slice));
         memcpy(sb->base_slices, sb->inlined, slice_count * sizeof(grpc_slice));
       } else {
-        sb->base_slices =
-            gpr_realloc(sb->base_slices, sb->capacity * sizeof(grpc_slice));
+        sb->base_slices = (grpc_slice *)gpr_realloc(
+            sb->base_slices, sb->capacity * sizeof(grpc_slice));
       }
 
       sb->slices = sb->base_slices + slice_offset;
@@ -291,7 +292,7 @@ void grpc_slice_buffer_move_first_no_ref(grpc_slice_buffer *src, size_t n,
 void grpc_slice_buffer_move_first_into_buffer(grpc_exec_ctx *exec_ctx,
                                               grpc_slice_buffer *src, size_t n,
                                               void *dst) {
-  char *dstp = dst;
+  char *dstp = (char *)dst;
   GPR_ASSERT(src->length >= n);
 
   while (n > 0) {
