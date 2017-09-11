@@ -179,6 +179,7 @@ if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
     endif()
     if(TARGET protoc)
       set(_gRPC_PROTOBUF_PROTOC protoc)
+      set(_gRPC_PROTOBUF_PROTOC_EXECUTABLE $<TARGET_FILE:protoc>)
     endif()
   else()
       message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
@@ -202,8 +203,10 @@ elseif("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "package")
     endif()
     if(TARGET protobuf::protoc)
       set(_gRPC_PROTOBUF_PROTOC protobuf::protoc)
+      set(_gRPC_PROTOBUF_PROTOC_EXECUTABLE $<TARGET_FILE:protobuf::protoc>)
     else()
       set(_gRPC_PROTOBUF_PROTOC ${PROTOBUF_PROTOC_EXECUTABLE})
+      set(_gRPC_PROTOBUF_PROTOC_EXECUTABLE ${PROTOBUF_PROTOC_EXECUTABLE})
     endif()
     set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND AND NOT PROTOBUF_FOUND)\n  find_package(Protobuf ${gRPC_PROTOBUF_PACKAGE_TYPE})\nendif()")
   endif()
@@ -328,7 +331,7 @@ function(protobuf_generate_grpc_cpp)
              "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h"
              "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc"
              "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h"
-      COMMAND $<TARGET_FILE:${_gRPC_PROTOBUF_PROTOC}>
+      COMMAND ${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}
       ARGS --grpc_out=generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}
            --cpp_out=${_gRPC_PROTO_GENS_DIR}
            --plugin=protoc-gen-grpc=$<TARGET_FILE:grpc_cpp_plugin>
@@ -14520,7 +14523,7 @@ if (gRPC_INSTALL)
 endif()
 
 foreach(_config gRPCConfig gRPCConfigVersion)
-  configure_file(tools/cmake/${_config}.cmake.in
+  configure_file(cmake/${_config}.cmake.in
     ${_config}.cmake @ONLY)
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${_config}.cmake
     DESTINATION ${gRPC_INSTALL_CMAKEDIR}
