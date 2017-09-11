@@ -490,7 +490,7 @@ void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       grpc_chttp2_complete_closure_step(
           exec_ctx, t, s, &s->send_trailing_metadata_finished,
           GRPC_ERROR_REF(error), "send_trailing_metadata_finished");
-      grpc_chttp2_mark_stream_closed(exec_ctx, t, s, !t->is_client, 1,
+      grpc_chttp2_mark_stream_closed(exec_ctx, t, s, false, !t->is_client, true,
                                      GRPC_ERROR_REF(error));
     }
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:end");

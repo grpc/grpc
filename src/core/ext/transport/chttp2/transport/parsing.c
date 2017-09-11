@@ -386,7 +386,7 @@ error_handler:
   } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, NULL)) {
     /* handle stream errors by closing the stream */
     if (s != NULL) {
-      grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, false, err);
+      grpc_chttp2_mark_stream_closed(exec_ctx, t, s, false, true, false, err);
     }
     grpc_slice_buffer_add(
         &t->qbuf, grpc_chttp2_rst_stream_create(t->incoming_stream_id,
@@ -590,7 +590,7 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
           "ignoring grpc_chttp2_stream with non-client generated index %d",
           t->incoming_stream_id));
       return init_skip_frame_parser(exec_ctx, t, 1);
-    } else if (grpc_chttp2_stream_map_size(&t->stream_map) >=
+    } else if (t->num_streams >=
                t->settings[GRPC_ACKED_SETTINGS]
                           [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS]) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Max stream count exceeded");

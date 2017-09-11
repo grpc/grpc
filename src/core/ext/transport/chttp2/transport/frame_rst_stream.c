@@ -103,7 +103,7 @@ grpc_error *grpc_chttp2_rst_stream_parser_parse(grpc_exec_ctx *exec_ctx,
           GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)reason);
       gpr_free(message);
     }
-    grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, true, error);
+    grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, true, true, error);
   }
 
   return GRPC_ERROR_NONE;

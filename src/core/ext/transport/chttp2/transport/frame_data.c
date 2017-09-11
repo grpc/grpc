@@ -310,7 +310,7 @@ grpc_error *grpc_chttp2_data_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
   }
 
   if (is_last && s->received_last_frame) {
-    grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, false,
+    grpc_chttp2_mark_stream_closed(exec_ctx, t, s, false, true, false,
                                    GRPC_ERROR_NONE);
   }
 
