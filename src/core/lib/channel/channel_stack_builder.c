@@ -51,7 +51,8 @@ struct grpc_channel_stack_builder_iterator {
 };
 
 grpc_channel_stack_builder *grpc_channel_stack_builder_create(void) {
-  grpc_channel_stack_builder *b = gpr_zalloc(sizeof(*b));
+  grpc_channel_stack_builder *b =
+      (grpc_channel_stack_builder *)gpr_zalloc(sizeof(*b));
 
   b->begin.filter = NULL;
   b->end.filter = NULL;
@@ -76,7 +77,8 @@ const char *grpc_channel_stack_builder_get_target(
 
 static grpc_channel_stack_builder_iterator *create_iterator_at_filter_node(
     grpc_channel_stack_builder *builder, filter_node *node) {
-  grpc_channel_stack_builder_iterator *it = gpr_malloc(sizeof(*it));
+  grpc_channel_stack_builder_iterator *it =
+      (grpc_channel_stack_builder_iterator *)gpr_malloc(sizeof(*it));
   it->builder = builder;
   it->node = node;
   return it;

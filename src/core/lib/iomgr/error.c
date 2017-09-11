@@ -211,7 +211,7 @@ static uint8_t get_placement(grpc_error **err, size_t size) {
 #ifndef NDEBUG
     grpc_error *orig = *err;
 #endif
-    *err = gpr_realloc(
+    *err = (grpc_error *)gpr_realloc(
         *err, sizeof(grpc_error) + (*err)->arena_capacity * sizeof(intptr_t));
 #ifndef NDEBUG
     if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
@@ -406,7 +406,8 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
     if (in->arena_capacity - in->arena_size < (uint8_t)SLOTS_PER_STR) {
       new_arena_capacity = (uint8_t)(3 * new_arena_capacity / 2);
     }
-    out = gpr_malloc(sizeof(*in) + new_arena_capacity * sizeof(intptr_t));
+    out = (grpc_error *)gpr_malloc(sizeof(*in) +
+                                   new_arena_capacity * sizeof(intptr_t));
 #ifndef NDEBUG
     if (GRPC_TRACER_ON(grpc_trace_error_refcount)) {
       gpr_log(GPR_DEBUG, "%p create copying %p", out, in);
@@ -530,7 +531,7 @@ typedef struct {
 static void append_chr(char c, char **s, size_t *sz, size_t *cap) {
   if (*sz == *cap) {
     *cap = GPR_MAX(8, 3 * *cap / 2);
-    *s = gpr_realloc(*s, *cap);
+    *s = (char *)gpr_realloc(*s, *cap);
   }
   (*s)[(*sz)++] = c;
 }
@@ -582,7 +583,8 @@ static void append_esc_str(const uint8_t *str, size_t len, char **s, size_t *sz,
 static void append_kv(kv_pairs *kvs, char *key, char *value) {
   if (kvs->num_kvs == kvs->cap_kvs) {
     kvs->cap_kvs = GPR_MAX(3 * kvs->cap_kvs / 2, 4);
-    kvs->kvs = gpr_realloc(kvs->kvs, sizeof(*kvs->kvs) * kvs->cap_kvs);
+    kvs->kvs =
+        (kv_pair *)gpr_realloc(kvs->kvs, sizeof(*kvs->kvs) * kvs->cap_kvs);
   }
   kvs->kvs[kvs->num_kvs].key = key;
   kvs->kvs[kvs->num_kvs].value = value;
@@ -695,8 +697,8 @@ static char *errs_string(grpc_error *err) {
 }
 
 static int cmp_kvs(const void *a, const void *b) {
-  const kv_pair *ka = a;
-  const kv_pair *kb = b;
+  const kv_pair *ka = (const kv_pair *)a;
+  const kv_pair *kb = (const kv_pair *)b;
   return strcmp(ka->key, kb->key);
 }
 
