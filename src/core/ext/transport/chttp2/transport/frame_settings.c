@@ -111,7 +111,7 @@ grpc_error *grpc_chttp2_settings_parser_parse(grpc_exec_ctx *exec_ctx, void *p,
                                               grpc_chttp2_transport *t,
                                               grpc_chttp2_stream *s,
                                               grpc_slice slice, int is_last) {
-  grpc_chttp2_settings_parser *parser = p;
+  grpc_chttp2_settings_parser *parser = (grpc_chttp2_settings_parser *)p;
   const uint8_t *cur = GRPC_SLICE_START_PTR(slice);
   const uint8_t *end = GRPC_SLICE_END_PTR(slice);
   char *msg;

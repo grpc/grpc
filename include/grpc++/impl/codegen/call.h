@@ -169,6 +169,15 @@ class WriteOptions {
     return *this;
   }
 
+  /// Guarantee that all bytes have been written to the wire before completing
+  /// this write (usually writes are completed when they pass flow control)
+  inline WriteOptions& set_write_through() {
+    SetBit(GRPC_WRITE_THROUGH);
+    return *this;
+  }
+
+  inline bool is_write_through() const { return GetBit(GRPC_WRITE_THROUGH); }
+
   /// Get value for the flag indicating that this is the last message, and
   /// should be coalesced with trailing metadata.
   ///

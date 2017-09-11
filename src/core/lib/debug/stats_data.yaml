@@ -54,6 +54,10 @@
   max: 1024
   buckets: 64
   doc: Number of byte segments offered to each syscall_read
+- counter: tcp_backup_pollers_created
+  doc: Number of times a backup poller has been created (this can be expensive)
+- counter: tcp_backup_poller_polls
+  doc: Number of polls performed on the backup poller
 # chttp2
 - counter: http2_op_batches
   doc: Number of batches received by HTTP2 transport
@@ -75,10 +79,36 @@
   max: 16777216
   buckets: 64
   doc: Size of messages received by HTTP2 transport
+- histogram: http2_send_initial_metadata_per_write
+  max: 1024
+  buckets: 64
+  doc: Number of streams initiated written per TCP write
+- histogram: http2_send_message_per_write
+  max: 1024
+  buckets: 64
+  doc: Number of streams whose payload was written per TCP write
+- histogram: http2_send_trailing_metadata_per_write
+  max: 1024
+  buckets: 64
+  doc: Number of streams terminated per TCP write
+- histogram: http2_send_flowctl_per_write
+  max: 1024
+  buckets: 64
+  doc: Number of flow control updates written per TCP write
+- counter: http2_settings_writes
+  doc: Number of settings frames sent
 - counter: http2_pings_sent
   doc: Number of HTTP2 pings sent by process
 - counter: http2_writes_begun
   doc: Number of HTTP2 writes initiated
+- counter: http2_writes_offloaded
+  doc: Number of HTTP2 writes offloaded to the executor from application threads
+- counter: http2_writes_continued
+  doc: Number of HTTP2 writes that finished seeing more data needed to be
+       written
+- counter: http2_partial_writes
+  doc: Number of HTTP2 writes that were made knowing there was still more data
+       to be written (we cap maximum write size to syscall_write)
 # combiner locks
 - counter: combiner_locks_initiated
   doc: Number of combiner lock entries by process
@@ -90,14 +120,21 @@
 - counter: combiner_locks_offloaded
   doc: Number of combiner locks offloaded to different threads
 # executor
-- counter: executor_scheduled_items
-  doc: Number of closures scheduled against the executor (gRPC thread pool)
+- counter: executor_scheduled_short_items
+  doc: Number of finite runtime closures scheduled against the executor
+       (gRPC thread pool)
+- counter: executor_scheduled_long_items
+  doc: Number of potentially infinite runtime closures scheduled against the
+       executor (gRPC thread pool)
 - counter: executor_scheduled_to_self
   doc: Number of closures scheduled by the executor to the executor
 - counter: executor_wakeup_initiated
   doc: Number of thread wakeups initiated within the executor
 - counter: executor_queue_drained
   doc: Number of times an executor queue was drained
+- counter: executor_push_retries
+  doc: Number of times we raced and were forced to retry pushing a closure to
+       the executor
 # server
 - counter: server_requested_calls
   doc: How many calls were requested (not necessarily received) by the server
