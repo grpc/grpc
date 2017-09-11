@@ -1,21 +1,16 @@
-FROM ubuntu:14.04
+FROM ubuntu:17.04
 
 RUN apt-get -y update && \
-    apt-get install -y curl git-core mingw-w64 xz-utils build-essential gcc-multilib wget unzip
-
-RUN mkdir -p /opt/mingw && \
-    curl -SL http://downloads.sourceforge.net/mingw-w64/i686-w64-mingw32-gcc-4.7.2-release-linux64_rubenvb.tar.xz | \
-    tar -xJC /opt/mingw && \
-    echo "export PATH=\$PATH:/opt/mingw/mingw32/bin" >> /etc/rubybashrc
-
-RUN mkdir -p /opt/mingw && \
-    curl -SL http://downloads.sourceforge.net/mingw-w64/x86_64-w64-mingw32-gcc-4.7.2-release-linux64_rubenvb.tar.xz | \
-    tar -xJC /opt/mingw && \
-    echo "export PATH=\$PATH:/opt/mingw/mingw64/bin" >> /etc/rubybashrc
+    apt-get install -y curl git-core xz-utils build-essential wget unzip sudo gpg dirmngr
 
 # Add "rvm" as system group, to avoid conflicts with host GIDs typically starting with 1000
 RUN groupadd -r rvm && useradd -r -g rvm -G sudo -p "" --create-home rvm && \
     echo "source /etc/profile.d/rvm.sh" >> /etc/rubybashrc
+
+USER root
+RUN apt-get -y update && \
+    apt-get install -y gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 g++-mingw-w64-x86-64 g++-mingw-w64-i686 \
+        gcc-multilib moreutils
 USER rvm
 
 # install rvm, RVM 1.26.0+ has signed releases, source rvm for usage outside of package scripts
@@ -178,12 +173,8 @@ RUN sed -i -- "s:/root/.rake-compiler:/usr/local/rake-compiler:g" /usr/local/rak
 # Install wrappers for strip commands as a workaround for "Protocol error" in boot2docker.
 RUN cp /tmp/build/strip_wrapper /root/
 RUN sudo chmod +rx /root/strip_wrapper
-RUN mv /opt/mingw/mingw32/bin/i686-w64-mingw32-strip /opt/mingw/mingw32/bin/i686-w64-mingw32-strip.bin && \
-    mv /opt/mingw/mingw64/bin/x86_64-w64-mingw32-strip /opt/mingw/mingw64/bin/x86_64-w64-mingw32-strip.bin && \
-    mv /usr/bin/i686-w64-mingw32-strip /usr/bin/i686-w64-mingw32-strip.bin && \
+RUN mv /usr/bin/i686-w64-mingw32-strip /usr/bin/i686-w64-mingw32-strip.bin && \
     mv /usr/bin/x86_64-w64-mingw32-strip /usr/bin/x86_64-w64-mingw32-strip.bin && \
-    ln /root/strip_wrapper /opt/mingw/mingw32/bin/i686-w64-mingw32-strip && \
-    ln /root/strip_wrapper /opt/mingw/mingw64/bin/x86_64-w64-mingw32-strip && \
     ln /root/strip_wrapper /usr/bin/i686-w64-mingw32-strip && \
     ln /root/strip_wrapper /usr/bin/x86_64-w64-mingw32-strip
 

@@ -17,52 +17,124 @@
 
 # overall
 - counter: client_calls_created
+  doc: Number of client side calls created by this process
 - counter: server_calls_created
+  doc: Number of server side calls created by this process
 # polling
 - counter: syscall_poll
+  doc: Number of polling syscalls (epoll_wait, poll, etc) made by this process
 - counter: syscall_wait
+  doc: Number of sleeping syscalls made by this process
 # stats system
 - counter: histogram_slow_lookups
+  doc: Number of times histogram increments went through the slow
+       (binary search) path
 # tcp
 - counter: syscall_write
+  doc: Number of write syscalls (or equivalent - eg sendmsg) made by this process
 - counter: syscall_read
+  doc: Number of read syscalls (or equivalent - eg recvmsg) made by this process
 - counter: reads_when_exec_ctx_done
+  doc: Number of reads that completed after the containing execution context was
+       completed
 - histogram: tcp_write_size
   max: 16777216 # 16 meg max write tracked
   buckets: 64
+  doc: Number of bytes offered to each syscall_write
 - histogram: tcp_write_iov_size
   max: 1024
   buckets: 64
+  doc: Number of byte segments offered to each syscall_write
 - histogram: tcp_read_size
   max: 16777216
   buckets: 64
+  doc: Number of bytes received by each syscall_read
 - histogram: tcp_read_offer
   max: 16777216
   buckets: 64
-- histogram: tcp_read_iov_size
+  doc: Number of bytes offered to each syscall_read
+- histogram: tcp_read_offer_iov_size
   max: 1024
   buckets: 64
+  doc: Number of byte segments offered to each syscall_read
+- counter: tcp_backup_pollers_created
+  doc: Number of times a backup poller has been created (this can be expensive)
+- counter: tcp_backup_poller_polls
+  doc: Number of polls performed on the backup poller
 # chttp2
 - counter: http2_op_batches
+  doc: Number of batches received by HTTP2 transport
 - counter: http2_op_cancel
+  doc: Number of cancelations received by HTTP2 transport
 - counter: http2_op_send_initial_metadata
+  doc: Number of batches containing send initial metadata
 - counter: http2_op_send_message
+  doc: Number of batches containing send message
 - counter: http2_op_send_trailing_metadata
+  doc: Number of batches containing send trailing metadata
 - counter: http2_op_recv_initial_metadata
+  doc: Number of batches containing receive initial metadata
 - counter: http2_op_recv_message
+  doc: Number of batches containing receive message
 - counter: http2_op_recv_trailing_metadata
+  doc: Number of batches containing receive trailing metadata
 - histogram: http2_send_message_size
   max: 16777216
   buckets: 64
+  doc: Size of messages received by HTTP2 transport
+- histogram: http2_send_initial_metadata_per_write
+  max: 1024
+  buckets: 64
+  doc: Number of streams initiated written per TCP write
+- histogram: http2_send_message_per_write
+  max: 1024
+  buckets: 64
+  doc: Number of streams whose payload was written per TCP write
+- histogram: http2_send_trailing_metadata_per_write
+  max: 1024
+  buckets: 64
+  doc: Number of streams terminated per TCP write
+- histogram: http2_send_flowctl_per_write
+  max: 1024
+  buckets: 64
+  doc: Number of flow control updates written per TCP write
+- counter: http2_settings_writes
+  doc: Number of settings frames sent
 - counter: http2_pings_sent
+  doc: Number of HTTP2 pings sent by process
 - counter: http2_writes_begun
+  doc: Number of HTTP2 writes initiated
+- counter: http2_writes_offloaded
+  doc: Number of HTTP2 writes offloaded to the executor from application threads
+- counter: http2_writes_continued
+  doc: Number of HTTP2 writes that finished seeing more data needed to be
+       written
+- counter: http2_partial_writes
+  doc: Number of HTTP2 writes that were made knowing there was still more data
+       to be written (we cap maximum write size to syscall_write)
 # combiner locks
 - counter: combiner_locks_initiated
+  doc: Number of combiner lock entries by process
+       (first items queued to a combiner)
 - counter: combiner_locks_scheduled_items
+  doc: Number of items scheduled against combiner locks
 - counter: combiner_locks_scheduled_final_items
+  doc: Number of final items scheduled against combiner locks
 - counter: combiner_locks_offloaded
+  doc: Number of combiner locks offloaded to different threads
 # executor
-- counter: executor_scheduled_items
+- counter: executor_scheduled_short_items
+  doc: Number of finite runtime closures scheduled against the executor
+       (gRPC thread pool)
+- counter: executor_scheduled_long_items
+  doc: Number of potentially infinite runtime closures scheduled against the
+       executor (gRPC thread pool)
 - counter: executor_scheduled_to_self
+  doc: Number of closures scheduled by the executor to the executor
 - counter: executor_wakeup_initiated
+  doc: Number of thread wakeups initiated within the executor
 - counter: executor_queue_drained
+  doc: Number of times an executor queue was drained
+- counter: executor_push_retries
+  doc: Number of times we raced and were forced to retry pushing a closure to
+       the executor
