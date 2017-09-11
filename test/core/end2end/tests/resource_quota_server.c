@@ -111,10 +111,10 @@ void resource_quota_server(grpc_end2end_test_config config) {
   grpc_resource_quota_resize(resource_quota, 5 * 1024 * 1024);
 
 #define NUM_CALLS 100
-#define CLIENT_BASE_TAG 1000
-#define SERVER_START_BASE_TAG 2000
-#define SERVER_RECV_BASE_TAG 3000
-#define SERVER_END_BASE_TAG 4000
+#define CLIENT_BASE_TAG 0x1000
+#define SERVER_START_BASE_TAG 0x2000
+#define SERVER_RECV_BASE_TAG 0x3000
+#define SERVER_END_BASE_TAG 0x4000
 
   grpc_arg arg;
   arg.key = GRPC_ARG_RESOURCE_QUOTA;
