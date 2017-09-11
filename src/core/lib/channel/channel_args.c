@@ -212,7 +212,7 @@ void grpc_channel_args_destroy(grpc_exec_ctx *exec_ctx, grpc_channel_args *a) {
 grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
     const grpc_channel_args *a) {
   size_t i;
-  if (a == NULL) return 0;
+  if (a == NULL) return GRPC_COMPRESS_NONE;
   for (i = 0; i < a->num_args; ++i) {
     if (a->args[i].type == GRPC_ARG_INTEGER &&
         !strcmp(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, a->args[i].key)) {
@@ -226,7 +226,7 @@ grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
 grpc_stream_compression_algorithm
 grpc_channel_args_get_stream_compression_algorithm(const grpc_channel_args *a) {
   size_t i;
-  if (a == NULL) return 0;
+  if (a == NULL) return GRPC_STREAM_COMPRESS_NONE;
   for (i = 0; i < a->num_args; ++i) {
     if (a->args[i].type == GRPC_ARG_INTEGER &&
         !strcmp(GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,

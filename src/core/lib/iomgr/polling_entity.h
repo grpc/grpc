@@ -22,6 +22,8 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
+typedef enum pops_tag { POPS_NONE, POPS_POLLSET, POPS_POLLSET_SET } pops_tag;
+
 /* A grpc_polling_entity is a pollset-or-pollset_set container. It allows
  * functions that accept a pollset XOR a pollset_set to do so through an
  * abstract interface. No ownership is taken. */
@@ -31,7 +33,7 @@ typedef struct grpc_polling_entity {
     grpc_pollset *pollset;
     grpc_pollset_set *pollset_set;
   } pollent;
-  enum pops_tag { POPS_NONE, POPS_POLLSET, POPS_POLLSET_SET } tag;
+  pops_tag tag;
 } grpc_polling_entity;
 
 grpc_polling_entity grpc_polling_entity_create_from_pollset_set(
