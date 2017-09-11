@@ -64,6 +64,12 @@ class ChannelArguments {
   /// Set the compression algorithm for the channel.
   void SetCompressionAlgorithm(grpc_compression_algorithm algorithm);
 
+  /// Set the grpclb fallback timeout (in ms) for the channel. If this amount
+  /// of time has passed but we have not gotten any non-empty \a serverlist from
+  /// the balancer, we will fall back to use the backend address(es) returned by
+  /// the resolver.
+  void SetGrpclbFallbackTimeout(int fallback_timeout);
+
   /// Set the socket mutator for the channel.
   void SetSocketMutator(grpc_socket_mutator* mutator);
 
