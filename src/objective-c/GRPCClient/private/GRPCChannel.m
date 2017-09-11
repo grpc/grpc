@@ -182,7 +182,7 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
 
 - (grpc_call *)unmanagedCallWithPath:(NSString *)path
                           serverName:(NSString *)serverName
-                             timeout:(UInt64)timeout
+                             timeout:(NSTimeInterval)timeout
                      completionQueue:(GRPCCompletionQueue *)queue {
   grpc_slice host_slice;
   if (serverName) {
@@ -193,7 +193,7 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
                                 gpr_inf_future(GPR_CLOCK_REALTIME) :
                                 gpr_time_add(
                                     gpr_now(GPR_CLOCK_MONOTONIC),
-                                    gpr_time_from_millis(timeout, GPR_TIMESPAN));
+                                    gpr_time_from_millis((int64_t)(timeout * 1000), GPR_TIMESPAN));
   grpc_call *call = grpc_channel_create_call(_unmanagedChannel,
                                              NULL, GRPC_PROPAGATE_DEFAULTS,
                                              queue.unmanagedQueue,

@@ -244,7 +244,7 @@
 - (instancetype)initWithHost:(NSString *)host
                   serverName:(NSString *)serverName
                         path:(NSString *)path
-                     timeout:(UInt64)timeout {
+                     timeout:(NSTimeInterval)timeout {
   if (!path || !host) {
     [NSException raise:NSInvalidArgumentException
                 format:@"path and host cannot be nil."];

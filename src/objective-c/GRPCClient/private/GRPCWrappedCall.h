@@ -77,7 +77,7 @@
 - (instancetype)initWithHost:(NSString *)host
                   serverName:(NSString *)serverName
                         path:(NSString *)path
-                     timeout:(UInt64)timeout NS_DESIGNATED_INITIALIZER;
+                     timeout:(NSTimeInterval)timeout NS_DESIGNATED_INITIALIZER;
 
 - (void)startBatchWithOperations:(NSArray *)ops errorHandler:(void(^)())errorHandler;
 

@@ -121,7 +121,7 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
 
 - (nullable grpc_call *)unmanagedCallWithPath:(NSString *)path
                                    serverName:(NSString *)serverName
-                                      timeout:(UInt64)timeout
+                                      timeout:(NSTimeInterval)timeout
                               completionQueue:(GRPCCompletionQueue *)queue {
   GRPCChannel *channel;
   // This is racing -[GRPCHost disconnect].

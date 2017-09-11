@@ -63,6 +63,6 @@ struct grpc_channel_credentials;
 
 - (nullable grpc_call *)unmanagedCallWithPath:(nonnull NSString *)path
                                    serverName:(nonnull NSString *)serverName
-                                      timeout:(UInt64)timeout
+                                      timeout:(NSTimeInterval)timeout
                               completionQueue:(nonnull GRPCCompletionQueue *)queue;
 @end

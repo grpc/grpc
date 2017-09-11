@@ -55,7 +55,7 @@ struct grpc_channel_credentials;
 /** Create a grpc_call object to the provided path on this host. */
 - (nullable struct grpc_call *)unmanagedCallWithPath:(NSString *)path
                                           serverName:(NSString *)serverName
-                                             timeout:(UInt64)timeout
+                                             timeout:(NSTimeInterval)timeout
                                      completionQueue:(GRPCCompletionQueue *)queue;
 
 // TODO: There's a race when a new RPC is coming through just as an existing one is getting
