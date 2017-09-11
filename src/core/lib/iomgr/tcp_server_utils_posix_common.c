@@ -93,7 +93,7 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, int fd,
     gpr_mu_lock(&s->mu);
     s->nports++;
     GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
-    sp = gpr_malloc(sizeof(grpc_tcp_listener));
+    sp = (grpc_tcp_listener *)gpr_malloc(sizeof(grpc_tcp_listener));
     sp->next = NULL;
     if (s->head == NULL) {
       s->head = sp;

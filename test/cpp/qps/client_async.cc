@@ -34,6 +34,7 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/usage_timer.h"
@@ -140,7 +141,8 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
     if (!next_issue_) {  // ready to issue
       RunNextState(true, nullptr);
     } else {  // wait for the issue time
-      alarm_.reset(new Alarm(cq_, next_issue_(), ClientRpcContext::tag(this)));
+      alarm_.reset(new Alarm);
+      alarm_->Set(cq_, next_issue_(), ClientRpcContext::tag(this));
     }
   }
 };
@@ -359,8 +361,8 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
           break;  // loop around, don't return
         case State::WAIT:
           next_state_ = State::READY_TO_WRITE;
-          alarm_.reset(
-              new Alarm(cq_, next_issue_(), ClientRpcContext::tag(this)));
+          alarm_.reset(new Alarm);
+          alarm_->Set(cq_, next_issue_(), ClientRpcContext::tag(this));
           return true;
         case State::READY_TO_WRITE:
           if (!ok) {
@@ -517,8 +519,8 @@ class ClientRpcContextStreamingFromClientImpl : public ClientRpcContext {
           }
           break;  // loop around, don't return
         case State::WAIT:
-          alarm_.reset(
-              new Alarm(cq_, next_issue_(), ClientRpcContext::tag(this)));
+          alarm_.reset(new Alarm);
+          alarm_->Set(cq_, next_issue_(), ClientRpcContext::tag(this));
           next_state_ = State::READY_TO_WRITE;
           return true;
         case State::READY_TO_WRITE:
@@ -759,8 +761,8 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
           break;  // loop around, don't return
         case State::WAIT:
           next_state_ = State::READY_TO_WRITE;
-          alarm_.reset(
-              new Alarm(cq_, next_issue_(), ClientRpcContext::tag(this)));
+          alarm_.reset(new Alarm);
+          alarm_->Set(cq_, next_issue_(), ClientRpcContext::tag(this));
           return true;
         case State::READY_TO_WRITE:
           if (!ok) {

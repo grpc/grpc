@@ -136,6 +136,8 @@
     add_definitions(/wd4065 /wd4506)
     # TODO(jtattermusch): revisit C4267 occurrences throughout the code
     add_definitions(/wd4267)
+    # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
+    add_definitions(/wd4987 /wd4774 /wd4819 /wd4996 /wd4619)
   endif()
 
   if (gRPC_USE_PROTO_LITE)
@@ -175,26 +177,13 @@
 
   if("<%text>${gRPC_CARES_PROVIDER}</%text>" STREQUAL "module")
     if(NOT CARES_ROOT_DIR)
-      set(CARES_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/src/c-ares)
+      set(CARES_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/cares/cares)
     endif()
-    string(TOLOWER <%text>${CMAKE_SYSTEM_NAME}</%text> CARES_SYSTEM_NAME)
+    set(CARES_STATIC ON)
     set(CARES_INCLUDE_DIR "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/cares/cares")
-    set(CARES_BUILD_INCLUDE_DIR "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/cares")
-    set(CARES_PLATFORM_INCLUDE_DIR "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/cares/config_<%text>${CARES_SYSTEM_NAME}</%text>")
-    if(EXISTS "<%text>${CARES_ROOT_DIR}</%text>/CMakeLists.txt")
-      if("<%text>${CARES_SYSTEM_NAME}</%text>" MATCHES "windows")
-        add_definitions(-DCARES_STATICLIB=1)
-        add_definitions(-DWIN32_LEAN_AND_MEAN=1)
-      else()
-        add_definitions(-DHAVE_CONFIG_H=1)
-        add_definitions(-D_GNU_SOURCE=1)
-      endif()
-      add_subdirectory(src/c-ares third_party/cares)
-      if(TARGET cares)
-          set(_gRPC_CARES_LIBRARIES cares)
-      endif()
-    else()
-      message(WARNING "gRPC_CARES_PROVIDER is \"module\" but CARES_ROOT_DIR is wrong")
+    add_subdirectory(third_party/cares/cares)
+    if(TARGET c-ares)
+      set(_gRPC_CARES_LIBRARIES c-ares)
     endif()
     if(gRPC_INSTALL)
       message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_CARES_PROVIDER is \"module\"")
@@ -235,6 +224,7 @@
       endif()
       if(TARGET protoc)
         set(_gRPC_PROTOBUF_PROTOC protoc)
+        set(_gRPC_PROTOBUF_PROTOC_EXECUTABLE $<TARGET_FILE:protoc>)
       endif()
     else()
         message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
@@ -258,8 +248,10 @@
       endif()
       if(TARGET protobuf::protoc)
         set(_gRPC_PROTOBUF_PROTOC protobuf::protoc)
+        set(_gRPC_PROTOBUF_PROTOC_EXECUTABLE $<TARGET_FILE:protobuf::protoc>)
       else()
         set(_gRPC_PROTOBUF_PROTOC <%text>${PROTOBUF_PROTOC_EXECUTABLE}</%text>)
+        set(_gRPC_PROTOBUF_PROTOC_EXECUTABLE <%text>${PROTOBUF_PROTOC_EXECUTABLE}</%text>)
       endif()
       set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND AND NOT PROTOBUF_FOUND)\n  find_package(Protobuf <%text>${gRPC_PROTOBUF_PACKAGE_TYPE}</%text>)\nendif()")
     endif()
@@ -384,7 +376,7 @@
                <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h"</%text>
                <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc"</%text>
                <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h"</%text>
-        COMMAND <%text>$<TARGET_FILE:${_gRPC_PROTOBUF_PROTOC}></%text>
+        COMMAND <%text>${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}</%text>
         ARGS --grpc_out=<%text>generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}</%text>
              --cpp_out=<%text>${_gRPC_PROTO_GENS_DIR}</%text>
              --plugin=protoc-gen-grpc=$<TARGET_FILE:grpc_cpp_plugin>
@@ -530,9 +522,7 @@
     PRIVATE <%text>${ZLIB_INCLUDE_DIR}</%text>
     PRIVATE <%text>${BENCHMARK}</%text>/include
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/zlib
-    PRIVATE <%text>${CARES_BUILD_INCLUDE_DIR}</%text>
     PRIVATE <%text>${CARES_INCLUDE_DIR}</%text>
-    PRIVATE <%text>${CARES_PLATFORM_INCLUDE_DIR}</%text>
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
   % if lib.build in ['test', 'private'] and lib.language == 'c++':
@@ -603,9 +593,7 @@
     PRIVATE <%text>${BENCHMARK_ROOT_DIR}</%text>/include
     PRIVATE <%text>${ZLIB_ROOT_DIR}</%text>
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/zlib
-    PRIVATE <%text>${CARES_BUILD_INCLUDE_DIR}</%text>
     PRIVATE <%text>${CARES_INCLUDE_DIR}</%text>
-    PRIVATE <%text>${CARES_PLATFORM_INCLUDE_DIR}</%text>
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
   % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
@@ -646,7 +634,7 @@
   endif()
 
   foreach(_config gRPCConfig gRPCConfigVersion)
-    configure_file(tools/cmake/<%text>${_config}</%text>.cmake.in
+    configure_file(cmake/<%text>${_config}</%text>.cmake.in
       <%text>${_config}</%text>.cmake @ONLY)
     install(FILES <%text>${CMAKE_CURRENT_BINARY_DIR}/${_config}</%text>.cmake
       DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>

@@ -44,6 +44,10 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
                      gpr_timespec deadline, grpc_closure *closure,
                      gpr_timespec now);
 
+/* Initialize *timer without setting it. This can later be passed through
+   the regular init or cancel */
+void grpc_timer_init_unset(grpc_timer *timer);
+
 /* Note that there is no timer destroy function. This is because the
    timer is a one-time occurrence with a guarantee that the callback will
    be called exactly once, either at expiration or cancellation. Thus, all

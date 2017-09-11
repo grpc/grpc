@@ -106,6 +106,7 @@ typedef struct {
   gpr_timespec deadline;
   gpr_arena *arena;
   grpc_call_context_element *context;
+  grpc_call_combiner *call_combiner;
 } grpc_connected_subchannel_call_args;
 
 grpc_error *grpc_connected_subchannel_create_call(
@@ -149,10 +150,6 @@ const grpc_subchannel_key *grpc_subchannel_get_key(
 void grpc_subchannel_call_process_op(grpc_exec_ctx *exec_ctx,
                                      grpc_subchannel_call *subchannel_call,
                                      grpc_transport_stream_op_batch *op);
-
-/** continue querying for peer */
-char *grpc_subchannel_call_get_peer(grpc_exec_ctx *exec_ctx,
-                                    grpc_subchannel_call *subchannel_call);
 
 /** Must be called once per call. Sets the 'then_schedule_closure' argument for
     call stack destruction. */

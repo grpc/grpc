@@ -33,12 +33,12 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'bundler',            '~> 1.9'
   s.add_development_dependency 'facter',             '~> 2.4'
   s.add_development_dependency 'logging',            '~> 2.0'
-  s.add_development_dependency 'simplecov',          '~> 0.9'
-  s.add_development_dependency 'rake',               '~> 10.4'
+  s.add_development_dependency 'simplecov',          '~> 0.14.1'
+  s.add_development_dependency 'rake',               '~> 12.0'
   s.add_development_dependency 'rake-compiler',      '~> 1.0'
   s.add_development_dependency 'rake-compiler-dock', '~> 0.5.1'
-  s.add_development_dependency 'rspec',              '~> 3.2'
-  s.add_development_dependency 'rubocop',            '~> 0.30.0'
+  s.add_development_dependency 'rspec',              '~> 3.6'
+  s.add_development_dependency 'rubocop',            '~> 0.49.1'
   s.add_development_dependency 'signet',             '~> 0.7.0'
 
   s.extensions = %w(src/ruby/ext/grpc/extconf.rb)
@@ -59,6 +59,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/support/string_util.h )
   s.files += %w( include/grpc/support/subprocess.h )
   s.files += %w( include/grpc/support/sync.h )
+  s.files += %w( include/grpc/support/sync_custom.h )
   s.files += %w( include/grpc/support/sync_generic.h )
   s.files += %w( include/grpc/support/sync_posix.h )
   s.files += %w( include/grpc/support/sync_windows.h )
@@ -77,6 +78,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/impl/codegen/gpr_types.h )
   s.files += %w( include/grpc/impl/codegen/port_platform.h )
   s.files += %w( include/grpc/impl/codegen/sync.h )
+  s.files += %w( include/grpc/impl/codegen/sync_custom.h )
   s.files += %w( include/grpc/impl/codegen/sync_generic.h )
   s.files += %w( include/grpc/impl/codegen/sync_posix.h )
   s.files += %w( include/grpc/impl/codegen/sync_windows.h )
@@ -95,7 +97,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/support/stack_lockfree.h )
   s.files += %w( src/core/lib/support/string.h )
   s.files += %w( src/core/lib/support/string_windows.h )
-  s.files += %w( src/core/lib/support/thd_internal.h )
   s.files += %w( src/core/lib/support/time_precise.h )
   s.files += %w( src/core/lib/support/tmpfile.h )
   s.files += %w( src/core/lib/profiling/basic_timers.c )
@@ -160,6 +161,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/impl/codegen/gpr_types.h )
   s.files += %w( include/grpc/impl/codegen/port_platform.h )
   s.files += %w( include/grpc/impl/codegen/sync.h )
+  s.files += %w( include/grpc/impl/codegen/sync_custom.h )
   s.files += %w( include/grpc/impl/codegen/sync_generic.h )
   s.files += %w( include/grpc/impl/codegen/sync_posix.h )
   s.files += %w( include/grpc/impl/codegen/sync_windows.h )
@@ -259,9 +261,12 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/compression/algorithm_metadata.h )
   s.files += %w( src/core/lib/compression/message_compress.h )
   s.files += %w( src/core/lib/compression/stream_compression.h )
+  s.files += %w( src/core/lib/debug/stats.h )
+  s.files += %w( src/core/lib/debug/stats_data.h )
   s.files += %w( src/core/lib/http/format_request.h )
   s.files += %w( src/core/lib/http/httpcli.h )
   s.files += %w( src/core/lib/http/parser.h )
+  s.files += %w( src/core/lib/iomgr/call_combiner.h )
   s.files += %w( src/core/lib/iomgr/closure.h )
   s.files += %w( src/core/lib/iomgr/combiner.h )
   s.files += %w( src/core/lib/iomgr/endpoint.h )
@@ -269,8 +274,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/error.h )
   s.files += %w( src/core/lib/iomgr/error_internal.h )
   s.files += %w( src/core/lib/iomgr/ev_epoll1_linux.h )
-  s.files += %w( src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h )
-  s.files += %w( src/core/lib/iomgr/ev_epoll_thread_pool_linux.h )
   s.files += %w( src/core/lib/iomgr/ev_epollex_linux.h )
   s.files += %w( src/core/lib/iomgr/ev_epollsig_linux.h )
   s.files += %w( src/core/lib/iomgr/ev_poll_posix.h )
@@ -369,11 +372,15 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h )
+  s.files += %w( third_party/nanopb/pb.h )
+  s.files += %w( third_party/nanopb/pb_common.h )
+  s.files += %w( third_party/nanopb/pb_decode.h )
+  s.files += %w( third_party/nanopb/pb_encode.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h )
-  s.files += %w( src/core/ext/filters/load_reporting/load_reporting.h )
-  s.files += %w( src/core/ext/filters/load_reporting/load_reporting_filter.h )
+  s.files += %w( src/core/ext/filters/load_reporting/server_load_reporting_filter.h )
+  s.files += %w( src/core/ext/filters/load_reporting/server_load_reporting_plugin.h )
   s.files += %w( src/core/ext/census/aggregation.h )
   s.files += %w( src/core/ext/census/base_resources.h )
   s.files += %w( src/core/ext/census/census_interface.h )
@@ -407,9 +414,12 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/compression/compression.c )
   s.files += %w( src/core/lib/compression/message_compress.c )
   s.files += %w( src/core/lib/compression/stream_compression.c )
+  s.files += %w( src/core/lib/debug/stats.c )
+  s.files += %w( src/core/lib/debug/stats_data.c )
   s.files += %w( src/core/lib/http/format_request.c )
   s.files += %w( src/core/lib/http/httpcli.c )
   s.files += %w( src/core/lib/http/parser.c )
+  s.files += %w( src/core/lib/iomgr/call_combiner.c )
   s.files += %w( src/core/lib/iomgr/closure.c )
   s.files += %w( src/core/lib/iomgr/combiner.c )
   s.files += %w( src/core/lib/iomgr/endpoint.c )
@@ -418,8 +428,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/endpoint_pair_windows.c )
   s.files += %w( src/core/lib/iomgr/error.c )
   s.files += %w( src/core/lib/iomgr/ev_epoll1_linux.c )
-  s.files += %w( src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c )
-  s.files += %w( src/core/lib/iomgr/ev_epoll_thread_pool_linux.c )
   s.files += %w( src/core/lib/iomgr/ev_epollex_linux.c )
   s.files += %w( src/core/lib/iomgr/ev_epollsig_linux.c )
   s.files += %w( src/core/lib/iomgr/ev_poll_posix.c )
@@ -632,8 +640,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c )
   s.files += %w( src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c )
-  s.files += %w( src/core/ext/filters/load_reporting/load_reporting.c )
-  s.files += %w( src/core/ext/filters/load_reporting/load_reporting_filter.c )
+  s.files += %w( src/core/ext/filters/load_reporting/server_load_reporting_filter.c )
+  s.files += %w( src/core/ext/filters/load_reporting/server_load_reporting_plugin.c )
   s.files += %w( src/core/ext/census/base_resources.c )
   s.files += %w( src/core/ext/census/context.c )
   s.files += %w( src/core/ext/census/gen/census.pb.c )

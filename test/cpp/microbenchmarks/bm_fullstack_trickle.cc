@@ -26,6 +26,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
+#include "test/cpp/util/test_config.h"
 extern "C" {
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -104,7 +105,7 @@ class TrickledCHTTP2 : public EndpointPairFixture {
             (double)state.iterations());
   }
 
-  void Log(int64_t iteration) {
+  void Log(int64_t iteration) GPR_ATTRIBUTE_NO_TSAN {
     auto now = gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), start_);
     grpc_chttp2_transport* client =
         reinterpret_cast<grpc_chttp2_transport*>(client_transport_);
@@ -192,7 +193,8 @@ class TrickledCHTTP2 : public EndpointPairFixture {
     return p;
   }
 
-  void UpdateStats(grpc_chttp2_transport* t, Stats* s, size_t backlog) {
+  void UpdateStats(grpc_chttp2_transport* t, Stats* s,
+                   size_t backlog) GPR_ATTRIBUTE_NO_TSAN {
     if (backlog == 0) {
       if (t->lists[GRPC_CHTTP2_LIST_STALLED_BY_STREAM].head != NULL) {
         s->streams_stalled_due_to_stream_flow_control++;
@@ -420,6 +422,6 @@ BENCHMARK(BM_PumpUnbalancedUnary_Trickle)->Apply(UnaryTrickleArgs);
 
 int main(int argc, char** argv) {
   ::benchmark::Initialize(&argc, argv);
-  ::google::ParseCommandLineFlags(&argc, &argv, false);
+  ::grpc::testing::InitTest(&argc, &argv, false);
   ::benchmark::RunSpecifiedBenchmarks();
 }
