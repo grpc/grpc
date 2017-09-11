@@ -234,6 +234,8 @@ static void note_deadline_change(timer_shard *shard) {
   }
 }
 
+void grpc_timer_init_unset(grpc_timer *timer) { timer->pending = false; }
+
 void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
                      gpr_timespec deadline, grpc_closure *closure,
                      gpr_timespec now) {

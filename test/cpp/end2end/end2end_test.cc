@@ -238,6 +238,18 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "127.0.0.1:" << port;
     // Setup server
+    BuildAndStartServer(processor);
+  }
+
+  void RestartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
+    if (is_server_started_) {
+      server_->Shutdown();
+      BuildAndStartServer(processor);
+    }
+  }
+
+  void BuildAndStartServer(
+      const std::shared_ptr<AuthMetadataProcessor>& processor) {
     ServerBuilder builder;
     ConfigureServerBuilder(&builder);
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
@@ -685,6 +697,20 @@ TEST_P(End2endTest, MultipleRpcs) {
   }
 }
 
+TEST_P(End2endTest, ReconnectChannel) {
+  if (GetParam().inproc) {
+    return;
+  }
+  ResetStub();
+  SendRpc(stub_.get(), 1, false);
+  RestartServer(std::shared_ptr<AuthMetadataProcessor>());
+  // It needs more than kConnectivityCheckIntervalMsec time to reconnect the
+  // channel.
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                               gpr_time_from_millis(1600, GPR_TIMESPAN)));
+  SendRpc(stub_.get(), 1, false);
+}
+
 TEST_P(End2endTest, RequestStreamOneRequest) {
   ResetStub();
   EchoRequest request;
@@ -725,6 +751,22 @@ TEST_P(End2endTest, RequestStreamTwoRequests) {
   request.set_message("hello");
   EXPECT_TRUE(stream->Write(request));
   EXPECT_TRUE(stream->Write(request));
+  stream->WritesDone();
+  Status s = stream->Finish();
+  EXPECT_EQ(response.message(), "hellohello");
+  EXPECT_TRUE(s.ok());
+}
+
+TEST_P(End2endTest, RequestStreamTwoRequestsWithWriteThrough) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+
+  auto stream = stub_->RequestStream(&context, &response);
+  request.set_message("hello");
+  EXPECT_TRUE(stream->Write(request, WriteOptions().set_write_through()));
+  EXPECT_TRUE(stream->Write(request, WriteOptions().set_write_through()));
   stream->WritesDone();
   Status s = stream->Finish();
   EXPECT_EQ(response.message(), "hellohello");

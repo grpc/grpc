@@ -93,8 +93,8 @@ static void chttp2_connector_shutdown(grpc_exec_ctx *exec_ctx,
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *error) {
-  grpc_handshaker_args *args = arg;
-  chttp2_connector *c = args->user_data;
+  grpc_handshaker_args *args = (grpc_handshaker_args *)arg;
+  chttp2_connector *c = (chttp2_connector *)args->user_data;
   gpr_mu_lock(&c->mu);
   if (error != GRPC_ERROR_NONE || c->shutdown) {
     if (error == GRPC_ERROR_NONE) {
@@ -143,7 +143,7 @@ static void start_handshake_locked(grpc_exec_ctx *exec_ctx,
 }
 
 static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  chttp2_connector *c = arg;
+  chttp2_connector *c = (chttp2_connector *)arg;
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(c->connecting);
   c->connecting = false;
@@ -198,7 +198,7 @@ static const grpc_connector_vtable chttp2_connector_vtable = {
     chttp2_connector_connect};
 
 grpc_connector *grpc_chttp2_connector_create() {
-  chttp2_connector *c = gpr_zalloc(sizeof(*c));
+  chttp2_connector *c = (chttp2_connector *)gpr_zalloc(sizeof(*c));
   c->base.vtable = &chttp2_connector_vtable;
   gpr_mu_init(&c->mu);
   gpr_ref_init(&c->refs, 1);

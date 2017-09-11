@@ -24,8 +24,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/ext/filters/load_reporting/load_reporting.h"
-#include "src/core/ext/filters/load_reporting/load_reporting_filter.h"
+#include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
+#include "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -56,8 +56,8 @@ typedef struct channel_data {
 
 static void on_initial_md_ready(grpc_exec_ctx *exec_ctx, void *user_data,
                                 grpc_error *err) {
-  grpc_call_element *elem = user_data;
-  call_data *calld = elem->call_data;
+  grpc_call_element *elem = (grpc_call_element *)user_data;
+  call_data *calld = (call_data *)elem->call_data;
 
   if (err == GRPC_ERROR_NONE) {
     if (calld->recv_initial_metadata->idx.named.path != NULL) {
@@ -88,7 +88,7 @@ static void on_initial_md_ready(grpc_exec_ctx *exec_ctx, void *user_data,
 static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   const grpc_call_element_args *args) {
-  call_data *calld = elem->call_data;
+  call_data *calld = (call_data *)elem->call_data;
   calld->id = (intptr_t)args->call_stack;
   GRPC_CLOSURE_INIT(&calld->on_initial_md_ready, on_initial_md_ready, elem,
                     grpc_schedule_on_exec_ctx);
@@ -111,7 +111,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
                               grpc_closure *ignored) {
-  call_data *calld = elem->call_data;
+  call_data *calld = (call_data *)elem->call_data;
 
   /* TODO(dgq): do something with the data
   channel_data *chand = elem->channel_data;
@@ -141,7 +141,7 @@ static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_channel_element_args *args) {
   GPR_ASSERT(!args->is_last);
 
-  channel_data *chand = elem->channel_data;
+  channel_data *chand = (channel_data *)elem->channel_data;
   chand->id = (intptr_t)args->channel_stack;
 
   /* TODO(dgq): do something with the data
@@ -176,8 +176,8 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 static grpc_filtered_mdelem lr_trailing_md_filter(grpc_exec_ctx *exec_ctx,
                                                   void *user_data,
                                                   grpc_mdelem md) {
-  grpc_call_element *elem = user_data;
-  call_data *calld = elem->call_data;
+  grpc_call_element *elem = (grpc_call_element *)user_data;
+  call_data *calld = (call_data *)elem->call_data;
   if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_LB_COST_BIN)) {
     calld->trailing_md_string = GRPC_MDVALUE(md);
     return GRPC_FILTERED_REMOVE();
@@ -189,7 +189,7 @@ static void lr_start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *op) {
   GPR_TIMER_BEGIN("lr_start_transport_stream_op_batch", 0);
-  call_data *calld = elem->call_data;
+  call_data *calld = (call_data *)elem->call_data;
 
   if (op->recv_initial_metadata) {
     /* substitute our callback for the higher callback */
@@ -213,7 +213,7 @@ static void lr_start_transport_stream_op_batch(
   GPR_TIMER_END("lr_start_transport_stream_op_batch", 0);
 }
 
-const grpc_channel_filter grpc_load_reporting_filter = {
+const grpc_channel_filter grpc_server_load_reporting_filter = {
     lr_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
@@ -223,6 +223,5 @@ const grpc_channel_filter grpc_load_reporting_filter = {
     sizeof(channel_data),
     init_channel_elem,
     destroy_channel_elem,
-    grpc_call_next_get_peer,
     grpc_channel_next_get_info,
     "load_reporting"};
