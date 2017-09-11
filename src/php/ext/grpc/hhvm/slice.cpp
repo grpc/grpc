@@ -32,6 +32,12 @@
 /*                                   Slice                                   */
 /*****************************************************************************/
 
+Slice::Slice(const grpc_slice slice)
+{
+    m_Slice = slice;
+    increaseRef();
+}
+
 Slice::Slice(const HPHP::String& string)
 {
   size_t length { static_cast<size_t>(string.size()) };

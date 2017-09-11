@@ -37,6 +37,7 @@ class Slice
 public:
     // constructors/descructors
     Slice(void) : m_Slice( grpc_empty_slice() ) {}
+    Slice(const grpc_slice slice);
     Slice(const HPHP::String& string);
     Slice(const char* const string);
     Slice(const char* const string, const size_t length);

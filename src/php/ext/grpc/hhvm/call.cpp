@@ -196,10 +196,12 @@ Variant MetadataArray::phpData(void) const
     {
         const grpc_metadata& element(m_Array.metadata[elem]);
 
-        String key{ reinterpret_cast<const char* const>(GRPC_SLICE_START_PTR(element.key)),
-                    GRPC_SLICE_LENGTH(element.key), CopyString };
-        String value{ reinterpret_cast<const char* const>(GRPC_SLICE_START_PTR(element.value)),
-                      GRPC_SLICE_LENGTH(element.value), CopyString };
+        Slice keySlice{ element.key };
+        String key{ reinterpret_cast<const char* const>(keySlice.data()), keySlice.length(),
+                                                        CopyString };
+        Slice valueSlice{ element.value };
+        String value{ reinterpret_cast<const char* const>(valueSlice.data()), valueSlice.length(),
+                      CopyString };
 
         if (!phpArray.exists(key, true))
         {
@@ -560,7 +562,7 @@ Object HHVM_METHOD(Call, startBatch,
     }
 
     grpc_event event (grpc_completion_queue_next(pCallData->queue()->queue(),
-                                                 gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN),
+                                                 gpr_time_from_millis(1 /*pCallData->getTimeout()*/, GPR_TIMESPAN),
                                                  nullptr));
     if (event.type != GRPC_OP_COMPLETE || event.tag != pCallData->call())
     {
