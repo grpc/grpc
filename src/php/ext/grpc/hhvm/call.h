@@ -104,7 +104,7 @@ class MetadataArray
 {
 public:
     // constructors/descructors
-    MetadataArray(void);
+    MetadataArray(const bool owned);
     ~MetadataArray(void);
 
     // interface functions
@@ -115,6 +115,7 @@ public:
     const grpc_metadata_array& array(void) const { return m_Array; } //
     grpc_metadata_array& array(void) { return m_Array; } // several methods need non const &
     Variant phpData(void) const;
+    bool owned(void) const { return m_Owned; }
 
 private:
     // helper functions
@@ -124,6 +125,7 @@ private:
     // member variables
     grpc_metadata_array m_Array;
     std::vector<std::pair<Slice, Slice>> m_PHPData; // the key, value PHP Data
+    bool m_Owned;
 };
 
 /*****************************************************************************/

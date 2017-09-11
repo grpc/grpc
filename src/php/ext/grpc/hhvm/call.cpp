@@ -114,7 +114,7 @@ void CallData::destroy(void)
 /*                              Metadata Array                               */
 /*****************************************************************************/
 
-MetadataArray::MetadataArray(void) : m_PHPData{}
+MetadataArray::MetadataArray(const bool owned) : m_PHPData{}, m_Owned{ owned }
 {
     grpc_metadata_array_init(&m_Array);
     // NOTE: Do not intialize the metadata array here with any members as
@@ -131,6 +131,11 @@ MetadataArray::~MetadataArray(void)
 // Returns true on success and false on failure
 bool MetadataArray::init(const Array& phpArray)
 {
+    if (!owned())
+    {
+        SystemLib::throwRuntimeExceptionObject("can only init an owned metadata array");
+    }
+
     // destroy any PHP data
     destroyPHP();
     m_Array.count = 0;
@@ -232,13 +237,15 @@ void MetadataArray::resizeMetadata(const size_t capacity)
     if (capacity > m_Array.capacity)
     {
         // allocate new memory
-        grpc_metadata* const pMetadataNew{ reinterpret_cast<grpc_metadata*>(gpr_malloc(capacity * sizeof(grpc_metadata))) };
+        grpc_metadata* const pMetadataNew{ reinterpret_cast<grpc_metadata*>(gpr_zalloc(capacity * sizeof(grpc_metadata))) };
 
         // move existing items
         for(size_t elem{ 0 }; elem < m_Array.count; ++elem)
         {
-            pMetadataNew[elem] = m_Array.metadata[elem];
+            std::memcpy(reinterpret_cast<void*>(&pMetadataNew[elem]),
+                        reinterpret_cast<const void*>(&m_Array.metadata[elem]), sizeof(grpc_metadata));
         }
+
 
         // destroy old memory
         gpr_free(m_Array.metadata);
@@ -318,8 +325,8 @@ Object HHVM_METHOD(Call, startBatch,
     typedef struct OpsManaged // this structure is managed data for the ops array
     {
         // constructors/destructors
-        OpsManaged(void) : send_metadata{}, send_trailing_metadata{},
-            recv_metadata{}, recv_trailing_metadata{},
+        OpsManaged(void) : send_metadata{ true }, send_trailing_metadata{ true },
+            recv_metadata{ false }, recv_trailing_metadata{ false },
             recv_status_details{}, send_status_details{},
             cancelled{ 0 }, status{ GRPC_STATUS_OK }
         {
@@ -355,7 +362,7 @@ Object HHVM_METHOD(Call, startBatch,
         MetadataArray recv_metadata;                             // owned by call object
         MetadataArray recv_trailing_metadata;                    // owned by call object
         std::array<grpc_byte_buffer*, maxActions> send_messages; // owned by caller
-        std::array<grpc_byte_buffer*, maxActions> recv_messages; // owned by caller
+        std::array<grpc_byte_buffer*, maxActions> recv_messages; // owned by call object
         Slice recv_status_details;                               // owned by caller
         Slice send_status_details;                               // owned by caller
         int cancelled;
@@ -562,7 +569,7 @@ Object HHVM_METHOD(Call, startBatch,
     }
 
     grpc_event event (grpc_completion_queue_next(pCallData->queue()->queue(),
-                                                 gpr_time_from_millis(1 /*pCallData->getTimeout()*/, GPR_TIMESPAN),
+                                                 gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN),
                                                  nullptr));
     if (event.type != GRPC_OP_COMPLETE || event.tag != pCallData->call())
     {

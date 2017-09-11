@@ -149,7 +149,7 @@ Object HHVM_METHOD(Server, requestCall)
 
     typedef struct CallDetails
     {
-        CallDetails(void) : metadata{}, method_text{ nullptr }, host_text{ nullptr }
+        CallDetails(void) : metadata{ false }, method_text{ nullptr }, host_text{ nullptr }
         {
             grpc_call_details_init(&details);
         }
@@ -167,10 +167,10 @@ Object HHVM_METHOD(Server, requestCall)
             }
             grpc_call_details_destroy(&details);
         }
-        MetadataArray metadata;     // owned by caller
-        grpc_call_details details;  // ownerd by caller
-        char* method_text;          // owned by caller
-        char* host_text;            // owned by caller
+        MetadataArray metadata;    // owned by caller
+        grpc_call_details details; // ownerd by caller
+        char* method_text;         // owned by caller
+        char* host_text;           // owned by caller
     } CallDetails;
 
     CallDetails callDetails{};
