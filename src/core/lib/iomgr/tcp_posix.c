@@ -148,7 +148,7 @@ static void run_poller(grpc_exec_ctx *exec_ctx, void *bp,
   if (gpr_atm_no_barrier_load(&g_uncovered_notifications_pending) == 1 &&
       gpr_atm_full_cas(&g_uncovered_notifications_pending, 1, 0)) {
     gpr_mu_lock(p->pollset_mu);
-    bool cas_ok = gpr_atm_no_barrier_cas(&g_backup_poller, (gpr_atm)p, 0);
+    bool cas_ok = gpr_atm_full_cas(&g_backup_poller, (gpr_atm)p, 0);
     if (GRPC_TRACER_ON(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "BACKUP_POLLER:%p done cas_ok=%d", p, cas_ok);
     }
@@ -168,7 +168,7 @@ static void run_poller(grpc_exec_ctx *exec_ctx, void *bp,
 }
 
 static void drop_uncovered(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
-  backup_poller *p = (backup_poller *)gpr_atm_no_barrier_load(&g_backup_poller);
+  backup_poller *p = (backup_poller *)gpr_atm_acq_load(&g_backup_poller);
   gpr_atm old_count =
       gpr_atm_no_barrier_fetch_add(&g_uncovered_notifications_pending, -1);
   if (GRPC_TRACER_ON(grpc_tcp_trace)) {
@@ -193,15 +193,16 @@ static void cover_self(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
       gpr_log(GPR_DEBUG, "BACKUP_POLLER:%p create", p);
     }
     grpc_pollset_init(BACKUP_POLLER_POLLSET(p), &p->pollset_mu);
-    gpr_atm_no_barrier_store(&g_backup_poller, (gpr_atm)p);
+    gpr_atm_rel_store(&g_backup_poller, (gpr_atm)p);
     GRPC_CLOSURE_SCHED(
         exec_ctx,
         GRPC_CLOSURE_INIT(&p->run_poller, run_poller, p,
                           grpc_executor_scheduler(GRPC_EXECUTOR_LONG)),
         GRPC_ERROR_NONE);
   } else {
-    p = (backup_poller *)gpr_atm_no_barrier_load(&g_backup_poller);
-    GPR_ASSERT(p != NULL);
+    while ((p = (backup_poller *)gpr_atm_acq_load(&g_backup_poller)) == NULL) {
+      // spin waiting for backup poller
+    }
   }
   if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "BACKUP_POLLER:%p add %p", p, tcp);
