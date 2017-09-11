@@ -151,7 +151,8 @@ class ServerBuilder {
   /// Add a completion queue for handling asynchronous services.
   ///
   /// Caller is required to shutdown the server prior to shutting down the
-  /// returned completion queue. A typical usage scenario:
+  /// returned completion queue. Caller is also required to drain the
+  /// completion queue after shutting it down. A typical usage scenario:
   ///
   /// // While building the server:
   /// ServerBuilder builder;
@@ -162,6 +163,10 @@ class ServerBuilder {
   /// // While shutting down the server;
   /// server_->Shutdown();
   /// cq_->Shutdown();  // Always *after* the associated server's Shutdown()!
+  /// // Drain the cq_ that was created
+  /// void* ignored_tag;
+  /// bool ignored_ok;
+  /// while (cq_->Next(&ignored_tag, &ignored_ok)) { }
   ///
   /// \param is_frequently_polled This is an optional parameter to inform gRPC
   /// library about whether this completion queue would be frequently polled
