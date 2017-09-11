@@ -144,10 +144,11 @@ struct rr_subchannel_list {
 
 static rr_subchannel_list *rr_subchannel_list_create(round_robin_lb_policy *p,
                                                      size_t num_subchannels) {
-  rr_subchannel_list *subchannel_list = gpr_zalloc(sizeof(*subchannel_list));
+  rr_subchannel_list *subchannel_list =
+      (rr_subchannel_list *)gpr_zalloc(sizeof(*subchannel_list));
   subchannel_list->policy = p;
   subchannel_list->subchannels =
-      gpr_zalloc(sizeof(subchannel_data) * num_subchannels);
+      (subchannel_data *)gpr_zalloc(sizeof(subchannel_data) * num_subchannels);
   subchannel_list->num_subchannels = num_subchannels;
   gpr_ref_init(&subchannel_list->refcount, 1);
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
@@ -452,7 +453,7 @@ static int rr_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   if (!p->started_picking) {
     start_picking_locked(exec_ctx, p);
   }
-  pending_pick *pp = gpr_malloc(sizeof(*pp));
+  pending_pick *pp = (pending_pick *)gpr_malloc(sizeof(*pp));
   pp->next = p->pending_picks;
   pp->target = target;
   pp->on_complete = on_complete;
@@ -553,7 +554,7 @@ static grpc_connectivity_state update_lb_connectivity_status_locked(
 
 static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                            grpc_error *error) {
-  subchannel_data *sd = arg;
+  subchannel_data *sd = (subchannel_data *)arg;
   round_robin_lb_policy *p = sd->subchannel_list->policy;
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(
@@ -754,7 +755,7 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     }
     return;
   }
-  grpc_lb_addresses *addresses = arg->value.pointer.p;
+  grpc_lb_addresses *addresses = (grpc_lb_addresses *)arg->value.pointer.p;
   rr_subchannel_list *subchannel_list =
       rr_subchannel_list_create(p, addresses->num_addresses);
   if (addresses->num_addresses == 0) {
@@ -887,7 +888,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
                                           grpc_lb_policy_factory *factory,
                                           grpc_lb_policy_args *args) {
   GPR_ASSERT(args->client_channel_factory != NULL);
-  round_robin_lb_policy *p = gpr_zalloc(sizeof(*p));
+  round_robin_lb_policy *p = (round_robin_lb_policy *)gpr_zalloc(sizeof(*p));
   grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable, args->combiner);
   grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,
                                "round_robin");

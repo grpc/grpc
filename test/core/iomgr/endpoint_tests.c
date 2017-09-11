@@ -77,7 +77,7 @@ static void end_test(grpc_endpoint_test_config config) { config.clean_up(); }
 static grpc_slice *allocate_blocks(size_t num_bytes, size_t slice_size,
                                    size_t *num_blocks, uint8_t *current_data) {
   size_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1 : 0);
-  grpc_slice *slices = gpr_malloc(sizeof(grpc_slice) * nslices);
+  grpc_slice *slices = (grpc_slice *)gpr_malloc(sizeof(grpc_slice) * nslices);
   size_t num_bytes_left = num_bytes;
   size_t i;
   size_t j;
@@ -117,7 +117,8 @@ struct read_and_write_test_state {
 
 static void read_and_write_test_read_handler(grpc_exec_ctx *exec_ctx,
                                              void *data, grpc_error *error) {
-  struct read_and_write_test_state *state = data;
+  struct read_and_write_test_state *state =
+      (struct read_and_write_test_state *)data;
 
   state->bytes_read += count_slices(
       state->incoming.slices, state->incoming.count, &state->current_read_data);
@@ -135,7 +136,8 @@ static void read_and_write_test_read_handler(grpc_exec_ctx *exec_ctx,
 
 static void read_and_write_test_write_handler(grpc_exec_ctx *exec_ctx,
                                               void *data, grpc_error *error) {
-  struct read_and_write_test_state *state = data;
+  struct read_and_write_test_state *state =
+      (struct read_and_write_test_state *)data;
   grpc_slice *slices = NULL;
   size_t nslices;
 

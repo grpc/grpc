@@ -144,7 +144,7 @@ static void dns_ares_channel_saw_error_locked(grpc_exec_ctx *exec_ctx,
 
 static void dns_ares_on_retry_timer_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                            grpc_error *error) {
-  ares_dns_resolver *r = arg;
+  ares_dns_resolver *r = (ares_dns_resolver *)arg;
   r->have_retry_timer = false;
   if (error == GRPC_ERROR_NONE) {
     if (!r->resolving) {
@@ -227,7 +227,7 @@ static char *choose_service_config(char *service_config_choice_json) {
 
 static void dns_ares_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                         grpc_error *error) {
-  ares_dns_resolver *r = arg;
+  ares_dns_resolver *r = (ares_dns_resolver *)arg;
   grpc_channel_args *result = NULL;
   GPR_ASSERT(r->resolving);
   r->resolving = false;
@@ -361,7 +361,8 @@ static grpc_resolver *dns_ares_create(grpc_exec_ctx *exec_ctx,
   const char *path = args->uri->path;
   if (path[0] == '/') ++path;
   /* Create resolver. */
-  ares_dns_resolver *r = gpr_zalloc(sizeof(ares_dns_resolver));
+  ares_dns_resolver *r =
+      (ares_dns_resolver *)gpr_zalloc(sizeof(ares_dns_resolver));
   grpc_resolver_init(&r->base, &dns_ares_resolver_vtable, args->combiner);
   if (0 != strcmp(args->uri->authority, "")) {
     r->dns_server = gpr_strdup(args->uri->authority);

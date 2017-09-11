@@ -327,7 +327,7 @@ grpc_call *grpc_channel_create_pollset_set_call(
 
 void *grpc_channel_register_call(grpc_channel *channel, const char *method,
                                  const char *host, void *reserved) {
-  registered_call *rc = gpr_malloc(sizeof(registered_call));
+  registered_call *rc = (registered_call *)gpr_malloc(sizeof(registered_call));
   GRPC_API_TRACE(
       "grpc_channel_register_call(channel=%p, method=%s, host=%s, reserved=%p)",
       4, (channel, method, host, reserved));
@@ -354,7 +354,7 @@ grpc_call *grpc_channel_create_registered_call(
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
     grpc_completion_queue *completion_queue, void *registered_call_handle,
     gpr_timespec deadline, void *reserved) {
-  registered_call *rc = registered_call_handle;
+  registered_call *rc = (registered_call *)registered_call_handle;
   GRPC_API_TRACE(
       "grpc_channel_create_registered_call("
       "channel=%p, parent_call=%p, propagation_mask=%x, completion_queue=%p, "
@@ -393,7 +393,7 @@ void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx,
 
 static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_error *error) {
-  grpc_channel *channel = arg;
+  grpc_channel *channel = (grpc_channel *)arg;
   grpc_channel_stack_destroy(exec_ctx, CHANNEL_STACK_FROM_CHANNEL(channel));
   while (channel->registered_calls) {
     registered_call *rc = channel->registered_calls;

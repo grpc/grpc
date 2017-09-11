@@ -261,7 +261,7 @@ static grpc_fd *fd_create(int fd, const char *name) {
   gpr_mu_unlock(&fd_freelist_mu);
 
   if (new_fd == NULL) {
-    new_fd = gpr_malloc(sizeof(grpc_fd));
+    new_fd = (grpc_fd *)gpr_malloc(sizeof(grpc_fd));
   }
 
   new_fd->fd = fd;
@@ -443,8 +443,8 @@ static grpc_error *pollset_global_init(void) {
     return GRPC_OS_ERROR(errno, "epoll_ctl");
   }
   g_num_neighbourhoods = GPR_CLAMP(gpr_cpu_num_cores(), 1, MAX_NEIGHBOURHOODS);
-  g_neighbourhoods =
-      gpr_zalloc(sizeof(*g_neighbourhoods) * g_num_neighbourhoods);
+  g_neighbourhoods = (pollset_neighbourhood *)gpr_zalloc(
+      sizeof(*g_neighbourhoods) * g_num_neighbourhoods);
   for (size_t i = 0; i < g_num_neighbourhoods; i++) {
     gpr_mu_init(&g_neighbourhoods[i].mu);
   }

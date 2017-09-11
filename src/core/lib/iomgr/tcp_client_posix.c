@@ -80,7 +80,8 @@ static grpc_error *prepare_socket(const grpc_resolved_address *addr, int fd,
     for (size_t i = 0; i < channel_args->num_args; i++) {
       if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_SOCKET_MUTATOR)) {
         GPR_ASSERT(channel_args->args[i].type == GRPC_ARG_POINTER);
-        grpc_socket_mutator *mutator = channel_args->args[i].value.pointer.p;
+        grpc_socket_mutator *mutator =
+            (grpc_socket_mutator *)channel_args->args[i].value.pointer.p;
         err = grpc_set_socket_with_mutator(fd, mutator);
         if (err != GRPC_ERROR_NONE) goto error;
       }
@@ -98,7 +99,7 @@ done:
 
 static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   int done;
-  async_connect *ac = acp;
+  async_connect *ac = (async_connect *)acp;
   if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: error=%s", ac->addr_str,
@@ -126,7 +127,7 @@ grpc_endpoint *grpc_tcp_client_create_from_fd(
 }
 
 static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
-  async_connect *ac = acp;
+  async_connect *ac = (async_connect *)acp;
   int so_error = 0;
   socklen_t so_error_size;
   int err;
@@ -304,7 +305,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
 
   grpc_pollset_set_add_fd(exec_ctx, interested_parties, fdobj);
 
-  ac = gpr_malloc(sizeof(async_connect));
+  ac = (async_connect *)gpr_malloc(sizeof(async_connect));
   ac->closure = closure;
   ac->ep = ep;
   ac->fd = fdobj;

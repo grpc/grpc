@@ -38,7 +38,7 @@
 // filter stack.  Yields the call combiner when the batch returns.
 static void yield_call_combiner(grpc_exec_ctx* exec_ctx, void* arg,
                                 grpc_error* ignored) {
-  grpc_deadline_state* deadline_state = arg;
+  grpc_deadline_state* deadline_state = (grpc_deadline_state*)arg;
   GRPC_CALL_COMBINER_STOP(exec_ctx, deadline_state->call_combiner,
                           "got on_complete from cancel_stream batch");
   GRPC_CALL_STACK_UNREF(exec_ctx, deadline_state->call_stack, "deadline_timer");
@@ -48,8 +48,8 @@ static void yield_call_combiner(grpc_exec_ctx* exec_ctx, void* arg,
 // synchronized.
 static void send_cancel_op_in_call_combiner(grpc_exec_ctx* exec_ctx, void* arg,
                                             grpc_error* error) {
-  grpc_call_element* elem = arg;
-  grpc_deadline_state* deadline_state = elem->call_data;
+  grpc_call_element* elem = (grpc_call_element*)arg;
+  grpc_deadline_state* deadline_state = (grpc_deadline_state*)elem->call_data;
   grpc_transport_stream_op_batch* batch = grpc_make_transport_stream_op(
       GRPC_CLOSURE_INIT(&deadline_state->timer_callback, yield_call_combiner,
                         deadline_state, grpc_schedule_on_exec_ctx));
@@ -158,8 +158,10 @@ struct start_timer_after_init_state {
 };
 static void start_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
                                    grpc_error* error) {
-  struct start_timer_after_init_state* state = arg;
-  grpc_deadline_state* deadline_state = state->elem->call_data;
+  struct start_timer_after_init_state* state =
+      (struct start_timer_after_init_state*)arg;
+  grpc_deadline_state* deadline_state =
+      (grpc_deadline_state*)state->elem->call_data;
   if (!state->in_call_combiner) {
     // We are initially called without holding the call combiner, so we
     // need to bounce ourselves into it.
@@ -192,7 +194,8 @@ void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
     // call stack initialization is finished.  To avoid that problem, we
     // create a closure to start the timer, and we schedule that closure
     // to be run after call stack initialization is done.
-    struct start_timer_after_init_state* state = gpr_zalloc(sizeof(*state));
+    struct start_timer_after_init_state* state =
+        (struct start_timer_after_init_state*)gpr_zalloc(sizeof(*state));
     state->elem = elem;
     state->deadline = deadline;
     GRPC_CLOSURE_INIT(&state->closure, start_timer_after_init, state,

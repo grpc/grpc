@@ -89,7 +89,7 @@ static ssize_t fill_socket(int fd) {
 static size_t fill_socket_partial(int fd, size_t bytes) {
   ssize_t write_bytes;
   size_t total_bytes = 0;
-  unsigned char *buf = gpr_malloc(bytes);
+  unsigned char *buf = (unsigned char *)gpr_malloc(bytes);
   unsigned i;
   for (i = 0; i < bytes; ++i) {
     buf[i] = (uint8_t)(i % 256);
@@ -267,7 +267,7 @@ struct write_socket_state {
 static grpc_slice *allocate_blocks(size_t num_bytes, size_t slice_size,
                                    size_t *num_blocks, uint8_t *current_data) {
   size_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1u : 0u);
-  grpc_slice *slices = gpr_malloc(sizeof(grpc_slice) * nslices);
+  grpc_slice *slices = (grpc_slice *)gpr_malloc(sizeof(grpc_slice) * nslices);
   size_t num_bytes_left = num_bytes;
   unsigned i, j;
   unsigned char *buf;
@@ -301,7 +301,7 @@ static void write_done(grpc_exec_ctx *exec_ctx,
 }
 
 void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
-  unsigned char *buf = gpr_malloc(read_size);
+  unsigned char *buf = (unsigned char *)gpr_malloc(read_size);
   ssize_t bytes_read;
   size_t bytes_left = num_bytes;
   int flags;
@@ -404,7 +404,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
 }
 
 void on_fd_released(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *errors) {
-  int *done = arg;
+  int *done = (int *)arg;
   *done = 1;
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
@@ -547,7 +547,7 @@ static grpc_endpoint_test_config configs[] = {
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
                             grpc_error *error) {
-  grpc_pollset_destroy(exec_ctx, p);
+  grpc_pollset_destroy(exec_ctx, (grpc_pollset *)p);
 }
 
 int main(int argc, char **argv) {
@@ -555,7 +555,7 @@ int main(int argc, char **argv) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
   grpc_init();
-  g_pollset = gpr_zalloc(grpc_pollset_size());
+  g_pollset = (grpc_pollset *)gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(g_pollset, &g_mu);
   grpc_endpoint_tests(configs[0], g_pollset, g_mu);
   run_tests();

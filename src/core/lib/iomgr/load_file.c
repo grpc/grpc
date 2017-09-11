@@ -47,7 +47,8 @@ grpc_error *grpc_load_file(const char *filename, int add_null_terminator,
   /* Converting to size_t on the assumption that it will not fail */
   contents_size = (size_t)ftell(file);
   fseek(file, 0, SEEK_SET);
-  contents = gpr_malloc(contents_size + (add_null_terminator ? 1 : 0));
+  contents = (unsigned char *)gpr_malloc(contents_size +
+                                         (add_null_terminator ? 1 : 0));
   bytes_read = fread(contents, 1, contents_size, file);
   if (bytes_read < contents_size) {
     error = GRPC_OS_ERROR(errno, "fread");

@@ -159,7 +159,7 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                  grpc_resolved_addresses **addresses) {
   request *r = gpr_malloc(sizeof(request));
   GRPC_CLOSURE_INIT(&r->request_closure, do_request_thread, r,
-                    grpc_executor_scheduler);
+                    grpc_executor_scheduler(GRPC_EXECUTOR_SHORT));
   r->name = gpr_strdup(name);
   r->default_port = gpr_strdup(default_port);
   r->on_done = on_done;

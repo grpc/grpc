@@ -83,7 +83,7 @@ static void start_timer_thread_and_unlock(void) {
   }
   gpr_thd_options opt = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&opt);
-  completed_thread *ct = gpr_malloc(sizeof(*ct));
+  completed_thread *ct = (completed_thread *)gpr_malloc(sizeof(*ct));
   // The call to gpr_thd_new() has to be under the same lock used by
   // gc_completed_threads(), particularly due to ct->t, which is written here
   // (internally by gpr_thd_new) and read there. Otherwise it's possible for ct
