@@ -158,9 +158,9 @@ static void on_hostbyname_done_cb(void *arg, int status, int timeouts,
     for (i = 0; hostent->h_addr_list[i] != NULL; i++) {
     }
     (*lb_addresses)->num_addresses += i;
-    (*lb_addresses)->addresses =
-        gpr_realloc((*lb_addresses)->addresses,
-                    sizeof(grpc_lb_address) * (*lb_addresses)->num_addresses);
+    (*lb_addresses)->addresses = (grpc_lb_address *)gpr_realloc(
+        (*lb_addresses)->addresses,
+        sizeof(grpc_lb_address) * (*lb_addresses)->num_addresses);
     for (i = prev_naddr; i < (*lb_addresses)->num_addresses; i++) {
       switch (hostent->h_addrtype) {
         case AF_INET6: {
@@ -293,12 +293,12 @@ static void on_txt_done_cb(void *arg, int status, int timeouts,
   // Found a service config record.
   if (result != NULL) {
     size_t service_config_len = result->length - prefix_len;
-    *r->service_config_json_out = gpr_malloc(service_config_len + 1);
+    *r->service_config_json_out = (char *)gpr_malloc(service_config_len + 1);
     memcpy(*r->service_config_json_out, result->txt + prefix_len,
            service_config_len);
     for (result = result->next; result != NULL && !result->record_start;
          result = result->next) {
-      *r->service_config_json_out = gpr_realloc(
+      *r->service_config_json_out = (char *)gpr_realloc(
           *r->service_config_json_out, service_config_len + result->length + 1);
       memcpy(*r->service_config_json_out + service_config_len, result->txt,
              result->length);
@@ -360,7 +360,8 @@ static grpc_ares_request *grpc_dns_lookup_ares_impl(
   error = grpc_ares_ev_driver_create(&ev_driver, interested_parties);
   if (error != GRPC_ERROR_NONE) goto error_cleanup;
 
-  grpc_ares_request *r = gpr_zalloc(sizeof(grpc_ares_request));
+  grpc_ares_request *r =
+      (grpc_ares_request *)gpr_zalloc(sizeof(grpc_ares_request));
   gpr_mu_init(&r->mu);
   r->ev_driver = ev_driver;
   r->on_done = on_done;
@@ -502,10 +503,11 @@ static void on_dns_lookup_done_cb(grpc_exec_ctx *exec_ctx, void *arg,
   if (r->lb_addrs == NULL || r->lb_addrs->num_addresses == 0) {
     *resolved_addresses = NULL;
   } else {
-    *resolved_addresses = gpr_zalloc(sizeof(grpc_resolved_addresses));
+    *resolved_addresses =
+        (grpc_resolved_addresses *)gpr_zalloc(sizeof(grpc_resolved_addresses));
     (*resolved_addresses)->naddrs = r->lb_addrs->num_addresses;
-    (*resolved_addresses)->addrs = gpr_zalloc(sizeof(grpc_resolved_address) *
-                                              (*resolved_addresses)->naddrs);
+    (*resolved_addresses)->addrs = (grpc_resolved_address *)gpr_zalloc(
+        sizeof(grpc_resolved_address) * (*resolved_addresses)->naddrs);
     for (size_t i = 0; i < (*resolved_addresses)->naddrs; i++) {
       GPR_ASSERT(!r->lb_addrs->addresses[i].is_balancer);
       memcpy(&(*resolved_addresses)->addrs[i],

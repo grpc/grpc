@@ -150,6 +150,7 @@ class PythonArtifact:
                              self.py_version,
                              '32' if self.arch == 'x86' else '64'],
                             environ=environ,
+                            timeout_seconds=45*60,
                             use_workspace=True)
     else:
       environ['PYTHON'] = self.py_version
@@ -257,6 +258,7 @@ class NodeExtArtifact:
                             ['tools\\run_tests\\artifacts\\build_artifact_node.bat',
                              self.gyp_arch],
                             use_workspace=True,
+                            timeout_seconds=45*60,
                             cpu_cost=cpu_cost)
     else:
       if self.platform == 'linux':

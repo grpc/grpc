@@ -82,7 +82,8 @@ void grpc_executor_set_threading(grpc_exec_ctx *exec_ctx, bool threading) {
     g_max_threads = GPR_MAX(1, 2 * gpr_cpu_num_cores());
     gpr_atm_no_barrier_store(&g_cur_threads, 1);
     gpr_tls_init(&g_this_thread_state);
-    g_thread_state = gpr_zalloc(sizeof(thread_state) * g_max_threads);
+    g_thread_state =
+        (thread_state *)gpr_zalloc(sizeof(thread_state) * g_max_threads);
     for (size_t i = 0; i < g_max_threads; i++) {
       gpr_mu_init(&g_thread_state[i].mu);
       gpr_cv_init(&g_thread_state[i].cv);
@@ -129,7 +130,7 @@ void grpc_executor_shutdown(grpc_exec_ctx *exec_ctx) {
 }
 
 static void executor_thread(void *arg) {
-  thread_state *ts = arg;
+  thread_state *ts = (thread_state *)arg;
   gpr_tls_set(&g_this_thread_state, (intptr_t)ts);
 
   grpc_exec_ctx exec_ctx =

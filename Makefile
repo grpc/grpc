@@ -3166,8 +3166,8 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c \
-    src/core/ext/filters/load_reporting/load_reporting.c \
-    src/core/ext/filters/load_reporting/load_reporting_filter.c \
+    src/core/ext/filters/load_reporting/server_load_reporting_filter.c \
+    src/core/ext/filters/load_reporting/server_load_reporting_plugin.c \
     src/core/ext/census/base_resources.c \
     src/core/ext/census/context.c \
     src/core/ext/census/gen/census.pb.c \
@@ -3491,8 +3491,8 @@ LIBGRPC_CRONET_SRC = \
     src/core/tsi/transport_security.c \
     src/core/tsi/transport_security_adapter.c \
     src/core/ext/transport/chttp2/client/chttp2_connector.c \
-    src/core/ext/filters/load_reporting/load_reporting.c \
-    src/core/ext/filters/load_reporting/load_reporting_filter.c \
+    src/core/ext/filters/load_reporting/server_load_reporting_filter.c \
+    src/core/ext/filters/load_reporting/server_load_reporting_plugin.c \
     src/core/plugin_registry/grpc_cronet_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
@@ -4261,8 +4261,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c \
-    src/core/ext/filters/load_reporting/load_reporting.c \
-    src/core/ext/filters/load_reporting/load_reporting_filter.c \
+    src/core/ext/filters/load_reporting/server_load_reporting_filter.c \
+    src/core/ext/filters/load_reporting/server_load_reporting_plugin.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c \
@@ -8373,7 +8373,7 @@ PUBLIC_HEADERS_C += \
 LIBARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBARES_SRC))))
 
 $(LIBARES_OBJS): CPPFLAGS += -Ithird_party/cares -Ithird_party/cares/cares $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) -fvisibility=hidden -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
-$(LIBARES_OBJS): CFLAGS += -Wno-sign-conversion $(if $(subst MINGW32,,$(SYSTEM)),-Wno-invalid-source-encoding,)
+$(LIBARES_OBJS): CFLAGS += -Wno-sign-conversion $(if $(subst Darwin,,$(SYSTEM)),,-Wno-shorten-64-to-32) $(if $(subst MINGW32,,$(SYSTEM)),-Wno-invalid-source-encoding,)
 
 $(LIBDIR)/$(CONFIG)/libares.a: $(ZLIB_DEP)  $(LIBARES_OBJS) 
 	$(E) "[AR]      Creating $@"

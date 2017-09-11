@@ -256,7 +256,7 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   msg.msg_flags = 0;
 
   GRPC_STATS_INC_TCP_READ_OFFER(exec_ctx, tcp->incoming_buffer->length);
-  GRPC_STATS_INC_TCP_READ_IOV_SIZE(exec_ctx, tcp->incoming_buffer->count);
+  GRPC_STATS_INC_TCP_READ_OFFER_IOV_SIZE(exec_ctx, tcp->incoming_buffer->count);
 
   GPR_TIMER_BEGIN("recvmsg", 0);
   do {
@@ -307,7 +307,7 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
 
 static void tcp_read_allocation_done(grpc_exec_ctx *exec_ctx, void *tcpp,
                                      grpc_error *error) {
-  grpc_tcp *tcp = tcpp;
+  grpc_tcp *tcp = (grpc_tcp *)tcpp;
   if (error != GRPC_ERROR_NONE) {
     grpc_slice_buffer_reset_and_unref_internal(exec_ctx, tcp->incoming_buffer);
     grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
