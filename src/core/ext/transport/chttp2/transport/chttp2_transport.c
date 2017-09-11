@@ -1974,10 +1974,6 @@ void grpc_chttp2_cancel_stream(grpc_exec_ctx *exec_ctx,
   if (due_to_error != GRPC_ERROR_NONE && !s->seen_error) {
     s->seen_error = true;
   }
-  if (!s->write_closed) {
-    grpc_chttp2_fail_pending_writes(exec_ctx, t, s,
-                                    GRPC_ERROR_REF(due_to_error));
-  }
   grpc_chttp2_mark_stream_closed(exec_ctx, t, s, 1, 1, due_to_error);
 }
 
@@ -2107,6 +2103,7 @@ void grpc_chttp2_mark_stream_closed(grpc_exec_ctx *exec_ctx,
   if (close_writes && !s->write_closed) {
     s->write_closed_error = GRPC_ERROR_REF(error);
     s->write_closed = true;
+    grpc_chttp2_fail_pending_writes(exec_ctx, t, s, GRPC_ERROR_REF(error));
   }
   if (s->read_closed && s->write_closed) {
     became_closed = true;
@@ -2291,9 +2288,6 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       &t->qbuf, grpc_chttp2_rst_stream_create(s->id, GRPC_HTTP2_NO_ERROR,
                                               &s->stats.outgoing));
 
-  if (!s->write_closed) {
-    grpc_chttp2_fail_pending_writes(exec_ctx, t, s, GRPC_ERROR_REF(error));
-  }
   grpc_chttp2_mark_stream_closed(exec_ctx, t, s, 1, 1, error);
   grpc_chttp2_initiate_write(exec_ctx, t, "close_from_api");
 }

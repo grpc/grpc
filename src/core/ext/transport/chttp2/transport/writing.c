@@ -386,13 +386,13 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
           if (is_last_frame) {
             s->send_trailing_metadata = NULL;
             s->sent_trailing_metadata = true;
-            grpc_chttp2_mark_stream_closed(exec_ctx, t, s, !t->is_client, 1,
-                                           GRPC_ERROR_NONE);
             if (!t->is_client && !s->read_closed) {
               grpc_slice_buffer_add(&t->outbuf, grpc_chttp2_rst_stream_create(
                                                     s->id, GRPC_HTTP2_NO_ERROR,
                                                     &s->stats.outgoing));
             }
+            grpc_chttp2_mark_stream_closed(exec_ctx, t, s, !t->is_client, 1,
+                                           GRPC_ERROR_NONE);
           }
           result.early_results_scheduled |=
               update_list(exec_ctx, t, s,
@@ -446,13 +446,13 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
         }
         s->send_trailing_metadata = NULL;
         s->sent_trailing_metadata = true;
-        grpc_chttp2_mark_stream_closed(exec_ctx, t, s, !t->is_client, 1,
-                                       GRPC_ERROR_NONE);
         if (!t->is_client && !s->read_closed) {
           grpc_slice_buffer_add(
               &t->outbuf, grpc_chttp2_rst_stream_create(
                               s->id, GRPC_HTTP2_NO_ERROR, &s->stats.outgoing));
         }
+        grpc_chttp2_mark_stream_closed(exec_ctx, t, s, !t->is_client, 1,
+                                       GRPC_ERROR_NONE);
         now_writing = true;
         result.early_results_scheduled = true;
         grpc_chttp2_complete_closure_step(
