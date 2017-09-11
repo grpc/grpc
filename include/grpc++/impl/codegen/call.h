@@ -361,11 +361,9 @@ class MessageDeserializer;
 template <class M>
 class MessageDeserializer<
     M, typename std::enable_if<std::is_same<
-           ::grpc::Status,
-           decltype(SerializationTraits<M>::Deserialize(
-               static_cast<const ::grpc::ByteBuffer&>(
-                   *(static_cast<const ::grpc::ByteBuffer*>(nullptr))),
-               static_cast<M*>(nullptr)))>::value>::type> {
+           ::grpc::Status, decltype(SerializationTraits<M>::Deserialize(
+                               internal::Example<const ::grpc::ByteBuffer&>(),
+                               internal::Example<M*>()))>::value>::type> {
  public:
   static Status Deserialize(const ByteBuffer& bbuf, M* message) {
     return SerializationTraits<M>::Deserialize(bbuf, message);
@@ -376,8 +374,8 @@ template <class M>
 class MessageDeserializer<
     M, typename std::enable_if<std::is_same<
            ::grpc::Status, decltype(SerializationTraits<M>::Deserialize(
-                               static_cast<grpc_byte_buffer*>(nullptr),
-                               static_cast<M*>(nullptr)))>::value>::type> {
+                               internal::Example<grpc_byte_buffer*>(),
+                               internal::Example<M*>()))>::value>::type> {
  public:
   static Status Deserialize(const ByteBuffer& bbuf, M* message) {
     return SerializationTraits<M>::Deserialize(
