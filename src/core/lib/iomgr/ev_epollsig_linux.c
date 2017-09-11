@@ -363,7 +363,8 @@ static void polling_island_add_fds_locked(polling_island *pi, grpc_fd **fds,
 
     if (pi->fd_cnt == pi->fd_capacity) {
       pi->fd_capacity = GPR_MAX(pi->fd_capacity + 8, pi->fd_cnt * 3 / 2);
-      pi->fds = gpr_realloc(pi->fds, sizeof(grpc_fd *) * pi->fd_capacity);
+      pi->fds =
+          (grpc_fd **)gpr_realloc(pi->fds, sizeof(grpc_fd *) * pi->fd_capacity);
     }
 
     pi->fds[pi->fd_cnt++] = fds[i];
@@ -466,7 +467,7 @@ static polling_island *polling_island_create(grpc_exec_ctx *exec_ctx,
 
   *error = GRPC_ERROR_NONE;
 
-  pi = gpr_malloc(sizeof(*pi));
+  pi = (polling_island *)gpr_malloc(sizeof(*pi));
   gpr_mu_init(&pi->mu);
   pi->fd_cnt = 0;
   pi->fd_capacity = 0;
@@ -810,7 +811,7 @@ static grpc_fd *fd_create(int fd, const char *name) {
   gpr_mu_unlock(&fd_freelist_mu);
 
   if (new_fd == NULL) {
-    new_fd = gpr_malloc(sizeof(grpc_fd));
+    new_fd = (grpc_fd *)gpr_malloc(sizeof(grpc_fd));
     gpr_mu_init(&new_fd->po.mu);
   }
 
@@ -1274,7 +1275,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
          to the function pollset_work_and_unlock() will pick up the correct
          epoll_fd */
     } else {
-      grpc_fd *fd = data_ptr;
+      grpc_fd *fd = (grpc_fd *)data_ptr;
       int cancel = ep_ev[i].events & (EPOLLERR | EPOLLHUP);
       int read_ev = ep_ev[i].events & (EPOLLIN | EPOLLPRI);
       int write_ev = ep_ev[i].events & EPOLLOUT;
@@ -1570,7 +1571,7 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
  */
 
 static grpc_pollset_set *pollset_set_create(void) {
-  grpc_pollset_set *pss = gpr_malloc(sizeof(*pss));
+  grpc_pollset_set *pss = (grpc_pollset_set *)gpr_malloc(sizeof(*pss));
   gpr_mu_init(&pss->po.mu);
   pss->po.pi = NULL;
 #ifndef NDEBUG
@@ -1648,8 +1649,8 @@ void *grpc_pollset_get_polling_island(grpc_pollset *ps) {
 }
 
 bool grpc_are_polling_islands_equal(void *p, void *q) {
-  polling_island *p1 = p;
-  polling_island *p2 = q;
+  polling_island *p1 = (polling_island *)p;
+  polling_island *p2 = (polling_island *)q;
 
   /* Note: polling_island_lock_pair() may change p1 and p2 to point to the
      latest polling islands in their respective linked lists */

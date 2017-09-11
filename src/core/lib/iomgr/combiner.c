@@ -74,14 +74,15 @@ static const grpc_closure_scheduler_vtable finally_scheduler = {
 static void offload(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
 
 grpc_combiner *grpc_combiner_create(void) {
-  grpc_combiner *lock = gpr_zalloc(sizeof(*lock));
+  grpc_combiner *lock = (grpc_combiner *)gpr_zalloc(sizeof(*lock));
   gpr_ref_init(&lock->refs, 1);
   lock->scheduler.vtable = &scheduler;
   lock->finally_scheduler.vtable = &finally_scheduler;
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
   gpr_mpscq_init(&lock->queue);
   grpc_closure_list_init(&lock->final_list);
-  GRPC_CLOSURE_INIT(&lock->offload, offload, lock, grpc_executor_scheduler);
+  GRPC_CLOSURE_INIT(&lock->offload, offload, lock,
+                    grpc_executor_scheduler(GRPC_EXECUTOR_SHORT));
   GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG, "C:%p create", lock));
   return lock;
 }
@@ -193,7 +194,7 @@ static void move_next(grpc_exec_ctx *exec_ctx) {
 }
 
 static void offload(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  grpc_combiner *lock = arg;
+  grpc_combiner *lock = (grpc_combiner *)arg;
   push_last_on_exec_ctx(exec_ctx, lock);
 }
 

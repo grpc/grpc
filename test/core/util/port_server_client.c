@@ -42,14 +42,14 @@ typedef struct freereq {
 
 static void destroy_pops_and_shutdown(grpc_exec_ctx *exec_ctx, void *p,
                                       grpc_error *error) {
-  grpc_pollset *pollset = grpc_polling_entity_pollset(p);
+  grpc_pollset *pollset = grpc_polling_entity_pollset((grpc_polling_entity *)p);
   grpc_pollset_destroy(exec_ctx, pollset);
   gpr_free(pollset);
 }
 
 static void freed_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
                                    grpc_error *error) {
-  freereq *pr = arg;
+  freereq *pr = (freereq *)arg;
   gpr_mu_lock(pr->mu);
   pr->done = 1;
   GRPC_LOG_IF_ERROR(
@@ -74,7 +74,7 @@ void grpc_free_port_using_server(int port) {
   memset(&req, 0, sizeof(req));
   memset(&rsp, 0, sizeof(rsp));
 
-  grpc_pollset *pollset = gpr_zalloc(grpc_pollset_size());
+  grpc_pollset *pollset = (grpc_pollset *)gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &pr.mu);
   pr.pops = grpc_polling_entity_create_from_pollset(pollset);
   shutdown_closure = GRPC_CLOSURE_CREATE(destroy_pops_and_shutdown, &pr.pops,
@@ -131,7 +131,7 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
                                  grpc_error *error) {
   size_t i;
   int port = 0;
-  portreq *pr = arg;
+  portreq *pr = (portreq *)arg;
   int failed = 0;
   grpc_httpcli_response *response = &pr->response;
 
@@ -207,7 +207,7 @@ int grpc_pick_port_using_server(void) {
 
   memset(&pr, 0, sizeof(pr));
   memset(&req, 0, sizeof(req));
-  grpc_pollset *pollset = gpr_zalloc(grpc_pollset_size());
+  grpc_pollset *pollset = (grpc_pollset *)gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &pr.mu);
   pr.pops = grpc_polling_entity_create_from_pollset(pollset);
   shutdown_closure = GRPC_CLOSURE_CREATE(destroy_pops_and_shutdown, &pr.pops,

@@ -27,8 +27,8 @@
 void grpc_chttp2_stream_map_init(grpc_chttp2_stream_map *map,
                                  size_t initial_capacity) {
   GPR_ASSERT(initial_capacity > 1);
-  map->keys = gpr_malloc(sizeof(uint32_t) * initial_capacity);
-  map->values = gpr_malloc(sizeof(void *) * initial_capacity);
+  map->keys = (uint32_t *)gpr_malloc(sizeof(uint32_t) * initial_capacity);
+  map->values = (void **)gpr_malloc(sizeof(void *) * initial_capacity);
   map->count = 0;
   map->free = 0;
   map->capacity = initial_capacity;

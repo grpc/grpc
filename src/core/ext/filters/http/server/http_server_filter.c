@@ -94,7 +94,7 @@ static void add_error(const char *error_name, grpc_error **cumulative,
 static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
                                                    grpc_call_element *elem,
                                                    grpc_metadata_batch *b) {
-  call_data *calld = elem->call_data;
+  call_data *calld = (call_data *)elem->call_data;
   grpc_error *error = GRPC_ERROR_NONE;
   static const char *error_name = "Failed processing incoming headers";
 
@@ -263,8 +263,8 @@ static grpc_error *server_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
 
 static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
                        grpc_error *err) {
-  grpc_call_element *elem = user_data;
-  call_data *calld = elem->call_data;
+  grpc_call_element *elem = (grpc_call_element *)user_data;
+  call_data *calld = (call_data *)elem->call_data;
   if (err == GRPC_ERROR_NONE) {
     err = server_filter_incoming_metadata(exec_ctx, elem,
                                           calld->recv_initial_metadata);
@@ -276,8 +276,8 @@ static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
 
 static void hs_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
                            grpc_error *err) {
-  grpc_call_element *elem = user_data;
-  call_data *calld = elem->call_data;
+  grpc_call_element *elem = (grpc_call_element *)user_data;
+  call_data *calld = (call_data *)elem->call_data;
   /* Call recv_message_ready if we got the payload via the path field */
   if (calld->seen_path_with_query && calld->recv_message_ready != NULL) {
     *calld->pp_recv_message = calld->payload_bin_delivered
@@ -296,8 +296,8 @@ static void hs_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
 
 static void hs_recv_message_ready(grpc_exec_ctx *exec_ctx, void *user_data,
                                   grpc_error *err) {
-  grpc_call_element *elem = user_data;
-  call_data *calld = elem->call_data;
+  grpc_call_element *elem = (grpc_call_element *)user_data;
+  call_data *calld = (call_data *)elem->call_data;
   if (calld->seen_path_with_query) {
     // Do nothing. This is probably a GET request, and payload will be
     // returned in hs_on_complete callback.
@@ -314,7 +314,7 @@ static grpc_error *hs_mutate_op(grpc_exec_ctx *exec_ctx,
                                 grpc_call_element *elem,
                                 grpc_transport_stream_op_batch *op) {
   /* grab pointers to our data from the call element */
-  call_data *calld = elem->call_data;
+  call_data *calld = (call_data *)elem->call_data;
 
   if (op->send_initial_metadata) {
     grpc_error *error = GRPC_ERROR_NONE;
@@ -376,7 +376,7 @@ static grpc_error *hs_mutate_op(grpc_exec_ctx *exec_ctx,
 static void hs_start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *op) {
-  call_data *calld = elem->call_data;
+  call_data *calld = (call_data *)elem->call_data;
   GPR_TIMER_BEGIN("hs_start_transport_stream_op_batch", 0);
   grpc_error *error = hs_mutate_op(exec_ctx, elem, op);
   if (error != GRPC_ERROR_NONE) {
@@ -393,7 +393,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   const grpc_call_element_args *args) {
   /* grab pointers to our data from the call element */
-  call_data *calld = elem->call_data;
+  call_data *calld = (call_data *)elem->call_data;
   /* initialize members */
   calld->call_combiner = args->call_combiner;
   GRPC_CLOSURE_INIT(&calld->hs_on_recv, hs_on_recv, elem,
@@ -410,7 +410,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
                               grpc_closure *ignored) {
-  call_data *calld = elem->call_data;
+  call_data *calld = (call_data *)elem->call_data;
   grpc_slice_buffer_destroy_internal(exec_ctx, &calld->read_slice_buffer);
 }
 
