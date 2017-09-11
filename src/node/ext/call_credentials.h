@@ -79,8 +79,7 @@ int plugin_get_metadata(
     void *state, grpc_auth_metadata_context context,
     grpc_credentials_plugin_metadata_cb cb, void *user_data,
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
-    size_t *num_creds_md, grpc_status_code *status,
-    const char **error_details);
+    size_t *num_creds_md, grpc_status_code *status, const char **error_details);
 
 void plugin_destroy_state(void *state);
 
