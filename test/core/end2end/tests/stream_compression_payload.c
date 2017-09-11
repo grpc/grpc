@@ -95,7 +95,7 @@ static grpc_slice generate_random_slice() {
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
   char *output;
   const size_t output_size = 1024 * 1024;
-  output = gpr_malloc(output_size);
+  output = (char *)gpr_malloc(output_size);
   for (i = 0; i < output_size - 1; ++i) {
     output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
   }

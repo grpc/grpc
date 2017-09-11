@@ -312,7 +312,7 @@ static const grpc_channel_filter test_server_filter = {
 
 static bool maybe_add_filter(grpc_exec_ctx *exec_ctx,
                              grpc_channel_stack_builder *builder, void *arg) {
-  grpc_channel_filter *filter = arg;
+  grpc_channel_filter *filter = (grpc_channel_filter *)arg;
   if (g_enable_filter) {
     // Want to add the filter as close to the end as possible, to make
     // sure that all of the filters work well together.  However, we

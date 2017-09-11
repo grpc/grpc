@@ -91,7 +91,7 @@ static grpc_slice generate_random_slice() {
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
   char *output;
   const size_t output_size = 1024 * 1024;
-  output = gpr_malloc(output_size);
+  output = (char *)gpr_malloc(output_size);
   for (i = 0; i < output_size - 1; ++i) {
     output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
   }
@@ -111,10 +111,10 @@ void resource_quota_server(grpc_end2end_test_config config) {
   grpc_resource_quota_resize(resource_quota, 5 * 1024 * 1024);
 
 #define NUM_CALLS 100
-#define CLIENT_BASE_TAG 1000
-#define SERVER_START_BASE_TAG 2000
-#define SERVER_RECV_BASE_TAG 3000
-#define SERVER_END_BASE_TAG 4000
+#define CLIENT_BASE_TAG 0x1000
+#define SERVER_START_BASE_TAG 0x2000
+#define SERVER_RECV_BASE_TAG 0x3000
+#define SERVER_END_BASE_TAG 0x4000
 
   grpc_arg arg;
   arg.key = GRPC_ARG_RESOURCE_QUOTA;
@@ -144,11 +144,14 @@ void resource_quota_server(grpc_end2end_test_config config) {
   size_t *request_metadata_recv_count = malloc(sizeof(size_t) * NUM_CALLS);
   grpc_call_details *call_details =
       malloc(sizeof(grpc_call_details) * NUM_CALLS);
-  grpc_status_code *status = malloc(sizeof(grpc_status_code) * NUM_CALLS);
-  grpc_slice *details = malloc(sizeof(grpc_slice) * NUM_CALLS);
+  grpc_status_code *status =
+      (grpc_status_code *)malloc(sizeof(grpc_status_code) * NUM_CALLS);
+  grpc_slice *details = (grpc_slice *)malloc(sizeof(grpc_slice) * NUM_CALLS);
+  grpc_byte_buffer **request_payload =
+      malloc(sizeof(grpc_byte_buffer *) * NUM_CALLS);
   grpc_byte_buffer **request_payload_recv =
       malloc(sizeof(grpc_byte_buffer *) * NUM_CALLS);
-  int *was_cancelled = malloc(sizeof(int) * NUM_CALLS);
+  int *was_cancelled = (int *)malloc(sizeof(int) * NUM_CALLS);
   grpc_call_error error;
   int pending_client_calls = 0;
   int pending_server_start_calls = 0;
@@ -159,14 +162,12 @@ void resource_quota_server(grpc_end2end_test_config config) {
   int deadline_exceeded = 0;
   int unavailable = 0;
 
-  grpc_byte_buffer *request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-
   grpc_op ops[6];
   grpc_op *op;
 
   for (int i = 0; i < NUM_CALLS; i++) {
     grpc_call_details_init(&call_details[i]);
+    request_payload[i] = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
     request_payload_recv[i] = NULL;
     was_cancelled[i] = 0;
   }
@@ -196,7 +197,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
     op->reserved = NULL;
     op++;
     op->op = GRPC_OP_SEND_MESSAGE;
-    op->data.send_message.send_message = request_payload;
+    op->data.send_message.send_message = request_payload[i];
     op->flags = 0;
     op->reserved = NULL;
     op++;
@@ -262,6 +263,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
 
       grpc_call_unref(client_calls[call_id]);
       grpc_slice_unref(details[call_id]);
+      grpc_byte_buffer_destroy(request_payload[call_id]);
 
       pending_client_calls--;
     } else if (ev_tag < SERVER_RECV_BASE_TAG) {
@@ -351,7 +353,6 @@ void resource_quota_server(grpc_end2end_test_config config) {
           NUM_CALLS, cancelled_calls_on_server, cancelled_calls_on_client,
           deadline_exceeded, unavailable);
 
-  grpc_byte_buffer_destroy(request_payload);
   grpc_slice_unref(request_payload_slice);
   grpc_resource_quota_unref(resource_quota);
 
@@ -369,6 +370,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
   free(call_details);
   free(status);
   free(details);
+  free(request_payload);
   free(request_payload_recv);
   free(was_cancelled);
 }

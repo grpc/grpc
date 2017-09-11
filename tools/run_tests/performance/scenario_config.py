@@ -154,7 +154,9 @@ def _ping_pong_scenario(name, rpc_type,
 
   scenario['client_config']['payload_config'] = _payload_type(use_generic_payload, req_size, resp_size)
 
-  optimization_target = 'blend'
+  # Optimization target of 'throughput' does not work well with epoll1 polling
+  # engine. Use the default value of 'blend'
+  optimization_target = 'throughput'
 
   if unconstrained_client:
     outstanding_calls = outstanding if outstanding is not None else OUTSTANDING_REQUESTS[unconstrained_client]
@@ -169,7 +171,6 @@ def _ping_pong_scenario(name, rpc_type,
     scenario['client_config']['outstanding_rpcs_per_channel'] = deep
     scenario['client_config']['client_channels'] = wide
     scenario['client_config']['async_client_threads'] = 0
-    optimization_target = 'throughput'
   else:
     scenario['client_config']['outstanding_rpcs_per_channel'] = 1
     scenario['client_config']['client_channels'] = 1

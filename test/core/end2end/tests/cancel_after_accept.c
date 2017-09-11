@@ -39,10 +39,13 @@ static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
+                                            cancellation_mode mode,
+                                            bool use_service_config,
                                             grpc_channel_args *client_args,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s/%s/%s", test_name, config.name,
+          mode.name, use_service_config ? "service_config" : "client_api");
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -138,8 +141,8 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
     args = grpc_channel_args_copy_and_add(args, &arg, 1);
   }
 
-  grpc_end2end_test_fixture f =
-      begin_test(config, "cancel_after_accept", args, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, "cancel_after_accept", mode,
+                                           use_service_config, args, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = use_service_config

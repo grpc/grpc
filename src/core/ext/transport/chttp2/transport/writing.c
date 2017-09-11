@@ -22,6 +22,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/http2_errors.h"
@@ -116,20 +117,24 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
                          &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
   grpc_slice_buffer_add(&t->outbuf,
                         grpc_chttp2_ping_create(false, pq->inflight_id));
+  GRPC_STATS_INC_HTTP2_PINGS_SENT(exec_ctx);
   t->ping_state.last_ping_sent_time = now;
   t->ping_state.pings_before_data_required -=
       (t->ping_state.pings_before_data_required != 0);
 }
 
-static void update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+static bool update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                         grpc_chttp2_stream *s, int64_t send_bytes,
-                        grpc_chttp2_write_cb **list, grpc_error *error) {
+                        grpc_chttp2_write_cb **list, int64_t *ctr,
+                        grpc_error *error) {
+  bool sched_any = false;
   grpc_chttp2_write_cb *cb = *list;
   *list = NULL;
-  s->flow_controlled_bytes_written += send_bytes;
+  *ctr += send_bytes;
   while (cb) {
     grpc_chttp2_write_cb *next = cb->next;
-    if (cb->call_at_byte <= s->flow_controlled_bytes_written) {
+    if (cb->call_at_byte <= *ctr) {
+      sched_any = true;
       finish_write_cb(exec_ctx, t, s, cb, GRPC_ERROR_REF(error));
     } else {
       add_to_write_list(list, cb);
@@ -137,6 +142,7 @@ static void update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     cb = next;
   }
   GRPC_ERROR_UNREF(error);
+  return sched_any;
 }
 
 static bool stream_ref_if_not_destroyed(gpr_refcount *r) {
@@ -154,22 +160,22 @@ static uint32_t target_write_size(grpc_chttp2_transport *t) {
 }
 
 // Returns true if initial_metadata contains only default headers.
-//
-// TODO(roth): The fact that we hard-code these particular headers here
-// is fairly ugly.  Need some better way to know which headers are
-// default, maybe via a bit in the static metadata table?
 static bool is_default_initial_metadata(grpc_metadata_batch *initial_metadata) {
-  int num_default_fields =
-      (initial_metadata->idx.named.status != NULL) +
-      (initial_metadata->idx.named.content_type != NULL) +
-      (initial_metadata->idx.named.grpc_encoding != NULL) +
-      (initial_metadata->idx.named.grpc_accept_encoding != NULL);
-  return (size_t)num_default_fields == initial_metadata->list.count;
+  return initial_metadata->list.default_count == initial_metadata->list.count;
 }
 
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
   grpc_chttp2_stream *s;
+
+  /* stats histogram counters: we increment these throughout this function,
+     and at the end publish to the central stats histograms */
+  int flow_control_writes = 0;
+  int initial_metadata_writes = 0;
+  int trailing_metadata_writes = 0;
+  int message_writes = 0;
+
+  GRPC_STATS_INC_HTTP2_WRITES_BEGUN(exec_ctx);
 
   GPR_TIMER_BEGIN("grpc_chttp2_begin_write", 0);
 
@@ -182,6 +188,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     t->force_send_settings = 0;
     t->dirtied_local_settings = 0;
     t->sent_local_settings = 1;
+    GRPC_STATS_INC_HTTP2_SETTINGS_WRITES(exec_ctx);
   }
 
   /* simple writes are queued to qbuf, and flushed here */
@@ -201,13 +208,13 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     }
   }
 
-  bool partial_write = false;
+  grpc_chttp2_begin_write_result result = {false, false, false};
 
   /* for each grpc_chttp2_stream that's become writable, frame it's data
      (according to available window sizes) and add to the output buffer */
   while (true) {
     if (t->outbuf.length > target_write_size(t)) {
-      partial_write = true;
+      result.partial = true;
       break;
     }
 
@@ -251,7 +258,6 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             .stats = &s->stats.outgoing};
         grpc_chttp2_encode_header(exec_ctx, &t->hpack_compressor, NULL, 0,
                                   s->send_initial_metadata, &hopt, &t->outbuf);
-        now_writing = true;
         t->ping_state.pings_before_data_required =
             t->ping_policy.max_pings_without_data;
         if (!t->is_client) {
@@ -259,6 +265,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
               gpr_inf_past(GPR_CLOCK_MONOTONIC);
           t->ping_recv_state.ping_strikes = 0;
         }
+        initial_metadata_writes++;
       } else {
         GRPC_CHTTP2_IF_TRACING(
             gpr_log(GPR_INFO, "not sending initial_metadata (Trailers-Only)"));
@@ -274,10 +281,15 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
               [num_extra_headers_for_trailing_metadata++] =
                   &s->send_initial_metadata->idx.named.content_type->md;
         }
+        trailing_metadata_writes++;
       }
       s->send_initial_metadata = NULL;
       s->sent_initial_metadata = true;
       sent_initial_metadata = true;
+      result.early_results_scheduled = true;
+      grpc_chttp2_complete_closure_step(
+          exec_ctx, t, s, &s->send_initial_metadata_finished, GRPC_ERROR_NONE,
+          "send_initial_metadata_finished");
     }
     /* send any window updates */
     uint32_t stream_announce = grpc_chttp2_flowctl_maybe_send_stream_update(
@@ -293,6 +305,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             gpr_inf_past(GPR_CLOCK_MONOTONIC);
         t->ping_recv_state.ping_strikes = 0;
       }
+      flow_control_writes++;
     }
     if (sent_initial_metadata) {
       /* send any body bytes, if allowed by flow control */
@@ -311,6 +324,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
         if (max_outgoing > 0) {
           bool is_last_data_frame = false;
           bool is_last_frame = false;
+          size_t sending_bytes_before = s->sending_bytes;
           if (s->stream_compression_send_enabled) {
             while ((s->flow_controlled_buffer.length > 0 ||
                     s->compressed_data_buffer->length > 0) &&
@@ -378,6 +392,11 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                                                     &s->stats.outgoing));
             }
           }
+          result.early_results_scheduled |=
+              update_list(exec_ctx, t, s,
+                          (int64_t)(s->sending_bytes - sending_bytes_before),
+                          &s->on_flow_controlled_cbs,
+                          &s->flow_controlled_bytes_flowed, GRPC_ERROR_NONE);
           now_writing = true;
           if (s->flow_controlled_buffer.length > 0 ||
               (s->stream_compression_send_enabled &&
@@ -385,6 +404,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing:fork");
             grpc_chttp2_list_add_writable_stream(t, s);
           }
+          message_writes++;
         } else if (t->flow_control.remote_window == 0) {
           grpc_chttp2_list_add_stalled_by_transport(t, s);
           now_writing = true;
@@ -420,6 +440,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                                     num_extra_headers_for_trailing_metadata,
                                     s->send_trailing_metadata, &hopt,
                                     &t->outbuf);
+          trailing_metadata_writes++;
         }
         s->send_trailing_metadata = NULL;
         s->sent_trailing_metadata = true;
@@ -429,10 +450,22 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                               s->id, GRPC_HTTP2_NO_ERROR, &s->stats.outgoing));
         }
         now_writing = true;
+        result.early_results_scheduled = true;
+        grpc_chttp2_complete_closure_step(
+            exec_ctx, t, s, &s->send_trailing_metadata_finished,
+            GRPC_ERROR_NONE, "send_trailing_metadata_finished");
       }
     }
 
     if (now_writing) {
+      GRPC_STATS_INC_HTTP2_SEND_INITIAL_METADATA_PER_WRITE(
+          exec_ctx, initial_metadata_writes);
+      GRPC_STATS_INC_HTTP2_SEND_MESSAGE_PER_WRITE(exec_ctx, message_writes);
+      GRPC_STATS_INC_HTTP2_SEND_TRAILING_METADATA_PER_WRITE(
+          exec_ctx, trailing_metadata_writes);
+      GRPC_STATS_INC_HTTP2_SEND_FLOWCTL_PER_WRITE(exec_ctx,
+                                                  flow_control_writes);
+
       if (!grpc_chttp2_list_add_writing_stream(t, s)) {
         /* already in writing list: drop ref */
         GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:already_writing");
@@ -470,9 +503,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
 
   GPR_TIMER_END("grpc_chttp2_begin_write", 0);
 
-  return t->outbuf.count > 0 ? (partial_write ? GRPC_CHTTP2_PARTIAL_WRITE
-                                              : GRPC_CHTTP2_FULL_WRITE)
-                             : GRPC_CHTTP2_NOTHING_TO_WRITE;
+  result.writing = t->outbuf.count > 0;
+  return result;
 }
 
 void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
@@ -481,20 +513,13 @@ void grpc_chttp2_end_write(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_chttp2_stream *s;
 
   while (grpc_chttp2_list_pop_writing_stream(t, &s)) {
-    if (s->sent_initial_metadata) {
-      grpc_chttp2_complete_closure_step(
-          exec_ctx, t, s, &s->send_initial_metadata_finished,
-          GRPC_ERROR_REF(error), "send_initial_metadata_finished");
-    }
     if (s->sending_bytes != 0) {
       update_list(exec_ctx, t, s, (int64_t)s->sending_bytes,
-                  &s->on_write_finished_cbs, GRPC_ERROR_REF(error));
+                  &s->on_write_finished_cbs, &s->flow_controlled_bytes_written,
+                  GRPC_ERROR_REF(error));
       s->sending_bytes = 0;
     }
     if (s->sent_trailing_metadata) {
-      grpc_chttp2_complete_closure_step(
-          exec_ctx, t, s, &s->send_trailing_metadata_finished,
-          GRPC_ERROR_REF(error), "send_trailing_metadata_finished");
       grpc_chttp2_mark_stream_closed(exec_ctx, t, s, !t->is_client, 1,
                                      GRPC_ERROR_REF(error));
     }

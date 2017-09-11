@@ -78,7 +78,7 @@ static void test_early_server_shutdown_finishes_tags(
   grpc_end2end_test_fixture f = begin_test(
       config, "test_early_server_shutdown_finishes_tags", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
-  grpc_call *s = (void *)1;
+  grpc_call *s = (grpc_call *)(uintptr_t)1;
   grpc_call_details call_details;
   grpc_metadata *request_metadata_recv;
   size_t request_metadata_recv_count;

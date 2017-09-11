@@ -14,14 +14,9 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary", "grpc_package")
 
-package(
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
-)
+grpc_package(name = "test/cpp/microbenchmarks")
 
 grpc_cc_test(
     name = "noop-benchmark",
@@ -40,13 +35,13 @@ grpc_cc_library(
         "fullstack_fixtures.h",
         "helpers.h",
     ],
+    external_deps = [
+        "benchmark",
+    ],
     deps = [
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util_unsecure",
-    ],
-    external_deps = [
-        "benchmark",
     ],
 )
 
@@ -81,14 +76,20 @@ grpc_cc_binary(
 grpc_cc_binary(
     name = "bm_fullstack_streaming_ping_pong",
     testonly = 1,
-    srcs = ["bm_fullstack_streaming_ping_pong.cc"],
+    srcs = [
+        "bm_fullstack_streaming_ping_pong.cc",
+        "fullstack_streaming_ping_pong.h",
+    ],
     deps = [":helpers"],
 )
 
 grpc_cc_binary(
     name = "bm_fullstack_streaming_pump",
     testonly = 1,
-    srcs = ["bm_fullstack_streaming_pump.cc"],
+    srcs = [
+        "bm_fullstack_streaming_pump.cc",
+        "fullstack_streaming_pump.h",
+    ],
     deps = [":helpers"],
 )
 
@@ -97,15 +98,18 @@ grpc_cc_binary(
     testonly = 1,
     srcs = ["bm_fullstack_trickle.cc"],
     deps = [
-      ":helpers",
-      "//test/cpp/util:test_config",
+        ":helpers",
+        "//test/cpp/util:test_config",
     ],
 )
 
 grpc_cc_binary(
     name = "bm_fullstack_unary_ping_pong",
     testonly = 1,
-    srcs = ["bm_fullstack_unary_ping_pong.cc"],
+    srcs = [
+        "bm_fullstack_unary_ping_pong.cc",
+        "fullstack_unary_ping_pong.h",
+    ],
     deps = [":helpers"],
 )
 

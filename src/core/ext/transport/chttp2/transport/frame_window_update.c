@@ -70,7 +70,8 @@ grpc_error *grpc_chttp2_window_update_parser_parse(
   uint8_t *const beg = GRPC_SLICE_START_PTR(slice);
   uint8_t *const end = GRPC_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
-  grpc_chttp2_window_update_parser *p = parser;
+  grpc_chttp2_window_update_parser *p =
+      (grpc_chttp2_window_update_parser *)parser;
 
   while (p->byte != 4 && cur != end) {
     p->amount |= ((uint32_t)*cur) << (8 * (3 - p->byte));
@@ -98,9 +99,8 @@ grpc_error *grpc_chttp2_window_update_parser_parse(
         grpc_chttp2_flowctl_recv_stream_update(
             &t->flow_control, &s->flow_control, received_update);
         if (grpc_chttp2_list_remove_stalled_by_stream(t, s)) {
-          grpc_chttp2_become_writable(
-              exec_ctx, t, s, GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED,
-              "stream.read_flow_control");
+          grpc_chttp2_become_writable(exec_ctx, t, s, true,
+                                      "stream.read_flow_control");
         }
       }
     } else {

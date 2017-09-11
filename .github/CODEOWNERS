@@ -3,4 +3,5 @@
 # repository as the source of truth for module ownership.
 /**/OWNERS @markdroth @nicolasnoble @ctiller
 /bazel/** @nicolasnoble @dgquintas @ctiller
+/src/compiler/cpp_generator.cc @vjpai
 /src/core/ext/filters/client_channel/** @markdroth @dgquintas @ctiller

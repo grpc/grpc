@@ -105,7 +105,7 @@ class TrickledCHTTP2 : public EndpointPairFixture {
             (double)state.iterations());
   }
 
-  void Log(int64_t iteration) {
+  void Log(int64_t iteration) GPR_ATTRIBUTE_NO_TSAN {
     auto now = gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), start_);
     grpc_chttp2_transport* client =
         reinterpret_cast<grpc_chttp2_transport*>(client_transport_);
@@ -193,7 +193,8 @@ class TrickledCHTTP2 : public EndpointPairFixture {
     return p;
   }
 
-  void UpdateStats(grpc_chttp2_transport* t, Stats* s, size_t backlog) {
+  void UpdateStats(grpc_chttp2_transport* t, Stats* s,
+                   size_t backlog) GPR_ATTRIBUTE_NO_TSAN {
     if (backlog == 0) {
       if (t->lists[GRPC_CHTTP2_LIST_STALLED_BY_STREAM].head != NULL) {
         s->streams_stalled_due_to_stream_flow_control++;

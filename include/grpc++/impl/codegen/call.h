@@ -169,6 +169,15 @@ class WriteOptions {
     return *this;
   }
 
+  /// Guarantee that all bytes have been written to the wire before completing
+  /// this write (usually writes are completed when they pass flow control)
+  inline WriteOptions& set_write_through() {
+    SetBit(GRPC_WRITE_THROUGH);
+    return *this;
+  }
+
+  inline bool is_write_through() const { return GetBit(GRPC_WRITE_THROUGH); }
+
   /// Get value for the flag indicating that this is the last message, and
   /// should be coalesced with trailing metadata.
   ///
@@ -272,7 +281,7 @@ class CallOpSendInitialMetadata {
 
 class CallOpSendMessage {
  public:
-  CallOpSendMessage() : send_buf_(nullptr), own_buf_(false) {}
+  CallOpSendMessage() : send_buf_(nullptr) {}
 
   /// Send \a message using \a options for the write. The \a options are cleared
   /// after use.
@@ -295,20 +304,25 @@ class CallOpSendMessage {
     write_options_.Clear();
   }
   void FinishOp(bool* status) {
-    if (own_buf_) g_core_codegen_interface->grpc_byte_buffer_destroy(send_buf_);
+    g_core_codegen_interface->grpc_byte_buffer_destroy(send_buf_);
     send_buf_ = nullptr;
   }
 
  private:
   grpc_byte_buffer* send_buf_;
   WriteOptions write_options_;
-  bool own_buf_;
 };
 
 template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
-  return SerializationTraits<M>::Serialize(message, &send_buf_, &own_buf_);
+  bool own_buf;
+  Status result =
+      SerializationTraits<M>::Serialize(message, &send_buf_, &own_buf);
+  if (!own_buf) {
+    send_buf_ = g_core_codegen_interface->grpc_byte_buffer_copy(send_buf_);
+  }
+  return result;
 }
 
 template <class M>

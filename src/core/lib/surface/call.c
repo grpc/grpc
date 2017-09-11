@@ -32,6 +32,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/compression/algorithm_metadata.h"
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -310,7 +311,7 @@ void *grpc_call_arena_alloc(grpc_call *call, size_t size) {
 static parent_call *get_or_create_parent_call(grpc_call *call) {
   parent_call *p = (parent_call *)gpr_atm_acq_load(&call->parent_call_atm);
   if (p == NULL) {
-    p = gpr_arena_alloc(call->arena, sizeof(*p));
+    p = (parent_call *)gpr_arena_alloc(call->arena, sizeof(*p));
     gpr_mu_init(&p->child_list_mu);
     if (!gpr_atm_rel_cas(&call->parent_call_atm, (gpr_atm)NULL, (gpr_atm)p)) {
       gpr_mu_destroy(&p->child_list_mu);
@@ -335,8 +336,8 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
   GPR_TIMER_BEGIN("grpc_call_create", 0);
   gpr_arena *arena =
       gpr_arena_create(grpc_channel_get_call_size_estimate(args->channel));
-  call = gpr_arena_alloc(arena,
-                         sizeof(grpc_call) + channel_stack->call_stack_size);
+  call = (grpc_call *)gpr_arena_alloc(
+      arena, sizeof(grpc_call) + channel_stack->call_stack_size);
   gpr_ref_init(&call->ext_ref, 1);
   call->arena = arena;
   grpc_call_combiner_init(&call->call_combiner);
@@ -347,6 +348,11 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
   /* Always support no compression */
   GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
   call->is_client = args->server_transport_data == NULL;
+  if (call->is_client) {
+    GRPC_STATS_INC_CLIENT_CALLS_CREATED(exec_ctx);
+  } else {
+    GRPC_STATS_INC_SERVER_CALLS_CREATED(exec_ctx);
+  }
   call->stream_op_payload.context = call->context;
   grpc_slice path = grpc_empty_slice();
   if (call->is_client) {
@@ -509,7 +515,7 @@ void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *c REF_ARG) {
 
 static void release_call(grpc_exec_ctx *exec_ctx, void *call,
                          grpc_error *error) {
-  grpc_call *c = call;
+  grpc_call *c = (grpc_call *)call;
   grpc_channel *channel = c->channel;
   grpc_call_combiner_destroy(&c->call_combiner);
   gpr_free((char *)c->peer_string);
@@ -522,7 +528,7 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
                          grpc_error *error) {
   size_t i;
   int ii;
-  grpc_call *c = call;
+  grpc_call *c = (grpc_call *)call;
   GPR_TIMER_BEGIN("destroy_call", 0);
   for (i = 0; i < 2; i++) {
     grpc_metadata_batch_destroy(
@@ -596,6 +602,12 @@ void grpc_call_unref(grpc_call *c) {
   if (cancel) {
     cancel_with_error(&exec_ctx, c, STATUS_FROM_API_OVERRIDE,
                       GRPC_ERROR_CANCELLED);
+  } else {
+    // Unset the call combiner cancellation closure.  This has the
+    // effect of scheduling the previously set cancellation closure, if
+    // any, so that it can release any internal references it may be
+    // holding to the call stack.
+    grpc_call_combiner_set_notify_on_cancel(&exec_ctx, &c->call_combiner, NULL);
   }
   GRPC_CALL_INTERNAL_UNREF(&exec_ctx, c, "destroy");
   grpc_exec_ctx_finish(&exec_ctx);
@@ -616,8 +628,8 @@ grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved) {
 // the filter stack.
 static void execute_batch_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
                                            grpc_error *ignored) {
-  grpc_transport_stream_op_batch *batch = arg;
-  grpc_call *call = batch->handler_private.extra_arg;
+  grpc_transport_stream_op_batch *batch = (grpc_transport_stream_op_batch *)arg;
+  grpc_call *call = (grpc_call *)batch->handler_private.extra_arg;
   GPR_TIMER_BEGIN("execute_batch", 0);
   grpc_call_element *elem = CALL_ELEM_FROM_CALL(call, 0);
   GRPC_CALL_LOG_OP(GPR_INFO, elem, batch);
@@ -1150,7 +1162,7 @@ static void recv_initial_filter(grpc_exec_ctx *exec_ctx, grpc_call *call,
 
 static void recv_trailing_filter(grpc_exec_ctx *exec_ctx, void *args,
                                  grpc_metadata_batch *b) {
-  grpc_call *call = args;
+  grpc_call *call = (grpc_call *)args;
   if (b->idx.named.grpc_status != NULL) {
     uint32_t status_code = decode_status(b->idx.named.grpc_status->md);
     grpc_error *error =
@@ -1234,7 +1246,8 @@ static batch_control *allocate_batch_control(grpc_call *call,
   int slot = batch_slot_for_op(ops[0].op);
   batch_control **pslot = &call->active_batches[slot];
   if (*pslot == NULL) {
-    *pslot = gpr_arena_alloc(call->arena, sizeof(batch_control));
+    *pslot =
+        (batch_control *)gpr_arena_alloc(call->arena, sizeof(batch_control));
   }
   batch_control *bctl = *pslot;
   if (bctl->call != NULL) {
@@ -1248,7 +1261,7 @@ static batch_control *allocate_batch_control(grpc_call *call,
 
 static void finish_batch_completion(grpc_exec_ctx *exec_ctx, void *user_data,
                                     grpc_cq_completion *storage) {
-  batch_control *bctl = user_data;
+  batch_control *bctl = (batch_control *)user_data;
   grpc_call *call = bctl->call;
   bctl->call = NULL;
   GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "completion");
@@ -1391,7 +1404,7 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
 
 static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
                                   grpc_error *error) {
-  batch_control *bctl = bctlp;
+  batch_control *bctl = (batch_control *)bctlp;
   grpc_call *call = bctl->call;
   grpc_byte_stream *bs = call->receiving_stream;
   bool release_error = false;
@@ -1450,7 +1463,7 @@ static void process_data_after_md(grpc_exec_ctx *exec_ctx,
 
 static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
                                    grpc_error *error) {
-  batch_control *bctl = bctlp;
+  batch_control *bctl = (batch_control *)bctlp;
   grpc_call *call = bctl->call;
   if (error != GRPC_ERROR_NONE) {
     if (call->receiving_stream != NULL) {
@@ -1476,7 +1489,7 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
 static void receiving_stream_ready_in_call_combiner(grpc_exec_ctx *exec_ctx,
                                                     void *bctlp,
                                                     grpc_error *error) {
-  batch_control *bctl = bctlp;
+  batch_control *bctl = (batch_control *)bctlp;
   grpc_call *call = bctl->call;
   GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner, "recv_message_ready");
   receiving_stream_ready(exec_ctx, bctlp, error);
@@ -1585,7 +1598,7 @@ static void add_batch_error(grpc_exec_ctx *exec_ctx, batch_control *bctl,
 
 static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
                                              void *bctlp, grpc_error *error) {
-  batch_control *bctl = bctlp;
+  batch_control *bctl = (batch_control *)bctlp;
   grpc_call *call = bctl->call;
 
   GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner,
@@ -1643,7 +1656,7 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
 
 static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
                          grpc_error *error) {
-  batch_control *bctl = bctlp;
+  batch_control *bctl = (batch_control *)bctlp;
   grpc_call *call = bctl->call;
   GRPC_CALL_COMBINER_STOP(exec_ctx, &call->call_combiner, "on_complete");
   add_batch_error(exec_ctx, bctl, GRPC_ERROR_REF(error), false);
