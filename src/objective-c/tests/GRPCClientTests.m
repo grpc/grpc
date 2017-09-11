@@ -437,7 +437,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
     [completion fulfill];
   }];
 
-  call.timeout = 1;
+  call.timeout = 0.001;
   [call startWithWriteable:responsesWriteable];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];

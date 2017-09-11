@@ -184,6 +184,10 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
                           serverName:(NSString *)serverName
                              timeout:(NSTimeInterval)timeout
                      completionQueue:(GRPCCompletionQueue *)queue {
+  GPR_ASSERT(timeout >= 0);
+  if (timeout < 0) {
+    timeout = 0;
+  }
   grpc_slice host_slice;
   if (serverName) {
     host_slice = grpc_slice_from_copied_string(serverName.UTF8String);

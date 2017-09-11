@@ -170,7 +170,9 @@ extern id const kGRPCTrailersKey;
 @property (atomic, copy, readwrite) NSString *serverName;
 
 /**
- * The timeout for the RPC call in milliseconds. If set to 0, the call will not timeout.
+ * The timeout for the RPC call in milliseconds. If set to 0, the call will not timeout. If set to
+ * positive, the gRPC call returns with status GRPCErrorCodeDeadlineExceeded. A negative value is
+ * not allowed.
  */
 @property NSTimeInterval timeout;
 
