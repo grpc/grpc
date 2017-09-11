@@ -303,14 +303,18 @@ class CallOpSendMessage {
   WriteOptions write_options_;
 };
 
+namespace internal {
+template <class T>
+T Example();
+}  // namespace internal
+
 template <class M>
 class CallOpSendMessage::MessageSerializer<
     M, typename std::enable_if<std::is_same<
-           ::grpc::Status,
-           decltype(SerializationTraits<M>::Serialize(
-               static_cast<const M&>(*(static_cast<const M*>(nullptr))),
-               static_cast<grpc_byte_buffer**>(nullptr),
-               static_cast<bool*>(nullptr)))>::value>::type> {
+           ::grpc::Status, decltype(SerializationTraits<M>::Serialize(
+                               internal::Example<const M&>(),
+                               internal::Example<grpc_byte_buffer**>(),
+                               internal::Example<bool*>()))>::value>::type> {
  public:
   static Status SendMessageInternal(const M& message, ByteBuffer* bbuf,
                                     bool* own_buf) {
@@ -322,11 +326,10 @@ class CallOpSendMessage::MessageSerializer<
 template <class M>
 class CallOpSendMessage::MessageSerializer<
     M, typename std::enable_if<std::is_same<
-           ::grpc::Status,
-           decltype(SerializationTraits<M>::Serialize(
-               static_cast<const M&>(*(static_cast<const M*>(nullptr))),
-               static_cast<::grpc::ByteBuffer*>(nullptr),
-               static_cast<bool*>(nullptr)))>::value>::type> {
+           ::grpc::Status, decltype(SerializationTraits<M>::Serialize(
+                               internal::Example<const M&>(),
+                               internal::Example<::grpc::ByteBuffer*>(),
+                               internal::Example<bool*>()))>::value>::type> {
  public:
   static Status SendMessageInternal(const M& message, ByteBuffer* bbuf,
                                     bool* own_buf) {
