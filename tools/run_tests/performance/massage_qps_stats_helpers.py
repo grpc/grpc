@@ -14,7 +14,7 @@
 
 import collections
 
-def threshold_for_count_below(buckets, boundaries, count_below):
+def _threshold_for_count_below(buckets, boundaries, count_below):
   count_so_far = 0
   for lower_idx in range(0, len(buckets)):
     count_so_far += buckets[lower_idx]
@@ -37,7 +37,7 @@ def threshold_for_count_below(buckets, boundaries, count_below):
                float(buckets[lower_idx]))
 
 def percentile(buckets, pctl, boundaries):
-  return threshold_for_count_below(
+  return _threshold_for_count_below(
       buckets, boundaries, sum(buckets) * pctl / 100.0)
 
 def counter(core_stats, name):
