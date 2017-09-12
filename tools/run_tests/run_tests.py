@@ -323,19 +323,26 @@ class CLanguage(object):
         if cpu_cost == 'capacity':
           cpu_cost = multiprocessing.cpu_count()
         if os.path.isfile(binary):
-          test_prefix = None
-          if 'gtest' in target and target['gtest']:
-            test_prefix = 'gtest'
-          elif 'benchmark' in target and target['benchmark']:
-            test_prefix = 'benchmark'
+          list_test_command = None
+          filter_test_command = None
 
-          if test_prefix:
+          # these are the flag defined by gtest and benchmark framework to list
+          # and filter test runs. We use them to split each individual test
+          # into its own JobSpec, and thus into its own process.
+          if 'gtest' in target and target['gtest']:
+            list_test_command = '--gtest_list_tests'
+            filter_test_command = '--gtest_filter=%s'
+          elif 'benchmark' in target and target['benchmark']:
+            list_test_command = '--benchmark_list_tests'
+            filter_test_command = '--benchmark_filter=%s'
+
+          if list_test_command:
             # here we parse the output of --gtest_list_tests (or 
             # --benchmark_list_tests)to build up a complete list of 
             # the tests contained in a binary for each test, we then 
             # add a job to run, filtering for just that test.
             with open(os.devnull, 'w') as fnull:
-              tests = subprocess.check_output([binary, '--%s_list_tests' % test_prefix],
+              tests = subprocess.check_output([binary, list_test_command],
                                               stderr=fnull)
             base = None
             for line in tests.split('\n'):
@@ -348,7 +355,7 @@ class CLanguage(object):
                 assert base is not None
                 assert line[1] == ' '
                 test = base + line.strip()
-                cmdline = [binary, '--%s_filter=%s' % (test_prefix, test)] + target['args']
+                cmdline = [binary, filter_test_command % test] + target['args']
                 out.append(self.config.job_spec(cmdline,
                                                 shortname='%s %s' % (' '.join(cmdline), shortname_ext),
                                                 cpu_cost=cpu_cost,
