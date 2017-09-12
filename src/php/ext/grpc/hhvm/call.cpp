@@ -63,14 +63,16 @@ Class* const CallData::getClass(void)
 CallData::CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_pCallCredentials{ nullptr },
     m_pChannel{ nullptr }, m_Timeout{ 0 },
     m_pMetadataPromise{ std::make_shared<MetadataPromise>() },
-    m_pMetadataMutex{ std::make_shared<std::mutex>() }, m_pCallCancelled{ std::make_shared<bool>(false) }
+    m_pMetadataMutex{ std::make_shared<std::mutex>() }, m_pCallCancelled{ std::make_shared<bool>(false) },
+    m_pSendMessages{ nullptr }
 {
 }
 
 CallData::CallData(grpc_call* const call, const bool owned, const int32_t timeoutMs) :
     m_pCall{ call }, m_Owned{ owned }, m_pCallCredentials{ nullptr }, m_pChannel{ nullptr },
     m_Timeout{ timeoutMs }, m_pMetadataPromise{ std::make_shared<MetadataPromise>() },
-    m_pMetadataMutex{ std::make_shared<std::mutex>() }, m_pCallCancelled{ std::make_shared<bool>(false) }
+    m_pMetadataMutex{ std::make_shared<std::mutex>() }, m_pCallCancelled{ std::make_shared<bool>(false) },
+    m_pSendMessages{ nullptr }
 {
 }
 
@@ -93,12 +95,20 @@ void CallData::destroy(void)
 {
     if (m_pCall)
     {
+        // clean up send messages
+        if (m_pSendMessages)
+        {
+            OpsManaged::destroyStatic(m_pSendMessages);
+            m_pSendMessages = nullptr;
+        }
+
         if (m_Owned)
         {
             // destroy call
             grpc_call_unref(m_pCall);
             m_Owned = false;
         }
+
         m_pCall = nullptr;
     }
     m_pChannel = nullptr;
@@ -258,60 +268,46 @@ void MetadataArray::resizeMetadata(const size_t capacity)
 /*                               OpsManaged                                  */
 /*****************************************************************************/
 
-struct OpsManaged
+
+// constructors/destructors
+OpsManaged::OpsManaged(void) : recv_metadata{ false }, recv_trailing_metadata{ false },
+    recv_status_details{}, send_status_details{},
+    cancelled{ 0 }, status{ GRPC_STATUS_OK }
 {
-    // constructors/destructors
-    OpsManaged(void) :
-        recv_metadata{ false }, recv_trailing_metadata{ false },
-        recv_status_details{}, send_status_details{},
-        cancelled{ 0 }, status{ GRPC_STATUS_OK }
-    {
-        recv_messages.fill(nullptr);
+    recv_messages.fill(nullptr);
+}
 
-        // clear out any old send messages
-        //std::for_each(s_Send_messages.begin(), s_Send_messages.end(),
-        //              OpsManaged::freeMessage);
-    }
-    ~OpsManaged(void)
-    {
-        destroy();
-    }
+OpsManaged::~OpsManaged(void)
+{
+    destroy();
+}
 
-    void destroy(void)
-    {
-        std::for_each(recv_messages.begin(), recv_messages.end(),
-                    OpsManaged::freeMessage);
-    }
+void OpsManaged::destroy(void)
+{
+    std::for_each(recv_messages.begin(), recv_messages.end(), freeMessage);
+}
 
-    static void freeMessage(grpc_byte_buffer* pBuffer)
-    {
-        if (pBuffer)
-        {
-            grpc_byte_buffer_destroy(pBuffer);
-            pBuffer = nullptr;
-        }
-    }
+void OpsManaged::destroyStatic(MessagesType* const pSendMessages)
+{
+    std::for_each(pSendMessages->begin(), pSendMessages->end(), freeMessage);
+}
 
-    // managed data
-    static const size_t s_MaxActions{ 8 };
-    static thread_local MetadataArray s_Send_metadata;          // owned by caller
-    static thread_local MetadataArray s_Send_trailing_metadata; // owned by caller
-    MetadataArray recv_metadata;                                // owned by call object
-    MetadataArray recv_trailing_metadata;                       // owned by call object
-    static thread_local std::array<grpc_byte_buffer*, s_MaxActions> s_Send_messages;  // owned by caller
-    std::array<grpc_byte_buffer*, s_MaxActions> recv_messages;  // owned by call object
-    Slice recv_status_details;                                  // owned by caller
-    Slice send_status_details;                                  // owned by caller
-    int cancelled ;
-    grpc_status_code status;
-};
+void OpsManaged::freeMessage(grpc_byte_buffer* pBuffer)
+{
+    if (pBuffer)
+    {
+        grpc_byte_buffer_destroy(pBuffer);
+        pBuffer = nullptr;
+    }
+}
 
 // initialize statics
+// NOTE: These variables are thread_local so that they have a lifetime beyod startBatch
+// where they are set
 thread_local MetadataArray OpsManaged::s_Send_metadata{ true };
 thread_local MetadataArray OpsManaged::s_Send_trailing_metadata{ true };
-thread_local std::array<grpc_byte_buffer*, OpsManaged::s_MaxActions>
-OpsManaged::s_Send_messages{ nullptr, nullptr, nullptr, nullptr, nullptr,
-                             nullptr, nullptr, nullptr };
+thread_local OpsManaged::MessagesType
+OpsManaged::s_Send_messages{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 
 /*****************************************************************************/
 /*                              HHVM Call Methods                            */
@@ -380,11 +376,12 @@ Object HHVM_METHOD(Call, startBatch,
     }
 
     // clear any existing ops data
-    std::array<grpc_op, OpsManaged::s_MaxActions> ops;
+    static thread_local std::array<grpc_op, OpsManaged::s_MaxActions> ops;
     std::memset(ops.data(), 0, sizeof(grpc_op) * OpsManaged::s_MaxActions);
 
     OpsManaged opsManaged{};
     CallData* const pCallData{ Native::data<CallData>(this_) };
+    pCallData->setSendMessages(&OpsManaged::s_Send_messages);
 
     size_t op_num{ 0 };
     bool sending_initial_metadata{ false };

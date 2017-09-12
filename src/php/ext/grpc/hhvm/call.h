@@ -38,6 +38,85 @@
 namespace HPHP {
 
 /*****************************************************************************/
+/*                             Metadata Array                                */
+/*****************************************************************************/
+
+// This class is an RAII wrapper around a call metadata array
+class MetadataArray
+{
+public:
+    // constructors/descructors
+    MetadataArray(const bool owned);
+    ~MetadataArray(void);
+    MetadataArray(const MetadataArray& otherMetadataArray) = delete;
+    MetadataArray(MetadataArray&& otherMetadataArray) = delete;
+    MetadataArray& operator=(const MetadataArray& rhsMetadataArray) = delete;
+    MetadataArray& operator&(MetadataArray&& rhsMetadataArray) = delete;
+
+    // interface functions
+    bool init(const Array& phpArray);
+    grpc_metadata* const data(void) { return m_Array.metadata; }
+    const grpc_metadata* const data(void) const { return m_Array.metadata; }
+    size_t size(void) const { return m_Array.count; }
+    const grpc_metadata_array& array(void) const { return m_Array; } //
+    grpc_metadata_array& array(void) { return m_Array; } // several methods need non const &
+    Variant phpData(void) const;
+    bool owned(void) const { return m_Owned; }
+
+private:
+    // helper functions
+    void destroyPHP(void);
+    void resizeMetadata(const size_t capacity);
+
+    // member variables
+    grpc_metadata_array m_Array;
+    std::vector<std::pair<Slice, Slice>> m_PHPData; // the key, value PHP Data
+    bool m_Owned;
+};
+
+/*****************************************************************************/
+/*                               OpsManaged                                  */
+/*****************************************************************************/
+
+struct OpsManaged
+{
+public:
+    // typedef's
+    const static size_t s_MaxActions{ 8 };
+    typedef std::array<grpc_byte_buffer*, s_MaxActions> MessagesType;
+
+    // constructors/destructors
+    OpsManaged(void);
+    ~OpsManaged(void);
+    OpsManaged(const OpsManaged& otherOpsManaged) = delete;
+    OpsManaged(OpsManaged&& otherOpsManaged) = delete;
+    OpsManaged& operator=(const OpsManaged& rhsOpsManaged) = delete;
+    OpsManaged& operator&(OpsManaged&& rhsOpsManaged) = delete;
+
+    // helper fuctions
+    static void destroyStatic(MessagesType* const pSendMessages);
+
+private:
+    // helper fuctions
+    void destroy(void);
+    static void freeMessage(grpc_byte_buffer* pBuffer);
+
+public:
+    // member variabes
+    static thread_local MetadataArray s_Send_metadata;          // owned by caller
+    static thread_local MetadataArray s_Send_trailing_metadata; // owned by caller
+    MetadataArray recv_metadata;                                // owned by call object
+    MetadataArray recv_trailing_metadata;                       // owned by call object
+    static thread_local MessagesType s_Send_messages;           // owned by caller
+    MessagesType recv_messages;                                 // owned by call object
+    Slice recv_status_details;                                  // owned by caller
+    Slice send_status_details;                                  // owned by caller
+    int cancelled ;
+    grpc_status_code status;
+
+};
+
+/*****************************************************************************/
 /*                             Channel Data                                  */
 /*****************************************************************************/
 
@@ -74,6 +153,8 @@ public:
     MetadataPromise& metadataPromise(void) { return *(m_pMetadataPromise.get()); }
     std::mutex& metadataMutex(void) { return *(m_pMetadataMutex.get()); }
     bool& callCancelled(void) { return *(m_pCallCancelled.get()); }
+    void setSendMessages(OpsManaged::MessagesType* const pSendMessages) { m_pSendMessages = pSendMessages; }
+    OpsManaged::MessagesType* const sendMessages(void) { return m_pSendMessages; }
     static Class* const getClass(void);
     static const StaticString& className(void) { return s_ClassName; }
 
@@ -91,41 +172,9 @@ private:
     std::shared_ptr<std::mutex> m_pMetadataMutex;        // metadata synchronization
     std::shared_ptr<bool> m_pCallCancelled;              // metadata synchronizations
     std::unique_ptr<CompletionQueue> m_pCompletionQueue;
+    OpsManaged::MessagesType* m_pSendMessages;
     static Class* s_pClass;
     static const StaticString s_ClassName;
-};
-
-/*****************************************************************************/
-/*                             Metadata Array                                */
-/*****************************************************************************/
-
-// This class is an RAII wrapper around a call metadata array
-class MetadataArray
-{
-public:
-    // constructors/descructors
-    MetadataArray(const bool owned);
-    ~MetadataArray(void);
-
-    // interface functions
-    bool init(const Array& phpArray);
-    grpc_metadata* const data(void) { return m_Array.metadata; }
-    const grpc_metadata* const data(void) const { return m_Array.metadata; }
-    size_t size(void) const { return m_Array.count; }
-    const grpc_metadata_array& array(void) const { return m_Array; } //
-    grpc_metadata_array& array(void) { return m_Array; } // several methods need non const &
-    Variant phpData(void) const;
-    bool owned(void) const { return m_Owned; }
-
-private:
-    // helper functions
-    void destroyPHP(void);
-    void resizeMetadata(const size_t capacity);
-
-    // member variables
-    grpc_metadata_array m_Array;
-    std::vector<std::pair<Slice, Slice>> m_PHPData; // the key, value PHP Data
-    bool m_Owned;
 };
 
 /*****************************************************************************/
