@@ -313,7 +313,7 @@ static void channel_broadcaster_shutdown(grpc_exec_ctx *exec_ctx,
 static void request_matcher_init(request_matcher *rm, grpc_server *server) {
   memset(rm, 0, sizeof(*rm));
   rm->server = server;
-  rm->requests_per_cq = (gpr_stack_lockfree **)gpr_malloc(
+  rm->requests_per_cq = gpr_malloc(
       sizeof(*rm->requests_per_cq) * server->cq_count);
   for (size_t i = 0; i < server->cq_count; i++) {
     gpr_locked_mpscq_init(&rm->requests_per_cq[i]);
