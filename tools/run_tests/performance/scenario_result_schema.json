@@ -1,269 +1,1099 @@
 [
   {
-    "name": "metadata",
-    "type": "RECORD",
-    "mode": "NULLABLE",
     "fields": [
       {
-        "name": "buildNumber",
-        "type": "INTEGER",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "buildNumber", 
+        "type": "INTEGER"
+      }, 
       {
-        "name": "buildUrl",
-        "type": "STRING",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "buildUrl", 
+        "type": "STRING"
+      }, 
       {
-        "name": "jobName",
-        "type": "STRING",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "jobName", 
+        "type": "STRING"
+      }, 
       {
-        "name": "gitCommit",
-        "type": "STRING",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "gitCommit", 
+        "type": "STRING"
+      }, 
       {
-        "name": "gitActualCommit",
-        "type": "STRING",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "gitActualCommit", 
+        "type": "STRING"
+      }, 
       {
-        "name": "created",
-        "type": "TIMESTAMP",
-        "mode": "NULLABLE"
+        "mode": "NULLABLE", 
+        "name": "created", 
+        "type": "TIMESTAMP"
       }
-    ]
-  },
+    ], 
+    "mode": "NULLABLE", 
+    "name": "metadata", 
+    "type": "RECORD"
+  }, 
   {
-    "name": "scenario",
-    "type": "RECORD",
-    "mode": "NULLABLE",
     "fields": [
       {
-        "name": "name",
-        "type": "STRING",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "name", 
+        "type": "STRING"
+      }, 
       {
-        "name": "clientConfig",
-        "type": "STRING",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "clientConfig", 
+        "type": "STRING"
+      }, 
       {
-        "name": "numClients",
-        "type": "INTEGER",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "numClients", 
+        "type": "INTEGER"
+      }, 
       {
-        "name": "serverConfig",
-        "type": "STRING",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "serverConfig", 
+        "type": "STRING"
+      }, 
       {
-        "name": "numServers",
-        "type": "INTEGER",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "numServers", 
+        "type": "INTEGER"
+      }, 
       {
-        "name": "warmupSeconds",
-        "type": "INTEGER",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "warmupSeconds", 
+        "type": "INTEGER"
+      }, 
       {
-        "name": "benchmarkSeconds",
-        "type": "INTEGER",
-        "mode": "NULLABLE"
+        "mode": "NULLABLE", 
+        "name": "benchmarkSeconds", 
+        "type": "INTEGER"
       }
-    ]
-  },
+    ], 
+    "mode": "NULLABLE", 
+    "name": "scenario", 
+    "type": "RECORD"
+  }, 
   {
-    "name": "latencies",
-    "type": "STRING",
-    "mode": "NULLABLE"
-  },
+    "mode": "NULLABLE", 
+    "name": "latencies", 
+    "type": "STRING"
+  }, 
   {
-    "name": "clientStats",
-    "type": "RECORD",
-    "mode": "REPEATED",
     "fields": [
       {
-        "name": "latencies",
-        "type": "STRING",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "latencies", 
+        "type": "STRING"
+      }, 
       {
-        "name": "timeElapsed",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "timeElapsed", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "timeUser",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "timeUser", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "timeSystem",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "timeSystem", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "cqPollCount",
-        "type": "INTEGER",
-        "mode": "NULLABLE"
+        "mode": "NULLABLE", 
+        "name": "cqPollCount", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_client_calls_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_server_calls_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_syscall_poll", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_syscall_wait", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_histogram_slow_lookups", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_syscall_write", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_syscall_read", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_backup_pollers_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_backup_poller_polls", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_op_batches", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_op_cancel", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_op_send_initial_metadata", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_op_send_message", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_op_send_trailing_metadata", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_op_recv_initial_metadata", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_op_recv_message", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_op_recv_trailing_metadata", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_settings_writes", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_pings_sent", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_writes_begun", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_writes_offloaded", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_writes_continued", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_partial_writes", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_combiner_locks_initiated", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_combiner_locks_scheduled_items", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_combiner_locks_scheduled_final_items", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_combiner_locks_offloaded", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_scheduled_short_items", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_scheduled_long_items", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_scheduled_to_self", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_wakeup_initiated", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_queue_drained", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_push_retries", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_size", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_size_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_size_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_size_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_size_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_iov_size", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_iov_size_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_iov_size_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_iov_size_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_iov_size_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_size", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_size_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_size_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_size_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_size_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer_iov_size", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer_iov_size_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer_iov_size_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer_iov_size_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer_iov_size_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_size", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_size_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_size_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_size_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_size_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_initial_metadata_per_write", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_initial_metadata_per_write_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_initial_metadata_per_write_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_initial_metadata_per_write_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_initial_metadata_per_write_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_per_write", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_per_write_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_per_write_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_per_write_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_per_write_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_trailing_metadata_per_write", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_trailing_metadata_per_write_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_trailing_metadata_per_write_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_trailing_metadata_per_write_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_trailing_metadata_per_write_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_flowctl_per_write", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_flowctl_per_write_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_flowctl_per_write_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_flowctl_per_write_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_flowctl_per_write_99p", 
+        "type": "FLOAT"
       }
-    ]
-  },
+    ], 
+    "mode": "REPEATED", 
+    "name": "clientStats", 
+    "type": "RECORD"
+  }, 
   {
-    "name": "serverStats",
-    "type": "RECORD",
-    "mode": "REPEATED",
     "fields": [
       {
-        "name": "timeElapsed",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "timeElapsed", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "timeUser",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "timeUser", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "timeSystem",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "timeSystem", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "cqPollCount",
-        "type": "INTEGER",
-        "mode": "NULLABLE"
+        "mode": "NULLABLE", 
+        "name": "cqPollCount", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_client_calls_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_server_calls_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_syscall_poll", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_syscall_wait", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_histogram_slow_lookups", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_syscall_write", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_syscall_read", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_backup_pollers_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_backup_poller_polls", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_op_batches", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_op_cancel", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_op_send_initial_metadata", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_op_send_message", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_op_send_trailing_metadata", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_op_recv_initial_metadata", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_op_recv_message", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_op_recv_trailing_metadata", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_settings_writes", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_pings_sent", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_writes_begun", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_writes_offloaded", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_writes_continued", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_partial_writes", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_combiner_locks_initiated", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_combiner_locks_scheduled_items", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_combiner_locks_scheduled_final_items", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_combiner_locks_offloaded", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_scheduled_short_items", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_scheduled_long_items", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_scheduled_to_self", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_wakeup_initiated", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_queue_drained", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_push_retries", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_size", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_size_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_size_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_size_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_size_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_iov_size", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_iov_size_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_iov_size_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_iov_size_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_write_iov_size_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_size", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_size_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_size_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_size_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_size_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer_iov_size", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer_iov_size_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer_iov_size_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer_iov_size_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_tcp_read_offer_iov_size_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_size", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_size_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_size_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_size_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_size_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_initial_metadata_per_write", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_initial_metadata_per_write_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_initial_metadata_per_write_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_initial_metadata_per_write_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_initial_metadata_per_write_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_per_write", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_per_write_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_per_write_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_per_write_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_message_per_write_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_trailing_metadata_per_write", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_trailing_metadata_per_write_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_trailing_metadata_per_write_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_trailing_metadata_per_write_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_trailing_metadata_per_write_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_flowctl_per_write", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_flowctl_per_write_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_flowctl_per_write_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_flowctl_per_write_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_send_flowctl_per_write_99p", 
+        "type": "FLOAT"
       }
-    ]
-  },
+    ], 
+    "mode": "REPEATED", 
+    "name": "serverStats", 
+    "type": "RECORD"
+  }, 
   {
-    "name": "serverCores",
-    "type": "STRING",
-    "mode": "NULLABLE"
-  },
+    "mode": "NULLABLE", 
+    "name": "serverCores", 
+    "type": "STRING"
+  }, 
   {
-    "name": "summary",
-    "type": "RECORD",
-    "mode": "NULLABLE",
     "fields": [
       {
-        "name": "qps",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "qps", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "qpsPerServerCore",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "qpsPerServerCore", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "serverSystemTime",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "serverSystemTime", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "serverUserTime",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "serverUserTime", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "clientSystemTime",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "clientSystemTime", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "clientUserTime",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "clientUserTime", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "latency50",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "latency50", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "latency90",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "latency90", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "latency95",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "latency95", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "latency99",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "latency99", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "latency999",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "latency999", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "clientPollsPerRequest",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "clientPollsPerRequest", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "serverPollsPerRequest",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "serverPollsPerRequest", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "serverQueriesPerCpuSec",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "serverQueriesPerCpuSec", 
+        "type": "FLOAT"
+      }, 
       {
-        "name": "clientQueriesPerCpuSec",
-        "type": "FLOAT",
-        "mode": "NULLABLE"
+        "mode": "NULLABLE", 
+        "name": "clientQueriesPerCpuSec", 
+        "type": "FLOAT"
       }
-    ]
-  },
+    ], 
+    "mode": "NULLABLE", 
+    "name": "summary", 
+    "type": "RECORD"
+  }, 
   {
-    "name": "clientSuccess",
-    "type": "STRING",
-    "mode": "NULLABLE"
-  },
+    "mode": "NULLABLE", 
+    "name": "clientSuccess", 
+    "type": "STRING"
+  }, 
   {
-    "name": "serverSuccess",
-    "type": "STRING",
-    "mode": "NULLABLE"
-  },
+    "mode": "NULLABLE", 
+    "name": "serverSuccess", 
+    "type": "STRING"
+  }, 
   {
-    "name": "requestResults",
-    "type": "STRING",
-    "mode": "NULLABLE"
-  },
+    "mode": "NULLABLE", 
+    "name": "requestResults", 
+    "type": "STRING"
+  }, 
   {
-    "name": "serverCpuStats",
-    "type": "RECORD",
-    "mode": "REPEATED",
     "fields": [
       {
-        "name": "totalCpuTime",
-        "type": "INTEGER",
-        "mode": "NULLABLE"
-      },
+        "mode": "NULLABLE", 
+        "name": "totalCpuTime", 
+        "type": "INTEGER"
+      }, 
       {
-        "name": "idleCpuTime",
-        "type": "INTEGER",
-        "mode": "NULLABLE"
+        "mode": "NULLABLE", 
+        "name": "idleCpuTime", 
+        "type": "INTEGER"
       }
-    ]
-  },
+    ], 
+    "mode": "REPEATED", 
+    "name": "serverCpuStats", 
+    "type": "RECORD"
+  }, 
   {
-    "name": "serverCpuUsage",
-    "type": "FLOAT",
-    "mode": "NULLABLE"
+    "mode": "NULLABLE", 
+    "name": "serverCpuUsage", 
+    "type": "FLOAT"
   }
 ]
