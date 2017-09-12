@@ -40,3 +40,4 @@ composer install
 # The proxy worker for PHP is implemented in Ruby
 cd ../../../..
 ruby src/ruby/qps/proxy-worker.rb $@
+
