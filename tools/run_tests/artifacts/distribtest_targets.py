@@ -255,12 +255,13 @@ class PHPDistribTest(object):
 class CppDistribTest(object):
   """Tests Cpp make intall by building examples."""
 
-  def __init__(self, platform, arch, docker_suffix=None):
-    self.name = 'cpp_%s_%s_%s' % (platform, arch, docker_suffix)
+  def __init__(self, platform, arch, docker_suffix=None, testcase=None):
+    self.name = 'cpp_%s_%s_%s_%s' % (platform, arch, docker_suffix, testcase)
     self.platform = platform
     self.arch = arch
     self.docker_suffix = docker_suffix
-    self.labels = ['distribtest', 'cpp', platform, arch, docker_suffix]
+    self.testcase = testcase
+    self.labels = ['distribtest', 'cpp', platform, arch, docker_suffix, testcase]
 
   def pre_build_jobspecs(self):
     return []
@@ -271,7 +272,7 @@ class CppDistribTest(object):
                                    'tools/dockerfile/distribtest/cpp_%s_%s' % (
                                        self.docker_suffix,
                                        self.arch),
-                                   'test/distrib/cpp/run_distrib_test.sh')
+                                   'test/distrib/cpp/run_distrib_test_%s.sh' % self.testcase)
     else:
       raise Exception("Not supported yet.")
 
@@ -281,7 +282,8 @@ class CppDistribTest(object):
 
 def targets():
   """Gets list of supported targets"""
-  return [CppDistribTest('linux', 'x64', 'jessie'),
+  return [CppDistribTest('linux', 'x64', 'jessie', 'routeguide'),
+          CppDistribTest('linux', 'x64', 'jessie', 'cmake'),
           CSharpDistribTest('linux', 'x64', 'wheezy'),
           CSharpDistribTest('linux', 'x64', 'jessie'),
           CSharpDistribTest('linux', 'x86', 'jessie'),
