@@ -85,7 +85,7 @@ for template in reversed(sorted(templates)):
       test[out] = tf[1]
       os.close(tf[0])
       cmd.append(test[out])
-    cmd.append(root + '/' + f)
+    cmd.append(args.base + '/' + root + '/' + f)
     jobs.append(jobset.JobSpec(cmd, shortname=out, timeout_seconds=None))
 
 jobset.run(pre_jobs, maxjobs=args.jobs)
