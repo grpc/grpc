@@ -556,7 +556,7 @@ def main():
         jobs = [scenario.jobspec]
         if scenario.workers:
           jobs.append(create_quit_jobspec(scenario.workers, remote_host=args.remote_driver_host))
-        scenario_failures, resultset = jobset.run(jobs, newline_on_success=True, maxjobs=1, clear_alarms=False)
+        scenario_failures, resultset = jobset.run(jobs, newline_on_success=True, maxjobs=1)
         total_scenario_failures += scenario_failures
         merged_resultset = dict(itertools.chain(six.iteritems(merged_resultset),
                                                 six.iteritems(resultset)))
