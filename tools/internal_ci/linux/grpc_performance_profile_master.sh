@@ -1,4 +1,5 @@
-# Copyright 2016 gRPC authors.
+#!/usr/bin/env bash
+# Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,21 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+set -ex
 
-# Install packages needed for gRPC and protobuf
-RUN apt-get update && apt-get install -y \
-      autoconf \
-      automake \
-      build-essential \
-      curl \
-      git \
-      g++ \
-      libtool \
-      make \
-      pkg-config \
-      unzip && apt-get clean
+# Enter the gRPC repo root
+cd $(dirname $0)/../../..
 
-RUN apt-get update && apt-get install -y cmake golang && apt-get clean
+source tools/internal_ci/helper_scripts/prepare_build_linux_perf_rc
 
-CMD ["bash"]
+tools/jenkins/run_performance_profile_hourly.sh || FAILED="true"
+
+# kill port_server.py to prevent the build from hanging
+ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi
+

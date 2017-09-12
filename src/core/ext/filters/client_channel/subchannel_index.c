@@ -136,8 +136,8 @@ grpc_subchannel *grpc_subchannel_index_find(grpc_exec_ctx *exec_ctx,
   gpr_avl index = gpr_avl_ref(g_subchannel_index, exec_ctx);
   gpr_mu_unlock(&g_mu);
 
-  grpc_subchannel *c = (grpc_subchannel *)GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(
-      gpr_avl_get(index, key, exec_ctx), "index_find");
+  grpc_subchannel *c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(
+      (grpc_subchannel *)gpr_avl_get(index, key, exec_ctx), "index_find");
   gpr_avl_unref(index, exec_ctx);
 
   return c;

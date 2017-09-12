@@ -110,7 +110,7 @@ static const grpc_endpoint_vtable vtable = {
 
 grpc_endpoint *grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),
                                          grpc_resource_quota *resource_quota) {
-  grpc_mock_endpoint *m = gpr_malloc(sizeof(*m));
+  grpc_mock_endpoint *m = (grpc_mock_endpoint *)gpr_malloc(sizeof(*m));
   m->base.vtable = &vtable;
   char *name;
   gpr_asprintf(&name, "mock_endpoint_%" PRIxPTR, (intptr_t)m);

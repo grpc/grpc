@@ -28,7 +28,7 @@
 grpc_tracer_flag grpc_http1_trace = GRPC_TRACER_INITIALIZER(false, "http1");
 
 static char *buf2str(void *buffer, size_t length) {
-  char *out = gpr_malloc(length + 1);
+  char *out = (char *)gpr_malloc(length + 1);
   memcpy(out, buffer, length);
   out[length] = 0;
   return out;
@@ -197,7 +197,8 @@ static grpc_error *add_header(grpc_http_parser *parser) {
   if (*hdr_count == parser->hdr_capacity) {
     parser->hdr_capacity =
         GPR_MAX(parser->hdr_capacity + 1, parser->hdr_capacity * 3 / 2);
-    *hdrs = gpr_realloc(*hdrs, parser->hdr_capacity * sizeof(**hdrs));
+    *hdrs = (grpc_http_header *)gpr_realloc(
+        *hdrs, parser->hdr_capacity * sizeof(**hdrs));
   }
   (*hdrs)[(*hdr_count)++] = hdr;
 
@@ -255,7 +256,7 @@ static grpc_error *addbyte_body(grpc_http_parser *parser, uint8_t byte) {
 
   if (*body_length == parser->body_capacity) {
     parser->body_capacity = GPR_MAX(8, parser->body_capacity * 3 / 2);
-    *body = gpr_realloc((void *)*body, parser->body_capacity);
+    *body = (char *)gpr_realloc((void *)*body, parser->body_capacity);
   }
   (*body)[*body_length] = (char)byte;
   (*body_length)++;
