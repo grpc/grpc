@@ -1,4 +1,5 @@
-# Copyright 2016 gRPC authors.
+#!/bin/bash
+# Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,21 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+# Source this rc script to prepare the environment for linux perf builds
 
-# Install packages needed for gRPC and protobuf
-RUN apt-get update && apt-get install -y \
-      autoconf \
-      automake \
-      build-essential \
-      curl \
-      git \
-      g++ \
-      libtool \
-      make \
-      pkg-config \
-      unzip && apt-get clean
+# Need to increase open files limit and size for perf test
+ulimit -n 32768
+ulimit -c unlimited
 
-RUN apt-get update && apt-get install -y cmake golang && apt-get clean
-
-CMD ["bash"]
+git submodule update --init
