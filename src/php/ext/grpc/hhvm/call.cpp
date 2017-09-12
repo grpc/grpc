@@ -261,13 +261,16 @@ void MetadataArray::resizeMetadata(const size_t capacity)
 struct OpsManaged
 {
     // constructors/destructors
-    OpsManaged(void) : send_trailing_metadata{ true },
+    OpsManaged(void) :
         recv_metadata{ false }, recv_trailing_metadata{ false },
         recv_status_details{}, send_status_details{},
         cancelled{ 0 }, status{ GRPC_STATUS_OK }
     {
-        send_messages.fill(nullptr);
         recv_messages.fill(nullptr);
+
+        // clear out any old send messages
+        //std::for_each(s_Send_messages.begin(), s_Send_messages.end(),
+        //              OpsManaged::freeMessage);
     }
     ~OpsManaged(void)
     {
@@ -276,46 +279,39 @@ struct OpsManaged
 
     void destroy(void)
     {
-        auto freeMessage = [](grpc_byte_buffer* pBuffer)
-        {
-            if (pBuffer)
-            {
-                grpc_byte_buffer_destroy(pBuffer);
-                pBuffer = nullptr;
-            }
-
-        };
-        std::for_each(send_messages.begin(), send_messages.end(), freeMessage);
-        std::for_each(recv_messages.begin(), recv_messages.end(), freeMessage);
+        std::for_each(recv_messages.begin(), recv_messages.end(),
+                    OpsManaged::freeMessage);
     }
 
-    // interface functions
-    void recycle(void)
+    static void freeMessage(grpc_byte_buffer* pBuffer)
     {
-        destroy();
-
-        // reset to initial states
-        cancelled = 0;
-        status = GRPC_STATUS_OK;
+        if (pBuffer)
+        {
+            grpc_byte_buffer_destroy(pBuffer);
+            pBuffer = nullptr;
+        }
     }
 
     // managed data
     static const size_t s_MaxActions{ 8 };
-    static thread_local MetadataArray s_Send_metadata;           // owned by caller
-    MetadataArray send_trailing_metadata;  // owned by caller
-    MetadataArray recv_metadata;                               // owned by call object
-    MetadataArray recv_trailing_metadata;                      // owned by call object
-    std::array<grpc_byte_buffer*, s_MaxActions> send_messages; // owned by caller
-    std::array<grpc_byte_buffer*, s_MaxActions> recv_messages; // owned by call object
-    Slice recv_status_details;                                 // owned by caller
-    Slice send_status_details;                                 // owned by caller
-    int cancelled;
+    static thread_local MetadataArray s_Send_metadata;          // owned by caller
+    static thread_local MetadataArray s_Send_trailing_metadata; // owned by caller
+    MetadataArray recv_metadata;                                // owned by call object
+    MetadataArray recv_trailing_metadata;                       // owned by call object
+    static thread_local std::array<grpc_byte_buffer*, s_MaxActions> s_Send_messages;  // owned by caller
+    std::array<grpc_byte_buffer*, s_MaxActions> recv_messages;  // owned by call object
+    Slice recv_status_details;                                  // owned by caller
+    Slice send_status_details;                                  // owned by caller
+    int cancelled ;
     grpc_status_code status;
 };
 
 // initialize statics
 thread_local MetadataArray OpsManaged::s_Send_metadata{ true };
-
+thread_local MetadataArray OpsManaged::s_Send_trailing_metadata{ true };
+thread_local std::array<grpc_byte_buffer*, OpsManaged::s_MaxActions>
+OpsManaged::s_Send_messages{ nullptr, nullptr, nullptr, nullptr, nullptr,
+                             nullptr, nullptr, nullptr };
 
 /*****************************************************************************/
 /*                              HHVM Call Methods                            */
@@ -450,8 +446,8 @@ Object HHVM_METHOD(Call, startBatch,
                 // convert string to byte buffer and store message in managed data
                 String messageValueString{ messageValue.toString() };
                 const Slice send_message{ messageValueString };
-                opsManaged.send_messages[op_num] = send_message.byteBuffer();
-                ops[op_num].data.send_message.send_message = opsManaged.send_messages[op_num];
+                OpsManaged::s_Send_messages[op_num] = send_message.byteBuffer();
+                ops[op_num].data.send_message.send_message = OpsManaged::s_Send_messages[op_num];
             }
             break;
         }
@@ -473,13 +469,13 @@ Object HHVM_METHOD(Call, startBatch,
                     SystemLib::throwInvalidArgumentExceptionObject("Expected an array for server status metadata value");
                 }
 
-                if (!opsManaged.send_trailing_metadata.init(innerMetadata.toArray()))
+                if (!OpsManaged::s_Send_trailing_metadata.init(innerMetadata.toArray()))
                 {
                     SystemLib::throwInvalidArgumentExceptionObject("Bad trailing metadata value given");
                 }
 
-                ops[op_num].data.send_status_from_server.trailing_metadata_count = opsManaged.send_trailing_metadata.size();
-                ops[op_num].data.send_status_from_server.trailing_metadata = opsManaged.send_trailing_metadata.data();
+                ops[op_num].data.send_status_from_server.trailing_metadata_count = OpsManaged::s_Send_trailing_metadata.size();
+                ops[op_num].data.send_status_from_server.trailing_metadata = OpsManaged::s_Send_trailing_metadata.data();
             }
 
             if (!statusArr.exists(String{ "code" }, true))
