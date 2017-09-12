@@ -395,8 +395,9 @@ with open('tools/run_tests/performance/massage_qps_stats.py', 'w') as P:
   for counter in inst_map['Counter']:
     print >>P, '    stats["core_%s"] = massage_qps_stats_helpers.counter(core_stats, "%s")' % (counter.name, counter.name)
   for i, histogram in enumerate(inst_map['Histogram']):
-    print >>P, '    stats["core_%s"] = ",".join("%%f" %% x for x in massage_qps_stats_helpers.histogram(core_stats, "%s").buckets)' % (histogram.name, histogram.name)
-    print >>P, '    stats["core_%s_bkts"] = ",".join("%%f" %% x for x in massage_qps_stats_helpers.histogram(core_stats, "%s").boundaries)' % (histogram.name, histogram.name)
+    print >>P, '    h = massage_qps_stats_helpers.histogram(core_stats, "%s")' % histogram.name
+    print >>P, '    stats["core_%s"] = ",".join("%%f" %% x for x in h.buckets)' % histogram.name
+    print >>P, '    stats["core_%s_bkts"] = ",".join("%%f" %% x for x in h.boundaries)' % histogram.name
     for pctl in RECORD_EXPLICIT_PERCENTILES:
-      print >>P, '    stats["core_%s_%dp"] = massage_qps_stats_helpers.percentile(massage_qps_stats_helpers.histogram(core_stats, "%s").buckets, %d, massage_qps_stats_helpers.histogram(core_stats, "%s").boundaries)' % (
-          histogram.name, pctl, histogram.name, pctl, histogram.name)
+      print >>P, '    stats["core_%s_%dp"] = massage_qps_stats_helpers.percentile(h.buckets, %d, h.boundaries)' % (
+          histogram.name, pctl, pctl)

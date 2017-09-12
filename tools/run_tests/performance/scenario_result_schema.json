@@ -277,6 +277,16 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_server_requested_calls", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_server_slowpath_requests_queued", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_tcp_write_size", 
         "type": "STRING"
       }, 
@@ -523,6 +533,31 @@
       {
         "mode": "NULLABLE", 
         "name": "core_http2_send_flowctl_per_write_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_server_cqs_checked", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_server_cqs_checked_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_server_cqs_checked_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_server_cqs_checked_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_server_cqs_checked_99p", 
         "type": "FLOAT"
       }
     ], 
@@ -719,6 +754,16 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_server_requested_calls", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_server_slowpath_requests_queued", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_tcp_write_size", 
         "type": "STRING"
       }, 
@@ -965,6 +1010,31 @@
       {
         "mode": "NULLABLE", 
         "name": "core_http2_send_flowctl_per_write_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_server_cqs_checked", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_server_cqs_checked_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_server_cqs_checked_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_server_cqs_checked_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_server_cqs_checked_99p", 
         "type": "FLOAT"
       }
     ], 
