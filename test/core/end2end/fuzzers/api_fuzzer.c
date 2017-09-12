@@ -60,7 +60,9 @@ extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 static gpr_timespec now_impl(gpr_clock_type clock_type) {
   GPR_ASSERT(clock_type != GPR_TIMESPAN);
-  return g_now;
+  gpr_timespec ts = g_now;
+  ts.clock_type = clock_type;
+  return ts;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
