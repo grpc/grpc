@@ -313,3 +313,9 @@ with open('src/core/lib/debug/stats_data.c', 'w') as C:
       len(inst_map['Histogram']), ','.join('grpc_stats_table_%d' % x for x in histo_bucket_boundaries))
   print >>C, "void (*const grpc_stats_inc_histogram[%d])(grpc_exec_ctx *exec_ctx, int x) = {%s};" % (
       len(inst_map['Histogram']), ','.join('grpc_stats_inc_%s' % histogram.name.lower() for histogram in inst_map['Histogram']))
+
+with open('src/core/lib/debug/stats_data_bq_schema.sql', 'w') as S:
+  columns = []
+  for counter in inst_map['Counter']:
+    columns.append(('%s_per_iteration' % counter.name, 'INTEGER'))
+  print >>S, ',\n'.join('%s:%s' % x for x in columns)
