@@ -64,7 +64,7 @@ CallData::CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_pCallCredenti
     m_pChannel{ nullptr }, m_Timeout{ 0 },
     m_pMetadataPromise{ std::make_shared<MetadataPromise>() },
     m_pMetadataMutex{ std::make_shared<std::mutex>() }, m_pCallCancelled{ std::make_shared<bool>(false) },
-    m_pSendMessages{ nullptr }
+    m_pOpsManaged{ nullptr }
 {
 }
 
@@ -72,7 +72,7 @@ CallData::CallData(grpc_call* const call, const bool owned, const int32_t timeou
     m_pCall{ call }, m_Owned{ owned }, m_pCallCredentials{ nullptr }, m_pChannel{ nullptr },
     m_Timeout{ timeoutMs }, m_pMetadataPromise{ std::make_shared<MetadataPromise>() },
     m_pMetadataMutex{ std::make_shared<std::mutex>() }, m_pCallCancelled{ std::make_shared<bool>(false) },
-    m_pSendMessages{ nullptr }
+    m_pOpsManaged{ nullptr }
 {
 }
 
@@ -95,13 +95,10 @@ void CallData::destroy(void)
 {
     if (m_pCall)
     {
-        // clean up send messages
-        if (m_pSendMessages)
-        {
-            OpsManaged::destroyStatic(m_pSendMessages);
-            m_pSendMessages = nullptr;
-        }
+        // delete any left over ops data
+        if (m_pOpsManaged) m_pOpsManaged.reset(nullptr);
 
+        // delete the call if owned
         if (m_Owned)
         {
             // destroy call
@@ -118,6 +115,11 @@ void CallData::destroy(void)
  void CallData::setQueue(std::unique_ptr<CompletionQueue>&& pCompletionQueue)
 {
     m_pCompletionQueue = std::move(pCompletionQueue);
+}
+
+void CallData::setOpsManaged(std::unique_ptr<OpsManaged>&& pOpsManaged)
+{
+    m_pOpsManaged= std::move(pOpsManaged);
 }
 
 /*****************************************************************************/
@@ -270,10 +272,12 @@ void MetadataArray::resizeMetadata(const size_t capacity)
 
 
 // constructors/destructors
-OpsManaged::OpsManaged(void) : recv_metadata{ false }, recv_trailing_metadata{ false },
-    recv_status_details{}, send_status_details{},
-    cancelled{ 0 }, status{ GRPC_STATUS_OK }
+OpsManaged::OpsManaged(void) : send_metadata_ref{ OpsManaged::s_Send_metadata},
+    send_trailing_metadata_ref{ OpsManaged::s_Send_trailing_metadata},
+    recv_metadata{ false }, recv_trailing_metadata{ false }, recv_status_details{},
+    send_status_details{}, cancelled{ 0 }, status{ GRPC_STATUS_OK }
 {
+    send_messages.fill(nullptr);
     recv_messages.fill(nullptr);
 }
 
@@ -284,12 +288,13 @@ OpsManaged::~OpsManaged(void)
 
 void OpsManaged::destroy(void)
 {
-    std::for_each(recv_messages.begin(), recv_messages.end(), freeMessage);
-}
+    // clean up send metadata's
+    send_metadata_ref.init();
+    send_trailing_metadata_ref.init();
 
-void OpsManaged::destroyStatic(MessagesType* const pSendMessages)
-{
-    std::for_each(pSendMessages->begin(), pSendMessages->end(), freeMessage);
+    // clean up messages
+    std::for_each(recv_messages.begin(), recv_messages.end(), freeMessage);
+    std::for_each(send_messages.begin(), send_messages.end(), freeMessage);
 }
 
 void OpsManaged::freeMessage(grpc_byte_buffer* pBuffer)
@@ -306,8 +311,6 @@ void OpsManaged::freeMessage(grpc_byte_buffer* pBuffer)
 // where they are set
 thread_local MetadataArray OpsManaged::s_Send_metadata{ true };
 thread_local MetadataArray OpsManaged::s_Send_trailing_metadata{ true };
-thread_local OpsManaged::MessagesType
-OpsManaged::s_Send_messages{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 
 /*****************************************************************************/
 /*                              HHVM Call Methods                            */
@@ -379,9 +382,9 @@ Object HHVM_METHOD(Call, startBatch,
     static thread_local std::array<grpc_op, OpsManaged::s_MaxActions> ops;
     std::memset(ops.data(), 0, sizeof(grpc_op) * OpsManaged::s_MaxActions);
 
-    OpsManaged opsManaged{};
     CallData* const pCallData{ Native::data<CallData>(this_) };
-    pCallData->setSendMessages(&OpsManaged::s_Send_messages);
+    pCallData->setOpsManaged(std::unique_ptr<OpsManaged>(new OpsManaged));
+    OpsManaged& opsManaged{ pCallData->opsManaged() };
 
     size_t op_num{ 0 };
     bool sending_initial_metadata{ false };
@@ -410,8 +413,8 @@ Object HHVM_METHOD(Call, startBatch,
                 SystemLib::throwInvalidArgumentExceptionObject("Bad metadata value given");
             }
 
-            ops[op_num].data.send_initial_metadata.count = OpsManaged::s_Send_metadata.size();
-            ops[op_num].data.send_initial_metadata.metadata = OpsManaged::s_Send_metadata.data();
+            ops[op_num].data.send_initial_metadata.count = opsManaged.send_metadata_ref.size();
+            ops[op_num].data.send_initial_metadata.metadata = opsManaged.send_metadata_ref.data();
             sending_initial_metadata = true;
             break;
         }
@@ -443,8 +446,8 @@ Object HHVM_METHOD(Call, startBatch,
                 // convert string to byte buffer and store message in managed data
                 String messageValueString{ messageValue.toString() };
                 const Slice send_message{ messageValueString };
-                OpsManaged::s_Send_messages[op_num] = send_message.byteBuffer();
-                ops[op_num].data.send_message.send_message = OpsManaged::s_Send_messages[op_num];
+                opsManaged.send_messages[op_num] = send_message.byteBuffer();
+                ops[op_num].data.send_message.send_message = opsManaged.send_messages[op_num];
             }
             break;
         }
@@ -471,8 +474,8 @@ Object HHVM_METHOD(Call, startBatch,
                     SystemLib::throwInvalidArgumentExceptionObject("Bad trailing metadata value given");
                 }
 
-                ops[op_num].data.send_status_from_server.trailing_metadata_count = OpsManaged::s_Send_trailing_metadata.size();
-                ops[op_num].data.send_status_from_server.trailing_metadata = OpsManaged::s_Send_trailing_metadata.data();
+                ops[op_num].data.send_status_from_server.trailing_metadata_count = opsManaged.send_trailing_metadata_ref.size();
+                ops[op_num].data.send_status_from_server.trailing_metadata = opsManaged.send_trailing_metadata_ref.data();
             }
 
             if (!statusArr.exists(String{ "code" }, true))

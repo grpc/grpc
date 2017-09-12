@@ -54,7 +54,7 @@ public:
     MetadataArray& operator&(MetadataArray&& rhsMetadataArray) = delete;
 
     // interface functions
-    bool init(const Array& phpArray);
+    bool init(const Array& phpArray = Array{});
     grpc_metadata* const data(void) { return m_Array.metadata; }
     const grpc_metadata* const data(void) const { return m_Array.metadata; }
     size_t size(void) const { return m_Array.count; }
@@ -93,9 +93,6 @@ public:
     OpsManaged& operator=(const OpsManaged& rhsOpsManaged) = delete;
     OpsManaged& operator&(OpsManaged&& rhsOpsManaged) = delete;
 
-    // helper fuctions
-    static void destroyStatic(MessagesType* const pSendMessages);
-
 private:
     // helper fuctions
     void destroy(void);
@@ -105,9 +102,11 @@ public:
     // member variabes
     static thread_local MetadataArray s_Send_metadata;          // owned by caller
     static thread_local MetadataArray s_Send_trailing_metadata; // owned by caller
+    MetadataArray& send_metadata_ref;
+    MetadataArray& send_trailing_metadata_ref;
     MetadataArray recv_metadata;                                // owned by call object
     MetadataArray recv_trailing_metadata;                       // owned by call object
-    static thread_local MessagesType s_Send_messages;           // owned by caller
+    MessagesType send_messages;                                 // owned by caller
     MessagesType recv_messages;                                 // owned by call object
     Slice recv_status_details;                                  // owned by caller
     Slice send_status_details;                                  // owned by caller
@@ -152,9 +151,9 @@ public:
     std::shared_ptr<bool>& sharedCancelled(void) { return m_pCallCancelled; }
     MetadataPromise& metadataPromise(void) { return *(m_pMetadataPromise.get()); }
     std::mutex& metadataMutex(void) { return *(m_pMetadataMutex.get()); }
+    void setOpsManaged(std::unique_ptr<OpsManaged>&& pOpsManaged);
+    OpsManaged& opsManaged(void) { return *(m_pOpsManaged.get()); }
     bool& callCancelled(void) { return *(m_pCallCancelled.get()); }
-    void setSendMessages(OpsManaged::MessagesType* const pSendMessages) { m_pSendMessages = pSendMessages; }
-    OpsManaged::MessagesType* const sendMessages(void) { return m_pSendMessages; }
     static Class* const getClass(void);
     static const StaticString& className(void) { return s_ClassName; }
 
@@ -172,7 +171,7 @@ private:
     std::shared_ptr<std::mutex> m_pMetadataMutex;        // metadata synchronization
     std::shared_ptr<bool> m_pCallCancelled;              // metadata synchronizations
     std::unique_ptr<CompletionQueue> m_pCompletionQueue;
-    OpsManaged::MessagesType* m_pSendMessages;
+    std::unique_ptr<OpsManaged> m_pOpsManaged;
     static Class* s_pClass;
     static const StaticString s_ClassName;
 };
