@@ -62,6 +62,8 @@ const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "executor_wakeup_initiated",
     "executor_queue_drained",
     "executor_push_retries",
+    "server_requested_calls",
+    "server_slowpath_requests_queued",
 };
 const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of client side calls created by this process",
@@ -114,6 +116,9 @@ const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of times an executor queue was drained",
     "Number of times we raced and were forced to retry pushing a closure to "
     "the executor",
+    "How many calls were requested (not necessarily received) by the server",
+    "How many times was the server slow path taken (indicates too few "
+    "outstanding requests)",
 };
 const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
     "call_initial_size",
@@ -128,6 +133,7 @@ const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
     "http2_send_message_per_write",
     "http2_send_trailing_metadata_per_write",
     "http2_send_flowctl_per_write",
+    "server_cqs_checked",
 };
 const char *grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT] = {
     "Initial size of the grpc_call arena created at call start",
@@ -142,6 +148,8 @@ const char *grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT] = {
     "Number of streams whose payload was written per TCP write",
     "Number of streams terminated per TCP write",
     "Number of flow control updates written per TCP write",
+    "How many completion queues were checked looking for a CQ that had "
+    "requested the incoming call",
 };
 const int grpc_stats_table_0[65] = {
     0,      1,      2,      3,      4,     5,     7,     9,     11,    14,
@@ -208,6 +216,8 @@ const uint8_t grpc_stats_table_7[102] = {
     23, 24, 24, 24, 25, 26, 27, 27, 28, 28, 29, 29, 30, 30, 31, 31, 32,
     32, 33, 33, 34, 35, 35, 36, 37, 37, 38, 38, 39, 39, 40, 40, 41, 41,
     42, 42, 43, 44, 44, 45, 46, 46, 47, 48, 48, 49, 49, 50, 50, 51, 51};
+const int grpc_stats_table_8[9] = {0, 1, 2, 4, 7, 13, 23, 39, 64};
+const uint8_t grpc_stats_table_9[9] = {0, 0, 1, 2, 2, 3, 4, 4, 5};
 void grpc_stats_inc_call_initial_size(grpc_exec_ctx *exec_ctx, int value) {
   value = GPR_CLAMP(value, 0, 262144);
   if (value < 6) {
@@ -525,16 +535,42 @@ void grpc_stats_inc_http2_send_flowctl_per_write(grpc_exec_ctx *exec_ctx,
                            grpc_stats_histo_find_bucket_slow(
                                (exec_ctx), value, grpc_stats_table_6, 64));
 }
-const int grpc_stats_histo_buckets[12] = {64, 128, 64, 64, 64, 64,
-                                          64, 64,  64, 64, 64, 64};
-const int grpc_stats_histo_start[12] = {0,   64,  192, 256, 320, 384,
-                                        448, 512, 576, 640, 704, 768};
-const int *const grpc_stats_histo_bucket_boundaries[12] = {
+void grpc_stats_inc_server_cqs_checked(grpc_exec_ctx *exec_ctx, int value) {
+  value = GPR_CLAMP(value, 0, 64);
+  if (value < 3) {
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx),
+                             GRPC_STATS_HISTOGRAM_SERVER_CQS_CHECKED, value);
+    return;
+  }
+  union {
+    double dbl;
+    uint64_t uint;
+  } _val, _bkt;
+  _val.dbl = value;
+  if (_val.uint < 4625196817309499392ull) {
+    int bucket =
+        grpc_stats_table_9[((_val.uint - 4613937818241073152ull) >> 51)] + 3;
+    _bkt.dbl = grpc_stats_table_8[bucket];
+    bucket -= (_val.uint < _bkt.uint);
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx),
+                             GRPC_STATS_HISTOGRAM_SERVER_CQS_CHECKED, bucket);
+    return;
+  }
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_SERVER_CQS_CHECKED,
+                           grpc_stats_histo_find_bucket_slow(
+                               (exec_ctx), value, grpc_stats_table_8, 8));
+}
+const int grpc_stats_histo_buckets[13] = {64, 128, 64, 64, 64, 64, 64,
+                                          64, 64,  64, 64, 64, 8};
+const int grpc_stats_histo_start[13] = {0,   64,  192, 256, 320, 384, 448,
+                                        512, 576, 640, 704, 768, 832};
+const int *const grpc_stats_histo_bucket_boundaries[13] = {
     grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_4,
     grpc_stats_table_6, grpc_stats_table_4, grpc_stats_table_4,
     grpc_stats_table_6, grpc_stats_table_4, grpc_stats_table_6,
-    grpc_stats_table_6, grpc_stats_table_6, grpc_stats_table_6};
-void (*const grpc_stats_inc_histogram[12])(grpc_exec_ctx *exec_ctx, int x) = {
+    grpc_stats_table_6, grpc_stats_table_6, grpc_stats_table_6,
+    grpc_stats_table_8};
+void (*const grpc_stats_inc_histogram[13])(grpc_exec_ctx *exec_ctx, int x) = {
     grpc_stats_inc_call_initial_size,
     grpc_stats_inc_poll_events_returned,
     grpc_stats_inc_tcp_write_size,
@@ -546,4 +582,5 @@ void (*const grpc_stats_inc_histogram[12])(grpc_exec_ctx *exec_ctx, int x) = {
     grpc_stats_inc_http2_send_initial_metadata_per_write,
     grpc_stats_inc_http2_send_message_per_write,
     grpc_stats_inc_http2_send_trailing_metadata_per_write,
-    grpc_stats_inc_http2_send_flowctl_per_write};
+    grpc_stats_inc_http2_send_flowctl_per_write,
+    grpc_stats_inc_server_cqs_checked};
