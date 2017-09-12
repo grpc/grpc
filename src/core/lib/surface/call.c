@@ -549,8 +549,8 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
     GRPC_CQ_INTERNAL_UNREF(exec_ctx, c->cq, "bind");
   }
 
-  get_final_status((grpc_call *)call, set_status_value_directly,
-                   &c->final_info.final_status, NULL);
+  get_final_status(c, set_status_value_directly, &c->final_info.final_status,
+                   NULL);
   c->final_info.stats.latency =
       gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), c->start_time);
 
@@ -1475,7 +1475,7 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
    * acq_load is in receiving_initial_metadata_ready() */
   if (error != GRPC_ERROR_NONE || call->receiving_stream == NULL ||
       !gpr_atm_rel_cas(&call->recv_state, RECV_NONE, (gpr_atm)bctlp)) {
-    process_data_after_md(exec_ctx, (batch_control *)bctlp);
+    process_data_after_md(exec_ctx, bctl);
   }
 }
 
