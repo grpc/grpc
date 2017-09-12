@@ -1,6 +1,6 @@
 {
   "name": "grpc-tools",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "author": "Google Inc.",
   "description": "Tools for developing with gRPC on Node.js",
   "homepage": "https://grpc.io/",
