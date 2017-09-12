@@ -22,42 +22,15 @@ import sys
 import json
 import csv
 import bm_json
+import json
+import subprocess
 
-columns = [
-  ('jenkins_build', 'integer'),
-  ('jenkins_job', 'string'),
-  ('date', 'timestamp'),
-  ('cpu_scaling_enabled', 'boolean'),
-  ('num_cpus', 'integer'),
-  ('mhz_per_cpu', 'integer'),
-  ('library_build_type', 'string'),
-  ('name', 'string'),
-  ('fixture', 'string'),
-  ('client_mutator', 'string'),
-  ('server_mutator', 'string'),
-  ('request_size', 'integer'),
-  ('response_size', 'integer'),
-  ('request_count', 'integer'),
-  ('iterations', 'integer'),
-  ('time_unit', 'string'),
-  ('real_time', 'integer'),
-  ('cpu_time', 'integer'),
-  ('bytes_per_second', 'float'),
-  ('allocs_per_iteration', 'float'),
-  ('locks_per_iteration', 'float'),
-  ('writes_per_iteration', 'float'),
-  ('bandwidth_kilobits', 'integer'),
-  ('cli_transport_stalls_per_iteration', 'float'),
-  ('cli_stream_stalls_per_iteration', 'float'),
-  ('svr_transport_stalls_per_iteration', 'float'),
-  ('svr_stream_stalls_per_iteration', 'float'),
-  ('atm_cas_per_iteration', 'float'),
-  ('atm_add_per_iteration', 'float'),
-  ('end_of_stream', 'boolean'),
-  ('header_bytes_per_iteration', 'float'),
-  ('framing_bytes_per_iteration', 'float'),
-  ('nows_per_iteration', 'float'),
-]
+columns = []
+
+for row in json.loads(
+    subprocess.check_output([
+      'bq','--format=json','show','microbenchmarks.microbenchmarks']))['schema']['fields']:
+  columns.append((row['name'], row['type']))
 
 SANITIZE = {
   'integer': int,

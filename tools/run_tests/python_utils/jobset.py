@@ -71,10 +71,8 @@ def platform_string():
 if platform_string() == 'windows':
   pass
 else:
-  have_alarm = False
   def alarm_handler(unused_signum, unused_frame):
-    global have_alarm
-    have_alarm = False
+    pass
 
   signal.signal(signal.SIGCHLD, lambda unused_signum, unused_frame: None)
   signal.signal(signal.SIGALRM, alarm_handler)
@@ -367,10 +365,9 @@ class Jobset(object):
   """Manages one run of jobs."""
 
   def __init__(self, check_cancelled, maxjobs, newline_on_success, travis,
-               stop_on_failure, add_env, quiet_success, max_time, clear_alarms):
+               stop_on_failure, add_env, quiet_success, max_time):
     self._running = set()
     self._check_cancelled = check_cancelled
-    self._clear_alarms = clear_alarms
     self._cancelled = False
     self._failures = 0
     self._completed = 0
@@ -455,10 +452,7 @@ class Jobset(object):
       if platform_string() == 'windows':
         time.sleep(0.1)
       else:
-        global have_alarm
-        if not have_alarm:
-          have_alarm = True
-          signal.alarm(10)
+        signal.alarm(10)
         signal.pause()
 
   def cancelled(self):
@@ -474,10 +468,7 @@ class Jobset(object):
     while self._running:
       if self.cancelled(): pass  # poll cancellation
       self.reap()
-    # Clear the alarms when finished to avoid a race condition causing job
-    # failures. Don't do this when running multi-VM tests because clearing
-    # the alarms causes the test to stall
-    if platform_string() != 'windows' and self._clear_alarms:
+    if platform_string() != 'windows':
       signal.alarm(0)
     return not self.cancelled() and self._failures == 0
 
@@ -507,8 +498,7 @@ def run(cmdlines,
         add_env={},
         skip_jobs=False,
         quiet_success=False,
-        max_time=-1,
-        clear_alarms=True):
+        max_time=-1):
   if skip_jobs:
     resultset = {}
     skipped_job_result = JobResult()
@@ -520,7 +510,7 @@ def run(cmdlines,
   js = Jobset(check_cancelled,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
               newline_on_success, travis, stop_on_failure, add_env,
-              quiet_success, max_time, clear_alarms)
+              quiet_success, max_time)
   for cmdline, remaining in tag_remaining(cmdlines):
     if not js.start(cmdline):
       break
