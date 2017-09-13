@@ -185,6 +185,11 @@ static void postprocess_scenario_result(ScenarioResult* result) {
       server_queries_per_cpu_sec);
   result->mutable_summary()->set_client_queries_per_cpu_sec(
       client_queries_per_cpu_sec);
+
+  result->mutable_summary()->set_server_cpu_load(server_system_time +
+                                                 server_user_time);
+  result->mutable_summary()->set_client_cpu_load(client_system_time +
+                                                 client_user_time);
 }
 
 std::unique_ptr<ScenarioResult> RunScenario(
