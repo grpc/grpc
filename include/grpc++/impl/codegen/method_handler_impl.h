@@ -19,6 +19,7 @@
 #ifndef GRPCXX_IMPL_CODEGEN_METHOD_HANDLER_IMPL_H
 #define GRPCXX_IMPL_CODEGEN_METHOD_HANDLER_IMPL_H
 
+#include <grpc++/impl/codegen/byte_buffer.h>
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/rpc_service_method.h>
 #include <grpc++/impl/codegen/sync_stream.h>
@@ -37,8 +38,8 @@ class RpcMethodHandler : public MethodHandler {
 
   void RunHandler(const HandlerParameter& param) final {
     RequestType req;
-    Status status =
-        SerializationTraits<RequestType>::Deserialize(param.request, &req);
+    Status status = internal::MessageDeserializer<RequestType>::Deserialize(
+        param.request, &req);
     ResponseType rsp;
     if (status.ok()) {
       status = func_(service_, param.server_context, &req, &rsp);
@@ -123,8 +124,8 @@ class ServerStreamingHandler : public MethodHandler {
 
   void RunHandler(const HandlerParameter& param) final {
     RequestType req;
-    Status status =
-        SerializationTraits<RequestType>::Deserialize(param.request, &req);
+    Status status = internal::MessageDeserializer<RequestType>::Deserialize(
+        param.request, &req);
 
     if (status.ok()) {
       ServerWriter<ResponseType> writer(param.call, param.server_context);
