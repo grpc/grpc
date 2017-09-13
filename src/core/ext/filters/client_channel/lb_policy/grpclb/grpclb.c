@@ -1666,7 +1666,7 @@ static void lb_call_on_retry_timer_locked(grpc_exec_ctx *exec_ctx, void *arg,
 
 static void lb_on_fallback_timer_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                         grpc_error *error) {
-  glb_lb_policy *glb_policy = arg;
+  glb_lb_policy *glb_policy = (glb_lb_policy *)arg;
   /* If we receive a serverlist after the timer fires but before this callback
    * actually runs, don't do anything. */
   if (glb_policy->serverlist != NULL) return;
@@ -1804,6 +1804,17 @@ static void glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
         &glb_policy->lb_channel_connectivity,
         &glb_policy->lb_channel_on_connectivity_changed, NULL);
   }
+
+  // Propagate update to fallback_backend_addresses if a non-empty serverlist
+  // hasn't been received from the balancer.
+  if (glb_policy->serverlist == NULL) {
+    grpc_lb_addresses_destroy(exec_ctx, glb_policy->fallback_backend_addresses);
+    glb_policy->fallback_backend_addresses =
+        extract_backend_addresses_locked(exec_ctx, addresses);
+    if (glb_policy->rr_policy != NULL) {
+      rr_handover_locked(exec_ctx, glb_policy);
+    }
+  }
 }
 
 // Invoked as part of the update process. It continues watching the LB channel
@@ -1886,13 +1897,7 @@ static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
 static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
                                   grpc_lb_policy_factory *factory,
                                   grpc_lb_policy_args *args) {
-  /* Count the number of gRPC-LB addresses. There must be at least one.
-   * TODO(roth): For now, we ignore non-balancer addresses, but in the
-   * future, we may change the behavior such that we fall back to using
-   * the non-balancer addresses if we cannot reach any balancers. In the
-   * fallback case, we should use the LB policy indicated by
-   * GRPC_ARG_LB_POLICY_NAME (although if that specifies grpclb or is
-   * unset, we should default to pick_first). */
+  /* Count the number of gRPC-LB addresses. There must be at least one. */
   const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
@@ -1928,6 +1933,11 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   glb_policy->lb_call_timeout_ms =
       grpc_channel_arg_get_integer(arg, (grpc_integer_options){0, 0, INT_MAX});
 
+  arg = grpc_channel_args_find(args->args, GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS);
+  glb_policy->lb_fallback_timeout_ms = grpc_channel_arg_get_integer(
+      arg, (grpc_integer_options){GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS, 0,
+                                  INT_MAX});
+
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
   // since we use this to trigger the client_load_reporting filter.
   grpc_arg new_arg =
@@ -1935,6 +1945,11 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   static const char *args_to_remove[] = {GRPC_ARG_LB_POLICY_NAME};
   glb_policy->args = grpc_channel_args_copy_and_add_and_remove(
       args->args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &new_arg, 1);
+
+  /* Extract the backend addresses (may be empty) from the resolver for
+   * fallback. */
+  glb_policy->fallback_backend_addresses =
+      extract_backend_addresses_locked(exec_ctx, addresses);
 
   /* Create a client channel over them to communicate with a LB service */
   glb_policy->response_generator =
