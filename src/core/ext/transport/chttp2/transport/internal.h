@@ -238,9 +238,6 @@ typedef struct {
    * to send WINDOW_UPDATE frames. */
   int64_t announced_window;
 
-  /** should we probe bdp? */
-  bool enable_bdp_probe;
-
   /* bdp estimation */
   grpc_bdp_estimator bdp_estimator;
 
@@ -392,6 +389,9 @@ struct grpc_chttp2_transport {
   grpc_slice goaway_text;
 
   grpc_chttp2_write_cb *write_cb_pool;
+
+  /** should we probe bdp? */
+  bool enable_bdp_probe;
 
   /* bdp estimator */
   grpc_closure start_bdp_ping_locked;
@@ -718,7 +718,6 @@ typedef struct {
   grpc_chttp2_flowctl_urgency send_setting_update;
   uint32_t initial_window_size;
   uint32_t max_frame_size;
-  bool need_ping;
 } grpc_chttp2_flowctl_action;
 
 // Reads the flow control data and returns and actionable struct that will tell

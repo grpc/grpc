@@ -45,12 +45,9 @@ bool grpc_bdp_estimator_get_bw(const grpc_bdp_estimator *estimator,
   return true;
 }
 
-void grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
+bool grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
                                            int64_t num_bytes) {
   estimator->accumulator += num_bytes;
-}
-
-bool grpc_bdp_estimator_need_ping(const grpc_bdp_estimator *estimator) {
   switch (estimator->ping_state) {
     case GRPC_BDP_PING_UNSCHEDULED:
       return true;
