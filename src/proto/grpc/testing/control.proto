@@ -247,8 +247,8 @@ message ScenarioResultSummary
   double client_queries_per_cpu_sec = 18;
 
   // Server and client cpu load
-  double server_cpu_load;
-  double client_cpu_load;
+  double server_cpu_load = 19;
+  double client_cpu_load = 20;
 }
 
 // Results of a single benchmark scenario.
