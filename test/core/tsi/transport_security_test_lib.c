@@ -23,8 +23,44 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/thd.h>
 #include "src/core/lib/security/transport/tsi_error.h"
 #include "test/core/tsi/transport_security_test_lib.h"
+
+typedef struct notification {
+  gpr_cv cv;
+  gpr_mu mu;
+  bool notified;
+} notification;
+
+static notification tsi_to_caller_notification;
+
+static void notification_init(notification *n) {
+  gpr_mu_init(&n->mu);
+  gpr_cv_init(&n->cv);
+  n->notified = false;
+}
+
+static void notification_destroy(notification *n) {
+  gpr_mu_destroy(&n->mu);
+  gpr_cv_destroy(&n->cv);
+}
+
+static void signal(notification *n) {
+  gpr_mu_lock(&n->mu);
+  n->notified = true;
+  gpr_cv_signal(&n->cv);
+  gpr_mu_unlock(&n->mu);
+}
+
+static void wait(notification *n) {
+  gpr_mu_lock(&n->mu);
+  while (!n->notified) {
+    gpr_cv_wait(&n->cv, &n->mu, gpr_inf_future(GPR_CLOCK_REALTIME));
+  }
+  n->notified = false;
+  gpr_mu_unlock(&n->mu);
+}
 
 typedef struct handshaker_args {
   tsi_test_fixture *fixture;
@@ -273,9 +309,11 @@ grpc_error *on_handshake_next_done(tsi_result result, void *user_data,
   /* Read more data if we need to. */
   if (result == TSI_INCOMPLETE_DATA) {
     GPR_ASSERT(bytes_to_send_size == 0);
+    signal(&tsi_to_caller_notification);
     return error;
   }
   if (result != TSI_OK) {
+    signal(&tsi_to_caller_notification);
     return grpc_set_tsi_error_result(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake failed"), result);
   }
@@ -295,6 +333,7 @@ grpc_error *on_handshake_next_done(tsi_result result, void *user_data,
   if (handshaker_result != NULL) {
     maybe_append_unused_bytes(args);
   }
+  signal(&tsi_to_caller_notification);
   return error;
 }
 
@@ -345,7 +384,11 @@ static void do_handshaker_next(handshaker_args *args) {
   if (result != TSI_ASYNC) {
     args->error = on_handshake_next_done(result, args, bytes_to_send,
                                          bytes_to_send_size, handshaker_result);
+    if (args->error != GRPC_ERROR_NONE) {
+      return;
+    }
   }
+  wait(&tsi_to_caller_notification);
 }
 
 void tsi_test_do_handshake(tsi_test_fixture *fixture) {
@@ -355,6 +398,7 @@ void tsi_test_do_handshake(tsi_test_fixture *fixture) {
       handshaker_args_create(fixture, true /* is_client */);
   handshaker_args *server_args =
       handshaker_args_create(fixture, false /* is_client */);
+  notification_init(&tsi_to_caller_notification);
   /* Do handshake. */
   do {
     client_args->transferred_data = false;
@@ -372,6 +416,7 @@ void tsi_test_do_handshake(tsi_test_fixture *fixture) {
   /* Verify handshake results. */
   check_handshake_results(fixture);
   /* Cleanup. */
+  notification_destroy(&tsi_to_caller_notification);
   handshaker_args_destroy(client_args);
   handshaker_args_destroy(server_args);
 }
