@@ -205,8 +205,10 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
       ts = &g_thread_state[GPR_HASH_POINTER(exec_ctx, cur_thread_count)];
     } else {
       GRPC_STATS_INC_EXECUTOR_SCHEDULED_TO_SELF(exec_ctx);
-      grpc_closure_list_append(&ts->local_elems, closure, error);
-      return;
+      if (!is_short) {
+        grpc_closure_list_append(&ts->local_elems, closure, error);
+        return;
+      }
     }
     thread_state *orig_ts = ts;
 
