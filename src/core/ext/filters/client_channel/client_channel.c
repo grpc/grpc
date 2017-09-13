@@ -1348,7 +1348,6 @@ static void retry_checks_for_new_batch(grpc_exec_ctx *exec_ctx,
               chand, calld);
     }
     retry_committed(exec_ctx, elem);
-    return;
   }
   // Save a copy of metadata for send_initial_metadata ops.
   if (batch->send_initial_metadata) {
