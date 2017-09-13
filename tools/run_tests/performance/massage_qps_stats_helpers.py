@@ -23,7 +23,7 @@ def _threshold_for_count_below(buckets, boundaries, count_below):
   if count_so_far == count_below:
     # this bucket hits the threshold exactly... we should be midway through
     # any run of zero values following the bucket
-    for upper_idx in range(lower_idx + 1, num_buckets):
+    for upper_idx in range(lower_idx + 1, len(buckets)):
       if buckets[upper_idx] != 0:
         break
     return (boundaries[lower_idx] + boundaries[upper_idx]) / 2.0
