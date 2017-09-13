@@ -174,7 +174,7 @@ static void on_hostbyname_done_cb(void *arg, int status, int timeouts,
           grpc_lb_addresses_set_address(
               *lb_addresses, i, &addr, addr_len,
               hr->is_balancer /* is_balancer */,
-              hr->is_balancer ? strdup(hr->host) : NULL /* balancer_name */,
+              hr->is_balancer ? hr->host : NULL /* balancer_name */,
               NULL /* user_data */);
           char output[INET6_ADDRSTRLEN];
           ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
@@ -195,7 +195,7 @@ static void on_hostbyname_done_cb(void *arg, int status, int timeouts,
           grpc_lb_addresses_set_address(
               *lb_addresses, i, &addr, addr_len,
               hr->is_balancer /* is_balancer */,
-              hr->is_balancer ? strdup(hr->host) : NULL /* balancer_name */,
+              hr->is_balancer ? hr->host : NULL /* balancer_name */,
               NULL /* user_data */);
           char output[INET_ADDRSTRLEN];
           ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);

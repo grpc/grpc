@@ -130,9 +130,9 @@ static void fd_global_shutdown(void);
  * Pollset Declarations
  */
 
-typedef enum { UNKICKED, KICKED, DESIGNATED_POLLER } kick_state;
+typedef enum { UNKICKED, KICKED, DESIGNATED_POLLER } kick_state_t;
 
-static const char *kick_state_string(kick_state st) {
+static const char *kick_state_string(kick_state_t st) {
   switch (st) {
     case UNKICKED:
       return "UNKICKED";
@@ -145,7 +145,7 @@ static const char *kick_state_string(kick_state st) {
 }
 
 struct grpc_pollset_worker {
-  kick_state kick_state;
+  kick_state_t kick_state;
   int kick_state_mutator;  // which line of code last changed kick state
   bool initialized_cv;
   grpc_pollset_worker *next;

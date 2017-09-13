@@ -118,7 +118,7 @@ static grpc_socket_factory *get_socket_factory(const grpc_channel_args *args) {
     const grpc_arg *arg = grpc_channel_args_find(args, GRPC_ARG_SOCKET_FACTORY);
     if (arg) {
       GPR_ASSERT(arg->type == GRPC_ARG_POINTER);
-      return arg->value.pointer.p;
+      return (grpc_socket_factory *)arg->value.pointer.p;
     }
   }
   return NULL;

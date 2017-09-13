@@ -29,9 +29,11 @@ from python_utils.filter_pull_request_tests import filter_tests
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
 
+_DEFAULT_RUNTESTS_TIMEOUT = 1*60*60
+
 # Set the timeout high to allow enough time for sanitizers and pre-building
 # clang docker.
-_RUNTESTS_TIMEOUT = 4*60*60
+_CPP_RUNTESTS_TIMEOUT = 4*60*60
 
 # Number of jobs assigned to each run_tests.py instance
 _DEFAULT_INNER_JOBS = 2
@@ -51,8 +53,11 @@ def _report_filename_internal_ci(name):
 
 
 def _docker_jobspec(name, runtests_args=[], runtests_envs={},
-                    inner_jobs=_DEFAULT_INNER_JOBS):
+                    inner_jobs=_DEFAULT_INNER_JOBS,
+                    timeout_seconds=None):
   """Run a single instance of run_tests.py in a docker container"""
+  if not timeout_seconds:
+    timeout_seconds = _DEFAULT_RUNTESTS_TIMEOUT
   test_job = jobset.JobSpec(
           cmdline=['python', 'tools/run_tests/run_tests.py',
                    '--use_docker',
@@ -62,15 +67,18 @@ def _docker_jobspec(name, runtests_args=[], runtests_envs={},
                    '--report_suite_name', '%s' % name] + runtests_args,
           environ=runtests_envs,
           shortname='run_tests_%s' % name,
-          timeout_seconds=_RUNTESTS_TIMEOUT)
+          timeout_seconds=timeout_seconds)
   return test_job
 
 
 def _workspace_jobspec(name, runtests_args=[], workspace_name=None,
-                       runtests_envs={}, inner_jobs=_DEFAULT_INNER_JOBS):
+                       runtests_envs={}, inner_jobs=_DEFAULT_INNER_JOBS,
+                       timeout_seconds=None):
   """Run a single instance of run_tests.py in a separate workspace"""
   if not workspace_name:
     workspace_name = 'workspace_%s' % name
+  if not timeout_seconds:
+    timeout_seconds = _DEFAULT_RUNTESTS_TIMEOUT
   env = {'WORKSPACE_NAME': workspace_name}
   env.update(runtests_envs)
   test_job = jobset.JobSpec(
@@ -82,14 +90,15 @@ def _workspace_jobspec(name, runtests_args=[], workspace_name=None,
                    '--report_suite_name', '%s' % name] + runtests_args,
           environ=env,
           shortname='run_tests_%s' % name,
-          timeout_seconds=_RUNTESTS_TIMEOUT)
+          timeout_seconds=timeout_seconds)
   return test_job
 
 
 def _generate_jobs(languages, configs, platforms, iomgr_platform = 'native',
                   arch=None, compiler=None,
                   labels=[], extra_args=[], extra_envs={},
-                  inner_jobs=_DEFAULT_INNER_JOBS):
+                  inner_jobs=_DEFAULT_INNER_JOBS,
+                  timeout_seconds=None):
   result = []
   for language in languages:
     for platform in platforms:
@@ -110,10 +119,12 @@ def _generate_jobs(languages, configs, platforms, iomgr_platform = 'native',
         runtests_args += extra_args
         if platform == 'linux':
           job = _docker_jobspec(name=name, runtests_args=runtests_args,
-                                runtests_envs=extra_envs, inner_jobs=inner_jobs)
+                                runtests_envs=extra_envs, inner_jobs=inner_jobs,
+                                timeout_seconds=timeout_seconds)
         else:
           job = _workspace_jobspec(name=name, runtests_args=runtests_args,
-                                   runtests_envs=extra_envs, inner_jobs=inner_jobs)
+                                   runtests_envs=extra_envs, inner_jobs=inner_jobs,
+                                   timeout_seconds=timeout_seconds)
 
         job.labels = [platform, config, language, iomgr_platform] + labels
         result.append(job)
@@ -136,7 +147,8 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                              platforms=['linux', 'macos', 'windows'],
                              labels=['basictests', 'corelang'],
                              extra_args=extra_args,
-                             inner_jobs=inner_jobs)
+                             inner_jobs=inner_jobs,
+                             timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
   
   test_jobs += _generate_jobs(languages=['csharp', 'node', 'python'],
                              configs=['dbg', 'opt'],
@@ -151,7 +163,8 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                               platforms=['linux', 'macos'],
                               labels=['basictests', 'corelang'],
                               extra_args=extra_args,
-                              inner_jobs=inner_jobs)
+                              inner_jobs=inner_jobs,
+                              timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
   
   test_jobs += _generate_jobs(languages=['ruby', 'php'],
                               configs=['dbg', 'opt'],
@@ -174,13 +187,15 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                               platforms=['linux'],
                               labels=['sanitizers', 'corelang'],
                               extra_args=extra_args,
-                              inner_jobs=inner_jobs)
+                              inner_jobs=inner_jobs,
+                              timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
   test_jobs += _generate_jobs(languages=['c++'],
                               configs=['asan', 'tsan'],
                               platforms=['linux'],
                               labels=['sanitizers', 'corelang'],
                               extra_args=extra_args,
-                              inner_jobs=inner_jobs)
+                              inner_jobs=inner_jobs,
+                              timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
   return test_jobs
 
@@ -207,7 +222,8 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                                 compiler=compiler,
                                 labels=['portability', 'corelang'],
                                 extra_args=extra_args,
-                                inner_jobs=inner_jobs)
+                                inner_jobs=inner_jobs,
+                                timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
   # portability C on Windows 64-bit (x86 is the default)
   test_jobs += _generate_jobs(languages=['c'],
@@ -246,10 +262,11 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               configs=['dbg'], platforms=['linux'],
                               labels=['portability', 'corelang'],
                               extra_args=extra_args,
-                              extra_envs={'GRPC_DNS_RESOLVER': 'ares'})
+                              extra_envs={'GRPC_DNS_RESOLVER': 'ares'},
+                              timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
   # TODO(zyc): Turn on this test after adding c-ares support on windows.
-  # C with the c-ares DNS resolver on Windonws
+  # C with the c-ares DNS resolver on Windows
   # test_jobs += _generate_jobs(languages=['c'],
   #                             configs=['dbg'], platforms=['windows'],
   #                             labels=['portability', 'corelang'],
@@ -292,7 +309,8 @@ def _create_portability_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS)
                               iomgr_platform='uv',
                               labels=['portability', 'corelang'],
                               extra_args=extra_args,
-                              inner_jobs=inner_jobs)
+                              inner_jobs=inner_jobs,
+                              timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
   test_jobs += _generate_jobs(languages=['node'],
                               configs=['dbg'],

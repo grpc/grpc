@@ -159,3 +159,14 @@
 - counter: executor_push_retries
   doc: Number of times we raced and were forced to retry pushing a closure to
        the executor
+# server
+- counter: server_requested_calls
+  doc: How many calls were requested (not necessarily received) by the server
+- histogram: server_cqs_checked
+  buckets: 8
+  max: 64
+  doc: How many completion queues were checked looking for a CQ that had
+       requested the incoming call
+- counter: server_slowpath_requests_queued
+  doc: How many times was the server slow path taken (indicates too few
+       outstanding requests)
