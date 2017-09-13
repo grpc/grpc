@@ -25,6 +25,10 @@
 const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "client_calls_created",
     "server_calls_created",
+    "cqs_created",
+    "client_channels_created",
+    "client_subchannels_created",
+    "server_channels_created",
     "syscall_poll",
     "syscall_wait",
     "histogram_slow_lookups",
@@ -60,6 +64,8 @@ const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
 const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of client side calls created by this process",
     "Number of server side calls created by this process",
+    "Number of completion queues created", "Number of client channels created",
+    "Number of client subchannels created", "Number of server channels created",
     "Number of polling syscalls (epoll_wait, poll, etc) made by this process",
     "Number of sleeping syscalls made by this process",
     "Number of times histogram increments went through the slow (binary "

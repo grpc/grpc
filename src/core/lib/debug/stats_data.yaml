@@ -20,6 +20,14 @@
   doc: Number of client side calls created by this process
 - counter: server_calls_created
   doc: Number of server side calls created by this process
+- counter: cqs_created
+  doc: Number of completion queues created
+- counter: client_channels_created
+  doc: Number of client channels created
+- counter: client_subchannels_created
+  doc: Number of client subchannels created
+- counter: server_channels_created
+  doc: Number of server channels created
 # polling
 - counter: syscall_poll
   doc: Number of polling syscalls (epoll_wait, poll, etc) made by this process
