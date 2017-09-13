@@ -873,6 +873,7 @@ static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       GPR_ASSERT(worker->next->initialized_cv);
       gpr_atm_no_barrier_store(&g_active_poller, (gpr_atm)worker->next);
       SET_KICK_STATE(worker->next, DESIGNATED_POLLER);
+      GRPC_STATS_INC_POLLSET_KICK_WAKEUP_CV(exec_ctx);
       gpr_cv_signal(&worker->next->cv);
       if (grpc_exec_ctx_has_work(exec_ctx)) {
         gpr_mu_unlock(&pollset->mu);
@@ -1098,7 +1099,7 @@ static grpc_error *pollset_kick(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
         goto done;
       }
     } else {
-      GRPC_STATS_INC_POLLSET_KICKED_AGAIN(exec_ctx);
+      GRPC_STATS_INC_POLLSET_KICK_OWN_THREAD(exec_ctx);
       if (GRPC_TRACER_ON(grpc_polling_trace)) {
         gpr_log(GPR_ERROR, " .. kicked while waking up");
       }
