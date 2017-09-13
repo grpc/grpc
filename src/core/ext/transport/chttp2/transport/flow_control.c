@@ -18,6 +18,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
+#include <limits.h>
 #include <math.h>
 #include <string.h>
 
