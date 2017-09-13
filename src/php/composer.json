@@ -1,20 +1,23 @@
 {
-  "name": "grpc/grpc-dev",
-  "description": "gRPC library for PHP - for Developement use only",
+  "name": "grpc/grpc",
+  "type": "library",
+  "description": "gRPC library for PHP",
+  "keywords": ["rpc"],
+  "homepage": "https://grpc.io",
   "license": "Apache-2.0",
-  "version": "1.7.0",
   "require": {
     "php": ">=5.5.0",
-    "google/protobuf": "^v3.3.0"
+    "google/protobuf": "^3.4.0"
   },
   "require-dev": {
     "google/auth": "v0.9"
   },
+  "suggest": {
+    "ext-protobuf": "For better performance, install the protobuf C extension."
+  },
   "autoload": {
     "psr-4": {
-      "Grpc\\": "lib/Grpc/",
-      "": ["tests/interop/",
-           "tests/generated_code/"]
+      "Grpc\\": "src/php/lib/Grpc/"
     }
   }
 }
