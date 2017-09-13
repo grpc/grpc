@@ -789,7 +789,7 @@ static bool begin_worker(grpc_pollset *pollset, grpc_pollset_worker *worker,
 }
 
 static bool check_neighbourhood_for_available_poller(
-    pollset_neighbourhood *neighbourhood) {
+    grpc_exec_ctx *exec_ctx, pollset_neighbourhood *neighbourhood) {
   GPR_TIMER_BEGIN("check_neighbourhood_for_available_poller", 0);
   bool found_worker = false;
   do {
@@ -813,6 +813,7 @@ static bool check_neighbourhood_for_available_poller(
               SET_KICK_STATE(inspect_worker, DESIGNATED_POLLER);
               if (inspect_worker->initialized_cv) {
                 GPR_TIMER_MARK("signal worker", 0);
+                GRPC_STATS_INC_POLLSET_KICK_WAKEUP_CV(exec_ctx);
                 gpr_cv_signal(&inspect_worker->cv);
               }
             } else {
@@ -891,7 +892,7 @@ static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               g_num_neighbourhoods];
         if (gpr_mu_trylock(&neighbourhood->mu)) {
           found_worker =
-              check_neighbourhood_for_available_poller(neighbourhood);
+              check_neighbourhood_for_available_poller(exec_ctx, neighbourhood);
           gpr_mu_unlock(&neighbourhood->mu);
           scan_state[i] = true;
         } else {
@@ -904,7 +905,8 @@ static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
             &g_neighbourhoods[(poller_neighbourhood_idx + i) %
                               g_num_neighbourhoods];
         gpr_mu_lock(&neighbourhood->mu);
-        found_worker = check_neighbourhood_for_available_poller(neighbourhood);
+        found_worker =
+            check_neighbourhood_for_available_poller(exec_ctx, neighbourhood);
         gpr_mu_unlock(&neighbourhood->mu);
       }
       grpc_exec_ctx_flush(exec_ctx);

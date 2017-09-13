@@ -70,16 +70,18 @@ const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of server side calls created by this process",
     "Number of polling syscalls (epoll_wait, poll, etc) made by this process",
     "Number of sleeping syscalls made by this process",
-    "How many polling wakeups were performed by the process",
-    "How many times was a polling wakeup requested without an active poller",
+    "How many polling wakeups were performed by the process (only valid for "
+    "epoll1 right now)",
+    "How many times was a polling wakeup requested without an active poller "
+    "(only valid for epoll1 right now)",
     "How many times was the same polling worker awoken repeatedly before "
-    "waking up",
+    "waking up (only valid for epoll1 right now)",
     "How many times was an eventfd used as the wakeup vector for a polling "
-    "wakeup",
+    "wakeup (only valid for epoll1 right now)",
     "How many times was a condition variable used as the wakeup vector for a "
-    "polling wakeup",
+    "polling wakeup (only valid for epoll1 right now)",
     "How many times could a polling wakeup be satisfied by keeping the waking "
-    "thread awake?",
+    "thread awake? (only valid for epoll1 right now)",
     "Number of times histogram increments went through the slow (binary "
     "search) path",
     "Number of write syscalls (or equivalent - eg sendmsg) made by this "

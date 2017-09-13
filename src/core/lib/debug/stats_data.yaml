@@ -35,20 +35,26 @@
   doc: How many events are called for each syscall_poll
 - counter: pollset_kick
   doc: How many polling wakeups were performed by the process
+       (only valid for epoll1 right now)
 - counter: pollset_kicked_without_poller
   doc: How many times was a polling wakeup requested without an active poller
+       (only valid for epoll1 right now)
 - counter: pollset_kicked_again
   doc: How many times was the same polling worker awoken repeatedly before
        waking up
+       (only valid for epoll1 right now)
 - counter: pollset_kick_wakeup_fd
   doc: How many times was an eventfd used as the wakeup vector for a polling
        wakeup
+       (only valid for epoll1 right now)
 - counter: pollset_kick_wakeup_cv
   doc: How many times was a condition variable used as the wakeup vector for a
        polling wakeup
+       (only valid for epoll1 right now)
 - counter: pollset_kick_own_thread
   doc: How many times could a polling wakeup be satisfied by keeping the waking
        thread awake?
+       (only valid for epoll1 right now)
 # stats system
 - counter: histogram_slow_lookups
   doc: Number of times histogram increments went through the slow
