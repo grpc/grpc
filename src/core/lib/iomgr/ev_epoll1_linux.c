@@ -512,14 +512,17 @@ static grpc_error *pollset_kick_all(grpc_exec_ctx *exec_ctx,
       GRPC_STATS_INC_POLLSET_KICK(exec_ctx);
       switch (worker->kick_state) {
         case KICKED:
+          GRPC_STATS_INC_POLLSET_KICKED_AGAIN(exec_ctx);
           break;
         case UNKICKED:
+          GRPC_STATS_INC_POLLSET_KICK_WAKEUP_CV(exec_ctx);
           SET_KICK_STATE(worker, KICKED);
           if (worker->initialized_cv) {
             gpr_cv_signal(&worker->cv);
           }
           break;
         case DESIGNATED_POLLER:
+          GRPC_STATS_INC_POLLSET_KICK_WAKEUP_FD(exec_ctx);
           SET_KICK_STATE(worker, KICKED);
           append_error(&error, grpc_wakeup_fd_wakeup(&global_wakeup_fd),
                        "pollset_kick_all");
