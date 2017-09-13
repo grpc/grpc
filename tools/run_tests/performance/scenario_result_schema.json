@@ -226,6 +226,16 @@
         "name": "clientQueriesPerCpuSec",
         "type": "FLOAT",
         "mode": "NULLABLE"
+      },
+      {
+        "name": "serverCpuLoad",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "clientCpuLoad",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
       }
     ]
   },

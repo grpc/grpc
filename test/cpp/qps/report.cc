@@ -78,6 +78,12 @@ void CompositeReporter::ReportQueriesPerCpuSec(const ScenarioResult& result) {
   }
 }
 
+void CompositeReporter::ReportCpuLoad(const ScenarioResult& result) {
+  for (size_t i = 0; i < reporters_.size(); ++i) {
+    reporters_[i]->ReportCpuLoad(result);
+  }
+}
+
 void GprLogReporter::ReportQPS(const ScenarioResult& result) {
   gpr_log(GPR_INFO, "QPS: %.1f", result.summary().qps());
   if (result.summary().failed_requests_per_second() > 0) {
@@ -160,6 +166,13 @@ void GprLogReporter::ReportQueriesPerCpuSec(const ScenarioResult& result) {
           result.summary().client_queries_per_cpu_sec());
 }
 
+void GprLogReporter::ReportCpuLoad(const ScenarioResult& result) {
+  gpr_log(GPR_INFO, "Server CPU load: %.2f",
+          result.summary().server_cpu_load());
+  gpr_log(GPR_INFO, "Client CPU load: %.2f",
+          result.summary().client_cpu_load());
+}
+
 void JsonReporter::ReportQPS(const ScenarioResult& result) {
   grpc::string json_string =
       SerializeJson(result, "type.googleapis.com/grpc.testing.ScenarioResult");
@@ -189,6 +202,10 @@ void JsonReporter::ReportPollCount(const ScenarioResult& result) {
 }
 
 void JsonReporter::ReportQueriesPerCpuSec(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
+}
+
+void JsonReporter::ReportCpuLoad(const ScenarioResult& result) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
@@ -229,6 +246,10 @@ void RpcReporter::ReportPollCount(const ScenarioResult& result) {
 }
 
 void RpcReporter::ReportQueriesPerCpuSec(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
+}
+
+void RpcReporter::ReportCpuLoad(const ScenarioResult& result) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
