@@ -101,6 +101,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -1046,6 +1047,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
     gpr_free(glb_policy);
     return NULL;
   }
+  grpc_subchannel_index_ref();
   GRPC_CLOSURE_INIT(&glb_policy->lb_channel_on_connectivity_changed,
                     glb_lb_channel_on_connectivity_changed_cb, glb_policy,
                     grpc_combiner_scheduler(args->combiner));
@@ -1072,6 +1074,7 @@ static void glb_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     grpc_lb_addresses_destroy(exec_ctx, glb_policy->fallback_backend_addresses);
   }
   grpc_fake_resolver_response_generator_unref(glb_policy->response_generator);
+  grpc_subchannel_index_unref();
   if (glb_policy->pending_update_args != NULL) {
     grpc_channel_args_destroy(exec_ctx, glb_policy->pending_update_args->args);
     gpr_free(glb_policy->pending_update_args);
