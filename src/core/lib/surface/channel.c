@@ -282,7 +282,7 @@ static grpc_call *grpc_channel_create_call_internal(
   grpc_call_create_args args;
   memset(&args, 0, sizeof(args));
   args.channel = channel;
-  args.parent_call = parent_call;
+  args.parent = parent_call;
   args.propagation_mask = propagation_mask;
   args.cq = cq;
   args.pollset_set_alternative = pollset_set_alternative;
