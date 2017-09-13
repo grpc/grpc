@@ -16,24 +16,41 @@
  *
  */
 
+#include <memory>
+
 #ifndef GRPC_HHVM_GRPC_COMPLETION_QUEUE_H_
 #define GRPC_HHVM_GRPC_COMPLETION_QUEUE_H_
 
-#include <grpc/grpc.h>
+#include "grpc/grpc.h"
 
 #include "hphp/runtime/ext/extension.h"
 
 namespace HPHP {
 
-struct CompletionQueue {
-  CompletionQueue();
-  ~CompletionQueue();
-  grpc_completion_queue *getQueue();
+// This is the singleton completion queue class
+class CompletionQueue
+{
+ public:
+    // constructors/destructors
+    ~CompletionQueue(void);
+    CompletionQueue(const CompletionQueue&) = delete;
+    CompletionQueue(CompletionQueue&&) = delete;
+    CompletionQueue& operator=(const CompletionQueue&) = delete;
+    CompletionQueue& operator=(CompletionQueue&&) = delete;
 
-  /* The global completion queue for all operations */
-  grpc_completion_queue *completion_queue;
+    // interface functions
+    grpc_completion_queue* const queue(void) { return m_pCompletionQueue; };
 
-  static DECLARE_THREAD_LOCAL(CompletionQueue, tl_obj);
+    // singleton accessor and factory function
+    static void getClientQueue(std::unique_ptr<CompletionQueue>& pCompletionQueue);
+    static void getServerQueue(std::unique_ptr<CompletionQueue>& pCompletionQueue);
+
+private:
+    // private constructor
+    CompletionQueue(void);
+
+    // The global completion queue for all operations
+    grpc_completion_queue* m_pCompletionQueue;
 };
 
 }

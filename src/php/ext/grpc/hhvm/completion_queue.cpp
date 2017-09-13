@@ -16,25 +16,64 @@
  *
  */
 
+#include <memory>
+
+#ifdef HAVE_CONFIG_H
+    #include "config.h"
+#endif
+
 #include "completion_queue.h"
+#include "common.h"
 
 #include "hphp/runtime/ext/extension.h"
 
 namespace HPHP {
 
-IMPLEMENT_THREAD_LOCAL(CompletionQueue, CompletionQueue::tl_obj);
-
-CompletionQueue::CompletionQueue() {
-  completion_queue = grpc_completion_queue_create_for_pluck(NULL);
+CompletionQueue::CompletionQueue(void)
+{
+    m_pCompletionQueue = grpc_completion_queue_create_for_next(nullptr);
 }
 
-CompletionQueue::~CompletionQueue() {
-  grpc_completion_queue_shutdown(completion_queue);
-  grpc_completion_queue_destroy(completion_queue);
+CompletionQueue::~CompletionQueue(void)
+{
+    // queue must be destroyed after server
+
+    // shutdown queue
+    grpc_completion_queue_shutdown(m_pCompletionQueue);
+
+    // Wait for confirmation of queue shutdown
+    for(;;)
+    {
+        grpc_event event( grpc_completion_queue_next(m_pCompletionQueue,
+                                                     gpr_time_from_millis(100, GPR_TIMESPAN),
+                                                     nullptr) );
+        if (event.type == GRPC_QUEUE_SHUTDOWN ||
+            event.type == GRPC_QUEUE_TIMEOUT) break;
+    }
+
+    // destroy queue.  This will segfault if there are still pending items in queue
+    grpc_completion_queue_destroy(m_pCompletionQueue);
 }
 
-grpc_completion_queue *CompletionQueue::getQueue() {
-  return completion_queue;
+void CompletionQueue::getClientQueue(std::unique_ptr<CompletionQueue>& pCompletionQueue)
+{
+    // Each client gets a completion queue
+    static std::mutex queueMutex;
+    {
+        std::unique_lock<std::mutex> lock{ queueMutex };
+        pCompletionQueue.reset(new CompletionQueue{});
+    }
 }
+
+void CompletionQueue::getServerQueue(std::unique_ptr<CompletionQueue>& pCompletionQueue)
+{
+    // Each server gets a completion queue
+    static std::mutex queueMutex;
+    {
+        std::unique_lock<std::mutex> lock{ queueMutex };
+        pCompletionQueue.reset(new CompletionQueue{});
+    }
+}
+
 
 }

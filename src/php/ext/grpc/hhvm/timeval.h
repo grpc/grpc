@@ -20,53 +20,67 @@
 #define NET_GRPC_HHVM_GRPC_TIMEVAL_H_
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
 
-#include "common.h"
 
 #include "hphp/runtime/ext/extension.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/time.h>
+#include "grpc/support/time.h"
 
 namespace HPHP {
 
+/*****************************************************************************/
+/*                               Time Value Data                             */
+/*****************************************************************************/
 
-class TimevalData {
-  private:
-    gpr_timespec wrapped;
-  public:
-    static Class* s_class;
-    static const StaticString s_className;
+class TimevalData
+{
+public:
+    TimevalData(void) : m_TimeValue{} {};
+    ~TimevalData(void);
+    TimevalData(const TimevalData& otherTimevalData) = delete;
+    TimevalData(TimevalData&& otherTimevalData) = delete;
+    TimevalData& operator=(const TimevalData& rhsTimevalData) = delete;
+    TimevalData& operator=(TimevalData&& rhsTimevalData) = delete;
 
-    static Class* getClass();
+    // interface functions
+    void init(const gpr_timespec& timeValue);
+    const gpr_timespec& time(void) const { return m_TimeValue; }
+    static Class* const getClass(void);
+    static const StaticString& className(void) { return s_ClassName; }
 
-    TimevalData();
-    ~TimevalData();
+private:
+    // helper functions
+    void destroy(void);
 
-    void init(gpr_timespec time);
-    void sweep();
-    gpr_timespec getWrapped();
+    // member variables
+    gpr_timespec m_TimeValue;
+    static Class* s_pClass;
+    static const StaticString s_ClassName;
 };
 
+/*****************************************************************************/
+/*                            HHVM Time Value Mehods                         */
+/*****************************************************************************/
+
 void HHVM_METHOD(Timeval, __construct,
-  int64_t microseconds);
+                 int64_t microseconds);
 
 Object HHVM_METHOD(Timeval, add,
-  const Object& other_obj);
+                   const Object& other_obj);
 
 Object HHVM_METHOD(Timeval, subtract,
-  const Object& other_obj);
+                   const Object& other_obj);
 
 int64_t HHVM_STATIC_METHOD(Timeval, compare,
-  const Object& a_obj,
-  const Object& b_obj);
+                           const Object& a_obj,
+                           const Object& b_obj);
 
 bool HHVM_STATIC_METHOD(Timeval, similar,
-  const Object& a_obj,
-  const Object& b_obj,
-  const Object& thresh_obj);
+                        const Object& a_obj,
+                        const Object& b_obj,
+                        const Object& thresh_obj);
 
 Object HHVM_STATIC_METHOD(Timeval, now);
 

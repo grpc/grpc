@@ -16,163 +16,249 @@
  *
  */
 
-#include "channel_credentials.h"
-#include "call_credentials.h"
-
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
 
-#include "hphp/runtime/ext/extension.h"
-#include "hphp/runtime/base/req-containers.h"
+#include "channel_credentials.h"
+#include "call_credentials.h"
+#include "common.h"
+
 #include "hphp/runtime/vm/native-data.h"
-#include "hphp/runtime/base/builtin-functions.h"
 #include "hphp/runtime/base/string-util.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
+#include "grpc/support/alloc.h"
 
 namespace HPHP {
 
-IMPLEMENT_THREAD_LOCAL(DefaultPemRootCerts, DefaultPemRootCerts::tl_obj);
+/*****************************************************************************/
+/*                     Default Permanent Root Certificates                   */
+/*****************************************************************************/
 
-static grpc_ssl_roots_override_result get_ssl_roots_override(char **pem_root_certs) {
-  *pem_root_certs = DefaultPemRootCerts::tl_obj.get()->getCerts();
-  if (*pem_root_certs == NULL) {
-    return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
-  }
-  return GRPC_SSL_ROOTS_OVERRIDE_OK;
+DefaultPEMRootCerts::DefaultPEMRootCerts(void) : m_PEMRootCerts{}
+{
 }
 
-DefaultPemRootCerts::DefaultPemRootCerts() {}
+grpc_ssl_roots_override_result DefaultPEMRootCerts::get_ssl_roots_override(char** pPermRootsCerts)
+{
+    // The output of this function (the char *) is gpr_free'd by the calling function
+    DefaultPEMRootCerts& singletonCerts{ getDefaultPEMRootCerts() };
 
-char * DefaultPemRootCerts::getCerts() { return default_pem_root_certs; }
-void DefaultPemRootCerts::setCerts(const String& pem_roots) {
-  if (default_pem_root_certs != NULL) {
-    gpr_free((void *)default_pem_root_certs);
-  }
+    {
+        ReadLock lock{ singletonCerts.m_CertsLock };
 
-  default_pem_root_certs = (char *) gpr_malloc((pem_roots.length() + 1) * sizeof(char));
-  memcpy(default_pem_root_certs, pem_roots.c_str(), pem_roots.length() + 1);
+        if (singletonCerts.m_PEMRootCerts.empty())
+        {
+            return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
+        }
+
+        // allocate and copy string with null
+        size_t strLength{ singletonCerts.m_PEMRootCerts.size() + 1};
+        char* const pStr{ reinterpret_cast<char *>(gpr_zalloc(strLength)) };
+        if (pStr)
+        {
+            std::memcpy(reinterpret_cast<void*>(pStr),
+                        reinterpret_cast<const void*>(singletonCerts.m_PEMRootCerts.c_str()), strLength);
+            *pPermRootsCerts = pStr;
+            return GRPC_SSL_ROOTS_OVERRIDE_OK;
+        }
+        else
+        {
+
+            return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
+        }
+    }
 }
 
-Class* ChannelCredentialsData::s_class = nullptr;
-const StaticString ChannelCredentialsData::s_className("Grpc\\ChannelCredentials");
+void DefaultPEMRootCerts::setCerts(const String& pemRootsCerts)
+{
+    std::string certsString{ pemRootsCerts.toCppString() };
 
-IMPLEMENT_GET_CLASS(ChannelCredentialsData);
+    {
+        WriteLock lock{ m_CertsLock };
 
-ChannelCredentialsData::ChannelCredentialsData() : key(String("")) {}
-
-ChannelCredentialsData::~ChannelCredentialsData() { sweep(); }
-
-void ChannelCredentialsData::init(grpc_channel_credentials* channel_credentials) {
-  wrapped = channel_credentials;
+        // copy new certs
+        m_PEMRootCerts = std::move(certsString);
+    }
 }
 
-void ChannelCredentialsData::sweep() {
-  if (wrapped) {
-    grpc_channel_credentials_release(wrapped);
-    wrapped = nullptr;
-  }
+DefaultPEMRootCerts& DefaultPEMRootCerts::getDefaultPEMRootCerts(void)
+{
+    static DefaultPEMRootCerts s_DefaultPEMRootCerts{};
+    return s_DefaultPEMRootCerts;
 }
 
-grpc_channel_credentials* ChannelCredentialsData::getWrapped() {
-  return wrapped;
+/*****************************************************************************/
+/*                        Channel Credentials Data                           */
+/*****************************************************************************/
+
+Class* ChannelCredentialsData::s_pClass{ nullptr };
+const StaticString ChannelCredentialsData::s_ClassName{ "Grpc\\ChannelCredentials" };
+
+Class* const ChannelCredentialsData::getClass(void)
+{
+    if (!s_pClass)
+    {
+        s_pClass = Unit::lookupClass(s_ClassName.get());
+        assert(s_pClass);
+    }
+    return s_pClass;
 }
 
-void ChannelCredentialsData::setHashKey(const String& hashKey) {
-  key = hashKey;
+ChannelCredentialsData::ChannelCredentialsData(void) :
+    m_pChannelCredentials{ nullptr }, m_HashKey{ String{} }
+{
 }
 
-String ChannelCredentialsData::getHashKey() {
-  return key;
+ChannelCredentialsData::~ChannelCredentialsData(void)
+{
+    destroy();
 }
+
+void ChannelCredentialsData::init(grpc_channel_credentials* const pChannelCredentials,
+                                  const String& hashKey)
+{
+    // forward
+    init(pChannelCredentials, std::move(String{ hashKey }));
+}
+
+void ChannelCredentialsData::init(grpc_channel_credentials* const pChannelCredentials,
+                                  String&& hashKey)
+{
+    // destroy any existing channel credentials
+    destroy();
+
+    m_pChannelCredentials = pChannelCredentials;
+    m_HashKey = std::move(hashKey);
+}
+
+void ChannelCredentialsData::destroy(void)
+{
+    if (m_pChannelCredentials)
+    {
+        grpc_channel_credentials_release(m_pChannelCredentials);
+        m_pChannelCredentials = nullptr;
+    }
+}
+
+/*****************************************************************************/
+/*                     HHVM Channel Credentials Methods                      */
+/*****************************************************************************/
 
 void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,
-  const String& pem_roots) {
-  DefaultPemRootCerts::tl_obj.get()->setCerts(pem_roots);
+                        const String& pem_root_certs)
+{
+    HHVM_TRACE_SCOPE("ChannelCredentials setDefaultRootsPem") // Degug Trace
+
+    DefaultPEMRootCerts::getDefaultPEMRootCerts().setCerts(pem_root_certs);
 }
 
-Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault) {
-  auto newChannelCredentialsObj = Object{ChannelCredentialsData::getClass()};
-  auto channelCredentialsData = Native::data<ChannelCredentialsData>(newChannelCredentialsObj);
-  grpc_channel_credentials *channel_credentials = grpc_google_default_credentials_create();
-  channelCredentialsData->init(channel_credentials);
+Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault)
+{
+    HHVM_TRACE_SCOPE("ChannelCredentials createDefault") // Degug Trace
 
-  return newChannelCredentialsObj;
+    Object newChannelCredentialsObj{ ChannelCredentialsData::getClass() };
+    ChannelCredentialsData* const pChannelCredentialsData{ Native::data<ChannelCredentialsData>(newChannelCredentialsObj) };
+    grpc_channel_credentials* const pChannelCredentials{ grpc_google_default_credentials_create() };
+
+    if (!pChannelCredentials)
+    {
+        SystemLib::throwBadMethodCallExceptionObject("Failed to create default channel credentials");
+    }
+
+    pChannelCredentialsData->init(pChannelCredentials, String{});
+
+    return newChannelCredentialsObj;
 }
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createSsl,
-  const Variant& pem_root_certs /*=null*/,
-  const Variant& pem_key_cert_pair__private_key /*= null*/,
-  const Variant& pem_key_cert_pair__cert_chain /*=null*/
-  ) {
-  const char *pem_root_certs_ = NULL;
+                          const Variant& perm_root_certs /*=null*/,
+                          const Variant& perm_key_cert_pair__private_key /*= null*/,
+                          const Variant& perm_key_cert_pair__cert_chain /*=null*/
+                          )
+{
+    HHVM_TRACE_SCOPE("ChannelCredentials createSsl") // Degug Trace
 
-  if (pem_root_certs.isString()) {
-    pem_root_certs_ = pem_root_certs.toString().c_str();
-  }
+    const char* const pPermRootCerts{ (!perm_root_certs.isNull() && perm_root_certs.isString()) ?
+                                      perm_root_certs.toString().c_str() : nullptr };
 
-  auto newChannelCredentialsObj = Object{ChannelCredentialsData::getClass()};
-  auto channelCredentialsData = Native::data<ChannelCredentialsData>(newChannelCredentialsObj);
+    Object newChannelCredentialsObj{ ChannelCredentialsData::getClass() };
+    ChannelCredentialsData* const pChannelCredentialsData{ Native::data<ChannelCredentialsData>(newChannelCredentialsObj) };
 
-  String unhashedKey = String("");
+    String unhashedKey{};
+    grpc_ssl_pem_key_cert_pair perm_key_cert_pair;
+    perm_key_cert_pair.private_key = perm_key_cert_pair.cert_chain = nullptr;
 
-  grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
-  pem_key_cert_pair.private_key = pem_key_cert_pair.cert_chain = NULL;
+    if (!perm_key_cert_pair__private_key.isNull() && perm_key_cert_pair__private_key.isString())
+    {
+        perm_key_cert_pair.private_key = perm_key_cert_pair__private_key.toString().c_str();
+        unhashedKey += perm_key_cert_pair__private_key.toString();
+    }
 
-  if (pem_key_cert_pair__private_key.isString()) {
-    pem_key_cert_pair.private_key = pem_key_cert_pair__private_key.toString().c_str();
-    unhashedKey += pem_key_cert_pair__private_key.toString();
-  }
+    if (!perm_key_cert_pair__cert_chain.isNull() && perm_key_cert_pair__cert_chain.isString())
+    {
+        perm_key_cert_pair.cert_chain = perm_key_cert_pair__cert_chain.toString().c_str();
+        unhashedKey += perm_key_cert_pair__cert_chain.toString();
+    }
 
-  if (pem_key_cert_pair__cert_chain.isString()) {
-    pem_key_cert_pair.cert_chain = pem_key_cert_pair__cert_chain.toString().c_str();
-    unhashedKey += pem_key_cert_pair__cert_chain.toString();
-  }
+    String hashKey{ !unhashedKey.empty() ? StringUtil::SHA1(unhashedKey, false) : "" };
 
-  if (unhashedKey != String("")) {
-    String hashKey = StringUtil::SHA1(unhashedKey, false);
-    channelCredentialsData->setHashKey(hashKey);
-  } else {
-    channelCredentialsData->setHashKey(String(""));
-  }
+    grpc_channel_credentials* const pChannelCredentials{
+        grpc_ssl_credentials_create(pPermRootCerts,
+                                    !perm_key_cert_pair.private_key ? nullptr : &perm_key_cert_pair,
+                                    nullptr) };
 
-  channelCredentialsData->init(grpc_ssl_credentials_create(
-    pem_root_certs_,
-    pem_key_cert_pair.private_key == NULL ? NULL : &pem_key_cert_pair, NULL
-  ));
+    if (!pChannelCredentials)
+    {
+        SystemLib::throwBadMethodCallExceptionObject("Failed to create SSL channel credentials");
+    }
 
-  return newChannelCredentialsObj;
+    pChannelCredentialsData->init(pChannelCredentials, std::move(hashKey));
+
+    return newChannelCredentialsObj;
 }
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createComposite,
-  const Object& cred1_obj,
-  const Object& cred2_obj) {
-  auto channelCredentialsData = Native::data<ChannelCredentialsData>(cred1_obj);
-  auto callCredentialsData = Native::data<CallCredentialsData>(cred2_obj);
+                          const Object& cred1_obj,
+                          const Object& cred2_obj)
+{
+    HHVM_TRACE_SCOPE("ChannelCredentials createComposite") // Degug Trace
 
-  grpc_channel_credentials* channel_credentials = grpc_composite_channel_credentials_create(
-    channelCredentialsData->getWrapped(),
-    callCredentialsData->getWrapped(),
-    NULL
-  );
+    ChannelCredentialsData* pChannelCredentialsData{ Native::data<ChannelCredentialsData>(cred1_obj) };
+    CallCredentialsData* pCallCredentialsData{ Native::data<CallCredentialsData>(cred2_obj) };
 
-  auto newChannelCredentialsObj = Object{ChannelCredentialsData::getClass()};
-  auto newChannelCredentialsData = Native::data<ChannelCredentialsData>(newChannelCredentialsObj);
-  newChannelCredentialsData->init(channel_credentials);
-  newChannelCredentialsData->setHashKey(channelCredentialsData->getHashKey());
+    grpc_channel_credentials* const pChannelCredentials{
+        grpc_composite_channel_credentials_create(pChannelCredentialsData->credentials(),
+                                                  pCallCredentialsData->credentials(), nullptr) };
 
-  return newChannelCredentialsObj;
+    if (!pChannelCredentials)
+    {
+        SystemLib::throwBadMethodCallExceptionObject("Failed to create composite channel credentials");
+    }
+
+    Object newChannelCredentialsObj{ChannelCredentialsData::getClass() };
+    ChannelCredentialsData* const pNewChannelCredentialsData{ Native::data<ChannelCredentialsData>(newChannelCredentialsObj) };
+    pNewChannelCredentialsData->init(pChannelCredentials, pChannelCredentialsData->hashKey());
+
+    return newChannelCredentialsObj;
 }
 
-Variant HHVM_STATIC_METHOD(ChannelCredentials, createInsecure) {
-  return Variant();
+Variant HHVM_STATIC_METHOD(ChannelCredentials, createInsecure)
+{
+    HHVM_TRACE_SCOPE("ChannelCredentials createInsecure") // Degug Trace
+
+    return Variant{};
 }
 
-void grpc_hhvm_init_channel_credentials() {
-  grpc_set_ssl_roots_override_callback(get_ssl_roots_override);
+void grpc_hhvm_init_channel_credentials(void)
+{
+    static std::mutex s_CallLock;
+
+    {
+        // NOTE:  This function call is not thread safe and requires an exclusive lock
+        std::unique_lock<std::mutex> lock{ s_CallLock };
+        grpc_set_ssl_roots_override_callback(DefaultPEMRootCerts::get_ssl_roots_override);
+    }
 }
 
 } // namespace HPHP

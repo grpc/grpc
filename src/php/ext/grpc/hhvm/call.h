@@ -19,72 +19,182 @@
 #ifndef NET_GRPC_HHVM_GRPC_CALL_H_
 #define NET_GRPC_HHVM_GRPC_CALL_H_
 
+#include <cstdint>
+#include <memory>
+#include <future>
+
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
 
+#include "call_credentials.h"
+#include "slice.h"
+
 #include "hphp/runtime/ext/extension.h"
-#include "channel.h"
-#include "timeval.h"
 
 #include "grpc/grpc.h"
+#include "grpc/support/alloc.h"
 
 namespace HPHP {
 
-class CallData {
-  private:
-    grpc_call* wrapped{nullptr};
-    bool owned = false;
-    ChannelData* channelData{nullptr};
-    int32_t timeout;
-  public:
-    static Class* s_class;
-    static const StaticString s_className;
+/*****************************************************************************/
+/*                             Metadata Array                                */
+/*****************************************************************************/
 
-    static Class* getClass();
+// This class is an RAII wrapper around a call metadata array
+class MetadataArray
+{
+public:
+    // constructors/descructors
+    MetadataArray(const bool owned);
+    ~MetadataArray(void);
+    MetadataArray(const MetadataArray& otherMetadataArray) = delete;
+    MetadataArray(MetadataArray&& otherMetadataArray) = delete;
+    MetadataArray& operator=(const MetadataArray& rhsMetadataArray) = delete;
+    MetadataArray& operator&(MetadataArray&& rhsMetadataArray) = delete;
 
-    CallData();
-    ~CallData();
+    // interface functions
+    bool init(const Array& phpArray = Array{});
+    grpc_metadata* const data(void) { return m_Array.metadata; }
+    const grpc_metadata* const data(void) const { return m_Array.metadata; }
+    size_t size(void) const { return m_Array.count; }
+    const grpc_metadata_array& array(void) const { return m_Array; } //
+    grpc_metadata_array& array(void) { return m_Array; } // several methods need non const &
+    Variant phpData(void) const;
+    bool owned(void) const { return m_Owned; }
 
-    void init(grpc_call* call);
-    void sweep();
-    grpc_call* getWrapped();
-    bool getOwned();
-    void setChannelData(ChannelData* channelData_);
-    void setOwned(bool owned_);
-    void setTimeout(int32_t timeout_);
-    int32_t getTimeout();
+private:
+    // helper functions
+    void destroyPHP(void);
+    void resizeMetadata(const size_t capacity);
+
+    // member variables
+    grpc_metadata_array m_Array;
+    std::vector<std::pair<Slice, Slice>> m_PHPData; // the key, value PHP Data
+    bool m_Owned;
 };
 
-void *cq_pluck_async(void *params_ptr);
+/*****************************************************************************/
+/*                               OpsManaged                                  */
+/*****************************************************************************/
 
-typedef struct cq_pluck_async_params {
-  grpc_completion_queue* cq;
-  void* tag;
-  gpr_timespec deadline;
-  void* reserved;
-  int fd;
-} cq_pluck_async_params;
+struct OpsManaged
+{
+public:
+    // typedef's
+    const static size_t s_MaxActions{ 8 };
+    typedef std::array<grpc_byte_buffer*, s_MaxActions> MessagesType;
+
+    // constructors/destructors
+    OpsManaged(void);
+    ~OpsManaged(void);
+    OpsManaged(const OpsManaged& otherOpsManaged) = delete;
+    OpsManaged(OpsManaged&& otherOpsManaged) = delete;
+    OpsManaged& operator=(const OpsManaged& rhsOpsManaged) = delete;
+    OpsManaged& operator&(OpsManaged&& rhsOpsManaged) = delete;
+
+private:
+    // helper fuctions
+    void destroy(void);
+    static void freeMessage(grpc_byte_buffer* pBuffer);
+
+public:
+    // member variabes
+    static thread_local MetadataArray s_Send_metadata;          // owned by caller
+    static thread_local MetadataArray s_Send_trailing_metadata; // owned by caller
+    MetadataArray& send_metadata_ref;
+    MetadataArray& send_trailing_metadata_ref;
+    MetadataArray recv_metadata;                                // owned by call object
+    MetadataArray recv_trailing_metadata;                       // owned by call object
+    MessagesType send_messages;                                 // owned by caller
+    MessagesType recv_messages;                                 // owned by call object
+    Slice recv_status_details;                                  // owned by caller
+    Slice send_status_details;                                  // owned by caller
+    int cancelled ;
+    grpc_status_code status;
+
+};
+
+/*****************************************************************************/
+/*                             Channel Data                                  */
+/*****************************************************************************/
+
+// forward declarations
+class ChannelData;
+class CompletionQueue;
+
+class CallData
+{
+public:
+    // constructors/destructors
+    CallData(void);
+    CallData(grpc_call* const call, const bool owned, const int32_t timeoutMs = 0);
+    ~CallData(void);
+    CallData(const CallData& otherCallData) = delete;
+    CallData(CallData&& otherCallData) = delete;
+    CallData& operator=(const CallData& rhsCallData) = delete;
+    CallData& operator&(CallData&& rhsCallData) = delete;
+
+    // interface functions
+    void init(grpc_call* const call, const bool owned, const int32_t timeoutMs = 0);
+    grpc_call* const call(void) { return m_pCall; }
+    bool getOwned(void) const { return m_Owned; }
+    bool credentialed(void) const { return (m_pCallCredentials != nullptr); }
+    CallCredentialsData* const callCredentials(void) { return m_pCallCredentials; }
+    void setCallCredentials(CallCredentialsData* const pCallCredentials) { m_pCallCredentials = pCallCredentials; }
+    void setChannel(ChannelData* const pChannel) { m_pChannel = pChannel; }
+    void setQueue(std::unique_ptr<CompletionQueue>&& pCompletionQueue);
+    CompletionQueue* const queue(void) { return m_pCompletionQueue.get(); }
+    int32_t getTimeout(void) const { return m_Timeout; }
+    std::shared_ptr<MetadataPromise>& sharedPromise(void) { return m_pMetadataPromise; }
+    std::shared_ptr<std::mutex>& sharedMutex(void) { return m_pMetadataMutex; }
+    std::shared_ptr<bool>& sharedCancelled(void) { return m_pCallCancelled; }
+    MetadataPromise& metadataPromise(void) { return *(m_pMetadataPromise.get()); }
+    std::mutex& metadataMutex(void) { return *(m_pMetadataMutex.get()); }
+    void setOpsManaged(std::unique_ptr<OpsManaged>&& pOpsManaged);
+    OpsManaged& opsManaged(void) { return *(m_pOpsManaged.get()); }
+    bool& callCancelled(void) { return *(m_pCallCancelled.get()); }
+    static Class* const getClass(void);
+    static const StaticString& className(void) { return s_ClassName; }
+
+private:
+    // helper functions
+    void destroy(void);
+
+    // member variables
+    grpc_call* m_pCall;
+    bool m_Owned;
+    CallCredentialsData* m_pCallCredentials;
+    ChannelData* m_pChannel;
+    int32_t m_Timeout;
+    std::shared_ptr<MetadataPromise> m_pMetadataPromise; // metadata synchronization
+    std::shared_ptr<std::mutex> m_pMetadataMutex;        // metadata synchronization
+    std::shared_ptr<bool> m_pCallCancelled;              // metadata synchronizations
+    std::unique_ptr<CompletionQueue> m_pCompletionQueue;
+    std::unique_ptr<OpsManaged> m_pOpsManaged;
+    static Class* s_pClass;
+    static const StaticString s_ClassName;
+};
+
+/*****************************************************************************/
+/*                             HHVM Call Methods                             */
+/*****************************************************************************/
 
 void HHVM_METHOD(Call, __construct,
-  const Object& channel_obj,
-  const String& method,
-  const Object& deadline_obj,
-  const Variant& host_override /* = null */);
+                 const Object& channel_obj,
+                 const String& method,
+                 const Object& deadline_obj,
+                 const Variant& host_override /* = null */);
 
 Object HHVM_METHOD(Call, startBatch,
-  const Array& actions);
+                   const Array& actions);
 
 String HHVM_METHOD(Call, getPeer);
 
 void HHVM_METHOD(Call, cancel);
 
 int64_t HHVM_METHOD(Call, setCredentials,
-  const Object& creds_obj);
-
-Variant grpc_parse_metadata_array(grpc_metadata_array *metadata_array);
-bool hhvm_create_metadata_array(const Array& array, grpc_metadata_array *metadata);
-
+                    const Object& creds_obj);
 };
 
 #endif /* NET_GRPC_HHVM_GRPC_CALL_H_ */

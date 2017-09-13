@@ -16,68 +16,91 @@
  *
  */
 
-#include "server_credentials.h"
-
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
 
-#include "hphp/runtime/ext/extension.h"
-#include "hphp/runtime/base/req-containers.h"
-#include "hphp/runtime/vm/native-data.h"
-#include "hphp/runtime/base/builtin-functions.h"
+#include "server_credentials.h"
+#include "common.h"
 
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
+#include "hphp/runtime/vm/native-data.h"
 
 namespace HPHP {
 
-Class* ServerCredentialsData::s_class = nullptr;
-const StaticString ServerCredentialsData::s_className("Grpc\\ServerCredentials");
+/*****************************************************************************/
+/*                             Server Credentials Data                       */
+/*****************************************************************************/
 
-IMPLEMENT_GET_CLASS(ServerCredentialsData);
+Class* ServerCredentialsData::s_pClass{ nullptr };
+const StaticString ServerCredentialsData::s_ClassName{ "Grpc\\ServerCredentials" };
 
-ServerCredentialsData::ServerCredentialsData() {}
-ServerCredentialsData::~ServerCredentialsData() { sweep(); }
-
-void ServerCredentialsData::init(grpc_server_credentials* server_credentials) {
-  wrapped = server_credentials;
+Class* const ServerCredentialsData::getClass(void)
+{
+    if (!s_pClass)
+    {
+        s_pClass = Unit::lookupClass(s_ClassName.get());
+        assert(s_pClass);
+    }
+    return s_pClass;
 }
 
-void ServerCredentialsData::sweep() {
-  if (wrapped) {
-    grpc_server_credentials_release(wrapped);
-    wrapped = nullptr;
-  }
+ServerCredentialsData::ServerCredentialsData(void) : m_pCredentials{ nullptr }
+{
 }
 
-grpc_server_credentials* ServerCredentialsData::getWrapped() {
-  return wrapped;
+ServerCredentialsData::~ServerCredentialsData()
+{
+    destroy();
 }
+
+void ServerCredentialsData::init(grpc_server_credentials* const server_credentials)
+{
+    // destroy any existing server credentials
+    destroy();
+
+    m_pCredentials = server_credentials;
+}
+
+void ServerCredentialsData::destroy(void)
+{
+    if (m_pCredentials)
+    {
+        grpc_server_credentials_release(m_pCredentials);
+        m_pCredentials = nullptr;
+    }
+}
+
+/*****************************************************************************/
+/*                         HHVM Server Credentials Methods                   */
+/*****************************************************************************/
 
 Object HHVM_STATIC_METHOD(ServerCredentials, createSsl,
-  const String& pem_root_certs,
-  const String& pem_private_key,
-  const String& pem_cert_chain) {
-  grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
+                          const String& pem_root_certs,
+                          const String& pem_private_key,
+                          const String& pem_cert_chain)
+{
+    HHVM_TRACE_SCOPE("ServerCredentials createSsl") // Degug Trace
 
-  pem_key_cert_pair.private_key = pem_private_key.c_str();
-  pem_key_cert_pair.cert_chain = pem_cert_chain.c_str();
+    grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
+    pem_key_cert_pair.private_key = pem_private_key.c_str();
+    pem_key_cert_pair.cert_chain = pem_cert_chain.c_str();
 
-  auto newServerCredentialsObj = Object{ServerCredentialsData::getClass()};
-  auto serverCredentialsData = Native::data<ServerCredentialsData>(newServerCredentialsObj);
+    Object newServerCredentialsObj{ ServerCredentialsData::getClass() };
+    ServerCredentialsData* const pServerCredentialsData{ Native::data<ServerCredentialsData>(newServerCredentialsObj) };
 
-  /* TODO: add a client_certificate_request field in ServerCredentials and pass
-   * it as the last parameter. */
-  serverCredentialsData->init(grpc_ssl_server_credentials_create_ex(
-    pem_root_certs.c_str(),
-    &pem_key_cert_pair,
-    1,
-    GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
-    NULL
-  ));
+    // TODO: add a client_certificate_request field in ServerCredentials and pass it as the last parameter. */
+    grpc_server_credentials* const pServerCredentials{
+        grpc_ssl_server_credentials_create_ex(pem_root_certs.c_str(), &pem_key_cert_pair,
+                                              1, GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, nullptr) };
 
-  return newServerCredentialsObj;
+    if (!pServerCredentials)
+    {
+        SystemLib::throwBadMethodCallExceptionObject("failed to create server credentials");
+    }
+
+    pServerCredentialsData->init(pServerCredentials);
+
+    return newServerCredentialsObj;
 }
 
 } // namespace HPHP

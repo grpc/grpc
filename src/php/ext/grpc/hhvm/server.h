@@ -20,43 +20,65 @@
 #define NET_GRPC_HHVM_GRPC_SERVER_H_
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
 
-#include "common.h"
+#include "completion_queue.h"
 
-#include <grpc/grpc.h>
+#include "hphp/runtime/ext/extension.h"
+
+#include "grpc/grpc.h"
 
 namespace HPHP {
 
-class ServerData {
-  private:
-    grpc_server* wrapped{nullptr};
-  public:
-    static Class* s_class;
-    static const StaticString s_className;
+/*****************************************************************************/
+/*                                  Server Data                              */
+/*****************************************************************************/
 
-    static Class* getClass();
+class ServerData
+{
+public:
+    // constructors/destructors
+    ServerData(void);
+    ~ServerData(void);
+    ServerData(const ServerData& otherServerData) = delete;
+    ServerData(ServerData&& otherServerData) = delete;
+    ServerData& operator=(const ServerData& rhsServerData) = delete;
+    ServerData& operator=(ServerData&& rhsServerData) = delete;
 
-    ServerData();
-    ~ServerData();
+    // interface functions
+    void init(grpc_server* const pServer);
+    grpc_server* const server(void) { return m_pServer; }
+    CompletionQueue* const queue(void) { return m_pComletionQueue.get(); };
+    static Class* const getClass(void);
+    static const StaticString& className(void) { return s_ClassName; }
 
-    void init(grpc_server* server);
-    void sweep();
-    grpc_server* getWrapped();
+private:
+    // helper functions
+    void destroy(void);
+
+    // member variables
+    grpc_server* m_pServer;
+    std::unique_ptr<CompletionQueue> m_pComletionQueue;
+    static Class* s_pClass;
+    static const StaticString s_ClassName;
 };
 
+/*****************************************************************************/
+/*                           HHVM Server Methods                             */
+/*****************************************************************************/
+
 void HHVM_METHOD(Server, __construct,
-  const Variant& args_array_or_null /* = null */);
+                 const Variant& args_array_or_null /* = null */);
 
 Object HHVM_METHOD(Server, requestCall);
 
 bool HHVM_METHOD(Server, addHttp2Port,
-  const String& addr);
+                 const String& addr);
 
 bool HHVM_METHOD(Server, addSecureHttp2Port,
-  const String& addr,
-  const Object& server_credentials);
+                 const String& addr,
+                 const Object& server_credentials);
 
 void HHVM_METHOD(Server, start);
 

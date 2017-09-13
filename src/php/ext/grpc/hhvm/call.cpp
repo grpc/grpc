@@ -16,586 +16,704 @@
  *
  */
 
+#include <array>
+#include <cstdint>
+#include <future>
+#include <mutex>
+#include <sstream>
+
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
 
-#include "common.h"
-
 #include "call.h"
-#include "timeval.h"
-#include "completion_queue.h"
-#include "byte_buffer.h"
 #include "call_credentials.h"
+#include "channel.h"
+#include "common.h"
+#include "completion_queue.h"
+#include "timeval.h"
 
-#include "hphp/runtime/ext/extension.h"
-#include "hphp/runtime/base/req-containers.h"
+#include "hphp/runtime/base/array-iterator.h"
+#include "hphp/runtime/base/memory-manager.h"
 #include "hphp/runtime/vm/native-data.h"
-#include "hphp/runtime/base/builtin-functions.h"
-#include "hphp/runtime/base/type-variant.h"
-#include "hphp/util/process.h"
+#include "hphp/runtime/vm/vm-regs.h"
 
-#include <sys/eventfd.h>
-#include <sys/poll.h>
-
-#include <grpc/support/alloc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/grpc.h>
+#include "grpc/grpc_security.h"
+#include "grpc/support/alloc.h"
 
 namespace HPHP {
 
-Mutex s_grpc_call_start_batch_mutex;
+/*****************************************************************************/
+/*                                 Call Data                                 */
+/*****************************************************************************/
 
-Class* CallData::s_class = nullptr;
-const StaticString CallData::s_className("Grpc\\Call");
+Class* CallData::s_pClass{ nullptr };
+const StaticString CallData::s_ClassName{ "Grpc\\Call" };
 
-IMPLEMENT_GET_CLASS(CallData);
-
-CallData::CallData() {}
-CallData::~CallData() { sweep(); }
-
-void CallData::init(grpc_call* call) {
-  wrapped = call;
-}
-
-void CallData::sweep() {
-  if (wrapped) {
-    if (owned) {
-      grpc_call_unref(wrapped);
+Class* const CallData::getClass(void)
+{
+    if (!s_pClass)
+    {
+        s_pClass = Unit::lookupClass(s_ClassName.get());
+        assert(s_pClass);
     }
-    wrapped = nullptr;
-  }
-  if (channelData) {
-    channelData = nullptr;
-  }
+    return s_pClass;
 }
 
-grpc_call* CallData::getWrapped() {
-  return wrapped;
+CallData::CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_pCallCredentials{ nullptr },
+    m_pChannel{ nullptr }, m_Timeout{ 0 },
+    m_pMetadataPromise{ std::make_shared<MetadataPromise>() },
+    m_pMetadataMutex{ std::make_shared<std::mutex>() }, m_pCallCancelled{ std::make_shared<bool>(false) },
+    m_pOpsManaged{ nullptr }
+{
 }
 
-bool CallData::getOwned() {
-  return owned;
+CallData::CallData(grpc_call* const call, const bool owned, const int32_t timeoutMs) :
+    m_pCall{ call }, m_Owned{ owned }, m_pCallCredentials{ nullptr }, m_pChannel{ nullptr },
+    m_Timeout{ timeoutMs }, m_pMetadataPromise{ std::make_shared<MetadataPromise>() },
+    m_pMetadataMutex{ std::make_shared<std::mutex>() }, m_pCallCancelled{ std::make_shared<bool>(false) },
+    m_pOpsManaged{ nullptr }
+{
 }
 
-void CallData::setChannelData(ChannelData* channelData_) {
-  channelData = channelData_;
+CallData::~CallData(void)
+{
+    destroy();
 }
 
-void CallData::setOwned(bool owned_) {
-  owned = owned_;
+void CallData::init(grpc_call* const call, const bool owned, const int32_t timeoutMs)
+{
+    // destroy any existing call
+    destroy();
+
+    m_pCall = call;
+    m_Owned = owned;
+    m_Timeout = timeoutMs;
 }
 
-void CallData::setTimeout(int32_t timeout_) {
-  timeout = timeout_;
+void CallData::destroy(void)
+{
+    if (m_pCall)
+    {
+        // delete any left over ops data
+        if (m_pOpsManaged) m_pOpsManaged.reset(nullptr);
+
+        // delete the call if owned
+        if (m_Owned)
+        {
+            // destroy call
+            grpc_call_unref(m_pCall);
+            m_Owned = false;
+        }
+
+        m_pCall = nullptr;
+    }
+    m_pChannel = nullptr;
+    m_pCallCredentials = nullptr;
 }
 
-int32_t CallData::getTimeout() {
-  return timeout;
+ void CallData::setQueue(std::unique_ptr<CompletionQueue>&& pCompletionQueue)
+{
+    m_pCompletionQueue = std::move(pCompletionQueue);
 }
+
+void CallData::setOpsManaged(std::unique_ptr<OpsManaged>&& pOpsManaged)
+{
+    m_pOpsManaged= std::move(pOpsManaged);
+}
+
+/*****************************************************************************/
+/*                              Metadata Array                               */
+/*****************************************************************************/
+
+MetadataArray::MetadataArray(const bool owned) : m_PHPData{}, m_Owned{ owned }
+{
+    grpc_metadata_array_init(&m_Array);
+    // NOTE: Do not intialize the metadata array here with any members as
+    // some metadata is owned by caller and some by callee
+}
+
+MetadataArray::~MetadataArray(void)
+{
+    destroyPHP();
+    grpc_metadata_array_destroy(&m_Array);
+}
+
+// Populates a grpc_metadata_array with the data in a PHP array object.
+// Returns true on success and false on failure
+bool MetadataArray::init(const Array& phpArray)
+{
+    if (!owned())
+    {
+        SystemLib::throwRuntimeExceptionObject("can only init an owned metadata array");
+    }
+
+    // destroy any PHP data
+    destroyPHP();
+    m_Array.count = 0;
+
+    // precheck validity of data
+    size_t count{ 0 };
+    for (ArrayIter iter{ phpArray }; iter; ++iter)
+    {
+        Variant key{ iter.first() };
+        if (key.isNull() || !key.isString() ||
+            !grpc_header_key_is_legal(grpc_slice_from_static_string(key.toString().c_str())))
+        {
+            return false;
+        }
+
+        Variant value{ iter.second() };
+        if (value.isNull() || !value.isArray())
+        {
+            return false;
+        }
+
+        Array innerArray{ value.toArray() };
+        for (ArrayIter iter2(innerArray); iter2; ++iter2, ++count)
+        {
+            Variant value2{ iter2.second() };
+            if (value2.isNull() || !value2.isString())
+            {
+                return false;
+            }
+        }
+    }
+    if (count > m_Array.capacity) resizeMetadata(count);
+
+    // create metadata array
+    size_t elem{ 0 };
+    for (ArrayIter iter(phpArray); iter; ++iter)
+    {
+        Variant key{ iter.first() };
+        Variant value{ iter.second() };
+        Array innerArray{ value.toArray() };
+        for (ArrayIter iter2(innerArray); iter2; ++iter2, ++elem)
+        {
+            Variant value2{ iter2.second() };
+            String value2Str{ value2.toString() };
+            Slice keySlice{ key.toString() };
+            Slice valueSlice{ value2Str };
+            m_PHPData.emplace_back(std::move(keySlice), std::move(valueSlice));
+
+            m_Array.metadata[elem].key = m_PHPData[elem].first.slice();
+            m_Array.metadata[elem].value = m_PHPData[elem].second.slice();
+        }
+    }
+    m_Array.count = count;
+    return true;
+}
+
+// Creates and returns a PHP array object with the data in a
+// grpc_metadata_array. Returns NULL on failure
+Variant MetadataArray::phpData(void) const
+{
+    Array phpArray{ Array::Create() };
+    for(size_t elem{ 0 }; elem < m_Array.count; ++elem)
+    {
+        const grpc_metadata& element(m_Array.metadata[elem]);
+
+        Slice keySlice{ element.key };
+        String key{ reinterpret_cast<const char* const>(keySlice.data()), keySlice.length(),
+                                                        CopyString };
+        Slice valueSlice{ element.value };
+        String value{ reinterpret_cast<const char* const>(valueSlice.data()), valueSlice.length(),
+                      CopyString };
+
+        if (!phpArray.exists(key, true))
+        {
+            phpArray.set(key, Array::Create(), true);
+        }
+
+        Variant current{ phpArray[key] };
+        if (current.isNull() || !current.isArray())
+        {
+            SystemLib::throwInvalidArgumentExceptionObject("Metadata hash somehow contains wrong types.");
+            return Variant{};
+        }
+        Array currentArray{ current.toArray() };
+        currentArray.append(Variant{ value });
+    }
+
+    return Variant(phpArray);
+}
+
+void MetadataArray::destroyPHP(void)
+{
+    // destroy PHP data
+    m_PHPData.clear();
+}
+
+void MetadataArray::resizeMetadata(const size_t capacity)
+{
+    if (capacity > m_Array.capacity)
+    {
+        // allocate new memory
+        grpc_metadata* const pMetadataNew{ reinterpret_cast<grpc_metadata*>(gpr_zalloc(capacity * sizeof(grpc_metadata))) };
+
+        // move existing items
+        for(size_t elem{ 0 }; elem < m_Array.count; ++elem)
+        {
+            std::memcpy(reinterpret_cast<void*>(&pMetadataNew[elem]),
+                        reinterpret_cast<const void*>(&m_Array.metadata[elem]), sizeof(grpc_metadata));
+        }
+
+
+        // destroy old memory
+        gpr_free(m_Array.metadata);
+        m_Array.metadata = pMetadataNew;
+        m_Array.capacity = capacity;
+    }
+}
+
+/*****************************************************************************/
+/*                               OpsManaged                                  */
+/*****************************************************************************/
+
+
+// constructors/destructors
+OpsManaged::OpsManaged(void) : send_metadata_ref{ OpsManaged::s_Send_metadata},
+    send_trailing_metadata_ref{ OpsManaged::s_Send_trailing_metadata},
+    recv_metadata{ false }, recv_trailing_metadata{ false }, recv_status_details{},
+    send_status_details{}, cancelled{ 0 }, status{ GRPC_STATUS_OK }
+{
+    send_messages.fill(nullptr);
+    recv_messages.fill(nullptr);
+}
+
+OpsManaged::~OpsManaged(void)
+{
+    destroy();
+}
+
+void OpsManaged::destroy(void)
+{
+    // clean up send metadata's
+    send_metadata_ref.init();
+    send_trailing_metadata_ref.init();
+
+    // clean up messages
+    std::for_each(recv_messages.begin(), recv_messages.end(), freeMessage);
+    std::for_each(send_messages.begin(), send_messages.end(), freeMessage);
+}
+
+void OpsManaged::freeMessage(grpc_byte_buffer* pBuffer)
+{
+    if (pBuffer)
+    {
+        grpc_byte_buffer_destroy(pBuffer);
+        pBuffer = nullptr;
+    }
+}
+
+// initialize statics
+// NOTE: These variables are thread_local so that they have a lifetime beyod startBatch
+// where they are set
+thread_local MetadataArray OpsManaged::s_Send_metadata{ true };
+thread_local MetadataArray OpsManaged::s_Send_trailing_metadata{ true };
+
+/*****************************************************************************/
+/*                              HHVM Call Methods                            */
+/*****************************************************************************/
 
 void HHVM_METHOD(Call, __construct,
-  const Object& channel_obj,
-  const String& method,
-  const Object& deadline_obj,
-  const Variant& host_override /* = null */) {
-  auto callData = Native::data<CallData>(this_);
-  auto channelData = Native::data<ChannelData>(channel_obj);
+                 const Object& channel_obj,
+                 const String& method,
+                 const Object& deadline_obj,
+                 const Variant& host_override /* = null */)
+{
+    HHVM_TRACE_SCOPE("Call construct") // Degug Trace
 
-  if (channelData->getWrapped() == nullptr) {
-    SystemLib::throwInvalidArgumentExceptionObject("Call cannot be constructed from a closed Channel");
+    CallData* const pCallData{ Native::data<CallData>(this_) };
+    ChannelData* const pChannelData{ Native::data<ChannelData>(channel_obj) };
+
+    if (pChannelData->channel() == nullptr)
+    {
+        SystemLib::throwBadMethodCallExceptionObject("Call cannot be constructed from a closed Channel");
+    }
+    pCallData->setChannel(pChannelData);
+
+    TimevalData* const pDeadlineTimevalData{ Native::data<TimevalData>(deadline_obj) };
+
+    Slice method_slice{ !method.empty() ? method : String{} };
+    Slice host_slice{ !host_override.isNull() && host_override.isString() ?
+                       host_override.toString() : String{} };
+
+    std::unique_ptr<CompletionQueue> pCompletionQueue{ nullptr };
+    CompletionQueue::getClientQueue(pCompletionQueue);
+
+    grpc_call* const pCall{ grpc_channel_create_call(pChannelData->channel(),
+                                                     nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                                     pCompletionQueue->queue(),
+                                                     method_slice.slice(),
+                                                     !host_slice.empty() ? &host_slice.slice() : nullptr,
+                                                     pDeadlineTimevalData->time(), nullptr) };
+
+    if (!pCall)
+    {
+        SystemLib::throwBadMethodCallExceptionObject("failed to create call");
+    }
+
+    int32_t timeout{ gpr_time_to_millis(gpr_convert_clock_type(pDeadlineTimevalData->time(),
+                                                               GPR_TIMESPAN)) };
+    pCallData->init(pCall, true, timeout);
+    pCallData->setQueue(std::move(pCompletionQueue));
+
     return;
-  }
-
-  callData->setChannelData(channelData);
-
-  auto deadlineTimevalData = Native::data<TimevalData>(deadline_obj);
-  callData->setTimeout(gpr_time_to_millis(gpr_convert_clock_type(deadlineTimevalData->getWrapped(), GPR_TIMESPAN)));
-
-  grpc_slice method_slice = grpc_slice_from_copied_string(method.c_str());
-  grpc_slice host_slice = !host_override.isNull() ? grpc_slice_from_copied_string(host_override.toString().c_str())
-                              : grpc_empty_slice();
-  callData->init(grpc_channel_create_call(channelData->getWrapped(), NULL, GRPC_PROPAGATE_DEFAULTS,
-                             CompletionQueue::tl_obj.get()->getQueue(), method_slice,
-                             !host_override.isNull() ? &host_slice : NULL,
-                             deadlineTimevalData->getWrapped(), NULL));
-
-  grpc_slice_unref(method_slice);
-  grpc_slice_unref(host_slice);
-
-  callData->setOwned(true);
 }
 
 Object HHVM_METHOD(Call, startBatch,
-  const Array& actions) { // array<int, mixed>
-  auto resultObj = SystemLib::AllocStdClassObject();
+                   const Array& actions) // array<int, mixed>
+{
+    VMRegGuard _;
 
-  if (actions.size() > 8) {
-    SystemLib::throwInvalidArgumentExceptionObject("actions array must not be longer than 8 operations");
-    return resultObj;
-  }
+    HHVM_TRACE_SCOPE("Call startBatch") // Degug Trace
 
-  auto callData = Native::data<CallData>(this_);
+    Object resultObj{ SystemLib::AllocStdClassObject() };
 
-  size_t op_num = 0;
-  grpc_op ops[8];
-
-  grpc_metadata_array metadata;
-  grpc_metadata_array trailing_metadata;
-  grpc_metadata_array recv_metadata;
-  grpc_metadata_array recv_trailing_metadata;
-  grpc_status_code status;
-  grpc_slice recv_status_details = grpc_empty_slice();
-  grpc_slice send_status_details = grpc_empty_slice();
-  grpc_byte_buffer *message = nullptr;
-  int cancelled;
-  grpc_call_error error;
-  grpc_event *event_ptr = nullptr;
-  grpc_event event;
-
-  int fd = -1;
-
-  grpc_metadata_array_init(&metadata);
-  grpc_metadata_array_init(&trailing_metadata);
-  grpc_metadata_array_init(&recv_metadata);
-  grpc_metadata_array_init(&recv_trailing_metadata);
-  memset(ops, 0, sizeof(ops));
-
-  bool expect_send_initial_metadata = false;
-
-  for (ArrayIter iter(actions); iter; ++iter) {
-    Variant key = iter.first();
-    if (!key.isInteger()) {
-      SystemLib::throwInvalidArgumentExceptionObject("batch keys must be integers");
-      goto cleanup;
+    if (actions.size() > OpsManaged::s_MaxActions)
+    {
+        std::stringstream oSS;
+        oSS << "actions array must not be longer than " << OpsManaged::s_MaxActions << " operations" << std::endl;
+        SystemLib::throwInvalidArgumentExceptionObject(oSS.str());
     }
 
-    int index = key.toInt32();
+    // clear any existing ops data
+    static thread_local std::array<grpc_op, OpsManaged::s_MaxActions> ops;
+    std::memset(ops.data(), 0, sizeof(grpc_op) * OpsManaged::s_MaxActions);
 
-    Variant value = iter.second();
+    CallData* const pCallData{ Native::data<CallData>(this_) };
+    pCallData->setOpsManaged(std::unique_ptr<OpsManaged>(new OpsManaged));
+    OpsManaged& opsManaged{ pCallData->opsManaged() };
 
-    switch(index) {
-      case GRPC_OP_SEND_INITIAL_METADATA:
-        if (!value.isArray()) {
-          SystemLib::throwInvalidArgumentExceptionObject("Expected an array value for the metadata");
-          goto cleanup;
-        }
-
-        if (!hhvm_create_metadata_array(value.toArray(), &metadata)) {
-          SystemLib::throwInvalidArgumentExceptionObject("Bad metadata value given");
-          goto cleanup;
-        }
-
-        ops[op_num].data.send_initial_metadata.count = metadata.count;
-        ops[op_num].data.send_initial_metadata.metadata = metadata.metadata;
-        expect_send_initial_metadata = true;
-        break;
-      case GRPC_OP_SEND_MESSAGE:
+    size_t op_num{ 0 };
+    bool sending_initial_metadata{ false };
+    for (ArrayIter iter(actions); iter && (op_num < OpsManaged::s_MaxActions); ++iter, ++op_num)
+    {
+        Variant key{ iter.first() };
+        Variant value{ iter.second() };
+        if (key.isNull() || !key.isInteger())
         {
-          if (!value.isArray()) {
-            SystemLib::throwInvalidArgumentExceptionObject("Expected an array for send message");
-            goto cleanup;
-          }
-
-          auto messageArr = value.toArray();
-          if (messageArr.exists(String("flags"), true)) {
-            auto messageFlags = messageArr[String("flags")];
-            if (!messageFlags.isInteger()) {
-              SystemLib::throwInvalidArgumentExceptionObject("Expected an int for message flags");
-              goto cleanup;
-            }
-            ops[op_num].flags = messageFlags.toInt32() & GRPC_WRITE_USED_MASK;
-          }
-
-          if (messageArr.exists(String("message"), true)) {
-            auto messageValue = messageArr[String("message")];
-            if (!messageValue.isString()) {
-              SystemLib::throwInvalidArgumentExceptionObject("Expected a string for send message");
-              goto cleanup;
-            }
-            String messageValueString = messageValue.toString();
-            ops[op_num].data.send_message.send_message = string_to_byte_buffer(messageValueString.c_str(),
-                                                              messageValueString.size());
-          }
+            SystemLib::throwInvalidArgumentExceptionObject("batch keys must be integers");
         }
-        break;
-      case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
-        break;
-      case GRPC_OP_SEND_STATUS_FROM_SERVER:
+
+        int32_t index{ key.toInt32() };
+        ops[op_num].flags = 0;
+        switch(index)
         {
-          if (!value.isArray()) {
-            SystemLib::throwInvalidArgumentExceptionObject("Expected an array for server status");
-            goto cleanup;
-          }
-
-          auto statusArr = value.toArray();
-          if (statusArr.exists(String("metadata"), true)) {
-            auto innerMetadata = statusArr[String("metadata")];
-            if (!innerMetadata.isArray()) {
-              SystemLib::throwInvalidArgumentExceptionObject("Expected an array for server status metadata value");
-              goto cleanup;
+        case GRPC_OP_SEND_INITIAL_METADATA:
+        {
+            if (value.isNull() || !value.isArray())
+            {
+                SystemLib::throwInvalidArgumentExceptionObject("Expected an array value for the metadata");
             }
 
-            if (!hhvm_create_metadata_array(innerMetadata.toArray(), &trailing_metadata)) {
-              SystemLib::throwInvalidArgumentExceptionObject("Bad trailing metadata value given");
-              goto cleanup;
+            if (!OpsManaged::s_Send_metadata.init(value.toArray()))
+            {
+                SystemLib::throwInvalidArgumentExceptionObject("Bad metadata value given");
             }
 
-            ops[op_num].data.send_status_from_server.trailing_metadata =
-                trailing_metadata.metadata;
-            ops[op_num].data.send_status_from_server.trailing_metadata_count =
-                trailing_metadata.count;
-          }
-
-          if (!statusArr.exists(String("code"), true)) {
-            SystemLib::throwInvalidArgumentExceptionObject("Integer status code is required");
-          }
-
-          auto innerCode = statusArr[String("code")];
-
-          if (!innerCode.isInteger()) {
-            SystemLib::throwInvalidArgumentExceptionObject("Status code must be an integer");
-            goto cleanup;
-          }
-
-          ops[op_num].data.send_status_from_server.status = (grpc_status_code)innerCode.toInt32();
-
-          if (!statusArr.exists(String("details"), true)) {
-            SystemLib::throwInvalidArgumentExceptionObject("String status details is required");
-            goto cleanup;
-          }
-
-          auto innerDetails = statusArr[String("details")];
-          if (!innerDetails.isString()) {
-            SystemLib::throwInvalidArgumentExceptionObject("Status details must be a string");
-            goto cleanup;
-          }
-
-          send_status_details = grpc_slice_from_copied_string(innerDetails.toString().c_str());
-          ops[op_num].data.send_status_from_server.status_details = &send_status_details;
+            ops[op_num].data.send_initial_metadata.count = opsManaged.send_metadata_ref.size();
+            ops[op_num].data.send_initial_metadata.metadata = opsManaged.send_metadata_ref.data();
+            sending_initial_metadata = true;
+            break;
         }
-        break;
-      case GRPC_OP_RECV_INITIAL_METADATA:
-        ops[op_num].data.recv_initial_metadata.recv_initial_metadata = &recv_metadata;
-        break;
-      case GRPC_OP_RECV_MESSAGE:
-        ops[op_num].data.recv_message.recv_message = &message;
-        break;
-      case GRPC_OP_RECV_STATUS_ON_CLIENT:
-        ops[op_num].data.recv_status_on_client.trailing_metadata = &recv_trailing_metadata;
-        ops[op_num].data.recv_status_on_client.status = &status;
-        ops[op_num].data.recv_status_on_client.status_details = &recv_status_details;
-        break;
-      case GRPC_OP_RECV_CLOSE_ON_SERVER:
-        ops[op_num].data.recv_close_on_server.cancelled = &cancelled;
-        break;
-      default:
-        SystemLib::throwInvalidArgumentExceptionObject("Unrecognized key in batch");
-        goto cleanup;
+        case GRPC_OP_SEND_MESSAGE:
+        {
+            if (value.isNull() || !value.isArray())
+            {
+                SystemLib::throwInvalidArgumentExceptionObject("Expected an array for send message");
+            }
+
+            Array messageArr{ value.toArray() };
+            if (messageArr.exists(String{ "flags" }, true))
+            {
+                Variant messageFlags{ messageArr[String{ "flags" }] };
+                if (messageFlags.isNull() || !messageFlags.isInteger())
+                {
+                    SystemLib::throwInvalidArgumentExceptionObject("Expected an int for message flags");
+                }
+                ops[op_num].flags = messageFlags.toInt32() & GRPC_WRITE_USED_MASK;
+            }
+
+            if (messageArr.exists(String{ "message" }, true))
+            {
+                Variant messageValue{ messageArr[String{ "message" }] };
+                if (messageValue.isNull() || !messageValue.isString())
+                {
+                    SystemLib::throwInvalidArgumentExceptionObject("Expected a string for send message");
+                }
+                // convert string to byte buffer and store message in managed data
+                String messageValueString{ messageValue.toString() };
+                const Slice send_message{ messageValueString };
+                opsManaged.send_messages[op_num] = send_message.byteBuffer();
+                ops[op_num].data.send_message.send_message = opsManaged.send_messages[op_num];
+            }
+            break;
+        }
+        case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+            break;
+        case GRPC_OP_SEND_STATUS_FROM_SERVER:
+        {
+            if (value.isNull() || !value.isArray())
+            {
+                SystemLib::throwInvalidArgumentExceptionObject("Expected an array for server status");
+            }
+
+            Array statusArr{ value.toArray() };
+            if (statusArr.exists(String{ "metadata" }, true))
+            {
+                Variant innerMetadata{ statusArr[String{ "metadata" }] };
+                if (innerMetadata.isNull() || !innerMetadata.isArray())
+                {
+                    SystemLib::throwInvalidArgumentExceptionObject("Expected an array for server status metadata value");
+                }
+
+                if (!OpsManaged::s_Send_trailing_metadata.init(innerMetadata.toArray()))
+                {
+                    SystemLib::throwInvalidArgumentExceptionObject("Bad trailing metadata value given");
+                }
+
+                ops[op_num].data.send_status_from_server.trailing_metadata_count = opsManaged.send_trailing_metadata_ref.size();
+                ops[op_num].data.send_status_from_server.trailing_metadata = opsManaged.send_trailing_metadata_ref.data();
+            }
+
+            if (!statusArr.exists(String{ "code" }, true))
+            {
+                SystemLib::throwInvalidArgumentExceptionObject("Integer status code is required");
+            }
+
+            Variant innerCode{ statusArr[String{ "code" }] };
+            if (innerCode.isNull() || !innerCode.isInteger())
+            {
+                SystemLib::throwInvalidArgumentExceptionObject("Status code must be an integer");
+            }
+            ops[op_num].data.send_status_from_server.status = static_cast<grpc_status_code>(innerCode.toInt32());
+
+            if (!statusArr.exists(String{ "details" }, true))
+            {
+                SystemLib::throwInvalidArgumentExceptionObject("String status details is required");
+            }
+
+            Variant innerDetails{ statusArr[String{ "details" }] };
+            if (innerDetails.isNull() || !innerDetails.isString())
+            {
+                SystemLib::throwInvalidArgumentExceptionObject("Status details must be a string");
+            }
+
+            Slice innerDetailsSlice{ innerDetails.toString() };
+            opsManaged.send_status_details = std::move(innerDetailsSlice);
+            ops[op_num].data.send_status_from_server.status_details = &opsManaged.send_status_details.slice();
+            break;
+        }
+        case GRPC_OP_RECV_INITIAL_METADATA:
+            ops[op_num].data.recv_initial_metadata.recv_initial_metadata = &opsManaged.recv_metadata.array();
+            break;
+        case GRPC_OP_RECV_MESSAGE:
+            ops[op_num].data.recv_message.recv_message = &opsManaged.recv_messages[op_num];
+            break;
+        case GRPC_OP_RECV_STATUS_ON_CLIENT:
+            ops[op_num].data.recv_status_on_client.trailing_metadata = &opsManaged.recv_trailing_metadata.array();
+            ops[op_num].data.recv_status_on_client.status = &opsManaged.status;
+            ops[op_num].data.recv_status_on_client.status_details = &opsManaged.recv_status_details.slice();
+            break;
+        case GRPC_OP_RECV_CLOSE_ON_SERVER:
+            ops[op_num].data.recv_close_on_server.cancelled = &opsManaged.cancelled;
+            break;
+        default:
+            SystemLib::throwInvalidArgumentExceptionObject("Unrecognized key in batch");
+        }
+
+        ops[op_num].op = static_cast<grpc_op_type>(index);
+        ops[op_num].reserved = nullptr;
     }
 
-    ops[op_num].op = (grpc_op_type)index;
-    ops[op_num].flags = 0;
-    ops[op_num].reserved = NULL;
-    op_num++;
-  }
+    // set up the crendential promise for the call credentials set up with this call for
+    // the plugin_get_metadata routine
+    bool credentialedCall{ sending_initial_metadata && pCallData->credentialed() };
+    if (credentialedCall)
+    {
+        PluginMetadataInfo& pluginMetadataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
+        PluginMetadataInfo::MetaDataInfo metaDataInfo{ pCallData->sharedPromise(),
+                                                       pCallData->sharedMutex(),
+                                                       pCallData->sharedCancelled(),
+                                                       std::this_thread::get_id() };
+        pluginMetadataInfo.setInfo(pCallData->callCredentials(), std::move(metaDataInfo));
+    }
 
-  if (expect_send_initial_metadata == true) {
-    // We do this above grpc_call_start_batch because it can also sometimes execute the callback
-    // from within itself and we need to have the fd setup by that point
-    fd = eventfd(0, EFD_CLOEXEC|EFD_NONBLOCK);
-    PluginGetMetadataFd::tl_obj.get()->setFd(fd);
-  }
+    bool callFailed{ false };
+    grpc_status_code failCode{ GRPC_STATUS_OK };
+    auto callFailure = [&callFailed, &credentialedCall, &opsManaged, pCallData](void)
+    {
+        // clean up any meta data info
+        if (credentialedCall)
+        {
+            PluginMetadataInfo& pluginMetadataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
+            pluginMetadataInfo.deleteInfo(pCallData->callCredentials());
+        }
+        {
+            // set call cancelled shared flag
+            std::lock_guard<std::mutex> lock{ pCallData->metadataMutex() };
+            pCallData->callCancelled()=true;
+        }
+        // cancel the call with the server
+        grpc_call_cancel_with_status(pCallData->call(), GRPC_STATUS_DEADLINE_EXCEEDED,
+                                     "RPC Call Timeout Exceeded", nullptr);
+        callFailed = true;
+    };
 
-  {
-    Lock l1(s_grpc_call_start_batch_mutex);
-    error = grpc_call_start_batch(callData->getWrapped(), ops, op_num, callData->getWrapped(), NULL);
-  }
+    static std::mutex s_StartBatchMutex;
+    {
+        std::unique_lock<std::mutex> lock{ s_StartBatchMutex };
+        grpc_call_error errorCode{ grpc_call_start_batch(pCallData->call(), ops.data(),
+                                                         op_num, pCallData->call(), nullptr) };
 
-  if (error != GRPC_CALL_OK) {
-    SystemLib::throwInvalidArgumentExceptionObject(folly::sformat("start_batch was called incorrectly: {}", (int)error));
-    goto cleanup;
-  }
+        if (errorCode != GRPC_CALL_OK)
+        {
+            lock.unlock();
+            callFailure();
+            std::stringstream oSS;
+            oSS << "start_batch was called incorrectly: " << errorCode << std::endl;
+            SystemLib::throwBadMethodCallExceptionObject(oSS.str());
+        }
+    }
 
-  if (expect_send_initial_metadata == true) {
+    grpc_event event (grpc_completion_queue_next(pCallData->queue()->queue(),
+                                                 gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN),
+                                                 nullptr));
+    if (event.type != GRPC_OP_COMPLETE || event.tag != pCallData->call())
+    {
+        // failed so clean up and return empty object
+        callFailure();
+        failCode = GRPC_STATUS_DEADLINE_EXCEEDED;
+    }
+
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
     // has it's own thread and you cannot run application code on a single request in more than
     // one thread. However gRPC calls call_credentials.cpp:plugin_get_metadata in a different thread
     // in many cases and that violates the thread safety within a request in HHVM and causes segfaults
-    // at any reasonable concurrency. Our workaround here is to pass in a file descriptor that can be
-    // used by the concurrent thread to send back the parameters to this main thread so we can execute
-    // it here.
-
-    cq_pluck_async_params *cq_pluck_params;
-    cq_pluck_params = (cq_pluck_async_params *)gpr_zalloc(sizeof(cq_pluck_async_params));
-    cq_pluck_params->cq = CompletionQueue::tl_obj.get()->getQueue();
-    cq_pluck_params->tag = callData->getWrapped();
-    cq_pluck_params->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
-    cq_pluck_params->reserved = nullptr;
-    cq_pluck_params->fd = fd;
-
-    pthread_t cq_pluck_thread_id;
-    pthread_create(&cq_pluck_thread_id, NULL, cq_pluck_async, (void *)cq_pluck_params);
-
-    // Block, wait for signal from callback
-    struct pollfd fds[] = {
-        { fd, POLLIN },
-    };
-    int r = poll(fds, 1, callData->getTimeout()); // Timeout after N seconds as defined by the application
-    if (r > 0) {
-      plugin_get_metadata_params *params;
-      int numBytes = read(fd, &params, sizeof(plugin_get_metadata_params *));
-      PluginGetMetadataFd::tl_obj.get()->setFd(-1);
-
-      if (numBytes > 0 && params != nullptr) {
-        plugin_do_get_metadata(params->ptr, params->context, params->cb, params->user_data);
-        gpr_free(params);
-      }
-    }
-    pthread_join(cq_pluck_thread_id, (void **)&event_ptr);
-    event = *event_ptr;
-  } else {
-    event = grpc_completion_queue_pluck(CompletionQueue::tl_obj.get()->getQueue(), callData->getWrapped(),
-                                        gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-  }
-
-  // An error occured if success = 0
-  if (event.success == 0) {
-    SystemLib::throwInvalidArgumentExceptionObject(folly::sformat("There was a problem with the request. Event error code: {}", (int)event.type));
-    goto cleanup;
-  }
-
-  for (int i = 0; i < op_num; i++) {
-    switch(ops[i].op) {
-      case GRPC_OP_SEND_INITIAL_METADATA:
-        resultObj.o_set("send_metadata", Variant(true));
-        break;
-      case GRPC_OP_SEND_MESSAGE:
-        resultObj.o_set("send_message", Variant(true));
-        break;
-      case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
-        resultObj.o_set("send_close", Variant(true));
-        break;
-      case GRPC_OP_SEND_STATUS_FROM_SERVER:
-        resultObj.o_set("send_status", Variant(true));
-        break;
-      case GRPC_OP_RECV_INITIAL_METADATA:
-        resultObj.o_set("metadata", grpc_parse_metadata_array(&recv_metadata));
-        break;
-      case GRPC_OP_RECV_MESSAGE:
-        char *message_str;
-        size_t message_len;
-        byte_buffer_to_string(message, &message_str, &message_len);
-        if (message_str == NULL) {
-          resultObj.o_set("message", Variant());
-        } else {
-          resultObj.o_set("message", Variant(String(message_str, message_len, CopyString)));
-        }
-        req::free(message_str);
-        break;
-      case GRPC_OP_RECV_STATUS_ON_CLIENT:
+    // at any reasonable concurrency.
+    if (credentialedCall && !callFailed)
+    {
+        // wait on the plugin_get_metadata to complete
+        auto getPluginMetadataFuture = pCallData->metadataPromise().get_future();
+        std::future_status status{ getPluginMetadataFuture.wait_for(std::chrono::milliseconds{ pCallData->getTimeout() }) };
+        if (status == std::future_status::timeout)
         {
-          auto recvStatusObj = SystemLib::AllocStdClassObject();
-          recvStatusObj.o_set("metadata", grpc_parse_metadata_array(&recv_trailing_metadata));
-          recvStatusObj.o_set("code", Variant((int64_t)status));
-          char *status_details_text = grpc_slice_to_c_string(recv_status_details);
-          recvStatusObj.o_set("details", Variant(String(status_details_text, CopyString)));
-          gpr_free(status_details_text);
-          resultObj.o_set("status", Variant(recvStatusObj));
+            // failed so clean up and return empty object
+            callFailure();
+            failCode = GRPC_STATUS_UNAUTHENTICATED;
         }
-        break;
-      case GRPC_OP_RECV_CLOSE_ON_SERVER:
-        resultObj.o_set("cancelled", (bool)cancelled);
-        break;
-      default:
-        break;
+        else
+        {
+            plugin_get_metadata_params metaDataParams{ getPluginMetadataFuture.get() };
+            if (!metaDataParams.completed)
+            {
+                // call the plugin in this thread if it wasn't completed already
+                plugin_do_get_metadata(metaDataParams.ptr, metaDataParams.context,
+                                       metaDataParams.cb, metaDataParams.user_data);
+            }
+        }
     }
-  }
 
-  cleanup:
-    if (fd != -1) {
-      close(fd);
+    // process results of call
+    for (size_t i{ 0 }; i < op_num; ++i)
+    {
+        switch(ops[i].op)
+        {
+        case GRPC_OP_SEND_INITIAL_METADATA:
+            resultObj.o_set("send_metadata", Variant{ true });
+            break;
+        case GRPC_OP_SEND_MESSAGE:
+            resultObj.o_set("send_message", Variant{ true });
+            break;
+        case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+            resultObj.o_set("send_close", Variant{ true });
+            break;
+        case GRPC_OP_SEND_STATUS_FROM_SERVER:
+            resultObj.o_set("send_status", Variant{ true });
+            break;
+        case GRPC_OP_RECV_INITIAL_METADATA:
+            resultObj.o_set("metadata", opsManaged.recv_metadata.phpData());
+            break;
+        case GRPC_OP_RECV_MESSAGE:
+        {
+            // TODO: Modify this for multiple receive messages most likely an array assoicated with "message"
+            if (!opsManaged.recv_messages[i] || callFailed)
+            {
+                resultObj.o_set("message", Variant());
+            }
+            else
+            {
+                Slice slice{ opsManaged.recv_messages[i] };
+                resultObj.o_set("message",
+                                Variant{ String{ reinterpret_cast<const char*>(slice.data()),
+                                                 slice.length(), CopyString } });
+            }
+            break;
+        }
+        case GRPC_OP_RECV_STATUS_ON_CLIENT:
+        {
+            Object recvStatusObj{ SystemLib::AllocStdClassObject() };
+            if (callFailed)
+            {
+                recvStatusObj.o_set("metadata", Variant{});
+                recvStatusObj.o_set("code", Variant{ static_cast<int64_t>(failCode) });
+                recvStatusObj.o_set("details",Variant{ String{ "Error occured" } });
+                resultObj.o_set("status", std::move(Variant{ recvStatusObj }));
+            }
+            else
+            {
+                recvStatusObj.o_set("metadata", opsManaged.recv_trailing_metadata.phpData());
+                recvStatusObj.o_set("code", Variant{ static_cast<int64_t>(opsManaged.status) });
+                recvStatusObj.o_set("details",
+                                    Variant{ String{ reinterpret_cast<const char*>(opsManaged.recv_status_details.data()),
+                                                     opsManaged.recv_status_details.length(), CopyString } });
+                resultObj.o_set("status", std::move(Variant{ recvStatusObj }));
+            }
+            break;
+        }
+        case GRPC_OP_RECV_CLOSE_ON_SERVER:
+            resultObj.o_set("cancelled", callFailed ? true : (opsManaged.cancelled != 0));
+            break;
+        default:
+            break;
+        }
     }
-    if (event_ptr != nullptr) {
-      gpr_free(event_ptr);
-    }
-    for (int i = 0; i < metadata.count; i++) {
-      grpc_slice_unref(metadata.metadata[i].key);
-      grpc_slice_unref(metadata.metadata[i].value);
-    }
-    grpc_metadata_array_destroy(&metadata);
-    for (int i = 0; i < trailing_metadata.count; i++) {
-      grpc_slice_unref(trailing_metadata.metadata[i].key);
-      grpc_slice_unref(trailing_metadata.metadata[i].value);
-    }
-    grpc_metadata_array_destroy(&trailing_metadata);
-    grpc_metadata_array_destroy(&recv_metadata);
-    grpc_metadata_array_destroy(&recv_trailing_metadata);
-    grpc_slice_unref(recv_status_details);
-    grpc_slice_unref(send_status_details);
-    for (int i = 0; i < op_num; i++) {
-      if (ops[i].op == GRPC_OP_SEND_MESSAGE) {
-        grpc_byte_buffer_destroy(ops[i].data.send_message.send_message);
-      }
-      if (ops[i].op == GRPC_OP_RECV_MESSAGE) {
-        grpc_byte_buffer_destroy(message);
-      }
-    }
+
     return resultObj;
 }
 
-void *cq_pluck_async(void *params_ptr) {
-  cq_pluck_async_params *params = (cq_pluck_async_params *)params_ptr;
-  grpc_event event;
-  grpc_event *event_copy = (grpc_event *)gpr_zalloc(sizeof(grpc_event));
+String HHVM_METHOD(Call, getPeer)
+{
+    HHVM_TRACE_SCOPE("Call getPeer") // Degug Trace
 
-
-  // This doesn't need a lock b/c we use a completion queue per HHVM request thread
-  event = grpc_completion_queue_pluck(params->cq, params->tag, params->deadline, params->reserved);
-
-  // An error occured if success = 0
-  if (event.success == 0) {
-    // If there was an error then our callback wouldn't have been called but the main
-    // thread is still blocking on the read, so we need to unblock it somehow. We do
-    // this by writing nullptr to the fd which is then handled on the other side.
-    write(params->fd, nullptr, sizeof(plugin_get_metadata_params *));
-  }
-
-  *event_copy = event;
-
-  return (void *)event_copy;
+    CallData* const pCallData{ Native::data<CallData>(this_) };
+    return String{ grpc_call_get_peer(pCallData->call()), CopyString };
 }
 
+void HHVM_METHOD(Call, cancel)
+{
+    HHVM_TRACE_SCOPE("Call cancel") // Degug Trace
 
-String HHVM_METHOD(Call, getPeer) {
-  auto callData = Native::data<CallData>(this_);
-  return String(grpc_call_get_peer(callData->getWrapped()), CopyString);
-}
-
-void HHVM_METHOD(Call, cancel) {
-  auto callData = Native::data<CallData>(this_);
-  grpc_call_cancel(callData->getWrapped(), NULL);
+    CallData* const pCallData{ Native::data<CallData>(this_) };
+    grpc_call_cancel(pCallData->call(), nullptr);
 }
 
 int64_t HHVM_METHOD(Call, setCredentials,
-  const Object& creds_obj) {
-  auto callCredentialsData = Native::data<CallCredentialsData>(creds_obj);
-  auto callData = Native::data<CallData>(this_);
+                    const Object& creds_obj)
+{
+    HHVM_TRACE_SCOPE("Call setCredentials") // Degug Trace
 
-  grpc_call_error error = GRPC_CALL_ERROR;
-  error = grpc_call_set_credentials(callData->getWrapped(), callCredentialsData->getWrapped());
+    CallData* const pCallData{ Native::data<CallData>(this_) };
+    CallCredentialsData* const pCallCredentialsData{ Native::data<CallCredentialsData>(creds_obj) };
 
-  return (int64_t)error;
-}
+    grpc_call_error error{ grpc_call_set_credentials(pCallData->call(),
+                                                     pCallCredentialsData->credentials()) };
 
-/* Creates and returns a PHP array object with the data in a
- * grpc_metadata_array. Returns NULL on failure */
-Variant grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
-  char *str_key;
-  char *str_val;
-  size_t key_len;
+    pCallData->setCallCredentials((error == GRPC_CALL_OK) ? pCallCredentialsData : nullptr);
 
-  int count = metadata_array->count;
-  grpc_metadata *elements = metadata_array->metadata;
-
-  auto array = Array::Create();
-
-  grpc_metadata *elem;
-  for (int i = 0; i < count; i++) {
-    elem = &elements[i];
-
-    key_len = GRPC_SLICE_LENGTH(elem->key);
-    #if HHVM_VERSION_MAJOR >= 3 && HHVM_VERSION_MINOR >= 19
-    str_key = (char *) req::calloc_untyped(key_len + 1, sizeof(char));
-    #else
-    str_key = (char *) req::calloc(key_len + 1, sizeof(char));
-    #endif
-    memcpy(str_key, GRPC_SLICE_START_PTR(elem->key), key_len);
-
-    #if HHVM_VERSION_MAJOR >= 3 && HHVM_VERSION_MINOR >= 19
-    str_val = (char *) req::calloc_untyped(GRPC_SLICE_LENGTH(elem->value) + 1, sizeof(char));
-    #else
-    str_val = (char *) req::calloc(GRPC_SLICE_LENGTH(elem->value) + 1, sizeof(char));
-    #endif
-    memcpy(str_val, GRPC_SLICE_START_PTR(elem->value), GRPC_SLICE_LENGTH(elem->value));
-
-    auto key = String(str_key, key_len, CopyString);
-    auto val = String(str_val, GRPC_SLICE_LENGTH(elem->value), CopyString);
-
-    req::free(str_key);
-    req::free(str_val);
-
-    if (!array.exists(key, true)) {
-      array.set(key, Array::Create(), true);
-    }
-
-    Variant current = array[key];
-    if (!current.isArray()) {
-      SystemLib::throwInvalidArgumentExceptionObject("Metadata hash somehow contains wrong types.");
-      return Variant();
-    }
-
-    Array currArray = current.toArray();
-
-    currArray.append(Variant(val));
-  }
-
-  return Variant(array);
-}
-
-/* Populates a grpc_metadata_array with the data in a PHP array object.
-   Returns true on success and false on failure */
-bool hhvm_create_metadata_array(const Array& array, grpc_metadata_array *metadata) {
-  // Must call grpc_metadata_array_init(&metadata); before calling this function
-
-  for (ArrayIter iter(array); iter; ++iter) {
-    Variant key = iter.first();
-    if (!key.isString() || key.isNull()) {
-      return false;
-    }
-
-    Variant value = iter.second();
-    if (!value.isArray()) {
-      return false;
-    }
-
-    metadata->capacity += value.toArray().size();
-  }
-
-  metadata->metadata = (grpc_metadata *)gpr_malloc(metadata->capacity * sizeof(grpc_metadata));
-
-  for (ArrayIter iter(array); iter; ++iter) {
-    Variant key = iter.first();
-    if (!key.isString()) {
-      return false;
-    }
-
-    if (!grpc_header_key_is_legal(grpc_slice_from_static_string(key.toString().c_str()))) {
-      return false;
-    }
-
-    Variant value = iter.second();
-    if (!value.isArray()) {
-      return false;
-    }
-
-    Array innerArray = value.toArray();
-    for (ArrayIter iter2(innerArray); iter2; ++iter2) {
-      Variant key2 = iter2.first();
-      Variant value2 = iter2.second();
-      if (!value2.isString()) {
-        return false;
-      }
-
-      String value2String = value2.toString();
-
-      metadata->metadata[metadata->count].key = grpc_slice_from_copied_string(key.toString().c_str());
-      metadata->metadata[metadata->count].value = grpc_slice_from_copied_buffer(value2String.c_str(), value2String.length());
-      metadata->count += 1;
-    }
-  }
-
-  return true;
+    return static_cast<int64_t>(error);
 }
 
 } // namespace HPHP

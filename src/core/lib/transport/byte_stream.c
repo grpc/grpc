@@ -56,7 +56,8 @@ static bool slice_buffer_stream_next(grpc_exec_ctx *exec_ctx,
                                      size_t max_size_hint,
                                      grpc_closure *on_complete) {
   grpc_slice_buffer_stream *stream = (grpc_slice_buffer_stream *)byte_stream;
-  GPR_ASSERT(stream->cursor < stream->backing_buffer->count);
+  if (stream->backing_buffer->count > 0)
+      GPR_ASSERT(stream->cursor < stream->backing_buffer->count);
   return true;
 }
 
@@ -67,10 +68,13 @@ static grpc_error *slice_buffer_stream_pull(grpc_exec_ctx *exec_ctx,
   if (stream->shutdown_error != GRPC_ERROR_NONE) {
     return GRPC_ERROR_REF(stream->shutdown_error);
   }
-  GPR_ASSERT(stream->cursor < stream->backing_buffer->count);
-  *slice =
-      grpc_slice_ref_internal(stream->backing_buffer->slices[stream->cursor]);
-  stream->cursor++;
+  if (stream->backing_buffer->count > 0)
+  {
+    GPR_ASSERT(stream->cursor < stream->backing_buffer->count);
+    *slice =
+        grpc_slice_ref_internal(stream->backing_buffer->slices[stream->cursor]);
+    stream->cursor++;
+  }
   return GRPC_ERROR_NONE;
 }
 

@@ -19,23 +19,42 @@
 #ifndef NET_GRPC_HHVM_GRPC_COMMON_H_
 #define NET_GRPC_HHVM_GRPC_COMMON_H_
 
+#include <cstdint>
+#include <iostream>
+#include <iomanip>
+#include <string>
+
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
 
 #include "hphp/runtime/ext/extension.h"
 
-namespace HPHP {
+class TraceScope
+{
+public:
+    TraceScope(const std::string& message, const std::string& function, const std::string& file) :
+        m_Message{ message}, m_Function{ function }, m_File{ file }
+    {
+        std::cout << __TIME__ << " - " << m_Message << " - Entry " << m_Function << ' '
+                  << m_File << std::endl;
+    }
+    ~TraceScope(void)
+    {
+        std::cout << __TIME__ << " - " << m_Message << " - Exit  " << m_Function << ' '
+                  << m_File << std::endl;
+    }
+    std::string m_Message;
+    std::string m_Function;
+    std::string m_File;
+};
 
-#define IMPLEMENT_GET_CLASS(cls) \
-  Class* cls::getClass() { \
-    if (s_class == nullptr) { \
-        s_class = Unit::lookupClass(s_className.get()); \
-        assert(s_class); \
-    } \
-    return s_class; \
-  }
+//#define HHVM_TRACE_DEBUG
 
-}
+#ifdef HHVM_TRACE_DEBUG
+    #define HHVM_TRACE_SCOPE(x) TraceScope traceScope{ x, __func__, __FILE__ };
+#else
+    #define HHVM_TRACE_SCOPE(x)
+#endif // HHVM_TRACE_DEBUG
 
 #endif /* NET_GRPC_HHVM_GRPC_COMMON_H_ */

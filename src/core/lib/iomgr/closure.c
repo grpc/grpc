@@ -167,7 +167,7 @@ void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *c,
   GPR_TIMER_BEGIN("grpc_closure_sched", 0);
   if (c != NULL) {
 #ifndef NDEBUG
-    GPR_ASSERT(!c->scheduled);
+    GPR_ASSERT(!(c->scheduled));
     c->scheduled = true;
     c->file_initiated = file;
     c->line_initiated = line;

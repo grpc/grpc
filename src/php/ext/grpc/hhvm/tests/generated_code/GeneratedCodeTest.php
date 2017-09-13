@@ -1,3 +1,4 @@
+<?php
 /*
  *
  * Copyright 2015 gRPC authors.
@@ -15,15 +16,20 @@
  * limitations under the License.
  *
  */
+require_once dirname(__FILE__).'/AbstractGeneratedCodeTest.php';
 
-#ifndef NET_GRPC_HHVM_GRPC_BYTE_BUFFER_H_
-#define NET_GRPC_HHVM_GRPC_BYTE_BUFFER_H_
+class GeneratedCodeTest extends AbstractGeneratedCodeTest
+{
+    public function setUp()
+    {
+        self::$client = new Math\MathClient(
+            getenv('GRPC_TEST_HOST'), [
+                'credentials' => Grpc\ChannelCredentials::createInsecure(),
+            ]);
+    }
 
-#include <grpc/grpc.h>
-
-grpc_byte_buffer *string_to_byte_buffer(const char *string, size_t length);
-
-void byte_buffer_to_string(grpc_byte_buffer *buffer, char **out_string,
-                           size_t *out_length);
-
-#endif /* NET_GRPC_HHVM_GRPC_BYTE_BUFFER_H_ */
+    public function tearDown()
+    {
+        self::$client->close();
+    }
+}

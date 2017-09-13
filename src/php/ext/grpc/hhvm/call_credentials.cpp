@@ -17,59 +17,147 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+    #include "config.h"
 #endif
 
 #include "call_credentials.h"
+#include "call.h"
 #include "channel_credentials.h"
 #include "common.h"
-#include "call.h"
 
-#include "hphp/runtime/ext/extension.h"
-#include "hphp/runtime/base/req-containers.h"
-#include "hphp/runtime/base/type-resource.h"
-#include "hphp/runtime/base/object-data.h"
-#include "hphp/runtime/vm/native-data.h"
-#include "hphp/runtime/base/builtin-functions.h"
 #include "hphp/runtime/base/array-init.h"
-#include "hphp/util/process.h"
+#include "hphp/runtime/base/builtin-functions.h"
+#include "hphp/runtime/vm/native-data.h"
 
-#include <sys/eventfd.h>
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
+#include "grpc/support/alloc.h"
 
 namespace HPHP {
 
-Class* CallCredentialsData::s_class = nullptr;
-const StaticString CallCredentialsData::s_className("Grpc\\CallCredentials");
+/*****************************************************************************/
+/*                       Crendentials Plugin Functions                       */
+/*****************************************************************************/
 
-IMPLEMENT_GET_CLASS(CallCredentialsData);
+typedef struct plugin_state
+{
+    Variant callback;
+    CallCredentialsData* pCallCredentials;
+} plugin_state;
 
-CallCredentialsData::CallCredentialsData() {}
-CallCredentialsData::~CallCredentialsData() { sweep(); }
+// forward declarations
+void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
+                         grpc_credentials_plugin_metadata_cb cb,
+                         void *user_data);
+void plugin_destroy_state(void *ptr);
 
-void CallCredentialsData::init(grpc_call_credentials* call_credentials) {
-  wrapped = call_credentials;
+PluginMetadataInfo::~PluginMetadataInfo(void)
+{
+    std::lock_guard<std::mutex> lock{ m_Lock };
+    m_MetaDataMap.clear();
 }
 
-void CallCredentialsData::sweep() {
-  if (wrapped) {
-    grpc_call_credentials_release(wrapped);
-    wrapped = nullptr;
-  }
+PluginMetadataInfo& PluginMetadataInfo::getPluginMetadataInfo(void)
+{
+    static PluginMetadataInfo s_PluginMetadataInfo;
+    return s_PluginMetadataInfo;
 }
 
-grpc_call_credentials* CallCredentialsData::getWrapped() {
-  return wrapped;
+void PluginMetadataInfo::setInfo(CallCredentialsData* const pCallCredentials,
+                                 MetaDataInfo&& metaDataInfo)
+{
+    std::lock_guard<std::mutex> lock{ m_Lock };
+    auto itrPair = m_MetaDataMap.emplace(pCallCredentials, std::move(metaDataInfo));
+    if (!itrPair.second)
+    {
+        // call credentials exist already so update
+        // TODO:  The second entry may need to be a vector if we have multiple
+        // stacked but current thinking is this can't happen
+        itrPair.first->second = std::move(metaDataInfo);
+    }
 }
 
-IMPLEMENT_THREAD_LOCAL(PluginGetMetadataFd, PluginGetMetadataFd::tl_obj);
+typename PluginMetadataInfo::MetaDataInfo
+PluginMetadataInfo::getInfo(CallCredentialsData* const pCallCredentials)
+{
+    MetaDataInfo metaDataInfo{};
+    {
+        std::lock_guard<std::mutex> lock{ m_Lock };
+        auto itrFind = m_MetaDataMap.find(pCallCredentials);
+        if (itrFind != m_MetaDataMap.cend())
+        {
+            // get the metadata info
+            metaDataInfo = std::move(itrFind->second);
 
-PluginGetMetadataFd::PluginGetMetadataFd() {}
-void PluginGetMetadataFd::setFd(int fd_) { fd = fd_; }
-int PluginGetMetadataFd::getFd() { return fd; }
+            // erase the entry
+            m_MetaDataMap.erase(itrFind);
+        }
+    }
+    return metaDataInfo;
+}
+
+bool PluginMetadataInfo::deleteInfo(CallCredentialsData* const pCallCredentials)
+{
+    std::lock_guard<std::mutex> lock{ m_Lock };
+    auto itrFind = m_MetaDataMap.find(pCallCredentials);
+    if (itrFind != m_MetaDataMap.cend())
+    {
+        // erase the entry
+        m_MetaDataMap.erase(itrFind);
+        return true;
+    }
+    else
+    {
+        // does not exist
+        return false;
+    }
+}
+
+/*****************************************************************************/
+/*                           Call Credentials Data                           */
+/*****************************************************************************/
+
+Class* CallCredentialsData::s_pClass{ nullptr };
+const StaticString CallCredentialsData::s_ClassName{ "Grpc\\CallCredentials" };
+
+Class* const CallCredentialsData::getClass(void)
+{
+    if (!s_pClass)
+    {
+        s_pClass = Unit::lookupClass(s_ClassName.get());
+        assert(s_pClass);
+    }
+    return s_pClass;
+}
+
+CallCredentialsData::CallCredentialsData(void) : m_pCallCredentials{ nullptr }
+{
+}
+
+CallCredentialsData::~CallCredentialsData(void)
+{
+    destroy();
+}
+
+void CallCredentialsData::init(grpc_call_credentials* const pCallCredentials)
+{
+    // destroy any existing call credetials
+    destroy();
+
+    // take ownership of new call credentials
+    m_pCallCredentials = pCallCredentials;
+}
+
+void CallCredentialsData::destroy(void)
+{
+    if (m_pCallCredentials)
+    {
+        grpc_call_credentials_release(m_pCallCredentials);
+        m_pCallCredentials = nullptr;
+    }
+}
+
+/*****************************************************************************/
+/*                        HHVM Call Credentials Methods                      */
+/*****************************************************************************/
 
 /**
  * Create composite credentials from two existing credentials.
@@ -78,21 +166,29 @@ int PluginGetMetadataFd::getFd() { return fd; }
  * @return CallCredentials The new composite credentials object
  */
 Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
-  const Object& cred1_obj,
-  const Object& cred2_obj) {
-  auto callCredentialsData1 = Native::data<CallCredentialsData>(cred1_obj);
-  auto callCredentialsData2 = Native::data<CallCredentialsData>(cred2_obj);
+                          const Object& cred1_obj,
+                          const Object& cred2_obj)
+{
+    HHVM_TRACE_SCOPE("CallCredentials createComposite") // Degug Trace
 
-  grpc_call_credentials *call_credentials =
-        grpc_composite_call_credentials_create(callCredentialsData1->getWrapped(),
-                                               callCredentialsData2->getWrapped(),
-                                               NULL);
+    CallCredentialsData* const pCallCredentialsData1{ Native::data<CallCredentialsData>(cred1_obj) };
+    CallCredentialsData* const pCallCredentialsData2{ Native::data<CallCredentialsData>(cred2_obj) };
 
-  auto newCallCredentialsObj = Object{CallCredentialsData::getClass()};
-  auto newCallCredentialsData = Native::data<CallCredentialsData>(newCallCredentialsObj);
-  newCallCredentialsData->init(call_credentials);
+    grpc_call_credentials* const pCallCredentials{
+        grpc_composite_call_credentials_create(pCallCredentialsData1->credentials(),
+                                               pCallCredentialsData2->credentials(),
+                                               nullptr) };
 
-  return newCallCredentialsObj;
+    if (!pCallCredentials)
+    {
+        SystemLib::throwBadMethodCallExceptionObject("Failed to create call credentials composite");
+    }
+
+    Object newCallCredentialsObj{ CallCredentialsData::getClass() };
+    CallCredentialsData* const pNewCallCredentialsData{ Native::data<CallCredentialsData>(newCallCredentialsObj)};
+    pNewCallCredentialsData->init(pCallCredentials);
+
+    return newCallCredentialsObj;
 }
 
 /**
@@ -101,84 +197,132 @@ Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
  * @return CallCredentials The new call credentials object
  */
 Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
-  const Variant& callback) {
+                          const Variant& callback)
+{
+    HHVM_TRACE_SCOPE("CallCredentials createFromPlugin") // Degug Trace
 
-  if (!is_callable(callback)) {
-    throw_invalid_argument("Callback argument is not a valid callback");
-  }
+    if (callback.isNull() || !is_callable(callback))
+    {
+        SystemLib::throwInvalidArgumentExceptionObject("Callback argument is not a valid callback");
+    }
 
-  plugin_state *state;
-  state = (plugin_state *)gpr_zalloc(sizeof(plugin_state));
-  state->callback = callback;
-  state->fd_obj = PluginGetMetadataFd::tl_obj.get();
+    Object newCallCredentialsObj{ CallCredentialsData::getClass() };
+    CallCredentialsData* const pNewCallCredentialsData{ Native::data<CallCredentialsData>(newCallCredentialsObj) };
 
-  grpc_metadata_credentials_plugin plugin;
-  plugin.get_metadata = plugin_get_metadata;
-  plugin.destroy = plugin_destroy_state;
-  plugin.state = (void *)state;
-  plugin.type = "";
+    plugin_state *pState{ reinterpret_cast<plugin_state*>(gpr_zalloc(sizeof(plugin_state))) };
+    pState->callback = callback;
+    pState->pCallCredentials = pNewCallCredentialsData;
 
-  auto newCallCredentialsObj = Object{CallCredentialsData::getClass()};
-  auto newCallCredentialsData = Native::data<CallCredentialsData>(newCallCredentialsObj);
-  newCallCredentialsData->init(grpc_metadata_credentials_create_from_plugin(plugin, NULL));
+    grpc_metadata_credentials_plugin plugin;
+    plugin.get_metadata = plugin_get_metadata;
+    plugin.destroy = plugin_destroy_state;
+    plugin.state = reinterpret_cast<void *>(pState);
+    plugin.type = "";
 
-  return newCallCredentialsObj;
+    grpc_call_credentials* pCallCredentials{ grpc_metadata_credentials_create_from_plugin(plugin, nullptr) };
+
+    if (!pCallCredentials)
+    {
+        SystemLib::throwBadMethodCallExceptionObject("failed to create call credntials plugin");
+    }
+    pNewCallCredentialsData->init(pCallCredentials);
+
+    return newCallCredentialsObj;
 }
 
-// This work done in this function MUST be done on the same thread as the HHVM request
+/*****************************************************************************/
+/*                       Crendentials Plugin Functions                       */
+/*****************************************************************************/
+
+// This work done in this function MUST be done on the same thread as the HHVM call request
 void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
-                             grpc_credentials_plugin_metadata_cb cb,
-                             void *user_data) {
-  Object returnObj = SystemLib::AllocStdClassObject();
-  returnObj.o_set("service_url", String(context.service_url, CopyString));
-  returnObj.o_set("method_name", String(context.method_name, CopyString));
+                            grpc_credentials_plugin_metadata_cb cb,
+                            void *user_data)
+{
+    HHVM_TRACE_SCOPE("CallCredentials plugin_do_get_metadata") // Degug Trace
 
-  plugin_state *state = (plugin_state *)ptr;
+    Object returnObj{ SystemLib::AllocStdClassObject() };
+    returnObj.o_set("service_url", String(context.service_url, CopyString));
+    returnObj.o_set("method_name", String(context.method_name, CopyString));
 
-  Variant retval = vm_call_user_func(state->callback, make_packed_array(returnObj));
-  if (!retval.isArray()) {
-    throw_invalid_argument("Callback return value expected an array.");
-    return;
-  }
+    plugin_state* const pState{ reinterpret_cast<plugin_state *>(ptr) };
 
-  grpc_status_code code = GRPC_STATUS_OK;
+    Variant retVal{ vm_call_user_func(pState->callback, make_packed_array(returnObj)) };
+    if (!retVal.isArray())
+    {
+        SystemLib::throwInvalidArgumentExceptionObject("Callback return value expected an array.");
+    }
 
-  grpc_metadata_array metadata;
-  grpc_metadata_array_init(&metadata);
+    grpc_status_code code{ GRPC_STATUS_OK };
+    MetadataArray metadata{ true };
+    if (!metadata.init(retVal.toArray()))
+    {
+        code = GRPC_STATUS_INVALID_ARGUMENT;
+    }
 
-  if (!hhvm_create_metadata_array(retval.toArray(), &metadata)) {
-    code = GRPC_STATUS_INVALID_ARGUMENT;
-  }
-
-  /* Pass control back to core */
-  cb(user_data, metadata.metadata, metadata.count, code, NULL);
-
-  for (int i = 0; i < metadata.count; i++) {
-    grpc_slice_unref(metadata.metadata[i].key);
-    grpc_slice_unref(metadata.metadata[i].value);
-  }
-  grpc_metadata_array_destroy(&metadata);
+    // Pass control back to core
+    cb(user_data, metadata.data(), metadata.size(), code, nullptr);
 }
 
 void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
                          grpc_credentials_plugin_metadata_cb cb,
-                         void *user_data) {
-  plugin_state *state = (plugin_state *)ptr;
-  PluginGetMetadataFd *fd_obj = state->fd_obj;
+                         void *user_data)
+{
+    HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata") // Degug Trace
 
-  plugin_get_metadata_params *params = (plugin_get_metadata_params *)gpr_zalloc(sizeof(plugin_get_metadata_params));
-  params->ptr = ptr;
-  params->context = context;
-  params->cb = cb;
-  params->user_data = user_data;
+    plugin_state *pState{ reinterpret_cast<plugin_state *>(ptr) };
+    CallCredentialsData* const pCallCrendentials{ pState->pCallCredentials };
 
-  write(fd_obj->getFd(), &params, sizeof(plugin_get_metadata_params *));
+    PluginMetadataInfo& pluginMetaDataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
+    PluginMetadataInfo::MetaDataInfo metaDataInfo{ pluginMetaDataInfo.getInfo(pCallCrendentials) };
+
+    MetadataPromise* const pMetaDataPromise{ metaDataInfo.metadataPromise() };
+    if (!pMetaDataPromise)
+    {
+        // failed to get promise associated with call credentials.  This can happen if the call timed
+        // out and the metadata was erased before this function was invoked
+        return;
+    }
+
+    std::mutex& metaDataMutex{ *(metaDataInfo.metadataMutex()) };
+    const bool& callCancelled{ *(metaDataInfo.callCancelled()) };
+    const std::thread::id& callThreadId{ metaDataInfo.threadId() };
+    if (callThreadId == std::this_thread::get_id())
+    {
+        HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata same thread") // Degug Trace
+        {
+            // check if call cancelled from timeout before performing callback function
+            std::lock_guard<std::mutex> lock{ metaDataMutex };
+            if (!callCancelled)
+            {
+                plugin_do_get_metadata(ptr, context, cb, user_data);
+                plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data,
+                                                   true };
+                pMetaDataPromise->set_value(std::move(params));
+            }
+            else
+            {
+                // call was cancelled
+                return;
+            }
+        }
+    }
+    else
+    {
+        HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata different thread") // Degug Trace
+        plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data };
+
+        // return the meta data params in the promise
+        pMetaDataPromise->set_value(std::move(params));
+    }
 }
 
+void plugin_destroy_state(void *ptr)
+{
+    HHVM_TRACE_SCOPE("CallCredentials plugin_destroy_state") // Degug Trace
 
-void plugin_destroy_state(void *ptr) {
-  plugin_state *state = (plugin_state *)ptr;
-  gpr_free(state);
+    plugin_state* const pState{ reinterpret_cast<plugin_state *>(ptr) };
+    if (pState) gpr_free(pState);
 }
 
 } // namespace HPHP
