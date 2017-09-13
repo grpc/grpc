@@ -355,8 +355,11 @@ typedef enum grpc_call_error {
 /** Force compression to be disabled for a particular write
     (start_write/add_metadata). Illegal on invoke/accept. */
 #define GRPC_WRITE_NO_COMPRESS (0x00000002u)
+/** Force this message to be written to the socket before completing it */
+#define GRPC_WRITE_THROUGH (0x00000004u)
 /** Mask of all valid flags. */
-#define GRPC_WRITE_USED_MASK (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS)
+#define GRPC_WRITE_USED_MASK \
+  (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS | GRPC_WRITE_THROUGH)
 
 /** Initial metadata flags */
 /** Signal that the call is idempotent */
@@ -377,7 +380,7 @@ typedef enum grpc_call_error {
    GRPC_INITIAL_METADATA_WAIT_FOR_READY |                \
    GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |             \
    GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET | \
-   GRPC_INITIAL_METADATA_CORKED)
+   GRPC_INITIAL_METADATA_CORKED | GRPC_WRITE_THROUGH)
 
 /** A single metadata element */
 typedef struct grpc_metadata {
@@ -505,8 +508,17 @@ typedef struct grpc_op {
         uint8_t is_set;
         grpc_compression_level level;
       } maybe_compression_level;
+      struct grpc_op_send_initial_metadata_maybe_stream_compression_level {
+        uint8_t is_set;
+        grpc_stream_compression_level level;
+      } maybe_stream_compression_level;
     } send_initial_metadata;
     struct grpc_op_send_message {
+      /** This op takes ownership of the slices in send_message.  After
+       * a call completes, the contents of send_message are not guaranteed
+       * and likely empty.  The original owner should still call
+       * grpc_byte_buffer_destroy() on this object however.
+       */
       struct grpc_byte_buffer *send_message;
     } send_message;
     struct grpc_op_send_status_from_server {

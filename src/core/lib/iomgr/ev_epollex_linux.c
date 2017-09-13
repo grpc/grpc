@@ -37,6 +37,7 @@
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/is_epollexclusive_available.h"
@@ -49,7 +50,7 @@
 #include "src/core/lib/support/spinlock.h"
 
 /*******************************************************************************
- * Pollset-set sibling link
+ * Polling object
  */
 
 typedef enum {
@@ -96,12 +97,12 @@ static void pg_join(grpc_exec_ctx *exec_ctx, polling_group *pg,
  * pollable Declarations
  */
 
-typedef struct pollable {
+typedef struct pollable_t {
   polling_obj po;
   int epfd;
   grpc_wakeup_fd wakeup;
   grpc_pollset_worker *root_worker;
-} pollable;
+} pollable_t;
 
 static const char *polling_obj_type_string(polling_obj_type t) {
   switch (t) {
@@ -121,7 +122,7 @@ static const char *polling_obj_type_string(polling_obj_type t) {
   return "<invalid>";
 }
 
-static char *pollable_desc(pollable *p) {
+static char *pollable_desc(pollable_t *p) {
   char *out;
   gpr_asprintf(&out, "type=%s group=%p epfd=%d wakeup=%d",
                polling_obj_type_string(p->po.type), p->po.group, p->epfd,
@@ -129,19 +130,19 @@ static char *pollable_desc(pollable *p) {
   return out;
 }
 
-static pollable g_empty_pollable;
+static pollable_t g_empty_pollable;
 
-static void pollable_init(pollable *p, polling_obj_type type);
-static void pollable_destroy(pollable *p);
+static void pollable_init(pollable_t *p, polling_obj_type type);
+static void pollable_destroy(pollable_t *p);
 /* ensure that p->epfd, p->wakeup are initialized; p->po.mu must be held */
-static grpc_error *pollable_materialize(pollable *p);
+static grpc_error *pollable_materialize(pollable_t *p);
 
 /*******************************************************************************
  * Fd Declarations
  */
 
 struct grpc_fd {
-  pollable pollable;
+  pollable_t pollable;
   int fd;
   /* refst format:
        bit 0    : 1=Active / 0=Orphaned
@@ -192,15 +193,15 @@ struct grpc_pollset_worker {
   pollset_worker_link links[POLLSET_WORKER_LINK_COUNT];
   gpr_cv cv;
   grpc_pollset *pollset;
-  pollable *pollable;
+  pollable_t *pollable;
 };
 
 #define MAX_EPOLL_EVENTS 100
 #define MAX_EPOLL_EVENTS_HANDLED_EACH_POLL_CALL 5
 
 struct grpc_pollset {
-  pollable pollable;
-  pollable *current_pollable;
+  pollable_t pollable;
+  pollable_t *current_pollable;
   int kick_alls_pending;
   bool kicked_without_poller;
   grpc_closure *shutdown_closure;
@@ -278,7 +279,7 @@ static void ref_by(grpc_fd *fd, int n) {
 }
 
 static void fd_destroy(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  grpc_fd *fd = arg;
+  grpc_fd *fd = (grpc_fd *)arg;
   /* Add the fd to the freelist */
   grpc_iomgr_unregister_object(&fd->iomgr_object);
   pollable_destroy(&fd->pollable);
@@ -339,7 +340,7 @@ static grpc_fd *fd_create(int fd, const char *name) {
   gpr_mu_unlock(&fd_freelist_mu);
 
   if (new_fd == NULL) {
-    new_fd = gpr_malloc(sizeof(grpc_fd));
+    new_fd = (grpc_fd *)gpr_malloc(sizeof(grpc_fd));
   }
 
   pollable_init(&new_fd->pollable, PO_FD);
@@ -450,13 +451,13 @@ static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
  * Pollable Definitions
  */
 
-static void pollable_init(pollable *p, polling_obj_type type) {
+static void pollable_init(pollable_t *p, polling_obj_type type) {
   po_init(&p->po, type);
   p->root_worker = NULL;
   p->epfd = -1;
 }
 
-static void pollable_destroy(pollable *p) {
+static void pollable_destroy(pollable_t *p) {
   po_destroy(&p->po);
   if (p->epfd != -1) {
     close(p->epfd);
@@ -465,7 +466,7 @@ static void pollable_destroy(pollable *p) {
 }
 
 /* ensure that p->epfd, p->wakeup are initialized; p->po.mu must be held */
-static grpc_error *pollable_materialize(pollable *p) {
+static grpc_error *pollable_materialize(pollable_t *p) {
   if (p->epfd == -1) {
     int new_epfd = epoll_create1(EPOLL_CLOEXEC);
     if (new_epfd < 0) {
@@ -491,7 +492,7 @@ static grpc_error *pollable_materialize(pollable *p) {
 }
 
 /* pollable must be materialized */
-static grpc_error *pollable_add_fd(pollable *p, grpc_fd *fd) {
+static grpc_error *pollable_add_fd(pollable_t *p, grpc_fd *fd) {
   grpc_error *error = GRPC_ERROR_NONE;
   static const char *err_desc = "pollable_add_fd";
   const int epfd = p->epfd;
@@ -555,7 +556,7 @@ static void pollset_maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
 static void do_kick_all(grpc_exec_ctx *exec_ctx, void *arg,
                         grpc_error *error_unused) {
   grpc_error *error = GRPC_ERROR_NONE;
-  grpc_pollset *pollset = arg;
+  grpc_pollset *pollset = (grpc_pollset *)arg;
   gpr_mu_lock(&pollset->pollable.po.mu);
   if (pollset->root_worker != NULL) {
     grpc_pollset_worker *worker = pollset->root_worker;
@@ -598,7 +599,7 @@ static void pollset_kick_all(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
                      GRPC_ERROR_NONE);
 }
 
-static grpc_error *pollset_kick_inner(grpc_pollset *pollset, pollable *p,
+static grpc_error *pollset_kick_inner(grpc_pollset *pollset, pollable_t *p,
                                       grpc_pollset_worker *specific_worker) {
   if (GRPC_TRACER_ON(grpc_polling_trace)) {
     gpr_log(GPR_DEBUG,
@@ -663,7 +664,7 @@ static grpc_error *pollset_kick_inner(grpc_pollset *pollset, pollable *p,
 /* p->po.mu must be held before calling this function */
 static grpc_error *pollset_kick(grpc_pollset *pollset,
                                 grpc_pollset_worker *specific_worker) {
-  pollable *p = pollset->current_pollable;
+  pollable_t *p = pollset->current_pollable;
   if (p != &pollset->pollable) {
     gpr_mu_lock(&p->po.mu);
   }
@@ -743,7 +744,7 @@ static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   pollset_maybe_finish_shutdown(exec_ctx, pollset);
 }
 
-static bool pollset_is_pollable_fd(grpc_pollset *pollset, pollable *p) {
+static bool pollset_is_pollable_fd(grpc_pollset *pollset, pollable_t *p) {
   return p != &g_empty_pollable && p != &pollset->pollable;
 }
 
@@ -761,8 +762,9 @@ static grpc_error *pollset_process_events(grpc_exec_ctx *exec_ctx,
       if (GRPC_TRACER_ON(grpc_polling_trace)) {
         gpr_log(GPR_DEBUG, "PS:%p got pollset_wakeup %p", pollset, data_ptr);
       }
-      append_error(&error, grpc_wakeup_fd_consume_wakeup(
-                               (void *)((~(intptr_t)1) & (intptr_t)data_ptr)),
+      append_error(&error,
+                   grpc_wakeup_fd_consume_wakeup(
+                       (grpc_wakeup_fd *)((~(intptr_t)1) & (intptr_t)data_ptr)),
                    err_desc);
     } else {
       grpc_fd *fd = (grpc_fd *)data_ptr;
@@ -799,7 +801,7 @@ static void pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
 }
 
 static grpc_error *pollset_epoll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                                 pollable *p, gpr_timespec now,
+                                 pollable_t *p, gpr_timespec now,
                                  gpr_timespec deadline) {
   int timeout = poll_deadline_to_millis_timeout(deadline, now);
 
@@ -814,6 +816,7 @@ static grpc_error *pollset_epoll(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   }
   int r;
   do {
+    GRPC_STATS_INC_SYSCALL_POLL(exec_ctx);
     r = epoll_wait(p->epfd, pollset->events, MAX_EPOLL_EVENTS, timeout);
   } while (r < 0 && errno == EINTR);
   if (timeout != 0) {
@@ -1010,7 +1013,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
 static void unref_fd_no_longer_poller(grpc_exec_ctx *exec_ctx, void *arg,
                                       grpc_error *error) {
-  grpc_fd *fd = arg;
+  grpc_fd *fd = (grpc_fd *)arg;
   UNREF_BY(exec_ctx, fd, 2, "pollset_pollable");
 }
 
@@ -1026,7 +1029,7 @@ static grpc_error *pollset_add_fd_locked(grpc_exec_ctx *exec_ctx,
               "PS:%p add fd %p; transition pollable from empty to fd", pollset,
               fd);
     }
-    /* empty pollable --> single fd pollable */
+    /* empty pollable --> single fd pollable_t */
     pollset_kick_all(exec_ctx, pollset);
     pollset->current_pollable = &fd->pollable;
     if (!fd_locked) gpr_mu_lock(&fd->pollable.po.mu);
@@ -1079,7 +1082,7 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
  */
 
 static grpc_pollset_set *pollset_set_create(void) {
-  grpc_pollset_set *pss = gpr_zalloc(sizeof(*pss));
+  grpc_pollset_set *pss = (grpc_pollset_set *)gpr_zalloc(sizeof(*pss));
   po_init(&pss->po, PO_POLLSET_SET);
   return pss;
 }
@@ -1241,7 +1244,7 @@ static void pg_broadcast(grpc_exec_ctx *exec_ctx, polling_group *from,
 static void pg_create(grpc_exec_ctx *exec_ctx, polling_obj **initial_po,
                       size_t initial_po_count) {
   /* assumes all polling objects in initial_po are locked */
-  polling_group *pg = gpr_malloc(sizeof(*pg));
+  polling_group *pg = (polling_group *)gpr_malloc(sizeof(*pg));
   po_init(&pg->po, PO_POLLING_GROUP);
   gpr_ref_init(&pg->refs, (int)initial_po_count);
   for (size_t i = 0; i < initial_po_count; i++) {
@@ -1351,7 +1354,7 @@ static void pg_merge(grpc_exec_ctx *exec_ctx, polling_group *a,
     gpr_mu_lock(&po->mu);
     if (unref_count == unref_cap) {
       unref_cap = GPR_MAX(8, 3 * unref_cap / 2);
-      unref = gpr_realloc(unref, unref_cap * sizeof(*unref));
+      unref = (polling_group **)gpr_realloc(unref, unref_cap * sizeof(*unref));
     }
     unref[unref_count++] = po->group;
     po->group = pg_ref(a);

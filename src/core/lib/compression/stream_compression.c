@@ -159,7 +159,8 @@ bool grpc_stream_decompress(grpc_stream_compression_context *ctx,
 grpc_stream_compression_context *grpc_stream_compression_context_create(
     grpc_stream_compression_method method) {
   grpc_stream_compression_context *ctx =
-      gpr_zalloc(sizeof(grpc_stream_compression_context));
+      (grpc_stream_compression_context *)gpr_zalloc(
+          sizeof(grpc_stream_compression_context));
   int r;
   if (ctx == NULL) {
     return NULL;

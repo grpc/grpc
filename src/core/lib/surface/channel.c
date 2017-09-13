@@ -142,6 +142,16 @@ grpc_channel *grpc_channel_create_with_builder(
                                      GRPC_COMPRESS_LEVEL_NONE,
                                      GRPC_COMPRESS_LEVEL_COUNT - 1});
     } else if (0 == strcmp(args->args[i].key,
+                           GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_LEVEL)) {
+      channel->compression_options.default_stream_compression_level.is_set =
+          true;
+      channel->compression_options.default_stream_compression_level.level =
+          (grpc_stream_compression_level)grpc_channel_arg_get_integer(
+              &args->args[i],
+              (grpc_integer_options){GRPC_STREAM_COMPRESS_LEVEL_NONE,
+                                     GRPC_STREAM_COMPRESS_LEVEL_NONE,
+                                     GRPC_STREAM_COMPRESS_LEVEL_COUNT - 1});
+    } else if (0 == strcmp(args->args[i].key,
                            GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM)) {
       channel->compression_options.default_algorithm.is_set = true;
       channel->compression_options.default_algorithm.algorithm =
@@ -149,10 +159,29 @@ grpc_channel *grpc_channel_create_with_builder(
               &args->args[i],
               (grpc_integer_options){GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,
                                      GRPC_COMPRESS_ALGORITHMS_COUNT - 1});
+    } else if (0 == strcmp(args->args[i].key,
+                           GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM)) {
+      channel->compression_options.default_stream_compression_algorithm.is_set =
+          true;
+      channel->compression_options.default_stream_compression_algorithm
+          .algorithm =
+          (grpc_stream_compression_algorithm)grpc_channel_arg_get_integer(
+              &args->args[i],
+              (grpc_integer_options){
+                  GRPC_STREAM_COMPRESS_NONE, GRPC_STREAM_COMPRESS_NONE,
+                  GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT - 1});
     } else if (0 ==
                strcmp(args->args[i].key,
                       GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET)) {
       channel->compression_options.enabled_algorithms_bitset =
+          (uint32_t)args->args[i].value.integer |
+          0x1; /* always support no compression */
+    } else if (0 ==
+               strcmp(
+                   args->args[i].key,
+                   GRPC_STREAM_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET)) {
+      channel->compression_options
+          .enabled_stream_compression_algorithms_bitset =
           (uint32_t)args->args[i].value.integer |
           0x1; /* always support no compression */
     }
@@ -298,7 +327,7 @@ grpc_call *grpc_channel_create_pollset_set_call(
 
 void *grpc_channel_register_call(grpc_channel *channel, const char *method,
                                  const char *host, void *reserved) {
-  registered_call *rc = gpr_malloc(sizeof(registered_call));
+  registered_call *rc = (registered_call *)gpr_malloc(sizeof(registered_call));
   GRPC_API_TRACE(
       "grpc_channel_register_call(channel=%p, method=%s, host=%s, reserved=%p)",
       4, (channel, method, host, reserved));
@@ -325,7 +354,7 @@ grpc_call *grpc_channel_create_registered_call(
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
     grpc_completion_queue *completion_queue, void *registered_call_handle,
     gpr_timespec deadline, void *reserved) {
-  registered_call *rc = registered_call_handle;
+  registered_call *rc = (registered_call *)registered_call_handle;
   GRPC_API_TRACE(
       "grpc_channel_create_registered_call("
       "channel=%p, parent_call=%p, propagation_mask=%x, completion_queue=%p, "
@@ -363,7 +392,7 @@ void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx,
 
 static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_error *error) {
-  grpc_channel *channel = arg;
+  grpc_channel *channel = (grpc_channel *)arg;
   grpc_channel_stack_destroy(exec_ctx, CHANNEL_STACK_FROM_CHANNEL(channel));
   while (channel->registered_calls) {
     registered_call *rc = channel->registered_calls;

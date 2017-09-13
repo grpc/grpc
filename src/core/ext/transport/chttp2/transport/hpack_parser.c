@@ -1284,7 +1284,7 @@ static void append_bytes(grpc_chttp2_hpack_parser_string *str,
     GPR_ASSERT(str->data.copied.length + length <= UINT32_MAX);
     str->data.copied.capacity = (uint32_t)(str->data.copied.length + length);
     str->data.copied.str =
-        gpr_realloc(str->data.copied.str, str->data.copied.capacity);
+        (char *)gpr_realloc(str->data.copied.str, str->data.copied.capacity);
   }
   memcpy(str->data.copied.str + str->data.copied.length, data, length);
   GPR_ASSERT(length <= UINT32_MAX - str->data.copied.length);
@@ -1643,7 +1643,7 @@ static const maybe_complete_func_type maybe_complete_funcs[] = {
 
 static void force_client_rst_stream(grpc_exec_ctx *exec_ctx, void *sp,
                                     grpc_error *error) {
-  grpc_chttp2_stream *s = sp;
+  grpc_chttp2_stream *s = (grpc_chttp2_stream *)sp;
   grpc_chttp2_transport *t = s->t;
   if (!s->write_closed) {
     grpc_slice_buffer_add(
@@ -1655,12 +1655,30 @@ static void force_client_rst_stream(grpc_exec_ctx *exec_ctx, void *sp,
   GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "final_rst");
 }
 
+static void parse_stream_compression_md(grpc_exec_ctx *exec_ctx,
+                                        grpc_chttp2_transport *t,
+                                        grpc_chttp2_stream *s,
+                                        grpc_metadata_batch *initial_metadata) {
+  if (initial_metadata->idx.named.content_encoding != NULL) {
+    grpc_slice content_encoding =
+        GRPC_MDVALUE(initial_metadata->idx.named.content_encoding->md);
+    if (!grpc_slice_eq(content_encoding, GRPC_MDSTR_IDENTITY)) {
+      if (grpc_slice_eq(content_encoding, GRPC_MDSTR_GZIP)) {
+        s->stream_compression_recv_enabled = true;
+        s->decompressed_data_buffer =
+            (grpc_slice_buffer *)gpr_malloc(sizeof(grpc_slice_buffer));
+        grpc_slice_buffer_init(s->decompressed_data_buffer);
+      }
+    }
+  }
+}
+
 grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
                                             void *hpack_parser,
                                             grpc_chttp2_transport *t,
                                             grpc_chttp2_stream *s,
                                             grpc_slice slice, int is_last) {
-  grpc_chttp2_hpack_parser *parser = hpack_parser;
+  grpc_chttp2_hpack_parser *parser = (grpc_chttp2_hpack_parser *)hpack_parser;
   GPR_TIMER_BEGIN("grpc_chttp2_hpack_parser_parse", 0);
   if (s != NULL) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
@@ -1681,8 +1699,15 @@ grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
     if (s != NULL) {
       if (parser->is_boundary) {
         if (s->header_frames_received == GPR_ARRAY_SIZE(s->metadata_buffer)) {
+          GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Too many trailer frames");
+        }
+        /* Process stream compression md element if it exists */
+        if (s->header_frames_received ==
+            0) { /* Only acts on initial metadata */
+          parse_stream_compression_md(exec_ctx, t, s,
+                                      &s->metadata_buffer[0].batch);
         }
         s->published_metadata[s->header_frames_received] =
             GRPC_METADATA_PUBLISHED_FROM_WIRE;

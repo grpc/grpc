@@ -173,7 +173,7 @@ void grpc_chttp2_hptbl_init(grpc_exec_ctx *exec_ctx, grpc_chttp2_hptbl *tbl) {
       GRPC_CHTTP2_INITIAL_HPACK_TABLE_SIZE;
   tbl->max_entries = tbl->cap_entries =
       entries_for_bytes(tbl->current_table_bytes);
-  tbl->ents = gpr_malloc(sizeof(*tbl->ents) * tbl->cap_entries);
+  tbl->ents = (grpc_mdelem *)gpr_malloc(sizeof(*tbl->ents) * tbl->cap_entries);
   memset(tbl->ents, 0, sizeof(*tbl->ents) * tbl->cap_entries);
   for (i = 1; i <= GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
     tbl->static_ents[i - 1] = grpc_mdelem_from_slices(
@@ -228,7 +228,7 @@ static void evict1(grpc_exec_ctx *exec_ctx, grpc_chttp2_hptbl *tbl) {
 }
 
 static void rebuild_ents(grpc_chttp2_hptbl *tbl, uint32_t new_cap) {
-  grpc_mdelem *ents = gpr_malloc(sizeof(*ents) * new_cap);
+  grpc_mdelem *ents = (grpc_mdelem *)gpr_malloc(sizeof(*ents) * new_cap);
   uint32_t i;
 
   for (i = 0; i < tbl->num_ents; i++) {

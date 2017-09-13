@@ -39,7 +39,7 @@ static void ping_destroy(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 static void ping_done(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  ping_result *pr = arg;
+  ping_result *pr = (ping_result *)arg;
   grpc_cq_end_op(exec_ctx, pr->cq, pr->tag, GRPC_ERROR_REF(error), ping_destroy,
                  pr, &pr->completion_storage);
 }
@@ -49,7 +49,7 @@ void grpc_channel_ping(grpc_channel *channel, grpc_completion_queue *cq,
   GRPC_API_TRACE("grpc_channel_ping(channel=%p, cq=%p, tag=%p, reserved=%p)", 4,
                  (channel, cq, tag, reserved));
   grpc_transport_op *op = grpc_make_transport_op(NULL);
-  ping_result *pr = gpr_malloc(sizeof(*pr));
+  ping_result *pr = (ping_result *)gpr_malloc(sizeof(*pr));
   grpc_channel_element *top_elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

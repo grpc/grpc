@@ -33,14 +33,17 @@ sys.path.append(gcp_utils_dir)
 import big_query_utils
 
 def print_table(table):
-    for i, (k, v) in enumerate(table.items()):
+    kokoro_base_url = 'https://kokoro.corp.google.com/job/'
+    for k, v in table.items():
       job_name = v[0]
       build_id = v[1]
       ts = int(float(v[2]))
       # TODO(dgq): timezone handling is wrong. We need to determine the timezone
       # of the computer running this script.
       human_ts = datetime.datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S PDT')
-      print("{}. Test: {}, Timestamp: {}, id: {}@{}\n".format(i, k, human_ts, job_name, build_id))
+      job_path = '{}/{}'.format('/job/'.join(job_name.split('/')), build_id)
+      full_kokoro_url = kokoro_base_url + job_path
+      print("Test: {}, Timestamp: {}, url: {}\n".format(k, human_ts, full_kokoro_url))
 
 
 def get_flaky_tests(days_lower_bound, days_upper_bound, limit=None):

@@ -18,6 +18,8 @@
 
 #include <grpc++/alarm.h>
 #include <grpc++/completion_queue.h>
+#include <thread>
+
 #include <gtest/gtest.h>
 
 #include "test/core/util/test_config.h"
@@ -26,6 +28,46 @@ namespace grpc {
 namespace {
 
 TEST(AlarmTest, RegularExpiry) {
+  CompletionQueue cq;
+  void* junk = reinterpret_cast<void*>(1618033);
+  Alarm alarm;
+  alarm.Set(&cq, grpc_timeout_seconds_to_deadline(1), junk);
+
+  void* output_tag;
+  bool ok;
+  const CompletionQueue::NextStatus status = cq.AsyncNext(
+      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
+
+  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(junk, output_tag);
+}
+
+TEST(AlarmTest, MultithreadedRegularExpiry) {
+  CompletionQueue cq;
+  void* junk = reinterpret_cast<void*>(1618033);
+  void* output_tag;
+  bool ok;
+  CompletionQueue::NextStatus status;
+  Alarm alarm;
+
+  std::thread t1([&alarm, &cq, &junk] {
+    alarm.Set(&cq, grpc_timeout_seconds_to_deadline(1), junk);
+  });
+
+  std::thread t2([&cq, &ok, &output_tag, &status] {
+    status = cq.AsyncNext((void**)&output_tag, &ok,
+                          grpc_timeout_seconds_to_deadline(2));
+  });
+
+  t1.join();
+  t2.join();
+  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(junk, output_tag);
+}
+
+TEST(AlarmTest, DeprecatedRegularExpiry) {
   CompletionQueue cq;
   void* junk = reinterpret_cast<void*>(1618033);
   Alarm alarm(&cq, grpc_timeout_seconds_to_deadline(1), junk);
@@ -43,7 +85,8 @@ TEST(AlarmTest, RegularExpiry) {
 TEST(AlarmTest, MoveConstructor) {
   CompletionQueue cq;
   void* junk = reinterpret_cast<void*>(1618033);
-  Alarm first(&cq, grpc_timeout_seconds_to_deadline(1), junk);
+  Alarm first;
+  first.Set(&cq, grpc_timeout_seconds_to_deadline(1), junk);
   Alarm second(std::move(first));
   void* output_tag;
   bool ok;
@@ -57,7 +100,8 @@ TEST(AlarmTest, MoveConstructor) {
 TEST(AlarmTest, MoveAssignment) {
   CompletionQueue cq;
   void* junk = reinterpret_cast<void*>(1618033);
-  Alarm first(&cq, grpc_timeout_seconds_to_deadline(1), junk);
+  Alarm first;
+  first.Set(&cq, grpc_timeout_seconds_to_deadline(1), junk);
   Alarm second(std::move(first));
   first = std::move(second);
 
@@ -76,7 +120,8 @@ TEST(AlarmTest, RegularExpiryChrono) {
   void* junk = reinterpret_cast<void*>(1618033);
   std::chrono::system_clock::time_point one_sec_deadline =
       std::chrono::system_clock::now() + std::chrono::seconds(1);
-  Alarm alarm(&cq, one_sec_deadline, junk);
+  Alarm alarm;
+  alarm.Set(&cq, one_sec_deadline, junk);
 
   void* output_tag;
   bool ok;
@@ -91,7 +136,8 @@ TEST(AlarmTest, RegularExpiryChrono) {
 TEST(AlarmTest, ZeroExpiry) {
   CompletionQueue cq;
   void* junk = reinterpret_cast<void*>(1618033);
-  Alarm alarm(&cq, grpc_timeout_seconds_to_deadline(0), junk);
+  Alarm alarm;
+  alarm.Set(&cq, grpc_timeout_seconds_to_deadline(0), junk);
 
   void* output_tag;
   bool ok;
@@ -106,7 +152,8 @@ TEST(AlarmTest, ZeroExpiry) {
 TEST(AlarmTest, NegativeExpiry) {
   CompletionQueue cq;
   void* junk = reinterpret_cast<void*>(1618033);
-  Alarm alarm(&cq, grpc_timeout_seconds_to_deadline(-1), junk);
+  Alarm alarm;
+  alarm.Set(&cq, grpc_timeout_seconds_to_deadline(-1), junk);
 
   void* output_tag;
   bool ok;
@@ -121,7 +168,8 @@ TEST(AlarmTest, NegativeExpiry) {
 TEST(AlarmTest, Cancellation) {
   CompletionQueue cq;
   void* junk = reinterpret_cast<void*>(1618033);
-  Alarm alarm(&cq, grpc_timeout_seconds_to_deadline(2), junk);
+  Alarm alarm;
+  alarm.Set(&cq, grpc_timeout_seconds_to_deadline(2), junk);
   alarm.Cancel();
 
   void* output_tag;

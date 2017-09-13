@@ -28,8 +28,7 @@ ulimit -n 10000
 ulimit -a
 
 # Add GCP credentials for BQ access
-# pip does not install google-api-python-client properly, so use easy_install
-sudo easy_install --upgrade google-api-python-client
+pip install google-api-python-client --user python
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
 
 # If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
@@ -39,34 +38,23 @@ if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ] && [ -n "$RUN_TESTS_FLAGS" ]; the
   export RUN_TESTS_FLAGS="$RUN_TESTS_FLAGS --filter_pr_tests --base_branch origin/$ghprbTargetBranch"
 fi
 
-# required to build protobuf
-brew install gflags
-
 set +ex  # rvm script is very verbose and exits with errorcode
 source $HOME/.rvm/scripts/rvm
 set -e  # rvm commands are very verbose
-rvm install ruby-2.4
+rvm use ruby-2.4
 rvm osx-ssl-certs status all
 rvm osx-ssl-certs update all
 set -ex
 
-gem install bundler
-
 # cocoapods
 export LANG=en_US.UTF-8
-gem install cocoapods
-gem install xcpretty
 pod repo update  # needed by python
 
 # python
 brew install coreutils  # we need grealpath
-sudo pip install virtualenv
-sudo pip install -U six tox setuptools
+pip install virtualenv --user python
+pip install -U six tox setuptools --user python
 export PYTHONPATH=/Library/Python/3.4/site-packages
-
-# python 3.4
-wget -q https://www.python.org/ftp/python/3.4.4/python-3.4.4-macosx10.6.pkg
-sudo installer -pkg python-3.4.4-macosx10.6.pkg -target /
 
 # set xcode version for Obj-C tests
 sudo xcode-select -switch /Applications/Xcode_8.2.1.app/Contents/Developer
