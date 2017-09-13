@@ -408,13 +408,21 @@ static double get_pid_controller_guess(grpc_chttp2_transport_flowctl* tfc,
 }
 
 // Take in a target and modifies it based on the memory pressure of the system
+// Behavior:
+// - no mem pressure -> set init window to max
+// - .2 - .9 mem pressure -> set init window to bdp * k. k ranges from 3 to 0
+// - over .9 mem pressure -> set init window to 0
 static double get_target_under_memory_pressure(
     grpc_chttp2_transport_flowctl* tfc, double target) {
   // do not increase window under heavy memory pressure.
   double memory_pressure = grpc_resource_quota_get_memory_pressure(
       grpc_resource_user_quota(grpc_endpoint_get_resource_user(tfc->t->ep)));
-  if (memory_pressure > 0.8) {
-    target *= 1 - GPR_MIN(1, (memory_pressure - 0.8) / 0.1);
+  if (memory_pressure < 0.2) {
+    target = (double)((1u << 31) - 1);
+  } else if (memory_pressure < 0.9) {
+    target *= 1 + ((0.9 - memory_pressure) * 5);
+  } else {
+    target = 0;
   }
   return target;
 }
@@ -481,9 +489,8 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_bdp_action(
   double bw_dbl = -1;
   if (grpc_bdp_estimator_get_bw(&tfc->bdp_estimator, &bw_dbl)) {
     // we target the max of BDP or bandwidth in microseconds.
-    int32_t frame_size = (int32_t)GPR_CLAMP(
-        GPR_MAX((int32_t)GPR_CLAMP(bw_dbl, 0, INT_MAX) / 1000, bdp), 16384,
-        16777215);
+    int32_t frame_size =
+        (int32_t)GPR_CLAMP((int32_t)(bdp / 3), 16384, 16777215);
     grpc_chttp2_flowctl_urgency frame_size_urgency = delta_is_significant(
         tfc, frame_size, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE);
     if (frame_size_urgency != GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED) {
