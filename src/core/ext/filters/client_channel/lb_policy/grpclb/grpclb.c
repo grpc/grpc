@@ -138,7 +138,7 @@ static grpc_error *initial_metadata_add_lb_token(
 }
 
 static void destroy_client_stats(void *arg) {
-  grpc_grpclb_client_stats_unref(arg);
+  grpc_grpclb_client_stats_unref((grpc_grpclb_client_stats *)arg);
 }
 
 typedef struct wrapped_rr_closure_arg {
@@ -286,7 +286,49 @@ static void add_pending_ping(pending_ping **root, grpc_closure *notify) {
  * glb_lb_policy
  */
 typedef struct rr_connectivity_data rr_connectivity_data;
-static const grpc_lb_policy_vtable glb_lb_policy_vtable;
+
+/* Forward declare functions referred in glb_lb_policy_vtable */
+static void glb_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol);
+static void glb_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol);
+static int glb_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                           const grpc_lb_policy_pick_args *pick_args,
+                           grpc_connected_subchannel **target,
+                           grpc_call_context_element *context, void **user_data,
+                           grpc_closure *on_complete);
+static void glb_cancel_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                                   grpc_connected_subchannel **target,
+                                   grpc_error *error);
+static void glb_cancel_picks_locked(grpc_exec_ctx *exec_ctx,
+                                    grpc_lb_policy *pol,
+                                    uint32_t initial_metadata_flags_mask,
+                                    uint32_t initial_metadata_flags_eq,
+                                    grpc_error *error);
+static void glb_ping_one_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                                grpc_closure *closure);
+static void glb_exit_idle_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol);
+static grpc_connectivity_state glb_check_connectivity_locked(
+    grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+    grpc_error **connectivity_error);
+static void glb_notify_on_state_change_locked(grpc_exec_ctx *exec_ctx,
+                                              grpc_lb_policy *pol,
+                                              grpc_connectivity_state *current,
+                                              grpc_closure *notify);
+static void glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+                              const grpc_lb_policy_args *args);
+
+/* Code wiring the policy with the rest of the core */
+static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
+    glb_destroy,
+    glb_shutdown_locked,
+    glb_pick_locked,
+    glb_cancel_pick_locked,
+    glb_cancel_picks_locked,
+    glb_ping_one_locked,
+    glb_exit_idle_locked,
+    glb_check_connectivity_locked,
+    glb_notify_on_state_change_locked,
+    glb_update_locked};
+
 typedef struct glb_lb_policy {
   /** base policy: must be first */
   grpc_lb_policy base;
@@ -783,7 +825,7 @@ static void create_rr_locked(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
   /* Allocate the data for the tracking of the new RR policy's connectivity.
    * It'll be deallocated in glb_rr_connectivity_changed() */
   rr_connectivity_data *rr_connectivity =
-      gpr_zalloc(sizeof(rr_connectivity_data));
+      (rr_connectivity_data *)gpr_zalloc(sizeof(rr_connectivity_data));
   GRPC_CLOSURE_INIT(&rr_connectivity->on_change,
                     glb_rr_connectivity_changed_locked, rr_connectivity,
                     grpc_combiner_scheduler(glb_policy->base.combiner));
@@ -923,7 +965,8 @@ static grpc_channel_args *build_lb_channel_args(
   grpc_lb_addresses *lb_addresses =
       grpc_lb_addresses_create(num_grpclb_addrs, NULL);
   grpc_slice_hash_table_entry *targets_info_entries =
-      gpr_zalloc(sizeof(*targets_info_entries) * num_grpclb_addrs);
+      (grpc_slice_hash_table_entry *)gpr_zalloc(sizeof(*targets_info_entries) *
+                                                num_grpclb_addrs);
 
   size_t lb_addresses_idx = 0;
   for (size_t i = 0; i < addresses->num_addresses; ++i) {
@@ -1382,7 +1425,8 @@ static void do_send_client_load_report_locked(grpc_exec_ctx *exec_ctx,
 
 static bool load_report_counters_are_zero(grpc_grpclb_request *request) {
   grpc_grpclb_dropped_call_counts *drop_entries =
-      request->client_stats.calls_finished_with_drop.arg;
+      (grpc_grpclb_dropped_call_counts *)
+          request->client_stats.calls_finished_with_drop.arg;
   return request->client_stats.num_calls_started == 0 &&
          request->client_stats.num_calls_finished == 0 &&
          request->client_stats.num_calls_finished_with_client_failed_to_send ==
@@ -1968,19 +2012,6 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx *exec_ctx,
       break;
   }
 }
-
-/* Code wiring the policy with the rest of the core */
-static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
-    glb_destroy,
-    glb_shutdown_locked,
-    glb_pick_locked,
-    glb_cancel_pick_locked,
-    glb_cancel_picks_locked,
-    glb_ping_one_locked,
-    glb_exit_idle_locked,
-    glb_check_connectivity_locked,
-    glb_notify_on_state_change_locked,
-    glb_update_locked};
 
 static void glb_factory_ref(grpc_lb_policy_factory *factory) {}
 

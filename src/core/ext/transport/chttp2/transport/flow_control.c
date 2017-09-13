@@ -60,24 +60,24 @@ static void pretrace(shadow_flow_control* shadow_fc,
 
 #define TRACE_PADDING 30
 
-static char* fmt_int64_diff_str(int64_t old, int64_t new) {
+static char* fmt_int64_diff_str(int64_t old_val, int64_t new_val) {
   char* str;
-  if (old != new) {
-    gpr_asprintf(&str, "%" PRId64 " -> %" PRId64 "", old, new);
+  if (old_val != new_val) {
+    gpr_asprintf(&str, "%" PRId64 " -> %" PRId64 "", old_val, new_val);
   } else {
-    gpr_asprintf(&str, "%" PRId64 "", old);
+    gpr_asprintf(&str, "%" PRId64 "", old_val);
   }
   char* str_lp = gpr_leftpad(str, ' ', TRACE_PADDING);
   gpr_free(str);
   return str_lp;
 }
 
-static char* fmt_uint32_diff_str(uint32_t old, uint32_t new) {
+static char* fmt_uint32_diff_str(uint32_t old_val, uint32_t new_val) {
   char* str;
-  if (new > 0 && old != new) {
-    gpr_asprintf(&str, "%" PRIu32 " -> %" PRIu32 "", old, new);
+  if (new_val > 0 && old_val != new_val) {
+    gpr_asprintf(&str, "%" PRIu32 " -> %" PRIu32 "", old_val, new_val);
   } else {
-    gpr_asprintf(&str, "%" PRIu32 "", old);
+    gpr_asprintf(&str, "%" PRIu32 "", old_val);
   }
   char* str_lp = gpr_leftpad(str, ' ', TRACE_PADDING);
   gpr_free(str);

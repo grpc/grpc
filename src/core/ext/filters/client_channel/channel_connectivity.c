@@ -86,7 +86,7 @@ static void delete_state_watcher(grpc_exec_ctx *exec_ctx, state_watcher *w) {
 
 static void finished_completion(grpc_exec_ctx *exec_ctx, void *pw,
                                 grpc_cq_completion *ignored) {
-  int delete = 0;
+  bool should_delete = false;
   state_watcher *w = (state_watcher *)pw;
   gpr_mu_lock(&w->mu);
   switch (w->phase) {
@@ -94,12 +94,12 @@ static void finished_completion(grpc_exec_ctx *exec_ctx, void *pw,
     case READY_TO_CALL_BACK:
       GPR_UNREACHABLE_CODE(return );
     case CALLING_BACK_AND_FINISHED:
-      delete = 1;
+      should_delete = true;
       break;
   }
   gpr_mu_unlock(&w->mu);
 
-  if (delete) {
+  if (should_delete) {
     delete_state_watcher(exec_ctx, w);
   }
 }
@@ -161,12 +161,12 @@ static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
 
 static void watch_complete(grpc_exec_ctx *exec_ctx, void *pw,
                            grpc_error *error) {
-  partly_done(exec_ctx, pw, true, GRPC_ERROR_REF(error));
+  partly_done(exec_ctx, (state_watcher *)pw, true, GRPC_ERROR_REF(error));
 }
 
 static void timeout_complete(grpc_exec_ctx *exec_ctx, void *pw,
                              grpc_error *error) {
-  partly_done(exec_ctx, pw, false, GRPC_ERROR_REF(error));
+  partly_done(exec_ctx, (state_watcher *)pw, false, GRPC_ERROR_REF(error));
 }
 
 int grpc_channel_num_external_connectivity_watchers(grpc_channel *channel) {

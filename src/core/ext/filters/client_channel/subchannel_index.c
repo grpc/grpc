@@ -88,24 +88,26 @@ void grpc_subchannel_key_destroy(grpc_exec_ctx *exec_ctx,
 
 static void sck_avl_destroy(void *p, void *user_data) {
   grpc_exec_ctx *exec_ctx = (grpc_exec_ctx *)user_data;
-  grpc_subchannel_key_destroy(exec_ctx, p);
+  grpc_subchannel_key_destroy(exec_ctx, (grpc_subchannel_key *)p);
 }
 
 static void *sck_avl_copy(void *p, void *unused) {
-  return subchannel_key_copy(p);
+  return subchannel_key_copy((grpc_subchannel_key *)p);
 }
 
 static long sck_avl_compare(void *a, void *b, void *unused) {
-  return grpc_subchannel_key_compare(a, b);
+  return grpc_subchannel_key_compare((grpc_subchannel_key *)a,
+                                     (grpc_subchannel_key *)b);
 }
 
 static void scv_avl_destroy(void *p, void *user_data) {
   grpc_exec_ctx *exec_ctx = (grpc_exec_ctx *)user_data;
-  GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, p, "subchannel_index");
+  GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, (grpc_subchannel *)p,
+                             "subchannel_index");
 }
 
 static void *scv_avl_copy(void *p, void *unused) {
-  GRPC_SUBCHANNEL_WEAK_REF(p, "subchannel_index");
+  GRPC_SUBCHANNEL_WEAK_REF((grpc_subchannel *)p, "subchannel_index");
   return p;
 }
 
