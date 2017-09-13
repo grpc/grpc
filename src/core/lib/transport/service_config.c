@@ -147,10 +147,10 @@ static char* parse_json_method_name(grpc_json* json) {
 // Returns false on error.
 static bool parse_json_method_config(
     grpc_exec_ctx* exec_ctx, grpc_json* json,
-    void* (*create_value)(const grpc_json* method_config_json),
-    grpc_slice_hash_table_entry* entries, size_t* idx) {
+    void* (*create_value)(const grpc_json* method_config_json, void* user_data),
+    void* user_data, grpc_slice_hash_table_entry* entries, size_t* idx) {
   // Construct value.
-  void* method_config = create_value(json);
+  void* method_config = create_value(json, user_data);
   if (method_config == NULL) return false;
   // Construct list of paths.
   bool success = false;
@@ -181,7 +181,8 @@ done:
 
 grpc_slice_hash_table* grpc_service_config_create_method_config_table(
     grpc_exec_ctx* exec_ctx, const grpc_service_config* service_config,
-    void* (*create_value)(const grpc_json* method_config_json),
+    void* (*create_value)(const grpc_json* method_config_json, void* user_data),
+    void* user_data,
     void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value)) {
   const grpc_json* json = service_config->json_tree;
   // Traverse parsed JSON tree.
@@ -204,8 +205,8 @@ grpc_slice_hash_table* grpc_service_config_create_method_config_table(
       size_t idx = 0;
       for (grpc_json* method = field->child; method != NULL;
            method = method->next) {
-        if (!parse_json_method_config(exec_ctx, method, create_value, entries,
-                                      &idx)) {
+        if (!parse_json_method_config(exec_ctx, method, create_value,
+                                      user_data, entries, &idx)) {
           return NULL;
         }
       }

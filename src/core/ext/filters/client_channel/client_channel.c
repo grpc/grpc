@@ -209,7 +209,9 @@ static bool parse_retry_policy(grpc_json *field,
   return true;
 }
 
-static void *method_parameters_create_from_json(const grpc_json *json) {
+static void *method_parameters_create_from_json(const grpc_json *json,
+                                                void *user_data) {
+  const bool enable_retries = (bool)user_data;
   wait_for_ready_value wait_for_ready = WAIT_FOR_READY_UNSET;
   gpr_timespec timeout = {0, 0, GPR_TIMESPAN};
   retry_policy_params *retry_policy = NULL;
@@ -221,7 +223,7 @@ static void *method_parameters_create_from_json(const grpc_json *json) {
     } else if (strcmp(field->key, "timeout") == 0) {
       if (timeout.tv_sec > 0 || timeout.tv_nsec > 0) goto error;  // Duplicate.
       if (!parse_timeout(field, &timeout)) goto error;
-    } else if (strcmp(field->key, "retryPolicy") == 0) {
+    } else if (strcmp(field->key, "retryPolicy") == 0 && enable_retries) {
       if (retry_policy != NULL) goto error;  // Duplicate.
       retry_policy = gpr_malloc(sizeof(*retry_policy));
       memset(retry_policy, 0, sizeof(*retry_policy));
@@ -256,6 +258,8 @@ typedef struct client_channel_channel_data {
   bool deadline_checking_enabled;
   /** client channel factory */
   grpc_client_channel_factory *client_channel_factory;
+  /** Enable retries. */
+  bool enable_retries;
   /** per-RPC retry buffer size */
   size_t per_rpc_retry_buffer_size;
 
@@ -536,24 +540,26 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
       grpc_service_config *service_config =
           grpc_service_config_create(service_config_json);
       if (service_config != NULL) {
-        channel_arg =
-            grpc_channel_args_find(chand->resolver_result, GRPC_ARG_SERVER_URI);
-        GPR_ASSERT(channel_arg != NULL);
-        GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
-        grpc_uri *uri =
-            grpc_uri_parse(exec_ctx, channel_arg->value.string, true);
-        GPR_ASSERT(uri->path[0] != '\0');
-        service_config_parsing_state parsing_state;
-        memset(&parsing_state, 0, sizeof(parsing_state));
-        parsing_state.server_name =
-            uri->path[0] == '/' ? uri->path + 1 : uri->path;
-        grpc_service_config_parse_global_params(
-            service_config, parse_retry_throttle_params, &parsing_state);
-        grpc_uri_destroy(uri);
-        retry_throttle_data = parsing_state.retry_throttle_data;
+        if (chand->enable_retries) {
+          channel_arg = grpc_channel_args_find(chand->resolver_result,
+                                               GRPC_ARG_SERVER_URI);
+          GPR_ASSERT(channel_arg != NULL);
+          GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
+          grpc_uri *uri =
+              grpc_uri_parse(exec_ctx, channel_arg->value.string, true);
+          GPR_ASSERT(uri->path[0] != '\0');
+          service_config_parsing_state parsing_state;
+          memset(&parsing_state, 0, sizeof(parsing_state));
+          parsing_state.server_name =
+              uri->path[0] == '/' ? uri->path + 1 : uri->path;
+          grpc_service_config_parse_global_params(
+              service_config, parse_retry_throttle_params, &parsing_state);
+          grpc_uri_destroy(uri);
+          retry_throttle_data = parsing_state.retry_throttle_data;
+        }
         method_params_table = grpc_service_config_create_method_config_table(
             exec_ctx, service_config, method_parameters_create_from_json,
-            method_parameters_free);
+            (void *)chand->enable_retries, method_parameters_free);
         grpc_service_config_destroy(service_config);
       }
     }
@@ -799,6 +805,10 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   chand->per_rpc_retry_buffer_size = (size_t)grpc_channel_arg_get_integer(
       arg, (grpc_integer_options){DEFAULT_PER_RPC_RETRY_BUFFER_SIZE, 0,
                                   INT_MAX});
+  // Record enable_retries.
+  arg = grpc_channel_args_find(args->channel_args,
+                               GRPC_ARG_ENABLE_RETRIES);
+  chand->enable_retries = grpc_channel_arg_get_bool(arg, true);
   // Record client channel factory.
   arg = grpc_channel_args_find(args->channel_args,
                                GRPC_ARG_CLIENT_CHANNEL_FACTORY);
@@ -1347,6 +1357,7 @@ static void retry_checks_for_new_batch(grpc_exec_ctx *exec_ctx,
               "chand=%p calld=%p: exceeded retry buffer size, committing",
               chand, calld);
     }
+// FIXME: this frees the cached data, but we need to add to it below...
     retry_committed(exec_ctx, elem);
   }
   // Save a copy of metadata for send_initial_metadata ops.

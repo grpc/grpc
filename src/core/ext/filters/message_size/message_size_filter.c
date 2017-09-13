@@ -39,7 +39,8 @@ static void message_size_limits_free(grpc_exec_ctx* exec_ctx, void* value) {
   gpr_free(value);
 }
 
-static void* message_size_limits_create_from_json(const grpc_json* json) {
+static void* message_size_limits_create_from_json(const grpc_json* json,
+                                                  void* user_data) {
   int max_request_message_bytes = -1;
   int max_response_message_bytes = -1;
   for (grpc_json* field = json->child; field != NULL; field = field->next) {
@@ -238,7 +239,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
       chand->method_limit_table =
           grpc_service_config_create_method_config_table(
               exec_ctx, service_config, message_size_limits_create_from_json,
-              message_size_limits_free);
+              NULL, message_size_limits_free);
       grpc_service_config_destroy(service_config);
     }
   }

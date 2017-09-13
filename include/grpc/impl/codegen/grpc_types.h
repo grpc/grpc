@@ -299,6 +299,8 @@ typedef struct {
     Defaults to "blend". In the current implementation "blend" is equivalent to
     "latency". */
 #define GRPC_ARG_OPTIMIZATION_TARGET "grpc.optimization_target"
+/** If set to zero, disables retry behavior. Retries are enabled by default. */
+#define GRPC_ARG_ENABLE_RETRIES "grpc.enable_retries"
 /** Per-RPC retry buffer size, in bytes. */
 #define GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE "grpc.per_rpc_retry_buffer_size"
 /** \} */
