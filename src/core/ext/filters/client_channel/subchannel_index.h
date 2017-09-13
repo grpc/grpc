@@ -59,6 +59,13 @@ void grpc_subchannel_index_init(void);
 /** Shutdown the subchannel index (global) */
 void grpc_subchannel_index_shutdown(void);
 
+/** Increment the refcount (non-zero) of subchannel index (global). */
+void grpc_subchannel_index_ref(void);
+
+/** Decrement the refcount of subchannel index (global). If the refcount drops
+    to zero, unref the subchannel index and destroy its mutex. */
+void grpc_subchannel_index_unref(void);
+
 /** \em TEST ONLY.
  * If \a force_creation is true, all key comparisons will be false, resulting in
  * new subchannels always being created. Otherwise, the keys will be compared as

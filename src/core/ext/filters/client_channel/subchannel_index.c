@@ -34,6 +34,8 @@ static gpr_avl g_subchannel_index;
 
 static gpr_mu g_mu;
 
+static gpr_refcount g_refcount;
+
 struct grpc_subchannel_key {
   grpc_subchannel_args args;
 };
@@ -121,14 +123,26 @@ static const gpr_avl_vtable subchannel_avl_vtable = {
 void grpc_subchannel_index_init(void) {
   g_subchannel_index = gpr_avl_create(&subchannel_avl_vtable);
   gpr_mu_init(&g_mu);
+  gpr_ref_init(&g_refcount, 1);
 }
 
 void grpc_subchannel_index_shutdown(void) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  gpr_mu_destroy(&g_mu);
-  gpr_avl_unref(g_subchannel_index, &exec_ctx);
-  grpc_exec_ctx_finish(&exec_ctx);
+  // TODO(juanlishen): This refcounting mechanism may lead to memory leackage.
+  // To solve that, we should force polling to flush any pending callbacks, then
+  // shutdown safely.
+  grpc_subchannel_index_unref();
 }
+
+void grpc_subchannel_index_unref(void) {
+  if (gpr_unref(&g_refcount)) {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    gpr_mu_destroy(&g_mu);
+    gpr_avl_unref(g_subchannel_index, &exec_ctx);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+}
+
+void grpc_subchannel_index_ref(void) { gpr_ref_non_zero(&g_refcount); }
 
 grpc_subchannel *grpc_subchannel_index_find(grpc_exec_ctx *exec_ctx,
                                             grpc_subchannel_key *key) {

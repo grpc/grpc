@@ -93,7 +93,7 @@ TEST_F(ByteBufferTest, SerializationMakesCopy) {
   std::vector<Slice> slices;
   slices.push_back(Slice(hello, Slice::STEAL_REF));
   slices.push_back(Slice(world, Slice::STEAL_REF));
-  grpc_byte_buffer* send_buffer = nullptr;
+  ByteBuffer send_buffer;
   bool owned = false;
   ByteBuffer buffer(&slices[0], 2);
   slices.clear();
@@ -101,8 +101,7 @@ TEST_F(ByteBufferTest, SerializationMakesCopy) {
       buffer, &send_buffer, &owned);
   EXPECT_TRUE(status.ok());
   EXPECT_TRUE(owned);
-  EXPECT_TRUE(send_buffer != nullptr);
-  grpc_byte_buffer_destroy(send_buffer);
+  EXPECT_TRUE(send_buffer.Valid());
 }
 
 }  // namespace
