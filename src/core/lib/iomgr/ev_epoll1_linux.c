@@ -515,9 +515,9 @@ static grpc_error *pollset_kick_all(grpc_exec_ctx *exec_ctx,
           GRPC_STATS_INC_POLLSET_KICKED_AGAIN(exec_ctx);
           break;
         case UNKICKED:
-          GRPC_STATS_INC_POLLSET_KICK_WAKEUP_CV(exec_ctx);
           SET_KICK_STATE(worker, KICKED);
           if (worker->initialized_cv) {
+            GRPC_STATS_INC_POLLSET_KICK_WAKEUP_CV(exec_ctx);
             gpr_cv_signal(&worker->cv);
           }
           break;

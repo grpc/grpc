@@ -666,12 +666,8 @@ static grpc_error *pollset_kick_inner(grpc_exec_ctx *exec_ctx,
 /* p->po.mu must be held before calling this function */
 static grpc_error *pollset_kick(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                                 grpc_pollset_worker *specific_worker) {
-<<<<<<< HEAD
-  pollable *p = pollset->current_pollable;
-  GRPC_STATS_INC_POLLSET_KICK(exec_ctx);
-=======
   pollable_t *p = pollset->current_pollable;
->>>>>>> d1fefe89dacf198a721053f2b1a3e173f1f24948
+  GRPC_STATS_INC_POLLSET_KICK(exec_ctx);
   if (p != &pollset->pollable) {
     gpr_mu_lock(&p->po.mu);
   }
