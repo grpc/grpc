@@ -60,11 +60,11 @@ void grpc_socket_mutator_unref(grpc_socket_mutator *mutator) {
 }
 
 static void *socket_mutator_arg_copy(void *p) {
-  return grpc_socket_mutator_ref(p);
+  return grpc_socket_mutator_ref((grpc_socket_mutator *)p);
 }
 
 static void socket_mutator_arg_destroy(grpc_exec_ctx *exec_ctx, void *p) {
-  grpc_socket_mutator_unref(p);
+  grpc_socket_mutator_unref((grpc_socket_mutator *)p);
 }
 
 static int socket_mutator_cmp(void *a, void *b) {
