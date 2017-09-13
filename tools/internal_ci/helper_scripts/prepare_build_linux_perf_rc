@@ -27,6 +27,8 @@ if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
 
   gsutil cp gs://grpc-testing-secrets/github_credentials/oauth_token.txt ~/
   export JENKINS_OAUTH_TOKEN=$(cat ~/oauth_token.txt)
+  # Remove this nbefore merging. Only used for testing
+  KOKORO_GITHUB_PULL_REQUEST_NUMBER=12552
   export ghprbPullId=$KOKORO_GITHUB_PULL_REQUEST_NUMBER
   set -x
 fi
