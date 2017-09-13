@@ -405,6 +405,6 @@ with open('tools/run_tests/performance/massage_qps_stats.py', 'w') as P:
 with open('src/core/lib/debug/stats_data_bq_schema.sql', 'w') as S:
   columns = []
   for counter in inst_map['Counter']:
-    columns.append(('%s_per_iteration' % counter.name, 'INTEGER'))
+    columns.append(('%s_per_iteration' % counter.name, 'FLOAT'))
   print >>S, ',\n'.join('%s:%s' % x for x in columns)
 
