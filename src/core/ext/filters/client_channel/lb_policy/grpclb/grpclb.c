@@ -966,10 +966,6 @@ static grpc_channel_args *build_lb_channel_args(
   return result;
 }
 
-static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx *exec_ctx,
-                                                      void *arg,
-                                                      grpc_error *error);
-
 static void glb_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)pol;
   GPR_ASSERT(glb_policy->pending_picks == NULL);
