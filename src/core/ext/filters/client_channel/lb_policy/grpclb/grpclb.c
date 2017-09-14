@@ -1857,6 +1857,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
     gpr_free(glb_policy);
     return NULL;
   }
+  grpc_subchannel_index_ref();
   GRPC_CLOSURE_INIT(&glb_policy->lb_channel_on_connectivity_changed,
                     glb_lb_channel_on_connectivity_changed_cb, glb_policy,
                     grpc_combiner_scheduler(args->combiner));
