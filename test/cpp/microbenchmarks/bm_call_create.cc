@@ -757,10 +757,10 @@ static void BM_IsolatedCall_Unary(benchmark::State &state) {
   grpc_byte_buffer *recv_message = NULL;
   grpc_status_code status_code;
   grpc_slice status_details = grpc_empty_slice();
-  grpc_metadata_array recv_initial_metadata;
-  grpc_metadata_array_init(&recv_initial_metadata);
-  grpc_metadata_array recv_trailing_metadata;
-  grpc_metadata_array_init(&recv_trailing_metadata);
+  grpc_metadata *recv_initial_metadata;
+  size_t recv_initial_metadata_count;
+  grpc_metadata *recv_trailing_metadata;
+  size_t recv_trailing_metadata_count;
   grpc_op ops[6];
   memset(ops, 0, sizeof(ops));
   ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -768,14 +768,16 @@ static void BM_IsolatedCall_Unary(benchmark::State &state) {
   ops[1].data.send_message.send_message = send_message;
   ops[2].op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   ops[3].op = GRPC_OP_RECV_INITIAL_METADATA;
-  ops[3].data.recv_initial_metadata.recv_initial_metadata =
-      &recv_initial_metadata;
+  ops[3].data.recv_initial_metadata.initial_metadata = &recv_initial_metadata;
+  ops[3].data.recv_initial_metadata.count = &recv_initial_metadata_count;
   ops[4].op = GRPC_OP_RECV_MESSAGE;
   ops[4].data.recv_message.recv_message = &recv_message;
   ops[5].op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   ops[5].data.recv_status_on_client.status = &status_code;
   ops[5].data.recv_status_on_client.status_details = &status_details;
   ops[5].data.recv_status_on_client.trailing_metadata = &recv_trailing_metadata;
+  ops[5].data.recv_status_on_client.trailing_metadata_count =
+      &recv_trailing_metadata_count;
   while (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call *call = grpc_channel_create_registered_call(
@@ -787,8 +789,6 @@ static void BM_IsolatedCall_Unary(benchmark::State &state) {
     grpc_call_unref(call);
   }
   fixture.Finish(state);
-  grpc_metadata_array_destroy(&recv_initial_metadata);
-  grpc_metadata_array_destroy(&recv_trailing_metadata);
   grpc_byte_buffer_destroy(send_message);
 }
 BENCHMARK(BM_IsolatedCall_Unary);
@@ -800,16 +800,14 @@ static void BM_IsolatedCall_StreamingSend(benchmark::State &state) {
       grpc_channel_register_call(fixture.channel(), "/foo/bar", NULL, NULL);
   grpc_slice slice = grpc_slice_from_static_string("hello world");
   grpc_byte_buffer *send_message = grpc_raw_byte_buffer_create(&slice, 1);
-  grpc_metadata_array recv_initial_metadata;
-  grpc_metadata_array_init(&recv_initial_metadata);
-  grpc_metadata_array recv_trailing_metadata;
-  grpc_metadata_array_init(&recv_trailing_metadata);
+  grpc_metadata *recv_initial_metadata;
+  size_t recv_initial_metadata_count;
   grpc_op ops[2];
   memset(ops, 0, sizeof(ops));
   ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
   ops[1].op = GRPC_OP_RECV_INITIAL_METADATA;
-  ops[1].data.recv_initial_metadata.recv_initial_metadata =
-      &recv_initial_metadata;
+  ops[1].data.recv_initial_metadata.initial_metadata = &recv_initial_metadata;
+  ops[1].data.recv_initial_metadata.count = &recv_initial_metadata_count;
   grpc_call *call = grpc_channel_create_registered_call(
       fixture.channel(), nullptr, GRPC_PROPAGATE_DEFAULTS, fixture.cq(),
       method_hdl, deadline, NULL);
@@ -827,8 +825,6 @@ static void BM_IsolatedCall_StreamingSend(benchmark::State &state) {
   }
   grpc_call_unref(call);
   fixture.Finish(state);
-  grpc_metadata_array_destroy(&recv_initial_metadata);
-  grpc_metadata_array_destroy(&recv_trailing_metadata);
   grpc_byte_buffer_destroy(send_message);
 }
 BENCHMARK(BM_IsolatedCall_StreamingSend);

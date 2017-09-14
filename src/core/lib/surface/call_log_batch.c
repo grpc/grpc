@@ -76,7 +76,7 @@ char *grpc_op_string(const grpc_op *op) {
       break;
     case GRPC_OP_RECV_INITIAL_METADATA:
       gpr_asprintf(&tmp, "RECV_INITIAL_METADATA ptr=%p",
-                   op->data.recv_initial_metadata.recv_initial_metadata);
+                   op->data.recv_initial_metadata.initial_metadata);
       gpr_strvec_add(&b, tmp);
       break;
     case GRPC_OP_RECV_MESSAGE:

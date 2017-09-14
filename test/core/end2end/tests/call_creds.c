@@ -136,9 +136,12 @@ static void request_response_with_payload_and_call_creds(
   cq_verifier *cqv;
   grpc_op ops[6];
   grpc_op *op;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
+  grpc_metadata *initial_metadata_recv;
+  size_t initial_metadata_recv_count;
+  grpc_metadata *trailing_metadata_recv;
+  size_t trailing_metadata_recv_count;
+  grpc_metadata *request_metadata_recv;
+  size_t request_metadata_recv_count;
   grpc_byte_buffer *request_payload_recv = NULL;
   grpc_byte_buffer *response_payload_recv = NULL;
   grpc_call_details call_details;
@@ -179,9 +182,6 @@ static void request_response_with_payload_and_call_creds(
   }
   grpc_call_credentials_release(creds);
 
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
   memset(ops, 0, sizeof(ops));
@@ -201,7 +201,10 @@ static void request_response_with_payload_and_call_creds(
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.count = &initial_metadata_recv_count;
+  op->data.recv_initial_metadata.count = &initial_metadata_recv_count;
+  op->data.recv_initial_metadata.count = &initial_metadata_recv_count;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -212,6 +215,8 @@ static void request_response_with_payload_and_call_creds(
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata_count =
+      &trailing_metadata_recv_count;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
@@ -220,9 +225,9 @@ static void request_response_with_payload_and_call_creds(
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(
+      f.server, &s, &call_details, &request_metadata_recv,
+      &request_metadata_recv_count, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -295,41 +300,38 @@ static void request_response_with_payload_and_call_creds(
 
   switch (mode) {
     case NONE:
-      GPR_ASSERT(contains_metadata(&request_metadata_recv,
-                                   GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
-                                   iam_token));
-      GPR_ASSERT(contains_metadata(&request_metadata_recv,
-                                   GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
-                                   iam_selector));
+      GPR_ASSERT(contains_metadata(
+          request_metadata_recv, request_metadata_recv_count,
+          GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY, iam_token));
+      GPR_ASSERT(contains_metadata(
+          request_metadata_recv, request_metadata_recv_count,
+          GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY, iam_selector));
       break;
     case OVERRIDE:
-      GPR_ASSERT(contains_metadata(&request_metadata_recv,
-                                   GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
-                                   overridden_iam_token));
-      GPR_ASSERT(contains_metadata(&request_metadata_recv,
-                                   GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
-                                   overridden_iam_selector));
+      GPR_ASSERT(contains_metadata(
+          request_metadata_recv, request_metadata_recv_count,
+          GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY, overridden_iam_token));
+      GPR_ASSERT(contains_metadata(
+          request_metadata_recv, request_metadata_recv_count,
+          GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY, overridden_iam_selector));
       break;
     case DESTROY:
-      GPR_ASSERT(!contains_metadata(&request_metadata_recv,
-                                    GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
-                                    iam_token));
-      GPR_ASSERT(!contains_metadata(&request_metadata_recv,
-                                    GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
-                                    iam_selector));
-      GPR_ASSERT(!contains_metadata(&request_metadata_recv,
-                                    GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
-                                    overridden_iam_token));
-      GPR_ASSERT(!contains_metadata(&request_metadata_recv,
-                                    GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
-                                    overridden_iam_selector));
+      GPR_ASSERT(!contains_metadata(
+          request_metadata_recv, request_metadata_recv_count,
+          GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY, iam_token));
+      GPR_ASSERT(!contains_metadata(
+          request_metadata_recv, request_metadata_recv_count,
+          GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY, iam_selector));
+      GPR_ASSERT(!contains_metadata(
+          request_metadata_recv, request_metadata_recv_count,
+          GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY, overridden_iam_token));
+      GPR_ASSERT(!contains_metadata(
+          request_metadata_recv, request_metadata_recv_count,
+          GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY, overridden_iam_selector));
       break;
   }
 
   grpc_slice_unref(details);
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
   grpc_call_unref(c);
@@ -374,9 +376,10 @@ static void test_request_with_server_rejecting_client_creds(
   grpc_end2end_test_fixture f;
   gpr_timespec deadline = five_seconds_from_now();
   cq_verifier *cqv;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
+  grpc_metadata *initial_metadata_recv;
+  size_t initial_metadata_recv_count;
+  grpc_metadata *trailing_metadata_recv;
+  size_t trailing_metadata_recv_count;
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
@@ -403,15 +406,14 @@ static void test_request_with_server_rejecting_client_creds(
   GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
   grpc_call_credentials_release(creds);
 
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata_count =
+      &trailing_metadata_recv_count;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
@@ -432,7 +434,8 @@ static void test_request_with_server_rejecting_client_creds(
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.count = &initial_metadata_recv_count;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -449,9 +452,6 @@ static void test_request_with_server_rejecting_client_creds(
 
   GPR_ASSERT(status == GRPC_STATUS_UNAUTHENTICATED);
 
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
   grpc_byte_buffer_destroy(request_payload);

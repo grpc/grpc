@@ -131,16 +131,17 @@ void resource_quota_server(grpc_end2end_test_config config) {
    * will be verified on completion. */
   grpc_slice request_payload_slice = generate_random_slice();
 
-  grpc_call **client_calls =
-      (grpc_call **)malloc(sizeof(grpc_call *) * NUM_CALLS);
-  grpc_call **server_calls =
-      (grpc_call **)malloc(sizeof(grpc_call *) * NUM_CALLS);
-  grpc_metadata_array *initial_metadata_recv =
-      malloc(sizeof(grpc_metadata_array) * NUM_CALLS);
-  grpc_metadata_array *trailing_metadata_recv =
-      malloc(sizeof(grpc_metadata_array) * NUM_CALLS);
-  grpc_metadata_array *request_metadata_recv =
-      malloc(sizeof(grpc_metadata_array) * NUM_CALLS);
+  grpc_call **client_calls = malloc(sizeof(grpc_call *) * NUM_CALLS);
+  grpc_call **server_calls = malloc(sizeof(grpc_call *) * NUM_CALLS);
+  grpc_metadata **initial_metadata_recv =
+      malloc(sizeof(grpc_metadata *) * NUM_CALLS);
+  grpc_metadata **trailing_metadata_recv =
+      malloc(sizeof(grpc_metadata *) * NUM_CALLS);
+  grpc_metadata **request_metadata_recv =
+      malloc(sizeof(grpc_metadata *) * NUM_CALLS);
+  size_t *initial_metadata_recv_count = malloc(sizeof(size_t) * NUM_CALLS);
+  size_t *trailing_metadata_recv_count = malloc(sizeof(size_t) * NUM_CALLS);
+  size_t *request_metadata_recv_count = malloc(sizeof(size_t) * NUM_CALLS);
   grpc_call_details *call_details =
       malloc(sizeof(grpc_call_details) * NUM_CALLS);
   grpc_status_code *status =
@@ -165,9 +166,6 @@ void resource_quota_server(grpc_end2end_test_config config) {
   grpc_op *op;
 
   for (int i = 0; i < NUM_CALLS; i++) {
-    grpc_metadata_array_init(&initial_metadata_recv[i]);
-    grpc_metadata_array_init(&trailing_metadata_recv[i]);
-    grpc_metadata_array_init(&request_metadata_recv[i]);
     grpc_call_details_init(&call_details[i]);
     request_payload[i] = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
     request_payload_recv[i] = NULL;
@@ -177,7 +175,8 @@ void resource_quota_server(grpc_end2end_test_config config) {
   for (int i = 0; i < NUM_CALLS; i++) {
     error = grpc_server_request_call(
         f.server, &server_calls[i], &call_details[i], &request_metadata_recv[i],
-        f.cq, f.cq, tag(SERVER_START_BASE_TAG + i));
+        &request_metadata_recv_count[i], f.cq, f.cq,
+        tag(SERVER_START_BASE_TAG + i));
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     pending_server_start_calls++;
@@ -207,14 +206,16 @@ void resource_quota_server(grpc_end2end_test_config config) {
     op->reserved = NULL;
     op++;
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
-    op->data.recv_initial_metadata.recv_initial_metadata =
-        &initial_metadata_recv[i];
+    op->data.recv_initial_metadata.initial_metadata = &initial_metadata_recv[i];
+    op->data.recv_initial_metadata.count = &initial_metadata_recv_count[i];
     op->flags = 0;
     op->reserved = NULL;
     op++;
     op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
     op->data.recv_status_on_client.trailing_metadata =
         &trailing_metadata_recv[i];
+    op->data.recv_status_on_client.trailing_metadata_count =
+        &trailing_metadata_recv_count[i];
     op->data.recv_status_on_client.status = &status[i];
     op->data.recv_status_on_client.status_details = &details[i];
     op->flags = 0;
@@ -260,8 +261,6 @@ void resource_quota_server(grpc_end2end_test_config config) {
       }
       GPR_ASSERT(pending_client_calls > 0);
 
-      grpc_metadata_array_destroy(&initial_metadata_recv[call_id]);
-      grpc_metadata_array_destroy(&trailing_metadata_recv[call_id]);
       grpc_call_unref(client_calls[call_id]);
       grpc_slice_unref(details[call_id]);
       grpc_byte_buffer_destroy(request_payload[call_id]);
@@ -295,7 +294,6 @@ void resource_quota_server(grpc_end2end_test_config config) {
       pending_server_recv_calls++;
 
       grpc_call_details_destroy(&call_details[call_id]);
-      grpc_metadata_array_destroy(&request_metadata_recv[call_id]);
     } else if (ev_tag < SERVER_END_BASE_TAG) {
       /* finished read on the server */
       int call_id = ev_tag - SERVER_RECV_BASE_TAG;
@@ -366,6 +364,9 @@ void resource_quota_server(grpc_end2end_test_config config) {
   free(initial_metadata_recv);
   free(trailing_metadata_recv);
   free(request_metadata_recv);
+  free(initial_metadata_recv_count);
+  free(trailing_metadata_recv_count);
+  free(request_metadata_recv_count);
   free(call_details);
   free(status);
   free(details);

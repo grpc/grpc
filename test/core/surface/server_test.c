@@ -57,11 +57,12 @@ void test_register_method_fail(void) {
 void test_request_call_on_no_server_cq(void) {
   grpc_completion_queue *cc = grpc_completion_queue_create_for_next(NULL);
   grpc_server *server = grpc_server_create(NULL, NULL);
-  GPR_ASSERT(GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE ==
-             grpc_server_request_call(server, NULL, NULL, NULL, cc, cc, NULL));
+  GPR_ASSERT(
+      GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE ==
+      grpc_server_request_call(server, NULL, NULL, NULL, NULL, cc, cc, NULL));
   GPR_ASSERT(GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE ==
              grpc_server_request_registered_call(server, NULL, NULL, NULL, NULL,
-                                                 NULL, cc, cc, NULL));
+                                                 NULL, NULL, cc, cc, NULL));
   grpc_completion_queue_destroy(cc);
   grpc_server_destroy(server);
 }

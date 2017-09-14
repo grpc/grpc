@@ -131,15 +131,12 @@ class Server::SyncRequest final : public CompletionQueueTag {
                              method->method_type() ==
                                  RpcMethod::SERVER_STREAMING),
         call_details_(nullptr),
-        cq_(nullptr) {
-    grpc_metadata_array_init(&request_metadata_);
-  }
+        cq_(nullptr) {}
 
   ~SyncRequest() {
     if (call_details_) {
       delete call_details_;
     }
-    grpc_metadata_array_destroy(&request_metadata_);
   }
 
   void SetupRequest() { cq_ = grpc_completion_queue_create_for_pluck(nullptr); }
@@ -156,6 +153,7 @@ class Server::SyncRequest final : public CompletionQueueTag {
       if (GRPC_CALL_OK !=
           grpc_server_request_registered_call(
               server, tag_, &call_, &deadline_, &request_metadata_,
+              &request_metadata_count_,
               has_request_payload_ ? &request_payload_ : nullptr, cq_,
               notify_cq, this)) {
         TeardownRequest();
@@ -167,8 +165,8 @@ class Server::SyncRequest final : public CompletionQueueTag {
         grpc_call_details_init(call_details_);
       }
       if (grpc_server_request_call(server, &call_, call_details_,
-                                   &request_metadata_, cq_, notify_cq,
-                                   this) != GRPC_CALL_OK) {
+                                   &request_metadata_, &request_metadata_count_,
+                                   cq_, notify_cq, this) != GRPC_CALL_OK) {
         TeardownRequest();
         return;
       }
@@ -192,7 +190,8 @@ class Server::SyncRequest final : public CompletionQueueTag {
     explicit CallData(Server* server, SyncRequest* mrd)
         : cq_(mrd->cq_),
           call_(mrd->call_, server, &cq_, server->max_receive_message_size()),
-          ctx_(mrd->deadline_, &mrd->request_metadata_),
+          ctx_(mrd->deadline_, mrd->request_metadata_,
+               mrd->request_metadata_count_),
           has_request_payload_(mrd->has_request_payload_),
           request_payload_(mrd->request_payload_),
           method_(mrd->method_) {
@@ -200,7 +199,7 @@ class Server::SyncRequest final : public CompletionQueueTag {
       ctx_.cq_ = &cq_;
       GPR_ASSERT(mrd->in_flight_);
       mrd->in_flight_ = false;
-      mrd->request_metadata_.count = 0;
+      mrd->request_metadata_count_ = 0;
     }
 
     ~CallData() {
@@ -244,7 +243,8 @@ class Server::SyncRequest final : public CompletionQueueTag {
   grpc_call* call_;
   grpc_call_details* call_details_;
   gpr_timespec deadline_;
-  grpc_metadata_array request_metadata_;
+  grpc_metadata* request_metadata_;
+  size_t request_metadata_count_;
   grpc_byte_buffer* request_payload_;
   grpc_completion_queue* cq_;
 };
@@ -666,7 +666,8 @@ void ServerInterface::RegisteredAsyncRequest::IssueRequest(
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_registered_call(
                                  server_->server(), registered_method, &call_,
                                  &context_->deadline_,
-                                 context_->client_metadata_.arr(), payload,
+                                 context_->client_metadata_.pmetadata(),
+                                 context_->client_metadata_.psize(), payload,
                                  call_cq_->cq(), notification_cq->cq(), this));
 }
 
@@ -681,8 +682,9 @@ ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
   GPR_ASSERT(call_cq);
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
                                  server->server(), &call_, &call_details_,
-                                 context->client_metadata_.arr(), call_cq->cq(),
-                                 notification_cq->cq(), this));
+                                 context->client_metadata_.pmetadata(),
+                                 context->client_metadata_.psize(),
+                                 call_cq->cq(), notification_cq->cq(), this));
 }
 
 bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,

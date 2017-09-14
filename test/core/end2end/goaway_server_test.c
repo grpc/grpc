@@ -137,22 +137,24 @@ int main(int argc, char **argv) {
   int was_cancelled1;
   int was_cancelled2;
 
-  grpc_metadata_array trailing_metadata_recv1;
-  grpc_metadata_array request_metadata1;
+  grpc_metadata *trailing_metadata_recv1;
+  size_t trailing_metadata_recv1_count;
+  grpc_metadata *request_metadata1;
+  size_t request_metadata1_count;
   grpc_call_details request_details1;
   grpc_status_code status1;
   grpc_slice details1;
-  grpc_metadata_array_init(&trailing_metadata_recv1);
-  grpc_metadata_array_init(&request_metadata1);
+
   grpc_call_details_init(&request_details1);
 
-  grpc_metadata_array trailing_metadata_recv2;
-  grpc_metadata_array request_metadata2;
+  grpc_metadata *trailing_metadata_recv2;
+  size_t trailing_metadata_recv2_count;
+  grpc_metadata *request_metadata2;
+  size_t request_metadata2_count;
   grpc_call_details request_details2;
   grpc_status_code status2;
   grpc_slice details2;
-  grpc_metadata_array_init(&trailing_metadata_recv2);
-  grpc_metadata_array_init(&request_metadata2);
+
   grpc_call_details_init(&request_details2);
 
   cq = grpc_completion_queue_create_for_next(NULL);
@@ -196,6 +198,8 @@ int main(int argc, char **argv) {
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv1;
+  op->data.recv_status_on_client.trailing_metadata_count =
+      &trailing_metadata_recv1_count;
   op->data.recv_status_on_client.status = &status1;
   op->data.recv_status_on_client.status_details = &details1;
   op->flags = 0;
@@ -215,9 +219,10 @@ int main(int argc, char **argv) {
 
   /* request a call to the server */
   grpc_call *server_call1;
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(server1, &server_call1, &request_details1,
-                                      &request_metadata1, cq, cq, tag(0x301)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                 server1, &server_call1, &request_details1,
+                                 &request_metadata1, &request_metadata1_count,
+                                 cq, cq, tag(0x301)));
 
   set_resolve_port(port1);
 
@@ -272,6 +277,8 @@ int main(int argc, char **argv) {
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv2;
+  op->data.recv_status_on_client.trailing_metadata_count =
+      &trailing_metadata_recv2_count;
   op->data.recv_status_on_client.status = &status2;
   op->data.recv_status_on_client.status_details = &details2;
   op->flags = 0;
@@ -292,9 +299,10 @@ int main(int argc, char **argv) {
 
   /* request a call to the server */
   grpc_call *server_call2;
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(server2, &server_call2, &request_details2,
-                                      &request_metadata2, cq, cq, tag(0x401)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                 server2, &server_call2, &request_details2,
+                                 &request_metadata2, &request_metadata2_count,
+                                 cq, cq, tag(0x401)));
 
   /* second call should now start */
   CQ_EXPECT_COMPLETION(cqv, tag(0x201), 1);
@@ -336,12 +344,9 @@ int main(int argc, char **argv) {
   grpc_server_destroy(server2);
   grpc_channel_destroy(chan);
 
-  grpc_metadata_array_destroy(&trailing_metadata_recv1);
-  grpc_metadata_array_destroy(&request_metadata1);
   grpc_call_details_destroy(&request_details1);
   grpc_slice_unref(details1);
-  grpc_metadata_array_destroy(&trailing_metadata_recv2);
-  grpc_metadata_array_destroy(&request_metadata2);
+
   grpc_call_details_destroy(&request_details2);
   grpc_slice_unref(details2);
 

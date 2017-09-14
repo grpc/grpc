@@ -104,8 +104,10 @@ static void test_with_authority_header(grpc_end2end_test_config config) {
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata *initial_metadata_recv;
+  size_t initial_metadata_recv_count;
+  grpc_metadata *trailing_metadata_recv;
+  size_t trailing_metadata_recv_count;
   grpc_byte_buffer *response_payload_recv = NULL;
   grpc_status_code status;
   grpc_call_error error;
@@ -117,9 +119,6 @@ static void test_with_authority_header(grpc_end2end_test_config config) {
                                grpc_slice_from_static_string("/foo"), &host,
                                deadline, NULL);
   GPR_ASSERT(c);
-
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -139,7 +138,8 @@ static void test_with_authority_header(grpc_end2end_test_config config) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.count = &initial_metadata_recv_count;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -150,6 +150,10 @@ static void test_with_authority_header(grpc_end2end_test_config config) {
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata_count =
+      &trailing_metadata_recv_count;
+  op->data.recv_status_on_client.trailing_metadata_count =
+      &trailing_metadata_recv_count;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
@@ -164,8 +168,6 @@ static void test_with_authority_header(grpc_end2end_test_config config) {
   GPR_ASSERT(status == GRPC_STATUS_CANCELLED);
 
   grpc_slice_unref(details);
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
 
   grpc_call_unref(c);
 

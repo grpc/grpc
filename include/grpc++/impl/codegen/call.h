@@ -603,7 +603,9 @@ class CallOpRecvInitialMetadata {
     if (metadata_map_ == nullptr) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
-    op->data.recv_initial_metadata.recv_initial_metadata = metadata_map_->arr();
+    op->data.recv_initial_metadata.initial_metadata =
+        metadata_map_->pmetadata();
+    op->data.recv_initial_metadata.count = metadata_map_->psize();
     op->flags = 0;
     op->reserved = NULL;
   }
@@ -633,7 +635,10 @@ class CallOpClientRecvStatus {
     if (recv_status_ == nullptr) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-    op->data.recv_status_on_client.trailing_metadata = metadata_map_->arr();
+    op->data.recv_status_on_client.trailing_metadata =
+        metadata_map_->pmetadata();
+    op->data.recv_status_on_client.trailing_metadata_count =
+        metadata_map_->psize();
     op->data.recv_status_on_client.status = &status_code_;
     op->data.recv_status_on_client.status_details = &error_message_;
     op->flags = 0;

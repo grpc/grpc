@@ -67,14 +67,16 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
   grpc_call *call1 = NULL;
   grpc_call_details call_details1;
-  grpc_metadata_array request_metadata1;
+  grpc_metadata *request_metadata1;
+  size_t request_metadata1_count;
   grpc_call_details_init(&call_details1);
-  grpc_metadata_array_init(&request_metadata1);
+
   int requested_calls = 0;
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(server, &call1, &call_details1,
-                                      &request_metadata1, cq, cq, tag(1)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                 server, &call1, &call_details1,
+                                 &request_metadata1, &request_metadata1_count,
+                                 cq, cq, tag(1)));
   requested_calls++;
 
   grpc_event ev;
@@ -99,7 +101,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 done:
   if (call1 != NULL) grpc_call_unref(call1);
   grpc_call_details_destroy(&call_details1);
-  grpc_metadata_array_destroy(&request_metadata1);
+
   grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
   grpc_server_cancel_all_calls(server);
   for (int i = 0; i <= requested_calls; i++) {

@@ -44,8 +44,8 @@ static grpc_completion_queue *cq;
 static grpc_server *server;
 static grpc_call *call;
 static grpc_call_details call_details;
-static grpc_metadata_array request_metadata_recv;
-static grpc_metadata_array initial_metadata_send;
+static grpc_metadata *request_metadata_recv;
+static size_t request_metadata_recv_count;
 static grpc_byte_buffer *payload_buffer = NULL;
 /* Used to drain the terminal read in unary calls. */
 static grpc_byte_buffer *terminal_buffer = NULL;
@@ -76,18 +76,16 @@ typedef struct {
 } call_state;
 
 static void request_call(void) {
-  grpc_metadata_array_init(&request_metadata_recv);
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_server_request_call(server, &call, &call_details,
-                                      &request_metadata_recv, cq, cq,
+                                      &request_metadata_recv,
+                                      &request_metadata_recv_count, cq, cq,
                                       tag(FLING_SERVER_NEW_REQUEST)));
 }
 
 static void handle_unary_method(void) {
   grpc_op *op;
   grpc_call_error error;
-
-  grpc_metadata_array_init(&initial_metadata_send);
 
   op = unary_ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -119,7 +117,7 @@ static void handle_unary_method(void) {
 static void send_initial_metadata(void) {
   grpc_call_error error;
   void *tagarg = tag(FLING_SERVER_SEND_INIT_METADATA_FOR_STREAMING);
-  grpc_metadata_array_init(&initial_metadata_send);
+
   metadata_send_op.op = GRPC_OP_SEND_INITIAL_METADATA;
   metadata_send_op.data.send_initial_metadata.count = 0;
   error = grpc_call_start_batch(call, &metadata_send_op, 1, tagarg, NULL);

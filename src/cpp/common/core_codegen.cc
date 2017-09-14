@@ -176,14 +176,6 @@ void CoreCodegen::grpc_slice_buffer_pop(grpc_slice_buffer* sb) {
   ::grpc_slice_buffer_pop(sb);
 }
 
-void CoreCodegen::grpc_metadata_array_init(grpc_metadata_array* array) {
-  ::grpc_metadata_array_init(array);
-}
-
-void CoreCodegen::grpc_metadata_array_destroy(grpc_metadata_array* array) {
-  ::grpc_metadata_array_destroy(array);
-}
-
 const Status& CoreCodegen::ok() { return grpc::Status::OK; }
 
 const Status& CoreCodegen::cancelled() { return grpc::Status::CANCELLED; }

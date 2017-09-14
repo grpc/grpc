@@ -98,9 +98,10 @@ static void test_invoke_request_with_flags(
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
+  grpc_metadata *initial_metadata_recv;
+  size_t initial_metadata_recv_count;
+  grpc_metadata *trailing_metadata_recv;
+  size_t trailing_metadata_recv_count;
   grpc_byte_buffer *request_payload_recv = NULL;
   grpc_call_details call_details;
   grpc_status_code status;
@@ -116,9 +117,6 @@ static void test_invoke_request_with_flags(
       NULL);
   GPR_ASSERT(c);
 
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
   memset(ops, 0, sizeof(ops));
@@ -138,12 +136,15 @@ static void test_invoke_request_with_flags(
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.count = &initial_metadata_recv_count;
   op->flags = flags_for_op[op->op];
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata_count =
+      &trailing_metadata_recv_count;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = flags_for_op[op->op];
@@ -159,9 +160,6 @@ static void test_invoke_request_with_flags(
     grpc_slice_unref(details);
   }
 
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
   grpc_call_unref(c);

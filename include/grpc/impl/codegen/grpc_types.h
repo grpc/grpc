@@ -431,12 +431,6 @@ typedef struct grpc_event {
 } grpc_event;
 
 typedef struct {
-  size_t count;
-  size_t capacity;
-  grpc_metadata *metadata;
-} grpc_metadata_array;
-
-typedef struct {
   grpc_slice method;
   grpc_slice host;
   gpr_timespec deadline;
@@ -534,13 +528,10 @@ typedef struct grpc_op {
        */
       grpc_slice *status_details;
     } send_status_from_server;
-    /** ownership of the array is with the caller, but ownership of the elements
-        stays with the call object (ie key, value members are owned by the call
-        object, recv_initial_metadata->array is owned by the caller).
-        After the operation completes, call grpc_metadata_array_destroy on this
-        value, or reuse it in a future op. */
     struct grpc_op_recv_initial_metadata {
-      grpc_metadata_array *recv_initial_metadata;
+      /** Ownership of all metadata and the array stays with the grpc_call */
+      grpc_metadata **initial_metadata;
+      size_t *count;
     } recv_initial_metadata;
     /** ownership of the byte buffer is moved to the caller; the caller must
         call grpc_byte_buffer_destroy on this value, or reuse it in a future op.
@@ -549,12 +540,9 @@ typedef struct grpc_op {
       struct grpc_byte_buffer **recv_message;
     } recv_message;
     struct grpc_op_recv_status_on_client {
-      /** ownership of the array is with the caller, but ownership of the
-          elements stays with the call object (ie key, value members are owned
-          by the call object, trailing_metadata->array is owned by the caller).
-          After the operation completes, call grpc_metadata_array_destroy on
-          this value, or reuse it in a future op. */
-      grpc_metadata_array *trailing_metadata;
+      /** Ownership of all metadata and the array stays with the grpc_call */
+      grpc_metadata **trailing_metadata;
+      size_t *trailing_metadata_count;
       grpc_status_code *status;
       grpc_slice *status_details;
     } recv_status_on_client;

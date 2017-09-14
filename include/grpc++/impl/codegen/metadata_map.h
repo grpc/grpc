@@ -20,35 +20,53 @@
 #define GRPCXX_IMPL_CODEGEN_METADATA_MAP_H
 
 #include <grpc++/impl/codegen/slice.h>
+#include <atomic>
+#include <map>
 
 namespace grpc {
 
 class MetadataMap {
  public:
-  MetadataMap() { memset(&arr_, 0, sizeof(arr_)); }
-
-  ~MetadataMap() {
-    g_core_codegen_interface->grpc_metadata_array_destroy(&arr_);
-  }
-
   void FillMap() {
-    for (size_t i = 0; i < arr_.count; i++) {
-      // TODO(yangg) handle duplicates?
-      map_.insert(std::pair<grpc::string_ref, grpc::string_ref>(
-          StringRefFromSlice(&arr_.metadata[i].key),
-          StringRefFromSlice(&arr_.metadata[i].value)));
-    }
+    GPR_CODEGEN_ASSERT(map_.load(std::memory_order::memory_order_relaxed) ==
+                       nullptr);
   }
 
-  std::multimap<grpc::string_ref, grpc::string_ref> *map() { return &map_; }
-  const std::multimap<grpc::string_ref, grpc::string_ref> *map() const {
-    return &map_;
+  std::multimap<grpc::string_ref, grpc::string_ref> *map() {
+    return FetchMap();
   }
-  grpc_metadata_array *arr() { return &arr_; }
+  const std::multimap<grpc::string_ref, grpc::string_ref> *map() const {
+    return FetchMap();
+  }
+  grpc_metadata **pmetadata() { return &metadata_; }
+  size_t *psize() { return &size_; }
 
  private:
-  grpc_metadata_array arr_;
-  std::multimap<grpc::string_ref, grpc::string_ref> map_;
+  typedef std::multimap<grpc::string_ref, grpc::string_ref> MapRep;
+
+  MapRep *FetchMap() const {
+    MapRep *r = map_.load(std::memory_order::memory_order_acquire);
+    if (r == nullptr) {
+      r = new MapRep;
+      for (size_t i = 0; i < size_; i++) {
+        r->insert(std::pair<grpc::string_ref, grpc::string_ref>(
+            StringRefFromSlice(&metadata_[i].key),
+            StringRefFromSlice(&metadata_[i].value)));
+      }
+      MapRep *prev = nullptr;
+      if (!map_.compare_exchange_strong(
+              prev, r, std::memory_order::memory_order_release,
+              std::memory_order::memory_order_relaxed)) {
+        delete r;
+        r = prev;
+      }
+    }
+    return r;
+  }
+
+  grpc_metadata *metadata_ = nullptr;
+  size_t size_ = 0;
+  mutable std::atomic<MapRep *> map_{nullptr};
 };
 
 }  // namespace grpc

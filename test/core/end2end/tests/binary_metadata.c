@@ -124,9 +124,12 @@ static void test_request_response_with_metadata_and_payload(
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
+  grpc_metadata *initial_metadata_recv;
+  size_t initial_metadata_recv_count;
+  grpc_metadata *trailing_metadata_recv;
+  size_t trailing_metadata_recv_count;
+  grpc_metadata *request_metadata_recv;
+  size_t request_metadata_recv_count;
   grpc_byte_buffer *request_payload_recv = NULL;
   grpc_byte_buffer *response_payload_recv = NULL;
   grpc_call_details call_details;
@@ -143,9 +146,6 @@ static void test_request_response_with_metadata_and_payload(
       NULL);
   GPR_ASSERT(c);
 
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
   memset(ops, 0, sizeof(ops));
@@ -166,7 +166,8 @@ static void test_request_response_with_metadata_and_payload(
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.count = &initial_metadata_recv_count;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -177,6 +178,10 @@ static void test_request_response_with_metadata_and_payload(
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata_count =
+      &trailing_metadata_recv_count;
+  op->data.recv_status_on_client.trailing_metadata_count =
+      &trailing_metadata_recv_count;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
@@ -185,9 +190,9 @@ static void test_request_response_with_metadata_and_payload(
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(
+      f.server, &s, &call_details, &request_metadata_recv,
+      &request_metadata_recv_count, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -281,22 +286,19 @@ static void test_request_response_with_metadata_and_payload(
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
   GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));
   GPR_ASSERT(contains_metadata(
-      &request_metadata_recv, "key1-bin",
+      request_metadata_recv, request_metadata_recv_count, "key1-bin",
       "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc"));
   GPR_ASSERT(contains_metadata(
-      &request_metadata_recv, "key2-bin",
+      request_metadata_recv, request_metadata_recv_count, "key2-bin",
       "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d"));
   GPR_ASSERT(contains_metadata(
-      &initial_metadata_recv, "key3-bin",
+      initial_metadata_recv, initial_metadata_recv_count, "key3-bin",
       "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee"));
   GPR_ASSERT(contains_metadata(
-      &initial_metadata_recv, "key4-bin",
+      initial_metadata_recv, initial_metadata_recv_count, "key4-bin",
       "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff"));
 
   grpc_slice_unref(details);
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 
   grpc_call_unref(c);

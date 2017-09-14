@@ -38,17 +38,16 @@ static grpc_call *call;
 static grpc_op ops[6];
 static grpc_op stream_init_ops[2];
 static grpc_op stream_step_ops[2];
-static grpc_metadata_array initial_metadata_recv;
-static grpc_metadata_array trailing_metadata_recv;
+static grpc_metadata *initial_metadata_recv;
+static size_t initial_metadata_recv_count;
+static grpc_metadata *trailing_metadata_recv;
+static size_t trailing_metadata_recv_count;
 static grpc_byte_buffer *response_payload_recv = NULL;
 static grpc_status_code status;
 static grpc_slice details;
 static grpc_op *op;
 
 static void init_ping_pong_request(void) {
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-
   memset(ops, 0, sizeof(ops));
   op = ops;
 
@@ -61,13 +60,16 @@ static void init_ping_pong_request(void) {
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.count = &initial_metadata_recv_count;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &response_payload_recv;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata_count =
+      &trailing_metadata_recv_count;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
@@ -91,8 +93,6 @@ static void step_ping_pong_request(void) {
 }
 
 static void init_ping_pong_stream(void) {
-  grpc_metadata_array_init(&initial_metadata_recv);
-
   grpc_call_error error;
   grpc_slice host = grpc_slice_from_static_string("localhost");
   call = grpc_channel_create_call(
@@ -102,13 +102,13 @@ static void init_ping_pong_stream(void) {
   stream_init_ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
   stream_init_ops[0].data.send_initial_metadata.count = 0;
   stream_init_ops[1].op = GRPC_OP_RECV_INITIAL_METADATA;
-  stream_init_ops[1].data.recv_initial_metadata.recv_initial_metadata =
+  stream_init_ops[1].data.recv_initial_metadata.initial_metadata =
       &initial_metadata_recv;
+  stream_init_ops[1].data.recv_initial_metadata.count =
+      &initial_metadata_recv_count;
   error = grpc_call_start_batch(call, stream_init_ops, 2, (void *)1, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-
-  grpc_metadata_array_init(&initial_metadata_recv);
 
   stream_step_ops[0].op = GRPC_OP_SEND_MESSAGE;
   stream_step_ops[0].data.send_message.send_message = the_buffer;

@@ -101,13 +101,14 @@ static void server_verifier(grpc_server *server, grpc_completion_queue *cq,
   grpc_call *s;
   grpc_call_details call_details;
   cq_verifier *cqv = cq_verifier_create(cq);
-  grpc_metadata_array request_metadata_recv;
+  grpc_metadata *request_metadata_recv;
+  size_t request_metadata_recv_count;
 
   grpc_call_details_init(&call_details);
-  grpc_metadata_array_init(&request_metadata_recv);
 
-  error = grpc_server_request_call(server, &s, &call_details,
-                                   &request_metadata_recv, cq, cq, tag(101));
+  error = grpc_server_request_call(
+      server, &s, &call_details, &request_metadata_recv,
+      &request_metadata_recv_count, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -115,7 +116,6 @@ static void server_verifier(grpc_server *server, grpc_completion_queue *cq,
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
 
-  grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(s);
   cq_verifier_destroy(cqv);
@@ -128,13 +128,14 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   grpc_call *s;
   grpc_call_details call_details;
   cq_verifier *cqv = cq_verifier_create(cq);
-  grpc_metadata_array request_metadata_recv;
+  grpc_metadata *request_metadata_recv;
+  size_t request_metadata_recv_count;
 
   grpc_call_details_init(&call_details);
-  grpc_metadata_array_init(&request_metadata_recv);
 
-  error = grpc_server_request_call(server, &s, &call_details,
-                                   &request_metadata_recv, cq, cq, tag(101));
+  error = grpc_server_request_call(
+      server, &s, &call_details, &request_metadata_recv,
+      &request_metadata_recv_count, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -161,7 +162,7 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   cq_verify(cqv);
 
   grpc_slice_unref(meta.value);
-  grpc_metadata_array_destroy(&request_metadata_recv);
+
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(s);
   cq_verifier_destroy(cqv);

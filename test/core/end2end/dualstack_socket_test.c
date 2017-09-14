@@ -69,9 +69,12 @@ void test_connect(const char *server_host, const char *client_host, int port,
   int got_port;
   grpc_op ops[6];
   grpc_op *op;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
+  grpc_metadata *initial_metadata_recv;
+  size_t initial_metadata_recv_count;
+  grpc_metadata *trailing_metadata_recv;
+  size_t trailing_metadata_recv_count;
+  grpc_metadata *request_metadata_recv;
+  size_t request_metadata_recv_count;
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
@@ -87,9 +90,6 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
   gpr_join_host_port(&server_hostport, server_host, port);
 
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
   /* Create server. */
@@ -171,12 +171,15 @@ void test_connect(const char *server_host, const char *client_host, int port,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.count = &initial_metadata_recv_count;
   op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata_count =
+      &trailing_metadata_recv_count;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
@@ -187,8 +190,9 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
   if (expect_ok) {
     /* Check for a successful request. */
-    error = grpc_server_request_call(server, &s, &call_details,
-                                     &request_metadata_recv, cq, cq, tag(101));
+    error = grpc_server_request_call(
+        server, &s, &call_details, &request_metadata_recv,
+        &request_metadata_recv_count, cq, cq, tag(101));
     GPR_ASSERT(GRPC_CALL_OK == error);
     CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
     cq_verify(cqv);
@@ -256,10 +260,6 @@ void test_connect(const char *server_host, const char *client_host, int port,
   grpc_completion_queue_shutdown(cq);
   drain_cq(cq);
   grpc_completion_queue_destroy(cq);
-
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
 
   grpc_call_details_destroy(&call_details);
   grpc_slice_unref(details);

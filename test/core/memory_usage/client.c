@@ -42,10 +42,12 @@ static grpc_op *op;
 
 typedef struct {
   grpc_call *call;
-  grpc_metadata_array initial_metadata_recv;
+  grpc_metadata *initial_metadata_recv;
+  size_t initial_metadata_recv_count;
   grpc_status_code status;
   grpc_slice details;
-  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata *trailing_metadata_recv;
+  size_t trailing_metadata_recv_count;
 } fling_call;
 
 // Statically allocate call data structs. Enough to accomodate 10000 ping-pong
@@ -58,8 +60,6 @@ static void *tag(intptr_t t) { return (void *)t; }
 // call (i.e send and recv metadata). A call is outstanding after we initated,
 // so we can measure the call memory usage.
 static void init_ping_pong_request(int call_idx) {
-  grpc_metadata_array_init(&calls[call_idx].initial_metadata_recv);
-
   memset(metadata_ops, 0, sizeof(metadata_ops));
   op = metadata_ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -67,8 +67,10 @@ static void init_ping_pong_request(int call_idx) {
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata =
+  op->data.recv_initial_metadata.initial_metadata =
       &calls[call_idx].initial_metadata_recv;
+  op->data.recv_initial_metadata.count =
+      &calls[call_idx].initial_metadata_recv_count;
   op++;
 
   grpc_slice hostname = grpc_slice_from_static_string("localhost");
@@ -86,13 +88,13 @@ static void init_ping_pong_request(int call_idx) {
 
 // Second step is to finish the call (i.e recv status) and destroy the call.
 static void finish_ping_pong_request(int call_idx) {
-  grpc_metadata_array_init(&calls[call_idx].trailing_metadata_recv);
-
   memset(status_ops, 0, sizeof(status_ops));
   op = status_ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata =
       &calls[call_idx].trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata_count =
+      &calls[call_idx].trailing_metadata_recv_count;
   op->data.recv_status_on_client.status = &calls[call_idx].status;
   op->data.recv_status_on_client.status_details = &calls[call_idx].details;
   op++;
@@ -102,8 +104,7 @@ static void finish_ping_pong_request(int call_idx) {
                                                    (size_t)(op - status_ops),
                                                    tag(call_idx), NULL));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-  grpc_metadata_array_destroy(&calls[call_idx].initial_metadata_recv);
-  grpc_metadata_array_destroy(&calls[call_idx].trailing_metadata_recv);
+
   grpc_slice_unref(calls[call_idx].details);
   grpc_call_unref(calls[call_idx].call);
   calls[call_idx].call = NULL;
@@ -111,9 +112,6 @@ static void finish_ping_pong_request(int call_idx) {
 
 static struct grpc_memory_counters send_snapshot_request(int call_idx,
                                                          grpc_slice call_type) {
-  grpc_metadata_array_init(&calls[call_idx].initial_metadata_recv);
-  grpc_metadata_array_init(&calls[call_idx].trailing_metadata_recv);
-
   grpc_byte_buffer *response_payload_recv = NULL;
   memset(snapshot_ops, 0, sizeof(snapshot_ops));
   op = snapshot_ops;
@@ -125,8 +123,10 @@ static struct grpc_memory_counters send_snapshot_request(int call_idx,
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata =
+  op->data.recv_initial_metadata.initial_metadata =
       &calls[call_idx].initial_metadata_recv;
+  op->data.recv_initial_metadata.count =
+      &calls[call_idx].initial_metadata_recv_count;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &response_payload_recv;
@@ -134,6 +134,8 @@ static struct grpc_memory_counters send_snapshot_request(int call_idx,
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata =
       &calls[call_idx].trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata_count =
+      &calls[call_idx].trailing_metadata_recv_count;
   op->data.recv_status_on_client.status = &calls[call_idx].status;
   op->data.recv_status_on_client.status_details = &calls[call_idx].details;
   op++;
@@ -165,8 +167,6 @@ static struct grpc_memory_counters send_snapshot_request(int call_idx,
       ((struct grpc_memory_counters *)GRPC_SLICE_START_PTR(response))
           ->total_allocs_relative;
 
-  grpc_metadata_array_destroy(&calls[call_idx].initial_metadata_recv);
-  grpc_metadata_array_destroy(&calls[call_idx].trailing_metadata_recv);
   grpc_slice_unref(response);
   grpc_byte_buffer_reader_destroy(&reader);
   grpc_byte_buffer_destroy(response_payload_recv);

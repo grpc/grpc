@@ -1379,7 +1379,6 @@ src/core/lib/surface/init.h \
 src/core/lib/surface/init_secure.c \
 src/core/lib/surface/lame_client.cc \
 src/core/lib/surface/lame_client.h \
-src/core/lib/surface/metadata_array.c \
 src/core/lib/surface/server.c \
 src/core/lib/surface/server.h \
 src/core/lib/surface/validate_metadata.c \

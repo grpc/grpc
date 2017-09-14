@@ -35,10 +35,17 @@ typedef enum {
 typedef struct call_data {
   grpc_call_combiner *call_combiner;
   grpc_call_stack *owning_call;
-  grpc_transport_stream_op_batch *recv_initial_metadata_batch;
+  gpr_arena *arena;
+  grpc_metadata_batch *recv_initial_metadata;
+  /* Closure to call when finished with the auth_on_recv hook. */
   grpc_closure *original_recv_initial_metadata_ready;
+  /* Receive closures are chained: we inject this closure as the on_done_recv
+     up-call on transport_op, and remember to call our on_done_recv member after
+     handling it. */
   grpc_closure recv_initial_metadata_ready;
-  grpc_metadata_array md;
+  grpc_transport_stream_op_batch *transport_op;
+  grpc_metadata *md;
+  size_t md_count;
   const grpc_metadata *consumed_md;
   size_t num_consumed_md;
   grpc_auth_context *auth_context;
@@ -51,26 +58,19 @@ typedef struct channel_data {
   grpc_server_credentials *creds;
 } channel_data;
 
-static grpc_metadata_array metadata_batch_to_md_array(
-    const grpc_metadata_batch *batch) {
+static void metadata_batch_to_md_array(gpr_arena *arena,
+                                       const grpc_metadata_batch *batch,
+                                       grpc_metadata **result,
+                                       size_t *result_count) {
   grpc_linked_mdelem *l;
-  grpc_metadata_array result;
-  grpc_metadata_array_init(&result);
-  for (l = batch->list.head; l != NULL; l = l->next) {
-    grpc_metadata *usr_md = NULL;
+  *result_count = batch->list.count;
+  *result = gpr_arena_alloc(arena, sizeof(grpc_metadata) * batch->list.count);
+  grpc_metadata *usr_md = *result;
+  for (l = batch->list.head; l != NULL; l = l->next, usr_md++) {
     grpc_mdelem md = l->md;
-    grpc_slice key = GRPC_MDKEY(md);
-    grpc_slice value = GRPC_MDVALUE(md);
-    if (result.count == result.capacity) {
-      result.capacity = GPR_MAX(result.capacity + 8, result.capacity * 2);
-      result.metadata =
-          gpr_realloc(result.metadata, result.capacity * sizeof(grpc_metadata));
-    }
-    usr_md = &result.metadata[result.count++];
-    usr_md->key = grpc_slice_ref_internal(key);
-    usr_md->value = grpc_slice_ref_internal(value);
+    usr_md->key = grpc_slice_ref_internal(GRPC_MDKEY(md));
+    usr_md->value = grpc_slice_ref_internal(GRPC_MDVALUE(md));
   }
-  return result;
 }
 
 static grpc_filtered_mdelem remove_consumed_md(grpc_exec_ctx *exec_ctx,
@@ -96,7 +96,7 @@ static void on_md_processing_done_inner(grpc_exec_ctx *exec_ctx,
                                         size_t num_response_md,
                                         grpc_error *error) {
   call_data *calld = elem->call_data;
-  grpc_transport_stream_op_batch *batch = calld->recv_initial_metadata_batch;
+  grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner, NULL);
   /* TODO(jboeuf): Implement support for response_md. */
   if (response_md != NULL && num_response_md > 0) {
     gpr_log(GPR_INFO,
@@ -106,9 +106,26 @@ static void on_md_processing_done_inner(grpc_exec_ctx *exec_ctx,
   if (error == GRPC_ERROR_NONE) {
     calld->consumed_md = consumed_md;
     calld->num_consumed_md = num_consumed_md;
-    error = grpc_metadata_batch_filter(
-        exec_ctx, batch->payload->recv_initial_metadata.recv_initial_metadata,
-        remove_consumed_md, elem, "Response metadata filtering error");
+    /* TODO(ctiller): propagate error */
+    GRPC_LOG_IF_ERROR(
+        "grpc_metadata_batch_filter",
+        grpc_metadata_batch_filter(exec_ctx, calld->recv_initial_metadata,
+                                   remove_consumed_md, elem,
+                                   "Response metadata filtering error"));
+    for (size_t i = 0; i < calld->md_count; i++) {
+      grpc_slice_unref_internal(exec_ctx, calld->md[i].key);
+      grpc_slice_unref_internal(exec_ctx, calld->md[i].value);
+    }
+  } else {
+    for (size_t i = 0; i < calld->md_count; i++) {
+      grpc_slice_unref_internal(exec_ctx, calld->md[i].key);
+      grpc_slice_unref_internal(exec_ctx, calld->md[i].value);
+    }
+    if (calld->transport_op->send_message) {
+      grpc_byte_stream_destroy(
+          exec_ctx, calld->transport_op->payload->send_message.send_message);
+      calld->transport_op->payload->send_message.send_message = NULL;
+    }
   }
   GRPC_CLOSURE_SCHED(exec_ctx, calld->original_recv_initial_metadata_ready,
                      error);
@@ -138,11 +155,10 @@ static void on_md_processing_done(
                                 response_md, num_response_md, error);
   }
   // Clean up.
-  for (size_t i = 0; i < calld->md.count; i++) {
-    grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].key);
-    grpc_slice_unref_internal(&exec_ctx, calld->md.metadata[i].value);
+  for (size_t i = 0; i < calld->md_count; i++) {
+    grpc_slice_unref_internal(&exec_ctx, calld->md[i].key);
+    grpc_slice_unref_internal(&exec_ctx, calld->md[i].value);
   }
-  grpc_metadata_array_destroy(&calld->md);
   GRPC_CALL_STACK_UNREF(&exec_ctx, calld->owning_call, "server_auth_metadata");
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -165,7 +181,6 @@ static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_call_element *elem = (grpc_call_element *)arg;
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
-  grpc_transport_stream_op_batch *batch = calld->recv_initial_metadata_batch;
   if (error == GRPC_ERROR_NONE) {
     if (chand->creds != NULL && chand->creds->processor.process != NULL) {
       // We're calling out to the application, so we need to make sure
@@ -176,11 +191,11 @@ static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
       grpc_call_combiner_set_notify_on_cancel(exec_ctx, calld->call_combiner,
                                               &calld->cancel_closure);
       GRPC_CALL_STACK_REF(calld->owning_call, "server_auth_metadata");
-      calld->md = metadata_batch_to_md_array(
-          batch->payload->recv_initial_metadata.recv_initial_metadata);
+      metadata_batch_to_md_array(calld->arena, calld->recv_initial_metadata,
+                                 &calld->md, &calld->md_count);
       chand->creds->processor.process(
-          chand->creds->processor.state, calld->auth_context,
-          calld->md.metadata, calld->md.count, on_md_processing_done, elem);
+          chand->creds->processor.state, calld->auth_context, calld->md,
+          calld->md_count, on_md_processing_done, elem);
       return;
     }
   }
@@ -194,7 +209,6 @@ static void auth_start_transport_stream_op_batch(
   call_data *calld = elem->call_data;
   if (batch->recv_initial_metadata) {
     // Inject our callback.
-    calld->recv_initial_metadata_batch = batch;
     calld->original_recv_initial_metadata_ready =
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
     batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
@@ -211,6 +225,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   channel_data *chand = elem->channel_data;
   calld->call_combiner = args->call_combiner;
   calld->owning_call = args->call_stack;
+  calld->arena = args->arena;
   GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
                     recv_initial_metadata_ready, elem,
                     grpc_schedule_on_exec_ctx);

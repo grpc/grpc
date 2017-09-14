@@ -37,8 +37,6 @@ EXPORTS
     grpc_compression_options_disable_algorithm
     grpc_compression_options_is_algorithm_enabled
     grpc_compression_options_is_stream_compression_algorithm_enabled
-    grpc_metadata_array_init
-    grpc_metadata_array_destroy
     grpc_call_details_init
     grpc_call_details_destroy
     grpc_register_plugin

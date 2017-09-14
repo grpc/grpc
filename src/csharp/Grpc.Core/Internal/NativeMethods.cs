@@ -110,7 +110,7 @@ namespace Grpc.Core.Internal
         public readonly Delegates.gprsharp_free_delegate gprsharp_free;
 
         public readonly Delegates.grpcsharp_metadata_array_create_delegate grpcsharp_metadata_array_create;
-        public readonly Delegates.grpcsharp_metadata_array_add_delegate grpcsharp_metadata_array_add;
+        public readonly Delegates.grpcsharp_metadata_array_set_delegate grpcsharp_metadata_array_set;
         public readonly Delegates.grpcsharp_metadata_array_count_delegate grpcsharp_metadata_array_count;
         public readonly Delegates.grpcsharp_metadata_array_get_key_delegate grpcsharp_metadata_array_get_key;
         public readonly Delegates.grpcsharp_metadata_array_get_value_delegate grpcsharp_metadata_array_get_value;
@@ -227,7 +227,7 @@ namespace Grpc.Core.Internal
             this.gprsharp_free = GetMethodDelegate<Delegates.gprsharp_free_delegate>(library);
 
             this.grpcsharp_metadata_array_create = GetMethodDelegate<Delegates.grpcsharp_metadata_array_create_delegate>(library);
-            this.grpcsharp_metadata_array_add = GetMethodDelegate<Delegates.grpcsharp_metadata_array_add_delegate>(library);
+            this.grpcsharp_metadata_array_set = GetMethodDelegate<Delegates.grpcsharp_metadata_array_set_delegate>(library);
             this.grpcsharp_metadata_array_count = GetMethodDelegate<Delegates.grpcsharp_metadata_array_count_delegate>(library);
             this.grpcsharp_metadata_array_get_key = GetMethodDelegate<Delegates.grpcsharp_metadata_array_get_key_delegate>(library);
             this.grpcsharp_metadata_array_get_value = GetMethodDelegate<Delegates.grpcsharp_metadata_array_get_value_delegate>(library);
@@ -383,7 +383,7 @@ namespace Grpc.Core.Internal
             public delegate void gprsharp_free_delegate(IntPtr ptr);
 
             public delegate MetadataArraySafeHandle grpcsharp_metadata_array_create_delegate(UIntPtr capacity);
-            public delegate void grpcsharp_metadata_array_add_delegate(MetadataArraySafeHandle array, string key, byte[] value, UIntPtr valueLength);
+            public delegate void grpcsharp_metadata_array_set_delegate(MetadataArraySafeHandle array, UIntPtr index, string key, byte[] value, UIntPtr valueLength);
             public delegate UIntPtr grpcsharp_metadata_array_count_delegate(IntPtr metadataArray);
             public delegate IntPtr grpcsharp_metadata_array_get_key_delegate(IntPtr metadataArray, UIntPtr index, out UIntPtr keyLength);
             public delegate IntPtr grpcsharp_metadata_array_get_value_delegate(IntPtr metadataArray, UIntPtr index, out UIntPtr valueLength);

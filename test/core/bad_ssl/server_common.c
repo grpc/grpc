@@ -50,19 +50,19 @@ void bad_ssl_run(grpc_server *server) {
   grpc_call_error error;
   grpc_call *s = NULL;
   grpc_call_details call_details;
-  grpc_metadata_array request_metadata_recv;
-
+  grpc_metadata *request_metadata_recv;
+  size_t request_metadata_recv_count;
   grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
   grpc_completion_queue *shutdown_cq;
 
   grpc_call_details_init(&call_details);
-  grpc_metadata_array_init(&request_metadata_recv);
 
   grpc_server_register_completion_queue(server, cq, NULL);
   grpc_server_start(server);
 
-  error = grpc_server_request_call(server, &s, &call_details,
-                                   &request_metadata_recv, cq, cq, (void *)1);
+  error = grpc_server_request_call(
+      server, &s, &call_details, &request_metadata_recv,
+      &request_metadata_recv_count, cq, cq, (void *)1);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   signal(SIGINT, sigint_handler);
@@ -99,5 +99,4 @@ void bad_ssl_run(grpc_server *server) {
 
   GPR_ASSERT(s == NULL);
   grpc_call_details_destroy(&call_details);
-  grpc_metadata_array_destroy(&request_metadata_recv);
 }

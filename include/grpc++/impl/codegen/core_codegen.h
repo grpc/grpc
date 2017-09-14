@@ -95,8 +95,6 @@ class CoreCodegen final : public CoreCodegenInterface {
                                            size_t length) override;
   grpc_slice grpc_slice_from_copied_buffer(const void* buffer,
                                            size_t length) override;
-  void grpc_metadata_array_init(grpc_metadata_array* array) override;
-  void grpc_metadata_array_destroy(grpc_metadata_array* array) override;
 
   gpr_timespec gpr_inf_future(gpr_clock_type type) override;
   gpr_timespec gpr_time_0(gpr_clock_type type) override;

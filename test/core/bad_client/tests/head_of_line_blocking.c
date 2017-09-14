@@ -72,22 +72,20 @@ static void verifier(grpc_server *server, grpc_completion_queue *cq,
   grpc_call_error error;
   grpc_call *s;
   cq_verifier *cqv = cq_verifier_create(cq);
-  grpc_metadata_array request_metadata_recv;
+  grpc_metadata *request_metadata_recv;
+  size_t request_metadata_recv_count;
   gpr_timespec deadline;
   grpc_byte_buffer *payload = NULL;
 
-  grpc_metadata_array_init(&request_metadata_recv);
-
-  error = grpc_server_request_registered_call(server, registered_method, &s,
-                                              &deadline, &request_metadata_recv,
-                                              &payload, cq, cq, tag(101));
+  error = grpc_server_request_registered_call(
+      server, registered_method, &s, &deadline, &request_metadata_recv,
+      &request_metadata_recv_count, &payload, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(payload != NULL);
 
-  grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_unref(s);
   grpc_byte_buffer_destroy(payload);
   cq_verifier_destroy(cqv);

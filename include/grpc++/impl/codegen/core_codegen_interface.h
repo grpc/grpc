@@ -111,9 +111,6 @@ class CoreCodegenInterface {
   virtual grpc_slice grpc_slice_from_copied_buffer(const void* buffer,
                                                    size_t length) = 0;
 
-  virtual void grpc_metadata_array_init(grpc_metadata_array* array) = 0;
-  virtual void grpc_metadata_array_destroy(grpc_metadata_array* array) = 0;
-
   virtual const Status& ok() = 0;
   virtual const Status& cancelled() = 0;
 

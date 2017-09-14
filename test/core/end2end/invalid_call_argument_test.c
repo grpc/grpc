@@ -40,13 +40,16 @@ struct test_state {
   grpc_completion_queue *cq;
   cq_verifier *cqv;
   grpc_op ops[6];
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata *initial_metadata_recv;
+  size_t initial_metadata_recv_count;
+  grpc_metadata *trailing_metadata_recv;
+  size_t trailing_metadata_recv_count;
   grpc_status_code status;
   grpc_slice details;
   grpc_call *server_call;
   grpc_server *server;
-  grpc_metadata_array server_initial_metadata_recv;
+  grpc_metadata *server_initial_metadata_recv;
+  size_t server_initial_metadata_recv_count;
   grpc_call_details call_details;
 };
 
@@ -57,8 +60,7 @@ static void prepare_test(int is_client) {
   char *server_hostport;
   grpc_op *op;
   g_state.is_client = is_client;
-  grpc_metadata_array_init(&g_state.initial_metadata_recv);
-  grpc_metadata_array_init(&g_state.trailing_metadata_recv);
+
   g_state.deadline = grpc_timeout_seconds_to_deadline(5);
   g_state.cq = grpc_completion_queue_create_for_next(NULL);
   g_state.cqv = cq_verifier_create(g_state.cq);
@@ -87,7 +89,7 @@ static void prepare_test(int is_client) {
     g_state.call = grpc_channel_create_call(
         g_state.chan, NULL, GRPC_PROPAGATE_DEFAULTS, g_state.cq,
         grpc_slice_from_static_string("/Foo"), &host, g_state.deadline, NULL);
-    grpc_metadata_array_init(&g_state.server_initial_metadata_recv);
+
     grpc_call_details_init(&g_state.call_details);
     op = g_state.ops;
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -98,11 +100,12 @@ static void prepare_test(int is_client) {
     GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(g_state.call, g_state.ops,
                                                      (size_t)(op - g_state.ops),
                                                      tag(1), NULL));
-    GPR_ASSERT(GRPC_CALL_OK ==
-               grpc_server_request_call(g_state.server, &g_state.server_call,
-                                        &g_state.call_details,
-                                        &g_state.server_initial_metadata_recv,
-                                        g_state.cq, g_state.cq, tag(101)));
+    GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                   g_state.server, &g_state.server_call,
+                                   &g_state.call_details,
+                                   &g_state.server_initial_metadata_recv,
+                                   &g_state.server_initial_metadata_recv_count,
+                                   g_state.cq, g_state.cq, tag(101)));
     CQ_EXPECT_COMPLETION(g_state.cqv, tag(101), 1);
     CQ_EXPECT_COMPLETION(g_state.cqv, tag(1), 1);
     cq_verify(g_state.cqv);
@@ -115,8 +118,6 @@ static void cleanup_test() {
   cq_verifier_destroy(g_state.cqv);
   grpc_channel_destroy(g_state.chan);
   grpc_slice_unref(g_state.details);
-  grpc_metadata_array_destroy(&g_state.initial_metadata_recv);
-  grpc_metadata_array_destroy(&g_state.trailing_metadata_recv);
 
   if (!g_state.is_client) {
     shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
@@ -129,7 +130,6 @@ static void cleanup_test() {
     grpc_completion_queue_destroy(shutdown_cq);
     grpc_server_destroy(g_state.server);
     grpc_call_details_destroy(&g_state.call_details);
-    grpc_metadata_array_destroy(&g_state.server_initial_metadata_recv);
   }
   grpc_completion_queue_shutdown(g_state.cq);
   while (grpc_completion_queue_next(g_state.cq,
@@ -297,8 +297,9 @@ static void test_receive_initial_metadata_twice_at_client() {
   prepare_test(1);
   op = g_state.ops;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata =
+  op->data.recv_initial_metadata.initial_metadata =
       &g_state.initial_metadata_recv;
+  op->data.recv_initial_metadata.count = &g_state.initial_metadata_recv_count;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -309,8 +310,9 @@ static void test_receive_initial_metadata_twice_at_client() {
   cq_verify(g_state.cqv);
   op = g_state.ops;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata =
+  op->data.recv_initial_metadata.initial_metadata =
       &g_state.initial_metadata_recv;
+  op->data.recv_initial_metadata.count = &g_state.initial_metadata_recv_count;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -389,6 +391,8 @@ static void test_recv_status_on_client_twice() {
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata =
       &g_state.trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata_count =
+      &g_state.initial_metadata_recv_count;
   op->data.recv_status_on_client.status = &g_state.status;
   op->data.recv_status_on_client.status_details = &g_state.details;
   op->flags = 0;
@@ -403,6 +407,7 @@ static void test_recv_status_on_client_twice() {
   op = g_state.ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = NULL;
+  op->data.recv_status_on_client.trailing_metadata_count = NULL;
   op->data.recv_status_on_client.status = NULL;
   op->data.recv_status_on_client.status_details = NULL;
   op->flags = 0;

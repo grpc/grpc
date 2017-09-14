@@ -267,7 +267,8 @@ class ServerContext {
   /// Return the tag queued by BeginCompletionOp()
   CompletionQueueTag* GetCompletionOpTag();
 
-  ServerContext(gpr_timespec deadline, grpc_metadata_array* arr);
+  ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
+                size_t metadata_count);
 
   void set_call(grpc_call* call) { call_ = call; }
 

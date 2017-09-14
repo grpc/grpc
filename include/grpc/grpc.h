@@ -40,9 +40,6 @@ extern "C" {
  * functionality lives in grpc_security.h.
  */
 
-GRPCAPI void grpc_metadata_array_init(grpc_metadata_array *array);
-GRPCAPI void grpc_metadata_array_destroy(grpc_metadata_array *array);
-
 GRPCAPI void grpc_call_details_init(grpc_call_details *details);
 GRPCAPI void grpc_call_details_destroy(grpc_call_details *details);
 
@@ -330,7 +327,7 @@ GRPCAPI void grpc_call_unref(grpc_call *call);
     \a grpc_server_register_completion_queue. */
 GRPCAPI grpc_call_error grpc_server_request_call(
     grpc_server *server, grpc_call **call, grpc_call_details *details,
-    grpc_metadata_array *request_metadata,
+    grpc_metadata **request_metadata, size_t *request_metadata_count,
     grpc_completion_queue *cq_bound_to_call,
     grpc_completion_queue *cq_for_notification, void *tag_new);
 
@@ -359,8 +356,8 @@ GRPCAPI void *grpc_server_register_method(
     grpc_server_register_completion_queue. */
 GRPCAPI grpc_call_error grpc_server_request_registered_call(
     grpc_server *server, void *registered_method, grpc_call **call,
-    gpr_timespec *deadline, grpc_metadata_array *request_metadata,
-    grpc_byte_buffer **optional_payload,
+    gpr_timespec *deadline, grpc_metadata **request_metadata,
+    size_t *request_metadata_count, grpc_byte_buffer **optional_payload,
     grpc_completion_queue *cq_bound_to_call,
     grpc_completion_queue *cq_for_notification, void *tag_new);
 

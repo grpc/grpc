@@ -43,7 +43,7 @@ namespace Grpc.Core.Internal
             for (int i = 0; i < metadata.Count; i++)
             {
                 var valueBytes = metadata[i].GetSerializedValueUnsafe();
-                Native.grpcsharp_metadata_array_add(metadataArray, metadata[i].Key, valueBytes, new UIntPtr((ulong)valueBytes.Length));
+                Native.grpcsharp_metadata_array_set(metadataArray, new UIntPtr((ulong)i), metadata[i].Key, valueBytes, new UIntPtr((ulong)valueBytes.Length));
             }
             return metadataArray;
         }

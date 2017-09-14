@@ -73,8 +73,8 @@ void cq_verifier_destroy(cq_verifier *v) {
   gpr_free(v);
 }
 
-static int has_metadata(const grpc_metadata *md, size_t count, const char *key,
-                        const char *value) {
+int contains_metadata(const grpc_metadata *md, size_t count, const char *key,
+                      const char *value) {
   size_t i;
   for (i = 0; i < count; i++) {
     if (0 == grpc_slice_str_cmp(md[i].key, key) &&
@@ -85,13 +85,8 @@ static int has_metadata(const grpc_metadata *md, size_t count, const char *key,
   return 0;
 }
 
-int contains_metadata(grpc_metadata_array *array, const char *key,
-                      const char *value) {
-  return has_metadata(array->metadata, array->count, key, value);
-}
-
-static int has_metadata_slices(const grpc_metadata *md, size_t count,
-                               grpc_slice key, grpc_slice value) {
+int contains_metadata_slices(const grpc_metadata *md, size_t count,
+                             grpc_slice key, grpc_slice value) {
   size_t i;
   for (i = 0; i < count; i++) {
     if (grpc_slice_eq(md[i].key, key) && grpc_slice_eq(md[i].value, value)) {
@@ -99,11 +94,6 @@ static int has_metadata_slices(const grpc_metadata *md, size_t count,
     }
   }
   return 0;
-}
-
-int contains_metadata_slices(grpc_metadata_array *array, grpc_slice key,
-                             grpc_slice value) {
-  return has_metadata_slices(array->metadata, array->count, key, value);
 }
 
 static grpc_slice merge_slices(grpc_slice *slices, size_t nslices) {

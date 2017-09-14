@@ -64,11 +64,13 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       channel, NULL, 0, cq, grpc_slice_from_static_string("/foo"), &host,
       gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array_init(&initial_metadata_recv);
+  grpc_metadata *initial_metadata_recv;
+  size_t initial_metadata_recv_count;
+
   grpc_byte_buffer *response_payload_recv = NULL;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array_init(&trailing_metadata_recv);
+  grpc_metadata *trailing_metadata_recv;
+  size_t trailing_metadata_recv_count;
+
   grpc_status_code status;
   grpc_slice details = grpc_empty_slice();
 
@@ -85,7 +87,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.count = &initial_metadata_recv_count;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -96,6 +99,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata_count =
+      &trailing_metadata_recv_count;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
@@ -140,8 +145,7 @@ done:
   }
   grpc_call_unref(call);
   grpc_completion_queue_destroy(cq);
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
+
   grpc_slice_unref(details);
   grpc_channel_destroy(channel);
   if (response_payload_recv != NULL) {

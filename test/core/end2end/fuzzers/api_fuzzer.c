@@ -561,8 +561,10 @@ typedef struct call_state {
   grpc_call *call;
   grpc_byte_buffer *recv_message;
   grpc_status_code status;
-  grpc_metadata_array recv_initial_metadata;
-  grpc_metadata_array recv_trailing_metadata;
+  grpc_metadata *recv_initial_metadata;
+  size_t recv_initial_metadata_count;
+  grpc_metadata *recv_trailing_metadata;
+  size_t recv_trailing_metadata_count;
   grpc_slice recv_status_details;
   int cancelled;
   int pending_ops;
@@ -615,8 +617,7 @@ static call_state *maybe_delete_call_state(call_state *call) {
 
   call->prev->next = call->next;
   call->next->prev = call->prev;
-  grpc_metadata_array_destroy(&call->recv_initial_metadata);
-  grpc_metadata_array_destroy(&call->recv_trailing_metadata);
+
   grpc_slice_unref(call->recv_status_details);
   grpc_call_details_destroy(&call->call_details);
 
@@ -1047,8 +1048,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
             case GRPC_OP_RECV_INITIAL_METADATA:
               op->op = GRPC_OP_RECV_INITIAL_METADATA;
               has_ops |= 1 << GRPC_OP_RECV_INITIAL_METADATA;
-              op->data.recv_initial_metadata.recv_initial_metadata =
+              op->data.recv_initial_metadata.initial_metadata =
                   &g_active_call->recv_initial_metadata;
+              op->data.recv_initial_metadata.count =
+                  &g_active_call->recv_initial_metadata_count;
               break;
             case GRPC_OP_RECV_MESSAGE:
               op->op = GRPC_OP_RECV_MESSAGE;
@@ -1060,6 +1063,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               op->data.recv_status_on_client.status = &g_active_call->status;
               op->data.recv_status_on_client.trailing_metadata =
                   &g_active_call->recv_trailing_metadata;
+              op->data.recv_status_on_client.trailing_metadata_count =
+                  &g_active_call->recv_trailing_metadata_count;
               op->data.recv_status_on_client.status_details =
                   &g_active_call->recv_status_details;
               break;
@@ -1154,9 +1159,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         call_state *cs = new_call(g_active_call, PENDING_SERVER);
         cs->pending_ops++;
         validator *v = create_validator(finished_request_call, cs);
-        grpc_call_error error =
-            grpc_server_request_call(g_server, &cs->call, &cs->call_details,
-                                     &cs->recv_initial_metadata, cq, cq, v);
+        grpc_call_error error = grpc_server_request_call(
+            g_server, &cs->call, &cs->call_details, &cs->recv_initial_metadata,
+            &cs->recv_initial_metadata_count, cq, cq, v);
         if (error != GRPC_CALL_OK) {
           v->validate(v->arg, false);
           gpr_free(v);

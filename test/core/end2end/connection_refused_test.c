@@ -42,7 +42,8 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   cq_verifier *cqv;
   grpc_op ops[6];
   grpc_op *op;
-  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata *trailing_metadata_recv;
+  size_t trailing_metadata_recv_count;
   grpc_status_code status;
   grpc_slice details;
 
@@ -50,8 +51,6 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
           wait_for_ready, use_service_config);
 
   grpc_init();
-
-  grpc_metadata_array_init(&trailing_metadata_recv);
 
   cq = grpc_completion_queue_create_for_next(NULL);
   cqv = cq_verifier_create(cq);
@@ -100,6 +99,8 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata_count =
+      &trailing_metadata_recv_count;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
@@ -128,7 +129,6 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   cq_verifier_destroy(cqv);
 
   grpc_slice_unref(details);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
 
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

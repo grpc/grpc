@@ -64,8 +64,10 @@ typedef struct {
   fling_server_tags state;
   grpc_call *call;
   grpc_call_details call_details;
-  grpc_metadata_array request_metadata_recv;
-  grpc_metadata_array initial_metadata_send;
+  grpc_metadata *request_metadata_recv;
+  size_t request_metadata_recv_count;
+  grpc_metadata *initial_metadata_send;
+  size_t initial_metadata_send_count;
 } fling_call;
 
 // hold up to 10000 calls and 6 snaphost calls
@@ -76,14 +78,14 @@ static void request_call_unary(int call_idx) {
     gpr_log(GPR_INFO, "Used all call slots (10000) on server. Server exit.");
     _exit(0);
   }
-  grpc_metadata_array_init(&calls[call_idx].request_metadata_recv);
+
   grpc_server_request_call(
       server, &calls[call_idx].call, &calls[call_idx].call_details,
-      &calls[call_idx].request_metadata_recv, cq, cq, &calls[call_idx]);
+      &calls[call_idx].request_metadata_recv,
+      &calls[call_idx].request_metadata_recv_count, cq, cq, &calls[call_idx]);
 }
 
 static void send_initial_metadata_unary(void *tag) {
-  grpc_metadata_array_init(&(*(fling_call *)tag).initial_metadata_send);
   metadata_ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
   metadata_ops[0].data.send_initial_metadata.count = 0;
 
@@ -108,7 +110,6 @@ static void send_snapshot(void *tag, struct grpc_memory_counters *snapshot) {
   grpc_slice snapshot_slice =
       grpc_slice_new(snapshot, sizeof(*snapshot), gpr_free);
   payload_buffer = grpc_raw_byte_buffer_create(&snapshot_slice, 1);
-  grpc_metadata_array_init(&(*(fling_call *)tag).initial_metadata_send);
 
   op = snapshot_ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -273,8 +274,7 @@ int main(int argc, char **argv) {
           case FLING_SERVER_SEND_STATUS_FLING_CALL:
             grpc_call_unref(s->call);
             grpc_call_details_destroy(&s->call_details);
-            grpc_metadata_array_destroy(&s->initial_metadata_send);
-            grpc_metadata_array_destroy(&s->request_metadata_recv);
+
             break;
           case FLING_SERVER_BATCH_SEND_STATUS_FLING_CALL:
             for (int k = 0; k < (int)(sizeof(calls) / sizeof(fling_call));
@@ -291,8 +291,7 @@ int main(int argc, char **argv) {
             grpc_byte_buffer_destroy(terminal_buffer);
             grpc_call_unref(s->call);
             grpc_call_details_destroy(&s->call_details);
-            grpc_metadata_array_destroy(&s->initial_metadata_send);
-            grpc_metadata_array_destroy(&s->request_metadata_recv);
+
             terminal_buffer = NULL;
             payload_buffer = NULL;
             break;
