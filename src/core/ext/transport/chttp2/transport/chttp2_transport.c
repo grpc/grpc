@@ -144,11 +144,10 @@ static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
 static void cancel_pings(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                          grpc_error *error);
-static void send_ping_locked(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
-    grpc_chttp2_ping_type ping_type, grpc_closure *on_initiate,
-    grpc_closure *on_complete,
-    grpc_chttp2_initiate_write_reason initiate_write_reason);
+static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+                             grpc_chttp2_ping_type ping_type,
+                             grpc_closure *on_initiate,
+                             grpc_closure *on_complete);
 static void retry_initiate_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                        grpc_error *error);
 
@@ -1711,18 +1710,14 @@ static void cancel_pings(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   GRPC_ERROR_UNREF(error);
 }
 
-static void send_ping_locked(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
-    grpc_chttp2_ping_type ping_type, grpc_closure *on_initiate,
-    grpc_closure *on_ack,
-    grpc_chttp2_initiate_write_reason initiate_write_reason) {
+static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+                             grpc_chttp2_ping_type ping_type,
+                             grpc_closure *on_initiate, grpc_closure *on_ack) {
   grpc_chttp2_ping_queue *pq = &t->ping_queues[ping_type];
   grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_INITIATE], on_initiate,
                            GRPC_ERROR_NONE);
-  if (grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_NEXT], on_ack,
-                               GRPC_ERROR_NONE)) {
-    grpc_chttp2_initiate_write(exec_ctx, t, initiate_write_reason);
-  }
+  grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_NEXT], on_ack,
+                           GRPC_ERROR_NONE);
 }
 
 static void retry_initiate_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
@@ -1807,8 +1802,9 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
 
   if (op->send_ping) {
     send_ping_locked(exec_ctx, t, GRPC_CHTTP2_PING_ON_NEXT_WRITE, NULL,
-                     op->send_ping,
-                     GRPC_CHTTP2_INITIATE_WRITE_APPLICATION_PING);
+                     op->send_ping);
+    grpc_chttp2_initiate_write(exec_ctx, t,
+                               GRPC_CHTTP2_INITIATE_WRITE_APPLICATION_PING);
   }
 
   if (op->on_connectivity_state_change != NULL) {
@@ -2451,8 +2447,7 @@ void grpc_chttp2_act_on_flowctl_action(grpc_exec_ctx *exec_ctx,
     grpc_bdp_estimator_schedule_ping(&t->flow_control.bdp_estimator);
     send_ping_locked(exec_ctx, t,
                      GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE,
-                     &t->start_bdp_ping_locked, &t->finish_bdp_ping_locked,
-                     GRPC_CHTTP2_INITIATE_WRITE_BDP_ESTIMATOR_PING);
+                     &t->start_bdp_ping_locked, &t->finish_bdp_ping_locked);
   }
 }
 
@@ -2649,8 +2644,9 @@ static void init_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
       GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive ping end");
       send_ping_locked(exec_ctx, t, GRPC_CHTTP2_PING_ON_NEXT_WRITE,
                        &t->start_keepalive_ping_locked,
-                       &t->finish_keepalive_ping_locked,
-                       GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING);
+                       &t->finish_keepalive_ping_locked);
+      grpc_chttp2_initiate_write(exec_ctx, t,
+                                 GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING);
     } else {
       GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
       grpc_timer_init(
