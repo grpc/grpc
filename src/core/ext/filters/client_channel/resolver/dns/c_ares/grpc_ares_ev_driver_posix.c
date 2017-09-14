@@ -38,7 +38,7 @@ typedef struct fd_node {
   /** the owner of this fd node */
   grpc_ares_ev_driver *ev_driver;
   /** the grpc_fd owned by this fd node */
-  grpc_fd *grpc_fd;
+  grpc_fd *fd;
   /** a closure wrapping on_readable_cb, which should be invoked when the
       grpc_fd in this node becomes readable. */
   grpc_closure read_closure;
@@ -96,15 +96,15 @@ static void grpc_ares_ev_driver_unref(grpc_ares_ev_driver *ev_driver) {
 }
 
 static void fd_node_destroy(grpc_exec_ctx *exec_ctx, fd_node *fdn) {
-  gpr_log(GPR_DEBUG, "delete fd: %d", grpc_fd_wrapped_fd(fdn->grpc_fd));
+  gpr_log(GPR_DEBUG, "delete fd: %d", grpc_fd_wrapped_fd(fdn->fd));
   GPR_ASSERT(!fdn->readable_registered);
   GPR_ASSERT(!fdn->writable_registered);
   gpr_mu_destroy(&fdn->mu);
-  grpc_pollset_set_del_fd(exec_ctx, fdn->ev_driver->pollset_set, fdn->grpc_fd);
+  grpc_pollset_set_del_fd(exec_ctx, fdn->ev_driver->pollset_set, fdn->fd);
   /* c-ares library has closed the fd inside grpc_fd. This fd may be picked up
      immediately by another thread, and should not be closed by the following
      grpc_fd_orphan. */
-  grpc_fd_orphan(exec_ctx, fdn->grpc_fd, NULL, NULL, true /* already_closed */,
+  grpc_fd_orphan(exec_ctx, fdn->fd, NULL, NULL, true /* already_closed */,
                  "c-ares query finished");
   gpr_free(fdn);
 }
@@ -150,9 +150,8 @@ void grpc_ares_ev_driver_shutdown(grpc_exec_ctx *exec_ctx,
   ev_driver->shutting_down = true;
   fd_node *fn = ev_driver->fds;
   while (fn != NULL) {
-    grpc_fd_shutdown(
-        exec_ctx, fn->grpc_fd,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("grpc_ares_ev_driver_shutdown"));
+    grpc_fd_shutdown(exec_ctx, fn->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                           "grpc_ares_ev_driver_shutdown"));
     fn = fn->next;
   }
   gpr_mu_unlock(&ev_driver->mu);
@@ -165,7 +164,7 @@ static fd_node *pop_fd_node(fd_node **head, int fd) {
   dummy_head.next = *head;
   fd_node *node = &dummy_head;
   while (node->next != NULL) {
-    if (grpc_fd_wrapped_fd(node->next->grpc_fd) == fd) {
+    if (grpc_fd_wrapped_fd(node->next->fd) == fd) {
       fd_node *ret = node->next;
       node->next = node->next->next;
       *head = dummy_head.next;
@@ -184,9 +183,9 @@ static void on_readable_cb(grpc_exec_ctx *exec_ctx, void *arg,
   fdn->readable_registered = false;
   gpr_mu_unlock(&fdn->mu);
 
-  gpr_log(GPR_DEBUG, "readable on %d", grpc_fd_wrapped_fd(fdn->grpc_fd));
+  gpr_log(GPR_DEBUG, "readable on %d", grpc_fd_wrapped_fd(fdn->fd));
   if (error == GRPC_ERROR_NONE) {
-    ares_process_fd(ev_driver->channel, grpc_fd_wrapped_fd(fdn->grpc_fd),
+    ares_process_fd(ev_driver->channel, grpc_fd_wrapped_fd(fdn->fd),
                     ARES_SOCKET_BAD);
   } else {
     // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
@@ -211,10 +210,10 @@ static void on_writable_cb(grpc_exec_ctx *exec_ctx, void *arg,
   fdn->writable_registered = false;
   gpr_mu_unlock(&fdn->mu);
 
-  gpr_log(GPR_DEBUG, "writable on %d", grpc_fd_wrapped_fd(fdn->grpc_fd));
+  gpr_log(GPR_DEBUG, "writable on %d", grpc_fd_wrapped_fd(fdn->fd));
   if (error == GRPC_ERROR_NONE) {
     ares_process_fd(ev_driver->channel, ARES_SOCKET_BAD,
-                    grpc_fd_wrapped_fd(fdn->grpc_fd));
+                    grpc_fd_wrapped_fd(fdn->fd));
   } else {
     // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
     // timed out. The pending lookups made on this ev_driver will be cancelled
@@ -253,7 +252,7 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
           gpr_asprintf(&fd_name, "ares_ev_driver-%" PRIuPTR, i);
           fdn = (fd_node *)gpr_malloc(sizeof(fd_node));
           gpr_log(GPR_DEBUG, "new fd: %d", socks[i]);
-          fdn->grpc_fd = grpc_fd_create(socks[i], fd_name);
+          fdn->fd = grpc_fd_create(socks[i], fd_name);
           fdn->ev_driver = ev_driver;
           fdn->readable_registered = false;
           fdn->writable_registered = false;
@@ -262,8 +261,7 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
                             grpc_schedule_on_exec_ctx);
           GRPC_CLOSURE_INIT(&fdn->write_closure, on_writable_cb, fdn,
                             grpc_schedule_on_exec_ctx);
-          grpc_pollset_set_add_fd(exec_ctx, ev_driver->pollset_set,
-                                  fdn->grpc_fd);
+          grpc_pollset_set_add_fd(exec_ctx, ev_driver->pollset_set, fdn->fd);
           gpr_free(fd_name);
         }
         fdn->next = new_list;
@@ -274,9 +272,8 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
         if (ARES_GETSOCK_READABLE(socks_bitmask, i) &&
             !fdn->readable_registered) {
           grpc_ares_ev_driver_ref(ev_driver);
-          gpr_log(GPR_DEBUG, "notify read on: %d",
-                  grpc_fd_wrapped_fd(fdn->grpc_fd));
-          grpc_fd_notify_on_read(exec_ctx, fdn->grpc_fd, &fdn->read_closure);
+          gpr_log(GPR_DEBUG, "notify read on: %d", grpc_fd_wrapped_fd(fdn->fd));
+          grpc_fd_notify_on_read(exec_ctx, fdn->fd, &fdn->read_closure);
           fdn->readable_registered = true;
         }
         // Register write_closure if the socket is writable and write_closure
@@ -284,9 +281,9 @@ static void grpc_ares_notify_on_event_locked(grpc_exec_ctx *exec_ctx,
         if (ARES_GETSOCK_WRITABLE(socks_bitmask, i) &&
             !fdn->writable_registered) {
           gpr_log(GPR_DEBUG, "notify write on: %d",
-                  grpc_fd_wrapped_fd(fdn->grpc_fd));
+                  grpc_fd_wrapped_fd(fdn->fd));
           grpc_ares_ev_driver_ref(ev_driver);
-          grpc_fd_notify_on_write(exec_ctx, fdn->grpc_fd, &fdn->write_closure);
+          grpc_fd_notify_on_write(exec_ctx, fdn->fd, &fdn->write_closure);
           fdn->writable_registered = true;
         }
         gpr_mu_unlock(&fdn->mu);

@@ -183,7 +183,8 @@ grpc_stream_compression_context_create_gzip(
   GPR_ASSERT(method == GRPC_STREAM_COMPRESSION_GZIP_COMPRESS ||
              method == GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS);
   grpc_stream_compression_context_gzip *gzip_ctx =
-      gpr_zalloc(sizeof(grpc_stream_compression_context_gzip));
+      (grpc_stream_compression_context *)gpr_zalloc(
+          sizeof(grpc_stream_compression_context_gzip));
   int r;
   if (gzip_ctx == NULL) {
     return NULL;

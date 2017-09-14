@@ -20,6 +20,14 @@
   doc: Number of client side calls created by this process
 - counter: server_calls_created
   doc: Number of server side calls created by this process
+- counter: cqs_created
+  doc: Number of completion queues created
+- counter: client_channels_created
+  doc: Number of client channels created
+- counter: client_subchannels_created
+  doc: Number of client subchannels created
+- counter: server_channels_created
+  doc: Number of server channels created
 # polling
 - counter: syscall_poll
   doc: Number of polling syscalls (epoll_wait, poll, etc) made by this process
@@ -135,3 +143,14 @@
 - counter: executor_push_retries
   doc: Number of times we raced and were forced to retry pushing a closure to
        the executor
+# server
+- counter: server_requested_calls
+  doc: How many calls were requested (not necessarily received) by the server
+- histogram: server_cqs_checked
+  buckets: 8
+  max: 64
+  doc: How many completion queues were checked looking for a CQ that had
+       requested the incoming call
+- counter: server_slowpath_requests_queued
+  doc: How many times was the server slow path taken (indicates too few
+       outstanding requests)

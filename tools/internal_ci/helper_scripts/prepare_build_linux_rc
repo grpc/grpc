@@ -26,6 +26,7 @@ sudo service docker restart
 
 # Populate xdg-cache-home to workaround https://github.com/grpc/grpc/issues/11968
 sudo mkdir -p /tmp/xdg-cache-home
+PYTHONWARNINGS=ignore XDG_CACHE_HOME=/tmp/xdg-cache-home sudo -E pip install setuptools wheel
 PYTHONWARNINGS=ignore XDG_CACHE_HOME=/tmp/xdg-cache-home sudo -E pip install coverage==4.4 pylint==1.6.5
 
 # Download Docker images from DockerHub

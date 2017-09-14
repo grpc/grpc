@@ -368,8 +368,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_fake_resolver_response_generator_unref(response_generator_);
   }
 
-  void ResetStub() {
+  void ResetStub(int fallback_timeout = 0) {
     ChannelArguments args;
+    args.SetGrpclbFallbackTimeout(fallback_timeout);
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_);
     std::ostringstream uri;
@@ -441,10 +442,10 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_exec_ctx_finish(&exec_ctx);
   }
 
-  const std::vector<int> GetBackendPorts() const {
+  const std::vector<int> GetBackendPorts(const size_t start_index = 0) const {
     std::vector<int> backend_ports;
-    for (const auto& bs : backend_servers_) {
-      backend_ports.push_back(bs.port_);
+    for (size_t i = start_index; i < backend_servers_.size(); ++i) {
+      backend_ports.push_back(backend_servers_[i].port_);
     }
     return backend_ports;
   }
@@ -613,6 +614,71 @@ TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
 
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(SingleBalancerTest, Fallback) {
+  const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
+  const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
+  const size_t kNumBackendInResolution = backends_.size() / 2;
+
+  ResetStub(kFallbackTimeoutMs);
+  std::vector<AddressData> addresses;
+  addresses.emplace_back(AddressData{balancer_servers_[0].port_, true, ""});
+  for (size_t i = 0; i < kNumBackendInResolution; ++i) {
+    addresses.emplace_back(AddressData{backend_servers_[i].port_, false, ""});
+  }
+  SetNextResolution(addresses);
+
+  // Send non-empty serverlist only after kServerlistDelayMs
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(
+             GetBackendPorts(kNumBackendInResolution /* start_index */), {}),
+      kServerlistDelayMs);
+
+  // The first request. The client will block while it's still trying to
+  // contact the balancer.
+  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
+  CheckRpcSendOk(kNumBackendInResolution);
+  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
+
+  // Fallback is used: each backend returned by the resolver should have
+  // gotten one request.
+  for (size_t i = 0; i < kNumBackendInResolution; ++i) {
+    EXPECT_EQ(1U, backend_servers_[i].service_->request_count());
+  }
+  for (size_t i = kNumBackendInResolution; i < backends_.size(); ++i) {
+    EXPECT_EQ(0U, backend_servers_[i].service_->request_count());
+  }
+
+  // Wait until update has been processed, as signaled by the backend returned
+  // by the balancer receiving a request.
+  do {
+    CheckRpcSendOk(1);
+  } while (
+      backend_servers_[kNumBackendInResolution].service_->request_count() == 0);
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    backend_servers_[i].service_->ResetCounters();
+  }
+
+  // Send out the second request.
+  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
+  CheckRpcSendOk(backends_.size() - kNumBackendInResolution);
+  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
+
+  // Serverlist is used: each backend returned by the balancer should
+  // have gotten one request.
+  for (size_t i = 0; i < kNumBackendInResolution; ++i) {
+    EXPECT_EQ(0U, backend_servers_[i].service_->request_count());
+  }
+  for (size_t i = kNumBackendInResolution; i < backends_.size(); ++i) {
+    EXPECT_EQ(1U, backend_servers_[i].service_->request_count());
+  }
+
+  balancers_[0]->NotifyDoneWithServerlists();
+  // The balancer got a single request.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  // and sent a single response.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
 }
 
 TEST_F(SingleBalancerTest, BackendsRestart) {

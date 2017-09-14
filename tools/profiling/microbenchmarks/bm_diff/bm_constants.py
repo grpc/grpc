@@ -28,4 +28,4 @@ _INTERESTING = ('cpu_time', 'real_time', 'locks_per_iteration',
         'atm_cas_per_iteration', 'atm_add_per_iteration',
         'nows_per_iteration', 'cli_transport_stalls_per_iteration', 
         'cli_stream_stalls_per_iteration', 'svr_transport_stalls_per_iteration',
-        'svr_stream_stalls_per_iteration',)
+        'svr_stream_stalls_per_iteration', 'http2_pings_sent_per_iteration')
