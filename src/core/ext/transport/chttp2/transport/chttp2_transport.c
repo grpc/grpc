@@ -341,7 +341,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->force_send_settings = 1 << GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE;
   t->sent_local_settings = 0;
   t->write_buffer_size = DEFAULT_WINDOW;
-  t->flow_control.enable_bdp_probe = true;
+  t->enable_bdp_probe = true;
 
   if (is_client) {
     grpc_slice_buffer_add(&t->outbuf, grpc_slice_from_copied_string(
@@ -458,7 +458,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
             (grpc_integer_options){0, 0, MAX_WRITE_BUFFER_SIZE});
       } else if (0 ==
                  strcmp(channel_args->args[i].key, GRPC_ARG_HTTP2_BDP_PROBE)) {
-        t->flow_control.enable_bdp_probe = grpc_channel_arg_get_integer(
+        t->enable_bdp_probe = grpc_channel_arg_get_integer(
             &channel_args->args[i], (grpc_integer_options){1, 0, 1});
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_KEEPALIVE_TIME_MS)) {
@@ -2357,13 +2357,6 @@ void grpc_chttp2_act_on_flowctl_action(grpc_exec_ctx *exec_ctx,
       grpc_chttp2_initiate_write(exec_ctx, t, "immediate setting update");
     }
   }
-  if (action.need_ping) {
-    GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
-    grpc_bdp_estimator_schedule_ping(&t->flow_control.bdp_estimator);
-    send_ping_locked(exec_ctx, t,
-                     GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE,
-                     &t->start_bdp_ping_locked, &t->finish_bdp_ping_locked);
-  }
 }
 
 static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
@@ -2401,6 +2394,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
   GPR_TIMER_BEGIN("reading_action_locked", 0);
 
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)tp;
+  bool need_bdp_ping = false;
 
   GRPC_ERROR_REF(error);
 
@@ -2419,9 +2413,11 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     grpc_error *errors[3] = {GRPC_ERROR_REF(error), GRPC_ERROR_NONE,
                              GRPC_ERROR_NONE};
     for (; i < t->read_buffer.count && errors[1] == GRPC_ERROR_NONE; i++) {
-      grpc_bdp_estimator_add_incoming_bytes(
-          &t->flow_control.bdp_estimator,
-          (int64_t)GRPC_SLICE_LENGTH(t->read_buffer.slices[i]));
+      if (grpc_bdp_estimator_add_incoming_bytes(
+              &t->flow_control.bdp_estimator,
+              (int64_t)GRPC_SLICE_LENGTH(t->read_buffer.slices[i]))) {
+        need_bdp_ping = true;
+      }
       errors[1] =
           grpc_chttp2_perform_read(exec_ctx, t, t->read_buffer.slices[i]);
     }
@@ -2466,9 +2462,18 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
   if (keep_reading) {
     grpc_endpoint_read(exec_ctx, t->ep, &t->read_buffer,
                        &t->read_action_locked);
-    grpc_chttp2_act_on_flowctl_action(
-        exec_ctx, grpc_chttp2_flowctl_get_bdp_action(&t->flow_control), t,
-        NULL);
+    if (t->enable_bdp_probe) {
+      if (need_bdp_ping) {
+        GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
+        grpc_bdp_estimator_schedule_ping(&t->flow_control.bdp_estimator);
+        send_ping_locked(exec_ctx, t,
+                         GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE,
+                         &t->start_bdp_ping_locked, &t->finish_bdp_ping_locked);
+      }
+      grpc_chttp2_act_on_flowctl_action(
+          exec_ctx, grpc_chttp2_flowctl_get_bdp_action(&t->flow_control), t,
+          NULL);
+    }
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keep_reading");
   } else {
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "reading_action");
