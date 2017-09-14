@@ -76,7 +76,7 @@ typedef struct requested_call {
       grpc_call_details *details;
     } batch;
     struct {
-      registered_method *registered_method;
+      registered_method *method;
       gpr_timespec *deadline;
       grpc_byte_buffer **optional_payload;
     } registered;
@@ -145,7 +145,7 @@ struct call_data {
   uint32_t recv_initial_metadata_flags;
   grpc_metadata_array initial_metadata;
 
-  request_matcher *request_matcher;
+  request_matcher *matcher;
   grpc_byte_buffer *payload;
 
   grpc_closure got_initial_metadata;
@@ -171,7 +171,7 @@ struct registered_method {
   grpc_server_register_method_payload_handling payload_handling;
   uint32_t flags;
   /* one request matcher per method */
-  request_matcher request_matcher;
+  request_matcher matcher;
   registered_method *next;
 };
 
@@ -334,7 +334,7 @@ static void request_matcher_destroy(request_matcher *rm) {
 
 static void kill_zombie(grpc_exec_ctx *exec_ctx, void *elem,
                         grpc_error *error) {
-  grpc_call_unref(grpc_call_from_top_element(elem));
+  grpc_call_unref(grpc_call_from_top_element((grpc_call_element *)elem));
 }
 
 static void request_matcher_zombify_all_pending_calls(grpc_exec_ctx *exec_ctx,
@@ -387,7 +387,7 @@ static void server_delete(grpc_exec_ctx *exec_ctx, grpc_server *server) {
   while ((rm = server->registered_methods) != NULL) {
     server->registered_methods = rm->next;
     if (server->started) {
-      request_matcher_destroy(&rm->request_matcher);
+      request_matcher_destroy(&rm->matcher);
     }
     gpr_free(rm->method);
     gpr_free(rm->host);
@@ -519,7 +519,7 @@ static void publish_new_rpc(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_call_element *call_elem = (grpc_call_element *)arg;
   call_data *calld = (call_data *)call_elem->call_data;
   channel_data *chand = (channel_data *)call_elem->channel_data;
-  request_matcher *rm = calld->request_matcher;
+  request_matcher *rm = calld->matcher;
   grpc_server *server = rm->server;
 
   if (error != GRPC_ERROR_NONE || gpr_atm_acq_load(&server->shutdown_flag)) {
@@ -583,7 +583,7 @@ static void finish_start_new_rpc(
     return;
   }
 
-  calld->request_matcher = rm;
+  calld->matcher = rm;
 
   switch (payload_handling) {
     case GRPC_SRM_PAYLOAD_NONE:
@@ -629,7 +629,7 @@ static void start_new_rpc(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
         continue;
       }
       finish_start_new_rpc(exec_ctx, server, elem,
-                           &rm->server_registered_method->request_matcher,
+                           &rm->server_registered_method->matcher,
                            rm->server_registered_method->payload_handling);
       return;
     }
@@ -647,7 +647,7 @@ static void start_new_rpc(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
         continue;
       }
       finish_start_new_rpc(exec_ctx, server, elem,
-                           &rm->server_registered_method->request_matcher,
+                           &rm->server_registered_method->matcher,
                            rm->server_registered_method->payload_handling);
       return;
     }
@@ -668,7 +668,7 @@ static int num_listeners(grpc_server *server) {
 
 static void done_shutdown_event(grpc_exec_ctx *exec_ctx, void *server,
                                 grpc_cq_completion *completion) {
-  server_unref(exec_ctx, server);
+  server_unref(exec_ctx, (grpc_server *)server);
 }
 
 static int num_channels(grpc_server *server) {
@@ -691,9 +691,9 @@ static void kill_pending_work_locked(grpc_exec_ctx *exec_ctx,
         exec_ctx, &server->unregistered_request_matcher);
     for (registered_method *rm = server->registered_methods; rm;
          rm = rm->next) {
-      request_matcher_kill_requests(exec_ctx, server, &rm->request_matcher,
+      request_matcher_kill_requests(exec_ctx, server, &rm->matcher,
                                     GRPC_ERROR_REF(error));
-      request_matcher_zombify_all_pending_calls(exec_ctx, &rm->request_matcher);
+      request_matcher_zombify_all_pending_calls(exec_ctx, &rm->matcher);
     }
   }
   GRPC_ERROR_UNREF(error);
@@ -1114,7 +1114,7 @@ void grpc_server_start(grpc_server *server) {
   request_matcher_init(&server->unregistered_request_matcher,
                        (size_t)server->max_requested_calls_per_cq, server);
   for (registered_method *rm = server->registered_methods; rm; rm = rm->next) {
-    request_matcher_init(&rm->request_matcher,
+    request_matcher_init(&rm->matcher,
                          (size_t)server->max_requested_calls_per_cq, server);
   }
 
@@ -1267,8 +1267,9 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
   /* stay locked, and gather up some stuff to do */
   GPR_ASSERT(grpc_cq_begin_op(cq, tag));
   if (server->shutdown_published) {
-    grpc_cq_end_op(&exec_ctx, cq, tag, GRPC_ERROR_NONE, done_published_shutdown,
-                   NULL, gpr_malloc(sizeof(grpc_cq_completion)));
+    grpc_cq_end_op(
+        &exec_ctx, cq, tag, GRPC_ERROR_NONE, done_published_shutdown, NULL,
+        (grpc_cq_completion *)gpr_malloc(sizeof(grpc_cq_completion)));
     gpr_mu_unlock(&server->mu_global);
     goto done;
   }
@@ -1390,7 +1391,7 @@ static grpc_call_error queue_call_request(grpc_exec_ctx *exec_ctx,
       rm = &server->unregistered_request_matcher;
       break;
     case REGISTERED_CALL:
-      rm = &rc->data.registered.registered_method->request_matcher;
+      rm = &rc->data.registered.method->matcher;
       break;
   }
   server->requested_calls_per_cq[cq_idx][request_id] = *rc;
@@ -1519,7 +1520,7 @@ grpc_call_error grpc_server_request_registered_call(
   rc->tag = tag;
   rc->cq_bound_to_call = cq_bound_to_call;
   rc->call = call;
-  rc->data.registered.registered_method = rm;
+  rc->data.registered.method = rm;
   rc->data.registered.deadline = deadline;
   rc->initial_metadata = initial_metadata;
   rc->data.registered.optional_payload = optional_payload;

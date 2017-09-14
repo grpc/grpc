@@ -122,6 +122,26 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_cqs_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_client_channels_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_client_subchannels_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_server_channels_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_syscall_poll", 
         "type": "INTEGER"
       }, 
@@ -223,6 +243,111 @@
       {
         "mode": "NULLABLE", 
         "name": "core_http2_partial_writes", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_initial_write", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_start_new_stream", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_send_message", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_send_initial_metadata", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_send_trailing_metadata", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_retry_send_ping", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_continue_pings", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_goaway_sent", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_rst_stream", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_close_from_api", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_stream_flow_control", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_transport_flow_control", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_send_settings", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_bdp_estimator_ping", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_flow_control_unstalled_by_setting", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_flow_control_unstalled_by_update", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_application_ping", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_keepalive_ping", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_transport_flow_control_unstalled", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_ping_response", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_force_rst_stream", 
         "type": "INTEGER"
       }, 
       {
@@ -634,6 +759,26 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_cqs_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_client_channels_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_client_subchannels_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_server_channels_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_syscall_poll", 
         "type": "INTEGER"
       }, 
@@ -735,6 +880,111 @@
       {
         "mode": "NULLABLE", 
         "name": "core_http2_partial_writes", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_initial_write", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_start_new_stream", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_send_message", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_send_initial_metadata", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_send_trailing_metadata", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_retry_send_ping", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_continue_pings", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_goaway_sent", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_rst_stream", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_close_from_api", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_stream_flow_control", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_transport_flow_control", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_send_settings", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_bdp_estimator_ping", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_flow_control_unstalled_by_setting", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_flow_control_unstalled_by_update", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_application_ping", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_keepalive_ping", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_transport_flow_control_unstalled", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_ping_response", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_force_rst_stream", 
         "type": "INTEGER"
       }, 
       {
