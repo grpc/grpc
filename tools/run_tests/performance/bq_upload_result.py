@@ -24,6 +24,7 @@ import os
 import sys
 import time
 import uuid
+import massage_qps_stats
 
 
 gcp_utils_dir = os.path.abspath(os.path.join(
@@ -117,6 +118,7 @@ def _flatten_result_inplace(scenario_result):
   scenario_result['serverCpuUsage'] = scenario_result['summary'].pop('serverCpuUsage', None)
   scenario_result['summary'].pop('successfulRequestsPerSecond', None)
   scenario_result['summary'].pop('failedRequestsPerSecond', None)
+  massage_qps_stats.massage_qps_stats(scenario_result)
 
 
 def _populate_metadata_inplace(scenario_result):

@@ -278,13 +278,13 @@ static void internal_set_time(grpc_error **err, grpc_error_times which,
   memcpy((*err)->arena + slot, &value, sizeof(value));
 }
 
-static void internal_add_error(grpc_error **err, grpc_error *new) {
-  grpc_linked_error new_last = {new, UINT8_MAX};
+static void internal_add_error(grpc_error **err, grpc_error *new_err) {
+  grpc_linked_error new_last = {new_err, UINT8_MAX};
   uint8_t slot = get_placement(err, sizeof(grpc_linked_error));
   if (slot == UINT8_MAX) {
-    gpr_log(GPR_ERROR, "Error %p is full, dropping error %p = %s", *err, new,
-            grpc_error_string(new));
-    GRPC_ERROR_UNREF(new);
+    gpr_log(GPR_ERROR, "Error %p is full, dropping error %p = %s", *err,
+            new_err, grpc_error_string(new_err));
+    GRPC_ERROR_UNREF(new_err);
     return;
   }
   if ((*err)->first_err == UINT8_MAX) {
@@ -321,8 +321,8 @@ grpc_error *grpc_error_create(const char *file, int line, grpc_slice desc,
   uint8_t initial_arena_capacity = (uint8_t)(
       DEFAULT_ERROR_CAPACITY +
       (uint8_t)(num_referencing * SLOTS_PER_LINKED_ERROR) + SURPLUS_CAPACITY);
-  grpc_error *err =
-      gpr_malloc(sizeof(*err) + initial_arena_capacity * sizeof(intptr_t));
+  grpc_error *err = (grpc_error *)gpr_malloc(
+      sizeof(*err) + initial_arena_capacity * sizeof(intptr_t));
   if (err == NULL) {  // TODO(ctiller): make gpr_malloc return NULL
     return GRPC_ERROR_OOM;
   }
@@ -432,10 +432,10 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
 grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
                                intptr_t value) {
   GPR_TIMER_BEGIN("grpc_error_set_int", 0);
-  grpc_error *new = copy_error_and_unref(src);
-  internal_set_int(&new, which, value);
+  grpc_error *new_err = copy_error_and_unref(src);
+  internal_set_int(&new_err, which, value);
   GPR_TIMER_END("grpc_error_set_int", 0);
-  return new;
+  return new_err;
 }
 
 typedef struct {
@@ -477,10 +477,10 @@ bool grpc_error_get_int(grpc_error *err, grpc_error_ints which, intptr_t *p) {
 grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
                                grpc_slice str) {
   GPR_TIMER_BEGIN("grpc_error_set_str", 0);
-  grpc_error *new = copy_error_and_unref(src);
-  internal_set_str(&new, which, str);
+  grpc_error *new_err = copy_error_and_unref(src);
+  internal_set_str(&new_err, which, str);
   GPR_TIMER_END("grpc_error_set_str", 0);
-  return new;
+  return new_err;
 }
 
 bool grpc_error_get_str(grpc_error *err, grpc_error_strs which,
@@ -507,10 +507,10 @@ bool grpc_error_get_str(grpc_error *err, grpc_error_strs which,
 
 grpc_error *grpc_error_add_child(grpc_error *src, grpc_error *child) {
   GPR_TIMER_BEGIN("grpc_error_add_child", 0);
-  grpc_error *new = copy_error_and_unref(src);
-  internal_add_error(&new, child);
+  grpc_error *new_err = copy_error_and_unref(src);
+  internal_add_error(&new_err, child);
   GPR_TIMER_END("grpc_error_add_child", 0);
-  return new;
+  return new_err;
 }
 
 static const char *no_error_string = "\"No Error\"";
@@ -733,7 +733,7 @@ const char *grpc_error_string(grpc_error *err) {
   void *p = (void *)gpr_atm_acq_load(&err->atomics.error_string);
   if (p != NULL) {
     GPR_TIMER_END("grpc_error_string", 0);
-    return p;
+    return (const char *)p;
   }
 
   kv_pairs kvs;

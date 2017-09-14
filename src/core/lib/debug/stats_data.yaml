@@ -143,3 +143,14 @@
   max: 1024
   buckets: 64
   doc: Number of closures executed each time an executor wakes up
+# server
+- counter: server_requested_calls
+  doc: How many calls were requested (not necessarily received) by the server
+- histogram: server_cqs_checked
+  buckets: 8
+  max: 64
+  doc: How many completion queues were checked looking for a CQ that had
+       requested the incoming call
+- counter: server_slowpath_requests_queued
+  doc: How many times was the server slow path taken (indicates too few
+       outstanding requests)

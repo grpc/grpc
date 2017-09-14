@@ -57,7 +57,7 @@ static grpc_error* cv_fd_init(grpc_wakeup_fd* fd_info) {
   g_cvfds.free_fds = g_cvfds.free_fds->next_free;
   g_cvfds.cvfds[idx].cvs = NULL;
   g_cvfds.cvfds[idx].is_set = 0;
-  fd_info->read_fd = IDX_TO_FD(idx);
+  fd_info->read_fd = GRPC_IDX_TO_FD(idx);
   fd_info->write_fd = -1;
   gpr_mu_unlock(&g_cvfds.mu);
   return GRPC_ERROR_NONE;
@@ -66,8 +66,8 @@ static grpc_error* cv_fd_init(grpc_wakeup_fd* fd_info) {
 static grpc_error* cv_fd_wakeup(grpc_wakeup_fd* fd_info) {
   cv_node* cvn;
   gpr_mu_lock(&g_cvfds.mu);
-  g_cvfds.cvfds[FD_TO_IDX(fd_info->read_fd)].is_set = 1;
-  cvn = g_cvfds.cvfds[FD_TO_IDX(fd_info->read_fd)].cvs;
+  g_cvfds.cvfds[GRPC_FD_TO_IDX(fd_info->read_fd)].is_set = 1;
+  cvn = g_cvfds.cvfds[GRPC_FD_TO_IDX(fd_info->read_fd)].cvs;
   while (cvn) {
     gpr_cv_signal(cvn->cv);
     cvn = cvn->next;
@@ -78,7 +78,7 @@ static grpc_error* cv_fd_wakeup(grpc_wakeup_fd* fd_info) {
 
 static grpc_error* cv_fd_consume(grpc_wakeup_fd* fd_info) {
   gpr_mu_lock(&g_cvfds.mu);
-  g_cvfds.cvfds[FD_TO_IDX(fd_info->read_fd)].is_set = 0;
+  g_cvfds.cvfds[GRPC_FD_TO_IDX(fd_info->read_fd)].is_set = 0;
   gpr_mu_unlock(&g_cvfds.mu);
   return GRPC_ERROR_NONE;
 }
@@ -89,9 +89,9 @@ static void cv_fd_destroy(grpc_wakeup_fd* fd_info) {
   }
   gpr_mu_lock(&g_cvfds.mu);
   // Assert that there are no active pollers
-  GPR_ASSERT(!g_cvfds.cvfds[FD_TO_IDX(fd_info->read_fd)].cvs);
-  g_cvfds.cvfds[FD_TO_IDX(fd_info->read_fd)].next_free = g_cvfds.free_fds;
-  g_cvfds.free_fds = &g_cvfds.cvfds[FD_TO_IDX(fd_info->read_fd)];
+  GPR_ASSERT(!g_cvfds.cvfds[GRPC_FD_TO_IDX(fd_info->read_fd)].cvs);
+  g_cvfds.cvfds[GRPC_FD_TO_IDX(fd_info->read_fd)].next_free = g_cvfds.free_fds;
+  g_cvfds.free_fds = &g_cvfds.cvfds[GRPC_FD_TO_IDX(fd_info->read_fd)];
   gpr_mu_unlock(&g_cvfds.mu);
 }
 

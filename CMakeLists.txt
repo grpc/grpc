@@ -123,10 +123,8 @@ if("${gRPC_ZLIB_PROVIDER}" STREQUAL "module")
     set(gRPC_INSTALL FALSE)
   endif()
 elseif("${gRPC_ZLIB_PROVIDER}" STREQUAL "package")
-  find_package(ZLIB)
-  if(TARGET ZLIB::ZLIB)
-    set(_gRPC_ZLIB_LIBRARIES ZLIB::ZLIB)
-  endif()
+  find_package(ZLIB REQUIRED)
+  set(_gRPC_ZLIB_LIBRARIES ${ZLIB_LIBRARIES})
   set(_gRPC_FIND_ZLIB "if(NOT ZLIB_FOUND)\n  find_package(ZLIB)\nendif()")
 endif()
 
@@ -145,7 +143,7 @@ if("${gRPC_CARES_PROVIDER}" STREQUAL "module")
     set(gRPC_INSTALL FALSE)
   endif()
 elseif("${gRPC_CARES_PROVIDER}" STREQUAL "package")
-  find_package(c-ares CONFIG)
+  find_package(c-ares REQUIRED CONFIG)
   if(TARGET c-ares::cares)
     set(_gRPC_CARES_LIBRARIES c-ares::cares)
   endif()
@@ -189,7 +187,7 @@ if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
     set(gRPC_INSTALL FALSE)
   endif()
 elseif("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "package")
-  find_package(Protobuf ${gRPC_PROTOBUF_PACKAGE_TYPE})
+  find_package(Protobuf REQUIRED ${gRPC_PROTOBUF_PACKAGE_TYPE})
   if(Protobuf_FOUND OR PROTOBUF_FOUND)
     if(TARGET protobuf::${_gRPC_PROTOBUF_LIBRARY_NAME})
       set(_gRPC_PROTOBUF_LIBRARIES protobuf::${_gRPC_PROTOBUF_LIBRARY_NAME})
@@ -234,11 +232,9 @@ if("${gRPC_SSL_PROVIDER}" STREQUAL "module")
     set(gRPC_INSTALL FALSE)
   endif()
 elseif("${gRPC_SSL_PROVIDER}" STREQUAL "package")
-  find_package(OpenSSL)
-  if(TARGET OpenSSL::SSL)
-    set(_gRPC_SSL_LIBRARIES OpenSSL::SSL)
-  endif()
-  set(_gRPC_FIND_SSL "if(NOT OpenSSL_FOUND)\n  find_package(OpenSSL)\nendif()")
+  find_package(OpenSSL REQUIRED)
+  set(_gRPC_SSL_LIBRARIES ${OPENSSL_LIBRARIES})
+  set(_gRPC_FIND_SSL "if(NOT OPENSSL_FOUND)\n  find_package(OpenSSL)\nendif()")
 endif()
 
 if("${gRPC_GFLAGS_PROVIDER}" STREQUAL "module")
@@ -832,7 +828,7 @@ endif()
 
 
 target_include_directories(gpr
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -924,7 +920,7 @@ endif()
 
 
 target_include_directories(gpr_test_util
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -1219,7 +1215,7 @@ endif()
 
 
 target_include_directories(grpc
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -1241,6 +1237,7 @@ target_link_libraries(grpc
 )
 
 foreach(_hdr
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -1525,7 +1522,7 @@ endif()
 
 
 target_include_directories(grpc_cronet
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -1547,6 +1544,7 @@ target_link_libraries(grpc_cronet
 )
 
 foreach(_hdr
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -1803,7 +1801,7 @@ endif()
 
 
 target_include_directories(grpc_test_util
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -1823,6 +1821,7 @@ target_link_libraries(grpc_test_util
 )
 
 foreach(_hdr
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -2063,7 +2062,7 @@ endif()
 
 
 target_include_directories(grpc_test_util_unsecure
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -2083,6 +2082,7 @@ target_link_libraries(grpc_test_util_unsecure
 )
 
 foreach(_hdr
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -2357,7 +2357,7 @@ endif()
 
 
 target_include_directories(grpc_unsecure
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -2378,6 +2378,7 @@ target_link_libraries(grpc_unsecure
 )
 
 foreach(_hdr
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -2446,7 +2447,7 @@ endif()
 
 
 target_include_directories(reconnect_server
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -2488,7 +2489,7 @@ endif()
 
 
 target_include_directories(test_tcp_server
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -2569,7 +2570,7 @@ endif()
 
 
 target_include_directories(grpc++
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -2687,6 +2688,7 @@ foreach(_hdr
   include/grpc/slice_buffer.h
   include/grpc/status.h
   include/grpc/support/workaround_list.h
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -2697,6 +2699,7 @@ foreach(_hdr
   include/grpc/impl/codegen/status.h
   include/grpc++/impl/codegen/async_stream.h
   include/grpc++/impl/codegen/async_unary_call.h
+  include/grpc++/impl/codegen/byte_buffer.h
   include/grpc++/impl/codegen/call.h
   include/grpc++/impl/codegen/call_hook.h
   include/grpc++/impl/codegen/channel_interface.h
@@ -2769,7 +2772,7 @@ protobuf_generate_grpc_cpp(
 )
 
 target_include_directories(grpc++_core_stats
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -3060,7 +3063,7 @@ endif()
 
 
 target_include_directories(grpc++_cronet
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -3179,6 +3182,7 @@ foreach(_hdr
   include/grpc/slice_buffer.h
   include/grpc/status.h
   include/grpc/support/workaround_list.h
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -3189,6 +3193,7 @@ foreach(_hdr
   include/grpc/impl/codegen/status.h
   include/grpc++/impl/codegen/async_stream.h
   include/grpc++/impl/codegen/async_unary_call.h
+  include/grpc++/impl/codegen/byte_buffer.h
   include/grpc++/impl/codegen/call.h
   include/grpc++/impl/codegen/call_hook.h
   include/grpc++/impl/codegen/channel_interface.h
@@ -3259,7 +3264,7 @@ protobuf_generate_grpc_cpp(
 )
 
 target_include_directories(grpc++_error_details
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -3324,7 +3329,7 @@ protobuf_generate_grpc_cpp(
 )
 
 target_include_directories(grpc++_proto_reflection_desc_db
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -3385,7 +3390,7 @@ protobuf_generate_grpc_cpp(
 )
 
 target_include_directories(grpc++_reflection
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -3443,7 +3448,7 @@ endif()
 
 
 target_include_directories(grpc++_test_config
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -3521,7 +3526,7 @@ protobuf_generate_grpc_cpp(
 )
 
 target_include_directories(grpc++_test_util
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -3549,6 +3554,7 @@ target_link_libraries(grpc++_test_util
 foreach(_hdr
   include/grpc++/impl/codegen/async_stream.h
   include/grpc++/impl/codegen/async_unary_call.h
+  include/grpc++/impl/codegen/byte_buffer.h
   include/grpc++/impl/codegen/call.h
   include/grpc++/impl/codegen/call_hook.h
   include/grpc++/impl/codegen/channel_interface.h
@@ -3576,6 +3582,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -3659,7 +3666,7 @@ protobuf_generate_grpc_cpp(
 )
 
 target_include_directories(grpc++_test_util_unsecure
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -3687,6 +3694,7 @@ target_link_libraries(grpc++_test_util_unsecure
 foreach(_hdr
   include/grpc++/impl/codegen/async_stream.h
   include/grpc++/impl/codegen/async_unary_call.h
+  include/grpc++/impl/codegen/byte_buffer.h
   include/grpc++/impl/codegen/call.h
   include/grpc++/impl/codegen/call_hook.h
   include/grpc++/impl/codegen/channel_interface.h
@@ -3714,6 +3722,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -3799,7 +3808,7 @@ endif()
 
 
 target_include_directories(grpc++_unsecure
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -3916,6 +3925,7 @@ foreach(_hdr
   include/grpc/slice_buffer.h
   include/grpc/status.h
   include/grpc/support/workaround_list.h
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -3926,6 +3936,7 @@ foreach(_hdr
   include/grpc/impl/codegen/status.h
   include/grpc++/impl/codegen/async_stream.h
   include/grpc++/impl/codegen/async_unary_call.h
+  include/grpc++/impl/codegen/byte_buffer.h
   include/grpc++/impl/codegen/call.h
   include/grpc++/impl/codegen/call_hook.h
   include/grpc++/impl/codegen/channel_interface.h
@@ -3989,7 +4000,7 @@ endif()
 
 
 target_include_directories(grpc_benchmark
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -4048,7 +4059,7 @@ protobuf_generate_grpc_cpp(
 )
 
 target_include_directories(grpc_cli_libs
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -4108,7 +4119,7 @@ endif()
 
 
 target_include_directories(grpc_plugin_support
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -4186,7 +4197,7 @@ protobuf_generate_grpc_cpp(
 )
 
 target_include_directories(http2_client_main
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -4241,7 +4252,7 @@ protobuf_generate_grpc_cpp(
 )
 
 target_include_directories(interop_client_helper
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -4311,7 +4322,7 @@ protobuf_generate_grpc_cpp(
 )
 
 target_include_directories(interop_client_main
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -4362,7 +4373,7 @@ endif()
 
 
 target_include_directories(interop_server_helper
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -4431,7 +4442,7 @@ protobuf_generate_grpc_cpp(
 )
 
 target_include_directories(interop_server_lib
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -4482,7 +4493,7 @@ endif()
 
 
 target_include_directories(interop_server_main
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -4570,7 +4581,7 @@ protobuf_generate_grpc_cpp(
 )
 
 target_include_directories(qps
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -4617,7 +4628,7 @@ endif()
 
 
 target_include_directories(grpc_csharp_ext
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -4712,7 +4723,7 @@ endif()
 
 
 target_include_directories(ares
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -4750,7 +4761,7 @@ endif()
 
 
 target_include_directories(bad_client_test
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -4791,7 +4802,7 @@ endif()
 
 
 target_include_directories(bad_ssl_test_server
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -4892,7 +4903,7 @@ endif()
 
 
 target_include_directories(end2end_tests
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
@@ -4993,7 +5004,7 @@ endif()
 
 
 target_include_directories(end2end_nosec_tests
-  PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src

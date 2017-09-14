@@ -34,6 +34,7 @@ argp.add_argument('build_files', nargs='+', default=[])
 argp.add_argument('--templates', nargs='+', default=[])
 argp.add_argument('--output_merged', default=None, type=str)
 argp.add_argument('--jobs', '-j', default=multiprocessing.cpu_count(), type=int)
+argp.add_argument('--base', default='.', type=str)
 args = argp.parse_args()
 
 json = args.build_files
@@ -69,7 +70,7 @@ jobs = []
 for template in reversed(sorted(templates)):
   root, f = os.path.split(template)
   if os.path.splitext(f)[1] == '.template':
-    out_dir = '.' + root[len('templates'):]
+    out_dir = args.base + root[len('templates'):]
     out = out_dir + '/' + os.path.splitext(f)[0]
     if not os.path.exists(out_dir):
       os.makedirs(out_dir)
@@ -84,7 +85,7 @@ for template in reversed(sorted(templates)):
       test[out] = tf[1]
       os.close(tf[0])
       cmd.append(test[out])
-    cmd.append(root + '/' + f)
+    cmd.append(args.base + '/' + root + '/' + f)
     jobs.append(jobset.JobSpec(cmd, shortname=out, timeout_seconds=None))
 
 jobset.run(pre_jobs, maxjobs=args.jobs)

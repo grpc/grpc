@@ -18,6 +18,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
+#include <limits.h>
 #include <math.h>
 #include <string.h>
 
@@ -483,7 +484,8 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_bdp_action(
     if (grpc_bdp_estimator_get_bw(&tfc->bdp_estimator, &bw_dbl)) {
       // we target the max of BDP or bandwidth in microseconds.
       int32_t frame_size = (int32_t)GPR_CLAMP(
-          GPR_MAX((int32_t)bw_dbl / 1000, bdp), 16384, 16777215);
+          GPR_MAX((int32_t)GPR_CLAMP(bw_dbl, 0, INT_MAX) / 1000, bdp), 16384,
+          16777215);
       grpc_chttp2_flowctl_urgency frame_size_urgency = delta_is_significant(
           tfc, frame_size, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE);
       if (frame_size_urgency != GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED) {

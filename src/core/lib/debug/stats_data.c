@@ -58,6 +58,8 @@ const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "executor_push_retries",
     "executor_threads_created",
     "executor_threads_used",
+    "server_requested_calls",
+    "server_slowpath_requests_queued",
 };
 const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of client side calls created by this process",
@@ -102,6 +104,9 @@ const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "the executor",
     "Size of the backing thread pool for overflow gRPC Core work",
     "How many executor threads actually got used",
+    "How many calls were requested (not necessarily received) by the server",
+    "How many times was the server slow path taken (indicates too few "
+    "outstanding requests)",
 };
 const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
     "tcp_write_size",
@@ -115,6 +120,7 @@ const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
     "http2_send_trailing_metadata_per_write",
     "http2_send_flowctl_per_write",
     "executor_closures_per_wakeup",
+    "server_cqs_checked",
 };
 const char *grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT] = {
     "Number of bytes offered to each syscall_write",
@@ -128,6 +134,8 @@ const char *grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT] = {
     "Number of streams terminated per TCP write",
     "Number of flow control updates written per TCP write",
     "Number of closures executed each time an executor wakes up",
+    "How many completion queues were checked looking for a CQ that had "
+    "requested the incoming call",
 };
 const int grpc_stats_table_0[65] = {
     0,       1,       2,       3,       4,       6,       8,        11,
@@ -158,6 +166,8 @@ const uint8_t grpc_stats_table_3[102] = {
     23, 24, 24, 24, 25, 26, 27, 27, 28, 28, 29, 29, 30, 30, 31, 31, 32,
     32, 33, 33, 34, 35, 35, 36, 37, 37, 38, 38, 39, 39, 40, 40, 41, 41,
     42, 42, 43, 44, 44, 45, 46, 46, 47, 48, 48, 49, 49, 50, 50, 51, 51};
+const int grpc_stats_table_4[9] = {0, 1, 2, 4, 7, 13, 23, 39, 64};
+const uint8_t grpc_stats_table_5[9] = {0, 0, 1, 2, 2, 3, 4, 4, 5};
 void grpc_stats_inc_tcp_write_size(grpc_exec_ctx *exec_ctx, int value) {
   value = GPR_CLAMP(value, 0, 16777216);
   if (value < 5) {
@@ -451,16 +461,41 @@ void grpc_stats_inc_executor_closures_per_wakeup(grpc_exec_ctx *exec_ctx,
                            grpc_stats_histo_find_bucket_slow(
                                (exec_ctx), value, grpc_stats_table_2, 64));
 }
-const int grpc_stats_histo_buckets[11] = {64, 64, 64, 64, 64, 64,
-                                          64, 64, 64, 64, 64};
-const int grpc_stats_histo_start[11] = {0,   64,  128, 192, 256, 320,
-                                        384, 448, 512, 576, 640};
-const int *const grpc_stats_histo_bucket_boundaries[11] = {
+void grpc_stats_inc_server_cqs_checked(grpc_exec_ctx *exec_ctx, int value) {
+  value = GPR_CLAMP(value, 0, 64);
+  if (value < 3) {
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx),
+                             GRPC_STATS_HISTOGRAM_SERVER_CQS_CHECKED, value);
+    return;
+  }
+  union {
+    double dbl;
+    uint64_t uint;
+  } _val, _bkt;
+  _val.dbl = value;
+  if (_val.uint < 4625196817309499392ull) {
+    int bucket =
+        grpc_stats_table_5[((_val.uint - 4613937818241073152ull) >> 51)] + 3;
+    _bkt.dbl = grpc_stats_table_4[bucket];
+    bucket -= (_val.uint < _bkt.uint);
+    GRPC_STATS_INC_HISTOGRAM((exec_ctx),
+                             GRPC_STATS_HISTOGRAM_SERVER_CQS_CHECKED, bucket);
+    return;
+  }
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx), GRPC_STATS_HISTOGRAM_SERVER_CQS_CHECKED,
+                           grpc_stats_histo_find_bucket_slow(
+                               (exec_ctx), value, grpc_stats_table_4, 8));
+}
+const int grpc_stats_histo_buckets[12] = {64, 64, 64, 64, 64, 64,
+                                          64, 64, 64, 64, 64, 8};
+const int grpc_stats_histo_start[12] = {0,   64,  128, 192, 256, 320,
+                                        384, 448, 512, 576, 640, 704};
+const int *const grpc_stats_histo_bucket_boundaries[12] = {
     grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_0,
     grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_0,
     grpc_stats_table_2, grpc_stats_table_2, grpc_stats_table_2,
-    grpc_stats_table_2, grpc_stats_table_2};
-void (*const grpc_stats_inc_histogram[11])(grpc_exec_ctx *exec_ctx, int x) = {
+    grpc_stats_table_2, grpc_stats_table_2, grpc_stats_table_4};
+void (*const grpc_stats_inc_histogram[12])(grpc_exec_ctx *exec_ctx, int x) = {
     grpc_stats_inc_tcp_write_size,
     grpc_stats_inc_tcp_write_iov_size,
     grpc_stats_inc_tcp_read_size,
@@ -471,4 +506,5 @@ void (*const grpc_stats_inc_histogram[11])(grpc_exec_ctx *exec_ctx, int x) = {
     grpc_stats_inc_http2_send_message_per_write,
     grpc_stats_inc_http2_send_trailing_metadata_per_write,
     grpc_stats_inc_http2_send_flowctl_per_write,
-    grpc_stats_inc_executor_closures_per_wakeup};
+    grpc_stats_inc_executor_closures_per_wakeup,
+    grpc_stats_inc_server_cqs_checked};

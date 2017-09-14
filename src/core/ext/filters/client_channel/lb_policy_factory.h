@@ -73,7 +73,7 @@ grpc_lb_addresses *grpc_lb_addresses_copy(const grpc_lb_addresses *addresses);
  * \a address is a socket address of length \a address_len.
  * Takes ownership of \a balancer_name. */
 void grpc_lb_addresses_set_address(grpc_lb_addresses *addresses, size_t index,
-                                   void *address, size_t address_len,
+                                   const void *address, size_t address_len,
                                    bool is_balancer, const char *balancer_name,
                                    void *user_data);
 

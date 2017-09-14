@@ -174,8 +174,8 @@ static const grpc_slice_refcount_vtable new_with_len_vtable = {
 grpc_slice grpc_slice_new_with_len(void *p, size_t len,
                                    void (*destroy)(void *, size_t)) {
   grpc_slice slice;
-  new_with_len_slice_refcount *rc =
-      gpr_malloc(sizeof(new_with_len_slice_refcount));
+  new_with_len_slice_refcount *rc = (new_with_len_slice_refcount *)gpr_malloc(
+      sizeof(new_with_len_slice_refcount));
   gpr_ref_init(&rc->refs, 1);
   rc->rc.vtable = &new_with_len_vtable;
   rc->rc.sub_refcount = &rc->rc;
