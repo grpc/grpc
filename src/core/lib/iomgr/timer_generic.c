@@ -79,6 +79,67 @@ static timer_shard g_shards[NUM_SHARDS];
  * Access to this is protected by g_shared_mutables.mu */
 static timer_shard *g_shard_queue[NUM_SHARDS];
 
+#define NUM_HASH_BUCKETS 1000
+#define NUM_SLOTS_PER_BUCKET 5
+static gpr_mu g_hash_mu;
+static grpc_timer *g_timer_hash[1000][5] = {{NULL, NULL}};
+
+static void init_timer_hash() { gpr_mu_init(&g_hash_mu); }
+
+static bool is_timer_present(grpc_timer *t) {
+  size_t i = GPR_HASH_POINTER(t, NUM_HASH_BUCKETS);
+  bool is_found = false;
+  gpr_mu_lock(&g_hash_mu);
+  for (int j = 0; j < NUM_SLOTS_PER_BUCKET; j++) {
+    if (g_timer_hash[i][j] == t) {
+      is_found = true;
+      break;
+    }
+  }
+  gpr_mu_unlock(&g_hash_mu);
+  return is_found;
+}
+
+static void check_and_add_timer(grpc_timer *t) {
+  size_t i = GPR_HASH_POINTER(t, NUM_HASH_BUCKETS);
+  bool added = false;
+  gpr_mu_lock(&g_hash_mu);
+  for (int j = 0; j < NUM_SLOTS_PER_BUCKET; j++) {
+    if (g_timer_hash[i][j] == NULL) {
+      g_timer_hash[i][j] = t;
+      added = true;
+      break;
+    } else if (g_timer_hash[i][j] == t) {
+      gpr_log(GPR_ERROR, "*** DUPLICATE TIMER BEING ADDED (%p) **", (void *)t);
+      abort();
+    }
+  }
+  gpr_mu_unlock(&g_hash_mu);
+  if (!added) {
+    gpr_log(GPR_ERROR, "** NOT ENOUGH BUCKETS **");
+    abort();
+  }
+}
+
+static void remove_timer(grpc_timer *t) {
+  size_t i = GPR_HASH_POINTER(t, NUM_HASH_BUCKETS);
+  bool removed = false;
+  gpr_mu_lock(&g_hash_mu);
+  for (int j = 0; j < NUM_SLOTS_PER_BUCKET; j++) {
+    if (g_timer_hash[i][j] == t) {
+      g_timer_hash[i][j] = 0;
+      removed = true;
+      break;
+    }
+  }
+
+  gpr_mu_unlock(&g_hash_mu);
+  if (!removed) {
+    gpr_log(GPR_ERROR, "*** Unable to remove %p. BUG! **", (void *)t);
+    abort();
+  }
+}
+
 /* Thread local variable that stores the deadline of the next timer the thread
  * has last-seen. This is an optimization to prevent the thread from checking
  * shared_mutables.min_timer (which requires acquiring shared_mutables.mu lock,
@@ -96,7 +157,8 @@ struct shared_mutables {
 } GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
 
 static struct shared_mutables g_shared_mutables = {
-    .checker_mu = GPR_SPINLOCK_STATIC_INITIALIZER, .initialized = false,
+    .checker_mu = GPR_SPINLOCK_STATIC_INITIALIZER,
+    .initialized = false,
 };
 
 static gpr_clock_type g_clock_type;
@@ -176,6 +238,8 @@ void grpc_timer_list_init(gpr_timespec now) {
     shard->min_deadline = compute_min_deadline(shard);
     g_shard_queue[i] = shard;
   }
+
+  init_timer_hash();
 }
 
 void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx) {
@@ -247,8 +311,9 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
   gpr_atm deadline_atm = timer->deadline = timespec_to_atm_round_up(deadline);
 
   if (GRPC_TRACER_ON(grpc_timer_trace)) {
-    gpr_log(GPR_DEBUG, "TIMER %p: SET %" PRId64 ".%09d [%" PRIdPTR
-                       "] now %" PRId64 ".%09d [%" PRIdPTR "] call %p[%p]",
+    gpr_log(GPR_DEBUG,
+            "TIMER %p: SET %" PRId64 ".%09d [%" PRIdPTR "] now %" PRId64
+            ".%09d [%" PRIdPTR "] call %p[%p]",
             timer, deadline.tv_sec, deadline.tv_nsec, deadline_atm, now.tv_sec,
             now.tv_nsec, timespec_to_atm_round_down(now), closure, closure->cb);
   }
@@ -273,6 +338,10 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
 
   grpc_time_averaged_stats_add_sample(&shard->stats,
                                       ts_to_dbl(gpr_time_sub(deadline, now)));
+
+  /** TODO: sreek - CHECK HERE AND ADD **/
+  check_and_add_timer(timer);
+
   if (deadline_atm < shard->queue_deadline_cap) {
     is_first_timer = grpc_timer_heap_add(&shard->heap, timer);
   } else {
@@ -280,8 +349,9 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
     list_join(&shard->list, timer);
   }
   if (GRPC_TRACER_ON(grpc_timer_trace)) {
-    gpr_log(GPR_DEBUG, "  .. add to shard %d with queue_deadline_cap=%" PRIdPTR
-                       " => is_first_timer=%s",
+    gpr_log(GPR_DEBUG,
+            "  .. add to shard %d with queue_deadline_cap=%" PRIdPTR
+            " => is_first_timer=%s",
             (int)(shard - g_shards), shard->queue_deadline_cap,
             is_first_timer ? "true" : "false");
   }
@@ -334,13 +404,24 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
     gpr_log(GPR_DEBUG, "TIMER %p: CANCEL pending=%s", timer,
             timer->pending ? "true" : "false");
   }
+
   if (timer->pending) {
+    /* TODO: sreek - Remove the timer here */
+    remove_timer(timer);
+
     GRPC_CLOSURE_SCHED(exec_ctx, timer->closure, GRPC_ERROR_CANCELLED);
     timer->pending = false;
     if (timer->heap_index == INVALID_HEAP_INDEX) {
       list_remove(timer);
     } else {
       grpc_timer_heap_remove(&shard->heap, timer);
+    }
+  } else {
+    if (is_timer_present(timer)) {
+      gpr_log(GPR_ERROR,
+              "** gpr_timer_cancel called on a non-pending timer! %p",
+              (void *)timer);
+      abort();
     }
   }
   gpr_mu_unlock(&shard->mu);
@@ -425,6 +506,8 @@ static size_t pop_timers(grpc_exec_ctx *exec_ctx, timer_shard *shard,
   grpc_timer *timer;
   gpr_mu_lock(&shard->mu);
   while ((timer = pop_one(shard, now))) {
+    /* TODO: sreek: Remove timer here */
+    remove_timer(timer);
     GRPC_CLOSURE_SCHED(exec_ctx, timer->closure, GRPC_ERROR_REF(error));
     n++;
   }
@@ -537,8 +620,9 @@ grpc_timer_check_result grpc_timer_check(grpc_exec_ctx *exec_ctx,
       gpr_asprintf(&next_str, "%" PRId64 ".%09d [%" PRIdPTR "]", next->tv_sec,
                    next->tv_nsec, timespec_to_atm_round_down(*next));
     }
-    gpr_log(GPR_DEBUG, "TIMER CHECK BEGIN: now=%" PRId64 ".%09d [%" PRIdPTR
-                       "] next=%s tls_min=%" PRIdPTR " glob_min=%" PRIdPTR,
+    gpr_log(GPR_DEBUG,
+            "TIMER CHECK BEGIN: now=%" PRId64 ".%09d [%" PRIdPTR
+            "] next=%s tls_min=%" PRIdPTR " glob_min=%" PRIdPTR,
             now.tv_sec, now.tv_nsec, now_atm, next_str,
             gpr_tls_get(&g_last_seen_min_timer),
             gpr_atm_no_barrier_load(&g_shared_mutables.min_timer));
