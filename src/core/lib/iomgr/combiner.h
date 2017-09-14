@@ -57,7 +57,11 @@ void grpc_combiner_unref(grpc_exec_ctx *exec_ctx,
 // Fetch a scheduler to schedule closures against
 grpc_closure_scheduler *grpc_combiner_scheduler(grpc_combiner *lock);
 // Scheduler to execute \a action within the lock just prior to unlocking.
-grpc_closure_scheduler *grpc_combiner_finally_scheduler(grpc_combiner *lock);
+// If offload_first==true, will force an offload step to be taken prior to the
+// final list been executed *UNLESS* there are elements on the list with
+// offload_first==false
+grpc_closure_scheduler *grpc_combiner_finally_scheduler(grpc_combiner *lock,
+                                                        bool offload_first);
 
 bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx);
 
