@@ -26,6 +26,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
@@ -419,6 +420,10 @@ grpc_completion_queue *grpc_completion_queue_create_internal(
   const cq_vtable *vtable = &g_cq_vtable[completion_type];
   const cq_poller_vtable *poller_vtable =
       &g_poller_vtable_by_poller_type[polling_type];
+
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  GRPC_STATS_INC_CQS_CREATED(&exec_ctx);
+  grpc_exec_ctx_finish(&exec_ctx);
 
   cq = (grpc_completion_queue *)gpr_zalloc(sizeof(grpc_completion_queue) +
                                            vtable->data_size +
