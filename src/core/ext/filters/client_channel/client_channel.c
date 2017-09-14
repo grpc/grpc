@@ -1297,10 +1297,10 @@ static void maybe_clear_pending_batch(pending_batch *pending) {
   }
 }
 
-// Cleans up retry state.  Called either when the RPC is committed
-// (i.e., we will not attempt any more retries) or when the call is
-// destroyed.
-static void retry_committed(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
+// Cleans up retry state.  Called when the RPC is committed (i.e., we will
+// not attempt any more retries).
+static void retry_committed(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                            subchannel_call_retry_state *retry_state) {
   call_data *calld = (call_data *)elem->call_data;
   channel_data *chand = (channel_data *)elem->channel_data;
   if (calld->retry_committed) return;
@@ -1308,19 +1308,24 @@ static void retry_committed(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: committing retries", chand, calld);
   }
-  if (calld->send_initial_metadata_storage != NULL) {
+  if (retry_state->completed_send_initial_metadata) {
     grpc_metadata_batch_destroy(exec_ctx, &calld->send_initial_metadata);
   }
-  if (calld->num_send_message_ops > 0) {
+  if (retry_state->completed_send_message_count > 0) {
     grpc_byte_stream_cache_destroy(exec_ctx, &calld->initial_send_message);
+    for (size_t i = 0; i < retry_state->completed_send_message_count - 1; ++i) {
+      grpc_byte_stream_cache_destroy(exec_ctx, &calld->send_messages[i]);
+    }
   }
-  for (int i = 0; i < (int)calld->num_send_message_ops - 1; ++i) {
-    grpc_byte_stream_cache_destroy(exec_ctx, &calld->send_messages[i]);
+// FIXME: is this right?  will it be needed by other send_messages later?
+  if (retry_state->completed_send_message_count ==
+      calld->num_send_message_ops) {
+    gpr_free(calld->send_messages);
+    calld->send_messages = NULL;
   }
-  if (calld->send_trailing_metadata_storage != NULL) {
+  if (retry_state->completed_send_trailing_metadata) {
     grpc_metadata_batch_destroy(exec_ctx, &calld->send_trailing_metadata);
   }
-  gpr_free(calld->send_messages);
 }
 
 static grpc_byte_stream_cache *get_send_message_cache(call_data *calld,
@@ -1334,9 +1339,9 @@ static grpc_byte_stream_cache *get_send_message_cache(call_data *calld,
 // If retries are configured, checks to see if this exceeds the retry
 // buffer limit.  If it doesn't exceed the limit, caches data for send ops
 // (if any).
-static void retry_checks_for_new_batch(grpc_exec_ctx *exec_ctx,
-                                       grpc_call_element *elem,
-                                       pending_batch *pending) {
+static void retry_checks_for_new_batch(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem, pending_batch *pending,
+    subchannel_call_retry_state *retry_state) {
   channel_data *chand = (channel_data *)elem->channel_data;
   call_data *calld = (call_data *)elem->call_data;
   if (pending->retry_checks_for_new_batch_done) return;
@@ -1357,9 +1362,9 @@ static void retry_checks_for_new_batch(grpc_exec_ctx *exec_ctx,
               "chand=%p calld=%p: exceeded retry buffer size, committing",
               chand, calld);
     }
-// FIXME: this frees the cached data, but we need to add to it below...
-    retry_committed(exec_ctx, elem);
+    retry_committed(exec_ctx, elem, retry_state);
   }
+// FIXME: avoid caching if already committed???
   // Save a copy of metadata for send_initial_metadata ops.
   if (batch->send_initial_metadata) {
     calld->seen_send_initial_metadata = true;
@@ -1621,7 +1626,7 @@ static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
       return;
     }
     // No error, so commit the call.
-    retry_committed(exec_ctx, elem);
+    retry_committed(exec_ctx, elem, retry_state);
   }
   // Manually invoking a callback function; it does not take ownership of error.
   invoke_recv_initial_metadata_callback(exec_ctx, batch_data, error);
@@ -1702,7 +1707,7 @@ static void recv_message_ready(grpc_exec_ctx *exec_ctx, void *arg,
     return;
   } else {
     // No error, so commit the call.
-    retry_committed(exec_ctx, elem);
+    retry_committed(exec_ctx, elem, retry_state);
   }
   // Manually invoking a callback function; it does not take ownership of error.
   invoke_recv_message_callback(exec_ctx, batch_data, error);
@@ -1811,6 +1816,29 @@ static void on_complete(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       GRPC_ERROR_UNREF(retry_state->recv_message_error);
     }
     return;
+  }
+  // If the call is finished or retries are committed, free cached data for
+  // send ops.
+  if (call_finished || calld->retry_committed) {
+    if (batch_data->batch.send_initial_metadata) {
+      grpc_metadata_batch_destroy(exec_ctx, &calld->send_initial_metadata);
+    }
+    if (batch_data->batch.send_message) {
+      if (retry_state->completed_send_message_count == 1) {
+        grpc_byte_stream_cache_destroy(exec_ctx, &calld->initial_send_message);
+      } else {
+        grpc_byte_stream_cache_destroy(
+            exec_ctx, &calld->send_messages[
+                retry_state->completed_send_message_count - 2]);
+        if (retry_state->completed_send_message_count ==
+            calld->num_send_message_ops) {
+          gpr_free(calld->send_messages);
+        }
+      }
+    }
+    if (batch_data->batch.send_trailing_metadata) {
+      grpc_metadata_batch_destroy(exec_ctx, &calld->send_trailing_metadata);
+    }
   }
   // Call not being retried.
   // Construct list of closures to execute.
@@ -2029,7 +2057,7 @@ static void start_retriable_subchannel_batches(grpc_exec_ctx *exec_ctx,
   for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
     pending_batch *pending = (pending_batch *)&calld->pending_batches[i];
     if (pending->batch == NULL) continue;
-    retry_checks_for_new_batch(exec_ctx, elem, pending);
+    retry_checks_for_new_batch(exec_ctx, elem, pending, retry_state);
     if (pending->batch->send_initial_metadata) {
       have_pending_send_initial_metadata = true;
     }
@@ -2694,9 +2722,6 @@ static void cc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
   }
   grpc_slice_unref_internal(exec_ctx, calld->path);
   if (calld->method_params != NULL) {
-    if (calld->method_params->retry_policy != NULL) {
-      retry_committed(exec_ctx, elem);
-    }
     method_parameters_unref(calld->method_params);
   }
   GRPC_ERROR_UNREF(calld->error);
