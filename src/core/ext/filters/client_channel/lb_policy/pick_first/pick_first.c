@@ -331,8 +331,8 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     gpr_log(GPR_INFO, "Pick First %p received update with %lu addresses",
             (void *)p, (unsigned long)addresses->num_addresses);
   }
-  grpc_subchannel_args *sc_args =
-      gpr_zalloc(sizeof(*sc_args) * addresses->num_addresses);
+  grpc_subchannel_args *sc_args = (grpc_subchannel_args *)gpr_zalloc(
+      sizeof(*sc_args) * addresses->num_addresses);
   /* We remove the following keys in order for subchannel keys belonging to
    * subchannels point to the same address to match. */
   static const char *keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS,
@@ -404,7 +404,7 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
   }
   /* Create the subchannels for the new subchannel args/addresses. */
   grpc_subchannel **new_subchannels =
-      gpr_zalloc(sizeof(*new_subchannels) * sc_args_count);
+      (grpc_subchannel **)gpr_zalloc(sizeof(*new_subchannels) * sc_args_count);
   size_t num_new_subchannels = 0;
   for (size_t i = 0; i < sc_args_count; i++) {
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
