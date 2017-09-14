@@ -811,7 +811,6 @@ include/grpc/impl/codegen/atm_gcc_sync.h \
 include/grpc/impl/codegen/atm_gcc_sync.h \
 include/grpc/impl/codegen/atm_windows.h \
 include/grpc/impl/codegen/atm_windows.h \
-include/grpc/impl/codegen/byte_buffer.h \
 include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
