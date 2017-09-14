@@ -50,7 +50,7 @@ int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
       grpc_slice_buffer_init(&decompressed_slices_buffer);
       if (is_compressed(reader->buffer_in)) {
         if (grpc_msg_decompress(&exec_ctx,
-                                reader->buffer_in->data.raw.compression,
+                                grpc_compression_algorithm_to_message_compression_algorithm(reader->buffer_in->data.raw.compression),
                                 &reader->buffer_in->data.raw.slice_buffer,
                                 &decompressed_slices_buffer) == 0) {
           gpr_log(GPR_ERROR,

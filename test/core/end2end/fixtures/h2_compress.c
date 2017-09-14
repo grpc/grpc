@@ -69,7 +69,7 @@ void chttp2_init_client_fullstack_compression(grpc_end2end_test_fixture *f,
     grpc_exec_ctx_finish(&exec_ctx);
   }
   ffd->client_args_compression = grpc_channel_args_set_compression_algorithm(
-      client_args, GRPC_COMPRESS_GZIP);
+      client_args, GRPC_COMPRESS_MESSAGE_GZIP);
   f->client = grpc_insecure_channel_create(ffd->localaddr,
                                            ffd->client_args_compression, NULL);
 }
@@ -83,7 +83,7 @@ void chttp2_init_server_fullstack_compression(grpc_end2end_test_fixture *f,
     grpc_exec_ctx_finish(&exec_ctx);
   }
   ffd->server_args_compression = grpc_channel_args_set_compression_algorithm(
-      server_args, GRPC_COMPRESS_GZIP);
+      server_args, GRPC_COMPRESS_MESSAGE_GZIP);
   if (f->server) {
     grpc_server_destroy(f->server);
   }

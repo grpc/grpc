@@ -109,7 +109,7 @@ static void test_read_corrupted_slice(void) {
   LOG_TEST("test_read_corrupted_slice");
   slice = grpc_slice_from_copied_string("test");
   buffer = grpc_raw_byte_buffer_create(&slice, 1);
-  buffer->data.raw.compression = GRPC_COMPRESS_GZIP; /* lies! */
+  buffer->data.raw.compression = GRPC_COMPRESS_MESSAGE_GZIP; /* lies! */
   grpc_slice_unref(slice);
   GPR_ASSERT(!grpc_byte_buffer_reader_init(&reader, buffer));
   grpc_byte_buffer_destroy(buffer);
@@ -134,7 +134,7 @@ static void read_compressed_slice(grpc_compression_algorithm algorithm,
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     GPR_ASSERT(
-        grpc_msg_compress(&exec_ctx, algorithm, &sliceb_in, &sliceb_out));
+        grpc_msg_compress(&exec_ctx, grpc_compression_algorithm_to_message_compression_algorithm(algorithm), &sliceb_in, &sliceb_out));
     grpc_exec_ctx_finish(&exec_ctx);
   }
 
@@ -160,13 +160,13 @@ static void read_compressed_slice(grpc_compression_algorithm algorithm,
 static void test_read_gzip_compressed_slice(void) {
   const size_t INPUT_SIZE = 2048;
   LOG_TEST("test_read_gzip_compressed_slice");
-  read_compressed_slice(GRPC_COMPRESS_GZIP, INPUT_SIZE);
+  read_compressed_slice(GRPC_COMPRESS_MESSAGE_GZIP, INPUT_SIZE);
 }
 
 static void test_read_deflate_compressed_slice(void) {
   const size_t INPUT_SIZE = 2048;
   LOG_TEST("test_read_deflate_compressed_slice");
-  read_compressed_slice(GRPC_COMPRESS_DEFLATE, INPUT_SIZE);
+  read_compressed_slice(GRPC_COMPRESS_MESSAGE_DEFLATE, INPUT_SIZE);
 }
 
 static void test_byte_buffer_from_reader(void) {

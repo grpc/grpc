@@ -39,7 +39,7 @@ typedef enum {
 } compressability;
 
 static void assert_passthrough(grpc_slice value,
-                               grpc_compression_algorithm algorithm,
+                               grpc_message_compression_algorithm algorithm,
                                grpc_slice_split_mode uncompressed_split_mode,
                                grpc_slice_split_mode compressed_split_mode,
                                compressability compress_result_check) {
@@ -51,7 +51,7 @@ static void assert_passthrough(grpc_slice value,
   int was_compressed;
   char *algorithm_name;
 
-  GPR_ASSERT(grpc_compression_algorithm_name(algorithm, &algorithm_name) != 0);
+  GPR_ASSERT(grpc_message_compression_algorithm_name(algorithm, &algorithm_name) != 0);
   gpr_log(
       GPR_INFO, "assert_passthrough: value_length=%" PRIuPTR
                 " value_hash=0x%08x "
@@ -93,7 +93,7 @@ static void assert_passthrough(grpc_slice value,
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     GPR_ASSERT(grpc_msg_decompress(
-        &exec_ctx, was_compressed ? algorithm : GRPC_COMPRESS_NONE, &compressed,
+        &exec_ctx, was_compressed ? algorithm : GRPC_MESSAGE_COMPRESS_NONE, &compressed,
         &output));
     grpc_exec_ctx_finish(&exec_ctx);
   }
@@ -115,8 +115,8 @@ static grpc_slice repeated(char c, size_t length) {
 }
 
 static compressability get_compressability(
-    test_value id, grpc_compression_algorithm algorithm) {
-  if (algorithm == GRPC_COMPRESS_NONE) return SHOULD_NOT_COMPRESS;
+    test_value id, grpc_message_compression_algorithm algorithm) {
+  if (algorithm == GRPC_MESSAGE_COMPRESS_NONE) return SHOULD_NOT_COMPRESS;
   switch (id) {
     case ONE_A:
       return SHOULD_NOT_COMPRESS;
@@ -148,14 +148,14 @@ static grpc_slice create_test_value(test_value id) {
 static void test_tiny_data_compress(void) {
   grpc_slice_buffer input;
   grpc_slice_buffer output;
-  grpc_compression_algorithm i;
+  grpc_message_compression_algorithm i;
 
   grpc_slice_buffer_init(&input);
   grpc_slice_buffer_init(&output);
   grpc_slice_buffer_add(&input, create_test_value(ONE_A));
 
-  for (i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
-    if (i == GRPC_COMPRESS_NONE) continue;
+  for (i = 0; i < GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT; i++) {
+    if (i == GRPC_MESSAGE_COMPRESS_NONE) continue;
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     GPR_ASSERT(0 == grpc_msg_compress(&exec_ctx, i, &input, &output));
     grpc_exec_ctx_finish(&exec_ctx);
@@ -180,7 +180,7 @@ static void test_bad_decompression_data_crc(void) {
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   /* compress it */
-  grpc_msg_compress(&exec_ctx, GRPC_COMPRESS_GZIP, &input, &corrupted);
+  grpc_msg_compress(&exec_ctx, GRPC_MESSAGE_COMPRESS_GZIP, &input, &corrupted);
   /* corrupt the output by smashing the CRC */
   GPR_ASSERT(corrupted.count > 1);
   GPR_ASSERT(GRPC_SLICE_LENGTH(corrupted.slices[1]) > 8);
@@ -188,7 +188,7 @@ static void test_bad_decompression_data_crc(void) {
   memcpy(GRPC_SLICE_START_PTR(corrupted.slices[1]) + idx, &bad, 4);
 
   /* try (and fail) to decompress the corrupted compresed buffer */
-  GPR_ASSERT(0 == grpc_msg_decompress(&exec_ctx, GRPC_COMPRESS_GZIP, &corrupted,
+  GPR_ASSERT(0 == grpc_msg_decompress(&exec_ctx, GRPC_MESSAGE_COMPRESS_GZIP, &corrupted,
                                       &output));
   grpc_exec_ctx_finish(&exec_ctx);
 
@@ -210,7 +210,7 @@ static void test_bad_decompression_data_trailing_garbage(void) {
 
   /* try (and fail) to decompress the invalid compresed buffer */
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  GPR_ASSERT(0 == grpc_msg_decompress(&exec_ctx, GRPC_COMPRESS_DEFLATE, &input,
+  GPR_ASSERT(0 == grpc_msg_decompress(&exec_ctx, GRPC_MESSAGE_COMPRESS_DEFLATE, &input,
                                       &output));
   grpc_exec_ctx_finish(&exec_ctx);
 
@@ -229,7 +229,7 @@ static void test_bad_decompression_data_stream(void) {
 
   /* try (and fail) to decompress the invalid compresed buffer */
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  GPR_ASSERT(0 == grpc_msg_decompress(&exec_ctx, GRPC_COMPRESS_DEFLATE, &input,
+  GPR_ASSERT(0 == grpc_msg_decompress(&exec_ctx, GRPC_MESSAGE_COMPRESS_DEFLATE, &input,
                                       &output));
   grpc_exec_ctx_finish(&exec_ctx);
 
@@ -248,12 +248,12 @@ static void test_bad_compression_algorithm(void) {
       &input, grpc_slice_from_copied_string("Never gonna give you up"));
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  was_compressed = grpc_msg_compress(&exec_ctx, GRPC_COMPRESS_ALGORITHMS_COUNT,
+  was_compressed = grpc_msg_compress(&exec_ctx, GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT,
                                      &input, &output);
   GPR_ASSERT(0 == was_compressed);
 
   was_compressed = grpc_msg_compress(
-      &exec_ctx, GRPC_COMPRESS_ALGORITHMS_COUNT + 123, &input, &output);
+      &exec_ctx, GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT + 123, &input, &output);
   GPR_ASSERT(0 == was_compressed);
   grpc_exec_ctx_finish(&exec_ctx);
 
@@ -273,11 +273,11 @@ static void test_bad_decompression_algorithm(void) {
                             "I'm not really compressed but it doesn't matter"));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   was_decompressed = grpc_msg_decompress(
-      &exec_ctx, GRPC_COMPRESS_ALGORITHMS_COUNT, &input, &output);
+      &exec_ctx, GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT, &input, &output);
   GPR_ASSERT(0 == was_decompressed);
 
   was_decompressed = grpc_msg_decompress(
-      &exec_ctx, GRPC_COMPRESS_ALGORITHMS_COUNT + 123, &input, &output);
+      &exec_ctx, GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT + 123, &input, &output);
   GPR_ASSERT(0 == was_decompressed);
   grpc_exec_ctx_finish(&exec_ctx);
 
@@ -296,7 +296,7 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
 
-  for (i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
+  for (i = 0; i < GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT; i++) {
     for (j = 0; j < GPR_ARRAY_SIZE(uncompressed_split_modes); j++) {
       for (k = 0; k < GPR_ARRAY_SIZE(compressed_split_modes); k++) {
         for (m = 0; m < TEST_VALUE_COUNT; m++) {
