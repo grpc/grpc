@@ -81,6 +81,8 @@ static size_t run_closures(grpc_exec_ctx *exec_ctx, grpc_closure_list list) {
     grpc_exec_ctx_flush(exec_ctx);
   }
 
+  GRPC_STATS_INC_EXECUTOR_CLOSURES_PER_WAKEUP(exec_ctx, n);
+
   return n;
 }
 
@@ -150,7 +152,10 @@ static void executor_thread(void *arg) {
   grpc_exec_ctx exec_ctx =
       GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, NULL);
 
+  GRPC_STATS_INC_EXECUTOR_THREADS_CREATED(&exec_ctx);
+
   size_t subtract_depth = 0;
+  bool used = false;
   for (;;) {
     if (GRPC_TRACER_ON(executor_trace)) {
       gpr_log(GPR_DEBUG, "EXECUTOR[%d]: step (sub_depth=%" PRIdPTR ")",
@@ -169,6 +174,10 @@ static void executor_thread(void *arg) {
       }
       gpr_mu_unlock(&ts->mu);
       break;
+    }
+    if (!used) {
+      GRPC_STATS_INC_EXECUTOR_THREADS_USED(&exec_ctx);
+      used = true;
     }
     GRPC_STATS_INC_EXECUTOR_QUEUE_DRAINED(&exec_ctx);
     grpc_closure_list exec = ts->elems;

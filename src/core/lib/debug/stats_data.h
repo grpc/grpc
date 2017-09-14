@@ -58,6 +58,8 @@ typedef enum {
   GRPC_STATS_COUNTER_EXECUTOR_WAKEUP_INITIATED,
   GRPC_STATS_COUNTER_EXECUTOR_QUEUE_DRAINED,
   GRPC_STATS_COUNTER_EXECUTOR_PUSH_RETRIES,
+  GRPC_STATS_COUNTER_EXECUTOR_THREADS_CREATED,
+  GRPC_STATS_COUNTER_EXECUTOR_THREADS_USED,
   GRPC_STATS_COUNTER_COUNT
 } grpc_stats_counters;
 extern const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT];
@@ -73,6 +75,7 @@ typedef enum {
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_PER_WRITE,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_TRAILING_METADATA_PER_WRITE,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_FLOWCTL_PER_WRITE,
+  GRPC_STATS_HISTOGRAM_EXECUTOR_CLOSURES_PER_WAKEUP,
   GRPC_STATS_HISTOGRAM_COUNT
 } grpc_stats_histograms;
 extern const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT];
@@ -98,7 +101,9 @@ typedef enum {
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_TRAILING_METADATA_PER_WRITE_BUCKETS = 64,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_FLOWCTL_PER_WRITE_FIRST_SLOT = 576,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_FLOWCTL_PER_WRITE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_BUCKETS = 640
+  GRPC_STATS_HISTOGRAM_EXECUTOR_CLOSURES_PER_WAKEUP_FIRST_SLOT = 640,
+  GRPC_STATS_HISTOGRAM_EXECUTOR_CLOSURES_PER_WAKEUP_BUCKETS = 64,
+  GRPC_STATS_HISTOGRAM_BUCKETS = 704
 } grpc_stats_histogram_constants;
 #define GRPC_STATS_INC_CLIENT_CALLS_CREATED(exec_ctx) \
   GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED)
@@ -179,6 +184,11 @@ typedef enum {
   GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_EXECUTOR_QUEUE_DRAINED)
 #define GRPC_STATS_INC_EXECUTOR_PUSH_RETRIES(exec_ctx) \
   GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_EXECUTOR_PUSH_RETRIES)
+#define GRPC_STATS_INC_EXECUTOR_THREADS_CREATED(exec_ctx) \
+  GRPC_STATS_INC_COUNTER((exec_ctx),                      \
+                         GRPC_STATS_COUNTER_EXECUTOR_THREADS_CREATED)
+#define GRPC_STATS_INC_EXECUTOR_THREADS_USED(exec_ctx) \
+  GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_EXECUTOR_THREADS_USED)
 #define GRPC_STATS_INC_TCP_WRITE_SIZE(exec_ctx, value) \
   grpc_stats_inc_tcp_write_size((exec_ctx), (int)(value))
 void grpc_stats_inc_tcp_write_size(grpc_exec_ctx *exec_ctx, int x);
@@ -214,10 +224,14 @@ void grpc_stats_inc_http2_send_trailing_metadata_per_write(
   grpc_stats_inc_http2_send_flowctl_per_write((exec_ctx), (int)(value))
 void grpc_stats_inc_http2_send_flowctl_per_write(grpc_exec_ctx *exec_ctx,
                                                  int x);
-extern const int grpc_stats_histo_buckets[10];
-extern const int grpc_stats_histo_start[10];
-extern const int *const grpc_stats_histo_bucket_boundaries[10];
-extern void (*const grpc_stats_inc_histogram[10])(grpc_exec_ctx *exec_ctx,
+#define GRPC_STATS_INC_EXECUTOR_CLOSURES_PER_WAKEUP(exec_ctx, value) \
+  grpc_stats_inc_executor_closures_per_wakeup((exec_ctx), (int)(value))
+void grpc_stats_inc_executor_closures_per_wakeup(grpc_exec_ctx *exec_ctx,
+                                                 int x);
+extern const int grpc_stats_histo_buckets[11];
+extern const int grpc_stats_histo_start[11];
+extern const int *const grpc_stats_histo_bucket_boundaries[11];
+extern void (*const grpc_stats_inc_histogram[11])(grpc_exec_ctx *exec_ctx,
                                                   int x);
 
 #endif /* GRPC_CORE_LIB_DEBUG_STATS_DATA_H */

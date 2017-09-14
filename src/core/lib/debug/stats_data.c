@@ -56,6 +56,8 @@ const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "executor_wakeup_initiated",
     "executor_queue_drained",
     "executor_push_retries",
+    "executor_threads_created",
+    "executor_threads_used",
 };
 const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of client side calls created by this process",
@@ -98,6 +100,8 @@ const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of times an executor queue was drained",
     "Number of times we raced and were forced to retry pushing a closure to "
     "the executor",
+    "Size of the backing thread pool for overflow gRPC Core work",
+    "How many executor threads actually got used",
 };
 const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
     "tcp_write_size",
@@ -110,6 +114,7 @@ const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
     "http2_send_message_per_write",
     "http2_send_trailing_metadata_per_write",
     "http2_send_flowctl_per_write",
+    "executor_closures_per_wakeup",
 };
 const char *grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT] = {
     "Number of bytes offered to each syscall_write",
@@ -122,6 +127,7 @@ const char *grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT] = {
     "Number of streams whose payload was written per TCP write",
     "Number of streams terminated per TCP write",
     "Number of flow control updates written per TCP write",
+    "Number of closures executed each time an executor wakes up",
 };
 const int grpc_stats_table_0[65] = {
     0,       1,       2,       3,       4,       6,       8,        11,
@@ -418,16 +424,43 @@ void grpc_stats_inc_http2_send_flowctl_per_write(grpc_exec_ctx *exec_ctx,
                            grpc_stats_histo_find_bucket_slow(
                                (exec_ctx), value, grpc_stats_table_2, 64));
 }
-const int grpc_stats_histo_buckets[10] = {64, 64, 64, 64, 64,
+void grpc_stats_inc_executor_closures_per_wakeup(grpc_exec_ctx *exec_ctx,
+                                                 int value) {
+  value = GPR_CLAMP(value, 0, 1024);
+  if (value < 13) {
+    GRPC_STATS_INC_HISTOGRAM(
+        (exec_ctx), GRPC_STATS_HISTOGRAM_EXECUTOR_CLOSURES_PER_WAKEUP, value);
+    return;
+  }
+  union {
+    double dbl;
+    uint64_t uint;
+  } _val, _bkt;
+  _val.dbl = value;
+  if (_val.uint < 4637863191261478912ull) {
+    int bucket =
+        grpc_stats_table_3[((_val.uint - 4623507967449235456ull) >> 48)] + 13;
+    _bkt.dbl = grpc_stats_table_2[bucket];
+    bucket -= (_val.uint < _bkt.uint);
+    GRPC_STATS_INC_HISTOGRAM(
+        (exec_ctx), GRPC_STATS_HISTOGRAM_EXECUTOR_CLOSURES_PER_WAKEUP, bucket);
+    return;
+  }
+  GRPC_STATS_INC_HISTOGRAM((exec_ctx),
+                           GRPC_STATS_HISTOGRAM_EXECUTOR_CLOSURES_PER_WAKEUP,
+                           grpc_stats_histo_find_bucket_slow(
+                               (exec_ctx), value, grpc_stats_table_2, 64));
+}
+const int grpc_stats_histo_buckets[11] = {64, 64, 64, 64, 64, 64,
                                           64, 64, 64, 64, 64};
-const int grpc_stats_histo_start[10] = {0,   64,  128, 192, 256,
-                                        320, 384, 448, 512, 576};
-const int *const grpc_stats_histo_bucket_boundaries[10] = {
+const int grpc_stats_histo_start[11] = {0,   64,  128, 192, 256, 320,
+                                        384, 448, 512, 576, 640};
+const int *const grpc_stats_histo_bucket_boundaries[11] = {
     grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_0,
     grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_0,
     grpc_stats_table_2, grpc_stats_table_2, grpc_stats_table_2,
-    grpc_stats_table_2};
-void (*const grpc_stats_inc_histogram[10])(grpc_exec_ctx *exec_ctx, int x) = {
+    grpc_stats_table_2, grpc_stats_table_2};
+void (*const grpc_stats_inc_histogram[11])(grpc_exec_ctx *exec_ctx, int x) = {
     grpc_stats_inc_tcp_write_size,
     grpc_stats_inc_tcp_write_iov_size,
     grpc_stats_inc_tcp_read_size,
@@ -437,4 +470,5 @@ void (*const grpc_stats_inc_histogram[10])(grpc_exec_ctx *exec_ctx, int x) = {
     grpc_stats_inc_http2_send_initial_metadata_per_write,
     grpc_stats_inc_http2_send_message_per_write,
     grpc_stats_inc_http2_send_trailing_metadata_per_write,
-    grpc_stats_inc_http2_send_flowctl_per_write};
+    grpc_stats_inc_http2_send_flowctl_per_write,
+    grpc_stats_inc_executor_closures_per_wakeup};
