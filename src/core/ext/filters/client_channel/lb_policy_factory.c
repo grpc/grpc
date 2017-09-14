@@ -56,7 +56,7 @@ grpc_lb_addresses* grpc_lb_addresses_copy(const grpc_lb_addresses* addresses) {
 }
 
 void grpc_lb_addresses_set_address(grpc_lb_addresses* addresses, size_t index,
-                                   const void* address, size_t address_len,
+                                   void* address, size_t address_len,
                                    bool is_balancer, const char* balancer_name,
                                    void* user_data) {
   GPR_ASSERT(index < addresses->num_addresses);
