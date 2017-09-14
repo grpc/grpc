@@ -1128,7 +1128,7 @@ static void start_picking_locked(grpc_exec_ctx *exec_ctx,
                                  glb_lb_policy *glb_policy) {
   /* start a timer to fall back */
   if (glb_policy->lb_fallback_timeout_ms > 0 &&
-      glb_policy->serverlist == NULL) {
+      glb_policy->serverlist == NULL && !glb_policy->fallback_timer_active) {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec deadline = gpr_time_add(
         now,
