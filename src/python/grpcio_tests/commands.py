@@ -67,55 +67,6 @@ class GatherProto(setuptools.Command):
             open(path, 'a').close()
 
 
-class BuildProtoModules(setuptools.Command):
-    """Command to generate project *_pb2.py modules from proto files."""
-
-    description = 'build protobuf modules'
-    user_options = [
-        ('include=', None, 'path patterns to include in protobuf generation'),
-        ('exclude=', None, 'path patterns to exclude from protobuf generation')
-    ]
-
-    def initialize_options(self):
-        self.exclude = None
-        self.include = r'.*\.proto$'
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        import grpc_tools.protoc as protoc
-
-        include_regex = re.compile(self.include)
-        exclude_regex = re.compile(self.exclude) if self.exclude else None
-        paths = []
-        for walk_root, directories, filenames in os.walk(PROTO_STEM):
-            for filename in filenames:
-                path = os.path.join(walk_root, filename)
-                if include_regex.match(path) and not (
-                        exclude_regex and exclude_regex.match(path)):
-                    paths.append(path)
-
-        # TODO(kpayson): It would be nice to do this in a batch command,
-        # but we currently have name conflicts in src/proto
-        for path in paths:
-            command = [
-                'grpc_tools.protoc',
-                '-I {}'.format(PROTO_STEM),
-                '--python_out={}'.format(PROTO_STEM),
-                '--grpc_python_out={}'.format(PROTO_STEM),
-            ] + [path]
-            if protoc.main(command) != 0:
-                sys.stderr.write(
-                    'warning: Command:\n{}\nFailed'.format(command))
-
-        # Generated proto directories dont include __init__.py, but
-        # these are needed for python package resolution
-        for walk_root, _, _ in os.walk(PROTO_STEM):
-            path = os.path.join(walk_root, '__init__.py')
-            open(path, 'a').close()
-
-
 class BuildPy(build_py.build_py):
     """Custom project build command."""
 
