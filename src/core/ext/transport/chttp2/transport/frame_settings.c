@@ -44,7 +44,8 @@ static uint8_t *fill_header(uint8_t *out, uint32_t length, uint8_t flags) {
   return out;
 }
 
-grpc_slice grpc_chttp2_settings_create(uint32_t *old, const uint32_t *new,
+grpc_slice grpc_chttp2_settings_create(uint32_t *old_settings,
+                                       const uint32_t *new_settings,
                                        uint32_t force_mask, size_t count) {
   size_t i;
   uint32_t n = 0;
@@ -52,21 +53,21 @@ grpc_slice grpc_chttp2_settings_create(uint32_t *old, const uint32_t *new,
   uint8_t *p;
 
   for (i = 0; i < count; i++) {
-    n += (new[i] != old[i] || (force_mask & (1u << i)) != 0);
+    n += (new_settings[i] != old_settings[i] || (force_mask & (1u << i)) != 0);
   }
 
   output = GRPC_SLICE_MALLOC(9 + 6 * n);
   p = fill_header(GRPC_SLICE_START_PTR(output), 6 * n, 0);
 
   for (i = 0; i < count; i++) {
-    if (new[i] != old[i] || (force_mask & (1u << i)) != 0) {
+    if (new_settings[i] != old_settings[i] || (force_mask & (1u << i)) != 0) {
       *p++ = (uint8_t)(grpc_setting_id_to_wire_id[i] >> 8);
       *p++ = (uint8_t)(grpc_setting_id_to_wire_id[i]);
-      *p++ = (uint8_t)(new[i] >> 24);
-      *p++ = (uint8_t)(new[i] >> 16);
-      *p++ = (uint8_t)(new[i] >> 8);
-      *p++ = (uint8_t)(new[i]);
-      old[i] = new[i];
+      *p++ = (uint8_t)(new_settings[i] >> 24);
+      *p++ = (uint8_t)(new_settings[i] >> 16);
+      *p++ = (uint8_t)(new_settings[i] >> 8);
+      *p++ = (uint8_t)(new_settings[i]);
+      old_settings[i] = new_settings[i];
     }
   }
 

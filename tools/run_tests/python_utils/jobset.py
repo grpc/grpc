@@ -224,7 +224,7 @@ class JobResult(object):
     self.retries = 0
     self.message = ''
     self.cpu_estimated = 1
-    self.cpu_measured = 0
+    self.cpu_measured = 1
 
 
 def read_from_start(f):

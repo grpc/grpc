@@ -33,7 +33,7 @@ static size_t g_num_cores;
 void grpc_stats_init(void) {
   g_num_cores = GPR_MAX(1, gpr_cpu_num_cores());
   grpc_stats_per_cpu_storage =
-      gpr_zalloc(sizeof(grpc_stats_data) * g_num_cores);
+      (grpc_stats_data *)gpr_zalloc(sizeof(grpc_stats_data) * g_num_cores);
 }
 
 void grpc_stats_shutdown(void) { gpr_free(grpc_stats_per_cpu_storage); }
