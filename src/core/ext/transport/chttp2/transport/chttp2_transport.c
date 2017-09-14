@@ -1761,7 +1761,7 @@ static void send_ping_locked(
   if (grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_NEXT], on_ack,
                                GRPC_ERROR_NONE)) {
     grpc_chttp2_initiate_write(exec_ctx, t,
-                               GRPC_CHTTP2_INITIATE_WRITE_SHORT_DELAY,
+                               GRPC_CHTTP2_INITIATE_WRITE_LONG_DELAY,
                                initiate_write_reason);
   }
 }
