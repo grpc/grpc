@@ -5,6 +5,7 @@
   "keywords": ["rpc"],
   "homepage": "https://grpc.io",
   "license": "Apache-2.0",
+  "version": "1.7.0",
   "require": {
     "php": ">=5.5.0",
     "google/protobuf": "^3.4.0"
@@ -17,7 +18,7 @@
   },
   "autoload": {
     "psr-4": {
-      "Grpc\\": "src/php/lib/Grpc/"
+      "Grpc\\": "lib/Grpc/"
     }
   }
 }
