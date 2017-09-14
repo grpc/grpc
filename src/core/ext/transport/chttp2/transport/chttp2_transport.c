@@ -3006,7 +3006,8 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t, grpc_chttp2_stream *s,
     uint32_t frame_size, uint32_t flags) {
   grpc_chttp2_incoming_byte_stream *incoming_byte_stream =
-      gpr_malloc(sizeof(*incoming_byte_stream));
+      (grpc_chttp2_incoming_byte_stream *)gpr_malloc(
+          sizeof(*incoming_byte_stream));
   incoming_byte_stream->base.length = frame_size;
   incoming_byte_stream->remaining_bytes = frame_size;
   incoming_byte_stream->base.flags = flags;
