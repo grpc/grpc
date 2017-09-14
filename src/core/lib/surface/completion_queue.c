@@ -26,6 +26,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
@@ -420,6 +421,10 @@ grpc_completion_queue *grpc_completion_queue_create_internal(
   const cq_poller_vtable *poller_vtable =
       &g_poller_vtable_by_poller_type[polling_type];
 
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  GRPC_STATS_INC_CQS_CREATED(&exec_ctx);
+  grpc_exec_ctx_finish(&exec_ctx);
+
   cq = (grpc_completion_queue *)gpr_zalloc(sizeof(grpc_completion_queue) +
                                            vtable->data_size +
                                            poller_vtable->size());
@@ -575,12 +580,12 @@ static bool atm_inc_if_nonzero(gpr_atm *counter) {
 }
 
 static bool cq_begin_op_for_next(grpc_completion_queue *cq, void *tag) {
-  cq_next_data *cqd = DATA_FROM_CQ(cq);
+  cq_next_data *cqd = (cq_next_data *)DATA_FROM_CQ(cq);
   return atm_inc_if_nonzero(&cqd->pending_events);
 }
 
 static bool cq_begin_op_for_pluck(grpc_completion_queue *cq, void *tag) {
-  cq_pluck_data *cqd = DATA_FROM_CQ(cq);
+  cq_pluck_data *cqd = (cq_pluck_data *)DATA_FROM_CQ(cq);
   return atm_inc_if_nonzero(&cqd->pending_events);
 }
 
@@ -625,7 +630,7 @@ static void cq_end_op_for_next(grpc_exec_ctx *exec_ctx,
     }
   }
 
-  cq_next_data *cqd = DATA_FROM_CQ(cq);
+  cq_next_data *cqd = (cq_next_data *)DATA_FROM_CQ(cq);
   int is_success = (error == GRPC_ERROR_NONE);
 
   storage->tag = tag;
@@ -686,7 +691,7 @@ static void cq_end_op_for_pluck(grpc_exec_ctx *exec_ctx,
                                              void *done_arg,
                                              grpc_cq_completion *storage),
                                 void *done_arg, grpc_cq_completion *storage) {
-  cq_pluck_data *cqd = DATA_FROM_CQ(cq);
+  cq_pluck_data *cqd = (cq_pluck_data *)DATA_FROM_CQ(cq);
   int is_success = (error == GRPC_ERROR_NONE);
 
   GPR_TIMER_BEGIN("cq_end_op_for_pluck", 0);
@@ -769,7 +774,7 @@ typedef struct {
 static bool cq_is_next_finished(grpc_exec_ctx *exec_ctx, void *arg) {
   cq_is_finished_arg *a = (cq_is_finished_arg *)arg;
   grpc_completion_queue *cq = a->cq;
-  cq_next_data *cqd = DATA_FROM_CQ(cq);
+  cq_next_data *cqd = (cq_next_data *)DATA_FROM_CQ(cq);
   GPR_ASSERT(a->stolen_completion == NULL);
 
   gpr_atm current_last_seen_things_queued_ever =
@@ -820,7 +825,7 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
                           void *reserved) {
   grpc_event ret;
   gpr_timespec now;
-  cq_next_data *cqd = DATA_FROM_CQ(cq);
+  cq_next_data *cqd = (cq_next_data *)DATA_FROM_CQ(cq);
 
   GPR_TIMER_BEGIN("grpc_completion_queue_next", 0);
 
@@ -953,7 +958,7 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
    this function */
 static void cq_finish_shutdown_next(grpc_exec_ctx *exec_ctx,
                                     grpc_completion_queue *cq) {
-  cq_next_data *cqd = DATA_FROM_CQ(cq);
+  cq_next_data *cqd = (cq_next_data *)DATA_FROM_CQ(cq);
 
   GPR_ASSERT(cqd->shutdown_called);
   GPR_ASSERT(gpr_atm_no_barrier_load(&cqd->pending_events) == 0);
@@ -964,7 +969,7 @@ static void cq_finish_shutdown_next(grpc_exec_ctx *exec_ctx,
 
 static void cq_shutdown_next(grpc_exec_ctx *exec_ctx,
                              grpc_completion_queue *cq) {
-  cq_next_data *cqd = DATA_FROM_CQ(cq);
+  cq_next_data *cqd = (cq_next_data *)DATA_FROM_CQ(cq);
 
   /* Need an extra ref for cq here because:
    * We call cq_finish_shutdown_next() below, that would call pollset shutdown.
@@ -994,7 +999,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
 
 static int add_plucker(grpc_completion_queue *cq, void *tag,
                        grpc_pollset_worker **worker) {
-  cq_pluck_data *cqd = DATA_FROM_CQ(cq);
+  cq_pluck_data *cqd = (cq_pluck_data *)DATA_FROM_CQ(cq);
   if (cqd->num_pluckers == GRPC_MAX_COMPLETION_QUEUE_PLUCKERS) {
     return 0;
   }
@@ -1006,7 +1011,7 @@ static int add_plucker(grpc_completion_queue *cq, void *tag,
 
 static void del_plucker(grpc_completion_queue *cq, void *tag,
                         grpc_pollset_worker **worker) {
-  cq_pluck_data *cqd = DATA_FROM_CQ(cq);
+  cq_pluck_data *cqd = (cq_pluck_data *)DATA_FROM_CQ(cq);
   for (int i = 0; i < cqd->num_pluckers; i++) {
     if (cqd->pluckers[i].tag == tag && cqd->pluckers[i].worker == worker) {
       cqd->num_pluckers--;
@@ -1020,7 +1025,7 @@ static void del_plucker(grpc_completion_queue *cq, void *tag,
 static bool cq_is_pluck_finished(grpc_exec_ctx *exec_ctx, void *arg) {
   cq_is_finished_arg *a = (cq_is_finished_arg *)arg;
   grpc_completion_queue *cq = a->cq;
-  cq_pluck_data *cqd = DATA_FROM_CQ(cq);
+  cq_pluck_data *cqd = (cq_pluck_data *)DATA_FROM_CQ(cq);
 
   GPR_ASSERT(a->stolen_completion == NULL);
   gpr_atm current_last_seen_things_queued_ever =
@@ -1057,7 +1062,7 @@ static grpc_event cq_pluck(grpc_completion_queue *cq, void *tag,
   grpc_cq_completion *prev;
   grpc_pollset_worker *worker = NULL;
   gpr_timespec now;
-  cq_pluck_data *cqd = DATA_FROM_CQ(cq);
+  cq_pluck_data *cqd = (cq_pluck_data *)DATA_FROM_CQ(cq);
 
   GPR_TIMER_BEGIN("grpc_completion_queue_pluck", 0);
 
@@ -1181,7 +1186,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
 
 static void cq_finish_shutdown_pluck(grpc_exec_ctx *exec_ctx,
                                      grpc_completion_queue *cq) {
-  cq_pluck_data *cqd = DATA_FROM_CQ(cq);
+  cq_pluck_data *cqd = (cq_pluck_data *)DATA_FROM_CQ(cq);
 
   GPR_ASSERT(cqd->shutdown_called);
   GPR_ASSERT(!gpr_atm_no_barrier_load(&cqd->shutdown));
@@ -1195,7 +1200,7 @@ static void cq_finish_shutdown_pluck(grpc_exec_ctx *exec_ctx,
  * merging them is a bit tricky and probably not worth it */
 static void cq_shutdown_pluck(grpc_exec_ctx *exec_ctx,
                               grpc_completion_queue *cq) {
-  cq_pluck_data *cqd = DATA_FROM_CQ(cq);
+  cq_pluck_data *cqd = (cq_pluck_data *)DATA_FROM_CQ(cq);
 
   /* Need an extra ref for cq here because:
    * We call cq_finish_shutdown_pluck() below, that would call pollset shutdown.
