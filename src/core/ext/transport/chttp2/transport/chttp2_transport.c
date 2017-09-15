@@ -1027,6 +1027,7 @@ static void write_action_begin_locked(grpc_exec_ctx *exec_ctx, void *gt,
                                                    write_action, t, scheduler),
                        GRPC_ERROR_NONE);
   } else {
+    GRPC_STATS_INC_HTTP2_SPURIOUS_WRITES_BEGUN(exec_ctx);
     set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_IDLE,
                     "begin writing nothing");
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "writing");
