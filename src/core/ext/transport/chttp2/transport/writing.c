@@ -201,9 +201,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
 
   if (t->flow_control.remote_window > 0) {
     while (grpc_chttp2_list_pop_stalled_by_transport(t, &s)) {
-      if (!t->closed && grpc_chttp2_list_add_writable_stream(t, s) &&
-          stream_ref_if_not_destroyed(&s->refcount->refs)) {
-        grpc_chttp2_initiate_write(exec_ctx, t, "transport.read_flow_control");
+      if (!t->closed && grpc_chttp2_list_add_writable_stream(t, s)) {
+        stream_ref_if_not_destroyed(&s->refcount->refs);
       }
     }
   }

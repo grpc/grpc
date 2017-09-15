@@ -204,7 +204,7 @@ static char *choose_service_config(char *service_config_choice_json) {
         int random_pct = rand() % 100;
         int percentage;
         if (sscanf(field->value, "%d", &percentage) != 1 ||
-            random_pct > percentage) {
+            random_pct > percentage || percentage == 0) {
           service_config_json = NULL;
           break;
         }

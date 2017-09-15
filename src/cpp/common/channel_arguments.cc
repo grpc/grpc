@@ -86,10 +86,6 @@ void ChannelArguments::SetCompressionAlgorithm(
   SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, algorithm);
 }
 
-void ChannelArguments::SetGrpclbFallbackTimeout(int fallback_timeout) {
-  SetInt(GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS, fallback_timeout);
-}
-
 void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
   if (!mutator) {
     return;

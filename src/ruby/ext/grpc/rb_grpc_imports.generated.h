@@ -25,12 +25,12 @@
 
 #include <windows.h>
 
+#include <grpc/byte_buffer.h>
 #include <grpc/census.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -47,6 +47,36 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
+typedef grpc_byte_buffer *(*grpc_raw_byte_buffer_create_type)(grpc_slice *slices, size_t nslices);
+extern grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
+#define grpc_raw_byte_buffer_create grpc_raw_byte_buffer_create_import
+typedef grpc_byte_buffer *(*grpc_raw_compressed_byte_buffer_create_type)(grpc_slice *slices, size_t nslices, grpc_compression_algorithm compression);
+extern grpc_raw_compressed_byte_buffer_create_type grpc_raw_compressed_byte_buffer_create_import;
+#define grpc_raw_compressed_byte_buffer_create grpc_raw_compressed_byte_buffer_create_import
+typedef grpc_byte_buffer *(*grpc_byte_buffer_copy_type)(grpc_byte_buffer *bb);
+extern grpc_byte_buffer_copy_type grpc_byte_buffer_copy_import;
+#define grpc_byte_buffer_copy grpc_byte_buffer_copy_import
+typedef size_t(*grpc_byte_buffer_length_type)(grpc_byte_buffer *bb);
+extern grpc_byte_buffer_length_type grpc_byte_buffer_length_import;
+#define grpc_byte_buffer_length grpc_byte_buffer_length_import
+typedef void(*grpc_byte_buffer_destroy_type)(grpc_byte_buffer *byte_buffer);
+extern grpc_byte_buffer_destroy_type grpc_byte_buffer_destroy_import;
+#define grpc_byte_buffer_destroy grpc_byte_buffer_destroy_import
+typedef int(*grpc_byte_buffer_reader_init_type)(grpc_byte_buffer_reader *reader, grpc_byte_buffer *buffer);
+extern grpc_byte_buffer_reader_init_type grpc_byte_buffer_reader_init_import;
+#define grpc_byte_buffer_reader_init grpc_byte_buffer_reader_init_import
+typedef void(*grpc_byte_buffer_reader_destroy_type)(grpc_byte_buffer_reader *reader);
+extern grpc_byte_buffer_reader_destroy_type grpc_byte_buffer_reader_destroy_import;
+#define grpc_byte_buffer_reader_destroy grpc_byte_buffer_reader_destroy_import
+typedef int(*grpc_byte_buffer_reader_next_type)(grpc_byte_buffer_reader *reader, grpc_slice *slice);
+extern grpc_byte_buffer_reader_next_type grpc_byte_buffer_reader_next_import;
+#define grpc_byte_buffer_reader_next grpc_byte_buffer_reader_next_import
+typedef grpc_slice(*grpc_byte_buffer_reader_readall_type)(grpc_byte_buffer_reader *reader);
+extern grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_import;
+#define grpc_byte_buffer_reader_readall grpc_byte_buffer_reader_readall_import
+typedef grpc_byte_buffer *(*grpc_raw_byte_buffer_from_reader_type)(grpc_byte_buffer_reader *reader);
+extern grpc_raw_byte_buffer_from_reader_type grpc_raw_byte_buffer_from_reader_import;
+#define grpc_raw_byte_buffer_from_reader grpc_raw_byte_buffer_from_reader_import
 typedef int(*census_initialize_type)(int features);
 extern census_initialize_type census_initialize_import;
 #define census_initialize census_initialize_import
@@ -455,36 +485,6 @@ extern grpc_call_set_credentials_type grpc_call_set_credentials_import;
 typedef void(*grpc_server_credentials_set_auth_metadata_processor_type)(grpc_server_credentials *creds, grpc_auth_metadata_processor processor);
 extern grpc_server_credentials_set_auth_metadata_processor_type grpc_server_credentials_set_auth_metadata_processor_import;
 #define grpc_server_credentials_set_auth_metadata_processor grpc_server_credentials_set_auth_metadata_processor_import
-typedef grpc_byte_buffer *(*grpc_raw_byte_buffer_create_type)(grpc_slice *slices, size_t nslices);
-extern grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
-#define grpc_raw_byte_buffer_create grpc_raw_byte_buffer_create_import
-typedef grpc_byte_buffer *(*grpc_raw_compressed_byte_buffer_create_type)(grpc_slice *slices, size_t nslices, grpc_compression_algorithm compression);
-extern grpc_raw_compressed_byte_buffer_create_type grpc_raw_compressed_byte_buffer_create_import;
-#define grpc_raw_compressed_byte_buffer_create grpc_raw_compressed_byte_buffer_create_import
-typedef grpc_byte_buffer *(*grpc_byte_buffer_copy_type)(grpc_byte_buffer *bb);
-extern grpc_byte_buffer_copy_type grpc_byte_buffer_copy_import;
-#define grpc_byte_buffer_copy grpc_byte_buffer_copy_import
-typedef size_t(*grpc_byte_buffer_length_type)(grpc_byte_buffer *bb);
-extern grpc_byte_buffer_length_type grpc_byte_buffer_length_import;
-#define grpc_byte_buffer_length grpc_byte_buffer_length_import
-typedef void(*grpc_byte_buffer_destroy_type)(grpc_byte_buffer *byte_buffer);
-extern grpc_byte_buffer_destroy_type grpc_byte_buffer_destroy_import;
-#define grpc_byte_buffer_destroy grpc_byte_buffer_destroy_import
-typedef int(*grpc_byte_buffer_reader_init_type)(grpc_byte_buffer_reader *reader, grpc_byte_buffer *buffer);
-extern grpc_byte_buffer_reader_init_type grpc_byte_buffer_reader_init_import;
-#define grpc_byte_buffer_reader_init grpc_byte_buffer_reader_init_import
-typedef void(*grpc_byte_buffer_reader_destroy_type)(grpc_byte_buffer_reader *reader);
-extern grpc_byte_buffer_reader_destroy_type grpc_byte_buffer_reader_destroy_import;
-#define grpc_byte_buffer_reader_destroy grpc_byte_buffer_reader_destroy_import
-typedef int(*grpc_byte_buffer_reader_next_type)(grpc_byte_buffer_reader *reader, grpc_slice *slice);
-extern grpc_byte_buffer_reader_next_type grpc_byte_buffer_reader_next_import;
-#define grpc_byte_buffer_reader_next grpc_byte_buffer_reader_next_import
-typedef grpc_slice(*grpc_byte_buffer_reader_readall_type)(grpc_byte_buffer_reader *reader);
-extern grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_import;
-#define grpc_byte_buffer_reader_readall grpc_byte_buffer_reader_readall_import
-typedef grpc_byte_buffer *(*grpc_raw_byte_buffer_from_reader_type)(grpc_byte_buffer_reader *reader);
-extern grpc_raw_byte_buffer_from_reader_type grpc_raw_byte_buffer_from_reader_import;
-#define grpc_raw_byte_buffer_from_reader grpc_raw_byte_buffer_from_reader_import
 typedef grpc_slice(*grpc_slice_ref_type)(grpc_slice s);
 extern grpc_slice_ref_type grpc_slice_ref_import;
 #define grpc_slice_ref grpc_slice_ref_import
