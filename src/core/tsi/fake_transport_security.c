@@ -493,7 +493,8 @@ static tsi_result fake_handshaker_result_extract_peer(
 }
 
 static tsi_result fake_handshaker_result_create_zero_copy_grpc_protector(
-    const tsi_handshaker_result *self, size_t *max_output_protected_frame_size,
+    void *exec_ctx, const tsi_handshaker_result *self,
+    size_t *max_output_protected_frame_size,
     tsi_zero_copy_grpc_protector **protector) {
   *protector =
       tsi_create_fake_zero_copy_grpc_protector(max_output_protected_frame_size);
