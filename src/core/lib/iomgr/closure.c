@@ -167,7 +167,15 @@ void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *c,
   GPR_TIMER_BEGIN("grpc_closure_sched", 0);
   if (c != NULL) {
 #ifndef NDEBUG
-    GPR_ASSERT(!c->scheduled);
+    if (c->scheduled) {
+      gpr_log(GPR_ERROR,
+              "Closure already scheduled. (closure: %p, created: [%s:%d], "
+              "previously scheduled at: [%s: %d] run?: %s",
+              closure, closure->file_created, closure->line_created,
+              closure->file_initiated, closure->line_initiated,
+              closure->run ? "true" : "false");
+      abort();
+    }
     c->scheduled = true;
     c->file_initiated = file;
     c->line_initiated = line;
