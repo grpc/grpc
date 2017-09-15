@@ -40,8 +40,7 @@ using helloworld::Greeter;
 class GreeterServiceImpl final : public Greeter::Service {
   Status SayHello(ServerContext* context, const HelloRequest* request,
                   HelloReply* reply) override {
-    std::string prefix("Hello ");
-    reply->set_message(prefix + request->name());
+    reply->set_message("Hello " + request->name());
     return Status::OK;
   }
 };
@@ -59,7 +58,6 @@ void RunServer() {
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
-
   // Wait for the server to shutdown. Note that some other thread must be
   // responsible for shutting down the server for this call to ever return.
   server->Wait();
@@ -67,6 +65,5 @@ void RunServer() {
 
 int main(int argc, char** argv) {
   RunServer();
-
   return 0;
 }
