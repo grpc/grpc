@@ -92,7 +92,7 @@ class Alarm : private GrpcLibraryCodegen {
   }
 
  private:
-  class AlarmEntry : public CompletionQueueTag {
+  class AlarmEntry : public internal::CompletionQueueTag {
    public:
     AlarmEntry(void* tag) : tag_(tag) {}
     void Set(void* tag) { tag_ = tag; }
