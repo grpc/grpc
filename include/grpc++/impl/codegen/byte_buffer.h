@@ -34,10 +34,14 @@ namespace grpc {
 template <class R>
 class CallOpRecvMessage;
 class MethodHandler;
-namespace internal {
-template <class M, class T>
-class MessageDeserializer;
-}
+template <class ServiceType, class RequestType, class ResponseType>
+class RpcMethodHandler;
+template <class ServiceType, class RequestType, class ResponseType>
+class ServerStreamingHandler;
+namespace CallOpGenericRecvMessageHelper {
+template <class R>
+class DeserializeFuncType;
+}  // namespace CallOpGenericRecvMessageHelper
 
 /// A sequence of bytes.
 class ByteBuffer final {
@@ -98,8 +102,14 @@ class ByteBuffer final {
   friend class CallOpRecvMessage;
   friend class CallOpGenericRecvMessage;
   friend class MethodHandler;
-  template <class M, class T>
-  friend class internal::MessageDeserializer;
+  template <class ServiceType, class RequestType, class ResponseType>
+  friend class RpcMethodHandler;
+  template <class ServiceType, class RequestType, class ResponseType>
+  friend class ServerStreamingHandler;
+  template <class R>
+  friend class CallOpGenericRecvMessageHelper::DeserializeFuncType;
+
+  grpc_byte_buffer* buffer_;
 
   // takes ownership
   void set_buffer(grpc_byte_buffer* buf) {
@@ -112,20 +122,25 @@ class ByteBuffer final {
   grpc_byte_buffer* c_buffer() { return buffer_; }
   grpc_byte_buffer** c_buffer_ptr() { return &buffer_; }
 
-  // DEPRECATED: Implicit conversion to transparently
-  // support deprecated SerializationTraits API
-  // No need to inline since deprecated
-  operator grpc_byte_buffer*();
-  operator const grpc_byte_buffer*() const;
+  class ByteBufferPointer {
+   public:
+    ByteBufferPointer(const ByteBuffer* b)
+        : bbuf_(const_cast<ByteBuffer*>(b)) {}
+    operator ByteBuffer*() { return bbuf_; }
+    operator grpc_byte_buffer*() { return bbuf_->buffer_; }
+    operator grpc_byte_buffer**() { return &bbuf_->buffer_; }
 
-  grpc_byte_buffer* buffer_;
+   private:
+    ByteBuffer* bbuf_;
+  };
+  ByteBufferPointer bbuf_ptr() const { return ByteBufferPointer(this); }
 };
 
 template <>
 class SerializationTraits<ByteBuffer, void> {
  public:
-  static Status Deserialize(const ByteBuffer& byte_buffer, ByteBuffer* dest) {
-    dest->set_buffer(byte_buffer.buffer_);
+  static Status Deserialize(ByteBuffer* byte_buffer, ByteBuffer* dest) {
+    dest->set_buffer(byte_buffer->buffer_);
     return Status::OK;
   }
   static Status Serialize(const ByteBuffer& source, ByteBuffer* buffer,

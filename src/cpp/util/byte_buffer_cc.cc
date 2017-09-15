@@ -33,6 +33,15 @@ ByteBuffer::ByteBuffer(const Slice* slices, size_t nslices) {
                 "Slice must have same representation as grpc_slice");
   static_assert(sizeof(Slice) == sizeof(grpc_slice),
                 "Slice must have same representation as grpc_slice");
+  // The following assertions check that the representation of a ByteBuffer is
+  // identical to grpc_byte_buffer*:  it has a grpc_byte_buffer* field,
+  // and nothing else.
+  static_assert(std::is_same<decltype(buffer_), grpc_byte_buffer*>::value,
+                "ByteBuffer must have same representation as "
+                "grpc_byte_buffer*");
+  static_assert(sizeof(ByteBuffer) == sizeof(grpc_byte_buffer*),
+                "ByteBuffer must have same representation as "
+                "grpc_byte_buffer*");
   g_gli_initializer.summon();  // Make sure that initializer linked in
   // The const_cast is legal if grpc_raw_byte_buffer_create() does no more
   // than its advertised side effect of increasing the reference count of the
@@ -86,20 +95,5 @@ void ByteBuffer::Swap(ByteBuffer* other) {
   other->buffer_ = buffer_;
   buffer_ = tmp;
 }
-
-ByteBuffer::operator grpc_byte_buffer*() {
-  // The following assertions check that the representation of a ByteBuffer is
-  // identical to grpc_byte_buffer*:  it has a grpc_byte_buffer* field,
-  // and nothing else.
-  static_assert(std::is_same<decltype(buffer_), grpc_byte_buffer*>::value,
-                "ByteBuffer must have same representation as "
-                "grpc_byte_buffer*");
-  static_assert(sizeof(ByteBuffer) == sizeof(grpc_byte_buffer*),
-                "ByteBuffer must have same representation as "
-                "grpc_byte_buffer*");
-  return buffer_;
-}
-
-ByteBuffer::operator const grpc_byte_buffer*() const { return buffer_; }
 
 }  // namespace grpc

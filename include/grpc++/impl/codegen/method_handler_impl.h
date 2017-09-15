@@ -38,8 +38,8 @@ class RpcMethodHandler : public MethodHandler {
 
   void RunHandler(const HandlerParameter& param) final {
     RequestType req;
-    Status status = internal::MessageDeserializer<RequestType>::Deserialize(
-        param.request, &req);
+    Status status = SerializationTraits<RequestType>::Deserialize(
+        param.request.bbuf_ptr(), &req);
     ResponseType rsp;
     if (status.ok()) {
       status = func_(service_, param.server_context, &req, &rsp);
@@ -124,8 +124,8 @@ class ServerStreamingHandler : public MethodHandler {
 
   void RunHandler(const HandlerParameter& param) final {
     RequestType req;
-    Status status = internal::MessageDeserializer<RequestType>::Deserialize(
-        param.request, &req);
+    Status status = SerializationTraits<RequestType>::Deserialize(
+        param.request.bbuf_ptr(), &req);
 
     if (status.ok()) {
       ServerWriter<ResponseType> writer(param.call, param.server_context);

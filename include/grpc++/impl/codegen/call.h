@@ -305,9 +305,6 @@ class CallOpSendMessage {
   void FinishOp(bool* status) { send_buf_.Clear(); }
 
  private:
-  template <class M, class T = void>
-  class MessageSerializer;
-
   ByteBuffer send_buf_;
   WriteOptions write_options_;
 };
@@ -318,40 +315,11 @@ T Example();
 }  // namespace internal
 
 template <class M>
-class CallOpSendMessage::MessageSerializer<
-    M, typename std::enable_if<std::is_same<
-           ::grpc::Status, decltype(SerializationTraits<M>::Serialize(
-                               internal::Example<const M&>(),
-                               internal::Example<grpc_byte_buffer**>(),
-                               internal::Example<bool*>()))>::value>::type> {
- public:
-  static Status SendMessageInternal(const M& message, ByteBuffer* bbuf,
-                                    bool* own_buf) {
-    return SerializationTraits<M>::Serialize(message, bbuf->c_buffer_ptr(),
-                                             own_buf);
-  }
-};
-
-template <class M>
-class CallOpSendMessage::MessageSerializer<
-    M, typename std::enable_if<std::is_same<
-           ::grpc::Status, decltype(SerializationTraits<M>::Serialize(
-                               internal::Example<const M&>(),
-                               internal::Example<::grpc::ByteBuffer*>(),
-                               internal::Example<bool*>()))>::value>::type> {
- public:
-  static Status SendMessageInternal(const M& message, ByteBuffer* bbuf,
-                                    bool* own_buf) {
-    return SerializationTraits<M>::Serialize(message, bbuf, own_buf);
-  }
-};
-
-template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
   bool own_buf;
-  Status result =
-      MessageSerializer<M>::SendMessageInternal(message, &send_buf_, &own_buf);
+  Status result = SerializationTraits<M>::Serialize(
+      message, send_buf_.bbuf_ptr(), &own_buf);
   if (!own_buf) {
     send_buf_.Duplicate();
   }
@@ -362,36 +330,6 @@ template <class M>
 Status CallOpSendMessage::SendMessage(const M& message) {
   return SendMessage(message, WriteOptions());
 }
-
-namespace internal {
-template <class M, class T = void>
-class MessageDeserializer;
-
-template <class M>
-class MessageDeserializer<
-    M, typename std::enable_if<std::is_same<
-           ::grpc::Status, decltype(SerializationTraits<M>::Deserialize(
-                               internal::Example<const ::grpc::ByteBuffer&>(),
-                               internal::Example<M*>()))>::value>::type> {
- public:
-  static Status Deserialize(const ByteBuffer& bbuf, M* message) {
-    return SerializationTraits<M>::Deserialize(bbuf, message);
-  }
-};
-
-template <class M>
-class MessageDeserializer<
-    M, typename std::enable_if<std::is_same<
-           ::grpc::Status, decltype(SerializationTraits<M>::Deserialize(
-                               internal::Example<grpc_byte_buffer*>(),
-                               internal::Example<M*>()))>::value>::type> {
- public:
-  static Status Deserialize(const ByteBuffer& bbuf, M* message) {
-    return SerializationTraits<M>::Deserialize(
-        const_cast<ByteBuffer&>(bbuf).c_buffer(), message);
-  }
-};
-}  // namespace internal
 
 template <class R>
 class CallOpRecvMessage {
@@ -423,7 +361,7 @@ class CallOpRecvMessage {
     if (recv_buf_.Valid()) {
       if (*status) {
         got_message = *status =
-            internal::MessageDeserializer<R>::Deserialize(recv_buf_, message_)
+            SerializationTraits<R>::Deserialize(recv_buf_.bbuf_ptr(), message_)
                 .ok();
         recv_buf_.Release();
       } else {
@@ -448,7 +386,7 @@ class CallOpRecvMessage {
 namespace CallOpGenericRecvMessageHelper {
 class DeserializeFunc {
  public:
-  virtual Status Deserialize(const ByteBuffer& buf) = 0;
+  virtual Status Deserialize(ByteBuffer* buf) = 0;
   virtual ~DeserializeFunc() {}
 };
 
@@ -456,8 +394,8 @@ template <class R>
 class DeserializeFuncType final : public DeserializeFunc {
  public:
   DeserializeFuncType(R* message) : message_(message) {}
-  Status Deserialize(const ByteBuffer& buf) override {
-    return grpc::internal::MessageDeserializer<R>::Deserialize(buf, message_);
+  Status Deserialize(ByteBuffer* buf) override {
+    return SerializationTraits<R>::Deserialize(buf->bbuf_ptr(), message_);
   }
 
   ~DeserializeFuncType() override {}
@@ -501,7 +439,7 @@ class CallOpGenericRecvMessage {
     if (recv_buf_.Valid()) {
       if (*status) {
         got_message = true;
-        *status = deserialize_->Deserialize(recv_buf_).ok();
+        *status = deserialize_->Deserialize(&recv_buf_).ok();
         recv_buf_.Release();
       } else {
         got_message = false;

@@ -24,20 +24,20 @@ namespace grpc {
 /// Defines how to serialize and deserialize some type.
 ///
 /// Used for hooking different message serialization API's into GRPC.
-/// Each SerializationTraits implementation must provide the following
-/// functions:
+/// Each SerializationTraits<Message> implementation must provide the
+/// following functions:
 /// 1.  static Status Serialize(const Message& msg,
 ///                             ByteBuffer* buffer,
 ///                             bool* own_buffer);
-///     AND/OR
+///     OR
 ///     static Status Serialize(const Message& msg,
 ///                             grpc_byte_buffer** buffer,
 ///                             bool* own_buffer);
 ///     The former is preferred; the latter is deprecated
 ///
-/// 2.  static Status Deserialize(const ByteBuffer& buffer,
+/// 2.  static Status Deserialize(ByteBuffer* buffer,
 ///                               Message* msg);
-///     AND/OR
+///     OR
 ///     static Status Deserialize(grpc_byte_buffer* buffer,
 ///                               Message* msg);
 ///     The former is preferred; the latter is deprecated
