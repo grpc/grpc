@@ -23,8 +23,25 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/thd.h>
 #include "src/core/lib/security/transport/tsi_error.h"
 #include "test/core/tsi/transport_security_test_lib.h"
+
+static void notification_signal(tsi_test_fixture *fixture) {
+  gpr_mu_lock(&fixture->mu);
+  fixture->notified = true;
+  gpr_cv_signal(&fixture->cv);
+  gpr_mu_unlock(&fixture->mu);
+}
+
+static void notification_wait(tsi_test_fixture *fixture) {
+  gpr_mu_lock(&fixture->mu);
+  while (!fixture->notified) {
+    gpr_cv_wait(&fixture->cv, &fixture->mu, gpr_inf_future(GPR_CLOCK_REALTIME));
+  }
+  fixture->notified = false;
+  gpr_mu_unlock(&fixture->mu);
+}
 
 typedef struct handshaker_args {
   tsi_test_fixture *fixture;
@@ -273,9 +290,11 @@ grpc_error *on_handshake_next_done(tsi_result result, void *user_data,
   /* Read more data if we need to. */
   if (result == TSI_INCOMPLETE_DATA) {
     GPR_ASSERT(bytes_to_send_size == 0);
+    notification_signal(fixture);
     return error;
   }
   if (result != TSI_OK) {
+    notification_signal(fixture);
     return grpc_set_tsi_error_result(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake failed"), result);
   }
@@ -295,6 +314,7 @@ grpc_error *on_handshake_next_done(tsi_result result, void *user_data,
   if (handshaker_result != NULL) {
     maybe_append_unused_bytes(args);
   }
+  notification_signal(fixture);
   return error;
 }
 
@@ -345,7 +365,11 @@ static void do_handshaker_next(handshaker_args *args) {
   if (result != TSI_ASYNC) {
     args->error = on_handshake_next_done(result, args, bytes_to_send,
                                          bytes_to_send_size, handshaker_result);
+    if (args->error != GRPC_ERROR_NONE) {
+      return;
+    }
   }
+  notification_wait(fixture);
 }
 
 void tsi_test_do_handshake(tsi_test_fixture *fixture) {
@@ -532,6 +556,9 @@ void tsi_test_fixture_init(tsi_test_fixture *fixture) {
   fixture->bytes_read_from_server_channel = 0;
   fixture->test_unused_bytes = true;
   fixture->has_client_finished_first = false;
+  gpr_mu_init(&fixture->mu);
+  gpr_cv_init(&fixture->cv);
+  fixture->notified = false;
 }
 
 void tsi_test_fixture_destroy(tsi_test_fixture *fixture) {
@@ -546,5 +573,7 @@ void tsi_test_fixture_destroy(tsi_test_fixture *fixture) {
   GPR_ASSERT(fixture->vtable != NULL);
   GPR_ASSERT(fixture->vtable->destruct != NULL);
   fixture->vtable->destruct(fixture);
+  gpr_mu_destroy(&fixture->mu);
+  gpr_cv_destroy(&fixture->cv);
   gpr_free(fixture);
 }
