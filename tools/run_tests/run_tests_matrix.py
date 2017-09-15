@@ -166,7 +166,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                               inner_jobs=inner_jobs,
                               timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
   
-  test_jobs += _generate_jobs(languages=['ruby', 'php'],
+  test_jobs += _generate_jobs(languages=['grpc-node', 'ruby', 'php'],
                               configs=['dbg', 'opt'],
                               platforms=['linux', 'macos'],
                               labels=['basictests', 'multilang'],
