@@ -160,12 +160,6 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
 
   GPR_TIMER_BEGIN("grpc_chttp2_begin_write", 0);
 
-  for (size_t i = 0; i < t->ping_ack_count; i++) {
-    grpc_slice_buffer_add(&t->outbuf,
-                          grpc_chttp2_ping_create(1, t->ping_acks[i]));
-  }
-  t->ping_ack_count = 0;
-
   if (t->dirtied_local_settings && !t->sent_local_settings) {
     grpc_slice_buffer_add(
         &t->outbuf,
@@ -177,6 +171,12 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     t->sent_local_settings = 1;
     GRPC_STATS_INC_HTTP2_SETTINGS_WRITES(exec_ctx);
   }
+
+  for (size_t i = 0; i < t->ping_ack_count; i++) {
+    grpc_slice_buffer_add(&t->outbuf,
+                          grpc_chttp2_ping_create(1, t->ping_acks[i]));
+  }
+  t->ping_ack_count = 0;
 
   /* simple writes are queued to qbuf, and flushed here */
   grpc_slice_buffer_move_into(&t->qbuf, &t->outbuf);
