@@ -441,14 +441,6 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
       action.send_stream_update = GRPC_CHTTP2_FLOWCTL_QUEUE_UPDATE;
     }
   }
-  TRACEACTION(tfc, action);
-  return action;
-}
-
-grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_bdp_action(
-    grpc_chttp2_transport_flowctl* tfc) {
-  grpc_chttp2_flowctl_action action;
-  memset(&action, 0, sizeof(action));
   if (tfc->enable_bdp_probe) {
     action.need_ping = grpc_bdp_estimator_need_ping(&tfc->bdp_estimator);
 
@@ -496,7 +488,6 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_bdp_action(
       }
     }
   }
-
   TRACEACTION(tfc, action);
   return action;
 }

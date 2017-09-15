@@ -62,12 +62,6 @@ typedef enum {
 } grpc_chttp2_write_state;
 
 typedef enum {
-  GRPC_CHTTP2_PING_ON_NEXT_WRITE = 0,
-  GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE,
-  GRPC_CHTTP2_PING_TYPE_COUNT /* must be last */
-} grpc_chttp2_ping_type;
-
-typedef enum {
   GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY,
   GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT,
 } grpc_chttp2_optimization_target;
@@ -93,7 +87,6 @@ typedef enum {
   GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL,
   GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL,
   GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS,
-  GRPC_CHTTP2_INITIATE_WRITE_BDP_ESTIMATOR_PING,
   GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_SETTING,
   GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_UPDATE,
   GRPC_CHTTP2_INITIATE_WRITE_APPLICATION_PING,
@@ -370,7 +363,7 @@ struct grpc_chttp2_transport {
   uint32_t last_new_stream_id;
 
   /** ping queues for various ping insertion points */
-  grpc_chttp2_ping_queue ping_queues[GRPC_CHTTP2_PING_TYPE_COUNT];
+  grpc_chttp2_ping_queue ping_queue;
   grpc_chttp2_repeated_ping_policy ping_policy;
   grpc_chttp2_repeated_ping_state ping_state;
   uint64_t ping_ctr; /* unique id for pings */
@@ -753,9 +746,6 @@ typedef struct {
 // chttp2 exactly what it needs to do
 grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
     grpc_chttp2_transport_flowctl *tfc, grpc_chttp2_stream_flowctl *sfc);
-
-grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_bdp_action(
-    grpc_chttp2_transport_flowctl *tfc);
 
 // Takes in a flow control action and performs all the needed operations.
 void grpc_chttp2_act_on_flowctl_action(grpc_exec_ctx *exec_ctx,
