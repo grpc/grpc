@@ -698,7 +698,7 @@ grpc_error *grpc_chttp2_flowctl_recv_data(grpc_chttp2_transport_flowctl *tfc,
 // returns an announce if we should send a transport update to our peer,
 // else returns zero
 uint32_t grpc_chttp2_flowctl_maybe_send_transport_update(
-    grpc_chttp2_transport_flowctl *tfc);
+    grpc_chttp2_transport_flowctl *tfc, bool writing_anyway);
 
 // returns an announce if we should send a stream update to our peer, else
 // returns zero

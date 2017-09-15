@@ -126,6 +126,25 @@ static bool update_list(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   return sched_any;
 }
 
+static void report_stall(grpc_chttp2_transport *t, grpc_chttp2_stream *s,
+                         const char *staller) {
+  gpr_log(
+      GPR_DEBUG,
+      "%s:%p stream %d stalled by %s [fc:pending=%" PRIdPTR ":flowed=%" PRId64
+      ":peer_initwin=%d:t_win=%" PRId64 ":s_win=%d:s_delta=%" PRId64 "]",
+      t->peer_string, t, s->id, staller, s->flow_controlled_buffer.length,
+      s->flow_controlled_bytes_flowed,
+      t->settings[GRPC_ACKED_SETTINGS]
+                 [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
+      t->flow_control.remote_window,
+      (uint32_t)GPR_MAX(
+          0,
+          s->flow_control.remote_window_delta +
+              (int64_t)t->settings[GRPC_PEER_SETTINGS]
+                                  [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]),
+      s->flow_control.remote_window_delta);
+}
+
 static bool stream_ref_if_not_destroyed(gpr_refcount *r) {
   gpr_atm count;
   do {
@@ -394,9 +413,11 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
           }
           message_writes++;
         } else if (t->flow_control.remote_window == 0) {
+          report_stall(t, s, "transport");
           grpc_chttp2_list_add_stalled_by_transport(t, s);
           now_writing = true;
         } else if (stream_remote_window == 0) {
+          report_stall(t, s, "stream");
           grpc_chttp2_list_add_stalled_by_stream(t, s);
           now_writing = true;
         }
@@ -465,8 +486,10 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     }
   }
 
-  uint32_t transport_announce =
-      grpc_chttp2_flowctl_maybe_send_transport_update(&t->flow_control);
+  maybe_initiate_ping(exec_ctx, t);
+
+  uint32_t transport_announce = grpc_chttp2_flowctl_maybe_send_transport_update(
+      &t->flow_control, t->outbuf.count > 0);
   if (transport_announce) {
     grpc_transport_one_way_stats throwaway_stats;
     grpc_slice_buffer_add(
@@ -480,8 +503,6 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       t->ping_recv_state.ping_strikes = 0;
     }
   }
-
-  maybe_initiate_ping(exec_ctx, t);
 
   GPR_TIMER_END("grpc_chttp2_begin_write", 0);
 
