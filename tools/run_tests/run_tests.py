@@ -714,6 +714,9 @@ class PythonLanguage(object):
       return (pypy32_config,)
     elif args.compiler == 'python_alpine':
       return (python27_config,)
+    elif args.compiler == 'all_the_cpythons':
+      return (python27_config, python34_config, python35_config,
+              python36_config,)
     else:
       raise Exception('Compiler %s not supported.' % args.compiler)
 
@@ -1211,7 +1214,7 @@ argp.add_argument('--compiler',
                   choices=['default',
                            'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc_musl',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
-                           'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3', 'python_alpine',
+                           'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3', 'python_alpine', 'all_the_cpythons',
                            'node0.12', 'node4', 'node5', 'node6', 'node7', 'node8',
                            'electron1.3', 'electron1.6',
                            'coreclr',
