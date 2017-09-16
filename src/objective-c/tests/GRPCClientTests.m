@@ -28,6 +28,7 @@
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
+#import <RxLibrary/GRXBufferedPipe.h>
 
 #define TEST_TIMEOUT 16
 
@@ -39,6 +40,7 @@ static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.googleapis.com";
 static GRPCProtoMethod *kInexistentMethod;
 static GRPCProtoMethod *kEmptyCallMethod;
 static GRPCProtoMethod *kUnaryCallMethod;
+static GRPCProtoMethod *kFullDuplexCallMethod;
 
 /** Observer class for testing that responseMetadata is KVO-compliant */
 @interface PassthroughObserver : NSObject
@@ -106,6 +108,9 @@ static GRPCProtoMethod *kUnaryCallMethod;
   kUnaryCallMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
                                                       service:kService
                                                        method:@"UnaryCall"];
+  kFullDuplexCallMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
+                                                           service:kService
+                                                            method:@"FullDuplexCall"];
 }
 
 - (void)testConnectionToRemoteServer {
@@ -423,11 +428,12 @@ static GRPCProtoMethod *kUnaryCallMethod;
 }
 
 - (void)testTimeout {
-  __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
+  __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
 
+  GRXBufferedPipe *pipe = [GRXBufferedPipe pipe];
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
-                                             path:kEmptyCallMethod.HTTPPath
-                                   requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
+                                             path:kFullDuplexCallMethod.HTTPPath
+                                   requestsWriter:pipe];
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
     XCTAssert(0, @"Failure: response received; Expect: no response received.");
