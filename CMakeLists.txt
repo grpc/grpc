@@ -954,6 +954,7 @@ add_library(grpc
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
+  src/core/lib/compression/compression_internal.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
   src/core/lib/debug/stats.c
@@ -1302,6 +1303,7 @@ add_library(grpc_cronet
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
+  src/core/lib/compression/compression_internal.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
   src/core/lib/debug/stats.c
@@ -1618,6 +1620,7 @@ add_library(grpc_test_util
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
+  src/core/lib/compression/compression_internal.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
   src/core/lib/debug/stats.c
@@ -1878,6 +1881,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
+  src/core/lib/compression/compression_internal.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
   src/core/lib/debug/stats.c
@@ -2124,6 +2128,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
+  src/core/lib/compression/compression_internal.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
   src/core/lib/debug/stats.c
@@ -2876,6 +2881,7 @@ add_library(grpc++_cronet
   src/core/lib/channel/handshaker_factory.c
   src/core/lib/channel/handshaker_registry.c
   src/core/lib/compression/compression.c
+  src/core/lib/compression/compression_internal.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
   src/core/lib/debug/stats.c

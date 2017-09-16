@@ -2938,6 +2938,7 @@ LIBGRPC_SRC = \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
+    src/core/lib/compression/compression_internal.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
     src/core/lib/debug/stats.c \
@@ -3286,6 +3287,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
+    src/core/lib/compression/compression_internal.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
     src/core/lib/debug/stats.c \
@@ -3601,6 +3603,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
+    src/core/lib/compression/compression_internal.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
     src/core/lib/debug/stats.c \
@@ -3852,6 +3855,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
+    src/core/lib/compression/compression_internal.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
     src/core/lib/debug/stats.c \
@@ -4076,6 +4080,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
+    src/core/lib/compression/compression_internal.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
     src/core/lib/debug/stats.c \
@@ -4811,6 +4816,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/channel/handshaker_factory.c \
     src/core/lib/channel/handshaker_registry.c \
     src/core/lib/compression/compression.c \
+    src/core/lib/compression/compression_internal.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
     src/core/lib/debug/stats.c \
