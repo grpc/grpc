@@ -46,7 +46,15 @@ namespace Grpc.Core
 
         readonly Task connectivityWatcherTask;
 
-        bool shutdownRequested;
+        /// <summary>
+        /// Captures the shared, mutable, channel state across various Channel objects utilizing the same underlying gRPC channel.
+        /// </summary>
+        class SharedChannelState
+        {
+                public bool ShutdownRequested;
+        }
+
+        SharedChannelState state;
 
         /// <summary>
         /// Creates a channel that connects to a specific host.
@@ -68,6 +76,7 @@ namespace Grpc.Core
         /// <param name="options">Channel options.</param>
         public Channel(string target, ChannelCredentials credentials, IEnumerable<ChannelOption> options)
         {
+	    this.CallInvoker = new DefaultCallInvoker(this);
             this.target = GrpcPreconditions.CheckNotNull(target, "target");
             this.options = CreateOptionsDictionary(options);
             EnsureUserAgentChannelOption(this.options);
@@ -125,6 +134,36 @@ namespace Grpc.Core
             {
                 return GetConnectivityState(false);
             }
+        }
+
+        /// <summary>
+        /// Gets the canonical CallInvoker for the current channel.
+        /// </summary>
+        /// <returns>An instance of DefaultCallInvoker if no interceptor is registered. Otherwise, returns an InterceptingCallInvoker.</returns>
+        internal CallInvoker CallInvoker { get; private set; }
+
+        /// <summary>
+        /// Intercepts the channel via the specified interceptor.
+        /// </summary>
+        /// <param name="interceptor">The interceptor instance to intercept the calls passing through the channel.</param>
+        /// <returns>A new channel instance whose calls will be intercepted.</returns>
+        public Channel Intercept(IInterceptor interceptor)
+        {
+            GrpcPreconditions.CheckNotNull(interceptor, "interceptor");
+            Channel interceptedChannel = (Channel)MemberwiseClone();
+            interceptedChannel.CallInvoker = new InterceptingCallInvoker(interceptor, this.CallInvoker);
+            return interceptedChannel;
+        }
+
+        /// <summary>
+        /// Intercepts the channel via the specified interceptor type.
+        /// </summary>
+        /// <typeparam name="T">The interceptor type to instantiate and utilize to intercept the calls passing through the channel.</param>
+        /// <returns>A new channel instance whose calls will be intercepted.</returns>
+        public Channel Intercept<T>()
+            where T : IInterceptor, new()
+        {
+            return Intercept(new T());
         }
 
         /// <summary>
@@ -219,8 +258,8 @@ namespace Grpc.Core
         {
             lock (myLock)
             {
-                GrpcPreconditions.CheckState(!shutdownRequested);
-                shutdownRequested = true;
+                GrpcPreconditions.CheckState(!state.ShutdownRequested);
+                state.ShutdownRequested = true;
             }
             GrpcEnvironment.UnregisterChannel(this);
 
@@ -301,7 +340,7 @@ namespace Grpc.Core
                 {
                     lock (myLock)
                     {
-                        if (shutdownRequested)
+                        if (state.ShutdownRequested)
                         {
                             break;
                         }

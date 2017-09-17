@@ -111,7 +111,7 @@ namespace Grpc.Core
         /// Initializes a new instance of <c>ClientBase</c> class.
         /// </summary>
         /// <param name="channel">The channel to use for remote call invocation.</param>
-        public ClientBase(Channel channel) : this(new DefaultCallInvoker(channel))
+        public ClientBase(Channel channel) : this(channel.CallInvoker)
         {
         }
 
@@ -156,9 +156,24 @@ namespace Grpc.Core
                 this.host = host;
             }
 
+            class SetHostInterceptor : InterceptorBase
+            {
+                string host;
+                public SetHostInterceptor(string host)
+                {
+                    this.host = host;
+                }
+
+                protected override object BeforeCall<TRequest, TResponse>(ref Method<TRequest, TResponse> method, ref string host, ref CallOptions options, TRequest request)
+                {
+                    host = this.host;
+                    return null;
+                }
+            }
+
             internal CallInvoker CreateDecoratedCallInvoker()
             {
-                return new InterceptingCallInvoker(undecoratedCallInvoker, hostInterceptor: (h) => host);
+                return new InterceptingCallInvoker(new SetHostInterceptor(host), undecoratedCallInvoker);
             }
 
             internal ClientBaseConfiguration WithHost(string host)
@@ -167,5 +182,6 @@ namespace Grpc.Core
                 return new ClientBaseConfiguration(this.undecoratedCallInvoker, host);
             }
         }
+
     }
 }
