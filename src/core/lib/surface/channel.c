@@ -27,6 +27,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
@@ -77,6 +78,11 @@ grpc_channel *grpc_channel_create_with_builder(
   grpc_channel_args *args = grpc_channel_args_copy(
       grpc_channel_stack_builder_get_channel_arguments(builder));
   grpc_channel *channel;
+  if (channel_stack_type == GRPC_SERVER_CHANNEL) {
+    GRPC_STATS_INC_SERVER_CHANNELS_CREATED(exec_ctx);
+  } else {
+    GRPC_STATS_INC_CLIENT_CHANNELS_CREATED(exec_ctx);
+  }
   grpc_error *error = grpc_channel_stack_builder_finish(
       exec_ctx, builder, sizeof(grpc_channel), 1, destroy_channel, NULL,
       (void **)&channel);
@@ -276,7 +282,7 @@ static grpc_call *grpc_channel_create_call_internal(
   grpc_call_create_args args;
   memset(&args, 0, sizeof(args));
   args.channel = channel;
-  args.parent_call = parent_call;
+  args.parent = parent_call;
   args.propagation_mask = propagation_mask;
   args.cq = cq;
   args.pollset_set_alternative = pollset_set_alternative;

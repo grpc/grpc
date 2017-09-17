@@ -656,7 +656,7 @@ grpc_resource_quota *grpc_resource_quota_from_channel_args(
     if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
       if (channel_args->args[i].type == GRPC_ARG_POINTER) {
         return grpc_resource_quota_ref_internal(
-            channel_args->args[i].value.pointer.p);
+            (grpc_resource_quota *)channel_args->args[i].value.pointer.p);
       } else {
         gpr_log(GPR_DEBUG, GRPC_ARG_RESOURCE_QUOTA " should be a pointer");
       }
@@ -666,12 +666,12 @@ grpc_resource_quota *grpc_resource_quota_from_channel_args(
 }
 
 static void *rq_copy(void *rq) {
-  grpc_resource_quota_ref(rq);
+  grpc_resource_quota_ref((grpc_resource_quota *)rq);
   return rq;
 }
 
 static void rq_destroy(grpc_exec_ctx *exec_ctx, void *rq) {
-  grpc_resource_quota_unref_internal(exec_ctx, rq);
+  grpc_resource_quota_unref_internal(exec_ctx, (grpc_resource_quota *)rq);
 }
 
 static int rq_cmp(void *a, void *b) { return GPR_ICMP(a, b); }

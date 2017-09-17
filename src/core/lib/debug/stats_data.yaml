@@ -20,6 +20,14 @@
   doc: Number of client side calls created by this process
 - counter: server_calls_created
   doc: Number of server side calls created by this process
+- counter: cqs_created
+  doc: Number of completion queues created
+- counter: client_channels_created
+  doc: Number of client channels created
+- counter: client_subchannels_created
+  doc: Number of client subchannels created
+- counter: server_channels_created
+  doc: Number of server channels created
 # polling
 - counter: syscall_poll
   doc: Number of polling syscalls (epoll_wait, poll, etc) made by this process
@@ -54,6 +62,10 @@
   max: 1024
   buckets: 64
   doc: Number of byte segments offered to each syscall_read
+- counter: tcp_backup_pollers_created
+  doc: Number of times a backup poller has been created (this can be expensive)
+- counter: tcp_backup_poller_polls
+  doc: Number of polls performed on the backup poller
 # chttp2
 - counter: http2_op_batches
   doc: Number of batches received by HTTP2 transport
@@ -75,10 +87,78 @@
   max: 16777216
   buckets: 64
   doc: Size of messages received by HTTP2 transport
+- histogram: http2_send_initial_metadata_per_write
+  max: 1024
+  buckets: 64
+  doc: Number of streams initiated written per TCP write
+- histogram: http2_send_message_per_write
+  max: 1024
+  buckets: 64
+  doc: Number of streams whose payload was written per TCP write
+- histogram: http2_send_trailing_metadata_per_write
+  max: 1024
+  buckets: 64
+  doc: Number of streams terminated per TCP write
+- histogram: http2_send_flowctl_per_write
+  max: 1024
+  buckets: 64
+  doc: Number of flow control updates written per TCP write
+- counter: http2_settings_writes
+  doc: Number of settings frames sent
 - counter: http2_pings_sent
   doc: Number of HTTP2 pings sent by process
 - counter: http2_writes_begun
   doc: Number of HTTP2 writes initiated
+- counter: http2_writes_offloaded
+  doc: Number of HTTP2 writes offloaded to the executor from application threads
+- counter: http2_writes_continued
+  doc: Number of HTTP2 writes that finished seeing more data needed to be
+       written
+- counter: http2_partial_writes
+  doc: Number of HTTP2 writes that were made knowing there was still more data
+       to be written (we cap maximum write size to syscall_write)
+- counter: http2_initiate_write_due_to_initial_write
+  doc: Number of HTTP2 writes initiated due to 'initial_write'
+- counter: http2_initiate_write_due_to_start_new_stream
+  doc: Number of HTTP2 writes initiated due to 'start_new_stream'
+- counter: http2_initiate_write_due_to_send_message
+  doc: Number of HTTP2 writes initiated due to 'send_message'
+- counter: http2_initiate_write_due_to_send_initial_metadata
+  doc: Number of HTTP2 writes initiated due to 'send_initial_metadata'
+- counter: http2_initiate_write_due_to_send_trailing_metadata
+  doc: Number of HTTP2 writes initiated due to 'send_trailing_metadata'
+- counter: http2_initiate_write_due_to_retry_send_ping
+  doc: Number of HTTP2 writes initiated due to 'retry_send_ping'
+- counter: http2_initiate_write_due_to_continue_pings
+  doc: Number of HTTP2 writes initiated due to 'continue_pings'
+- counter: http2_initiate_write_due_to_goaway_sent
+  doc: Number of HTTP2 writes initiated due to 'goaway_sent'
+- counter: http2_initiate_write_due_to_rst_stream
+  doc: Number of HTTP2 writes initiated due to 'rst_stream'
+- counter: http2_initiate_write_due_to_close_from_api
+  doc: Number of HTTP2 writes initiated due to 'close_from_api'
+- counter: http2_initiate_write_due_to_stream_flow_control
+  doc: Number of HTTP2 writes initiated due to 'stream_flow_control'
+- counter: http2_initiate_write_due_to_transport_flow_control
+  doc: Number of HTTP2 writes initiated due to 'transport_flow_control'
+- counter: http2_initiate_write_due_to_send_settings
+  doc: Number of HTTP2 writes initiated due to 'send_settings'
+- counter: http2_initiate_write_due_to_bdp_estimator_ping
+  doc: Number of HTTP2 writes initiated due to 'bdp_estimator_ping'
+- counter: http2_initiate_write_due_to_flow_control_unstalled_by_setting
+  doc: Number of HTTP2 writes initiated due to 'flow_control_unstalled_by_setting'
+- counter: http2_initiate_write_due_to_flow_control_unstalled_by_update
+  doc: Number of HTTP2 writes initiated due to 'flow_control_unstalled_by_update'
+- counter: http2_initiate_write_due_to_application_ping
+  doc: Number of HTTP2 writes initiated due to 'application_ping'
+- counter: http2_initiate_write_due_to_keepalive_ping
+  doc: Number of HTTP2 writes initiated due to 'keepalive_ping'
+- counter: http2_initiate_write_due_to_transport_flow_control_unstalled
+  doc: Number of HTTP2 writes initiated due to 'transport_flow_control_unstalled'
+- counter: http2_initiate_write_due_to_ping_response
+  doc: Number of HTTP2 writes initiated due to 'ping_response'
+- counter: http2_initiate_write_due_to_force_rst_stream
+  doc: Number of HTTP2 writes initiated due to 'force_rst_stream'
 # combiner locks
 - counter: combiner_locks_initiated
   doc: Number of combiner lock entries by process
@@ -90,11 +170,29 @@
 - counter: combiner_locks_offloaded
   doc: Number of combiner locks offloaded to different threads
 # executor
-- counter: executor_scheduled_items
-  doc: Number of closures scheduled against the executor (gRPC thread pool)
+- counter: executor_scheduled_short_items
+  doc: Number of finite runtime closures scheduled against the executor
+       (gRPC thread pool)
+- counter: executor_scheduled_long_items
+  doc: Number of potentially infinite runtime closures scheduled against the
+       executor (gRPC thread pool)
 - counter: executor_scheduled_to_self
   doc: Number of closures scheduled by the executor to the executor
 - counter: executor_wakeup_initiated
   doc: Number of thread wakeups initiated within the executor
 - counter: executor_queue_drained
   doc: Number of times an executor queue was drained
+- counter: executor_push_retries
+  doc: Number of times we raced and were forced to retry pushing a closure to
+       the executor
+# server
+- counter: server_requested_calls
+  doc: How many calls were requested (not necessarily received) by the server
+- histogram: server_cqs_checked
+  buckets: 8
+  max: 64
+  doc: How many completion queues were checked looking for a CQ that had
+       requested the incoming call
+- counter: server_slowpath_requests_queued
+  doc: How many times was the server slow path taken (indicates too few
+       outstanding requests)

@@ -48,13 +48,13 @@ static void *guard_malloc(size_t size) {
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, (gpr_atm)1);
-  ptr = g_old_allocs.malloc_fn(size + sizeof(size));
+  ptr = (size_t *)g_old_allocs.malloc_fn(size + sizeof(size));
   *ptr++ = size;
   return ptr;
 }
 
 static void *guard_realloc(void *vptr, size_t size) {
-  size_t *ptr = vptr;
+  size_t *ptr = (size_t *)vptr;
   if (vptr == NULL) {
     return guard_malloc(size);
   }
@@ -67,13 +67,13 @@ static void *guard_realloc(void *vptr, size_t size) {
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, -(gpr_atm)*ptr);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
-  ptr = g_old_allocs.realloc_fn(ptr, size + sizeof(size));
+  ptr = (size_t *)g_old_allocs.realloc_fn(ptr, size + sizeof(size));
   *ptr++ = size;
   return ptr;
 }
 
 static void guard_free(void *vptr) {
-  size_t *ptr = vptr;
+  size_t *ptr = (size_t *)vptr;
   if (!vptr) return;
   --ptr;
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, -(gpr_atm)*ptr);

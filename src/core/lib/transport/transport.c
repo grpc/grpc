@@ -72,7 +72,8 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
          cope with.
          Throw this over to the executor (on a core-owned thread) and process it
          there. */
-      refcount->destroy.scheduler = grpc_executor_scheduler;
+      refcount->destroy.scheduler =
+          grpc_executor_scheduler(GRPC_EXECUTOR_SHORT);
     }
     GRPC_CLOSURE_SCHED(exec_ctx, &refcount->destroy, GRPC_ERROR_NONE);
   }
@@ -101,8 +102,9 @@ static void slice_stream_unref(grpc_exec_ctx *exec_ctx, void *p) {
 grpc_slice grpc_slice_from_stream_owned_buffer(grpc_stream_refcount *refcount,
                                                void *buffer, size_t length) {
   slice_stream_ref(&refcount->slice_refcount);
-  return (grpc_slice){.refcount = &refcount->slice_refcount,
-                      .data.refcounted = {.bytes = buffer, .length = length}};
+  return (grpc_slice){
+      .refcount = &refcount->slice_refcount,
+      .data.refcounted = {.bytes = (uint8_t *)buffer, .length = length}};
 }
 
 static const grpc_slice_refcount_vtable stream_ref_slice_vtable = {
