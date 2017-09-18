@@ -1671,10 +1671,14 @@ static void lb_call_on_retry_timer_locked(grpc_exec_ctx *exec_ctx, void *arg,
 
 static void lb_on_fallback_timer_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                         grpc_error *error) {
-  glb_lb_policy *glb_policy = arg;
+  glb_lb_policy *glb_policy = (glb_lb_policy *)arg;
   /* If we receive a serverlist after the timer fires but before this callback
    * actually runs, don't do anything. */
-  if (glb_policy->serverlist != NULL) return;
+  if (glb_policy->serverlist != NULL) {
+    GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
+                              "grpclb_fallback_timer");
+    return;
+  }
   glb_policy->fallback_timer_active = false;
   if (!glb_policy->shutting_down && error == GRPC_ERROR_NONE) {
     if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
