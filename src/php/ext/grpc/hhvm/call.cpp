@@ -64,7 +64,7 @@ CallData::CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_pCallCredenti
     m_pChannel{ nullptr }, m_Timeout{ 0 },
     m_pMetadataPromise{ std::make_shared<MetadataPromise>() },
     m_pMetadataMutex{ std::make_shared<std::mutex>() }, m_pCallCancelled{ std::make_shared<bool>(false) },
-    m_pOpsManaged{ nullptr }
+    m_pOpsManaged{ nullptr }, m_BatchCounter{ 0 }
 {
 }
 
@@ -72,7 +72,7 @@ CallData::CallData(grpc_call* const call, const bool owned, const int32_t timeou
     m_pCall{ call }, m_Owned{ owned }, m_pCallCredentials{ nullptr }, m_pChannel{ nullptr },
     m_Timeout{ timeoutMs }, m_pMetadataPromise{ std::make_shared<MetadataPromise>() },
     m_pMetadataMutex{ std::make_shared<std::mutex>() }, m_pCallCancelled{ std::make_shared<bool>(false) },
-    m_pOpsManaged{ nullptr }
+    m_pOpsManaged{ nullptr }, m_BatchCounter{ 0 }
 {
 }
 
@@ -285,10 +285,10 @@ void MetadataArray::resizeMetadata(const size_t capacity)
 
 
 // constructors/destructors
-OpsManaged::OpsManaged(void) : send_metadata_ref{ OpsManaged::s_Send_metadata},
-    send_trailing_metadata_ref{ OpsManaged::s_Send_trailing_metadata},
-    recv_metadata{ false }, recv_trailing_metadata{ false }, recv_status_details{},
-    send_status_details{}, cancelled{ 0 }, status{ GRPC_STATUS_OK }, m_CallCancelled { false }
+OpsManaged::OpsManaged(void) : send_metadata{ true },
+    send_trailing_metadata{ true }, recv_metadata{ false },
+    recv_trailing_metadata{ false }, recv_status_details{},
+    send_status_details{}, cancelled{ 0 }, status{ GRPC_STATUS_OK }
 {
     send_messages.fill(nullptr);
     recv_messages.fill(nullptr);
@@ -301,16 +301,9 @@ OpsManaged::~OpsManaged(void)
 
 void OpsManaged::destroy(void)
 {
-    // clean up send metadata's
-    send_metadata_ref.init();
-    send_trailing_metadata_ref.init();
-
     // clean up messages
     std::for_each(recv_messages.begin(), recv_messages.end(), freeMessage);
-    if (m_CallCancelled == false)
-    {
-        std::for_each(send_messages.begin(), send_messages.end(), freeMessage);
-    }
+    std::for_each(send_messages.begin(), send_messages.end(), freeMessage);
 }
 
 void OpsManaged::freeMessage(grpc_byte_buffer* pBuffer)
@@ -321,17 +314,6 @@ void OpsManaged::freeMessage(grpc_byte_buffer* pBuffer)
         pBuffer = nullptr;
     }
 }
-
-void OpsManaged::setCallCancelled(bool callCancelled)
-{
-  m_CallCancelled = callCancelled;
-}
-
-// initialize statics
-// NOTE: These variables are thread_local so that they have a lifetime beyond startBatch
-// where they are set
-thread_local MetadataArray OpsManaged::s_Send_metadata{ true };
-thread_local MetadataArray OpsManaged::s_Send_trailing_metadata{ true };
 
 /*****************************************************************************/
 /*                              HHVM Call Methods                            */
@@ -404,6 +386,8 @@ Object HHVM_METHOD(Call, startBatch,
     std::memset(ops.data(), 0, sizeof(grpc_op) * OpsManaged::s_MaxActions);
 
     CallData* const pCallData{ Native::data<CallData>(this_) };
+    pCallData->incrementBatchCounter();
+    // create a new ops managed for this call
     pCallData->setOpsManaged(std::unique_ptr<OpsManaged>(new OpsManaged));
     OpsManaged& opsManaged{ pCallData->opsManaged() };
 
@@ -429,13 +413,13 @@ Object HHVM_METHOD(Call, startBatch,
                 SystemLib::throwInvalidArgumentExceptionObject("Expected an array value for the metadata");
             }
 
-            if (!OpsManaged::s_Send_metadata.init(value.toArray()))
+            if (!opsManaged.send_metadata.init(value.toArray()))
             {
                 SystemLib::throwInvalidArgumentExceptionObject("Bad metadata value given");
             }
 
-            ops[op_num].data.send_initial_metadata.count = opsManaged.send_metadata_ref.size();
-            ops[op_num].data.send_initial_metadata.metadata = opsManaged.send_metadata_ref.data();
+            ops[op_num].data.send_initial_metadata.count = opsManaged.send_metadata.size();
+            ops[op_num].data.send_initial_metadata.metadata = opsManaged.send_metadata.data();
             sending_initial_metadata = true;
             break;
         }
@@ -490,13 +474,13 @@ Object HHVM_METHOD(Call, startBatch,
                     SystemLib::throwInvalidArgumentExceptionObject("Expected an array for server status metadata value");
                 }
 
-                if (!OpsManaged::s_Send_trailing_metadata.init(innerMetadata.toArray()))
+                if (!opsManaged.send_trailing_metadata.init(innerMetadata.toArray()))
                 {
                     SystemLib::throwInvalidArgumentExceptionObject("Bad trailing metadata value given");
                 }
 
-                ops[op_num].data.send_status_from_server.trailing_metadata_count = opsManaged.send_trailing_metadata_ref.size();
-                ops[op_num].data.send_status_from_server.trailing_metadata = opsManaged.send_trailing_metadata_ref.data();
+                ops[op_num].data.send_status_from_server.trailing_metadata_count = opsManaged.send_trailing_metadata.size();
+                ops[op_num].data.send_status_from_server.trailing_metadata = opsManaged.send_trailing_metadata.data();
             }
 
             if (!statusArr.exists(String{ "code" }, true))
@@ -564,7 +548,7 @@ Object HHVM_METHOD(Call, startBatch,
 
     bool callFailed{ false };
     grpc_status_code failCode{ GRPC_STATUS_OK };
-    auto callFailure = [&callFailed, &credentialedCall, &opsManaged, pCallData](void)
+    auto callFailure = [&callFailed, &credentialedCall, &opsManaged, pCallData](bool timeOut = false)
     {
         // clean up any meta data info
         if (credentialedCall)
@@ -578,19 +562,25 @@ Object HHVM_METHOD(Call, startBatch,
             pCallData->callCancelled() = true;
         }
 
-        opsManaged.setCallCancelled(true);
-
         // cancel the call with the server
         grpc_call_cancel_with_status(pCallData->call(), GRPC_STATUS_DEADLINE_EXCEEDED,
                                      "RPC Call Timeout Exceeded", nullptr);
         callFailed = true;
+
+        if (timeOut)
+        {
+            // wait for failure after cancelling call
+            grpc_event event(grpc_completion_queue_next(pCallData->queue()->queue(),
+                             gpr_time_from_millis(1000, GPR_TIMESPAN),
+                             nullptr));
+        }
     };
 
     static std::mutex s_StartBatchMutex;
     {
         std::unique_lock<std::mutex> lock{ s_StartBatchMutex };
         grpc_call_error errorCode{ grpc_call_start_batch(pCallData->call(), ops.data(),
-                                                         op_num, pCallData->call(), nullptr) };
+                                                         op_num, &opsManaged, nullptr) };
 
         if (errorCode != GRPC_CALL_OK)
         {
@@ -605,10 +595,10 @@ Object HHVM_METHOD(Call, startBatch,
     grpc_event event (grpc_completion_queue_next(pCallData->queue()->queue(),
                                                  gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN),
                                                  nullptr));
-    if (event.type != GRPC_OP_COMPLETE || event.tag != pCallData->call())
+    if (event.type != GRPC_OP_COMPLETE || event.tag != &opsManaged)
     {
         // failed so clean up and return empty object
-        callFailure();
+        callFailure(event.type ==  GRPC_QUEUE_TIMEOUT);
         failCode = GRPC_STATUS_DEADLINE_EXCEEDED;
     }
 
@@ -705,6 +695,8 @@ Object HHVM_METHOD(Call, startBatch,
         }
     }
 
+    // clean up memory
+    pCallData->setOpsManaged(std::unique_ptr<OpsManaged>{ nullptr });
     return resultObj;
 }
 
