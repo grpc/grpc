@@ -45,6 +45,7 @@ public:
     ServerData(ServerData&& otherServerData) = delete;
     ServerData& operator=(const ServerData& rhsServerData) = delete;
     ServerData& operator=(ServerData&& rhsServerData) = delete;
+    void sweep(void);
 
     // interface functions
     void init(grpc_server* const pServer);

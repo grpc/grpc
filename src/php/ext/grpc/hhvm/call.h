@@ -1,3 +1,4 @@
+
 /*
  *
  * Copyright 2015 gRPC authors.
@@ -93,6 +94,9 @@ public:
     OpsManaged& operator=(const OpsManaged& rhsOpsManaged) = delete;
     OpsManaged& operator&(OpsManaged&& rhsOpsManaged) = delete;
 
+    // interface functions
+    void setCallCancelled(bool callCancelled);
+
 private:
     // helper fuctions
     void destroy(void);
@@ -110,8 +114,10 @@ public:
     MessagesType recv_messages;                                 // owned by call object
     Slice recv_status_details;                                  // owned by caller
     Slice send_status_details;                                  // owned by caller
-    int cancelled ;
+    int cancelled;
     grpc_status_code status;
+
+    bool m_CallCancelled;
 
 };
 
@@ -134,6 +140,7 @@ public:
     CallData(CallData&& otherCallData) = delete;
     CallData& operator=(const CallData& rhsCallData) = delete;
     CallData& operator&(CallData&& rhsCallData) = delete;
+    void sweep(void);
 
     // interface functions
     void init(grpc_call* const call, const bool owned, const int32_t timeoutMs = 0);

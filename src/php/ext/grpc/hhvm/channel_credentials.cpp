@@ -115,6 +115,11 @@ ChannelCredentialsData::~ChannelCredentialsData(void)
     destroy();
 }
 
+void ChannelCredentialsData::sweep(void)
+{
+    destroy();
+}
+
 void ChannelCredentialsData::init(grpc_channel_credentials* const pChannelCredentials,
                                   const String& hashKey)
 {
@@ -148,14 +153,14 @@ void ChannelCredentialsData::destroy(void)
 void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,
                         const String& pem_root_certs)
 {
-    HHVM_TRACE_SCOPE("ChannelCredentials setDefaultRootsPem") // Degug Trace
+    HHVM_TRACE_SCOPE("ChannelCredentials setDefaultRootsPem") // Debug Trace
 
     DefaultPEMRootCerts::getDefaultPEMRootCerts().setCerts(pem_root_certs);
 }
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault)
 {
-    HHVM_TRACE_SCOPE("ChannelCredentials createDefault") // Degug Trace
+    HHVM_TRACE_SCOPE("ChannelCredentials createDefault") // Debug Trace
 
     Object newChannelCredentialsObj{ ChannelCredentialsData::getClass() };
     ChannelCredentialsData* const pChannelCredentialsData{ Native::data<ChannelCredentialsData>(newChannelCredentialsObj) };
@@ -177,7 +182,7 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createSsl,
                           const Variant& perm_key_cert_pair__cert_chain /*=null*/
                           )
 {
-    HHVM_TRACE_SCOPE("ChannelCredentials createSsl") // Degug Trace
+    HHVM_TRACE_SCOPE("ChannelCredentials createSsl") // Debug Trace
 
     const char* const pPermRootCerts{ (!perm_root_certs.isNull() && perm_root_certs.isString()) ?
                                       perm_root_certs.toString().c_str() : nullptr };
@@ -222,7 +227,7 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createComposite,
                           const Object& cred1_obj,
                           const Object& cred2_obj)
 {
-    HHVM_TRACE_SCOPE("ChannelCredentials createComposite") // Degug Trace
+    HHVM_TRACE_SCOPE("ChannelCredentials createComposite") // Debug Trace
 
     ChannelCredentialsData* pChannelCredentialsData{ Native::data<ChannelCredentialsData>(cred1_obj) };
     CallCredentialsData* pCallCredentialsData{ Native::data<CallCredentialsData>(cred2_obj) };
@@ -245,7 +250,7 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createComposite,
 
 Variant HHVM_STATIC_METHOD(ChannelCredentials, createInsecure)
 {
-    HHVM_TRACE_SCOPE("ChannelCredentials createInsecure") // Degug Trace
+    HHVM_TRACE_SCOPE("ChannelCredentials createInsecure") // Debug Trace
 
     return Variant{};
 }

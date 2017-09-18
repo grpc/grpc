@@ -46,6 +46,7 @@ public:
     ServerCredentialsData(ServerCredentialsData&& otherServerCredentialsData) = delete;
     ServerCredentialsData& operator=(const ServerCredentialsData& rhsServerCredentialsData) = delete;
     ServerCredentialsData& operator=(ServerCredentialsData&& rhsServerCredentialsData) = delete;
+    void sweep(void);
 
     // interface functions
     void init(grpc_server_credentials* const server_credentials);

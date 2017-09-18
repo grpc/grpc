@@ -53,6 +53,11 @@ ServerCredentialsData::~ServerCredentialsData()
     destroy();
 }
 
+void ServerCredentialsData::sweep(void)
+{
+    destroy();
+}
+
 void ServerCredentialsData::init(grpc_server_credentials* const server_credentials)
 {
     // destroy any existing server credentials
@@ -79,7 +84,7 @@ Object HHVM_STATIC_METHOD(ServerCredentials, createSsl,
                           const String& pem_private_key,
                           const String& pem_cert_chain)
 {
-    HHVM_TRACE_SCOPE("ServerCredentials createSsl") // Degug Trace
+    HHVM_TRACE_SCOPE("ServerCredentials createSsl") // Debug Trace
 
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
     pem_key_cert_pair.private_key = pem_private_key.c_str();

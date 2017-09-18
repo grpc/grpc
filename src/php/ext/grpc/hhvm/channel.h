@@ -50,6 +50,7 @@ public:
     ChannelData(ChannelData&& otherChannelData) = delete;
     ChannelData& operator=(const ChannelData& rhsChannelData) = delete;
     ChannelData& operator=(ChannelData&& rhsChannelData) = delete;
+    void sweep(void);
 
     // interface functions
     void init(grpc_channel* channel, const bool owned, String&& hashKey);
@@ -84,6 +85,7 @@ public:
     ChannelArgs(ChannelData&& otherChannelArgs) = delete;
     ChannelArgs& operator=(const ChannelData& rhsChannelArgs) = delete;
     ChannelArgs& operator=(ChannelData&& rhsChannelArgs) = delete;
+    // void sweep(void); // Need this to be run from ChannelData::sweep()?
 
     // interface functions
     bool init(const Array& argsArray);

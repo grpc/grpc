@@ -43,6 +43,7 @@ public:
     TimevalData(TimevalData&& otherTimevalData) = delete;
     TimevalData& operator=(const TimevalData& rhsTimevalData) = delete;
     TimevalData& operator=(TimevalData&& rhsTimevalData) = delete;
+    void sweep(void);
 
     // interface functions
     void init(const gpr_timespec& timeValue);

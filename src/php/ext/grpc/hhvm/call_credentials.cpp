@@ -137,6 +137,11 @@ CallCredentialsData::~CallCredentialsData(void)
     destroy();
 }
 
+void CallCredentialsData::sweep(void)
+{
+    destroy();
+}
+
 void CallCredentialsData::init(grpc_call_credentials* const pCallCredentials)
 {
     // destroy any existing call credetials

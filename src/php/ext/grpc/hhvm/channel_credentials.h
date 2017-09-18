@@ -90,6 +90,7 @@ public:
     ChannelCredentialsData(ChannelCredentialsData&& otherChannelCredentialsData) = delete;
     ChannelCredentialsData& operator=(const ChannelCredentialsData& rhsChannelCredentialsData) = delete;
     ChannelCredentialsData& operator&(ChannelCredentialsData&& rhsChannelCredentialsData) = delete;
+    void sweep(void);
 
     // interface functions
     void init(grpc_channel_credentials* const pChannelCredentials, const String& hashKey);

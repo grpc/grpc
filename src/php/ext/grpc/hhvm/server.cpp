@@ -64,6 +64,11 @@ ServerData::~ServerData(void)
     destroy();
 }
 
+void ServerData::sweep(void)
+{
+    destroy();
+}
+
 void ServerData::init(grpc_server* const pServer)
 {
     // destroy any existing server
@@ -105,7 +110,7 @@ void ServerData::destroy(void)
 void HHVM_METHOD(Server, __construct,
                  const Variant& args_array_or_null /* = null */)
 {
-    HHVM_TRACE_SCOPE("Server construct") // Degug Trace
+    HHVM_TRACE_SCOPE("Server construct") // Debug Trace
 
     ServerData* const pServerData{ Native::data<ServerData>(this_) };
     grpc_server* pServer{ nullptr };
@@ -141,7 +146,7 @@ void HHVM_METHOD(Server, __construct,
 
 Object HHVM_METHOD(Server, requestCall)
 {
-    HHVM_TRACE_SCOPE("Server requestCall") // Degug Trace
+    HHVM_TRACE_SCOPE("Server requestCall") // Debug Trace
 
     Object resultObj{ SystemLib::AllocStdClassObject() };
 
@@ -220,7 +225,7 @@ Object HHVM_METHOD(Server, requestCall)
 bool HHVM_METHOD(Server, addHttp2Port,
                  const String& addr)
 {
-    HHVM_TRACE_SCOPE("Server addHttp2Port") // Degug Trace
+    HHVM_TRACE_SCOPE("Server addHttp2Port") // Debug Trace
 
     ServerData* const pServerData{ Native::data<ServerData>(this_) };
 
@@ -231,7 +236,7 @@ bool HHVM_METHOD(Server, addSecureHttp2Port,
                  const String& addr,
                  const Object& server_credentials)
 {
-    HHVM_TRACE_SCOPE("Server addSecureHttp2Port") // Degug Trace
+    HHVM_TRACE_SCOPE("Server addSecureHttp2Port") // Debug Trace
 
     ServerData* const pServerData{ Native::data<ServerData>(this_) };
     ServerCredentialsData* const pServerCredentialsData{ Native::data<ServerCredentialsData>(server_credentials) };
@@ -242,7 +247,7 @@ bool HHVM_METHOD(Server, addSecureHttp2Port,
 
 void HHVM_METHOD(Server, start)
 {
-    HHVM_TRACE_SCOPE("Server start") // Degug Trace
+    HHVM_TRACE_SCOPE("Server start") // Debug Trace
 
     ServerData* const pServerData{ Native::data<ServerData>(this_) };
     grpc_server_start(pServerData->server());

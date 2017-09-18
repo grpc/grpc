@@ -71,6 +71,11 @@ ChannelData::~ChannelData(void)
     destroy();
 }
 
+void ChannelData::sweep(void)
+{
+    destroy();
+}
+
 void ChannelData::init(grpc_channel* channel, const bool owned, String&& hashKey)
 {
     // destroy any existing channel data
@@ -323,7 +328,7 @@ void HHVM_METHOD(Channel, __construct,
                  const String& target,
                  const Array& args_array)
 {
-    HHVM_TRACE_SCOPE("Channel Construct") // Degug Trace
+    HHVM_TRACE_SCOPE("Channel Construct") // Debug Trace
 
     ChannelData* const pChannelData{ Native::data<ChannelData>(this_) };
 
@@ -431,7 +436,7 @@ void HHVM_METHOD(Channel, __construct,
  */
 String HHVM_METHOD(Channel, getTarget)
 {
-    HHVM_TRACE_SCOPE("Channel getTarget") // Degug Trace
+    HHVM_TRACE_SCOPE("Channel getTarget") // Debug Trace
 
     ChannelData* const pChannelData{ Native::data<ChannelData>(this_) };
 
@@ -475,7 +480,7 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
                  int64_t last_state,
                  const Object& deadline)
 {
-    HHVM_TRACE_SCOPE("Channel watchConnectivityState") // Degug Trace
+    HHVM_TRACE_SCOPE("Channel watchConnectivityState") // Debug Trace
 
     ChannelData* const pChannelData{ Native::data<ChannelData>(this_) };
 
@@ -509,7 +514,7 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
  */
 void HHVM_METHOD(Channel, close)
 {
-    HHVM_TRACE_SCOPE("Channel close") // Degug Trace
+    HHVM_TRACE_SCOPE("Channel close") // Debug Trace
 
     ChannelData* const pChannelData{ Native::data<ChannelData>(this_) };
 

@@ -43,6 +43,11 @@ TimevalData::~TimevalData(void)
     destroy();
 }
 
+void TimevalData::sweep(void)
+{
+    destroy();
+}
+
 void TimevalData::init(const gpr_timespec& timeValue)
 {
     // destroy any existing time values
@@ -63,7 +68,7 @@ Class* const TimevalData::getClass(void)
 
 void TimevalData::destroy(void)
 {
-  // TODO: cleanup
+  // TODO: cleanup?
 }
 
 /*****************************************************************************/
@@ -73,7 +78,7 @@ void TimevalData::destroy(void)
 void HHVM_METHOD(Timeval, __construct,
                  int64_t microseconds)
 {
-    HHVM_TRACE_SCOPE("Timeval construct") // Degug Trace
+    HHVM_TRACE_SCOPE("Timeval construct") // Debug Trace
 
     TimevalData* const pTimeval{ Native::data<TimevalData>(this_) };
     pTimeval->init(gpr_time_from_micros(microseconds, GPR_TIMESPAN));
@@ -82,7 +87,7 @@ void HHVM_METHOD(Timeval, __construct,
 Object HHVM_METHOD(Timeval, add,
                    const Object& other_obj)
 {
-    HHVM_TRACE_SCOPE("Timeval add") // Degug Trace
+    HHVM_TRACE_SCOPE("Timeval add") // Debug Trace
 
     TimevalData* const pTimeval{ Native::data<TimevalData>(this_) };
     TimevalData* const pOtherTimeval{ Native::data<TimevalData>(other_obj) };
@@ -97,7 +102,7 @@ Object HHVM_METHOD(Timeval, add,
 Object HHVM_METHOD(Timeval, subtract,
                    const Object& other_obj)
 {
-    HHVM_TRACE_SCOPE("Timeval subtract") // Degug Trace
+    HHVM_TRACE_SCOPE("Timeval subtract") // Debug Trace
 
     TimevalData* const pTimeval{ Native::data<TimevalData>(this_) };
     TimevalData* const pOtherTimeval{ Native::data<TimevalData>(other_obj) };
@@ -113,7 +118,7 @@ int64_t HHVM_STATIC_METHOD(Timeval, compare,
                            const Object& a_obj,
                            const Object& b_obj)
 {
-    HHVM_TRACE_SCOPE("Timeval compare") // Degug Trace
+    HHVM_TRACE_SCOPE("Timeval compare") // Debug Trace
 
     TimevalData* const pATimeval{ Native::data<TimevalData>(a_obj) };
     TimevalData* const pBTimeval{ Native::data<TimevalData>(b_obj) };
@@ -128,7 +133,7 @@ bool HHVM_STATIC_METHOD(Timeval, similar,
                         const Object& b_obj,
                         const Object& thresh_obj)
 {
-    HHVM_TRACE_SCOPE("Timeval similar") // Degug Trace
+    HHVM_TRACE_SCOPE("Timeval similar") // Debug Trace
 
     TimevalData* const pATimeval{ Native::data<TimevalData>(a_obj) };
     TimevalData* const pBTimeval{ Native::data<TimevalData>(b_obj) };
@@ -142,7 +147,7 @@ bool HHVM_STATIC_METHOD(Timeval, similar,
 
 Object HHVM_STATIC_METHOD(Timeval, now)
 {
-    HHVM_TRACE_SCOPE("Timeval now") // Degug Trace
+    HHVM_TRACE_SCOPE("Timeval now") // Debug Trace
 
     Object newTimevalObj{ TimevalData::getClass() };
     TimevalData* const pNewTimeval{ Native::data<TimevalData>(newTimevalObj) };
@@ -153,7 +158,7 @@ Object HHVM_STATIC_METHOD(Timeval, now)
 
 Object HHVM_STATIC_METHOD(Timeval, zero)
 {
-    HHVM_TRACE_SCOPE("Timeval zero") // Degug Trace
+    HHVM_TRACE_SCOPE("Timeval zero") // Debug Trace
 
     Object newTimevalObj{ TimevalData::getClass() };
     TimevalData* const pNewTimeval{ Native::data<TimevalData>(newTimevalObj) };
@@ -164,7 +169,7 @@ Object HHVM_STATIC_METHOD(Timeval, zero)
 
 Object HHVM_STATIC_METHOD(Timeval, infFuture)
 {
-    HHVM_TRACE_SCOPE("Timeval infFuture") // Degug Trace
+    HHVM_TRACE_SCOPE("Timeval infFuture") // Debug Trace
 
     Object newTimevalObj{ TimevalData::getClass() };
     TimevalData* const pNewTimeval{ Native::data<TimevalData>(newTimevalObj) };
@@ -175,7 +180,7 @@ Object HHVM_STATIC_METHOD(Timeval, infFuture)
 
 Object HHVM_STATIC_METHOD(Timeval, infPast)
 {
-    HHVM_TRACE_SCOPE("Timeval infPast") // Degug Trace
+    HHVM_TRACE_SCOPE("Timeval infPast") // Debug Trace
 
     Object newTimevalObj{ TimevalData::getClass() };
     TimevalData* const pNewTimeval{ Native::data<TimevalData>(newTimevalObj) };
@@ -186,7 +191,7 @@ Object HHVM_STATIC_METHOD(Timeval, infPast)
 
 void HHVM_METHOD(Timeval, sleepUntil)
 {
-    HHVM_TRACE_SCOPE("Timeval sleepUntil") // Degug Trace
+    HHVM_TRACE_SCOPE("Timeval sleepUntil") // Debug Trace
 
     TimevalData* const pTimeval{ Native::data<TimevalData>(this_) };
     gpr_sleep_until(pTimeval->time());

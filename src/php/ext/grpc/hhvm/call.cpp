@@ -81,6 +81,11 @@ CallData::~CallData(void)
     destroy();
 }
 
+void CallData::sweep(void)
+{
+    destroy();
+}
+
 void CallData::init(grpc_call* const call, const bool owned, const int32_t timeoutMs)
 {
     // destroy any existing call
@@ -275,7 +280,7 @@ void MetadataArray::resizeMetadata(const size_t capacity)
 OpsManaged::OpsManaged(void) : send_metadata_ref{ OpsManaged::s_Send_metadata},
     send_trailing_metadata_ref{ OpsManaged::s_Send_trailing_metadata},
     recv_metadata{ false }, recv_trailing_metadata{ false }, recv_status_details{},
-    send_status_details{}, cancelled{ 0 }, status{ GRPC_STATUS_OK }
+    send_status_details{}, cancelled{ 0 }, status{ GRPC_STATUS_OK }, m_CallCancelled { false }
 {
     send_messages.fill(nullptr);
     recv_messages.fill(nullptr);
@@ -294,7 +299,10 @@ void OpsManaged::destroy(void)
 
     // clean up messages
     std::for_each(recv_messages.begin(), recv_messages.end(), freeMessage);
-    std::for_each(send_messages.begin(), send_messages.end(), freeMessage);
+    if (m_CallCancelled == false)
+    {
+        std::for_each(send_messages.begin(), send_messages.end(), freeMessage);
+    }
 }
 
 void OpsManaged::freeMessage(grpc_byte_buffer* pBuffer)
@@ -306,8 +314,13 @@ void OpsManaged::freeMessage(grpc_byte_buffer* pBuffer)
     }
 }
 
+void OpsManaged::setCallCancelled(bool callCancelled)
+{
+  m_CallCancelled = callCancelled;
+}
+
 // initialize statics
-// NOTE: These variables are thread_local so that they have a lifetime beyod startBatch
+// NOTE: These variables are thread_local so that they have a lifetime beyond startBatch
 // where they are set
 thread_local MetadataArray OpsManaged::s_Send_metadata{ true };
 thread_local MetadataArray OpsManaged::s_Send_trailing_metadata{ true };
@@ -554,8 +567,11 @@ Object HHVM_METHOD(Call, startBatch,
         {
             // set call cancelled shared flag
             std::lock_guard<std::mutex> lock{ pCallData->metadataMutex() };
-            pCallData->callCancelled()=true;
+            pCallData->callCancelled() = true;
         }
+
+        opsManaged.setCallCancelled(true);
+
         // cancel the call with the server
         grpc_call_cancel_with_status(pCallData->call(), GRPC_STATUS_DEADLINE_EXCEEDED,
                                      "RPC Call Timeout Exceeded", nullptr);
@@ -602,7 +618,7 @@ Object HHVM_METHOD(Call, startBatch,
         {
             // failed so clean up and return empty object
             callFailure();
-            failCode = GRPC_STATUS_UNAUTHENTICATED;
+            failCode = GRPC_STATUS_DEADLINE_EXCEEDED;
         }
         else
         {

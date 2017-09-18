@@ -51,6 +51,7 @@ public:
     CallCredentialsData(CallCredentialsData&& otherCallCredentialsData) = delete;
     CallCredentialsData& operator=(const CallCredentialsData& rhsCallCredentialsData) = delete;
     CallCredentialsData& operator&(CallCredentialsData&& rhsCallCredentialsData) = delete;
+    void sweep(void);
 
     // interface functions
     void init(grpc_call_credentials* const pCallCredentials);
