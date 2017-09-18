@@ -153,7 +153,7 @@ void grpc_timer_list_init(gpr_timespec now) {
   uint32_t i;
 
   g_shared_mutables.initialized = true;
-  g_shared_mutables.checker_mu = GPR_SPINLOCK_STATIC_INITIALIZER;
+  g_shared_mutables.checker_mu = GPR_SPINLOCK_INITIALIZER;
   gpr_mu_init(&g_shared_mutables.mu);
   g_clock_type = now.clock_type;
   g_start_time = now;
