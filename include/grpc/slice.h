@@ -66,10 +66,6 @@ GPRAPI grpc_slice grpc_slice_malloc(size_t length);
 GPRAPI grpc_slice grpc_slice_malloc_large(size_t length);
 
 #define GRPC_SLICE_MALLOC(len) grpc_slice_malloc(len)
-/*  ((len) <= GRPC_SLICE_INLINED_SIZE                               \
-       ? (grpc_slice){.refcount = NULL,                           \
-                      .data.inlined = {.length = (uint8_t)(len)}} \
-       : grpc_slice_malloc_large((len)))*/
 
 /** Intern a slice:
 

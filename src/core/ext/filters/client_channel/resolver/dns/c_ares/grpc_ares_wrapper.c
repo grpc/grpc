@@ -276,7 +276,7 @@ static void on_txt_done_cb(void *arg, int status, int timeouts,
   char *error_msg;
   grpc_ares_request *r = (grpc_ares_request *)arg;
   const size_t prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
-  struct ares_txt_ext *result;
+  struct ares_txt_ext *result = NULL;
   struct ares_txt_ext *reply = NULL;
   grpc_error *error = GRPC_ERROR_NONE;
   gpr_mu_lock(&r->mu);

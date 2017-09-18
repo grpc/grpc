@@ -568,7 +568,11 @@ static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
     return 0;
   }
 
-  static const gpr_timespec round_up = {0, GPR_NS_PER_MS - 1, GPR_TIMESPAN};
+  static const gpr_timespec round_up = {
+      0,                 /* tv_sec */
+      GPR_NS_PER_MS - 1, /* tv_nsec */
+      GPR_TIMESPAN       /* clock_type */
+  };
   timeout = gpr_time_sub(deadline, now);
   int millis = gpr_time_to_millis(gpr_time_add(timeout, round_up));
   return millis >= 1 ? millis : 1;
