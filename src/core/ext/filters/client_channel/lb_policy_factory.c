@@ -56,7 +56,7 @@ grpc_lb_addresses* grpc_lb_addresses_copy(const grpc_lb_addresses* addresses) {
 }
 
 void grpc_lb_addresses_set_address(grpc_lb_addresses* addresses, size_t index,
-                                   const void* address, size_t address_len,
+                                   void* address, size_t address_len,
                                    bool is_balancer, const char* balancer_name,
                                    void* user_data) {
   GPR_ASSERT(index < addresses->num_addresses);
@@ -126,13 +126,14 @@ void grpc_lb_addresses_destroy(grpc_exec_ctx* exec_ctx,
 }
 
 static void* lb_addresses_copy(void* addresses) {
-  return grpc_lb_addresses_copy(addresses);
+  return grpc_lb_addresses_copy((grpc_lb_addresses*)addresses);
 }
 static void lb_addresses_destroy(grpc_exec_ctx* exec_ctx, void* addresses) {
-  grpc_lb_addresses_destroy(exec_ctx, addresses);
+  grpc_lb_addresses_destroy(exec_ctx, (grpc_lb_addresses*)addresses);
 }
 static int lb_addresses_cmp(void* addresses1, void* addresses2) {
-  return grpc_lb_addresses_cmp(addresses1, addresses2);
+  return grpc_lb_addresses_cmp((grpc_lb_addresses*)addresses1,
+                               (grpc_lb_addresses*)addresses2);
 }
 static const grpc_arg_pointer_vtable lb_addresses_arg_vtable = {
     lb_addresses_copy, lb_addresses_destroy, lb_addresses_cmp};
@@ -149,7 +150,7 @@ grpc_lb_addresses* grpc_lb_addresses_find_channel_arg(
       grpc_channel_args_find(channel_args, GRPC_ARG_LB_ADDRESSES);
   if (lb_addresses_arg == NULL || lb_addresses_arg->type != GRPC_ARG_POINTER)
     return NULL;
-  return lb_addresses_arg->value.pointer.p;
+  return (grpc_lb_addresses*)lb_addresses_arg->value.pointer.p;
 }
 
 void grpc_lb_policy_factory_ref(grpc_lb_policy_factory* factory) {

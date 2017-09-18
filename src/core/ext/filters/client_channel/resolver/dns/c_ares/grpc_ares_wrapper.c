@@ -123,8 +123,8 @@ static void grpc_ares_request_unref(grpc_exec_ctx *exec_ctx,
 static grpc_ares_hostbyname_request *create_hostbyname_request(
     grpc_ares_request *parent_request, char *host, uint16_t port,
     bool is_balancer) {
-  grpc_ares_hostbyname_request *hr =
-      gpr_zalloc(sizeof(grpc_ares_hostbyname_request));
+  grpc_ares_hostbyname_request *hr = (grpc_ares_hostbyname_request *)gpr_zalloc(
+      sizeof(grpc_ares_hostbyname_request));
   hr->parent_request = parent_request;
   hr->host = gpr_strdup(host);
   hr->port = port;
@@ -527,7 +527,8 @@ static void grpc_resolve_address_ares_impl(grpc_exec_ctx *exec_ctx,
                                            grpc_closure *on_done,
                                            grpc_resolved_addresses **addrs) {
   grpc_resolve_address_ares_request *r =
-      gpr_zalloc(sizeof(grpc_resolve_address_ares_request));
+      (grpc_resolve_address_ares_request *)gpr_zalloc(
+          sizeof(grpc_resolve_address_ares_request));
   r->addrs_out = addrs;
   r->on_resolve_address_done = on_done;
   GRPC_CLOSURE_INIT(&r->on_dns_lookup_done, on_dns_lookup_done_cb, r,

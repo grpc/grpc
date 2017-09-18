@@ -80,7 +80,7 @@ def get_bqtest_data(limit=None):
 SELECT
   filtered_test_name,
   SUM(result != 'PASSED' AND result != 'SKIPPED') > 0 as flaky,
-  MAX(cpu_measured) as cpu
+  MAX(cpu_measured) + 0.01 as cpu
   FROM (
   SELECT
     REGEXP_REPLACE(test_name, r'/\d+', '') AS filtered_test_name,
@@ -92,9 +92,7 @@ SELECT
     AND platform = '"""+platform_string()+"""'
     AND NOT REGEXP_MATCH(job_name, '.*portability.*') )
 GROUP BY
-  filtered_test_name
-HAVING
-  flaky OR cpu > 0"""
+  filtered_test_name"""
   if limit:
     query += " limit {}".format(limit)
   query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)

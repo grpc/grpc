@@ -49,7 +49,8 @@ xcodebuild \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' -
+    | egrep -v '^$' \
+    | egrep -v "(GPBDictionary|GPBArray)" -
 
 echo "TIME:  $(date)"
 xcodebuild \
@@ -57,7 +58,8 @@ xcodebuild \
     -scheme CoreCronetEnd2EndTests \
     -destination name="iPhone 6" \
     test \
-    | egrep "$XCODEBUILD_FILTER" \
+    | egrep -v "$XCODEBUILD_FILTER" \
+    | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
 echo "TIME:  $(date)"
@@ -65,7 +67,10 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme CronetUnitTests \
     -destination name="iPhone 6" \
-    test | xcpretty
+    test \
+    | egrep -v "$XCODEBUILD_FILTER" \
+    | egrep -v '^$' \
+    | egrep -v "(GPBDictionary|GPBArray)" -
 
 echo "TIME:  $(date)"
 xcodebuild \
@@ -74,5 +79,6 @@ xcodebuild \
     -destination name="iPhone 6" \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test \
-    | egrep "$XCODEBUILD_FILTER" \
+    | egrep -v "$XCODEBUILD_FILTER" \
+    | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -

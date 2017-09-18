@@ -44,6 +44,13 @@ class GenericStub final {
       ClientContext* context, const grpc::string& method, CompletionQueue* cq,
       void* tag);
 
+  /// Setup a call to a named method \a method using \a context, but don't
+  /// start it. Let it be started explicitly with StartCall and a tag.
+  /// The return value only indicates whether or not registration of the call
+  /// succeeded (i.e. the call won't proceed if the return value is nullptr).
+  std::unique_ptr<GenericClientAsyncReaderWriter> PrepareCall(
+      ClientContext* context, const grpc::string& method, CompletionQueue* cq);
+
  private:
   std::shared_ptr<ChannelInterface> channel_;
 };

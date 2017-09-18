@@ -1543,7 +1543,7 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
   for (i = 0; i < nfds; i++) {
     fds[i].revents = 0;
     if (fds[i].fd < 0 && (fds[i].events & POLLIN)) {
-      idx = FD_TO_IDX(fds[i].fd);
+      idx = GRPC_FD_TO_IDX(fds[i].fd);
       fd_cvs[i].cv = &pollcv_cv;
       fd_cvs[i].prev = NULL;
       fd_cvs[i].next = g_cvfds.cvfds[idx].cvs;
@@ -1606,8 +1606,8 @@ static int cvfd_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
   idx = 0;
   for (i = 0; i < nfds; i++) {
     if (fds[i].fd < 0 && (fds[i].events & POLLIN)) {
-      remove_cvn(&g_cvfds.cvfds[FD_TO_IDX(fds[i].fd)].cvs, &(fd_cvs[i]));
-      if (g_cvfds.cvfds[FD_TO_IDX(fds[i].fd)].is_set) {
+      remove_cvn(&g_cvfds.cvfds[GRPC_FD_TO_IDX(fds[i].fd)].cvs, &(fd_cvs[i]));
+      if (g_cvfds.cvfds[GRPC_FD_TO_IDX(fds[i].fd)].is_set) {
         fds[i].revents = POLLIN;
         if (res >= 0) res++;
       }

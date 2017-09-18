@@ -135,7 +135,7 @@ typedef struct batch_control {
 typedef struct {
   gpr_mu child_list_mu;
   grpc_call *first_child;
-} parent_call_t;
+} parent_call;
 
 typedef struct {
   grpc_call *parent;
@@ -144,7 +144,7 @@ typedef struct {
       parent->mu */
   grpc_call *sibling_next;
   grpc_call *sibling_prev;
-} child_call_t;
+} child_call;
 
 #define RECV_NONE ((gpr_atm)0)
 #define RECV_INITIAL_METADATA_FIRST ((gpr_atm)1)
@@ -157,8 +157,8 @@ struct grpc_call {
   grpc_polling_entity pollent;
   grpc_channel *channel;
   gpr_timespec start_time;
-  /* parent_call_t* */ gpr_atm parent_call_atm;
-  child_call_t *child_call;
+  /* parent_call* */ gpr_atm parent_call_atm;
+  child_call *child;
 
   /* client or server call */
   bool is_client;
@@ -304,21 +304,21 @@ void *grpc_call_arena_alloc(grpc_call *call, size_t size) {
   return gpr_arena_alloc(call->arena, size);
 }
 
-static parent_call_t *get_or_create_parent_call(grpc_call *call) {
-  parent_call_t *p = (parent_call_t *)gpr_atm_acq_load(&call->parent_call_atm);
+static parent_call *get_or_create_parent_call(grpc_call *call) {
+  parent_call *p = (parent_call *)gpr_atm_acq_load(&call->parent_call_atm);
   if (p == NULL) {
-    p = (parent_call_t *)gpr_arena_alloc(call->arena, sizeof(*p));
+    p = (parent_call *)gpr_arena_alloc(call->arena, sizeof(*p));
     gpr_mu_init(&p->child_list_mu);
     if (!gpr_atm_rel_cas(&call->parent_call_atm, (gpr_atm)NULL, (gpr_atm)p)) {
       gpr_mu_destroy(&p->child_list_mu);
-      p = (parent_call_t *)gpr_atm_acq_load(&call->parent_call_atm);
+      p = (parent_call *)gpr_atm_acq_load(&call->parent_call_atm);
     }
   }
   return p;
 }
 
-static parent_call_t *get_parent_call(grpc_call *call) {
-  return (parent_call_t *)gpr_atm_acq_load(&call->parent_call_atm);
+static parent_call *get_parent_call(grpc_call *call) {
+  return (parent_call *)gpr_atm_acq_load(&call->parent_call_atm);
 }
 
 grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
@@ -378,24 +378,24 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
 
   bool immediately_cancel = false;
 
-  if (args->parent_call != NULL) {
-    child_call_t *cc = call->child_call =
-        (child_call_t *)gpr_arena_alloc(arena, sizeof(child_call_t));
-    call->child_call->parent = args->parent_call;
+  if (args->parent != NULL) {
+    child_call *cc = call->child =
+        (child_call *)gpr_arena_alloc(arena, sizeof(child_call));
+    call->child->parent = args->parent;
 
-    GRPC_CALL_INTERNAL_REF(args->parent_call, "child");
+    GRPC_CALL_INTERNAL_REF(args->parent, "child");
     GPR_ASSERT(call->is_client);
-    GPR_ASSERT(!args->parent_call->is_client);
+    GPR_ASSERT(!args->parent->is_client);
 
-    parent_call_t *pc = get_or_create_parent_call(args->parent_call);
+    parent_call *pc = get_or_create_parent_call(args->parent);
 
     gpr_mu_lock(&pc->child_list_mu);
 
     if (args->propagation_mask & GRPC_PROPAGATE_DEADLINE) {
       send_deadline = gpr_time_min(
           gpr_convert_clock_type(send_deadline,
-                                 args->parent_call->send_deadline.clock_type),
-          args->parent_call->send_deadline);
+                                 args->parent->send_deadline.clock_type),
+          args->parent->send_deadline);
     }
     /* for now GRPC_PROPAGATE_TRACING_CONTEXT *MUST* be passed with
      * GRPC_PROPAGATE_STATS_CONTEXT */
@@ -407,9 +407,9 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
                                    "Census tracing propagation requested "
                                    "without Census context propagation"));
       }
-      grpc_call_context_set(
-          call, GRPC_CONTEXT_TRACING,
-          args->parent_call->context[GRPC_CONTEXT_TRACING].value, NULL);
+      grpc_call_context_set(call, GRPC_CONTEXT_TRACING,
+                            args->parent->context[GRPC_CONTEXT_TRACING].value,
+                            NULL);
     } else if (args->propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT) {
       add_init_error(&error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                  "Census context propagation requested "
@@ -417,7 +417,7 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
     }
     if (args->propagation_mask & GRPC_PROPAGATE_CANCELLATION) {
       call->cancellation_is_inherited = 1;
-      if (gpr_atm_acq_load(&args->parent_call->received_final_op_atm)) {
+      if (gpr_atm_acq_load(&args->parent->received_final_op_atm)) {
         immediately_cancel = true;
       }
     }
@@ -427,9 +427,9 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
       cc->sibling_next = cc->sibling_prev = call;
     } else {
       cc->sibling_next = pc->first_child;
-      cc->sibling_prev = pc->first_child->child_call->sibling_prev;
-      cc->sibling_next->child_call->sibling_prev =
-          cc->sibling_prev->child_call->sibling_next = call;
+      cc->sibling_prev = pc->first_child->child->sibling_prev;
+      cc->sibling_next->child->sibling_prev =
+          cc->sibling_prev->child->sibling_next = call;
     }
 
     gpr_mu_unlock(&pc->child_list_mu);
@@ -534,7 +534,7 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
   if (c->receiving_stream != NULL) {
     grpc_byte_stream_destroy(exec_ctx, c->receiving_stream);
   }
-  parent_call_t *pc = get_parent_call(c);
+  parent_call *pc = get_parent_call(c);
   if (pc != NULL) {
     gpr_mu_destroy(&pc->child_list_mu);
   }
@@ -571,14 +571,14 @@ void grpc_call_ref(grpc_call *c) { gpr_ref(&c->ext_ref); }
 void grpc_call_unref(grpc_call *c) {
   if (!gpr_unref(&c->ext_ref)) return;
 
-  child_call_t *cc = c->child_call;
+  child_call *cc = c->child;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   GPR_TIMER_BEGIN("grpc_call_unref", 0);
   GRPC_API_TRACE("grpc_call_unref(c=%p)", 1, (c));
 
   if (cc) {
-    parent_call_t *pc = get_parent_call(cc->parent);
+    parent_call *pc = get_parent_call(cc->parent);
     gpr_mu_lock(&pc->child_list_mu);
     if (c == pc->first_child) {
       pc->first_child = cc->sibling_next;
@@ -586,8 +586,8 @@ void grpc_call_unref(grpc_call *c) {
         pc->first_child = NULL;
       }
     }
-    cc->sibling_prev->child_call->sibling_next = cc->sibling_next;
-    cc->sibling_next->child_call->sibling_prev = cc->sibling_prev;
+    cc->sibling_prev->child->sibling_next = cc->sibling_next;
+    cc->sibling_next->child->sibling_prev = cc->sibling_prev;
     gpr_mu_unlock(&pc->child_list_mu);
     GRPC_CALL_INTERNAL_UNREF(&exec_ctx, cc->parent, "child");
   }
@@ -1310,14 +1310,14 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
 
     /* propagate cancellation to any interested children */
     gpr_atm_rel_store(&call->received_final_op_atm, 1);
-    parent_call_t *pc = get_parent_call(call);
+    parent_call *pc = get_parent_call(call);
     if (pc != NULL) {
       grpc_call *child;
       gpr_mu_lock(&pc->child_list_mu);
       child = pc->first_child;
       if (child != NULL) {
         do {
-          next_child_call = child->child_call->sibling_next;
+          next_child_call = child->child->sibling_next;
           if (child->cancellation_is_inherited) {
             GRPC_CALL_INTERNAL_REF(child, "propagate_cancel");
             cancel_with_error(exec_ctx, child, STATUS_FROM_API_OVERRIDE,
