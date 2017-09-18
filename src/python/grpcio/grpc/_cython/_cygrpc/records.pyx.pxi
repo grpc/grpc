@@ -20,11 +20,6 @@ cdef bytes _slice_bytes(grpc_slice slice):
   cdef size_t length = grpc_slice_length(slice)
   return (<const char *>start)[:length]
 
-cdef grpc_slice _copy_slice(grpc_slice slice) nogil:
-  cdef void *start = grpc_slice_start_ptr(slice)
-  cdef size_t length = grpc_slice_length(slice)
-  return grpc_slice_from_copied_buffer(<const char *>start, length)
-
 cdef grpc_slice _slice_from_bytes(bytes value) nogil:
   cdef const char *value_ptr
   cdef size_t length
@@ -404,10 +399,6 @@ cdef class Metadatum:
     self.c_metadata.key = _slice_from_bytes(key)
     self.c_metadata.value = _slice_from_bytes(value)
 
-  cdef void _copy_metadatum(self, grpc_metadata *destination) nogil:
-    destination[0].key = _copy_slice(self.c_metadata.key)
-    destination[0].value = _copy_slice(self.c_metadata.value)
-
   @property
   def key(self):
     return _slice_bytes(self.c_metadata.key)
@@ -433,6 +424,7 @@ cdef class Metadatum:
   def __dealloc__(self):
     grpc_slice_unref(self.c_metadata.key)
     grpc_slice_unref(self.c_metadata.value)
+
 
 cdef class _MetadataIterator:
 
@@ -462,6 +454,7 @@ cdef class Metadata:
       grpc_init()
       grpc_metadata_array_init(&self.c_metadata_array)
     metadata = list(metadata_iterable)
+    self._init_md_count = len(metadata)
     for metadatum in metadata:
       if not isinstance(metadatum, Metadatum):
         raise TypeError("expected list of Metadatum")
@@ -472,10 +465,16 @@ cdef class Metadata:
           self.c_metadata_array.count*sizeof(grpc_metadata)
       )
     for i in range(self.c_metadata_array.count):
-      (<Metadatum>metadata[i])._copy_metadatum(&self.c_metadata_array.metadata[i])
+      self.c_metadata_array.metadata[i].key = grpc_slice_copy(
+        (<Metadatum>metadata[i]).c_metadata.key)
+      self.c_metadata_array.metadata[i].value = grpc_slice_copy(
+        (<Metadatum>metadata[i]).c_metadata.value)
 
   def __dealloc__(self):
     with nogil:
+      for i in range(self._init_md_count):
+        grpc_slice_unref(self.c_metadata_array.metadata[i].key)
+        grpc_slice_unref(self.c_metadata_array.metadata[i].value)
       # this frees the allocated memory for the grpc_metadata_array (although
       # it'd be nice if that were documented somewhere...)
       # TODO(atash): document this in the C core
@@ -494,20 +493,6 @@ cdef class Metadata:
 
   def __iter__(self):
     return _MetadataIterator(self)
-
-  cdef void _claim_slice_ownership(self):
-    cdef grpc_metadata_array new_c_metadata_array
-    grpc_metadata_array_init(&new_c_metadata_array)
-    new_c_metadata_array.metadata = <grpc_metadata *>gpr_malloc(
-        self.c_metadata_array.count*sizeof(grpc_metadata))
-    new_c_metadata_array.count = self.c_metadata_array.count
-    for i in range(self.c_metadata_array.count):
-      new_c_metadata_array.metadata[i].key = _copy_slice(
-          self.c_metadata_array.metadata[i].key)
-      new_c_metadata_array.metadata[i].value = _copy_slice(
-          self.c_metadata_array.metadata[i].value)
-    grpc_metadata_array_destroy(&self.c_metadata_array)
-    self.c_metadata_array = new_c_metadata_array
 
 
 cdef class Operation:
