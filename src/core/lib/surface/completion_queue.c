@@ -328,25 +328,12 @@ static void cq_destroy_pluck(void *data);
 /* Completion queue vtables based on the completion-type */
 static const cq_vtable g_cq_vtable[] = {
     /* GRPC_CQ_NEXT */
-    {.data_size = sizeof(cq_next_data),
-     .cq_completion_type = GRPC_CQ_NEXT,
-     .init = cq_init_next,
-     .shutdown = cq_shutdown_next,
-     .destroy = cq_destroy_next,
-     .begin_op = cq_begin_op_for_next,
-     .end_op = cq_end_op_for_next,
-     .next = cq_next,
-     .pluck = NULL},
+    {GRPC_CQ_NEXT, sizeof(cq_next_data), cq_init_next, cq_shutdown_next,
+     cq_destroy_next, cq_begin_op_for_next, cq_end_op_for_next, cq_next, NULL},
     /* GRPC_CQ_PLUCK */
-    {.data_size = sizeof(cq_pluck_data),
-     .cq_completion_type = GRPC_CQ_PLUCK,
-     .init = cq_init_pluck,
-     .shutdown = cq_shutdown_pluck,
-     .destroy = cq_destroy_pluck,
-     .begin_op = cq_begin_op_for_pluck,
-     .end_op = cq_end_op_for_pluck,
-     .next = NULL,
-     .pluck = cq_pluck},
+    {GRPC_CQ_PLUCK, sizeof(cq_pluck_data), cq_init_pluck, cq_shutdown_pluck,
+     cq_destroy_pluck, cq_begin_op_for_pluck, cq_end_op_for_pluck, NULL,
+     cq_pluck},
 };
 
 #define DATA_FROM_CQ(cq) ((void *)(cq + 1))

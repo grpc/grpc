@@ -51,8 +51,9 @@
 #define MAX_DECODER_SPACE_USAGE 512
 
 static grpc_slice_refcount terminal_slice_refcount = {NULL, NULL};
-static const grpc_slice terminal_slice = {&terminal_slice_refcount,
-                                          .data.refcounted = {0, 0}};
+static const grpc_slice terminal_slice = {&terminal_slice_refcount, /* refcount */
+  {{0, 0}} /* refcounted */
+};
 
 extern grpc_tracer_flag grpc_http_trace;
 
@@ -283,29 +284,26 @@ typedef struct {
 } wire_value;
 
 static wire_value get_wire_value(grpc_mdelem elem, bool true_binary_enabled) {
+  wire_value wire_val;
   if (grpc_is_binary_header(GRPC_MDKEY(elem))) {
     if (true_binary_enabled) {
-      return (wire_value){
-          .huffman_prefix = 0x00,
-          .insert_null_before_wire_value = true,
-          .data = grpc_slice_ref_internal(GRPC_MDVALUE(elem)),
-      };
+      wire_val.huffman_prefix = 0x00;
+      wire_val.insert_null_before_wire_value = true;
+      wire_val.data = grpc_slice_ref_internal(GRPC_MDVALUE(elem));
+
     } else {
-      return (wire_value){
-          .huffman_prefix = 0x80,
-          .insert_null_before_wire_value = false,
-          .data = grpc_chttp2_base64_encode_and_huffman_compress(
-              GRPC_MDVALUE(elem)),
-      };
+      wire_val.huffman_prefix = 0x80;
+      wire_val.insert_null_before_wire_value = false;
+      wire_val.data =
+          grpc_chttp2_base64_encode_and_huffman_compress(GRPC_MDVALUE(elem));
     }
   } else {
     /* TODO(ctiller): opportunistically compress non-binary headers */
-    return (wire_value){
-        .huffman_prefix = 0x00,
-        .insert_null_before_wire_value = false,
-        .data = grpc_slice_ref_internal(GRPC_MDVALUE(elem)),
-    };
+    wire_val.huffman_prefix = 0x00;
+    wire_val.insert_null_before_wire_value = false;
+    wire_val.data = grpc_slice_ref_internal(GRPC_MDVALUE(elem));
   }
+  return wire_val;
 }
 
 static size_t wire_value_length(wire_value v) {

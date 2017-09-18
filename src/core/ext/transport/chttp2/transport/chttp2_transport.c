@@ -362,14 +362,12 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   queue_setting_update(exec_ctx, t,
                        GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA, 1);
 
-  t->ping_policy = (grpc_chttp2_repeated_ping_policy){
-      .max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA,
-      .min_time_between_pings =
-          gpr_time_from_millis(DEFAULT_MIN_TIME_BETWEEN_PINGS_MS, GPR_TIMESPAN),
-      .max_ping_strikes = DEFAULT_MAX_PING_STRIKES,
-      .min_ping_interval_without_data = gpr_time_from_millis(
-          DEFAULT_MIN_PING_INTERVAL_WITHOUT_DATA_MS, GPR_TIMESPAN),
-  };
+  t->ping_policy.max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA;
+  t->ping_policy.min_time_between_pings =
+      gpr_time_from_millis(DEFAULT_MIN_TIME_BETWEEN_PINGS_MS, GPR_TIMESPAN);
+  t->ping_policy.max_ping_strikes = DEFAULT_MAX_PING_STRIKES;
+  t->ping_policy.min_ping_interval_without_data = gpr_time_from_millis(
+      DEFAULT_MIN_PING_INTERVAL_WITHOUT_DATA_MS, GPR_TIMESPAN);
 
   /* Keepalive setting */
   if (t->is_client) {

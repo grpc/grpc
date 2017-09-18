@@ -57,12 +57,12 @@ bool grpc_is_epollexclusive_available(void) {
     close(fd);
     return false;
   }
-  struct epoll_event ev = {
-      /* choose events that should cause an error on
-         EPOLLEXCLUSIVE enabled kernels - specifically the combination of
-         EPOLLONESHOT and EPOLLEXCLUSIVE */
-      .events = (uint32_t)(EPOLLET | EPOLLIN | EPOLLEXCLUSIVE | EPOLLONESHOT),
-      .data.ptr = NULL};
+  struct epoll_event ev;
+  /* choose events that should cause an error on
+     EPOLLEXCLUSIVE enabled kernels - specifically the combination of
+     EPOLLONESHOT and EPOLLEXCLUSIVE */
+  ev.events = (uint32_t)(EPOLLET | EPOLLIN | EPOLLEXCLUSIVE | EPOLLONESHOT);
+  ev.data.ptr = NULL;
   if (epoll_ctl(fd, EPOLL_CTL_ADD, evfd, &ev) != 0) {
     if (errno != EINVAL) {
       if (!logged_why_not) {

@@ -275,14 +275,15 @@ static void on_txt_done_cb(void *arg, int status, int timeouts,
   gpr_log(GPR_DEBUG, "on_txt_done_cb");
   char *error_msg;
   grpc_ares_request *r = (grpc_ares_request *)arg;
+  const size_t prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
+  struct ares_txt_ext *result;
+  struct ares_txt_ext *reply = NULL;
+  grpc_error *error = GRPC_ERROR_NONE;
   gpr_mu_lock(&r->mu);
   if (status != ARES_SUCCESS) goto fail;
-  struct ares_txt_ext *reply = NULL;
   status = ares_parse_txt_reply_ext(buf, len, &reply);
   if (status != ARES_SUCCESS) goto fail;
   // Find service config in TXT record.
-  const size_t prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
-  struct ares_txt_ext *result;
   for (result = reply; result != NULL; result = result->next) {
     if (result->record_start &&
         memcmp(result->txt, g_service_config_attribute_prefix, prefix_len) ==
@@ -313,7 +314,7 @@ static void on_txt_done_cb(void *arg, int status, int timeouts,
 fail:
   gpr_asprintf(&error_msg, "C-ares TXT lookup status is not ARES_SUCCESS: %s",
                ares_strerror(status));
-  grpc_error *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
+  error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
   gpr_free(error_msg);
   if (r->error == GRPC_ERROR_NONE) {
     r->error = error;
@@ -331,6 +332,9 @@ static grpc_ares_request *grpc_dns_lookup_ares_impl(
     grpc_closure *on_done, grpc_lb_addresses **addrs, bool check_grpclb,
     char **service_config_json) {
   grpc_error *error = GRPC_ERROR_NONE;
+  grpc_ares_hostbyname_request *hr = NULL;
+  grpc_ares_request *r = NULL;
+  ares_channel *channel = NULL;
   /* TODO(zyc): Enable tracing after #9603 is checked in */
   /* if (grpc_dns_trace) {
       gpr_log(GPR_DEBUG, "resolve_address (blocking): name=%s, default_port=%s",
@@ -360,8 +364,7 @@ static grpc_ares_request *grpc_dns_lookup_ares_impl(
   error = grpc_ares_ev_driver_create(&ev_driver, interested_parties);
   if (error != GRPC_ERROR_NONE) goto error_cleanup;
 
-  grpc_ares_request *r =
-      (grpc_ares_request *)gpr_zalloc(sizeof(grpc_ares_request));
+  r = (grpc_ares_request *)gpr_zalloc(sizeof(grpc_ares_request));
   gpr_mu_init(&r->mu);
   r->ev_driver = ev_driver;
   r->on_done = on_done;
@@ -369,7 +372,7 @@ static grpc_ares_request *grpc_dns_lookup_ares_impl(
   r->service_config_json_out = service_config_json;
   r->success = false;
   r->error = GRPC_ERROR_NONE;
-  ares_channel *channel = grpc_ares_ev_driver_get_channel(r->ev_driver);
+  channel = grpc_ares_ev_driver_get_channel(r->ev_driver);
 
   // If dns_server is specified, use it.
   if (dns_server != NULL) {
@@ -410,12 +413,12 @@ static grpc_ares_request *grpc_dns_lookup_ares_impl(
   }
   gpr_ref_init(&r->pending_queries, 1);
   if (grpc_ipv6_loopback_available()) {
-    grpc_ares_hostbyname_request *hr = create_hostbyname_request(
-        r, host, strhtons(port), false /* is_balancer */);
+    hr = create_hostbyname_request(r, host, strhtons(port),
+                                   false /* is_balancer */);
     ares_gethostbyname(*channel, hr->host, AF_INET6, on_hostbyname_done_cb, hr);
   }
-  grpc_ares_hostbyname_request *hr = create_hostbyname_request(
-      r, host, strhtons(port), false /* is_balancer */);
+  hr = create_hostbyname_request(r, host, strhtons(port),
+                                 false /* is_balancer */);
   ares_gethostbyname(*channel, hr->host, AF_INET, on_hostbyname_done_cb, hr);
   if (check_grpclb) {
     /* Query the SRV record */
