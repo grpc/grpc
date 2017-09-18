@@ -965,7 +965,7 @@ static void cq_finish_shutdown_next(grpc_exec_ctx *exec_ctx,
   cq_next_data *cqd = (cq_next_data *)DATA_FROM_CQ(cq);
 
   GPR_ASSERT(cqd->shutdown_called);
-  GPR_ASSERT(gpr_atm_acq_load(&cqd->pending_events) == 0);
+  GPR_ASSERT(gpr_atm_no_barrier_load(&cqd->pending_events) == 0);
 
   cq->poller_vtable->shutdown(exec_ctx, POLLSET_FROM_CQ(cq),
                               &cq->pollset_shutdown_done);
@@ -989,6 +989,9 @@ static void cq_shutdown_next(grpc_exec_ctx *exec_ctx,
     return;
   }
   cqd->shutdown_called = true;
+  /* Doing a full_fetch_add (i.e acq/release) here to match with
+   * cq_begin_op_for_next and and cq_end_op_for_next functions which read/write
+   * on this counter without necessarily holding a lock on cq */
   if (gpr_atm_full_fetch_add(&cqd->pending_events, -1) == 1) {
     cq_finish_shutdown_next(exec_ctx, cq);
   }
