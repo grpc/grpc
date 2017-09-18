@@ -34,7 +34,8 @@ namespace grpc_php_generator {
 namespace {
 
 grpc::string MessageIdentifierName(const grpc::string &name) {
-  std::vector<grpc::string> tokens = grpc_generator::tokenize(name, ".");
+  grpc::string tmpName = grpc_generator::StringReplace(name, "google.protobuf.Empty", "google.protobuf.GPBEmpty");
+  std::vector<grpc::string> tokens = grpc_generator::tokenize(tmpName, ".");
   std::ostringstream oss;
   for (unsigned int i = 0; i < tokens.size(); i++) {
     oss << (i == 0 ? "" : "\\")
