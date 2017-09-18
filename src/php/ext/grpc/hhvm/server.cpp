@@ -229,7 +229,8 @@ bool HHVM_METHOD(Server, addHttp2Port,
 
     ServerData* const pServerData{ Native::data<ServerData>(this_) };
 
-    return (grpc_server_add_insecure_http2_port(pServerData->server(), addr.c_str()) != 0);
+    std::string strAddr{ addr.toCppString() };
+    return (grpc_server_add_insecure_http2_port(pServerData->server(), strAddr.c_str()) != 0);
 }
 
 bool HHVM_METHOD(Server, addSecureHttp2Port,
@@ -241,8 +242,9 @@ bool HHVM_METHOD(Server, addSecureHttp2Port,
     ServerData* const pServerData{ Native::data<ServerData>(this_) };
     ServerCredentialsData* const pServerCredentialsData{ Native::data<ServerCredentialsData>(server_credentials) };
 
+    std::string strAddr{ addr.toCppString() };
     return (grpc_server_add_secure_http2_port(pServerData->server(),
-                                              addr.c_str(), pServerCredentialsData->credentials()) != 0);
+                                              strAddr.c_str(), pServerCredentialsData->credentials()) != 0);
 }
 
 void HHVM_METHOD(Server, start)

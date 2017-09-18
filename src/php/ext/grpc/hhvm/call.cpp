@@ -162,11 +162,19 @@ bool MetadataArray::init(const Array& phpArray)
     for (ArrayIter iter{ phpArray }; iter; ++iter)
     {
         Variant key{ iter.first() };
-        if (key.isNull() || !key.isString() ||
-            !grpc_header_key_is_legal(grpc_slice_from_static_string(key.toString().c_str())))
+        if (key.isNull() || !key.isString())
         {
             return false;
         }
+        else
+        {
+            Slice keySlice{ key.toString() };
+            if (!grpc_header_key_is_legal(keySlice.slice()))
+            {
+                return false;
+            }
+        }
+
 
         Variant value{ iter.second() };
         if (value.isNull() || !value.isArray())
