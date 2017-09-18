@@ -51,15 +51,14 @@ grpc::string PackageName(const FileDescriptor *file) {
   }
 }
 
-grpc::string MessageIdentifierName(const grpc::string &name, const FileDescriptor *file) {
+grpc::string MessageIdentifierName(const grpc::string &name,
+                                   const FileDescriptor *file) {
   std::vector<grpc::string> tokens = grpc_generator::tokenize(name, ".");
   std::ostringstream oss;
-  oss << PackageName(file)
-      << "\\"
+  oss << PackageName(file) << "\\"
       << grpc_generator::CapitalizeFirstLetter(tokens[tokens.size() - 1]);
   return oss.str();
 }
-
 
 void PrintMethod(const MethodDescriptor *method, Printer *out) {
   const Descriptor *input_type = method->input_type();
@@ -67,8 +66,10 @@ void PrintMethod(const MethodDescriptor *method, Printer *out) {
   map<grpc::string, grpc::string> vars;
   vars["service_name"] = method->service()->full_name();
   vars["name"] = method->name();
-  vars["input_type_id"] = MessageIdentifierName(input_type->full_name(), input_type->file());
-  vars["output_type_id"] = MessageIdentifierName(output_type->full_name(), output_type->file());
+  vars["input_type_id"] =
+      MessageIdentifierName(input_type->full_name(), input_type->file());
+  vars["output_type_id"] =
+      MessageIdentifierName(output_type->full_name(), output_type->file());
 
   out->Print("/**\n");
   out->Print(GetPHPComments(method, " *").c_str());
