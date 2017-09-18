@@ -86,7 +86,6 @@ _WHITELIST_DICT = {
   '^test/distrib/php/': [_PHP_TEST_SUITE],
   '^test/distrib/python/': [_PYTHON_TEST_SUITE],
   '^test/distrib/ruby/': [_RUBY_TEST_SUITE],
-  '^tools/internal_ci/': [],
   '^vsprojects/': [_WINDOWS_TEST_SUITE],
   'binding\.gyp$': [_NODE_TEST_SUITE],
   'composer\.json$': [_PHP_TEST_SUITE],
@@ -128,7 +127,7 @@ def _get_changed_files(base_branch):
   # Get file changes between branch and merge-base of specified branch
   # Not combined to be Windows friendly
   base_commit = check_output(["git", "merge-base", base_branch, "HEAD"]).rstrip()
-  return check_output(["git", "diff", base_commit, "--name-only"]).splitlines()
+  return check_output(["git", "diff", base_commit, "--name-only", "HEAD"]).splitlines()
 
 
 def _can_skip_tests(file_names, triggers):

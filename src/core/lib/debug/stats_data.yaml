@@ -20,6 +20,14 @@
   doc: Number of client side calls created by this process
 - counter: server_calls_created
   doc: Number of server side calls created by this process
+- counter: cqs_created
+  doc: Number of completion queues created
+- counter: client_channels_created
+  doc: Number of client channels created
+- counter: client_subchannels_created
+  doc: Number of client subchannels created
+- counter: server_channels_created
+  doc: Number of server channels created
 # polling
 - counter: syscall_poll
   doc: Number of polling syscalls (epoll_wait, poll, etc) made by this process
@@ -109,6 +117,48 @@
 - counter: http2_partial_writes
   doc: Number of HTTP2 writes that were made knowing there was still more data
        to be written (we cap maximum write size to syscall_write)
+- counter: http2_initiate_write_due_to_initial_write
+  doc: Number of HTTP2 writes initiated due to 'initial_write'
+- counter: http2_initiate_write_due_to_start_new_stream
+  doc: Number of HTTP2 writes initiated due to 'start_new_stream'
+- counter: http2_initiate_write_due_to_send_message
+  doc: Number of HTTP2 writes initiated due to 'send_message'
+- counter: http2_initiate_write_due_to_send_initial_metadata
+  doc: Number of HTTP2 writes initiated due to 'send_initial_metadata'
+- counter: http2_initiate_write_due_to_send_trailing_metadata
+  doc: Number of HTTP2 writes initiated due to 'send_trailing_metadata'
+- counter: http2_initiate_write_due_to_retry_send_ping
+  doc: Number of HTTP2 writes initiated due to 'retry_send_ping'
+- counter: http2_initiate_write_due_to_continue_pings
+  doc: Number of HTTP2 writes initiated due to 'continue_pings'
+- counter: http2_initiate_write_due_to_goaway_sent
+  doc: Number of HTTP2 writes initiated due to 'goaway_sent'
+- counter: http2_initiate_write_due_to_rst_stream
+  doc: Number of HTTP2 writes initiated due to 'rst_stream'
+- counter: http2_initiate_write_due_to_close_from_api
+  doc: Number of HTTP2 writes initiated due to 'close_from_api'
+- counter: http2_initiate_write_due_to_stream_flow_control
+  doc: Number of HTTP2 writes initiated due to 'stream_flow_control'
+- counter: http2_initiate_write_due_to_transport_flow_control
+  doc: Number of HTTP2 writes initiated due to 'transport_flow_control'
+- counter: http2_initiate_write_due_to_send_settings
+  doc: Number of HTTP2 writes initiated due to 'send_settings'
+- counter: http2_initiate_write_due_to_bdp_estimator_ping
+  doc: Number of HTTP2 writes initiated due to 'bdp_estimator_ping'
+- counter: http2_initiate_write_due_to_flow_control_unstalled_by_setting
+  doc: Number of HTTP2 writes initiated due to 'flow_control_unstalled_by_setting'
+- counter: http2_initiate_write_due_to_flow_control_unstalled_by_update
+  doc: Number of HTTP2 writes initiated due to 'flow_control_unstalled_by_update'
+- counter: http2_initiate_write_due_to_application_ping
+  doc: Number of HTTP2 writes initiated due to 'application_ping'
+- counter: http2_initiate_write_due_to_keepalive_ping
+  doc: Number of HTTP2 writes initiated due to 'keepalive_ping'
+- counter: http2_initiate_write_due_to_transport_flow_control_unstalled
+  doc: Number of HTTP2 writes initiated due to 'transport_flow_control_unstalled'
+- counter: http2_initiate_write_due_to_ping_response
+  doc: Number of HTTP2 writes initiated due to 'ping_response'
+- counter: http2_initiate_write_due_to_force_rst_stream
+  doc: Number of HTTP2 writes initiated due to 'force_rst_stream'
 # combiner locks
 - counter: combiner_locks_initiated
   doc: Number of combiner lock entries by process

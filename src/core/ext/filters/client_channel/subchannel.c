@@ -33,6 +33,7 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
@@ -290,6 +291,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
     return c;
   }
 
+  GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED(exec_ctx);
   c = (grpc_subchannel *)gpr_zalloc(sizeof(*c));
   c->key = key;
   gpr_atm_no_barrier_store(&c->ref_pair, 1 << INTERNAL_REF_BITS);

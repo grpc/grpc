@@ -85,7 +85,7 @@ static void method_parameters_unref(method_parameters *method_params) {
 }
 
 static void method_parameters_free(grpc_exec_ctx *exec_ctx, void *value) {
-  method_parameters_unref(value);
+  method_parameters_unref((method_parameters *)value);
 }
 
 static bool parse_wait_for_ready(grpc_json *field,
@@ -719,7 +719,8 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "client channel factory arg must be a pointer");
   }
-  grpc_client_channel_factory_ref(arg->value.pointer.p);
+  grpc_client_channel_factory_ref(
+      (grpc_client_channel_factory *)arg->value.pointer.p);
   chand->client_channel_factory =
       (grpc_client_channel_factory *)arg->value.pointer.p;
   // Get server name to resolve, using proxy mapper if needed.

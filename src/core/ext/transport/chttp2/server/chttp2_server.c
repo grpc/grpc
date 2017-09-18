@@ -52,7 +52,7 @@ typedef struct {
 } server_state;
 
 typedef struct {
-  server_state *server_state;
+  server_state *svr_state;
   grpc_pollset *accepting_pollset;
   grpc_tcp_server_acceptor *acceptor;
   grpc_handshake_manager *handshake_mgr;
@@ -63,8 +63,8 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_handshaker_args *args = (grpc_handshaker_args *)arg;
   server_connection_state *connection_state =
       (server_connection_state *)args->user_data;
-  gpr_mu_lock(&connection_state->server_state->mu);
-  if (error != GRPC_ERROR_NONE || connection_state->server_state->shutdown) {
+  gpr_mu_lock(&connection_state->svr_state->mu);
+  if (error != GRPC_ERROR_NONE || connection_state->svr_state->shutdown) {
     const char *error_str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str);
 
@@ -89,7 +89,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
       grpc_transport *transport =
           grpc_create_chttp2_transport(exec_ctx, args->args, args->endpoint, 0);
       grpc_server_setup_transport(
-          exec_ctx, connection_state->server_state->server, transport,
+          exec_ctx, connection_state->svr_state->server, transport,
           connection_state->accepting_pollset, args->args);
       grpc_chttp2_transport_start_reading(exec_ctx, transport,
                                           args->read_buffer);
@@ -97,11 +97,11 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     }
   }
   grpc_handshake_manager_pending_list_remove(
-      &connection_state->server_state->pending_handshake_mgrs,
+      &connection_state->svr_state->pending_handshake_mgrs,
       connection_state->handshake_mgr);
-  gpr_mu_unlock(&connection_state->server_state->mu);
+  gpr_mu_unlock(&connection_state->svr_state->mu);
   grpc_handshake_manager_destroy(exec_ctx, connection_state->handshake_mgr);
-  grpc_tcp_server_unref(exec_ctx, connection_state->server_state->tcp_server);
+  grpc_tcp_server_unref(exec_ctx, connection_state->svr_state->tcp_server);
   gpr_free(connection_state->acceptor);
   gpr_free(connection_state);
 }
@@ -124,8 +124,8 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   gpr_mu_unlock(&state->mu);
   grpc_tcp_server_ref(state->tcp_server);
   server_connection_state *connection_state =
-      gpr_malloc(sizeof(*connection_state));
-  connection_state->server_state = state;
+      (server_connection_state *)gpr_malloc(sizeof(*connection_state));
+  connection_state->svr_state = state;
   connection_state->accepting_pollset = accepting_pollset;
   connection_state->acceptor = acceptor;
   connection_state->handshake_mgr = handshake_mgr;
