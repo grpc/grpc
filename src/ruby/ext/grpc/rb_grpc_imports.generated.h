@@ -164,10 +164,10 @@ extern census_record_values_type census_record_values_import;
 typedef int(*grpc_compression_algorithm_parse_type)(grpc_slice value, grpc_compression_algorithm *algorithm);
 extern grpc_compression_algorithm_parse_type grpc_compression_algorithm_parse_import;
 #define grpc_compression_algorithm_parse grpc_compression_algorithm_parse_import
-typedef int(*grpc_compression_algorithm_name_type)(grpc_compression_algorithm algorithm, char **name);
+typedef int(*grpc_compression_algorithm_name_type)(grpc_compression_algorithm algorithm, const char **name);
 extern grpc_compression_algorithm_name_type grpc_compression_algorithm_name_import;
 #define grpc_compression_algorithm_name grpc_compression_algorithm_name_import
-typedef int(*grpc_stream_compression_algorithm_name_type)(grpc_stream_compression_algorithm algorithm, char **name);
+typedef int(*grpc_stream_compression_algorithm_name_type)(grpc_stream_compression_algorithm algorithm, const char **name);
 extern grpc_stream_compression_algorithm_name_type grpc_stream_compression_algorithm_name_import;
 #define grpc_stream_compression_algorithm_name grpc_stream_compression_algorithm_name_import
 typedef grpc_compression_algorithm(*grpc_compression_algorithm_for_level_type)(grpc_compression_level level, uint32_t accepted_encodings);

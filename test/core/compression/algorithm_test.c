@@ -35,7 +35,7 @@ static void test_algorithm_mesh(void) {
   gpr_log(GPR_DEBUG, "test_algorithm_mesh");
 
   for (i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
-    char *name;
+    const char *name;
     grpc_compression_algorithm parsed;
     grpc_slice mdstr;
     grpc_mdelem mdelem;

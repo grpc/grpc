@@ -63,6 +63,6 @@ static const grpc_arg_pointer_vtable factory_arg_vtable = {
 
 grpc_arg grpc_client_channel_factory_create_channel_arg(
     grpc_client_channel_factory* factory) {
-  return grpc_channel_arg_pointer_create(GRPC_ARG_CLIENT_CHANNEL_FACTORY,
+  return grpc_channel_arg_pointer_create((char*)GRPC_ARG_CLIENT_CHANNEL_FACTORY,
                                          factory, &factory_arg_vtable);
 }

@@ -1830,8 +1830,8 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
 
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
   // since we use this to trigger the client_load_reporting filter.
-  grpc_arg new_arg =
-      grpc_channel_arg_string_create(GRPC_ARG_LB_POLICY_NAME, "grpclb");
+  grpc_arg new_arg = grpc_channel_arg_string_create(
+      (char *)GRPC_ARG_LB_POLICY_NAME, (char *)"grpclb");
   static const char *args_to_remove[] = {GRPC_ARG_LB_POLICY_NAME};
   glb_policy->args = grpc_channel_args_copy_and_add_and_remove(
       args->args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &new_arg, 1);

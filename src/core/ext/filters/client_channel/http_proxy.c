@@ -157,7 +157,7 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
   }
   grpc_arg args_to_add[2];
   args_to_add[0] = grpc_channel_arg_string_create(
-      GRPC_ARG_HTTP_CONNECT_SERVER,
+      (char*)GRPC_ARG_HTTP_CONNECT_SERVER,
       uri->path[0] == '/' ? uri->path + 1 : uri->path);
   if (user_cred != NULL) {
     /* Use base64 encoding for user credentials as stated in RFC 7617 */
@@ -166,8 +166,8 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
     char* header;
     gpr_asprintf(&header, "Proxy-Authorization:Basic %s", encoded_user_cred);
     gpr_free(encoded_user_cred);
-    args_to_add[1] =
-        grpc_channel_arg_string_create(GRPC_ARG_HTTP_CONNECT_HEADERS, header);
+    args_to_add[1] = grpc_channel_arg_string_create(
+        (char*)GRPC_ARG_HTTP_CONNECT_HEADERS, header);
     *new_args = grpc_channel_args_copy_and_add(args, args_to_add, 2);
     gpr_free(header);
   } else {
