@@ -20,6 +20,27 @@
 
 #include <grpc/support/log.h>
 
+static char *stream_list_id_string(grpc_chttp2_stream_list_id id) {
+  switch (id) {
+    case GRPC_CHTTP2_LIST_WRITABLE:
+      return "writable";
+    case GRPC_CHTTP2_LIST_WRITING:
+      return "writing";
+    case GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT:
+      return "stalled_by_transport";
+    case GRPC_CHTTP2_LIST_STALLED_BY_STREAM:
+      return "stalled_by_stream";
+    case GRPC_CHTTP2_LIST_WAITING_FOR_CONCURRENCY:
+      return "waiting_for_concurrency";
+    case STREAM_LIST_COUNT:
+      GPR_UNREACHABLE_CODE(return "unknown");
+  }
+  GPR_UNREACHABLE_CODE(return "unknown");
+}
+
+grpc_tracer_flag grpc_trace_http2_stream_state =
+    GRPC_TRACER_INITIALIZER(false, "http2_stream_state");
+
 /* core list management */
 
 static bool stream_list_empty(grpc_chttp2_transport *t,
@@ -44,6 +65,10 @@ static bool stream_list_pop(grpc_chttp2_transport *t,
     s->included[id] = 0;
   }
   *stream = s;
+  if (s && GRPC_TRACER_ON(grpc_trace_http2_stream_state)) {
+    gpr_log(GPR_DEBUG, "%p[%d][%s]: pop from %s", t, s->id,
+            t->is_client ? "cli" : "svr", stream_list_id_string(id));
+  }
   return s != 0;
 }
 
@@ -61,6 +86,10 @@ static void stream_list_remove(grpc_chttp2_transport *t, grpc_chttp2_stream *s,
     s->links[id].next->links[id].prev = s->links[id].prev;
   } else {
     t->lists[id].tail = s->links[id].prev;
+  }
+  if (GRPC_TRACER_ON(grpc_trace_http2_stream_state)) {
+    gpr_log(GPR_DEBUG, "%p[%d][%s]: remove from %s", t, s->id,
+            t->is_client ? "cli" : "svr", stream_list_id_string(id));
   }
 }
 
@@ -90,6 +119,10 @@ static void stream_list_add_tail(grpc_chttp2_transport *t,
   }
   t->lists[id].tail = s;
   s->included[id] = 1;
+  if (GRPC_TRACER_ON(grpc_trace_http2_stream_state)) {
+    gpr_log(GPR_DEBUG, "%p[%d][%s]: add to %s", t, s->id,
+            t->is_client ? "cli" : "svr", stream_list_id_string(id));
+  }
 }
 
 static bool stream_list_add(grpc_chttp2_transport *t, grpc_chttp2_stream *s,
@@ -150,17 +183,12 @@ void grpc_chttp2_list_remove_waiting_for_concurrency(grpc_chttp2_transport *t,
 
 void grpc_chttp2_list_add_stalled_by_transport(grpc_chttp2_transport *t,
                                                grpc_chttp2_stream *s) {
-  GRPC_FLOW_CONTROL_IF_TRACING(
-      gpr_log(GPR_DEBUG, "stream %u stalled by transport", s->id));
   stream_list_add(t, s, GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT);
 }
 
 bool grpc_chttp2_list_pop_stalled_by_transport(grpc_chttp2_transport *t,
                                                grpc_chttp2_stream **s) {
-  bool ret = stream_list_pop(t, s, GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT);
-  GRPC_FLOW_CONTROL_IF_TRACING(if (ret) gpr_log(
-      GPR_DEBUG, "stream %u un-stalled by transport", (*s)->id));
-  return ret;
+  return stream_list_pop(t, s, GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT);
 }
 
 void grpc_chttp2_list_remove_stalled_by_transport(grpc_chttp2_transport *t,
@@ -170,23 +198,15 @@ void grpc_chttp2_list_remove_stalled_by_transport(grpc_chttp2_transport *t,
 
 void grpc_chttp2_list_add_stalled_by_stream(grpc_chttp2_transport *t,
                                             grpc_chttp2_stream *s) {
-  GRPC_FLOW_CONTROL_IF_TRACING(
-      gpr_log(GPR_DEBUG, "stream %u stalled by stream", s->id));
   stream_list_add(t, s, GRPC_CHTTP2_LIST_STALLED_BY_STREAM);
 }
 
 bool grpc_chttp2_list_pop_stalled_by_stream(grpc_chttp2_transport *t,
                                             grpc_chttp2_stream **s) {
-  bool ret = stream_list_pop(t, s, GRPC_CHTTP2_LIST_STALLED_BY_STREAM);
-  GRPC_FLOW_CONTROL_IF_TRACING(
-      if (ret) gpr_log(GPR_DEBUG, "stream %u un-stalled by stream", (*s)->id));
-  return ret;
+  return stream_list_pop(t, s, GRPC_CHTTP2_LIST_STALLED_BY_STREAM);
 }
 
 bool grpc_chttp2_list_remove_stalled_by_stream(grpc_chttp2_transport *t,
                                                grpc_chttp2_stream *s) {
-  bool ret = stream_list_maybe_remove(t, s, GRPC_CHTTP2_LIST_STALLED_BY_STREAM);
-  GRPC_FLOW_CONTROL_IF_TRACING(
-      if (ret) gpr_log(GPR_DEBUG, "stream %u un-stalled by stream", s->id));
-  return ret;
+  return stream_list_maybe_remove(t, s, GRPC_CHTTP2_LIST_STALLED_BY_STREAM);
 }
