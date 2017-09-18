@@ -37,20 +37,20 @@
 void define_base_resources() {
   google_census_Resource_BasicUnit numerator =
       google_census_Resource_BasicUnit_SECS;
-  resource r = {"client_rpc_latency",             // name
-                "Client RPC latency in seconds",  // description
-                0,                                // prefix
-                1,                                // n_numerators
-                &numerator,                       // numerators
-                0,                                // n_denominators
-                NULL};                            // denominators
+  resource r = {(char *)"client_rpc_latency",             // name
+                (char *)"Client RPC latency in seconds",  // description
+                0,                                        // prefix
+                1,                                        // n_numerators
+                &numerator,                               // numerators
+                0,                                        // n_denominators
+                NULL};                                    // denominators
   define_resource(&r);
-  r = (resource){"server_rpc_latency",             // name
-                 "Server RPC latency in seconds",  // description
-                 0,                                // prefix
-                 1,                                // n_numerators
-                 &numerator,                       // numerators
-                 0,                                // n_denominators
-                 NULL};                            // denominators
+  r = (resource){(char *)"server_rpc_latency",             // name
+                 (char *)"Server RPC latency in seconds",  // description
+                 0,                                        // prefix
+                 1,                                        // n_numerators
+                 &numerator,                               // numerators
+                 0,                                        // n_denominators
+                 NULL};                                    // denominators
   define_resource(&r);
 }
