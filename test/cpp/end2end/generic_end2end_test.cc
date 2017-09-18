@@ -196,6 +196,61 @@ TEST_F(GenericEnd2endTest, SequentialRpcs) {
   SendRpc(10);
 }
 
+TEST_F(GenericEnd2endTest, SequentialBatchRpcs) {
+  ResetStub();
+  const int num_rpcs = 10;
+  const grpc::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
+  for (int i = 0; i < num_rpcs; i++) {
+    EchoRequest send_request;
+    EchoRequest recv_request;
+    EchoResponse send_response;
+    EchoResponse recv_response;
+    Status recv_status;
+
+    ClientContext cli_ctx;
+    GenericServerContext srv_ctx;
+    GenericServerAsyncReaderWriter stream(&srv_ctx);
+
+    // The string needs to be long enough to test heap-based slice.
+    send_request.set_message("Hello world. Hello world. Hello world.");
+
+    std::unique_ptr<GenericClientAsyncReaderWriter> call =
+        generic_stub_->PrepareCall(&cli_ctx, kMethodName, &cli_cq_);
+    std::unique_ptr<ByteBuffer> cli_send_buffer =
+        SerializeToByteBuffer(&send_request);
+    ByteBuffer cli_recv_buffer;
+    call->BatchOps(true, cli_send_buffer.get(), true, true, &cli_recv_buffer,
+                   true, &recv_status, tag(1));
+
+    generic_service_.RequestCall(&srv_ctx, &stream, srv_cq_.get(),
+                                 srv_cq_.get(), tag(4));
+
+    verify_ok(srv_cq_.get(), 4, true);
+    EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
+    EXPECT_EQ(kMethodName, srv_ctx.method());
+
+    ByteBuffer srv_recv_buffer;
+    stream.Read(&srv_recv_buffer, tag(5));
+    server_ok(5);
+    EXPECT_TRUE(ParseFromByteBuffer(&srv_recv_buffer, &recv_request));
+    EXPECT_EQ(send_request.message(), recv_request.message());
+
+    send_response.set_message(recv_request.message());
+    std::unique_ptr<ByteBuffer> srv_send_buffer =
+        SerializeToByteBuffer(&send_response);
+    stream.Write(*srv_send_buffer, tag(6));
+    server_ok(6);
+
+    stream.Finish(Status::OK, tag(7));
+    server_ok(7);
+
+    client_ok(1);
+    EXPECT_TRUE(ParseFromByteBuffer(&cli_recv_buffer, &recv_response));
+    EXPECT_EQ(send_response.message(), recv_response.message());
+    EXPECT_TRUE(recv_status.ok());
+  }
+}
+
 // One ping, one pong.
 TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   ResetStub();
