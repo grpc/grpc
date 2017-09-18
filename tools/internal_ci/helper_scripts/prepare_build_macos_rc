@@ -53,7 +53,7 @@ pod repo update  # needed by python
 # python
 brew install coreutils  # we need grealpath
 pip install virtualenv --user python
-pip install -U six tox setuptools --user python
+pip install -U six tox setuptools twisted pyyaml --user python
 export PYTHONPATH=/Library/Python/3.4/site-packages
 
 # set xcode version for Obj-C tests
