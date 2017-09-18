@@ -96,11 +96,7 @@ struct shared_mutables {
 } GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
 
 static struct shared_mutables g_shared_mutables = {
-  0,
-  GPR_SPINLOCK_STATIC_INITIALIZER,
-  false,
-  {{0}}
-};
+    0, GPR_SPINLOCK_STATIC_INITIALIZER, false, {{0}}};
 
 static gpr_clock_type g_clock_type;
 static gpr_timespec g_start_time;

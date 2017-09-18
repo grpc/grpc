@@ -51,8 +51,9 @@
 #define MAX_DECODER_SPACE_USAGE 512
 
 static grpc_slice_refcount terminal_slice_refcount = {NULL, NULL};
-static const grpc_slice terminal_slice = {&terminal_slice_refcount, /* refcount */
-  {{0, 0}} /* refcounted */
+static const grpc_slice terminal_slice = {
+    &terminal_slice_refcount, /* refcount */
+    {{0, 0}}                  /* refcounted */
 };
 
 extern grpc_tracer_flag grpc_http_trace;
