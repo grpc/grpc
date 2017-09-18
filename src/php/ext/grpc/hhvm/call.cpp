@@ -571,7 +571,7 @@ Object HHVM_METHOD(Call, startBatch,
         {
             // wait for failure after cancelling call
             grpc_event event(grpc_completion_queue_next(pCallData->queue()->queue(),
-                             gpr_time_from_millis(1000, GPR_TIMESPAN),
+                             gpr_inf_future(GPR_CLOCK_REALTIME),
                              nullptr));
         }
     };
