@@ -171,9 +171,8 @@ void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *c,
       gpr_log(GPR_ERROR,
               "Closure already scheduled. (closure: %p, created: [%s:%d], "
               "previously scheduled at: [%s: %d] run?: %s",
-              c, c->file_created, c->line_created,
-              c->file_initiated, c->line_initiated,
-              c->run ? "true" : "false");
+              c, c->file_created, c->line_created, c->file_initiated,
+              c->line_initiated, c->run ? "true" : "false");
       abort();
     }
     c->scheduled = true;
@@ -203,9 +202,8 @@ void grpc_closure_list_sched(grpc_exec_ctx *exec_ctx, grpc_closure_list *list) {
       gpr_log(GPR_ERROR,
               "Closure already scheduled. (closure: %p, created: [%s:%d], "
               "previously scheduled at: [%s: %d] run?: %s",
-              c, c->file_created, c->line_created,
-              c->file_initiated, c->line_initiated,
-              c->run ? "true" : "false");
+              c, c->file_created, c->line_created, c->file_initiated,
+              c->line_initiated, c->run ? "true" : "false");
       abort();
     }
     c->scheduled = true;
