@@ -55,7 +55,8 @@ static bool maybe_add_server_load_reporting_filter(
 }
 
 grpc_arg grpc_load_reporting_enable_arg() {
-  return grpc_channel_arg_integer_create(GRPC_ARG_ENABLE_LOAD_REPORTING, 1);
+  return grpc_channel_arg_integer_create((char *)GRPC_ARG_ENABLE_LOAD_REPORTING,
+                                         1);
 }
 
 /* Plugin registration */

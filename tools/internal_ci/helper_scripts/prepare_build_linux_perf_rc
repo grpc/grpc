@@ -19,4 +19,19 @@
 ulimit -n 32768
 ulimit -c unlimited
 
+# Performance PR testing needs GH API key and PR metadata to comment results
+if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
+  set +x
+  sudo apt-get install -y jq
+  export ghprbTargetBranch=$(curl -s https://api.github.com/repos/grpc/grpc/pulls/$KOKORO_GITHUB_PULL_REQUEST_NUMBER | jq -r .base.ref)
+
+  gsutil cp gs://grpc-testing-secrets/github_credentials/oauth_token.txt ~/
+  # TODO(matt-kwong): rename this to GITHUB_OAUTH_TOKEN after Jenkins deprecation
+  export JENKINS_OAUTH_TOKEN=$(cat ~/oauth_token.txt)
+  export ghprbPullId=$KOKORO_GITHUB_PULL_REQUEST_NUMBER
+  set -x
+fi
+
+sudo pip install tabulate
+
 git submodule update --init

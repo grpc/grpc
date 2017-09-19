@@ -44,7 +44,7 @@ cdef class Server:
     cdef OperationTag operation_tag = OperationTag(tag)
     operation_tag.operation_call = Call()
     operation_tag.request_call_details = CallDetails()
-    operation_tag.request_metadata = Metadata([])
+    operation_tag.request_metadata = MetadataArray()
     operation_tag.references.extend([self, call_queue, server_queue])
     operation_tag.is_new_request = True
     operation_tag.batch_operations = Operations([])

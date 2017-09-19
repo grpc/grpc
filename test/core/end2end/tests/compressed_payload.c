@@ -228,7 +228,7 @@ static void request_for_disabled_algorithm(
   /* with a certain error */
   GPR_ASSERT(status == expected_error);
 
-  char *algo_name = NULL;
+  const char *algo_name = NULL;
   GPR_ASSERT(grpc_compression_algorithm_name(algorithm_to_disable, &algo_name));
   char *expected_details = NULL;
   gpr_asprintf(&expected_details, "Compression algorithm '%s' is disabled.",

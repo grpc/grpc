@@ -209,7 +209,7 @@ static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
 #define GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP 2
 /* As per pollset_kick, with an extended set of flags (defined above)
    -- mostly for fd_posix's use. */
-static grpc_error *pollset_kick_ext(grpc_pollset *p,
+static grpc_error *pollset_kick_ext(grpc_exec_ctx *exec_ctx, grpc_pollset *p,
                                     grpc_pollset_worker *specific_worker,
                                     uint32_t flags) GRPC_MUST_USE_RESULT;
 
@@ -365,36 +365,39 @@ static grpc_pollset *fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
   return notifier;
 }
 
-static grpc_error *pollset_kick_locked(grpc_fd_watcher *watcher) {
+static grpc_error *pollset_kick_locked(grpc_exec_ctx *exec_ctx,
+                                       grpc_fd_watcher *watcher) {
   gpr_mu_lock(&watcher->pollset->mu);
   GPR_ASSERT(watcher->worker);
-  grpc_error *err = pollset_kick_ext(watcher->pollset, watcher->worker,
-                                     GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP);
+  grpc_error *err =
+      pollset_kick_ext(exec_ctx, watcher->pollset, watcher->worker,
+                       GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP);
   gpr_mu_unlock(&watcher->pollset->mu);
   return err;
 }
 
-static void maybe_wake_one_watcher_locked(grpc_fd *fd) {
+static void maybe_wake_one_watcher_locked(grpc_exec_ctx *exec_ctx,
+                                          grpc_fd *fd) {
   if (fd->inactive_watcher_root.next != &fd->inactive_watcher_root) {
-    pollset_kick_locked(fd->inactive_watcher_root.next);
+    pollset_kick_locked(exec_ctx, fd->inactive_watcher_root.next);
   } else if (fd->read_watcher) {
-    pollset_kick_locked(fd->read_watcher);
+    pollset_kick_locked(exec_ctx, fd->read_watcher);
   } else if (fd->write_watcher) {
-    pollset_kick_locked(fd->write_watcher);
+    pollset_kick_locked(exec_ctx, fd->write_watcher);
   }
 }
 
-static void wake_all_watchers_locked(grpc_fd *fd) {
+static void wake_all_watchers_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   grpc_fd_watcher *watcher;
   for (watcher = fd->inactive_watcher_root.next;
        watcher != &fd->inactive_watcher_root; watcher = watcher->next) {
-    pollset_kick_locked(watcher);
+    pollset_kick_locked(exec_ctx, watcher);
   }
   if (fd->read_watcher) {
-    pollset_kick_locked(fd->read_watcher);
+    pollset_kick_locked(exec_ctx, fd->read_watcher);
   }
   if (fd->write_watcher && fd->write_watcher != fd->read_watcher) {
-    pollset_kick_locked(fd->write_watcher);
+    pollset_kick_locked(exec_ctx, fd->write_watcher);
   }
 }
 
@@ -435,7 +438,7 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   if (!has_watchers(fd)) {
     close_fd_locked(exec_ctx, fd);
   } else {
-    wake_all_watchers_locked(fd);
+    wake_all_watchers_locked(exec_ctx, fd);
   }
   gpr_mu_unlock(&fd->mu);
   UNREF_BY(fd, 2, reason); /* drop the reference */
@@ -479,7 +482,7 @@ static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
     /* already ready ==> queue the closure to run immediately */
     *st = CLOSURE_NOT_READY;
     GRPC_CLOSURE_SCHED(exec_ctx, closure, fd_shutdown_error(fd));
-    maybe_wake_one_watcher_locked(fd);
+    maybe_wake_one_watcher_locked(exec_ctx, fd);
   } else {
     /* upcallptr was set to a different closure.  This is an error! */
     gpr_log(GPR_ERROR,
@@ -648,7 +651,7 @@ static void fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *watcher,
     }
   }
   if (kick) {
-    maybe_wake_one_watcher_locked(fd);
+    maybe_wake_one_watcher_locked(exec_ctx, fd);
   }
   if (fd_is_orphaned(fd) && !has_watchers(fd) && !fd->closed) {
     close_fd_locked(exec_ctx, fd);
@@ -712,11 +715,12 @@ static void kick_append_error(grpc_error **composite, grpc_error *error) {
   *composite = grpc_error_add_child(*composite, error);
 }
 
-static grpc_error *pollset_kick_ext(grpc_pollset *p,
+static grpc_error *pollset_kick_ext(grpc_exec_ctx *exec_ctx, grpc_pollset *p,
                                     grpc_pollset_worker *specific_worker,
                                     uint32_t flags) {
   GPR_TIMER_BEGIN("pollset_kick_ext", 0);
   grpc_error *error = GRPC_ERROR_NONE;
+  GRPC_STATS_INC_POLLSET_KICK(exec_ctx);
 
   /* pollset->mu already held */
   if (specific_worker != NULL) {
@@ -782,9 +786,9 @@ static grpc_error *pollset_kick_ext(grpc_pollset *p,
   return error;
 }
 
-static grpc_error *pollset_kick(grpc_pollset *p,
+static grpc_error *pollset_kick(grpc_exec_ctx *exec_ctx, grpc_pollset *p,
                                 grpc_pollset_worker *specific_worker) {
-  return pollset_kick_ext(p, specific_worker, 0);
+  return pollset_kick_ext(exec_ctx, p, specific_worker, 0);
 }
 
 /* global state management */
@@ -847,7 +851,7 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   }
   pollset->fds[pollset->fd_count++] = fd;
   GRPC_FD_REF(fd, "multipoller");
-  pollset_kick(pollset, NULL);
+  pollset_kick(exec_ctx, pollset, NULL);
 exit:
   gpr_mu_unlock(&pollset->mu);
 }
@@ -1083,7 +1087,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   /* check shutdown conditions */
   if (pollset->shutting_down) {
     if (pollset_has_workers(pollset)) {
-      pollset_kick(pollset, NULL);
+      pollset_kick(exec_ctx, pollset, NULL);
     } else if (!pollset->called_shutdown && !pollset_has_observers(pollset)) {
       pollset->called_shutdown = 1;
       gpr_mu_unlock(&pollset->mu);
@@ -1112,7 +1116,7 @@ static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   GPR_ASSERT(!pollset->shutting_down);
   pollset->shutting_down = 1;
   pollset->shutdown_done = closure;
-  pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
+  pollset_kick(exec_ctx, pollset, GRPC_POLLSET_KICK_BROADCAST);
   if (!pollset_has_workers(pollset)) {
     GRPC_CLOSURE_LIST_SCHED(exec_ctx, &pollset->idle_jobs);
   }

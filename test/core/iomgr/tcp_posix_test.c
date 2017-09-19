@@ -147,7 +147,8 @@ static void read_cb(grpc_exec_ctx *exec_ctx, void *user_data,
   gpr_log(GPR_INFO, "Read %" PRIuPTR " bytes of %" PRIuPTR, read_bytes,
           state->target_read_bytes);
   if (state->read_bytes >= state->target_read_bytes) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, NULL)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("kick",
+                                 grpc_pollset_kick(exec_ctx, g_pollset, NULL)));
     gpr_mu_unlock(g_mu);
   } else {
     grpc_endpoint_read(exec_ctx, state->ep, &state->incoming, &state->read_cb);
@@ -295,8 +296,8 @@ static void write_done(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(g_mu);
   gpr_log(GPR_INFO, "Signalling write done");
   state->write_done = 1;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(exec_ctx, g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -406,8 +407,8 @@ static void write_test(size_t num_bytes, size_t slice_size) {
 void on_fd_released(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *errors) {
   int *done = (int *)arg;
   *done = 1;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(exec_ctx, g_pollset, NULL)));
 }
 
 /* Do a read_test, then release fd and try to read/write again. Verify that

@@ -84,11 +84,17 @@ struct tsi_handshaker {
 };
 
 /* Base for tsi_handshaker_result implementations.
-   See transport_security_interface.h for documentation. */
+   See transport_security_interface.h for documentation.
+   The exec_ctx parameter in create_zero_copy_grpc_protector is supposed to be
+   of type grpc_exec_ctx*, but we're using void* instead to avoid making the TSI
+   API depend on grpc. The create_zero_copy_grpc_protector() method is only used
+   in grpc, where we do need the exec_ctx passed through, but the API still
+   needs to compile in other applications, where grpc_exec_ctx is not defined.
+*/
 typedef struct {
   tsi_result (*extract_peer)(const tsi_handshaker_result *self, tsi_peer *peer);
   tsi_result (*create_zero_copy_grpc_protector)(
-      const tsi_handshaker_result *self,
+      void *exec_ctx, const tsi_handshaker_result *self,
       size_t *max_output_protected_frame_size,
       tsi_zero_copy_grpc_protector **protector);
   tsi_result (*create_frame_protector)(const tsi_handshaker_result *self,

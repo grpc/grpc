@@ -4406,6 +4406,52 @@
   }, 
   {
     "args": [
+      "--test_bin_name=resolver_component_test_unsecure", 
+      "--running_under_bazel=false"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
+    "name": "resolver_component_tests_runner_invoker_unsecure", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "--test_bin_name=resolver_component_test", 
+      "--running_under_bazel=false"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
+    "name": "resolver_component_tests_runner_invoker", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "third_party/boringssl/crypto/aes/aes_tests.txt"
     ], 
     "boringssl": true, 

@@ -210,7 +210,7 @@ grpc_arg grpc_fake_resolver_response_generator_arg(
     grpc_fake_resolver_response_generator* generator) {
   grpc_arg arg;
   arg.type = GRPC_ARG_POINTER;
-  arg.key = GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR;
+  arg.key = (char*)GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR;
   arg.value.pointer.p = generator;
   arg.value.pointer.vtable = &response_generator_arg_vtable;
   return arg;
