@@ -319,7 +319,7 @@ static void simple_request_body(grpc_end2end_test_fixture f,
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
+  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = NULL;
   op++;
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
