@@ -86,14 +86,18 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 // this is the data passed back via promise from plugin_get_metadata
 typedef struct plugin_get_metadata_params
 {
-    plugin_get_metadata_params(void* const _ptr,  grpc_auth_metadata_context&& _context,
+    plugin_get_metadata_params(void* const _ptr, std::string&& _contextServiceUrl,
+                               std::string&& _contextMethodName,
                                grpc_credentials_plugin_metadata_cb&& _cb,
                                void* const _user_data, const bool _completed = false) :
-        completed{ _completed }, ptr{ _ptr }, context(std::move(_context)),
+        completed{ _completed }, ptr{ _ptr },
+        contextServiceUrl{ std::move(_contextServiceUrl) },
+        contextMethodName{ std::move(_contextMethodName) },
         cb{ std::move(_cb) }, user_data{ _user_data } {}
     bool completed;
     void *ptr;
-    grpc_auth_metadata_context context;
+    std::string contextServiceUrl;
+    std::string contextMethodName;
     grpc_credentials_plugin_metadata_cb cb;
     void *user_data;
 } plugin_get_metadata_params;
@@ -183,7 +187,8 @@ private:
     std::unordered_map<CallCredentialsData*, MetaDataInfo> m_MetaDataMap;
 };
 
-void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
+void plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
+                            const std::string& methodName,
                             grpc_credentials_plugin_metadata_cb cb,
                             void *user_data);
 }

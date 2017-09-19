@@ -624,8 +624,9 @@ Object HHVM_METHOD(Call, startBatch,
             if (!metaDataParams.completed)
             {
                 // call the plugin in this thread if it wasn't completed already
-                plugin_do_get_metadata(metaDataParams.ptr, metaDataParams.context,
-                                       metaDataParams.cb, metaDataParams.user_data);
+                plugin_do_get_metadata(metaDataParams.ptr, metaDataParams.contextServiceUrl,
+                                       metaDataParams.contextMethodName, metaDataParams.cb,
+                                       metaDataParams.user_data);
             }
         }
     }

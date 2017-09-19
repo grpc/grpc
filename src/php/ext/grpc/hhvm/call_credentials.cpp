@@ -240,15 +240,16 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 /*****************************************************************************/
 
 // This work done in this function MUST be done on the same thread as the HHVM call request
-void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
+void plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
+                            const std::string& methodName,
                             grpc_credentials_plugin_metadata_cb cb,
                             void *user_data)
 {
     HHVM_TRACE_SCOPE("CallCredentials plugin_do_get_metadata") // Degug Trace
 
     Object returnObj{ SystemLib::AllocStdClassObject() };
-    returnObj.o_set("service_url", String(context.service_url, CopyString));
-    returnObj.o_set("method_name", String(context.method_name, CopyString));
+    returnObj.o_set("service_url", String(serviceURL.c_str(), CopyString));
+    returnObj.o_set("method_name", String(methodName.c_str(), CopyString));
 
     plugin_state* const pState{ reinterpret_cast<plugin_state *>(ptr) };
 
@@ -289,6 +290,9 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
         return;
     }
 
+    std::string contextServiceUrl{ context.service_url ? context.service_url : "" };
+    std::string contextMethodName{ context.method_name ? context.method_name : "" };
+
     std::mutex& metaDataMutex{ *(metaDataInfo.metadataMutex()) };
     const bool& callCancelled{ *(metaDataInfo.callCancelled()) };
     const std::thread::id& callThreadId{ metaDataInfo.threadId() };
@@ -300,8 +304,11 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
             std::lock_guard<std::mutex> lock{ metaDataMutex };
             if (!callCancelled)
             {
-                plugin_do_get_metadata(ptr, context, cb, user_data);
-                plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data,
+                plugin_do_get_metadata(ptr, contextServiceUrl, contextMethodName,
+                                       cb, user_data);
+                plugin_get_metadata_params params{ ptr, std::move(contextServiceUrl),
+                                                   std::move(contextMethodName),
+                                                   std::move(cb), user_data,
                                                    true };
                 pMetaDataPromise->set_value(std::move(params));
             }
@@ -315,7 +322,9 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
     else
     {
         HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata different thread") // Degug Trace
-        plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data };
+        plugin_get_metadata_params params{ ptr, std::move(contextServiceUrl),
+                                           std::move(contextMethodName), std::move(cb),
+                                           user_data };
 
         // return the meta data params in the promise
         pMetaDataPromise->set_value(std::move(params));
