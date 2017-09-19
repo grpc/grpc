@@ -44,6 +44,8 @@ static char* get_http_proxy_server(grpc_exec_ctx* exec_ctx, char** user_cred) {
   GPR_ASSERT(user_cred != NULL);
   char* proxy_name = NULL;
   char* uri_str = gpr_getenv("http_proxy");
+  char** authority_strs = NULL;
+  size_t authority_nstrs;
   if (uri_str == NULL) return NULL;
   grpc_uri* uri =
       grpc_uri_parse(exec_ctx, uri_str, false /* suppress_errors */);
@@ -56,8 +58,6 @@ static char* get_http_proxy_server(grpc_exec_ctx* exec_ctx, char** user_cred) {
     goto done;
   }
   /* Split on '@' to separate user credentials from host */
-  char** authority_strs = NULL;
-  size_t authority_nstrs;
   gpr_string_split(uri->authority, "@", &authority_strs, &authority_nstrs);
   GPR_ASSERT(authority_nstrs != 0); /* should have at least 1 string */
   if (authority_nstrs == 1) {
