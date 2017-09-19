@@ -132,8 +132,14 @@ EXPORTS
     grpc_metadata_credentials_create_from_plugin
     grpc_secure_channel_create
     grpc_server_credentials_release
+    grpc_ssl_server_certificate_config_create
+    grpc_ssl_server_certificate_config_destroy
     grpc_ssl_server_credentials_create
     grpc_ssl_server_credentials_create_ex
+    grpc_ssl_server_credentials_create_options_using_config
+    grpc_ssl_server_credentials_create_options_using_config_fetcher
+    grpc_ssl_server_credentials_options_destroy
+    grpc_ssl_server_credentials_create_with_options
     grpc_server_add_secure_http2_port
     grpc_call_set_credentials
     grpc_server_credentials_set_auth_metadata_processor
