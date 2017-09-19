@@ -14,7 +14,7 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 4.0.0
   g_stands_for: garcia
-  version: 1.6.1
+  version: 1.6.2
 filegroups:
 - name: census
   public_headers:
