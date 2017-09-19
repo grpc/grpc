@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/support/murmur_hash.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/util/test_config.h"
 
@@ -64,10 +65,14 @@ void test_encoding(void) {
 
 static void assert_decodes_as(const char *buffer, grpc_millis expected) {
   grpc_millis got;
-  gpr_log(GPR_INFO, "check decoding '%s'", buffer);
+  uint32_t hash = gpr_murmur_hash3(buffer, strlen(buffer), 0);
+  gpr_log(GPR_INFO, "check decoding '%s' (hash=0x%x)", buffer, hash);
   GPR_ASSERT(1 == grpc_http2_decode_timeout(
                       grpc_slice_from_static_string(buffer), &got));
-  GPR_ASSERT(got == expected);
+  if (got != expected) {
+    gpr_log(GPR_ERROR, "got:'%"PRIdPTR"' != expected:'%"PRIdPTR"'", got, expected);
+    abort();
+  }
 }
 
 void decode_suite(char ext, grpc_millis (*answer)(int64_t x)) {
@@ -95,8 +100,8 @@ void decode_suite(char ext, grpc_millis (*answer)(int64_t x)) {
   }
 }
 
-static grpc_millis millis_from_nanos(int64_t x) { return x / GPR_NS_PER_MS; }
-static grpc_millis millis_from_micros(int64_t x) { return x / GPR_US_PER_MS; }
+static grpc_millis millis_from_nanos(int64_t x) { return x / GPR_NS_PER_MS + (x % GPR_NS_PER_MS != 0); }
+static grpc_millis millis_from_micros(int64_t x) { return x / GPR_US_PER_MS + (x % GPR_US_PER_MS != 0); }
 static grpc_millis millis_from_millis(int64_t x) { return x; }
 static grpc_millis millis_from_seconds(int64_t x) { return x * GPR_MS_PER_SEC; }
 static grpc_millis millis_from_minutes(int64_t x) {

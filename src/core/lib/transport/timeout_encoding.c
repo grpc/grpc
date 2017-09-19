@@ -89,7 +89,7 @@ static int is_all_whitespace(const char *p, const char *end) {
 }
 
 int grpc_http2_decode_timeout(grpc_slice text, grpc_millis *timeout) {
-  int32_t x = 0;
+  grpc_millis x = 0;
   const uint8_t *p = GRPC_SLICE_START_PTR(text);
   const uint8_t *end = GRPC_SLICE_END_PTR(text);
   int have_digit = 0;
