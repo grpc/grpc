@@ -58,9 +58,10 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
                                "#import <RxLibrary/GRXWriteable.h>\n"
                                "#import <RxLibrary/GRXWriter.h>\n";
 
-      // TODO(jcanizales): Instead forward-declare the input and output types
-      // and import the files in the .pbrpc.m
       ::grpc::string proto_imports;
+      proto_imports += "#if GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO\n" +
+                       grpc_objective_c_generator::GetAllMessageClasses(file) +
+                       "#else\n";
       for (int i = 0; i < file->dependency_count(); i++) {
         ::grpc::string header =
             grpc_objective_c_generator::MessageHeaderName(file->dependency(i));
@@ -70,19 +71,20 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
           grpc_generator::StripPrefix(&base_name, "google/protobuf/");
           // create the import code snippet
           proto_imports +=
-              "#if GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS\n"
-              "  #import <" +
+              "  #if GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS\n"
+              "    #import <" +
               ::grpc::string(ProtobufLibraryFrameworkName) + "/" + base_name +
               ">\n"
-              "#else\n"
-              "  #import \"" +
+              "  #else\n"
+              "    #import \"" +
               header +
               "\"\n"
-              "#endif\n";
+              "  #endif\n";
         } else {
-          proto_imports += ::grpc::string("#import \"") + header + "\"\n";
+          proto_imports += ::grpc::string("  #import \"") + header + "\"\n";
         }
       }
+      proto_imports += "#endif\n";
 
       ::grpc::string declarations;
       for (int i = 0; i < file->service_count(); i++) {
