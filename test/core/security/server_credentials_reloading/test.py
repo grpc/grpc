@@ -187,16 +187,18 @@ try:
                                     before_switch_timestamp, after_switch_timestamp)
     print 'good'
 
+    print 'one last check... server process has not exited yet...',
+    assert server_process.poll() is None
+    print 'good'
+
     failed = False
 except Exception as exc:
     print
     print 'some exception occured:'
     traceback.print_exc()
 finally:
-    print 'one last check... server process has not exited yet...',
-    assert server_process.poll() is None
-    print 'good'
-    server_process.terminate()
+    if server_process and server_process.poll() is None:
+        server_process.terminate()
 
     if background_client_process and background_client_process.poll() is None:
         background_client_process.terminate()
