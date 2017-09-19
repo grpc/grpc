@@ -202,7 +202,7 @@ void PollPollsetUntilRequestDone(ArgsStruct *args) {
     GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(&exec_ctx, args->pollset, &worker,
-                          gpr_now(GPR_CLOCK_REALTIME), NSecondDeadline(1)));
+                          grpc_timespec_to_millis_round_up(NSecondDeadline(1))));
     gpr_mu_unlock(args->mu);
     grpc_exec_ctx_finish(&exec_ctx);
   }
