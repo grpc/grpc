@@ -27,6 +27,18 @@
 #include "src/core/lib/support/string.h"
 #include "test/core/util/test_config.h"
 
+extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
+
+static int g_clock = 0;
+
+static gpr_timespec fake_gpr_now(gpr_clock_type clock_type) {
+  return (gpr_timespec){
+      .tv_sec = g_clock, .tv_nsec = 0, .clock_type = clock_type,
+  };
+}
+
+static void inc_time(void) { g_clock += 30; }
+
 static void test_noop(void) {
   gpr_log(GPR_INFO, "test_noop");
   grpc_bdp_estimator est;
@@ -44,6 +56,7 @@ static void test_get_estimate_no_samples(void) {
 static void add_samples(grpc_bdp_estimator *estimator, int64_t *samples,
                         size_t n) {
   grpc_bdp_estimator_add_incoming_bytes(estimator, 1234567);
+  inc_time();
   GPR_ASSERT(grpc_bdp_estimator_need_ping(estimator) == true);
   grpc_bdp_estimator_schedule_ping(estimator);
   grpc_bdp_estimator_start_ping(estimator);
@@ -130,6 +143,7 @@ static void test_get_estimate_random_values(size_t n) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
+  gpr_now_impl = fake_gpr_now;
   grpc_init();
   test_noop();
   test_get_estimate_no_samples();
