@@ -1,0 +1,211 @@
+#!/usr/bin/env python
+
+# run server process, and client process fails/succeeds depending on
+# where we are
+
+
+import traceback
+import subprocess
+import tempfile
+import sys
+import os
+
+# tempfiles to contain the client's cert plus intermediate cert from
+# the two cert hierarchies
+
+client_key_1_fpath = 'cert_hier_1/intermediate/private/client.key.pem'
+client_chain_1_fp = tempfile.NamedTemporaryFile(suffix='.pem')
+client_chain_1_fp.write('''{}
+{}
+'''.format(open('cert_hier_1/intermediate/certs/client.cert.pem').read(),
+           open('cert_hier_1/intermediate/certs/intermediate.cert.pem').read(),
+           ))
+client_chain_1_fp.flush()
+
+client_key_2_fpath = 'cert_hier_2/intermediate/private/client.key.pem'
+client_chain_2_fp = tempfile.NamedTemporaryFile(suffix='.pem')
+client_chain_2_fp.write('''{}
+{}
+'''.format(open('cert_hier_2/intermediate/certs/client.cert.pem').read(),
+           open('cert_hier_2/intermediate/certs/intermediate.cert.pem').read(),
+           ))
+client_chain_2_fp.flush()
+
+switch_creds_on_client_num = 8
+
+devnull_fp = open(os.devnull)
+server_process = subprocess.Popen(
+    ['python', 'greeter_server_with_server_creds_reload.py',
+     str(switch_creds_on_client_num)],
+    stdout=devnull_fp, stderr=devnull_fp)
+# give server a second to initialize
+import time
+time.sleep(1)
+
+server_ca_1_fpath = 'cert_hier_1/certs/ca.cert.pem'
+server_ca_2_fpath = 'cert_hier_2/certs/ca.cert.pem'
+
+# run a "background" client whose channel should work before and
+# continue to work after the server switches credentials
+background_client_process = None
+
+
+def run_client(cmd):
+    # run the command, wait for it to exit, and return its stdout and
+    # stderr. if there's any error in running the command, then None
+    # is returned for both
+    try:
+        p = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return p.communicate()
+    except:
+        pass
+    return None, None
+
+
+# stdout and stderr when the client successfully performs the rpc
+def assert_client_success(stdout, stderr):
+    assert stdout == 'Greeter client received: Hello, you\n', 'unexpected stdout: [{}]'.format(stdout)
+    assert stderr == '', 'unexpected stderr: [{}]'.format(stderr)
+    return
+
+def assert_client_failure(stdout, stderr, client_rejects_server):
+    # "client_rejects_server": true if the failure is because client
+    # rejects server, false if because server rejects client
+    # print 'checking stdout...'
+    assert stdout == '', 'unexpected stdout: {}'.format(stdout)
+    if client_rejects_server:
+        # print 'checking for "handshake failed" msg...'
+        # if server rejects client, then client won't see this msg
+        assert 'Handshake failed with fatal error' in stderr
+    assert not 'Greeter client received' in stderr
+    return
+
+def check_background_client_success(stdout, stderr,
+                                    before_switch_timestamp, after_switch_timestamp):
+    assert stderr == ''
+    lines = stdout.splitlines()
+    assert len(lines) == 2
+    assert lines[0].startswith('Greeter client received: Hello, '), lines[0]
+    assert int(lines[0].split()[4]) < before_switch_timestamp
+    assert lines[1].startswith('Greeter client received: Hello, '), lines[1]
+    assert int(lines[1].split()[4]) > after_switch_timestamp
+
+# for stderr when the client fails we'll have to do some string search
+
+cmd_for_cert_hier_1 = ['python', 'greeter_client.py',
+                       server_ca_1_fpath, client_key_1_fpath,
+                       client_chain_1_fp.name]
+
+failed = True
+
+try:
+    print 'things should work...',
+    stdout, stderr = run_client(cmd_for_cert_hier_1)
+    assert_client_success(stdout, stderr)
+    print 'nice!'
+
+    print 'client should reject server...',
+    # fails because client uses ca2 and so will reject server
+    stdout, stderr = run_client(
+        ['python', 'greeter_client.py',
+         server_ca_2_fpath, client_key_1_fpath, client_chain_1_fp.name])
+    assert_client_failure(stdout, stderr, True)
+    assert 'SSL_ERROR_SSL: error:1000007d:SSL routines:OPENSSL_internal:CERTIFICATE_VERIFY_FAILED' in stderr
+    print 'good'
+
+    print 'should work again...',
+    stdout, stderr = run_client(cmd_for_cert_hier_1)
+    assert_client_success(stdout, stderr)
+    print 'good'
+
+    print 'client should be rejected by server...',
+    # fails because client key/cert2, so server will reject
+    stdout, stderr = run_client(
+        ['python', 'greeter_client.py',
+         server_ca_1_fpath, client_key_2_fpath, client_chain_2_fp.name])
+    assert_client_failure(stdout, stderr, False)
+    print 'good'
+
+    print 'should work again...',
+    stdout, stderr = run_client(cmd_for_cert_hier_1)
+    assert_client_success(stdout, stderr)
+    print 'good'
+
+    print 'should work again...',
+    stdout, stderr = run_client(cmd_for_cert_hier_1)
+    assert_client_success(stdout, stderr)
+    print 'good'
+
+    background_client_process = subprocess.Popen(
+        ['python', 'greeter_client_2.py', server_ca_1_fpath,
+         client_key_1_fpath, client_chain_1_fp.name, "4"],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,)
+
+    time.sleep(1)
+
+    before_switch_timestamp = time.time()
+
+    print
+    print 'moment of truth!! client should reject server because the server switch creds...',
+    stdout, stderr = run_client(cmd_for_cert_hier_1)
+    assert_client_failure(stdout, stderr, True)
+    print 'NICE!!'
+    print
+
+    after_switch_timestamp = time.time()
+
+    print 'now should work again...',
+    stdout, stderr = run_client(
+        ['python', 'greeter_client.py',
+         server_ca_2_fpath, client_key_1_fpath, client_chain_1_fp.name])
+    assert_client_success(stdout, stderr)
+    print 'good'
+
+    print 'and again...',
+    stdout, stderr = run_client(
+        ['python', 'greeter_client.py',
+         server_ca_2_fpath, client_key_1_fpath, client_chain_1_fp.name])
+    assert_client_success(stdout, stderr)
+    print 'good'
+
+    print 'client should be rejected by server...',
+    stdout, stderr = run_client(
+        ['python', 'greeter_client.py',
+         server_ca_2_fpath, client_key_2_fpath, client_chain_2_fp.name])
+    assert_client_failure(stdout, stderr, False)
+    print 'good'
+
+    print 'another check... client should fail...',
+    stdout, stderr = run_client(cmd_for_cert_hier_1)
+    assert_client_failure(stdout, stderr, True)
+    print 'good'
+
+    print 'check background client...',
+    stdout, stderr = background_client_process.communicate()
+    check_background_client_success(stdout, stderr,
+                                    before_switch_timestamp, after_switch_timestamp)
+    print 'good'
+
+    print 'one last check... server process has not exited yet...',
+    assert server_process.poll() is None
+    print 'good'
+
+    failed = False
+except Exception as exc:
+    print
+    print 'some exception occured:'
+    traceback.print_exc()
+finally:
+    if server_process and server_process.poll() is None:
+        server_process.terminate()
+
+    if background_client_process and background_client_process.poll() is None:
+        background_client_process.terminate()
+
+if failed:
+    print 'FAILED'
+    sys.exit(1)
+else:
+    print 'PASSED'
+    sys.exit(0)

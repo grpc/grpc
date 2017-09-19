@@ -167,6 +167,8 @@ struct grpc_server_security_connector {
   void (*add_handshakers)(grpc_exec_ctx *exec_ctx,
                           grpc_server_security_connector *sc,
                           grpc_handshake_manager *handshake_mgr);
+  grpc_get_server_credentials_callback get_server_credentials_cb;
+  void *get_server_credentials_cb_arg;
 };
 
 void grpc_server_security_connector_add_handshakers(
@@ -233,6 +235,8 @@ typedef struct {
 */
 grpc_security_status grpc_ssl_server_security_connector_create(
     grpc_exec_ctx *exec_ctx, const grpc_ssl_server_config *config,
+    grpc_get_server_credentials_callback get_server_credentials_cb,
+    void *get_server_credentials_cb_arg,
     grpc_server_security_connector **sc);
 
 /* Util. */

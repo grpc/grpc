@@ -127,7 +127,10 @@ static grpc_security_status ssl_server_create_security_connector(
     grpc_exec_ctx *exec_ctx, grpc_server_credentials *creds,
     grpc_server_security_connector **sc) {
   grpc_ssl_server_credentials *c = (grpc_ssl_server_credentials *)creds;
-  return grpc_ssl_server_security_connector_create(exec_ctx, &c->config, sc);
+  return grpc_ssl_server_security_connector_create(
+      exec_ctx, &c->config,
+      creds->get_server_credentials_cb, creds->get_server_credentials_cb_arg,
+      sc);
 }
 
 static grpc_server_credentials_vtable ssl_server_vtable = {
@@ -161,12 +164,17 @@ static void ssl_build_server_config(
 
 grpc_server_credentials *grpc_ssl_server_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
-    size_t num_key_cert_pairs, int force_client_auth, void *reserved) {
+    size_t num_key_cert_pairs, int force_client_auth,
+    grpc_get_server_credentials_callback get_server_credentials_cb,
+    void *get_server_credentials_cb_arg,
+    void *reserved)
+{
   return grpc_ssl_server_credentials_create_ex(
       pem_root_certs, pem_key_cert_pairs, num_key_cert_pairs,
       force_client_auth
           ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
           : GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
+      get_server_credentials_cb, get_server_credentials_cb_arg,
       reserved);
 }
 
@@ -174,15 +182,19 @@ grpc_server_credentials *grpc_ssl_server_credentials_create_ex(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
     size_t num_key_cert_pairs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
+    grpc_get_server_credentials_callback get_server_credentials_cb,
+    void *get_server_credentials_cb_arg,
     void *reserved) {
   grpc_ssl_server_credentials *c =
       gpr_zalloc(sizeof(grpc_ssl_server_credentials));
   GRPC_API_TRACE(
       "grpc_ssl_server_credentials_create_ex("
       "pem_root_certs=%s, pem_key_cert_pairs=%p, num_key_cert_pairs=%lu, "
-      "client_certificate_request=%d, reserved=%p)",
-      5, (pem_root_certs, pem_key_cert_pairs, (unsigned long)num_key_cert_pairs,
-          client_certificate_request, reserved));
+      "client_certificate_request=%d, get_server_credentials_cb=%p, "
+      "get_server_credentials_cb_arg=%p, reserved=%p)",
+      7, (pem_root_certs, pem_key_cert_pairs, (unsigned long)num_key_cert_pairs,
+          client_certificate_request, get_server_credentials_cb, get_server_credentials_cb_arg,
+          reserved));
   GPR_ASSERT(reserved == NULL);
   c->base.type = GRPC_CHANNEL_CREDENTIALS_TYPE_SSL;
   gpr_ref_init(&c->base.refcount, 1);
@@ -190,5 +202,7 @@ grpc_server_credentials *grpc_ssl_server_credentials_create_ex(
   ssl_build_server_config(pem_root_certs, pem_key_cert_pairs,
                           num_key_cert_pairs, client_certificate_request,
                           &c->config);
+  c->base.get_server_credentials_cb = get_server_credentials_cb;
+  c->base.get_server_credentials_cb_arg = get_server_credentials_cb_arg;
   return &c->base;
 }

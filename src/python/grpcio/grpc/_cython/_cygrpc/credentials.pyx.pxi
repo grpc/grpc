@@ -248,7 +248,9 @@ def call_credentials_metadata_plugin(CredentialsMetadataPlugin plugin):
   return credentials
 
 def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
-                           bint force_client_auth):
+                           bint force_client_auth,
+                           get_server_credentials_cb=None
+                           ):
   pem_root_certs = str_to_bytes(pem_root_certs)
   cdef char *c_pem_root_certs = NULL
   if pem_root_certs is not None: 
@@ -268,6 +270,12 @@ def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
             sizeof(grpc_ssl_pem_key_cert_pair) *
                 credentials.c_ssl_pem_key_cert_pairs_count
         ))
+  get_server_creds_cb_wrapper = <grpc_get_server_credentials_callback>NULL
+  user_get_server_creds_cb = NULL
+  if get_server_credentials_cb:
+    credentials.references.append(get_server_credentials_cb)
+    get_server_creds_cb_wrapper = _get_server_credentials_cb_wrapper
+    user_get_server_creds_cb = <void*>get_server_credentials_cb
   for i in range(credentials.c_ssl_pem_key_cert_pairs_count):
     credentials.c_ssl_pem_key_cert_pairs[i] = (
         (<SslPemKeyCertPair>pem_key_cert_pairs[i]).c_pair)
@@ -275,6 +283,8 @@ def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
       c_pem_root_certs, credentials.c_ssl_pem_key_cert_pairs,
       credentials.c_ssl_pem_key_cert_pairs_count,
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY if force_client_auth else GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
+      get_server_creds_cb_wrapper,
+      user_get_server_creds_cb,
       NULL)
   return credentials
 

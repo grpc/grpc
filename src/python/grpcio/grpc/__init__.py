@@ -1220,7 +1220,8 @@ def composite_channel_credentials(channel_credentials, *call_credentials):
 
 def ssl_server_credentials(private_key_certificate_chain_pairs,
                            root_certificates=None,
-                           require_client_auth=False):
+                           require_client_auth=False,
+                           get_server_credentials_cb=None):
     """Creates a ServerCredentials for use with an SSL-enabled Server.
 
   Args:
@@ -1249,7 +1250,7 @@ def ssl_server_credentials(private_key_certificate_chain_pairs,
             _cygrpc.server_credentials_ssl(root_certificates, [
                 _cygrpc.SslPemKeyCertPair(key, pem)
                 for key, pem in private_key_certificate_chain_pairs
-            ], require_client_auth))
+            ], require_client_auth, get_server_credentials_cb))
 
 
 def channel_ready_future(channel):

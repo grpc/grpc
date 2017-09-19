@@ -193,7 +193,7 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                   test_server1_cert};
   grpc_server_credentials *ssl_creds =
-      grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1, 0, NULL);
+      grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1, 0, NULL, NULL, NULL);
   grpc_server_credentials_set_auth_metadata_processor(
       ssl_creds, test_processor_create(fail_server_auth_check(server_args)));
   chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);
