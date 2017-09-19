@@ -533,6 +533,7 @@ class PhpLanguage(object):
     self.config = config
     self.args = args
     _check_compiler(self.args.compiler, ['default'])
+    self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
   def test_specs(self):
     return [self.config.job_spec(['src/php/bin/run_tests.sh'],
@@ -545,7 +546,7 @@ class PhpLanguage(object):
     return ['static_c', 'shared_c']
 
   def make_options(self):
-    return []
+    return self._make_options;
 
   def build_steps(self):
     return [['tools/run_tests/helper_scripts/build_php.sh']]
@@ -569,6 +570,7 @@ class Php7Language(object):
     self.config = config
     self.args = args
     _check_compiler(self.args.compiler, ['default'])
+    self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
   def test_specs(self):
     return [self.config.job_spec(['src/php/bin/run_tests.sh'],
@@ -581,7 +583,7 @@ class Php7Language(object):
     return ['static_c', 'shared_c']
 
   def make_options(self):
-    return []
+    return self._make_options;
 
   def build_steps(self):
     return [['tools/run_tests/helper_scripts/build_php.sh']]
