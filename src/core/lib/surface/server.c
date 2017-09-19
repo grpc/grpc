@@ -128,12 +128,10 @@ typedef enum {
 typedef struct request_matcher request_matcher;
 
 struct call_data {
+  gpr_mpscq_node request_link; /* must be first */
   grpc_call *call;
 
-  /** protects state */
-  gpr_mu mu_state;
-  /** the current state of a call - see call_state */
-  call_state state;
+  gpr_atm state;
 
   bool path_set;
   bool host_set;
@@ -162,9 +160,9 @@ struct call_data {
 
 struct request_matcher {
   grpc_server *server;
-  call_data *pending_head;
-  call_data *pending_tail;
-  gpr_locked_mpscq *requests_per_cq;
+  gpr_mpscq inbound_calls;
+  gpr_mpscq requested_calls;
+  gpr_mu mu;
 };
 
 struct registered_method {
@@ -235,6 +233,9 @@ static void fail_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
 /* Before calling maybe_finish_shutdown, we must hold mu_global and not
    hold mu_call */
 static void maybe_finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_server *server);
+
+static bool match_call_request(grpc_exec_ctx *exec_ctx, request_matcher *rm, requested_call** rc_ptr, call_data** calld_ptr);
+static bool match_incoming_call(grpc_exec_ctx *exec_ctx, request_matcher *rm, call_data** calld_ptr, requested_call** rc_ptr);
 
 /*
  * channel broadcaster
@@ -313,19 +314,19 @@ static void channel_broadcaster_shutdown(grpc_exec_ctx *exec_ctx,
 static void request_matcher_init(request_matcher *rm, grpc_server *server) {
   memset(rm, 0, sizeof(*rm));
   rm->server = server;
-  rm->requests_per_cq = gpr_malloc(
-      sizeof(*rm->requests_per_cq) * server->cq_count);
-  for (size_t i = 0; i < server->cq_count; i++) {
-    gpr_locked_mpscq_init(&rm->requests_per_cq[i]);
-  }
+  gpr_mpscq_init(&rm->inbound_calls);
+  gpr_mpscq_init(&rm->requested_calls);
+  gpr_mu_init(&rm->mu);
 }
 
 static void request_matcher_destroy(request_matcher *rm) {
-  for (size_t i = 0; i < rm->server->cq_count; i++) {
-    GPR_ASSERT(gpr_locked_mpscq_pop(&rm->requests_per_cq[i]) == NULL);
-    gpr_locked_mpscq_destroy(&rm->requests_per_cq[i]);
-  }
-  gpr_free(rm->requests_per_cq);
+  gpr_mu_lock(&rm->mu);
+  GPR_ASSERT(gpr_mpscq_pop(&rm->inbound_calls) == NULL);
+  GPR_ASSERT(gpr_mpscq_pop(&rm->requested_calls) == NULL);
+  gpr_mpscq_destroy(&rm->inbound_calls);
+  gpr_mpscq_destroy(&rm->requested_calls);
+  gpr_mu_unlock(&rm->mu);
+  gpr_mu_destroy(&rm->mu);
 }
 
 static void kill_zombie(grpc_exec_ctx *exec_ctx, void *elem,
@@ -335,18 +336,20 @@ static void kill_zombie(grpc_exec_ctx *exec_ctx, void *elem,
 
 static void request_matcher_zombify_all_pending_calls(grpc_exec_ctx *exec_ctx,
                                                       request_matcher *rm) {
-  while (rm->pending_head) {
-    call_data *calld = rm->pending_head;
-    rm->pending_head = calld->pending_next;
-    gpr_mu_lock(&calld->mu_state);
-    calld->state = ZOMBIED;
-    gpr_mu_unlock(&calld->mu_state);
-    GRPC_CLOSURE_INIT(
-        &calld->kill_zombie_closure, kill_zombie,
-        grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0),
-        grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_SCHED(exec_ctx, &calld->kill_zombie_closure, GRPC_ERROR_NONE);
+  gpr_mu_lock(&rm->mu);
+  bool end = false;
+  while(!end) {
+      call_data* calld = (call_data*) gpr_mpscq_pop_and_check_end(&rm->inbound_calls, &end);
+      if (calld != NULL) {
+        gpr_atm_no_barrier_store(&calld->state, ZOMBIED);
+        GRPC_CLOSURE_INIT(
+            &calld->kill_zombie_closure, kill_zombie,
+            grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0),
+            grpc_schedule_on_exec_ctx);
+        GRPC_CLOSURE_SCHED(exec_ctx, &calld->kill_zombie_closure, GRPC_ERROR_NONE);
+      }
   }
+  gpr_mu_unlock(&rm->mu);
 }
 
 static void request_matcher_kill_requests(grpc_exec_ctx *exec_ctx,
@@ -354,18 +357,15 @@ static void request_matcher_kill_requests(grpc_exec_ctx *exec_ctx,
                                           request_matcher *rm,
                                           grpc_error *error) {
   requested_call *rc;
-  for (size_t i = 0; i < server->cq_count; i++) {
-    /* Here we know:
-       1. no requests are being added (since the server is shut down)
-       2. no other threads are pulling (since the shut down process is single
-          threaded)
-       So, we can ignore the queue lock and just pop, with the guarantee that a
-       NULL returned here truly means that the queue is empty */
-    while ((rc = (requested_call *)gpr_mpscq_pop(
-                &rm->requests_per_cq[i].queue)) != NULL) {
-      fail_call(exec_ctx, server, i, rc, GRPC_ERROR_REF(error));
+  bool end = false;
+  gpr_mu_lock(&rm->mu);
+  do {
+    rc = (requested_call*) gpr_mpscq_pop_and_check_end(&rm->requested_calls, &end);
+    if (rc != NULL) {
+      fail_call(exec_ctx, server, rc->cq_idx, rc, GRPC_ERROR_REF(error));
     }
-  }
+  } while (!end);
+  gpr_mu_unlock(&rm->mu);
   GRPC_ERROR_UNREF(error);
 }
 
@@ -494,14 +494,11 @@ static void publish_new_rpc(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_error *error) {
   grpc_call_element *call_elem = (grpc_call_element *)arg;
   call_data *calld = (call_data *)call_elem->call_data;
-  channel_data *chand = (channel_data *)call_elem->channel_data;
   request_matcher *rm = calld->matcher;
   grpc_server *server = rm->server;
 
   if (error != GRPC_ERROR_NONE || gpr_atm_acq_load(&server->shutdown_flag)) {
-    gpr_mu_lock(&calld->mu_state);
-    calld->state = ZOMBIED;
-    gpr_mu_unlock(&calld->mu_state);
+    gpr_atm_no_barrier_store(&calld->state, ZOMBIED);
     GRPC_CLOSURE_INIT(
         &calld->kill_zombie_closure, kill_zombie,
         grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0),
@@ -511,36 +508,11 @@ static void publish_new_rpc(grpc_exec_ctx *exec_ctx, void *arg,
     return;
   }
 
-  for (size_t i = 0; i < server->cq_count; i++) {
-    size_t cq_idx = (chand->cq_idx + i) % server->cq_count;
-    requested_call *rc =
-        (requested_call *)gpr_locked_mpscq_pop(&rm->requests_per_cq[cq_idx]);
-    if (rc == NULL) {
-      continue;
-    } else {
-      GRPC_STATS_INC_SERVER_CQS_CHECKED(exec_ctx, i);
-      gpr_mu_lock(&calld->mu_state);
-      calld->state = ACTIVATED;
-      gpr_mu_unlock(&calld->mu_state);
-      publish_call(exec_ctx, server, calld, cq_idx, rc);
-      return; /* early out */
-    }
+  requested_call* rc;
+  if (match_incoming_call(exec_ctx, rm, &calld, &rc)) {
+    gpr_atm_no_barrier_store(&calld->state, ACTIVATED);
+    publish_call(exec_ctx, server, calld, rc->cq_idx, rc);
   }
-
-  /* no cq to take the request found: queue it on the slow list */
-  GRPC_STATS_INC_SERVER_SLOWPATH_REQUESTS_QUEUED(exec_ctx);
-  gpr_mu_lock(&server->mu_call);
-  gpr_mu_lock(&calld->mu_state);
-  calld->state = PENDING;
-  gpr_mu_unlock(&calld->mu_state);
-  if (rm->pending_head == NULL) {
-    rm->pending_tail = rm->pending_head = calld;
-  } else {
-    rm->pending_tail->pending_next = calld;
-    rm->pending_tail = calld;
-  }
-  calld->pending_next = NULL;
-  gpr_mu_unlock(&server->mu_call);
 }
 
 static void finish_start_new_rpc(
@@ -550,9 +522,7 @@ static void finish_start_new_rpc(
   call_data *calld = (call_data *)elem->call_data;
 
   if (gpr_atm_acq_load(&server->shutdown_flag)) {
-    gpr_mu_lock(&calld->mu_state);
-    calld->state = ZOMBIED;
-    gpr_mu_unlock(&calld->mu_state);
+    gpr_atm_no_barrier_store(&calld->state, ZOMBIED);
     GRPC_CLOSURE_INIT(&calld->kill_zombie_closure, kill_zombie, elem,
                       grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_SCHED(exec_ctx, &calld->kill_zombie_closure, GRPC_ERROR_NONE);
@@ -781,21 +751,16 @@ static void got_initial_metadata(grpc_exec_ctx *exec_ctx, void *ptr,
   if (error == GRPC_ERROR_NONE) {
     start_new_rpc(exec_ctx, elem);
   } else {
-    gpr_mu_lock(&calld->mu_state);
-    if (calld->state == NOT_STARTED) {
-      calld->state = ZOMBIED;
-      gpr_mu_unlock(&calld->mu_state);
+    if (gpr_atm_full_cas(&calld->state, NOT_STARTED, ZOMBIED)) {
       GRPC_CLOSURE_INIT(&calld->kill_zombie_closure, kill_zombie, elem,
                         grpc_schedule_on_exec_ctx);
       GRPC_CLOSURE_SCHED(exec_ctx, &calld->kill_zombie_closure,
                          GRPC_ERROR_NONE);
-    } else if (calld->state == PENDING) {
-      calld->state = ZOMBIED;
-      gpr_mu_unlock(&calld->mu_state);
+    } else {
+      //TODO Can the call state be activated here?
+      gpr_atm_no_barrier_store(&calld->state, ZOMBIED);
       /* zombied call will be destroyed when it's removed from the pending
          queue... later */
-    } else {
-      gpr_mu_unlock(&calld->mu_state);
     }
   }
 }
@@ -859,7 +824,6 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   memset(calld, 0, sizeof(call_data));
   calld->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
   calld->call = grpc_call_from_top_element(elem);
-  gpr_mu_init(&calld->mu_state);
 
   GRPC_CLOSURE_INIT(&calld->server_on_recv_initial_metadata,
                     server_on_recv_initial_metadata, elem,
@@ -885,8 +849,6 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   }
   grpc_metadata_array_destroy(&calld->initial_metadata);
   grpc_byte_buffer_destroy(calld->payload);
-
-  gpr_mu_destroy(&calld->mu_state);
 
   server_unref(exec_ctx, chand->server);
 }
@@ -1326,11 +1288,91 @@ void grpc_server_add_listener(
   server->listeners = l;
 }
 
+static bool match_incoming_call(grpc_exec_ctx *exec_ctx, request_matcher *rm, call_data** calld_ptr, requested_call** rc_ptr) {
+
+  call_data* calld = *calld_ptr;
+  requested_call* rc = *rc_ptr;
+  if (gpr_mpscq_push(&rm->inbound_calls, &calld->request_link)) {
+    bool requested_empty = false;
+    bool inbound_empty = false;
+    gpr_mu_lock(&rm->mu);
+    while((rc = (requested_call*) gpr_mpscq_pop_and_check_end(&rm->requested_calls, &requested_empty)) == NULL){
+      if (rc != NULL) {
+          break;
+      } else if (requested_empty) {
+        gpr_mu_unlock(&rm->mu);
+        return false;
+      }
+    }
+    while((calld = (call_data*) gpr_mpscq_pop_and_check_end(&rm->inbound_calls, &inbound_empty)) == NULL){
+      if (calld != NULL || inbound_empty) {
+          break;
+      }
+    }
+    gpr_mu_unlock(&rm->mu);
+    *rc_ptr = rc;
+
+    // The requested call we added got consumed.  Re-queue the incoming call we popped
+    if (inbound_empty) {
+      return match_call_request(exec_ctx, rm, rc_ptr, calld_ptr);
+    }
+    gpr_atm_no_barrier_store(&calld->state, ACTIVATED);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+
+static bool match_call_request(grpc_exec_ctx *exec_ctx, request_matcher *rm, requested_call** rc_ptr, call_data** calld_ptr) {
+
+  requested_call* rc = *rc_ptr;
+  call_data* calld = *calld_ptr;
+  if (gpr_mpscq_push(&rm->requested_calls, &rc->request_link)) {
+    bool inbound_empty = false;
+    bool requested_empty = false;
+    gpr_mu_lock(&rm->mu);
+    while((calld = (call_data*) gpr_mpscq_pop_and_check_end(&rm->inbound_calls, &inbound_empty)) == NULL){
+      if (calld != NULL) {
+        // Anything popped off the queue should be PENDING or ZOMBIED
+        if (gpr_atm_no_barrier_load(&calld->state) == ZOMBIED) {
+          GRPC_CLOSURE_INIT(
+              &calld->kill_zombie_closure, kill_zombie,
+              grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0),
+              grpc_schedule_on_exec_ctx);
+          GRPC_CLOSURE_SCHED(exec_ctx, &calld->kill_zombie_closure,
+                            GRPC_ERROR_NONE);
+        } else {
+          break;
+        }
+      } else if (inbound_empty) {
+        gpr_mu_unlock(&rm->mu);
+        return false;
+      }
+    }
+    while((rc = (requested_call*) gpr_mpscq_pop_and_check_end(&rm->requested_calls, &requested_empty)) == NULL){
+      if (rc != NULL || requested_empty) {
+          break;
+      }
+    }
+    gpr_mu_unlock(&rm->mu);
+    *calld_ptr = calld;
+
+    // The requested call we added got consumed.  Re-queue the incoming call we popped
+    if (requested_empty) {
+      return match_incoming_call(exec_ctx, rm, calld_ptr, rc_ptr);
+    }
+    return true;
+  }
+  return false;
+}
+
 static grpc_call_error queue_call_request(grpc_exec_ctx *exec_ctx,
                                           grpc_server *server, size_t cq_idx,
                                           requested_call *rc) {
   call_data *calld = NULL;
   request_matcher *rm = NULL;
+  rc->cq_idx = cq_idx;
   if (gpr_atm_acq_load(&server->shutdown_flag)) {
     fail_call(exec_ctx, server, cq_idx, rc,
               GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
@@ -1344,33 +1386,9 @@ static grpc_call_error queue_call_request(grpc_exec_ctx *exec_ctx,
       rm = &rc->data.registered.method->matcher;
       break;
   }
-  if (gpr_locked_mpscq_push(&rm->requests_per_cq[cq_idx], &rc->request_link)) {
-    /* this was the first queued request: we need to lock and start
-       matching calls */
-    gpr_mu_lock(&server->mu_call);
-    while ((calld = rm->pending_head) != NULL) {
-      rc = (requested_call *)gpr_locked_mpscq_pop(&rm->requests_per_cq[cq_idx]);
-      if (rc == NULL) break;
-      rm->pending_head = calld->pending_next;
-      gpr_mu_unlock(&server->mu_call);
-      gpr_mu_lock(&calld->mu_state);
-      if (calld->state == ZOMBIED) {
-        gpr_mu_unlock(&calld->mu_state);
-        GRPC_CLOSURE_INIT(
-            &calld->kill_zombie_closure, kill_zombie,
-            grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0),
-            grpc_schedule_on_exec_ctx);
-        GRPC_CLOSURE_SCHED(exec_ctx, &calld->kill_zombie_closure,
-                           GRPC_ERROR_NONE);
-      } else {
-        GPR_ASSERT(calld->state == PENDING);
-        calld->state = ACTIVATED;
-        gpr_mu_unlock(&calld->mu_state);
-        publish_call(exec_ctx, server, calld, cq_idx, rc);
-      }
-      gpr_mu_lock(&server->mu_call);
-    }
-    gpr_mu_unlock(&server->mu_call);
+  if (match_call_request(exec_ctx, rm, &rc, &calld)) {
+    gpr_atm_no_barrier_store(&calld->state, ACTIVATED);
+    publish_call(exec_ctx, server, calld, rc->cq_idx, rc);
   }
   return GRPC_CALL_OK;
 }
