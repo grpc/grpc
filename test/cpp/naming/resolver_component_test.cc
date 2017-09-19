@@ -267,7 +267,9 @@ void CheckResolverResultLocked(grpc_exec_ctx *exec_ctx, void *argsp,
   }
   EXPECT_THAT(args->expected_addrs, UnorderedElementsAreArray(found_lb_addrs));
   CheckServiceConfigResultLocked(channel_args, args);
-  CheckLBPolicyResultLocked(channel_args, args);
+  if (args->expected_service_config_string == "") {
+    CheckLBPolicyResultLocked(channel_args, args);
+  }
   gpr_atm_rel_store(&args->done_atm, 1);
   gpr_mu_lock(args->mu);
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, NULL));

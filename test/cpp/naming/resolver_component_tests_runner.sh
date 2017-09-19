@@ -168,6 +168,14 @@ $FLAGS_test_bin_path \
   --local_dns_server_address=127.0.0.1:$FLAGS_test_dns_server_port &
 wait $! || EXIT_CODE=1
 
+$FLAGS_test_bin_path \
+  --target_name='ipv4-config-causing-fallback-to-tcp.resolver-tests.grpctestingexp.' \
+  --expected_addrs='1.2.3.4:443,False' \
+  --expected_chosen_service_config='{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooThree","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFour","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFive","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSix","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSeven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEight","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooNine","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTen","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEleven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]}]}' \
+  --expected_lb_policy='' \
+  --local_dns_server_address=127.0.0.1:$FLAGS_test_dns_server_port &
+wait $! || EXIT_CODE=1
+
 kill -SIGTERM $DNS_SERVER_PID || true
 wait
 exit $EXIT_CODE

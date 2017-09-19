@@ -137,11 +137,6 @@ resolver_component_tests:
     - {TTL: '2100', data: '2607:f8b0:400a:801::1002', type: AAAA}
     srv-ipv6-target-has-backend-and-balancer:
     - {TTL: '2100', data: '2607:f8b0:400a:801::1002', type: AAAA}
-
-resolver_component_tests_TODO:
-- 'TODO: enable this large-txt-record test once working. (it is much longer than 512
-  bytes, likely to cause use of TCP even if max payload for UDP is changed somehow,
-  e.g. via notes in RFC 2671)'
 - expected_addrs:
   - {address: '1.2.3.4:443', is_balancer: false}
   expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooThree","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFour","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFive","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSix","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSeven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEight","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooNine","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTen","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEleven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]}]}'
