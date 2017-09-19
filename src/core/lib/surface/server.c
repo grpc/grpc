@@ -1037,7 +1037,7 @@ void grpc_server_start(grpc_server *server) {
   }
   request_matcher_init(&server->unregistered_request_matcher, server);
   for (registered_method *rm = server->registered_methods; rm; rm = rm->next) {
-    request_matcher_init(&rm->request_matcher, server);
+    request_matcher_init(&rm->matcher, server);
   }
 
   server_ref(server);
