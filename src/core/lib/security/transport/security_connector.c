@@ -545,8 +545,8 @@ static void ssl_server_add_handshakers(grpc_exec_ctx *exec_ctx,
       const grpc_ssl_server_config *config =
         &((grpc_ssl_server_credentials*)server_creds)->config;
 
-      tsi_ssl_server_handshaker_factory_destroy(c->handshaker_factory);
-      c->handshaker_factory = NULL;
+      tsi_ssl_server_handshaker_factory_unref(c->server_handshaker_factory);
+      c->server_handshaker_factory = NULL;
 
       // TODO: this alpn setup logic is now in 3 places, should go
       // into a function
@@ -563,7 +563,7 @@ static void ssl_server_add_handshakers(grpc_exec_ctx *exec_ctx,
         config->pem_root_certs, get_tsi_client_certificate_request_type(
                                   config->client_certificate_request),
         ssl_cipher_suites(), alpn_protocol_strings, (uint16_t)num_alpn_protocols,
-        &c->handshaker_factory);
+        &c->server_handshaker_factory);
       if (result != TSI_OK) {
         gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
                 tsi_result_to_string(result));
