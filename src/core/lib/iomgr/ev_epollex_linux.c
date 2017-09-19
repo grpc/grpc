@@ -561,6 +561,7 @@ static void do_kick_all(grpc_exec_ctx *exec_ctx, void *arg,
   if (pollset->root_worker != NULL) {
     grpc_pollset_worker *worker = pollset->root_worker;
     do {
+      GRPC_STATS_INC_POLLSET_KICK(exec_ctx);
       if (worker->pollable_obj != &pollset->pollable_obj) {
         gpr_mu_lock(&worker->pollable_obj->po.mu);
       }
@@ -665,9 +666,10 @@ static grpc_error *pollset_kick_inner(grpc_pollset *pollset, pollable *p,
 }
 
 /* p->po.mu must be held before calling this function */
-static grpc_error *pollset_kick(grpc_pollset *pollset,
+static grpc_error *pollset_kick(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                                 grpc_pollset_worker *specific_worker) {
   pollable *p = pollset->current_pollable_obj;
+  GRPC_STATS_INC_POLLSET_KICK(exec_ctx);
   if (p != &pollset->pollable_obj) {
     gpr_mu_lock(&p->po.mu);
   }

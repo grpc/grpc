@@ -152,6 +152,36 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_pollset_kick", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kicked_without_poller", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kicked_again", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kick_wakeup_fd", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kick_wakeup_cv", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kick_own_thread", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_histogram_slow_lookups", 
         "type": "INTEGER"
       }, 
@@ -409,6 +439,56 @@
         "mode": "NULLABLE", 
         "name": "core_server_slowpath_requests_queued", 
         "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned_99p", 
+        "type": "FLOAT"
       }, 
       {
         "mode": "NULLABLE", 
@@ -754,6 +834,36 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_pollset_kick", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kicked_without_poller", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kicked_again", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kick_wakeup_fd", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kick_wakeup_cv", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kick_own_thread", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_histogram_slow_lookups", 
         "type": "INTEGER"
       }, 
@@ -1011,6 +1121,56 @@
         "mode": "NULLABLE", 
         "name": "core_server_slowpath_requests_queued", 
         "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned_99p", 
+        "type": "FLOAT"
       }, 
       {
         "mode": "NULLABLE", 

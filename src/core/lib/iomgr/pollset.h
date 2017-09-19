@@ -76,7 +76,7 @@ grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
 /* Break one polling thread out of polling work for this pollset.
    If specific_worker is non-NULL, then kick that worker. */
-grpc_error *grpc_pollset_kick(grpc_pollset *pollset,
+grpc_error *grpc_pollset_kick(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               grpc_pollset_worker *specific_worker)
     GRPC_MUST_USE_RESULT;
 
