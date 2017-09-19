@@ -14,9 +14,10 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  FROM ubuntu:15.10
+  FROM debian:jessie
   
   <%include file="../clang_format.include"/>
   ADD clang_format_all_the_things.sh /
   CMD ["echo 'Run with tools/distrib/clang_format_code.sh'"]
+  
   
