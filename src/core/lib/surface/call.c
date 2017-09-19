@@ -875,7 +875,7 @@ static void set_encodings_accepted_by_peer(grpc_exec_ctx *exec_ctx,
 
   accept_encoding_slice = GRPC_MDVALUE(mdel);
   grpc_slice_buffer_init(&accept_encoding_parts);
-  grpc_slice_split(accept_encoding_slice, ",", &accept_encoding_parts);
+  grpc_slice_split_without_space(accept_encoding_slice, ",", &accept_encoding_parts);
 
   GPR_BITSET(encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
   for (i = 0; i < accept_encoding_parts.count; i++) {
