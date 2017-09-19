@@ -1263,8 +1263,8 @@ grpc_channel *grpc_inproc_channel_create(grpc_server *server,
 
   grpc_arg default_authority_arg;
   default_authority_arg.type = GRPC_ARG_STRING;
-  default_authority_arg.key = GRPC_ARG_DEFAULT_AUTHORITY;
-  default_authority_arg.value.string = "inproc.authority";
+  default_authority_arg.key = (char *)GRPC_ARG_DEFAULT_AUTHORITY;
+  default_authority_arg.value.string = (char *)"inproc.authority";
   grpc_channel_args *client_args =
       grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
 

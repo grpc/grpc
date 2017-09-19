@@ -49,7 +49,7 @@ static void assert_passthrough(grpc_slice value,
   grpc_slice_buffer output;
   grpc_slice final;
   int was_compressed;
-  char *algorithm_name;
+  const char *algorithm_name;
 
   GPR_ASSERT(grpc_compression_algorithm_name(algorithm, &algorithm_name) != 0);
   gpr_log(

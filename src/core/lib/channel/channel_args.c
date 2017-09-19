@@ -243,7 +243,7 @@ grpc_channel_args *grpc_channel_args_set_compression_algorithm(
   GPR_ASSERT(algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT);
   grpc_arg tmp;
   tmp.type = GRPC_ARG_INTEGER;
-  tmp.key = GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM;
+  tmp.key = (char *)GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM;
   tmp.value.integer = algorithm;
   return grpc_channel_args_copy_and_add(a, &tmp, 1);
 }
@@ -253,7 +253,7 @@ grpc_channel_args *grpc_channel_args_set_stream_compression_algorithm(
   GPR_ASSERT(algorithm < GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT);
   grpc_arg tmp;
   tmp.type = GRPC_ARG_INTEGER;
-  tmp.key = GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM;
+  tmp.key = (char *)GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM;
   tmp.value.integer = algorithm;
   return grpc_channel_args_copy_and_add(a, &tmp, 1);
 }
@@ -308,7 +308,7 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
 
   if (grpc_channel_args_get_compression_algorithm(*a) == algorithm &&
       state == 0) {
-    char *algo_name = NULL;
+    const char *algo_name = NULL;
     GPR_ASSERT(grpc_compression_algorithm_name(algorithm, &algo_name) != 0);
     gpr_log(GPR_ERROR,
             "Tried to disable default compression algorithm '%s'. The "
@@ -324,7 +324,7 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
     /* create a new arg */
     grpc_arg tmp;
     tmp.type = GRPC_ARG_INTEGER;
-    tmp.key = GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET;
+    tmp.key = (char *)GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET;
     /* all enabled by default */
     tmp.value.integer = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
     if (state != 0) {
@@ -349,7 +349,7 @@ grpc_channel_args *grpc_channel_args_stream_compression_algorithm_set_state(
 
   if (grpc_channel_args_get_stream_compression_algorithm(*a) == algorithm &&
       state == 0) {
-    char *algo_name = NULL;
+    const char *algo_name = NULL;
     GPR_ASSERT(grpc_stream_compression_algorithm_name(algorithm, &algo_name) !=
                0);
     gpr_log(GPR_ERROR,
@@ -366,7 +366,7 @@ grpc_channel_args *grpc_channel_args_stream_compression_algorithm_set_state(
     /* create a new arg */
     grpc_arg tmp;
     tmp.type = GRPC_ARG_INTEGER;
-    tmp.key = GRPC_STREAM_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET;
+    tmp.key = (char *)GRPC_STREAM_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET;
     /* all enabled by default */
     tmp.value.integer = (1u << GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT) - 1;
     if (state != 0) {

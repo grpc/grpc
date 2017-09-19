@@ -85,7 +85,7 @@ static grpc_error *blocking_resolve_address_impl(
 
   if (s != 0) {
     /* Retry if well-known service name is recognized */
-    char *svc[][2] = {{"http", "80"}, {"https", "443"}};
+    const char *svc[][2] = {{"http", "80"}, {"https", "443"}};
     for (i = 0; i < GPR_ARRAY_SIZE(svc); i++) {
       if (strcmp(port, svc[i][0]) == 0) {
         GRPC_SCHEDULING_START_BLOCKING_REGION;

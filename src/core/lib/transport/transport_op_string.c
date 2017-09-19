@@ -196,7 +196,7 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
   return out;
 }
 
-void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
+void grpc_call_log_op(const char *file, int line, gpr_log_severity severity,
                       grpc_call_element *elem,
                       grpc_transport_stream_op_batch *op) {
   char *str = grpc_transport_stream_op_batch_string(op);

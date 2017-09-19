@@ -1512,7 +1512,7 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
     } else if (grpc_compression_options_is_stream_compression_algorithm_enabled(
                    &compression_options, algo) == 0) {
       /* check if algorithm is supported by current channel config */
-      char *algo_name = NULL;
+      const char *algo_name = NULL;
       grpc_stream_compression_algorithm_name(algo, &algo_name);
       gpr_asprintf(&error_msg, "Stream compression algorithm '%s' is disabled.",
                    algo_name);
@@ -1526,7 +1526,7 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
     if (!GPR_BITGET(call->stream_encodings_accepted_by_peer,
                     call->incoming_stream_compression_algorithm)) {
       if (GRPC_TRACER_ON(grpc_compression_trace)) {
-        char *algo_name = NULL;
+        const char *algo_name = NULL;
         grpc_stream_compression_algorithm_name(
             call->incoming_stream_compression_algorithm, &algo_name);
         gpr_log(
@@ -1553,7 +1553,7 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
     } else if (grpc_compression_options_is_algorithm_enabled(
                    &compression_options, algo) == 0) {
       /* check if algorithm is supported by current channel config */
-      char *algo_name = NULL;
+      const char *algo_name = NULL;
       grpc_compression_algorithm_name(algo, &algo_name);
       gpr_asprintf(&error_msg, "Compression algorithm '%s' is disabled.",
                    algo_name);
@@ -1569,7 +1569,7 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
     if (!GPR_BITGET(call->encodings_accepted_by_peer,
                     call->incoming_compression_algorithm)) {
       if (GRPC_TRACER_ON(grpc_compression_trace)) {
-        char *algo_name = NULL;
+        const char *algo_name = NULL;
         grpc_compression_algorithm_name(call->incoming_compression_algorithm,
                                         &algo_name);
         gpr_log(GPR_ERROR,

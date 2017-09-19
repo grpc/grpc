@@ -68,7 +68,7 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
   }
   if (t->ping_state.pings_before_data_required == 0 &&
       t->ping_policy.max_pings_without_data != 0) {
-    /* need to send something of substance before sending a ping again */
+    /* need to receive something of substance before sending a ping again */
     if (GRPC_TRACER_ON(grpc_http_trace) ||
         GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_DEBUG, "Ping delayed [%p]: too many recent pings: %d/%d",
@@ -77,12 +77,19 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
     }
     return;
   }
-  grpc_millis elapsed =
-      grpc_exec_ctx_now(exec_ctx) - t->ping_state.last_ping_sent_time;
-  /*gpr_log(GPR_DEBUG, "elapsed:%d.%09d min:%d.%09d", (int)elapsed.tv_sec,
-          elapsed.tv_nsec, (int)t->ping_policy.min_time_between_pings.tv_sec,
-          (int)t->ping_policy.min_time_between_pings.tv_nsec);*/
-  if (elapsed < t->ping_policy.min_time_between_pings) {
+  grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+  grpc_millis next_allowed_ping =
+      t->ping_state.last_ping_sent_time +
+      t->ping_policy.min_sent_ping_interval_without_data;
+  if (t->keepalive_permit_without_calls == 0 &&
+      grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
+    next_allowed_ping =
+        t->ping_recv_state.last_ping_recv_time + 7200 * GPR_MS_PER_SEC;
+  }
+  /* gpr_log(GPR_DEBUG, "next_allowed_ping:%d.%09d now:%d.%09d",
+          (int)next_allowed_ping.tv_sec, (int)next_allowed_ping.tv_nsec,
+          (int)now.tv_sec, (int)now.tv_nsec); */
+  if (next_allowed_ping > now) {
     /* not enough elapsed time between successive pings */
     if (GRPC_TRACER_ON(grpc_http_trace) ||
         GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
@@ -93,9 +100,7 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
     if (!t->ping_state.is_delayed_ping_timer_set) {
       t->ping_state.is_delayed_ping_timer_set = true;
       grpc_timer_init(exec_ctx, &t->ping_state.delayed_ping_timer,
-                      t->ping_state.last_ping_sent_time +
-                          t->ping_policy.min_time_between_pings,
-                      &t->retry_initiate_ping_locked);
+                      next_allowed_ping, &t->retry_initiate_ping_locked);
     }
     return;
   }
@@ -117,7 +122,13 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
   grpc_slice_buffer_add(&t->outbuf,
                         grpc_chttp2_ping_create(false, pq->inflight_id));
   GRPC_STATS_INC_HTTP2_PINGS_SENT(exec_ctx);
-  t->ping_state.last_ping_sent_time = grpc_exec_ctx_now(exec_ctx);
+  t->ping_state.last_ping_sent_time = now;
+  if (GRPC_TRACER_ON(grpc_http_trace) ||
+      GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
+    gpr_log(GPR_DEBUG, "Ping sent [%p]: %d/%d", t->peer_string,
+            t->ping_state.pings_before_data_required,
+            t->ping_policy.max_pings_without_data);
+  }
   t->ping_state.pings_before_data_required -=
       (t->ping_state.pings_before_data_required != 0);
 }
@@ -256,8 +267,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             .stats = &s->stats.outgoing};
         grpc_chttp2_encode_header(exec_ctx, &t->hpack_compressor, NULL, 0,
                                   s->send_initial_metadata, &hopt, &t->outbuf);
-        t->ping_state.pings_before_data_required =
-            t->ping_policy.max_pings_without_data;
+        now_writing = true;
         if (!t->is_client) {
           t->ping_recv_state.last_ping_recv_time = 0;
           t->ping_recv_state.ping_strikes = 0;
@@ -296,8 +306,6 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       grpc_slice_buffer_add(
           &t->outbuf, grpc_chttp2_window_update_create(s->id, stream_announce,
                                                        &s->stats.outgoing));
-      t->ping_state.pings_before_data_required =
-          t->ping_policy.max_pings_without_data;
       if (!t->is_client) {
         t->ping_recv_state.last_ping_recv_time = 0;
         t->ping_recv_state.ping_strikes = 0;
@@ -373,8 +381,6 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                                           send_bytes);
             s->sending_bytes += send_bytes;
           }
-          t->ping_state.pings_before_data_required =
-              t->ping_policy.max_pings_without_data;
           if (!t->is_client) {
             t->ping_recv_state.last_ping_recv_time = 0;
             t->ping_recv_state.ping_strikes = 0;
@@ -484,8 +490,6 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_slice_buffer_add(
         &t->outbuf, grpc_chttp2_window_update_create(0, transport_announce,
                                                      &throwaway_stats));
-    t->ping_state.pings_before_data_required =
-        t->ping_policy.max_pings_without_data;
     if (!t->is_client) {
       t->ping_recv_state.last_ping_recv_time = 0;
       t->ping_recv_state.ping_strikes = 0;

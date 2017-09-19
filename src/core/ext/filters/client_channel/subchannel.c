@@ -808,6 +808,6 @@ const char *grpc_get_subchannel_address_uri_arg(const grpc_channel_args *args) {
 
 grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address *addr) {
   return grpc_channel_arg_string_create(
-      GRPC_ARG_SUBCHANNEL_ADDRESS,
+      (char *)GRPC_ARG_SUBCHANNEL_ADDRESS,
       addr->len > 0 ? grpc_sockaddr_to_uri(addr) : gpr_strdup(""));
 }
