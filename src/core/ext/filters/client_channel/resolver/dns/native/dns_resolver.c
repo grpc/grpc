@@ -150,6 +150,8 @@ static void dns_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_channel_args *result = NULL;
   GPR_ASSERT(r->resolving);
   r->resolving = false;
+  GRPC_ERROR_REF(error);
+  error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(r->name_to_resolve));
   if (r->addresses != NULL) {
     grpc_lb_addresses *addresses = grpc_lb_addresses_create(
         r->addresses->naddrs, NULL /* user_data_vtable */);
@@ -186,6 +188,7 @@ static void dns_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
   r->resolved_result = result;
   r->resolved_version++;
   dns_maybe_finish_next_locked(exec_ctx, r);
+  GRPC_ERROR_UNREF(error);
 
   GRPC_RESOLVER_UNREF(exec_ctx, &r->base, "dns-resolving");
 }

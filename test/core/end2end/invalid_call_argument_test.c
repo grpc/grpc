@@ -92,7 +92,7 @@ static void prepare_test(int is_client) {
     op = g_state.ops;
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->data.send_initial_metadata.count = 0;
-    op->flags = 0;
+    op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
     op->reserved = NULL;
     op++;
     GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(g_state.call, g_state.ops,
