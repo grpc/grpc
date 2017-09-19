@@ -62,7 +62,8 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
     /* ping already in-flight: wait */
     if (GRPC_TRACER_ON(grpc_http_trace) ||
         GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_DEBUG, "Ping delayed [%p]: already pinging", t->peer_string);
+      gpr_log(GPR_DEBUG, "%s: Ping delayed [%p]: already pinging",
+              t->is_client ? "CLIENT" : "SERVER", t->peer_string);
     }
     return;
   }
@@ -71,8 +72,9 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
     /* need to receive something of substance before sending a ping again */
     if (GRPC_TRACER_ON(grpc_http_trace) ||
         GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_DEBUG, "Ping delayed [%p]: too many recent pings: %d/%d",
-              t->peer_string, t->ping_state.pings_before_data_required,
+      gpr_log(GPR_DEBUG, "%s: Ping delayed [%p]: too many recent pings: %d/%d",
+              t->is_client ? "CLIENT" : "SERVER", t->peer_string,
+              t->ping_state.pings_before_data_required,
               t->ping_policy.max_pings_without_data);
     }
     return;
@@ -94,8 +96,8 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
     if (GRPC_TRACER_ON(grpc_http_trace) ||
         GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_DEBUG,
-              "Ping delayed [%p]: not enough time elapsed since last ping",
-              t->peer_string);
+              "%s: Ping delayed [%p]: not enough time elapsed since last ping",
+              t->is_client ? "CLIENT" : "SERVER", t->peer_string);
     }
     if (!t->ping_state.is_delayed_ping_timer_set) {
       t->ping_state.is_delayed_ping_timer_set = true;
@@ -126,7 +128,8 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
   t->ping_state.last_ping_sent_time = now;
   if (GRPC_TRACER_ON(grpc_http_trace) ||
       GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
-    gpr_log(GPR_DEBUG, "Ping sent [%p]: %d/%d", t->peer_string,
+    gpr_log(GPR_DEBUG, "%s: Ping sent [%p]: %d/%d",
+            t->is_client ? "CLIENT" : "SERVER", t->peer_string,
             t->ping_state.pings_before_data_required,
             t->ping_policy.max_pings_without_data);
   }
@@ -451,6 +454,11 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
         }
         s->send_trailing_metadata = NULL;
         s->sent_trailing_metadata = true;
+        if (!t->is_client) {
+          t->ping_recv_state.last_ping_recv_time =
+              gpr_inf_past(GPR_CLOCK_MONOTONIC);
+          t->ping_recv_state.ping_strikes = 0;
+        }
         if (!t->is_client && !s->read_closed) {
           grpc_slice_buffer_add(
               &t->outbuf, grpc_chttp2_rst_stream_create(
