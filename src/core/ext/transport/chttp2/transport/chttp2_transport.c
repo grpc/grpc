@@ -274,6 +274,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->is_client = is_client;
   t->flow_control.remote_window = DEFAULT_WINDOW;
   t->flow_control.announced_window = DEFAULT_WINDOW;
+  t->flow_control.target_initial_window_size = DEFAULT_WINDOW;
   t->flow_control.t = t;
   t->deframe_state = is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->is_first_frame = true;
@@ -312,16 +313,6 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                     grpc_combiner_scheduler(t->combiner));
 
   grpc_bdp_estimator_init(&t->flow_control.bdp_estimator, t->peer_string);
-  t->flow_control.last_pid_update = gpr_now(GPR_CLOCK_MONOTONIC);
-  grpc_pid_controller_init(
-      &t->flow_control.pid_controller,
-      (grpc_pid_controller_args){.gain_p = 4,
-                                 .gain_i = 8,
-                                 .gain_d = 0,
-                                 .initial_control_value = log2(DEFAULT_WINDOW),
-                                 .min_control_value = -1,
-                                 .max_control_value = 25,
-                                 .integral_range = 10});
 
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
   grpc_chttp2_hpack_parser_init(exec_ctx, &t->hpack_parser);
@@ -360,8 +351,6 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     queue_setting_update(exec_ctx, t,
                          GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, 0);
   }
-  queue_setting_update(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
-                       DEFAULT_WINDOW);
   queue_setting_update(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
                        DEFAULT_MAX_HEADER_LIST_SIZE);
   queue_setting_update(exec_ctx, t,
@@ -590,6 +579,10 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
        inflight keeaplive timers */
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED;
   }
+
+  grpc_chttp2_act_on_flowctl_action(
+      exec_ctx, grpc_chttp2_flowctl_get_action(&t->flow_control, NULL), t,
+      NULL);
 
   grpc_chttp2_initiate_write(exec_ctx, t,
                              GRPC_CHTTP2_INITIATE_WRITE_INITIAL_WRITE);

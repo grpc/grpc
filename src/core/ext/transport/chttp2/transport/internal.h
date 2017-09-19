@@ -258,6 +258,8 @@ typedef struct {
    * to send WINDOW_UPDATE frames. */
   int64_t announced_window;
 
+  int32_t target_initial_window_size;
+
   /** should we probe bdp? */
   bool enable_bdp_probe;
 
@@ -265,6 +267,7 @@ typedef struct {
   grpc_bdp_estimator bdp_estimator;
 
   /* pid controller */
+  bool pid_controller_initialized;
   grpc_pid_controller pid_controller;
   gpr_timespec last_pid_update;
 

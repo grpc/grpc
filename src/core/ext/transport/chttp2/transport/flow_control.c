@@ -175,11 +175,9 @@ static void trace_action(grpc_chttp2_transport_flowctl* tfc,
 /* How many bytes of incoming flow control would we like to advertise */
 static uint32_t grpc_chttp2_target_announced_window(
     const grpc_chttp2_transport_flowctl* tfc) {
-  return (uint32_t)GPR_MIN(
-      (int64_t)((1u << 31) - 1),
-      tfc->announced_stream_total_over_incoming_window +
-          tfc->t->settings[GRPC_SENT_SETTINGS]
-                          [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+  return (uint32_t)GPR_MIN((int64_t)((1u << 31) - 1),
+                           tfc->announced_stream_total_over_incoming_window +
+                               tfc->target_initial_window_size);
 }
 
 // we have sent data on the wire, we must track this in our bookkeeping for the
@@ -395,8 +393,22 @@ static grpc_chttp2_flowctl_urgency delta_is_significant(
 // guess at the new bdp.
 static double get_pid_controller_guess(grpc_chttp2_transport_flowctl* tfc,
                                        double target) {
-  double bdp_error = target - grpc_pid_controller_last(&tfc->pid_controller);
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+  if (!tfc->pid_controller_initialized) {
+    tfc->last_pid_update = now;
+    tfc->pid_controller_initialized = true;
+    grpc_pid_controller_init(
+        &tfc->pid_controller,
+        (grpc_pid_controller_args){.gain_p = 4,
+                                   .gain_i = 8,
+                                   .gain_d = 0,
+                                   .initial_control_value = target,
+                                   .min_control_value = -1,
+                                   .max_control_value = 25,
+                                   .integral_range = 10});
+    return pow(2, target);
+  }
+  double bdp_error = target - grpc_pid_controller_last(&tfc->pid_controller);
   gpr_timespec dt_timespec = gpr_time_sub(now, tfc->last_pid_update);
   double dt = (double)dt_timespec.tv_sec + dt_timespec.tv_nsec * 1e-9;
   if (dt > 0.1) {
@@ -415,7 +427,7 @@ static double get_target_under_memory_pressure(
   double memory_pressure = grpc_resource_quota_get_memory_pressure(
       grpc_resource_user_quota(grpc_endpoint_get_resource_user(tfc->t->ep)));
   static const double kLowMemPressure = 0.1;
-  static const double kZeroTarget = 24;
+  static const double kZeroTarget = 22;
   static const double kHighMemPressure = 0.8;
   static const double kMaxMemPressure = 0.9;
   if (memory_pressure < kLowMemPressure && target < kZeroTarget) {
@@ -432,10 +444,6 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
     grpc_chttp2_transport_flowctl* tfc, grpc_chttp2_stream_flowctl* sfc) {
   grpc_chttp2_flowctl_action action;
   memset(&action, 0, sizeof(action));
-  uint32_t target_announced_window = grpc_chttp2_target_announced_window(tfc);
-  if (tfc->announced_window < target_announced_window / 2) {
-    action.send_transport_update = GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY;
-  }
   // TODO(ncteisen): tune this
   if (sfc != NULL && !sfc->s->read_closed) {
     uint32_t sent_init_window =
@@ -455,7 +463,6 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
 
     // get bdp estimate and update initial_window accordingly.
     int64_t estimate = -1;
-    int32_t bdp = -1;
     if (grpc_bdp_estimator_get_estimate(&tfc->bdp_estimator, &estimate)) {
       double target = 1 + log2((double)estimate);
 
@@ -469,14 +476,15 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
       double bdp_guess = get_pid_controller_guess(tfc, target);
 
       // Though initial window 'could' drop to 0, we keep the floor at 128
-      bdp = GPR_MAX((int32_t)bdp_guess, 128);
+      tfc->target_initial_window_size =
+          (int32_t)GPR_CLAMP(bdp_guess, 128, INT32_MAX);
 
       grpc_chttp2_flowctl_urgency init_window_update_urgency =
-          delta_is_significant(tfc, bdp,
+          delta_is_significant(tfc, tfc->target_initial_window_size,
                                GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
       if (init_window_update_urgency != GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED) {
         action.send_setting_update = init_window_update_urgency;
-        action.initial_window_size = (uint32_t)bdp;
+        action.initial_window_size = (uint32_t)tfc->target_initial_window_size;
       }
     }
 
@@ -485,8 +493,9 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
     if (grpc_bdp_estimator_get_bw(&tfc->bdp_estimator, &bw_dbl)) {
       // we target the max of BDP or bandwidth in microseconds.
       int32_t frame_size = (int32_t)GPR_CLAMP(
-          GPR_MAX((int32_t)GPR_CLAMP(bw_dbl, 0, INT_MAX) / 1000, bdp), 16384,
-          16777215);
+          GPR_MAX((int32_t)GPR_CLAMP(bw_dbl, 0, INT_MAX) / 1000,
+                  tfc->target_initial_window_size),
+          16384, 16777215);
       grpc_chttp2_flowctl_urgency frame_size_urgency = delta_is_significant(
           tfc, frame_size, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE);
       if (frame_size_urgency != GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED) {
@@ -496,6 +505,10 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
         action.max_frame_size = (uint32_t)frame_size;
       }
     }
+  }
+  uint32_t target_announced_window = grpc_chttp2_target_announced_window(tfc);
+  if (tfc->announced_window < target_announced_window / 2) {
+    action.send_transport_update = GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY;
   }
   TRACEACTION(tfc, action);
   return action;
