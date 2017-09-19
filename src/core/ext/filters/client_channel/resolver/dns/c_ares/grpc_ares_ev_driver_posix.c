@@ -38,8 +38,6 @@
 typedef struct fd_node {
   /** the owner of this fd node */
   grpc_ares_ev_driver *ev_driver;
-  /** the grpc_fd owned by this fd node */
-  grpc_fd *fd;
   /** a closure wrapping on_readable_cb, which should be invoked when the
       grpc_fd in this node becomes readable. */
   grpc_closure read_closure;
@@ -51,6 +49,8 @@ typedef struct fd_node {
 
   /** mutex guarding the rest of the state */
   gpr_mu mu;
+  /** the grpc_fd owned by this fd node */
+  grpc_fd *fd;
   /** if the readable closure has been registered */
   bool readable_registered;
   /** if the writable closure has been registered */
@@ -203,6 +203,7 @@ static void on_readable_cb(grpc_exec_ctx *exec_ctx, void *arg,
   fd_node *fdn = (fd_node *)arg;
   grpc_ares_ev_driver *ev_driver = fdn->ev_driver;
   gpr_mu_lock(&fdn->mu);
+  const int fd = grpc_fd_wrapped_fd(fdn->fd);
   fdn->readable_registered = false;
   if (fdn->shutting_down && !fdn->writable_registered) {
     gpr_mu_unlock(&fdn->mu);
@@ -212,13 +213,11 @@ static void on_readable_cb(grpc_exec_ctx *exec_ctx, void *arg,
   }
   gpr_mu_unlock(&fdn->mu);
 
-  gpr_log(GPR_DEBUG, "readable on %d", grpc_fd_wrapped_fd(fdn->fd));
+  gpr_log(GPR_DEBUG, "readable on %d", fd);
   if (error == GRPC_ERROR_NONE) {
     do {
-      ares_process_fd(ev_driver->channel, grpc_fd_wrapped_fd(fdn->fd),
-                      ARES_SOCKET_BAD);
-    } while (
-        grpc_ares_is_fd_still_readable(ev_driver, grpc_fd_wrapped_fd(fdn->fd)));
+      ares_process_fd(ev_driver->channel, fd, ARES_SOCKET_BAD);
+    } while (grpc_ares_is_fd_still_readable(ev_driver, fd));
   } else {
     // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
     // timed out. The pending lookups made on this ev_driver will be cancelled
@@ -239,6 +238,7 @@ static void on_writable_cb(grpc_exec_ctx *exec_ctx, void *arg,
   fd_node *fdn = (fd_node *)arg;
   grpc_ares_ev_driver *ev_driver = fdn->ev_driver;
   gpr_mu_lock(&fdn->mu);
+  const int fd = grpc_fd_wrapped_fd(fdn->fd);
   fdn->writable_registered = false;
   if (fdn->shutting_down && !fdn->readable_registered) {
     gpr_mu_unlock(&fdn->mu);
@@ -248,10 +248,9 @@ static void on_writable_cb(grpc_exec_ctx *exec_ctx, void *arg,
   }
   gpr_mu_unlock(&fdn->mu);
 
-  gpr_log(GPR_DEBUG, "writable on %d", grpc_fd_wrapped_fd(fdn->fd));
+  gpr_log(GPR_DEBUG, "writable on %d", fd);
   if (error == GRPC_ERROR_NONE) {
-    ares_process_fd(ev_driver->channel, ARES_SOCKET_BAD,
-                    grpc_fd_wrapped_fd(fdn->fd));
+    ares_process_fd(ev_driver->channel, ARES_SOCKET_BAD, fd);
   } else {
     // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
     // timed out. The pending lookups made on this ev_driver will be cancelled
