@@ -62,5 +62,7 @@ executor_scheduled_to_self_per_iteration:FLOAT,
 executor_wakeup_initiated_per_iteration:FLOAT,
 executor_queue_drained_per_iteration:FLOAT,
 executor_push_retries_per_iteration:FLOAT,
+executor_threads_created_per_iteration:FLOAT,
+executor_threads_used_per_iteration:FLOAT,
 server_requested_calls_per_iteration:FLOAT,
 server_slowpath_requests_queued_per_iteration:FLOAT
