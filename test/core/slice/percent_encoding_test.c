@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/slice/percent_encoding.h"
+#include <grpc/percent_encoding.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

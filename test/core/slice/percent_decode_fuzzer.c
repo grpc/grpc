@@ -20,10 +20,10 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <grpc/percent_encoding.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/slice/percent_encoding.h"
 #include "test/core/util/memory_counters.h"
 
 bool squelch = true;
