@@ -79,7 +79,8 @@ static void on_compute_engine_detection_http_response(grpc_exec_ctx *exec_ctx,
   detector->is_done = 1;
   GRPC_LOG_IF_ERROR(
       "Pollset kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&detector->pollent), NULL));
+      grpc_pollset_kick(exec_ctx,
+                        grpc_polling_entity_pollset(&detector->pollent), NULL));
   gpr_mu_unlock(g_polling_mu);
 }
 

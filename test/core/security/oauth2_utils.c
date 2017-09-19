@@ -60,7 +60,8 @@ static void on_oauth2_response(grpc_exec_ctx *exec_ctx, void *arg,
   request->token = token;
   GRPC_LOG_IF_ERROR(
       "pollset_kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&request->pops), NULL));
+      grpc_pollset_kick(exec_ctx, grpc_polling_entity_pollset(&request->pops),
+                        NULL));
   gpr_mu_unlock(request->mu);
 }
 

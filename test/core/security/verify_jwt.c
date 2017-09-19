@@ -66,7 +66,8 @@ static void on_jwt_verification_done(grpc_exec_ctx *exec_ctx, void *user_data,
 
   gpr_mu_lock(sync->mu);
   sync->is_done = 1;
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(sync->pollset, NULL));
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(exec_ctx, sync->pollset, NULL));
   gpr_mu_unlock(sync->mu);
 }
 

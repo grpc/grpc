@@ -178,8 +178,8 @@ static void listen_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg /*server */,
 
   gpr_mu_lock(g_mu);
   sv->done = 1;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(exec_ctx, g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -295,8 +295,8 @@ static void client_session_shutdown_cb(grpc_exec_ctx *exec_ctx,
   grpc_fd_orphan(exec_ctx, cl->em_fd, NULL, NULL, false /* already_closed */,
                  "c");
   cl->done = 1;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(exec_ctx, g_pollset, NULL)));
 }
 
 /* Write as much as possible, then register notify_on_write. */
@@ -413,8 +413,8 @@ static void first_read_callback(grpc_exec_ctx *exec_ctx,
 
   gpr_mu_lock(g_mu);
   fdc->cb_that_ran = first_read_callback;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(exec_ctx, g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -425,8 +425,8 @@ static void second_read_callback(grpc_exec_ctx *exec_ctx,
 
   gpr_mu_lock(g_mu);
   fdc->cb_that_ran = second_read_callback;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(exec_ctx, g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 

@@ -104,7 +104,8 @@ static void must_succeed(grpc_exec_ctx *exec_ctx, void *argsp,
   GPR_ASSERT(args->addrs->naddrs > 0);
   gpr_atm_rel_store(&args->done_atm, 1);
   gpr_mu_lock(args->mu);
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, NULL));
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(exec_ctx, args->pollset, NULL));
   gpr_mu_unlock(args->mu);
 }
 
@@ -113,7 +114,8 @@ static void must_fail(grpc_exec_ctx *exec_ctx, void *argsp, grpc_error *err) {
   GPR_ASSERT(err != GRPC_ERROR_NONE);
   gpr_atm_rel_store(&args->done_atm, 1);
   gpr_mu_lock(args->mu);
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, NULL));
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(exec_ctx, args->pollset, NULL));
   gpr_mu_unlock(args->mu);
 }
 

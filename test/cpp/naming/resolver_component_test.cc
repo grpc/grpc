@@ -270,7 +270,8 @@ void CheckResolverResultLocked(grpc_exec_ctx *exec_ctx, void *argsp,
   CheckLBPolicyResultLocked(channel_args, args);
   gpr_atm_rel_store(&args->done_atm, 1);
   gpr_mu_lock(args->mu);
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, NULL));
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(exec_ctx, args->pollset, NULL));
   gpr_mu_unlock(args->mu);
 }
 
