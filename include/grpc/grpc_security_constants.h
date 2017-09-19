@@ -49,6 +49,12 @@ typedef enum {
 } grpc_ssl_roots_override_result;
 
 typedef enum {
+  GRPC_SSL_CREDENTIALS_RELOAD_UNCHANGED,
+  GRPC_SSL_CREDENTIALS_RELOAD_NEW,
+  GRPC_SSL_CREDENTIALS_RELOAD_FAIL
+} grpc_ssl_credentials_reload_status;
+
+typedef enum {
   /** Server does not request client certificate. A client can present a self
      signed or signed certificates if it wishes to do so and they would be
      accepted. */
