@@ -281,13 +281,14 @@ grpc_error* grpc_chttp2_flowctl_recv_data(grpc_chttp2_transport_flowctl* tfc,
 // Returns a non zero announce integer if we should send a transport window
 // update
 uint32_t grpc_chttp2_flowctl_maybe_send_transport_update(
-    grpc_chttp2_transport_flowctl* tfc) {
+    grpc_chttp2_transport_flowctl* tfc, bool writing_anyway) {
   PRETRACE(tfc, NULL);
   uint32_t target_announced_window = grpc_chttp2_target_announced_window(tfc);
   uint32_t threshold_to_send_transport_window_update =
       tfc->t->outbuf.count > 0 ? 3 * target_announced_window / 4
                                : target_announced_window / 2;
-  if (tfc->announced_window <= threshold_to_send_transport_window_update &&
+  if ((writing_anyway ||
+       tfc->announced_window <= threshold_to_send_transport_window_update) &&
       tfc->announced_window != target_announced_window) {
     uint32_t announce = (uint32_t)GPR_CLAMP(
         target_announced_window - tfc->announced_window, 0, UINT32_MAX);
@@ -413,8 +414,16 @@ static double get_target_under_memory_pressure(
   // do not increase window under heavy memory pressure.
   double memory_pressure = grpc_resource_quota_get_memory_pressure(
       grpc_resource_user_quota(grpc_endpoint_get_resource_user(tfc->t->ep)));
-  if (memory_pressure > 0.8) {
-    target *= 1 - GPR_MIN(1, (memory_pressure - 0.8) / 0.1);
+  static const double kLowMemPressure = 0.1;
+  static const double kZeroTarget = 24;
+  static const double kHighMemPressure = 0.8;
+  static const double kMaxMemPressure = 0.9;
+  if (memory_pressure < kLowMemPressure && target < kZeroTarget) {
+    target = (target - kZeroTarget) * memory_pressure / kLowMemPressure +
+             kZeroTarget;
+  } else if (memory_pressure > kHighMemPressure) {
+    target *= 1 - GPR_MIN(1, (memory_pressure - kHighMemPressure) /
+                                 (kMaxMemPressure - kHighMemPressure));
   }
   return target;
 }
@@ -441,14 +450,6 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
       action.send_stream_update = GRPC_CHTTP2_FLOWCTL_QUEUE_UPDATE;
     }
   }
-  TRACEACTION(tfc, action);
-  return action;
-}
-
-grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_bdp_action(
-    grpc_chttp2_transport_flowctl* tfc) {
-  grpc_chttp2_flowctl_action action;
-  memset(&action, 0, sizeof(action));
   if (tfc->enable_bdp_probe) {
     action.need_ping = grpc_bdp_estimator_need_ping(&tfc->bdp_estimator);
 
@@ -496,7 +497,6 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_bdp_action(
       }
     }
   }
-
   TRACEACTION(tfc, action);
   return action;
 }

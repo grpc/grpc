@@ -98,21 +98,21 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
 
-  grpc_arg keepalive_args[] = {{.type = GRPC_ARG_INTEGER,
-                                .key = GRPC_ARG_KEEPALIVE_TIME_MS,
-                                .value.integer = 1500},
-                               {.type = GRPC_ARG_INTEGER,
-                                .key = GRPC_ARG_KEEPALIVE_TIMEOUT_MS,
-                                .value.integer = 0},
-                               {.type = GRPC_ARG_INTEGER,
-                                .key = GRPC_ARG_HTTP2_BDP_PROBE,
-                                .value.integer = 0}};
-
-  grpc_channel_args client_args = {.num_args = GPR_ARRAY_SIZE(keepalive_args),
-                                   .args = keepalive_args};
+  grpc_arg keepalive_arg_elems[] = {{.type = GRPC_ARG_INTEGER,
+                                     .key = GRPC_ARG_KEEPALIVE_TIME_MS,
+                                     .value.integer = 1500},
+                                    {.type = GRPC_ARG_INTEGER,
+                                     .key = GRPC_ARG_KEEPALIVE_TIMEOUT_MS,
+                                     .value.integer = 0},
+                                    {.type = GRPC_ARG_INTEGER,
+                                     .key = GRPC_ARG_HTTP2_BDP_PROBE,
+                                     .value.integer = 0}};
+  grpc_channel_args keepalive_args = {
+      .num_args = GPR_ARRAY_SIZE(keepalive_arg_elems),
+      .args = keepalive_arg_elems};
 
   grpc_end2end_test_fixture f =
-      begin_test(config, "keepalive_timeout", &client_args, NULL);
+      begin_test(config, "keepalive_timeout", &keepalive_args, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;

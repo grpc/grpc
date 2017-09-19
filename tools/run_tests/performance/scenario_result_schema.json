@@ -352,6 +352,11 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_http2_spurious_writes_begun", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_combiner_locks_initiated", 
         "type": "INTEGER"
       }, 
@@ -950,6 +955,11 @@
       {
         "mode": "NULLABLE", 
         "name": "core_http2_initiate_write_due_to_force_rst_stream", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_spurious_writes_begun", 
         "type": "INTEGER"
       }, 
       {

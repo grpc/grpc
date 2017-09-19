@@ -39,7 +39,12 @@ typedef struct grpc_bdp_estimator {
   grpc_bdp_estimator_ping_state ping_state;
   int64_t accumulator;
   int64_t estimate;
+  // case ping_state of
+  //  GRPC_BDP_PING_UNSCHEDULED => when to start the next ping
+  //  GRPC_BDP_PING_STARTED => when the current ping was started
   gpr_timespec ping_start_time;
+  int inter_ping_delay;
+  int stable_estimate_count;
   double bw_est;
   const char *name;
 } grpc_bdp_estimator;

@@ -159,6 +159,8 @@
   doc: Number of HTTP2 writes initiated due to 'ping_response'
 - counter: http2_initiate_write_due_to_force_rst_stream
   doc: Number of HTTP2 writes initiated due to 'force_rst_stream'
+- counter: http2_spurious_writes_begun
+  doc: Number of HTTP2 writes initiated with nothing to write
 # combiner locks
 - counter: combiner_locks_initiated
   doc: Number of combiner lock entries by process
