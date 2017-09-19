@@ -1766,19 +1766,15 @@ static void send_goaway(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 void grpc_chttp2_add_ping_strike(grpc_exec_ctx *exec_ctx,
                                  grpc_chttp2_transport *t) {
   t->ping_recv_state.ping_strikes++;
-  if (t->ping_policy.max_ping_strikes != 0) {
-    gpr_log(GPR_DEBUG, "%s: PING strike %d/%d", t->peer_string,
-            t->ping_recv_state.ping_strikes, t->ping_policy.max_ping_strikes);
-    if (t->ping_recv_state.ping_strikes > t->ping_policy.max_ping_strikes) {
-      send_goaway(
-          exec_ctx, t,
-          grpc_error_set_int(
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING("too_many_pings"),
-              GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM));
-      /*The transport will be closed after the write is done */
-      close_transport_locked(
-          exec_ctx, t, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Too many pings"));
-    }
+  if (++t->ping_recv_state.ping_strikes > t->ping_policy.max_ping_strikes &&
+      t->ping_policy.max_ping_strikes != 0) {
+    send_goaway(exec_ctx, t,
+                grpc_error_set_int(
+                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("too_many_pings"),
+                    GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM));
+    /*The transport will be closed after the write is done */
+    close_transport_locked(
+        exec_ctx, t, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Too many pings"));
   }
 }
 

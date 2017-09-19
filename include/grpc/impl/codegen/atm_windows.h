@@ -24,6 +24,7 @@
 
 typedef intptr_t gpr_atm;
 #define GPR_ATM_MAX INTPTR_MAX
+#define GPR_ATM_MIN INTPTR_MIN
 
 #define gpr_atm_full_barrier MemoryBarrier
 

@@ -86,15 +86,12 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
     next_allowed_ping =
         t->ping_recv_state.last_ping_recv_time + 7200 * GPR_MS_PER_SEC;
   }
-  /* gpr_log(GPR_DEBUG, "next_allowed_ping:%d.%09d now:%d.%09d",
-          (int)next_allowed_ping.tv_sec, (int)next_allowed_ping.tv_nsec,
-          (int)now.tv_sec, (int)now.tv_nsec); */
   if (next_allowed_ping > now) {
     /* not enough elapsed time between successive pings */
     if (GRPC_TRACER_ON(grpc_http_trace) ||
         GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_DEBUG,
-              "Ping delayed [%p]: not enough time elapsed since last ping",
+              "Ping delayed [%s]: not enough time elapsed since last ping",
               t->peer_string);
     }
     if (!t->ping_state.is_delayed_ping_timer_set) {
@@ -269,7 +266,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                                   s->send_initial_metadata, &hopt, &t->outbuf);
         now_writing = true;
         if (!t->is_client) {
-          t->ping_recv_state.last_ping_recv_time = 0;
+          t->ping_recv_state.last_ping_recv_time = GRPC_MILLIS_INF_PAST;
           t->ping_recv_state.ping_strikes = 0;
         }
         initial_metadata_writes++;
@@ -307,7 +304,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
           &t->outbuf, grpc_chttp2_window_update_create(s->id, stream_announce,
                                                        &s->stats.outgoing));
       if (!t->is_client) {
-        t->ping_recv_state.last_ping_recv_time = 0;
+        t->ping_recv_state.last_ping_recv_time = GRPC_MILLIS_INF_PAST;
         t->ping_recv_state.ping_strikes = 0;
       }
       flow_control_writes++;
@@ -491,7 +488,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
         &t->outbuf, grpc_chttp2_window_update_create(0, transport_announce,
                                                      &throwaway_stats));
     if (!t->is_client) {
-      t->ping_recv_state.last_ping_recv_time = 0;
+      t->ping_recv_state.last_ping_recv_time = GRPC_MILLIS_INF_PAST;
       t->ping_recv_state.ping_strikes = 0;
     }
   }

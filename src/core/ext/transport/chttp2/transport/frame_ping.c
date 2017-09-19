@@ -89,6 +89,7 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
       grpc_chttp2_ack_ping(exec_ctx, t, p->opaque_8bytes);
     } else {
       if (!t->is_client) {
+        grpc_millis now = grpc_exec_ctx_now(exec_ctx);
         grpc_millis next_allowed_ping =
             t->ping_recv_state.last_ping_recv_time +
             t->ping_policy.min_recv_ping_interval_without_data;
@@ -102,11 +103,11 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
               t->ping_recv_state.last_ping_recv_time + 7200 * GPR_MS_PER_SEC;
         }
 
-        if (next_allowed_ping > grpc_exec_ctx_now(exec_ctx)) {
+        if (next_allowed_ping > now) {
           grpc_chttp2_add_ping_strike(exec_ctx, t);
         }
 
-        t->ping_recv_state.last_ping_recv_time = grpc_exec_ctx_now(exec_ctx);
+        t->ping_recv_state.last_ping_recv_time = now;
       }
       if (!g_disable_ping_ack) {
         if (t->ping_ack_count == t->ping_ack_capacity) {

@@ -27,6 +27,7 @@
 typedef gpr_atm grpc_millis;
 
 #define GRPC_MILLIS_INF_FUTURE GPR_ATM_MAX
+#define GRPC_MILLIS_INF_PAST GPR_ATM_MIN
 
 /** A workqueue represents a list of work to be executed asynchronously.
     Forward declared here to avoid a circular dependency with workqueue.h. */
