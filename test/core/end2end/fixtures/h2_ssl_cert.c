@@ -119,7 +119,7 @@ static int fail_server_auth_check(grpc_channel_args *server_args) {
                                                     test_server1_cert};     \
     grpc_server_credentials *ssl_creds =                                    \
         grpc_ssl_server_credentials_create_ex(                              \
-            test_root_cert, &pem_cert_key_pair, 1, REQUEST_TYPE, NULL);     \
+            test_root_cert, &pem_cert_key_pair, 1, REQUEST_TYPE, NULL, NULL, NULL);     \
     if (fail_server_auth_check(server_args)) {                              \
       grpc_auth_metadata_processor processor = {process_auth_failure, NULL, \
                                                 NULL};                      \

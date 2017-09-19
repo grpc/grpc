@@ -137,7 +137,7 @@ static void secure_test_add_port(grpc_server *server, const char *addr) {
   grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,
                                                   test_server1_cert};
   grpc_server_credentials *ssl_creds =
-      grpc_ssl_server_credentials_create(NULL, &pem_cert_key_pair, 1, 0, NULL);
+      grpc_ssl_server_credentials_create(NULL, &pem_cert_key_pair, 1, 0, NULL, NULL, NULL);
   grpc_server_add_secure_http2_port(server, addr, ssl_creds);
   grpc_server_credentials_release(ssl_creds);
 }

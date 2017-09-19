@@ -51,7 +51,7 @@ typedef enum {
 typedef enum {
   GRPC_GET_SERVER_CREDENTIALS_UNCHANGED,
   GRPC_GET_SERVER_CREDENTIALS_NEW,
-  GRPC_GET_SERVER_CREDENTIALS_FAIL,
+  GRPC_GET_SERVER_CREDENTIALS_FAIL
 } grpc_get_server_credentials_result;
 
 typedef enum {
