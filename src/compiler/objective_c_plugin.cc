@@ -108,6 +108,28 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
                                ".pbrpc.h\"\n\n"
                                "#import <ProtoRPC/ProtoRPC.h>\n"
                                "#import <RxLibrary/GRXWriter+Immediate.h>\n";
+      for (int i = 0; i < file->dependency_count(); i++) {
+        ::grpc::string header =
+            grpc_objective_c_generator::MessageHeaderName(file->dependency(i));
+        const grpc::protobuf::FileDescriptor *dependency = file->dependency(i);
+        if (IsProtobufLibraryBundledProtoFile(dependency)) {
+          ::grpc::string base_name = header;
+          grpc_generator::StripPrefix(&base_name, "google/protobuf/");
+          // create the import code snippet
+          imports +=
+              "#if GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS\n"
+              "  #import <" +
+              ::grpc::string(ProtobufLibraryFrameworkName) + "/" + base_name +
+              ">\n"
+              "#else\n"
+              "  #import \"" +
+              header +
+              "\"\n"
+              "#endif\n";
+        } else {
+          imports += ::grpc::string("#import \"") + header + "\"\n";
+        }
+      }
 
       ::grpc::string definitions;
       for (int i = 0; i < file->service_count(); i++) {
