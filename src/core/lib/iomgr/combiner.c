@@ -44,7 +44,8 @@ grpc_tracer_flag grpc_combiner_trace =
 struct grpc_combiner {
   grpc_combiner *next_combiner_on_this_exec_ctx;
   grpc_closure_scheduler scheduler;
-  grpc_closure_scheduler finally_scheduler;
+  // [0] => no offload, [1] => offload
+  grpc_closure_scheduler finally_scheduler[2];
   gpr_mpscq queue;
   // either:
   // a pointer to the initiating exec ctx if that is the only exec_ctx that has
@@ -57,6 +58,10 @@ struct grpc_combiner {
   gpr_atm state;
   bool time_to_execute_final_list;
   grpc_closure_list final_list;
+  // 0 initially
+  // >0 => offload
+  // -1 => don't offload
+  int final_list_offload_count;
   grpc_closure offload;
   gpr_refcount refs;
 };
@@ -65,11 +70,17 @@ static void combiner_exec(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_error *error);
 static void combiner_finally_exec(grpc_exec_ctx *exec_ctx,
                                   grpc_closure *closure, grpc_error *error);
+static void combiner_finally_offload_exec(grpc_exec_ctx *exec_ctx,
+                                          grpc_closure *closure,
+                                          grpc_error *error);
 
 static const grpc_closure_scheduler_vtable scheduler = {
     combiner_exec, combiner_exec, "combiner:immediately"};
 static const grpc_closure_scheduler_vtable finally_scheduler = {
     combiner_finally_exec, combiner_finally_exec, "combiner:finally"};
+static const grpc_closure_scheduler_vtable finally_offload_scheduler = {
+    combiner_finally_offload_exec, combiner_finally_offload_exec,
+    "combiner:finally"};
 
 static void offload(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
 
@@ -77,7 +88,8 @@ grpc_combiner *grpc_combiner_create(void) {
   grpc_combiner *lock = (grpc_combiner *)gpr_zalloc(sizeof(*lock));
   gpr_ref_init(&lock->refs, 1);
   lock->scheduler.vtable = &scheduler;
-  lock->finally_scheduler.vtable = &finally_scheduler;
+  lock->finally_scheduler[0].vtable = &finally_scheduler;
+  lock->finally_scheduler[1].vtable = &finally_offload_scheduler;
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
   gpr_mpscq_init(&lock->queue);
   grpc_closure_list_init(&lock->final_list);
@@ -216,14 +228,15 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
   bool contended =
       gpr_atm_no_barrier_load(&lock->initiating_exec_ctx_or_null) == 0;
 
-  GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG,
-                              "C:%p grpc_combiner_continue_exec_ctx "
-                              "contended=%d "
-                              "exec_ctx_ready_to_finish=%d "
-                              "time_to_execute_final_list=%d",
-                              lock, contended,
-                              grpc_exec_ctx_ready_to_finish(exec_ctx),
-                              lock->time_to_execute_final_list));
+  GRPC_COMBINER_TRACE(gpr_log(
+      GPR_DEBUG,
+      "C:%p grpc_combiner_continue_exec_ctx "
+      "contended=%d "
+      "exec_ctx_ready_to_finish=%d "
+      "time_to_execute_final_list=%d "
+      "final_list_offload_count=%d",
+      lock, contended, grpc_exec_ctx_ready_to_finish(exec_ctx),
+      lock->time_to_execute_final_list, lock->final_list_offload_count));
 
   if (contended && grpc_exec_ctx_ready_to_finish(exec_ctx) &&
       grpc_executor_is_threaded()) {
@@ -259,7 +272,14 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
     cl->cb(exec_ctx, cl->cb_arg, cl_err);
     GRPC_ERROR_UNREF(cl_err);
     GPR_TIMER_END("combiner.exec1", 0);
+  } else if (lock->final_list_offload_count > 0) {
+    lock->final_list_offload_count = -1;  // don't delay again
+    GPR_TIMER_MARK("delay_requested", 0);
+    queue_offload(exec_ctx, lock);
+    GPR_TIMER_END("combiner.continue_exec_ctx", 0);
+    return true;
   } else {
+    lock->final_list_offload_count = 0;  // reset delay counter
     grpc_closure *c = lock->final_list.head;
     GPR_ASSERT(c != NULL);
     grpc_closure_list_init(&lock->final_list);
@@ -328,14 +348,15 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
 static void enqueue_finally(grpc_exec_ctx *exec_ctx, void *closure,
                             grpc_error *error);
 
-static void combiner_finally_exec(grpc_exec_ctx *exec_ctx,
-                                  grpc_closure *closure, grpc_error *error) {
+static void combiner_finally_exec_impl(grpc_exec_ctx *exec_ctx,
+                                       grpc_closure *closure, grpc_error *error,
+                                       bool offload) {
   GRPC_STATS_INC_COMBINER_LOCKS_SCHEDULED_FINAL_ITEMS(exec_ctx);
   grpc_combiner *lock =
-      COMBINER_FROM_CLOSURE_SCHEDULER(closure, finally_scheduler);
-  GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG,
-                              "C:%p grpc_combiner_execute_finally c=%p; ac=%p",
-                              lock, closure, exec_ctx->active_combiner));
+      COMBINER_FROM_CLOSURE_SCHEDULER(closure, finally_scheduler[offload]);
+  GRPC_COMBINER_TRACE(gpr_log(
+      GPR_DEBUG, "C:%p grpc_combiner_execute_finally c=%p; ac=%p; offload=%d",
+      lock, closure, exec_ctx->active_combiner, offload));
   GPR_TIMER_BEGIN("combiner.execute_finally", 0);
   if (exec_ctx->active_combiner != lock) {
     GPR_TIMER_MARK("slowpath", 0);
@@ -347,11 +368,27 @@ static void combiner_finally_exec(grpc_exec_ctx *exec_ctx,
     return;
   }
 
+  if (!offload) {
+    lock->final_list_offload_count = -1;
+  } else {
+    lock->final_list_offload_count += (lock->final_list_offload_count >= 0);
+  }
   if (grpc_closure_list_empty(lock->final_list)) {
     gpr_atm_full_fetch_add(&lock->state, STATE_ELEM_COUNT_LOW_BIT);
   }
   grpc_closure_list_append(&lock->final_list, closure, error);
   GPR_TIMER_END("combiner.execute_finally", 0);
+}
+
+static void combiner_finally_exec(grpc_exec_ctx *exec_ctx,
+                                  grpc_closure *closure, grpc_error *error) {
+  combiner_finally_exec_impl(exec_ctx, closure, error, false);
+}
+
+static void combiner_finally_offload_exec(grpc_exec_ctx *exec_ctx,
+                                          grpc_closure *closure,
+                                          grpc_error *error) {
+  combiner_finally_exec_impl(exec_ctx, closure, error, true);
 }
 
 static void enqueue_finally(grpc_exec_ctx *exec_ctx, void *closure,
@@ -364,7 +401,7 @@ grpc_closure_scheduler *grpc_combiner_scheduler(grpc_combiner *combiner) {
   return &combiner->scheduler;
 }
 
-grpc_closure_scheduler *grpc_combiner_finally_scheduler(
-    grpc_combiner *combiner) {
-  return &combiner->finally_scheduler;
+grpc_closure_scheduler *grpc_combiner_finally_scheduler(grpc_combiner *combiner,
+                                                        bool offload_first) {
+  return &combiner->finally_scheduler[offload_first];
 }

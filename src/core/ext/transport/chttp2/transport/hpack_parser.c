@@ -1650,6 +1650,7 @@ static void force_client_rst_stream(grpc_exec_ctx *exec_ctx, void *sp,
         &t->qbuf, grpc_chttp2_rst_stream_create(s->id, GRPC_HTTP2_NO_ERROR,
                                                 &s->stats.outgoing));
     grpc_chttp2_initiate_write(exec_ctx, t,
+                               GRPC_CHTTP2_INITIATE_WRITE_IMMEDIATELY,
                                GRPC_CHTTP2_INITIATE_WRITE_FORCE_RST_STREAM);
     grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, true, GRPC_ERROR_NONE);
   }
@@ -1723,9 +1724,9 @@ grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
              and can avoid the extra write */
           GRPC_CHTTP2_STREAM_REF(s, "final_rst");
           GRPC_CLOSURE_SCHED(
-              exec_ctx,
-              GRPC_CLOSURE_CREATE(force_client_rst_stream, s,
-                                  grpc_combiner_finally_scheduler(t->combiner)),
+              exec_ctx, GRPC_CLOSURE_CREATE(force_client_rst_stream, s,
+                                            grpc_combiner_finally_scheduler(
+                                                t->combiner, false)),
               GRPC_ERROR_NONE);
         }
         grpc_chttp2_mark_stream_closed(exec_ctx, t, s, true, false,

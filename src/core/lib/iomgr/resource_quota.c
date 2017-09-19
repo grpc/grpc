@@ -583,8 +583,9 @@ grpc_resource_quota *grpc_resource_quota_create(const char *name) {
     gpr_asprintf(&resource_quota->name, "anonymous_pool_%" PRIxPTR,
                  (intptr_t)resource_quota);
   }
-  GRPC_CLOSURE_INIT(&resource_quota->rq_step_closure, rq_step, resource_quota,
-                    grpc_combiner_finally_scheduler(resource_quota->combiner));
+  GRPC_CLOSURE_INIT(
+      &resource_quota->rq_step_closure, rq_step, resource_quota,
+      grpc_combiner_finally_scheduler(resource_quota->combiner, false));
   GRPC_CLOSURE_INIT(&resource_quota->rq_reclamation_done_closure,
                     rq_reclamation_done, resource_quota,
                     grpc_combiner_scheduler(resource_quota->combiner));

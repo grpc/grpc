@@ -103,6 +103,12 @@ typedef enum {
   GRPC_CHTTP2_INITIATE_WRITE_FORCE_RST_STREAM,
 } grpc_chttp2_initiate_write_reason;
 
+typedef enum {
+  GRPC_CHTTP2_INITIATE_WRITE_IMMEDIATELY,
+  GRPC_CHTTP2_INITIATE_WRITE_SHORT_DELAY,
+  GRPC_CHTTP2_INITIATE_WRITE_LONG_DELAY,
+} grpc_chttp2_initiate_write_delay;
+
 const char *grpc_chttp2_initiate_write_reason_string(
     grpc_chttp2_initiate_write_reason reason);
 
@@ -293,6 +299,12 @@ struct grpc_chttp2_transport {
       set when we initiate writing from idle, cleared when we
       initiate writing from writing+more */
   bool is_first_write_in_batch;
+  /** do we have a timer setup for a delayed write? */
+  bool have_initiate_write_timer;
+  /** the delayed write timer */
+  grpc_timer initiate_write_timer;
+  grpc_closure continue_initiate_write;
+  grpc_chttp2_initiate_write_reason initiate_write_timer_reason;
 
   /** is the transport destroying itself? */
   uint8_t destroying;
@@ -627,6 +639,7 @@ struct grpc_chttp2_stream {
     */
 void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
                                 grpc_chttp2_transport *t,
+                                grpc_chttp2_initiate_write_delay delay,
                                 grpc_chttp2_initiate_write_reason reason);
 
 typedef struct {
@@ -735,6 +748,8 @@ typedef enum {
   GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED = 0,
   // Initiate a write to update the initial window immediately.
   GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY,
+  // Initiate a write to update the initial window relatively soon.
+  GRPC_CHTTP2_FLOWCTL_UPDATE_SOON,
   // Push the flow control update into a send buffer, to be sent
   // out the next time a write is initiated.
   GRPC_CHTTP2_FLOWCTL_QUEUE_UPDATE,

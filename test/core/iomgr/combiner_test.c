@@ -131,10 +131,10 @@ static void in_finally(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 }
 
 static void add_finally(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  GRPC_CLOSURE_SCHED(exec_ctx,
-                     GRPC_CLOSURE_CREATE(in_finally, arg,
-                                         grpc_combiner_finally_scheduler(arg)),
-                     GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(
+      exec_ctx, GRPC_CLOSURE_CREATE(in_finally, arg,
+                                    grpc_combiner_finally_scheduler(arg, true)),
+      GRPC_ERROR_NONE);
 }
 
 static void test_execute_finally(void) {

@@ -118,6 +118,7 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
         }
         t->ping_acks[t->ping_ack_count++] = p->opaque_8bytes;
         grpc_chttp2_initiate_write(exec_ctx, t,
+                                   GRPC_CHTTP2_INITIATE_WRITE_IMMEDIATELY,
                                    GRPC_CHTTP2_INITIATE_WRITE_PING_RESPONSE);
       }
     }
