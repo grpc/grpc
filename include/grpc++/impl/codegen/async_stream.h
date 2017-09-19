@@ -424,6 +424,20 @@ class ClientAsyncReaderWriterInterface : public ClientAsyncStreamingInterface,
   ///
   /// \param[in] tag The tag identifying the operation.
   virtual void WritesDone(void* tag) = 0;
+
+  /// Special operation that is only available in this streaming interface
+  /// as it allows batching of multiple operations into a single function
+  /// call (and thus only a single CQ trip).
+  /// Note that \a do_read_initial_metadata is only checked when relevant since
+  /// it may be implicit otherwise. On the other hand, the other booleans
+  /// are actually required to be used correctly
+  /// \a write_request should be nullptr if nothing should be written
+  /// \a read_response should be nullptr if nothing should be read
+  /// \a status should be nullptr if not trying to get Status (not Finish-ing)
+  virtual void BatchOps(bool do_start_call, const W* write_request,
+                        bool do_writes_done, bool do_read_initial_metadata,
+                        R* read_response, bool allow_no_read_message,
+                        Status* status, void* tag) = 0;
 };
 
 /// Async client-side interface for bi-directional streaming,
@@ -531,6 +545,45 @@ class ClientAsyncReaderWriter final
     call_.PerformOps(&finish_ops_);
   }
 
+  void BatchOps(bool do_start_call, const W* write_request, bool do_writes_done,
+                bool do_read_initial_metadata, R* read_response,
+                bool allow_no_read_message, Status* status,
+                void* tag) override {
+    batch_ops_.set_output_tag(tag);
+    if (do_start_call) {
+      assert(!started_);
+      started_ = true;
+      batch_ops_.SendInitialMetadata(context_->send_initial_metadata_,
+                                     context_->initial_metadata_flags());
+    }
+    if ((write_request != nullptr) || do_writes_done ||
+        do_read_initial_metadata || (read_response != nullptr) ||
+        (status != nullptr)) {
+      assert(started_);
+    }
+    if (write_request != nullptr) {
+      GPR_CODEGEN_ASSERT(batch_ops_.SendMessage(*write_request).ok());
+    }
+    if (do_writes_done) {
+      batch_ops_.ClientSendClose();
+    }
+    if ((do_read_initial_metadata || (read_response != nullptr) ||
+         (status != nullptr)) &&
+        !context_->initial_metadata_received_) {
+      batch_ops_.RecvInitialMetadata(context_);
+    }
+    if (read_response != nullptr) {
+      batch_ops_.RecvMessage(read_response);
+      if (allow_no_read_message) {
+        batch_ops_.AllowNoMessage();
+      }
+    }
+    if (status != nullptr) {
+      batch_ops_.ClientRecvStatus(context_, status);
+    }
+    call_.PerformOps(&batch_ops_);
+  };
+
  private:
   ClientAsyncReaderWriter(Call call, ClientContext* context, bool start,
                           void* tag)
@@ -561,6 +614,10 @@ class ClientAsyncReaderWriter final
   CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpClientSendClose>
       write_ops_;
   CallOpSet<CallOpRecvInitialMetadata, CallOpClientRecvStatus> finish_ops_;
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpClientSendClose,
+            CallOpRecvInitialMetadata, CallOpRecvMessage<R>,
+            CallOpClientRecvStatus>
+      batch_ops_;
 };
 
 template <class W, class R>
