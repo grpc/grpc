@@ -12,6 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_testing/grpc_version.py.template`!!!
+require_relative './grpc'
+require 'google/rpc/status_pb'
 
-VERSION='1.7.0.dev0'
+# GRPC contains the General RPC module.
+module GRPC
+  # GoogleRpcStatusUtils provides utilities to convert between a
+  # GRPC::Core::Status and a deserialized Google::Rpc::Status proto
+  class GoogleRpcStatusUtils
+    def self.extract_google_rpc_status(status)
+      fail ArgumentError, 'bad type' unless status.is_a? Struct::Status
+      Google::Rpc::Status.decode(status.metadata['grpc-status-details-bin'])
+    end
+  end
+end
