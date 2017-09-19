@@ -99,8 +99,10 @@ grpc_error *grpc_chttp2_window_update_parser_parse(
         grpc_chttp2_flowctl_recv_stream_update(
             &t->flow_control, &s->flow_control, received_update);
         if (grpc_chttp2_list_remove_stalled_by_stream(t, s)) {
-          grpc_chttp2_become_writable(exec_ctx, t, s, true,
-                                      "stream.read_flow_control");
+          grpc_chttp2_mark_stream_writable(exec_ctx, t, s);
+          grpc_chttp2_initiate_write(
+              exec_ctx, t,
+              GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_UPDATE);
         }
       }
     } else {
@@ -109,7 +111,9 @@ grpc_error *grpc_chttp2_window_update_parser_parse(
                                                 received_update);
       bool is_zero = t->flow_control.remote_window <= 0;
       if (was_zero && !is_zero) {
-        grpc_chttp2_initiate_write(exec_ctx, t, "new_global_flow_control");
+        grpc_chttp2_initiate_write(
+            exec_ctx, t,
+            GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL_UNSTALLED);
       }
     }
   }

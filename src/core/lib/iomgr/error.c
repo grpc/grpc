@@ -641,7 +641,7 @@ static char *key_time(grpc_error_times which) {
 
 static char *fmt_time(gpr_timespec tm) {
   char *out;
-  char *pfx = "!!";
+  const char *pfx = "!!";
   switch (tm.clock_type) {
     case GPR_CLOCK_MONOTONIC:
       pfx = "@monotonic:";

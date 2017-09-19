@@ -589,7 +589,7 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
   // Dispose of outdated subchannel lists.
   if (sd->subchannel_list != p->subchannel_list &&
       sd->subchannel_list != p->latest_pending_subchannel_list) {
-    char *reason = NULL;
+    const char *reason = NULL;
     if (sd->subchannel_list->shutting_down) {
       reason = "sl_outdated_straggler";
       rr_subchannel_list_unref(exec_ctx, sd->subchannel_list, reason);

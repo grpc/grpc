@@ -29,6 +29,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'google-protobuf', '~> 3.1'
   s.add_dependency 'googleauth',      '~> 0.5.1'
+  s.add_dependency 'googleapis-common-protos-types', '~> 1.0.0'
 
   s.add_development_dependency 'bundler',            '~> 1.9'
   s.add_development_dependency 'facter',             '~> 2.4'

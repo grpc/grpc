@@ -1,2 +1,9 @@
+DocFX-generated C# API Reference
+--------------------------------
 
-SandCastle project files to generate HTML reference documentation.
+Install docfx based on instructions here: https://github.com/dotnet/docfx
+
+```
+# generate docfx documentation into ./html directory
+$ docfx
+```
