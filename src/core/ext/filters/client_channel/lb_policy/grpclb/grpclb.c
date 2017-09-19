@@ -1560,6 +1560,9 @@ static void lb_on_response_received_locked(grpc_exec_ctx *exec_ctx, void *arg,
           exec_ctx, glb_policy->lb_call, ops, (size_t)(op - ops),
           &glb_policy->lb_on_response_received); /* loop */
       GPR_ASSERT(GRPC_CALL_OK == call_error);
+    } else {
+      GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
+                                "lb_on_response_received_locked_shutdown");
     }
   } else { /* empty payload: call cancelled. */
            /* dispose of the "lb_on_response_received_locked" weak ref taken in
