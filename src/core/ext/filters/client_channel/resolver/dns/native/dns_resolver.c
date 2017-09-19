@@ -151,7 +151,8 @@ static void dns_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
   GPR_ASSERT(r->resolving);
   r->resolving = false;
   GRPC_ERROR_REF(error);
-  error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(r->name_to_resolve));
+  error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
+                             grpc_slice_from_copied_string(r->name_to_resolve));
   if (r->addresses != NULL) {
     grpc_lb_addresses *addresses = grpc_lb_addresses_create(
         r->addresses->naddrs, NULL /* user_data_vtable */);

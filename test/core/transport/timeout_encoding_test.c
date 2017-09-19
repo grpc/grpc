@@ -70,7 +70,8 @@ static void assert_decodes_as(const char *buffer, grpc_millis expected) {
   GPR_ASSERT(1 == grpc_http2_decode_timeout(
                       grpc_slice_from_static_string(buffer), &got));
   if (got != expected) {
-    gpr_log(GPR_ERROR, "got:'%"PRIdPTR"' != expected:'%"PRIdPTR"'", got, expected);
+    gpr_log(GPR_ERROR, "got:'%" PRIdPTR "' != expected:'%" PRIdPTR "'", got,
+            expected);
     abort();
   }
 }
@@ -100,8 +101,12 @@ void decode_suite(char ext, grpc_millis (*answer)(int64_t x)) {
   }
 }
 
-static grpc_millis millis_from_nanos(int64_t x) { return x / GPR_NS_PER_MS + (x % GPR_NS_PER_MS != 0); }
-static grpc_millis millis_from_micros(int64_t x) { return x / GPR_US_PER_MS + (x % GPR_US_PER_MS != 0); }
+static grpc_millis millis_from_nanos(int64_t x) {
+  return x / GPR_NS_PER_MS + (x % GPR_NS_PER_MS != 0);
+}
+static grpc_millis millis_from_micros(int64_t x) {
+  return x / GPR_US_PER_MS + (x % GPR_US_PER_MS != 0);
+}
 static grpc_millis millis_from_millis(int64_t x) { return x; }
 static grpc_millis millis_from_seconds(int64_t x) { return x * GPR_MS_PER_SEC; }
 static grpc_millis millis_from_minutes(int64_t x) {

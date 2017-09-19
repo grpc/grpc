@@ -199,10 +199,10 @@ void PollPollsetUntilRequestDone(ArgsStruct *args) {
     grpc_pollset_worker *worker = NULL;
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     gpr_mu_lock(args->mu);
-    GRPC_LOG_IF_ERROR(
-        "pollset_work",
-        grpc_pollset_work(&exec_ctx, args->pollset, &worker,
-                          grpc_timespec_to_millis_round_up(NSecondDeadline(1))));
+    GRPC_LOG_IF_ERROR("pollset_work",
+                      grpc_pollset_work(&exec_ctx, args->pollset, &worker,
+                                        grpc_timespec_to_millis_round_up(
+                                            NSecondDeadline(1))));
     gpr_mu_unlock(args->mu);
     grpc_exec_ctx_finish(&exec_ctx);
   }
