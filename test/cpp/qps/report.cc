@@ -107,8 +107,8 @@ void GprLogReporter::ReportCoreStats(const char* name, int idx,
             grpc_stats_counter_name[i], data.counters[i]);
   }
   for (int i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
-    gpr_log(GPR_DEBUG, "%s[%d].%s = %lf/%lf/%lf (50/95/99%%-ile)", name, idx,
-            grpc_stats_histogram_name[i],
+    gpr_log(GPR_DEBUG, "%s[%d].%s = %.1lf/%.1lf/%.1lf (50/95/99%%-ile)", name,
+            idx, grpc_stats_histogram_name[i],
             grpc_stats_histo_percentile(&data, (grpc_stats_histograms)i, 50),
             grpc_stats_histo_percentile(&data, (grpc_stats_histograms)i, 95),
             grpc_stats_histo_percentile(&data, (grpc_stats_histograms)i, 99));

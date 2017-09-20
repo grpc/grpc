@@ -249,7 +249,7 @@ static void dns_ares_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
                 service_config_string);
         args_to_remove[num_args_to_remove++] = GRPC_ARG_SERVICE_CONFIG;
         new_args[num_args_to_add++] = grpc_channel_arg_string_create(
-            GRPC_ARG_SERVICE_CONFIG, service_config_string);
+            (char *)GRPC_ARG_SERVICE_CONFIG, service_config_string);
         service_config = grpc_service_config_create(service_config_string);
         if (service_config != NULL) {
           const char *lb_policy_name =
@@ -257,7 +257,7 @@ static void dns_ares_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
           if (lb_policy_name != NULL) {
             args_to_remove[num_args_to_remove++] = GRPC_ARG_LB_POLICY_NAME;
             new_args[num_args_to_add++] = grpc_channel_arg_string_create(
-                GRPC_ARG_LB_POLICY_NAME, (char *)lb_policy_name);
+                (char *)GRPC_ARG_LB_POLICY_NAME, (char *)lb_policy_name);
           }
         }
       }

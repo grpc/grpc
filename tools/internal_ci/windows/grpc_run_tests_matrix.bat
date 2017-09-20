@@ -17,8 +17,10 @@ cd /d %~dp0\..\..\..
 
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat
 
-python tools/run_tests/run_tests_matrix.py %RUN_TESTS_FLAGS% || goto :error
-goto :EOF
+python tools/run_tests/run_tests_matrix.py %RUN_TESTS_FLAGS%
+set RUNTESTS_EXITCODE=%errorlevel%
 
-:error
-exit /b %errorlevel%
+@rem Reveal leftover processes that might be left behind by the build
+tasklist /V
+
+exit /b %RUNTESTS_EXITCODE%

@@ -477,8 +477,9 @@ static grpc_error *pollable_materialize(pollable *p) {
       close(new_epfd);
       return err;
     }
-    struct epoll_event ev = {.events = (uint32_t)(EPOLLIN | EPOLLET),
-                             .data.ptr = (void *)(1 | (intptr_t)&p->wakeup)};
+    struct epoll_event ev;
+    ev.events = (uint32_t)(EPOLLIN | EPOLLET);
+    ev.data.ptr = (void *)(1 | (intptr_t)&p->wakeup);
     if (epoll_ctl(new_epfd, EPOLL_CTL_ADD, p->wakeup.read_fd, &ev) != 0) {
       err = GRPC_OS_ERROR(errno, "epoll_ctl");
       close(new_epfd);
@@ -507,9 +508,9 @@ static grpc_error *pollable_add_fd(pollable *p, grpc_fd *fd) {
     gpr_mu_unlock(&fd->orphaned_mu);
     return GRPC_ERROR_NONE;
   }
-  struct epoll_event ev_fd = {
-      .events = (uint32_t)(EPOLLET | EPOLLIN | EPOLLOUT | EPOLLEXCLUSIVE),
-      .data.ptr = fd};
+  struct epoll_event ev_fd;
+  ev_fd.events = (uint32_t)(EPOLLET | EPOLLIN | EPOLLOUT | EPOLLEXCLUSIVE);
+  ev_fd.data.ptr = fd;
   if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd->fd, &ev_fd) != 0) {
     switch (errno) {
       case EEXIST:
@@ -561,6 +562,7 @@ static void do_kick_all(grpc_exec_ctx *exec_ctx, void *arg,
   if (pollset->root_worker != NULL) {
     grpc_pollset_worker *worker = pollset->root_worker;
     do {
+      GRPC_STATS_INC_POLLSET_KICK(exec_ctx);
       if (worker->pollable_obj != &pollset->pollable_obj) {
         gpr_mu_lock(&worker->pollable_obj->po.mu);
       }
@@ -665,9 +667,10 @@ static grpc_error *pollset_kick_inner(grpc_pollset *pollset, pollable *p,
 }
 
 /* p->po.mu must be held before calling this function */
-static grpc_error *pollset_kick(grpc_pollset *pollset,
+static grpc_error *pollset_kick(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                                 grpc_pollset_worker *specific_worker) {
   pollable *p = pollset->current_pollable_obj;
+  GRPC_STATS_INC_POLLSET_KICK(exec_ctx);
   if (p != &pollset->pollable_obj) {
     gpr_mu_lock(&p->po.mu);
   }
@@ -706,7 +709,10 @@ static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
   }
 
   static const gpr_timespec round_up = {
-      .clock_type = GPR_TIMESPAN, .tv_sec = 0, .tv_nsec = GPR_NS_PER_MS - 1};
+      0,                 /* tv_sec */
+      GPR_NS_PER_MS - 1, /* tv_nsec */
+      GPR_TIMESPAN       /* clock_type */
+  };
   timeout = gpr_time_sub(deadline, now);
   int millis = gpr_time_to_millis(gpr_time_add(timeout, round_up));
   return millis >= 1 ? millis : 1;
@@ -1390,34 +1396,34 @@ static void shutdown_engine(void) {
 }
 
 static const grpc_event_engine_vtable vtable = {
-    .pollset_size = sizeof(grpc_pollset),
+    sizeof(grpc_pollset),
 
-    .fd_create = fd_create,
-    .fd_wrapped_fd = fd_wrapped_fd,
-    .fd_orphan = fd_orphan,
-    .fd_shutdown = fd_shutdown,
-    .fd_is_shutdown = fd_is_shutdown,
-    .fd_notify_on_read = fd_notify_on_read,
-    .fd_notify_on_write = fd_notify_on_write,
-    .fd_get_read_notifier_pollset = fd_get_read_notifier_pollset,
+    fd_create,
+    fd_wrapped_fd,
+    fd_orphan,
+    fd_shutdown,
+    fd_notify_on_read,
+    fd_notify_on_write,
+    fd_is_shutdown,
+    fd_get_read_notifier_pollset,
 
-    .pollset_init = pollset_init,
-    .pollset_shutdown = pollset_shutdown,
-    .pollset_destroy = pollset_destroy,
-    .pollset_work = pollset_work,
-    .pollset_kick = pollset_kick,
-    .pollset_add_fd = pollset_add_fd,
+    pollset_init,
+    pollset_shutdown,
+    pollset_destroy,
+    pollset_work,
+    pollset_kick,
+    pollset_add_fd,
 
-    .pollset_set_create = pollset_set_create,
-    .pollset_set_destroy = pollset_set_destroy,
-    .pollset_set_add_pollset = pollset_set_add_pollset,
-    .pollset_set_del_pollset = pollset_set_del_pollset,
-    .pollset_set_add_pollset_set = pollset_set_add_pollset_set,
-    .pollset_set_del_pollset_set = pollset_set_del_pollset_set,
-    .pollset_set_add_fd = pollset_set_add_fd,
-    .pollset_set_del_fd = pollset_set_del_fd,
+    pollset_set_create,
+    pollset_set_destroy,
+    pollset_set_add_pollset,
+    pollset_set_del_pollset,
+    pollset_set_add_pollset_set,
+    pollset_set_del_pollset_set,
+    pollset_set_add_fd,
+    pollset_set_del_fd,
 
-    .shutdown_engine = shutdown_engine,
+    shutdown_engine,
 };
 
 const grpc_event_engine_vtable *grpc_init_epollex_linux(

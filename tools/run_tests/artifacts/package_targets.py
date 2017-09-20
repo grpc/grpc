@@ -78,7 +78,7 @@ class CSharpPackage:
     if self.linux:
       return create_docker_jobspec(
           self.name,
-          'tools/dockerfile/test/csharp_coreclr_x64',
+          'tools/dockerfile/test/csharp_jessie_x64',
           'src/csharp/build_packages_dotnetcli.sh')
     else:
       return create_jobspec(self.name,
