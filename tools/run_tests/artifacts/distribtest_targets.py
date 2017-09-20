@@ -105,7 +105,9 @@ class CSharpDistribTest(object):
           use_workspace=True)
     elif self.platform == 'windows':
       if self.arch == 'x64':
-        environ={'MSBUILD_EXTRA_ARGS': '/p:Platform=x64',
+        # Use double leading / as the first occurence gets removed by msys bash
+        # when invoking the .bat file (side-effect of posix path conversion)
+        environ={'MSBUILD_EXTRA_ARGS': '//p:Platform=x64',
                  'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\x64\\Debug'}
       else:
         environ={'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\Debug'}

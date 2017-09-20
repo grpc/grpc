@@ -35,7 +35,7 @@ typedef struct {
 #else
   bool value;
 #endif
-  char *name;
+  const char *name;
 } grpc_tracer_flag;
 
 #ifdef GRPC_THREADSAFE_TRACER

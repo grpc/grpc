@@ -20,4 +20,14 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-tools/run_tests/run_tests_matrix.py $RUN_TESTS_FLAGS
+tools/run_tests/run_tests_matrix.py $RUN_TESTS_FLAGS || FAILED="true"
+
+# Reveal leftover processes that might be left behind by the build
+ps aux | grep -i kbuilder
+
+echo 'Exiting gRPC main test script.'
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi

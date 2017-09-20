@@ -98,7 +98,7 @@ void grpc_pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
 void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_closure *closure) {
   pollset->shutting_down = 1;
-  grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
+  grpc_pollset_kick(exec_ctx, pollset, GRPC_POLLSET_KICK_BROADCAST);
   if (!pollset->is_iocp_worker) {
     GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
   } else {
@@ -181,7 +181,7 @@ done:
   return GRPC_ERROR_NONE;
 }
 
-grpc_error *grpc_pollset_kick(grpc_pollset *p,
+grpc_error *grpc_pollset_kick(grpc_exec_ctx *exec_ctx, grpc_pollset *p,
                               grpc_pollset_worker *specific_worker) {
   if (specific_worker != NULL) {
     if (specific_worker == GRPC_POLLSET_KICK_BROADCAST) {
@@ -209,7 +209,7 @@ grpc_error *grpc_pollset_kick(grpc_pollset *p,
     specific_worker =
         pop_front_worker(&p->root_worker, GRPC_POLLSET_WORKER_LINK_POLLSET);
     if (specific_worker != NULL) {
-      grpc_pollset_kick(p, specific_worker);
+      grpc_pollset_kick(exec_ctx, p, specific_worker);
     } else if (p->is_iocp_worker) {
       grpc_iocp_kick();
     } else {

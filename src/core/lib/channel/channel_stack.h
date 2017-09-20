@@ -281,7 +281,7 @@ grpc_channel_stack *grpc_channel_stack_from_top_element(
 /* Given the top element of a call stack, get the call stack itself */
 grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem);
 
-void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
+void grpc_call_log_op(const char *file, int line, gpr_log_severity severity,
                       grpc_call_element *elem,
                       grpc_transport_stream_op_batch *op);
 
