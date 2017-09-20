@@ -493,12 +493,12 @@ static void publish_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
       rc->data.batch.details->host = grpc_slice_ref_internal(calld->host);
       rc->data.batch.details->method = grpc_slice_ref_internal(calld->path);
       rc->data.batch.details->deadline =
-          grpc_millis_to_timespec(calld->deadline, GPR_CLOCK_REALTIME);
+          grpc_millis_to_timespec(calld->deadline, GPR_CLOCK_MONOTONIC);
       rc->data.batch.details->flags = calld->recv_initial_metadata_flags;
       break;
     case REGISTERED_CALL:
       *rc->data.registered.deadline =
-          grpc_millis_to_timespec(calld->deadline, GPR_CLOCK_REALTIME);
+          grpc_millis_to_timespec(calld->deadline, GPR_CLOCK_MONOTONIC);
       if (rc->data.registered.optional_payload) {
         *rc->data.registered.optional_payload = calld->payload;
         calld->payload = NULL;
