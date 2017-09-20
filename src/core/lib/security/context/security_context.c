@@ -117,7 +117,7 @@ void grpc_server_security_context_destroy(void *ctx) {
 static grpc_auth_property_iterator empty_iterator = {NULL, 0, NULL};
 
 grpc_auth_context *grpc_auth_context_create(grpc_auth_context *chained) {
-  grpc_auth_context *ctx = gpr_zalloc(sizeof(grpc_auth_context));
+  grpc_auth_context *ctx = (grpc_auth_context*) gpr_zalloc(sizeof(grpc_auth_context));
   gpr_ref_init(&ctx->refcount, 1);
   if (chained != NULL) {
     ctx->chained = GRPC_AUTH_CONTEXT_REF(chained, "chained");
@@ -275,7 +275,7 @@ void grpc_auth_context_add_property(grpc_auth_context *ctx, const char *name,
   ensure_auth_context_capacity(ctx);
   prop = &ctx->properties.array[ctx->properties.count++];
   prop->name = gpr_strdup(name);
-  prop->value = gpr_malloc(value_length + 1);
+  prop->value = (char*) gpr_malloc(value_length + 1);
   memcpy(prop->value, value, value_length);
   prop->value[value_length] = '\0';
   prop->value_length = value_length;

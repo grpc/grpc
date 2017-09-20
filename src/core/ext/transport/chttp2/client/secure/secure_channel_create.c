@@ -127,7 +127,7 @@ static grpc_subchannel_args *get_secure_naming_subchannel_args(
   if (new_args_from_connector != NULL) {
     grpc_channel_args_destroy(exec_ctx, new_args_from_connector);
   }
-  grpc_subchannel_args *final_sc_args = gpr_malloc(sizeof(*final_sc_args));
+  grpc_subchannel_args *final_sc_args = (grpc_subchannel_args*) gpr_malloc(sizeof(*final_sc_args));
   memcpy(final_sc_args, args, sizeof(*args));
   final_sc_args->args = new_args;
   return final_sc_args;

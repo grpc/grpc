@@ -282,7 +282,7 @@ tsi_result tsi_construct_allocated_string_peer_property(
   *property = tsi_init_peer_property();
   if (name != NULL) property->name = gpr_strdup(name);
   if (value_length > 0) {
-    property->value.data = gpr_zalloc(value_length);
+    property->value.data = (char*) gpr_zalloc(value_length);
     property->value.length = value_length;
   }
   return TSI_OK;
@@ -310,7 +310,7 @@ tsi_result tsi_construct_string_peer_property(const char *name,
 tsi_result tsi_construct_peer(size_t property_count, tsi_peer *peer) {
   memset(peer, 0, sizeof(tsi_peer));
   if (property_count > 0) {
-    peer->properties = gpr_zalloc(property_count * sizeof(tsi_peer_property));
+    peer->properties = (tsi_peer_property*) gpr_zalloc(property_count * sizeof(tsi_peer_property));
     peer->property_count = property_count;
   }
   return TSI_OK;

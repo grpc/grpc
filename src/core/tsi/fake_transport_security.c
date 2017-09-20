@@ -155,9 +155,9 @@ static void tsi_fake_frame_reset(tsi_fake_frame *frame, int needs_draining) {
 static void tsi_fake_frame_ensure_size(tsi_fake_frame *frame) {
   if (frame->data == NULL) {
     frame->allocated_size = frame->size;
-    frame->data = gpr_malloc(frame->allocated_size);
+    frame->data = (unsigned char*) gpr_malloc(frame->allocated_size);
   } else if (frame->size > frame->allocated_size) {
-    unsigned char *new_data = gpr_realloc(frame->data, frame->size);
+    unsigned char *new_data = (unsigned char*) gpr_realloc(frame->data, frame->size);
     frame->data = new_data;
     frame->allocated_size = frame->size;
   }
@@ -176,7 +176,7 @@ static tsi_result tsi_fake_frame_decode(const unsigned char *incoming_bytes,
   if (frame->needs_draining) return TSI_INTERNAL_ERROR;
   if (frame->data == NULL) {
     frame->allocated_size = TSI_FAKE_FRAME_INITIAL_ALLOCATED_SIZE;
-    frame->data = gpr_malloc(frame->allocated_size);
+    frame->data = (unsigned char*) gpr_malloc(frame->allocated_size);
   }
 
   if (frame->offset < TSI_FAKE_FRAME_HEADER_SIZE) {
@@ -538,10 +538,10 @@ static tsi_result fake_handshaker_result_create(
       handshaker_result == NULL) {
     return TSI_INVALID_ARGUMENT;
   }
-  fake_handshaker_result *result = gpr_zalloc(sizeof(*result));
+  fake_handshaker_result *result = (fake_handshaker_result*) gpr_zalloc(sizeof(*result));
   result->base.vtable = &handshaker_result_vtable;
   if (unused_bytes_size > 0) {
-    result->unused_bytes = gpr_malloc(unused_bytes_size);
+    result->unused_bytes = (unsigned char*) gpr_malloc(unused_bytes_size);
     memcpy(result->unused_bytes, unused_bytes, unused_bytes_size);
   }
   result->unused_bytes_size = unused_bytes_size;
@@ -723,13 +723,13 @@ static const tsi_handshaker_vtable handshaker_vtable = {
 };
 
 tsi_handshaker *tsi_create_fake_handshaker(int is_client) {
-  tsi_fake_handshaker *impl = gpr_zalloc(sizeof(*impl));
+  tsi_fake_handshaker *impl = (tsi_fake_handshaker*) gpr_zalloc(sizeof(*impl));
   impl->base.vtable = &handshaker_vtable;
   impl->is_client = is_client;
   impl->result = TSI_HANDSHAKE_IN_PROGRESS;
   impl->outgoing_bytes_buffer_size =
       TSI_FAKE_HANDSHAKER_OUTGOING_BUFFER_INITIAL_SIZE;
-  impl->outgoing_bytes_buffer = gpr_malloc(impl->outgoing_bytes_buffer_size);
+  impl->outgoing_bytes_buffer = (unsigned char*) gpr_malloc(impl->outgoing_bytes_buffer_size);
   if (is_client) {
     impl->needs_incoming_message = 0;
     impl->next_message_to_send = TSI_FAKE_CLIENT_INIT;
@@ -742,7 +742,7 @@ tsi_handshaker *tsi_create_fake_handshaker(int is_client) {
 
 tsi_frame_protector *tsi_create_fake_frame_protector(
     size_t *max_protected_frame_size) {
-  tsi_fake_frame_protector *impl = gpr_zalloc(sizeof(*impl));
+  tsi_fake_frame_protector *impl = (tsi_fake_frame_protector*) gpr_zalloc(sizeof(*impl));
   impl->max_frame_size = (max_protected_frame_size == NULL)
                              ? TSI_FAKE_DEFAULT_FRAME_SIZE
                              : *max_protected_frame_size;
@@ -752,7 +752,7 @@ tsi_frame_protector *tsi_create_fake_frame_protector(
 
 tsi_zero_copy_grpc_protector *tsi_create_fake_zero_copy_grpc_protector(
     size_t *max_protected_frame_size) {
-  tsi_fake_zero_copy_grpc_protector *impl = gpr_zalloc(sizeof(*impl));
+  tsi_fake_zero_copy_grpc_protector *impl = (tsi_fake_zero_copy_grpc_protector*) gpr_zalloc(sizeof(*impl));
   grpc_slice_buffer_init(&impl->header_sb);
   grpc_slice_buffer_init(&impl->protected_sb);
   impl->max_frame_size = (max_protected_frame_size == NULL)

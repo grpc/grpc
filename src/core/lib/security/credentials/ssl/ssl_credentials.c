@@ -94,7 +94,7 @@ static void ssl_build_config(const char *pem_root_certs,
 grpc_channel_credentials *grpc_ssl_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
     void *reserved) {
-  grpc_ssl_credentials *c = gpr_zalloc(sizeof(grpc_ssl_credentials));
+  grpc_ssl_credentials *c = (grpc_ssl_credentials*) gpr_zalloc(sizeof(grpc_ssl_credentials));
   GRPC_API_TRACE(
       "grpc_ssl_credentials_create(pem_root_certs=%s, "
       "pem_key_cert_pair=%p, "
