@@ -761,7 +761,8 @@ const char *grpc_jwt_issuer_email_domain(const char *issuer) {
   if (dot == NULL || dot == email_domain) return email_domain;
   GPR_ASSERT(dot > email_domain);
   /* There may be a subdomain, we just want the domain. */
-  dot = (const char *)gpr_memrchr((void *)email_domain, '.', (size_t)(dot - email_domain));
+  dot = (const char *)gpr_memrchr((void *)email_domain, '.',
+                                  (size_t)(dot - email_domain));
   if (dot == NULL) return email_domain;
   return dot + 1;
 }

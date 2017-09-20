@@ -102,7 +102,7 @@ static tsi_result tsi_fake_handshake_message_from_string(
   for (i = 0; i < TSI_FAKE_HANDSHAKE_MESSAGE_MAX; i++) {
     if (strncmp(msg_string, tsi_fake_handshake_message_strings[i],
                 strlen(tsi_fake_handshake_message_strings[i])) == 0) {
-      *msg = (tsi_fake_handshake_message) i;
+      *msg = (tsi_fake_handshake_message)i;
       return TSI_OK;
     }
   }

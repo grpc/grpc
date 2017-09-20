@@ -66,8 +66,8 @@ static grpc_security_status ssl_create_security_connector(
   if (status != GRPC_SECURITY_OK) {
     return status;
   }
-  grpc_arg new_arg =
-      grpc_channel_arg_string_create((char *)GRPC_ARG_HTTP2_SCHEME, (char *)"https");
+  grpc_arg new_arg = grpc_channel_arg_string_create(
+      (char *)GRPC_ARG_HTTP2_SCHEME, (char *)"https");
   *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
   return status;
 }
