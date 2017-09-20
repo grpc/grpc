@@ -23,6 +23,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Multiple-producer single-consumer lock free queue, based upon the
 // implementation from Dmitry Vyukov here:
 // http://www.1024cores.net/home/lock-free-algorithms/queues/intrusive-mpsc-node-based-queue
@@ -49,5 +53,9 @@ void gpr_mpscq_push(gpr_mpscq *q, gpr_mpscq_node *n);
 gpr_mpscq_node *gpr_mpscq_pop(gpr_mpscq *q);
 // Pop a node; sets *empty to true if the queue is empty, or false if it is not
 gpr_mpscq_node *gpr_mpscq_pop_and_check_end(gpr_mpscq *q, bool *empty);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_SUPPORT_MPSCQ_H */

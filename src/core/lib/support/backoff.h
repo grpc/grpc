@@ -21,6 +21,10 @@
 
 #include <grpc/support/time.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
   /// const:  how long to wait after the first failure before retrying
   int64_t initial_connect_timeout;
@@ -52,5 +56,9 @@ gpr_timespec gpr_backoff_step(gpr_backoff *backoff, gpr_timespec now);
 /// Reset the backoff, so the next gpr_backoff_step will be a gpr_backoff_begin
 /// instead
 void gpr_backoff_reset(gpr_backoff *backoff);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_SUPPORT_BACKOFF_H */
