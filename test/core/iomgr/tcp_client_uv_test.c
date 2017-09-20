@@ -46,11 +46,11 @@ static gpr_timespec test_deadline(void) {
   return grpc_timeout_seconds_to_deadline(10);
 }
 
-static void finish_connection() {
+static void finish_connection(grpc_exec_ctx *exec_ctx) {
   gpr_mu_lock(g_mu);
   g_connections_complete++;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(exec_ctx, g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -63,7 +63,7 @@ static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("must_succeed called"));
   grpc_endpoint_destroy(exec_ctx, g_connecting);
   g_connecting = NULL;
-  finish_connection();
+  finish_connection(exec_ctx);
 }
 
 static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
