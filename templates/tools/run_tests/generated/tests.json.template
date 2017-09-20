@@ -9,6 +9,7 @@
            "platforms": tgt.platforms,
            "ci_platforms": tgt.ci_platforms,
            "gtest": tgt.gtest,
+           "benchmark": tgt.get("benchmark", False),
            "exclude_configs": tgt.get("exclude_configs", []),
            "exclude_iomgrs": tgt.get("exclude_iomgrs", []),
            "args": tgt.get("args", []),
