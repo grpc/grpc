@@ -150,13 +150,8 @@ public:
     std::shared_ptr<bool>& sharedCancelled(void) { return m_pCallCancelled; }
     MetadataPromise& metadataPromise(void) { return *(m_pMetadataPromise.get()); }
     std::mutex& metadataMutex(void) { return *(m_pMetadataMutex.get()); }
-    void setOpsManaged(std::unique_ptr<OpsManaged>&& pOpsManaged);
-    OpsManaged& opsManaged(void) { return *(m_pOpsManaged.get()); }
     void incrementBatchCounter(void) { ++m_BatchCounter; }
     uint64_t batchCounter(void) const{ return m_BatchCounter; }
-    void incrementActiveBatches(void) { ++m_ActiveBatches; }
-    void decrementActiveBatches(void) { --m_ActiveBatches; }
-    uint64_t activeBatches(void) const { return m_ActiveBatches; }
     bool& callCancelled(void) { return *(m_pCallCancelled.get()); }
     static Class* const getClass(void);
     static const StaticString& className(void) { return s_ClassName; }
@@ -175,9 +170,7 @@ private:
     std::shared_ptr<std::mutex> m_pMetadataMutex;        // metadata synchronization
     std::shared_ptr<bool> m_pCallCancelled;              // metadata synchronizations
     std::unique_ptr<CompletionQueue> m_pCompletionQueue;
-    std::unique_ptr<OpsManaged> m_pOpsManaged;
     std::atomic<uint64_t> m_BatchCounter;
-    std::atomic<uint64_t> m_ActiveBatches;
     static Class* s_pClass;
     static const StaticString s_ClassName;
 };

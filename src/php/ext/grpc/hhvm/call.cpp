@@ -65,7 +65,7 @@ CallData::CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_pCallCredenti
     m_pChannel{ nullptr }, m_Timeout{ 0 },
     m_pMetadataPromise{ std::make_shared<MetadataPromise>() },
     m_pMetadataMutex{ std::make_shared<std::mutex>() }, m_pCallCancelled{ std::make_shared<bool>(false) },
-    m_pOpsManaged{ nullptr }, m_BatchCounter{ 0 }, m_ActiveBatches{ 0 }
+    m_BatchCounter{ 0 }
 {
 }
 
@@ -73,7 +73,7 @@ CallData::CallData(grpc_call* const call, const bool owned, const int32_t timeou
     m_pCall{ call }, m_Owned{ owned }, m_pCallCredentials{ nullptr }, m_pChannel{ nullptr },
     m_Timeout{ timeoutMs }, m_pMetadataPromise{ std::make_shared<MetadataPromise>() },
     m_pMetadataMutex{ std::make_shared<std::mutex>() }, m_pCallCancelled{ std::make_shared<bool>(false) },
-    m_pOpsManaged{ nullptr }, m_BatchCounter{ 0 }, m_ActiveBatches{ 0 }
+    m_BatchCounter{ 0 }
 {
 }
 
@@ -101,9 +101,6 @@ void CallData::destroy(void)
 {
     if (m_pCall)
     {
-        // delete any left over ops data
-        if (m_pOpsManaged) m_pOpsManaged.reset(nullptr);
-
         // delete the call if owned
         if (m_Owned)
         {
@@ -123,10 +120,6 @@ void CallData::destroy(void)
     m_pCompletionQueue = std::move(pCompletionQueue);
 }
 
-void CallData::setOpsManaged(std::unique_ptr<OpsManaged>&& pOpsManaged)
-{
-    m_pOpsManaged= std::move(pOpsManaged);
-}
 
 /*****************************************************************************/
 /*                              Metadata Array                               */
@@ -388,9 +381,10 @@ Object HHVM_METHOD(Call, startBatch,
 
     CallData* const pCallData{ Native::data<CallData>(this_) };
     pCallData->incrementBatchCounter();
+
     // create a new ops managed for this call
-    pCallData->setOpsManaged(std::unique_ptr<OpsManaged>(new OpsManaged));
-    OpsManaged& opsManaged{ pCallData->opsManaged() };
+    std::unique_ptr<OpsManaged> pOpsManage{ new OpsManaged{} };
+    OpsManaged& opsManaged{ *(pOpsManage.get()) };
 
     size_t op_num{ 0 };
     bool sending_initial_metadata{ false };
@@ -593,13 +587,11 @@ Object HHVM_METHOD(Call, startBatch,
             oSS << "start_batch was called incorrectly: " << errorCode << std::endl;
             SystemLib::throwBadMethodCallExceptionObject(oSS.str());
         }
-        pCallData->incrementActiveBatches();
     }
-    if (pCallData->activeBatches()>=2) std::cout << pCallData->activeBatches();
+
     grpc_event event (grpc_completion_queue_pluck(pCallData->queue()->queue(), &opsManaged,
                                                  gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN),
                                                  nullptr));
-    pCallData->decrementActiveBatches();
     if ((event.type != GRPC_OP_COMPLETE) || (event.tag != &opsManaged) || (event.success == 0))
     {
         // failed so clean up and return empty object
@@ -702,8 +694,6 @@ Object HHVM_METHOD(Call, startBatch,
         }
     }
 
-    // clean up memory
-    pCallData->setOpsManaged(std::unique_ptr<OpsManaged>{ nullptr });
     return resultObj;
 }
 
