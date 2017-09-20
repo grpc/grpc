@@ -176,7 +176,8 @@ static grpc_call_credentials_vtable plugin_vtable = {
 
 grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
     grpc_metadata_credentials_plugin plugin, void *reserved) {
-  grpc_plugin_credentials *c = (grpc_plugin_credentials*) gpr_zalloc(sizeof(*c));
+  grpc_plugin_credentials *c =
+      (grpc_plugin_credentials *)gpr_zalloc(sizeof(*c));
   GRPC_API_TRACE("grpc_metadata_credentials_create_from_plugin(reserved=%p)", 1,
                  (reserved));
   GPR_ASSERT(reserved == NULL);

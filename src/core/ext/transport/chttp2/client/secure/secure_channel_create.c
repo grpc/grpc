@@ -86,7 +86,8 @@ static grpc_subchannel_args *get_secure_naming_subchannel_args(
     if (target_uri->path[0] != '\0') {  // "path" may be empty
       const grpc_slice key = grpc_slice_from_static_string(
           target_uri->path[0] == '/' ? target_uri->path + 1 : target_uri->path);
-      const char *value = grpc_slice_hash_table_get(targets_info, key);
+      const char *value =
+          (const char *)grpc_slice_hash_table_get(targets_info, key);
       if (value != NULL) target_name_to_check = gpr_strdup(value);
       grpc_slice_unref_internal(exec_ctx, key);
     }
@@ -127,7 +128,8 @@ static grpc_subchannel_args *get_secure_naming_subchannel_args(
   if (new_args_from_connector != NULL) {
     grpc_channel_args_destroy(exec_ctx, new_args_from_connector);
   }
-  grpc_subchannel_args *final_sc_args = (grpc_subchannel_args*) gpr_malloc(sizeof(*final_sc_args));
+  grpc_subchannel_args *final_sc_args =
+      (grpc_subchannel_args *)gpr_malloc(sizeof(*final_sc_args));
   memcpy(final_sc_args, args, sizeof(*args));
   final_sc_args->args = new_args;
   return final_sc_args;
@@ -164,7 +166,7 @@ static grpc_channel *client_channel_factory_create_channel(
   }
   // Add channel arg containing the server URI.
   grpc_arg arg = grpc_channel_arg_string_create(
-      GRPC_ARG_SERVER_URI,
+      (char *)GRPC_ARG_SERVER_URI,
       grpc_resolver_factory_add_default_prefix_if_needed(exec_ctx, target));
   const char *to_remove[] = {GRPC_ARG_SERVER_URI};
   grpc_channel_args *new_args =

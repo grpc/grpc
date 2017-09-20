@@ -200,11 +200,13 @@ void grpc_security_connector_unref(grpc_exec_ctx *exec_ctx,
 }
 
 static void connector_pointer_arg_destroy(grpc_exec_ctx *exec_ctx, void *p) {
-  GRPC_SECURITY_CONNECTOR_UNREF(exec_ctx, p, "connector_pointer_arg_destroy");
+  GRPC_SECURITY_CONNECTOR_UNREF(exec_ctx, (grpc_security_connector *)p,
+                                "connector_pointer_arg_destroy");
 }
 
 static void *connector_pointer_arg_copy(void *p) {
-  return GRPC_SECURITY_CONNECTOR_REF(p, "connector_pointer_arg_copy");
+  return GRPC_SECURITY_CONNECTOR_REF((grpc_security_connector *)p,
+                                     "connector_pointer_arg_copy");
 }
 
 static int connector_pointer_cmp(void *a, void *b) { return GPR_ICMP(a, b); }
@@ -214,8 +216,8 @@ static const grpc_arg_pointer_vtable connector_pointer_vtable = {
     connector_pointer_cmp};
 
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector *sc) {
-  return grpc_channel_arg_pointer_create(GRPC_ARG_SECURITY_CONNECTOR, sc,
-                                         &connector_pointer_vtable);
+  return grpc_channel_arg_pointer_create((char *)GRPC_ARG_SECURITY_CONNECTOR,
+                                         sc, &connector_pointer_vtable);
 }
 
 grpc_security_connector *grpc_security_connector_from_arg(const grpc_arg *arg) {
@@ -225,7 +227,7 @@ grpc_security_connector *grpc_security_connector_from_arg(const grpc_arg *arg) {
             GRPC_ARG_SECURITY_CONNECTOR);
     return NULL;
   }
-  return arg->value.pointer.p;
+  return (grpc_security_connector *)arg->value.pointer.p;
 }
 
 grpc_security_connector *grpc_security_connector_find_in_args(
@@ -424,7 +426,8 @@ static grpc_security_connector_vtable fake_server_vtable = {
 grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
     grpc_call_credentials *request_metadata_creds, const char *target,
     const grpc_channel_args *args) {
-  grpc_fake_channel_security_connector *c = (grpc_fake_channel_security_connector*) gpr_zalloc(sizeof(*c));
+  grpc_fake_channel_security_connector *c =
+      (grpc_fake_channel_security_connector *)gpr_zalloc(sizeof(*c));
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
   c->base.base.vtable = &fake_channel_vtable;
@@ -443,7 +446,8 @@ grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
 grpc_server_security_connector *grpc_fake_server_security_connector_create(
     void) {
   grpc_server_security_connector *c =
-      gpr_zalloc(sizeof(grpc_server_security_connector));
+      (grpc_server_security_connector *)gpr_zalloc(
+          sizeof(grpc_server_security_connector));
   gpr_ref_init(&c->base.refcount, 1);
   c->base.vtable = &fake_server_vtable;
   c->base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
@@ -658,7 +662,8 @@ tsi_peer tsi_shallow_peer_from_ssl_auth_context(
   while (grpc_auth_property_iterator_next(&it) != NULL) max_num_props++;
 
   if (max_num_props > 0) {
-    peer.properties = (tsi_peer_property*) gpr_malloc(max_num_props * sizeof(tsi_peer_property));
+    peer.properties = (tsi_peer_property *)gpr_malloc(
+        max_num_props * sizeof(tsi_peer_property));
     it = grpc_auth_context_property_iterator(auth_context);
     while ((prop = grpc_auth_property_iterator_next(&it)) != NULL) {
       if (strcmp(prop->name, GRPC_X509_SAN_PROPERTY_NAME) == 0) {
@@ -804,13 +809,13 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     const char *overridden_target_name, grpc_channel_security_connector **sc) {
   size_t num_alpn_protocols = grpc_chttp2_num_alpn_versions();
   const char **alpn_protocol_strings =
-      gpr_malloc(sizeof(const char *) * num_alpn_protocols);
+      (const char **)gpr_malloc(sizeof(const char *) * num_alpn_protocols);
   tsi_result result = TSI_OK;
   grpc_ssl_channel_security_connector *c;
   size_t i;
   const char *pem_root_certs;
   char *port;
-
+  bool has_key_cert_pair;
   for (i = 0; i < num_alpn_protocols; i++) {
     alpn_protocol_strings[i] = grpc_chttp2_get_alpn_version_index(i);
   }
@@ -829,7 +834,8 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     pem_root_certs = config->pem_root_certs;
   }
 
-  c = (grpc_ssl_channel_security_connector*) gpr_zalloc(sizeof(grpc_ssl_channel_security_connector));
+  c = (grpc_ssl_channel_security_connector *)gpr_zalloc(
+      sizeof(grpc_ssl_channel_security_connector));
 
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.vtable = &ssl_channel_vtable;
@@ -845,8 +851,8 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     c->overridden_target_name = gpr_strdup(overridden_target_name);
   }
 
-  bool has_key_cert_pair = config->pem_key_cert_pair.private_key != NULL &&
-                           config->pem_key_cert_pair.cert_chain != NULL;
+  has_key_cert_pair = config->pem_key_cert_pair.private_key != NULL &&
+                      config->pem_key_cert_pair.cert_chain != NULL;
   result = tsi_create_ssl_client_handshaker_factory(
       has_key_cert_pair ? &config->pem_key_cert_pair : NULL, pem_root_certs,
       ssl_cipher_suites(), alpn_protocol_strings, (uint16_t)num_alpn_protocols,
@@ -872,7 +878,7 @@ grpc_security_status grpc_ssl_server_security_connector_create(
     grpc_server_security_connector **sc) {
   size_t num_alpn_protocols = grpc_chttp2_num_alpn_versions();
   const char **alpn_protocol_strings =
-      gpr_malloc(sizeof(const char *) * num_alpn_protocols);
+      (const char **)gpr_malloc(sizeof(const char *) * num_alpn_protocols);
   tsi_result result = TSI_OK;
   grpc_ssl_server_security_connector *c;
   size_t i;
@@ -885,7 +891,8 @@ grpc_security_status grpc_ssl_server_security_connector_create(
     gpr_log(GPR_ERROR, "An SSL server needs a key and a cert.");
     goto error;
   }
-  c = (grpc_ssl_server_security_connector*) gpr_zalloc(sizeof(grpc_ssl_server_security_connector));
+  c = (grpc_ssl_server_security_connector *)gpr_zalloc(
+      sizeof(grpc_ssl_server_security_connector));
 
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.url_scheme = GRPC_SSL_URL_SCHEME;

@@ -67,7 +67,7 @@ static grpc_security_status ssl_create_security_connector(
     return status;
   }
   grpc_arg new_arg =
-      grpc_channel_arg_string_create(GRPC_ARG_HTTP2_SCHEME, "https");
+      grpc_channel_arg_string_create((char *)GRPC_ARG_HTTP2_SCHEME, (char *)"https");
   *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
   return status;
 }
@@ -94,7 +94,8 @@ static void ssl_build_config(const char *pem_root_certs,
 grpc_channel_credentials *grpc_ssl_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
     void *reserved) {
-  grpc_ssl_credentials *c = (grpc_ssl_credentials*) gpr_zalloc(sizeof(grpc_ssl_credentials));
+  grpc_ssl_credentials *c =
+      (grpc_ssl_credentials *)gpr_zalloc(sizeof(grpc_ssl_credentials));
   GRPC_API_TRACE(
       "grpc_ssl_credentials_create(pem_root_certs=%s, "
       "pem_key_cert_pair=%p, "
@@ -145,8 +146,8 @@ static void ssl_build_server_config(
   }
   if (num_key_cert_pairs > 0) {
     GPR_ASSERT(pem_key_cert_pairs != NULL);
-    config->pem_key_cert_pairs =
-        gpr_zalloc(num_key_cert_pairs * sizeof(tsi_ssl_pem_key_cert_pair));
+    config->pem_key_cert_pairs = (tsi_ssl_pem_key_cert_pair *)gpr_zalloc(
+        num_key_cert_pairs * sizeof(tsi_ssl_pem_key_cert_pair));
   }
   config->num_key_cert_pairs = num_key_cert_pairs;
   for (i = 0; i < num_key_cert_pairs; i++) {
@@ -175,8 +176,8 @@ grpc_server_credentials *grpc_ssl_server_credentials_create_ex(
     size_t num_key_cert_pairs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     void *reserved) {
-  grpc_ssl_server_credentials *c =
-      gpr_zalloc(sizeof(grpc_ssl_server_credentials));
+  grpc_ssl_server_credentials *c = (grpc_ssl_server_credentials *)gpr_zalloc(
+      sizeof(grpc_ssl_server_credentials));
   GRPC_API_TRACE(
       "grpc_ssl_server_credentials_create_ex("
       "pem_root_certs=%s, pem_key_cert_pairs=%p, num_key_cert_pairs=%lu, "
