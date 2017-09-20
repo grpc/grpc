@@ -92,7 +92,7 @@ void ServerData::destroy(void)
         // wait for all calls to finish
         for(;;)
         {
-            grpc_event event( grpc_completion_queue_next(m_pComletionQueue->queue(),
+            grpc_event event( grpc_completion_queue_pluck(m_pComletionQueue->queue(), nullptr,
                                                          gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) );
             if ((event.type == GRPC_OP_COMPLETE) && (event.tag == m_pServer)) break;
         }
@@ -184,7 +184,7 @@ Object HHVM_METHOD(Server, requestCall)
                                                         &callDetails.details,
                                                         &callDetails.metadata.array(),
                                                         pServerData->queue()->queue(),
-                                                        pServerData->queue()->queue(), nullptr) };
+                                                        pServerData->queue()->queue(), pServerData) };
 
     if (errorCode != GRPC_CALL_OK)
     {
@@ -193,10 +193,10 @@ Object HHVM_METHOD(Server, requestCall)
         SystemLib::throwBadMethodCallExceptionObject(oSS.str());
     }
 
-    grpc_event event( grpc_completion_queue_next(pServerData->queue()->queue(),
+    grpc_event event( grpc_completion_queue_pluck(pServerData->queue()->queue(), pServerData,
                                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) );
 
-    if (event.type != GRPC_OP_COMPLETE )
+    if ((event.type != GRPC_OP_COMPLETE) || (event.success == 0))
     {
         // return empty object
         return resultObj;

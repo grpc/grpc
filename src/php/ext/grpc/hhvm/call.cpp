@@ -17,6 +17,7 @@
  */
 
 #include <array>
+#include <atomic>
 #include <cstdint>
 #include <future>
 #include <mutex>
@@ -64,7 +65,7 @@ CallData::CallData(void) : m_pCall{ nullptr }, m_Owned{ false }, m_pCallCredenti
     m_pChannel{ nullptr }, m_Timeout{ 0 },
     m_pMetadataPromise{ std::make_shared<MetadataPromise>() },
     m_pMetadataMutex{ std::make_shared<std::mutex>() }, m_pCallCancelled{ std::make_shared<bool>(false) },
-    m_pOpsManaged{ nullptr }, m_BatchCounter{ 0 }
+    m_pOpsManaged{ nullptr }, m_BatchCounter{ 0 }, m_ActiveBatches{ 0 }
 {
 }
 
@@ -72,7 +73,7 @@ CallData::CallData(grpc_call* const call, const bool owned, const int32_t timeou
     m_pCall{ call }, m_Owned{ owned }, m_pCallCredentials{ nullptr }, m_pChannel{ nullptr },
     m_Timeout{ timeoutMs }, m_pMetadataPromise{ std::make_shared<MetadataPromise>() },
     m_pMetadataMutex{ std::make_shared<std::mutex>() }, m_pCallCancelled{ std::make_shared<bool>(false) },
-    m_pOpsManaged{ nullptr }, m_BatchCounter{ 0 }
+    m_pOpsManaged{ nullptr }, m_BatchCounter{ 0 }, m_ActiveBatches{ 0 }
 {
 }
 
@@ -562,18 +563,20 @@ Object HHVM_METHOD(Call, startBatch,
             pCallData->callCancelled() = true;
         }
 
-        // cancel the call with the server
-        grpc_call_cancel_with_status(pCallData->call(), GRPC_STATUS_DEADLINE_EXCEEDED,
-                                     "RPC Call Timeout Exceeded", nullptr);
-        callFailed = true;
-
         if (timeOut)
         {
+            // cancel the call with the server
+            grpc_call_cancel_with_status(pCallData->call(), GRPC_STATUS_DEADLINE_EXCEEDED,
+                                         "RPC Call Timeout Exceeded", nullptr);
+
             // wait for failure after cancelling call
-            grpc_event event(grpc_completion_queue_next(pCallData->queue()->queue(),
-                             gpr_inf_future(GPR_CLOCK_REALTIME),
-                             nullptr));
+            grpc_event event(grpc_completion_queue_pluck(pCallData->queue()->queue(), &opsManaged,
+                                                         gpr_inf_future(GPR_CLOCK_REALTIME),
+                                                         nullptr));
         }
+
+        callFailed = true;
+
     };
 
     static std::mutex s_StartBatchMutex;
@@ -590,16 +593,18 @@ Object HHVM_METHOD(Call, startBatch,
             oSS << "start_batch was called incorrectly: " << errorCode << std::endl;
             SystemLib::throwBadMethodCallExceptionObject(oSS.str());
         }
+        pCallData->incrementActiveBatches();
     }
-
-    grpc_event event (grpc_completion_queue_next(pCallData->queue()->queue(),
+    if (pCallData->activeBatches()>=2) std::cout << pCallData->activeBatches();
+    grpc_event event (grpc_completion_queue_pluck(pCallData->queue()->queue(), &opsManaged,
                                                  gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN),
                                                  nullptr));
-    if (event.type != GRPC_OP_COMPLETE || event.tag != &opsManaged)
+    pCallData->decrementActiveBatches();
+    if ((event.type != GRPC_OP_COMPLETE) || (event.tag != &opsManaged) || (event.success == 0))
     {
         // failed so clean up and return empty object
         callFailure(event.type ==  GRPC_QUEUE_TIMEOUT);
-        failCode = GRPC_STATUS_DEADLINE_EXCEEDED;
+        failCode = (event.type == GRPC_QUEUE_TIMEOUT) ? GRPC_STATUS_DEADLINE_EXCEEDED : GRPC_STATUS_UNKNOWN;
     }
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
@@ -611,15 +616,16 @@ Object HHVM_METHOD(Call, startBatch,
     {
         // wait on the plugin_get_metadata to complete
         auto getPluginMetadataFuture = pCallData->metadataPromise().get_future();
-        std::future_status status{ getPluginMetadataFuture.wait_for(std::chrono::milliseconds{ pCallData->getTimeout() }) };
-        if (status == std::future_status::timeout)
+        getPluginMetadataFuture.wait();
+        //std::future_status status{ getPluginMetadataFuture.wait_for(std::chrono::milliseconds{ pCallData->getTimeout() }) };
+        /*if (status == std::future_status::timeout)
         {
             // failed so clean up and return empty object
             callFailure();
             failCode = GRPC_STATUS_DEADLINE_EXCEEDED;
         }
         else
-        {
+        */{
             plugin_get_metadata_params metaDataParams{ getPluginMetadataFuture.get() };
             if (!metaDataParams.completed)
             {
