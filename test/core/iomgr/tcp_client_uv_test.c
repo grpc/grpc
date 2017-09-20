@@ -69,7 +69,7 @@ static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg,
 static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   GPR_ASSERT(g_connecting == NULL);
   GPR_ASSERT(error != GRPC_ERROR_NONE);
-  finish_connection();
+  finish_connection(exec_ctx);
 }
 
 static void close_cb(uv_handle_t *handle) { gpr_free(handle); }
