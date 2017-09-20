@@ -87,6 +87,8 @@ struct grpc_resource_user {
   grpc_closure_list on_allocated;
   /* True if we are currently trying to allocate from the quota, false if not */
   bool allocating;
+  /* How many bytes of allocations are outstanding */
+  int64_t outstanding_allocations;
   /* True if we are currently trying to add ourselves to the non-free quota
      list, false otherwise */
   bool added_to_free_pool;
@@ -150,6 +152,9 @@ struct grpc_resource_quota {
 
   char *name;
 };
+
+static void ru_unref_by(grpc_exec_ctx *exec_ctx,
+                        grpc_resource_user *resource_user, gpr_atm amount);
 
 /*******************************************************************************
  * list management
@@ -287,6 +292,25 @@ static bool rq_alloc(grpc_exec_ctx *exec_ctx,
   while ((resource_user = rulist_pop_head(resource_quota,
                                           GRPC_RULIST_AWAITING_ALLOCATION))) {
     gpr_mu_lock(&resource_user->mu);
+    if (GRPC_TRACER_ON(grpc_resource_quota_trace)) {
+      gpr_log(GPR_DEBUG, "RQ: check allocation for user %p shutdown=%" PRIdPTR
+                         " free_pool=%" PRId64,
+              resource_user, gpr_atm_no_barrier_load(&resource_user->shutdown),
+              resource_user->free_pool);
+    }
+    if (gpr_atm_no_barrier_load(&resource_user->shutdown)) {
+      resource_user->allocating = false;
+      grpc_closure_list_fail_all(
+          &resource_user->on_allocated,
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource user shutdown"));
+      int64_t aborted_allocations = resource_user->outstanding_allocations;
+      resource_user->outstanding_allocations = 0;
+      resource_user->free_pool += aborted_allocations;
+      GRPC_CLOSURE_LIST_SCHED(exec_ctx, &resource_user->on_allocated);
+      gpr_mu_unlock(&resource_user->mu);
+      ru_unref_by(exec_ctx, resource_user, aborted_allocations);
+      continue;
+    }
     if (resource_user->free_pool < 0 &&
         -resource_user->free_pool <= resource_quota->free_pool) {
       int64_t amt = -resource_user->free_pool;
@@ -306,6 +330,7 @@ static bool rq_alloc(grpc_exec_ctx *exec_ctx,
     }
     if (resource_user->free_pool >= 0) {
       resource_user->allocating = false;
+      resource_user->outstanding_allocations = 0;
       GRPC_CLOSURE_LIST_SCHED(exec_ctx, &resource_user->on_allocated);
       gpr_mu_unlock(&resource_user->mu);
     } else {
@@ -486,6 +511,9 @@ static void ru_post_destructive_reclaimer(grpc_exec_ctx *exec_ctx, void *ru,
 }
 
 static void ru_shutdown(grpc_exec_ctx *exec_ctx, void *ru, grpc_error *error) {
+  if (GRPC_TRACER_ON(grpc_resource_quota_trace)) {
+    gpr_log(GPR_DEBUG, "RU shutdown %p", ru);
+  }
   grpc_resource_user *resource_user = (grpc_resource_user *)ru;
   GRPC_CLOSURE_SCHED(exec_ctx, resource_user->reclaimers[0],
                      GRPC_ERROR_CANCELLED);
@@ -716,6 +744,7 @@ grpc_resource_user *grpc_resource_user_create(
   resource_user->reclaimers[1] = NULL;
   resource_user->new_reclaimers[0] = NULL;
   resource_user->new_reclaimers[1] = NULL;
+  resource_user->outstanding_allocations = 0;
   for (int i = 0; i < GRPC_RULIST_COUNT; i++) {
     resource_user->links[i].next = resource_user->links[i].prev = NULL;
   }
@@ -776,6 +805,7 @@ void grpc_resource_user_alloc(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&resource_user->mu);
   ru_ref_by(resource_user, (gpr_atm)size);
   resource_user->free_pool -= (int64_t)size;
+  resource_user->outstanding_allocations += (int64_t)size;
   if (GRPC_TRACER_ON(grpc_resource_quota_trace)) {
     gpr_log(GPR_DEBUG, "RQ %s %s: alloc %" PRIdPTR "; free_pool -> %" PRId64,
             resource_user->resource_quota->name, resource_user->name, size,
@@ -790,6 +820,7 @@ void grpc_resource_user_alloc(grpc_exec_ctx *exec_ctx,
                          GRPC_ERROR_NONE);
     }
   } else {
+    resource_user->outstanding_allocations -= (int64_t)size;
     GRPC_CLOSURE_SCHED(exec_ctx, optional_on_done, GRPC_ERROR_NONE);
   }
   gpr_mu_unlock(&resource_user->mu);
