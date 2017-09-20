@@ -699,7 +699,6 @@ static int poll_deadline_to_millis_timeout(grpc_exec_ctx *exec_ctx,
     return 0;
   else
     return (int)delta;
-  }
 }
 
 static void fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
