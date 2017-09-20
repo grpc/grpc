@@ -106,7 +106,8 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
     return GRPC_SECURITY_ERROR;
   }
 
-  c = (grpc_httpcli_ssl_channel_security_connector*) gpr_zalloc(sizeof(grpc_httpcli_ssl_channel_security_connector));
+  c = (grpc_httpcli_ssl_channel_security_connector *)gpr_zalloc(
+      sizeof(grpc_httpcli_ssl_channel_security_connector));
 
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.vtable = &httpcli_ssl_vtable;
@@ -137,7 +138,7 @@ typedef struct {
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *error) {
-  grpc_handshaker_args *args = (grpc_handshaker_args*) arg;
+  grpc_handshaker_args *args = (grpc_handshaker_args *)arg;
   on_done_closure *c = (on_done_closure *)args->user_data;
   if (error != GRPC_ERROR_NONE) {
     const char *msg = grpc_error_string(error);
@@ -159,7 +160,7 @@ static void ssl_handshake(grpc_exec_ctx *exec_ctx, void *arg,
                           gpr_timespec deadline,
                           void (*on_done)(grpc_exec_ctx *exec_ctx, void *arg,
                                           grpc_endpoint *endpoint)) {
-  on_done_closure *c = (on_done_closure*) gpr_malloc(sizeof(*c));
+  on_done_closure *c = (on_done_closure *)gpr_malloc(sizeof(*c));
   const char *pem_root_certs = grpc_get_default_ssl_roots();
   if (pem_root_certs == NULL) {
     gpr_log(GPR_ERROR, "Could not get default pem root certs.");

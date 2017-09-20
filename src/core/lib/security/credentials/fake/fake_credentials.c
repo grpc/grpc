@@ -60,7 +60,8 @@ static grpc_server_credentials_vtable
 
 grpc_channel_credentials *grpc_fake_transport_security_credentials_create(
     void) {
-  grpc_channel_credentials *c = (grpc_channel_credentials*) gpr_zalloc(sizeof(grpc_channel_credentials));
+  grpc_channel_credentials *c =
+      (grpc_channel_credentials *)gpr_zalloc(sizeof(grpc_channel_credentials));
   c->type = GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY;
   c->vtable = &fake_transport_security_credentials_vtable;
   gpr_ref_init(&c->refcount, 1);
@@ -69,7 +70,8 @@ grpc_channel_credentials *grpc_fake_transport_security_credentials_create(
 
 grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
     void) {
-  grpc_server_credentials *c = (grpc_server_credentials*) gpr_malloc(sizeof(grpc_server_credentials));
+  grpc_server_credentials *c =
+      (grpc_server_credentials *)gpr_malloc(sizeof(grpc_server_credentials));
   memset(c, 0, sizeof(grpc_server_credentials));
   c->type = GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY;
   gpr_ref_init(&c->refcount, 1);
@@ -78,8 +80,8 @@ grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
 }
 
 grpc_arg grpc_fake_transport_expected_targets_arg(char *expected_targets) {
-  return grpc_channel_arg_string_create(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS,
-                                        expected_targets);
+  return grpc_channel_arg_string_create(
+      (char *)GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_targets);
 }
 
 const char *grpc_fake_transport_get_expected_targets(
@@ -129,7 +131,8 @@ grpc_call_credentials *grpc_md_only_test_credentials_create(
     grpc_exec_ctx *exec_ctx, const char *md_key, const char *md_value,
     bool is_async) {
   grpc_md_only_test_credentials *c =
-      gpr_zalloc(sizeof(grpc_md_only_test_credentials));
+      (grpc_md_only_test_credentials *)gpr_zalloc(
+          sizeof(grpc_md_only_test_credentials));
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_OAUTH2;
   c->base.vtable = &md_only_test_vtable;
   gpr_ref_init(&c->base.refcount, 1);

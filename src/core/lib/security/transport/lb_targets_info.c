@@ -25,19 +25,22 @@
  * secure naming purposes. */
 #define GRPC_ARG_LB_SECURE_NAMING_MAP "grpc.lb_secure_naming_map"
 
-static void *targets_info_copy(void *p) { return grpc_slice_hash_table_ref(p); }
+static void *targets_info_copy(void *p) {
+  return grpc_slice_hash_table_ref((grpc_slice_hash_table *)p);
+}
 static void targets_info_destroy(grpc_exec_ctx *exec_ctx, void *p) {
-  grpc_slice_hash_table_unref(exec_ctx, p);
+  grpc_slice_hash_table_unref(exec_ctx, (grpc_slice_hash_table *)p);
 }
 static int targets_info_cmp(void *a, void *b) {
-  return grpc_slice_hash_table_cmp(a, b);
+  return grpc_slice_hash_table_cmp((const grpc_slice_hash_table *)a,
+                                   (const grpc_slice_hash_table *)b);
 }
 static const grpc_arg_pointer_vtable server_to_balancer_names_vtable = {
     targets_info_copy, targets_info_destroy, targets_info_cmp};
 
 grpc_arg grpc_lb_targets_info_create_channel_arg(
     grpc_slice_hash_table *targets_info) {
-  return grpc_channel_arg_pointer_create(GRPC_ARG_LB_SECURE_NAMING_MAP,
+  return grpc_channel_arg_pointer_create((char *)GRPC_ARG_LB_SECURE_NAMING_MAP,
                                          targets_info,
                                          &server_to_balancer_names_vtable);
 }
@@ -48,7 +51,7 @@ grpc_slice_hash_table *grpc_lb_targets_info_find_in_args(
       grpc_channel_args_find(args, GRPC_ARG_LB_SECURE_NAMING_MAP);
   if (targets_info_arg != NULL) {
     GPR_ASSERT(targets_info_arg->type == GRPC_ARG_POINTER);
-    return targets_info_arg->value.pointer.p;
+    return (grpc_slice_hash_table *)targets_info_arg->value.pointer.p;
   }
   return NULL;
 }

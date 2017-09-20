@@ -82,7 +82,8 @@ void grpc_auth_context_release(grpc_auth_context *context) {
 /* --- grpc_client_security_context --- */
 
 grpc_client_security_context *grpc_client_security_context_create(void) {
-  return (grpc_client_security_context*)gpr_zalloc(sizeof(grpc_client_security_context));
+  return (grpc_client_security_context *)gpr_zalloc(
+      sizeof(grpc_client_security_context));
 }
 
 void grpc_client_security_context_destroy(void *ctx) {
@@ -100,7 +101,8 @@ void grpc_client_security_context_destroy(void *ctx) {
 /* --- grpc_server_security_context --- */
 
 grpc_server_security_context *grpc_server_security_context_create(void) {
-  return (grpc_client_security_context*)gpr_zalloc(sizeof(grpc_server_security_context));
+  return (grpc_server_security_context *)gpr_zalloc(
+      sizeof(grpc_server_security_context));
 }
 
 void grpc_server_security_context_destroy(void *ctx) {
@@ -117,7 +119,8 @@ void grpc_server_security_context_destroy(void *ctx) {
 static grpc_auth_property_iterator empty_iterator = {NULL, 0, NULL};
 
 grpc_auth_context *grpc_auth_context_create(grpc_auth_context *chained) {
-  grpc_auth_context *ctx = (grpc_auth_context*) gpr_zalloc(sizeof(grpc_auth_context));
+  grpc_auth_context *ctx =
+      (grpc_auth_context *)gpr_zalloc(sizeof(grpc_auth_context));
   gpr_ref_init(&ctx->refcount, 1);
   if (chained != NULL) {
     ctx->chained = GRPC_AUTH_CONTEXT_REF(chained, "chained");
@@ -258,9 +261,9 @@ static void ensure_auth_context_capacity(grpc_auth_context *ctx) {
   if (ctx->properties.count == ctx->properties.capacity) {
     ctx->properties.capacity =
         GPR_MAX(ctx->properties.capacity + 8, ctx->properties.capacity * 2);
-    ctx->properties.array = (grpc_auth_property *)
-        gpr_realloc(ctx->properties.array,
-                    ctx->properties.capacity * sizeof(grpc_auth_property));
+    ctx->properties.array = (grpc_auth_property *)gpr_realloc(
+        ctx->properties.array,
+        ctx->properties.capacity * sizeof(grpc_auth_property));
   }
 }
 
@@ -275,7 +278,7 @@ void grpc_auth_context_add_property(grpc_auth_context *ctx, const char *name,
   ensure_auth_context_capacity(ctx);
   prop = &ctx->properties.array[ctx->properties.count++];
   prop->name = gpr_strdup(name);
-  prop->value = (char*) gpr_malloc(value_length + 1);
+  prop->value = (char *)gpr_malloc(value_length + 1);
   memcpy(prop->value, value, value_length);
   prop->value[value_length] = '\0';
   prop->value_length = value_length;
@@ -302,11 +305,12 @@ void grpc_auth_property_reset(grpc_auth_property *property) {
 }
 
 static void auth_context_pointer_arg_destroy(grpc_exec_ctx *exec_ctx, void *p) {
-  GRPC_AUTH_CONTEXT_UNREF((grpc_auth_context*)p, "auth_context_pointer_arg");
+  GRPC_AUTH_CONTEXT_UNREF((grpc_auth_context *)p, "auth_context_pointer_arg");
 }
 
 static void *auth_context_pointer_arg_copy(void *p) {
-  return GRPC_AUTH_CONTEXT_REF((grpc_auth_context*)p, "auth_context_pointer_arg");
+  return GRPC_AUTH_CONTEXT_REF((grpc_auth_context *)p,
+                               "auth_context_pointer_arg");
 }
 
 static int auth_context_pointer_cmp(void *a, void *b) { return GPR_ICMP(a, b); }
@@ -316,8 +320,8 @@ static const grpc_arg_pointer_vtable auth_context_pointer_vtable = {
     auth_context_pointer_cmp};
 
 grpc_arg grpc_auth_context_to_arg(grpc_auth_context *p) {
-  return grpc_channel_arg_pointer_create(GRPC_AUTH_CONTEXT_ARG, p,
-                                         (char *)&auth_context_pointer_vtable);
+  return grpc_channel_arg_pointer_create((char *)GRPC_AUTH_CONTEXT_ARG, p,
+                                         &auth_context_pointer_vtable);
 }
 
 grpc_auth_context *grpc_auth_context_from_arg(const grpc_arg *arg) {
@@ -327,7 +331,7 @@ grpc_auth_context *grpc_auth_context_from_arg(const grpc_arg *arg) {
             GRPC_AUTH_CONTEXT_ARG);
     return NULL;
   }
-  return (grpc_auth_context*)arg->value.pointer.p;
+  return (grpc_auth_context *)arg->value.pointer.p;
 }
 
 grpc_auth_context *grpc_find_auth_context_in_args(

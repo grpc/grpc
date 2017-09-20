@@ -85,7 +85,7 @@ static void on_compute_engine_detection_http_response(grpc_exec_ctx *exec_ctx,
 }
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, grpc_error *e) {
-  grpc_pollset_destroy(exec_ctx, p);
+  grpc_pollset_destroy(exec_ctx, (grpc_pollset *)p);
 }
 
 static int is_stack_running_on_compute_engine(grpc_exec_ctx *exec_ctx) {
@@ -98,7 +98,7 @@ static int is_stack_running_on_compute_engine(grpc_exec_ctx *exec_ctx) {
      on compute engine. */
   gpr_timespec max_detection_delay = gpr_time_from_seconds(1, GPR_TIMESPAN);
 
-  grpc_pollset *pollset = (grpc_pollset*) gpr_zalloc(grpc_pollset_size());
+  grpc_pollset *pollset = (grpc_pollset *)gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &g_polling_mu);
   detector.pollent = grpc_polling_entity_create_from_pollset(pollset);
   detector.is_done = 0;
@@ -106,8 +106,8 @@ static int is_stack_running_on_compute_engine(grpc_exec_ctx *exec_ctx) {
 
   memset(&detector.response, 0, sizeof(detector.response));
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = GRPC_COMPUTE_ENGINE_DETECTION_HOST;
-  request.http.path = "/";
+  request.host = (char *)GRPC_COMPUTE_ENGINE_DETECTION_HOST;
+  request.http.path = (char *)"/";
 
   grpc_httpcli_context_init(&context);
 

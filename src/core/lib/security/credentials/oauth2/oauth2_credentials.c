@@ -130,7 +130,7 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
   }
 
   if (response->body_length > 0) {
-    null_terminated_body = (char*) gpr_malloc(response->body_length + 1);
+    null_terminated_body = (char *)gpr_malloc(response->body_length + 1);
     null_terminated_body[response->body_length] = '\0';
     memcpy(null_terminated_body, response->body, response->body_length);
   }
@@ -359,11 +359,11 @@ static void compute_engine_fetch_oauth2(
     grpc_exec_ctx *exec_ctx, grpc_credentials_metadata_request *metadata_req,
     grpc_httpcli_context *httpcli_context, grpc_polling_entity *pollent,
     grpc_iomgr_cb_func response_cb, gpr_timespec deadline) {
-  grpc_http_header header = {"Metadata-Flavor", "Google"};
+  grpc_http_header header = {(char *)"Metadata-Flavor", (char *)"Google"};
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = GRPC_COMPUTE_ENGINE_METADATA_HOST;
-  request.http.path = GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH;
+  request.host = (char *)GRPC_COMPUTE_ENGINE_METADATA_HOST;
+  request.http.path = (char *)GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH;
   request.http.hdr_count = 1;
   request.http.hdrs = &header;
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
@@ -381,7 +381,8 @@ static void compute_engine_fetch_oauth2(
 grpc_call_credentials *grpc_google_compute_engine_credentials_create(
     void *reserved) {
   grpc_oauth2_token_fetcher_credentials *c =
-      gpr_malloc(sizeof(grpc_oauth2_token_fetcher_credentials));
+      (grpc_oauth2_token_fetcher_credentials *)gpr_malloc(
+          sizeof(grpc_oauth2_token_fetcher_credentials));
   GRPC_API_TRACE("grpc_compute_engine_credentials_create(reserved=%p)", 1,
                  (reserved));
   GPR_ASSERT(reserved == NULL);
@@ -412,16 +413,16 @@ static void refresh_token_fetch_oauth2(
     grpc_iomgr_cb_func response_cb, gpr_timespec deadline) {
   grpc_google_refresh_token_credentials *c =
       (grpc_google_refresh_token_credentials *)metadata_req->creds;
-  grpc_http_header header = {"Content-Type",
-                             "application/x-www-form-urlencoded"};
+  grpc_http_header header = {(char *)"Content-Type",
+                             (char *)"application/x-www-form-urlencoded"};
   grpc_httpcli_request request;
   char *body = NULL;
   gpr_asprintf(&body, GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING,
                c->refresh_token.client_id, c->refresh_token.client_secret,
                c->refresh_token.refresh_token);
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = GRPC_GOOGLE_OAUTH2_SERVICE_HOST;
-  request.http.path = GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH;
+  request.host = (char *)GRPC_GOOGLE_OAUTH2_SERVICE_HOST;
+  request.http.path = (char *)GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH;
   request.http.hdr_count = 1;
   request.http.hdrs = &header;
   request.handshaker = &grpc_httpcli_ssl;
@@ -447,7 +448,8 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
     gpr_log(GPR_ERROR, "Invalid input for refresh token credentials creation");
     return NULL;
   }
-  c = (grpc_google_refresh_token_credentials*) gpr_zalloc(sizeof(grpc_google_refresh_token_credentials));
+  c = (grpc_google_refresh_token_credentials *)gpr_zalloc(
+      sizeof(grpc_google_refresh_token_credentials));
   init_oauth2_token_fetcher(&c->base, refresh_token_fetch_oauth2);
   c->base.base.vtable = &refresh_token_vtable;
   c->refresh_token = refresh_token;
@@ -515,7 +517,8 @@ static grpc_call_credentials_vtable access_token_vtable = {
 grpc_call_credentials *grpc_access_token_credentials_create(
     const char *access_token, void *reserved) {
   grpc_access_token_credentials *c =
-      gpr_zalloc(sizeof(grpc_access_token_credentials));
+      (grpc_access_token_credentials *)gpr_zalloc(
+          sizeof(grpc_access_token_credentials));
   GRPC_API_TRACE(
       "grpc_access_token_credentials_create(access_token=<redacted>, "
       "reserved=%p)",
