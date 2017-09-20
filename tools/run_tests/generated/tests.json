@@ -3065,7 +3065,10 @@
       "posix"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "dbg", 
+      "opt"
+    ], 
     "exclude_iomgrs": [], 
     "excluded_poll_engines": [
       "poll", 

@@ -3690,6 +3690,9 @@ targets:
   args:
   - --benchmark_min_time=0
   defaults: benchmark
+  exclude_configs:
+  - dbg
+  - opt
   excluded_poll_engines:
   - poll
   - poll-cv
