@@ -782,7 +782,7 @@ cdef class CompressionOptions:
 
 
 def compression_algorithm_name(grpc_compression_algorithm algorithm):
-  cdef char* name
+  cdef const char* name
   with nogil:
     grpc_compression_algorithm_name(algorithm, &name)
   # Let Cython do the right thing with string casting
