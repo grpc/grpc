@@ -226,7 +226,8 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
 static void on_host_checked(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_error *error) {
   grpc_transport_stream_op_batch *batch = (grpc_transport_stream_op_batch *)arg;
-  grpc_call_element *elem = (grpc_call_element *)batch->handler_private.extra_arg;
+  grpc_call_element *elem =
+      (grpc_call_element *)batch->handler_private.extra_arg;
   call_data *calld = (call_data *)elem->call_data;
   if (error == GRPC_ERROR_NONE) {
     send_security_metadata(exec_ctx, elem, batch);
