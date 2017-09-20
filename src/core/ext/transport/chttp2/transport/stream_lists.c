@@ -20,7 +20,7 @@
 
 #include <grpc/support/log.h>
 
-static char *stream_list_id_string(grpc_chttp2_stream_list_id id) {
+static const char *stream_list_id_string(grpc_chttp2_stream_list_id id) {
   switch (id) {
     case GRPC_CHTTP2_LIST_WRITABLE:
       return "writable";
