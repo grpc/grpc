@@ -1342,6 +1342,11 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
     GRPC_ERROR_UNREF(error);
     error = GRPC_ERROR_NONE;
   }
+  if (error != GRPC_ERROR_NONE && bctl->op.recv_message &&
+      *call->receiving_buffer != NULL) {
+    grpc_byte_buffer_destroy(*call->receiving_buffer);
+    *call->receiving_buffer = NULL;
+  }
 
   if (bctl->completion_data.notify_tag.is_closure) {
     /* unrefs bctl->error */
