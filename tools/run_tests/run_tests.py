@@ -329,12 +329,12 @@ class CLanguage(object):
           # these are the flag defined by gtest and benchmark framework to list
           # and filter test runs. We use them to split each individual test
           # into its own JobSpec, and thus into its own process.
-          if 'gtest' in target and target['gtest']:
-            list_test_command = '--gtest_list_tests'
-            filter_test_command = '--gtest_filter=%s'
-          elif 'benchmark' in target and target['benchmark']:
+          if 'benchmark' in target and target['benchmark']:
             list_test_command = '--benchmark_list_tests'
             filter_test_command = '--benchmark_filter=%s'
+          elif 'gtest' in target and target['gtest']:
+            list_test_command = '--gtest_list_tests'
+            filter_test_command = '--gtest_filter=%s'
 
           if list_test_command:
             # here we parse the output of --gtest_list_tests (or 
