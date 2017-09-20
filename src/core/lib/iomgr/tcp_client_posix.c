@@ -48,7 +48,6 @@ extern grpc_tracer_flag grpc_tcp_trace;
 typedef struct {
   gpr_mu mu;
   grpc_fd *fd;
-  gpr_timespec deadline;
   grpc_timer alarm;
   grpc_closure on_alarm;
   int refs;
