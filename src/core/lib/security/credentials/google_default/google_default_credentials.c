@@ -98,7 +98,7 @@ static int is_stack_running_on_compute_engine(grpc_exec_ctx *exec_ctx) {
      on compute engine. */
   gpr_timespec max_detection_delay = gpr_time_from_seconds(1, GPR_TIMESPAN);
 
-  grpc_pollset *pollset = gpr_zalloc(grpc_pollset_size());
+  grpc_pollset *pollset = (grpc_pollset*) gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &g_polling_mu);
   detector.pollent = grpc_polling_entity_create_from_pollset(pollset);
   detector.is_done = 0;

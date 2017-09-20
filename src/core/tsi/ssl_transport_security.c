@@ -135,7 +135,7 @@ static void init_openssl(void) {
   OpenSSL_add_all_algorithms();
   num_locks = CRYPTO_num_locks();
   GPR_ASSERT(num_locks > 0);
-  openssl_mutexes = gpr_malloc((size_t)num_locks * sizeof(gpr_mu));
+  openssl_mutexes = (gpr_mu*) gpr_malloc((size_t)num_locks * sizeof(gpr_mu));
   for (i = 0; i < CRYPTO_num_locks(); i++) {
     gpr_mu_init(&openssl_mutexes[i]);
   }
@@ -684,7 +684,7 @@ static tsi_result build_alpn_protocol_name_list(
     }
     *protocol_name_list_length += length + 1;
   }
-  *protocol_name_list = gpr_malloc(*protocol_name_list_length);
+  *protocol_name_list = (unsigned char*) gpr_malloc(*protocol_name_list_length);
   if (*protocol_name_list == NULL) return TSI_OUT_OF_RESOURCES;
   current = *protocol_name_list;
   for (i = 0; i < num_alpn_protocols; i++) {
@@ -1023,7 +1023,7 @@ static tsi_result ssl_handshaker_create_frame_protector(
   size_t actual_max_output_protected_frame_size =
       TSI_SSL_MAX_PROTECTED_FRAME_SIZE_UPPER_BOUND;
   tsi_ssl_handshaker *impl = (tsi_ssl_handshaker *)self;
-  tsi_ssl_frame_protector *protector_impl = gpr_zalloc(sizeof(*protector_impl));
+  tsi_ssl_frame_protector *protector_impl = (tsi_ssl_frame_protector*) gpr_zalloc(sizeof(*protector_impl));
 
   if (max_output_protected_frame_size != NULL) {
     if (*max_output_protected_frame_size >
@@ -1039,7 +1039,7 @@ static tsi_result ssl_handshaker_create_frame_protector(
   }
   protector_impl->buffer_size =
       actual_max_output_protected_frame_size - TSI_SSL_MAX_PROTECTION_OVERHEAD;
-  protector_impl->buffer = gpr_malloc(protector_impl->buffer_size);
+  protector_impl->buffer = (unsigned char*) gpr_malloc(protector_impl->buffer_size);
   if (protector_impl->buffer == NULL) {
     gpr_log(GPR_ERROR,
             "Could not allocated buffer for tsi_ssl_frame_protector.");
@@ -1130,7 +1130,7 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX *ctx, int is_client,
     SSL_set_accept_state(ssl);
   }
 
-  impl = gpr_zalloc(sizeof(*impl));
+  impl = (tsi_ssl_handshaker*) gpr_zalloc(sizeof(*impl));
   impl->ssl = ssl;
   impl->into_ssl = into_ssl;
   impl->from_ssl = from_ssl;
@@ -1359,7 +1359,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
     return TSI_INVALID_ARGUMENT;
   }
 
-  impl = gpr_zalloc(sizeof(*impl));
+  impl = (tsi_ssl_client_handshaker_factory*) gpr_zalloc(sizeof(*impl));
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &client_handshaker_factory_vtable;
 
@@ -1444,11 +1444,11 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
     return TSI_INVALID_ARGUMENT;
   }
 
-  impl = gpr_zalloc(sizeof(*impl));
+  impl = (tsi_ssl_server_handshaker_factory*) gpr_zalloc(sizeof(*impl));
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &server_handshaker_factory_vtable;
 
-  impl->ssl_contexts = gpr_zalloc(num_key_cert_pairs * sizeof(SSL_CTX *));
+  impl->ssl_contexts = (SSL_CTX**) gpr_zalloc(num_key_cert_pairs * sizeof(SSL_CTX *));
   impl->ssl_context_x509_subject_names =
       gpr_zalloc(num_key_cert_pairs * sizeof(tsi_peer));
   if (impl->ssl_contexts == NULL ||

@@ -130,7 +130,7 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
   }
 
   if (response->body_length > 0) {
-    null_terminated_body = gpr_malloc(response->body_length + 1);
+    null_terminated_body = (char*) gpr_malloc(response->body_length + 1);
     null_terminated_body[response->body_length] = '\0';
     memcpy(null_terminated_body, response->body, response->body_length);
   }
@@ -447,7 +447,7 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
     gpr_log(GPR_ERROR, "Invalid input for refresh token credentials creation");
     return NULL;
   }
-  c = gpr_zalloc(sizeof(grpc_google_refresh_token_credentials));
+  c = (grpc_google_refresh_token_credentials*) gpr_zalloc(sizeof(grpc_google_refresh_token_credentials));
   init_oauth2_token_fetcher(&c->base, refresh_token_fetch_oauth2);
   c->base.base.vtable = &refresh_token_vtable;
   c->refresh_token = refresh_token;

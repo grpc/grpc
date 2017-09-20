@@ -424,7 +424,7 @@ static grpc_security_connector_vtable fake_server_vtable = {
 grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
     grpc_call_credentials *request_metadata_creds, const char *target,
     const grpc_channel_args *args) {
-  grpc_fake_channel_security_connector *c = gpr_zalloc(sizeof(*c));
+  grpc_fake_channel_security_connector *c = (grpc_fake_channel_security_connector*) gpr_zalloc(sizeof(*c));
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
   c->base.base.vtable = &fake_channel_vtable;
@@ -658,7 +658,7 @@ tsi_peer tsi_shallow_peer_from_ssl_auth_context(
   while (grpc_auth_property_iterator_next(&it) != NULL) max_num_props++;
 
   if (max_num_props > 0) {
-    peer.properties = gpr_malloc(max_num_props * sizeof(tsi_peer_property));
+    peer.properties = (tsi_peer_property*) gpr_malloc(max_num_props * sizeof(tsi_peer_property));
     it = grpc_auth_context_property_iterator(auth_context);
     while ((prop = grpc_auth_property_iterator_next(&it)) != NULL) {
       if (strcmp(prop->name, GRPC_X509_SAN_PROPERTY_NAME) == 0) {
@@ -829,7 +829,7 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     pem_root_certs = config->pem_root_certs;
   }
 
-  c = gpr_zalloc(sizeof(grpc_ssl_channel_security_connector));
+  c = (grpc_ssl_channel_security_connector*) gpr_zalloc(sizeof(grpc_ssl_channel_security_connector));
 
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.vtable = &ssl_channel_vtable;
@@ -885,7 +885,7 @@ grpc_security_status grpc_ssl_server_security_connector_create(
     gpr_log(GPR_ERROR, "An SSL server needs a key and a cert.");
     goto error;
   }
-  c = gpr_zalloc(sizeof(grpc_ssl_server_security_connector));
+  c = (grpc_ssl_server_security_connector*) gpr_zalloc(sizeof(grpc_ssl_server_security_connector));
 
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.url_scheme = GRPC_SSL_URL_SCHEME;
