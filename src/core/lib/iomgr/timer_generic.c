@@ -95,9 +95,7 @@ struct shared_mutables {
   gpr_mu mu;
 } GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
 
-static struct shared_mutables g_shared_mutables = {
-    .checker_mu = GPR_SPINLOCK_STATIC_INITIALIZER, .initialized = false,
-};
+static struct shared_mutables g_shared_mutables;
 
 static gpr_atm saturating_add(gpr_atm a, gpr_atm b) {
   if (a > GPR_ATM_MAX - b) {
@@ -121,6 +119,7 @@ void grpc_timer_list_init(grpc_exec_ctx *exec_ctx) {
   uint32_t i;
 
   g_shared_mutables.initialized = true;
+  g_shared_mutables.checker_mu = GPR_SPINLOCK_INITIALIZER;
   gpr_mu_init(&g_shared_mutables.mu);
   g_shared_mutables.min_timer = grpc_exec_ctx_now(exec_ctx);
   gpr_tls_init(&g_last_seen_min_timer);

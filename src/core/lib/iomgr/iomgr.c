@@ -50,7 +50,7 @@ void grpc_iomgr_init(grpc_exec_ctx *exec_ctx) {
   grpc_executor_init(exec_ctx);
   grpc_timer_list_init(exec_ctx);
   g_root_object.next = g_root_object.prev = &g_root_object;
-  g_root_object.name = "root";
+  g_root_object.name = (char *)"root";
   grpc_network_status_init();
   grpc_iomgr_platform_init();
 }

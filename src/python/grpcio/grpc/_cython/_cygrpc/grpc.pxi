@@ -523,7 +523,7 @@ cdef extern from "grpc/compression.h":
   int grpc_compression_algorithm_parse(
       grpc_slice value, grpc_compression_algorithm *algorithm) nogil
   int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
-                                      char **name) nogil
+                                      const char **name) nogil
   grpc_compression_algorithm grpc_compression_algorithm_for_level(
       grpc_compression_level level, uint32_t accepted_encodings) nogil
   void grpc_compression_options_init(grpc_compression_options *opts) nogil

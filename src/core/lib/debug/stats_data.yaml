@@ -215,6 +215,14 @@
 - counter: executor_push_retries
   doc: Number of times we raced and were forced to retry pushing a closure to
        the executor
+- counter: executor_threads_created
+  doc: Size of the backing thread pool for overflow gRPC Core work
+- counter: executor_threads_used
+  doc: How many executor threads actually got used
+- histogram: executor_closures_per_wakeup
+  max: 1024
+  buckets: 64
+  doc: Number of closures executed each time an executor wakes up
 # server
 - counter: server_requested_calls
   doc: How many calls were requested (not necessarily received) by the server

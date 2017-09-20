@@ -350,11 +350,12 @@ class CLanguage(object):
                                                 environ=env))
           else:
             cmdline = [binary] + target['args']
+            shortname = target.get('shortname', ' '.join(
+                          pipes.quote(arg)
+                          for arg in cmdline))
+            shortname += shortname_ext
             out.append(self.config.job_spec(cmdline,
-                                            shortname=' '.join(
-                                                          pipes.quote(arg)
-                                                          for arg in cmdline) +
-                                                      shortname_ext,
+                                            shortname=shortname,
                                             cpu_cost=cpu_cost,
                                             flaky=target.get('flaky', False),
                                             timeout_seconds=target.get('timeout_seconds', _DEFAULT_TIMEOUT_SECONDS) * timeout_scaling,

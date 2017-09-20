@@ -281,8 +281,9 @@ static grpc_fd *fd_create(int fd, const char *name) {
 #endif
   gpr_free(fd_name);
 
-  struct epoll_event ev = {.events = (uint32_t)(EPOLLIN | EPOLLOUT | EPOLLET),
-                           .data.ptr = new_fd};
+  struct epoll_event ev;
+  ev.events = (uint32_t)(EPOLLIN | EPOLLOUT | EPOLLET);
+  ev.data.ptr = new_fd;
   if (epoll_ctl(g_epoll_set.epfd, EPOLL_CTL_ADD, fd, &ev) != 0) {
     gpr_log(GPR_ERROR, "epoll_ctl failed: %s", strerror(errno));
   }
@@ -436,8 +437,9 @@ static grpc_error *pollset_global_init(void) {
   global_wakeup_fd.read_fd = -1;
   grpc_error *err = grpc_wakeup_fd_init(&global_wakeup_fd);
   if (err != GRPC_ERROR_NONE) return err;
-  struct epoll_event ev = {.events = (uint32_t)(EPOLLIN | EPOLLET),
-                           .data.ptr = &global_wakeup_fd};
+  struct epoll_event ev;
+  ev.events = (uint32_t)(EPOLLIN | EPOLLET);
+  ev.data.ptr = &global_wakeup_fd;
   if (epoll_ctl(g_epoll_set.epfd, EPOLL_CTL_ADD, global_wakeup_fd.read_fd,
                 &ev) != 0) {
     return GRPC_OS_ERROR(errno, "epoll_ctl");
@@ -1194,34 +1196,34 @@ static void shutdown_engine(void) {
 }
 
 static const grpc_event_engine_vtable vtable = {
-    .pollset_size = sizeof(grpc_pollset),
+    sizeof(grpc_pollset),
 
-    .fd_create = fd_create,
-    .fd_wrapped_fd = fd_wrapped_fd,
-    .fd_orphan = fd_orphan,
-    .fd_shutdown = fd_shutdown,
-    .fd_is_shutdown = fd_is_shutdown,
-    .fd_notify_on_read = fd_notify_on_read,
-    .fd_notify_on_write = fd_notify_on_write,
-    .fd_get_read_notifier_pollset = fd_get_read_notifier_pollset,
+    fd_create,
+    fd_wrapped_fd,
+    fd_orphan,
+    fd_shutdown,
+    fd_notify_on_read,
+    fd_notify_on_write,
+    fd_is_shutdown,
+    fd_get_read_notifier_pollset,
 
-    .pollset_init = pollset_init,
-    .pollset_shutdown = pollset_shutdown,
-    .pollset_destroy = pollset_destroy,
-    .pollset_work = pollset_work,
-    .pollset_kick = pollset_kick,
-    .pollset_add_fd = pollset_add_fd,
+    pollset_init,
+    pollset_shutdown,
+    pollset_destroy,
+    pollset_work,
+    pollset_kick,
+    pollset_add_fd,
 
-    .pollset_set_create = pollset_set_create,
-    .pollset_set_destroy = pollset_set_destroy,
-    .pollset_set_add_pollset = pollset_set_add_pollset,
-    .pollset_set_del_pollset = pollset_set_del_pollset,
-    .pollset_set_add_pollset_set = pollset_set_add_pollset_set,
-    .pollset_set_del_pollset_set = pollset_set_del_pollset_set,
-    .pollset_set_add_fd = pollset_set_add_fd,
-    .pollset_set_del_fd = pollset_set_del_fd,
+    pollset_set_create,
+    pollset_set_destroy,
+    pollset_set_add_pollset,
+    pollset_set_del_pollset,
+    pollset_set_add_pollset_set,
+    pollset_set_del_pollset_set,
+    pollset_set_add_fd,
+    pollset_set_del_fd,
 
-    .shutdown_engine = shutdown_engine,
+    shutdown_engine,
 };
 
 /* It is possible that GLIBC has epoll but the underlying kernel doesn't.

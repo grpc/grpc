@@ -1672,6 +1672,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   batch_control *bctl;
   int num_completion_callbacks_needed = 1;
   grpc_call_error error = GRPC_CALL_OK;
+  grpc_transport_stream_op_batch *stream_op;
+  grpc_transport_stream_op_batch_payload *stream_op_payload;
 
   GPR_TIMER_BEGIN("grpc_call_start_batch", 0);
   GRPC_CALL_LOG_BATCH(GPR_INFO, call, ops, nops, notify_tag);
@@ -1698,9 +1700,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   bctl->completion_data.notify_tag.is_closure =
       (uint8_t)(is_notify_tag_closure != 0);
 
-  grpc_transport_stream_op_batch *stream_op = &bctl->op;
-  grpc_transport_stream_op_batch_payload *stream_op_payload =
-      &call->stream_op_payload;
+  stream_op = &bctl->op;
+  stream_op_payload = &call->stream_op_payload;
 
   /* rewrite batch ops into a transport op */
   for (i = 0; i < nops; i++) {
@@ -1710,7 +1711,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
       goto done_with_error;
     }
     switch (op->op) {
-      case GRPC_OP_SEND_INITIAL_METADATA:
+      case GRPC_OP_SEND_INITIAL_METADATA: {
         /* Flag validation: currently allow no flags */
         if (!are_initial_metadata_flags_valid(op->flags, call->is_client)) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
@@ -1804,7 +1805,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
               &call->peer_string;
         }
         break;
-      case GRPC_OP_SEND_MESSAGE:
+      }
+      case GRPC_OP_SEND_MESSAGE: {
         if (!are_write_flags_valid(op->flags)) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
@@ -1833,7 +1835,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         stream_op_payload->send_message.send_message =
             &call->sending_stream.base;
         break;
-      case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+      }
+      case GRPC_OP_SEND_CLOSE_FROM_CLIENT: {
         /* Flag validation: currently allow no flags */
         if (op->flags != 0) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
@@ -1852,7 +1855,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         stream_op_payload->send_trailing_metadata.send_trailing_metadata =
             &call->metadata_batch[0 /* is_receiving */][1 /* is_trailing */];
         break;
-      case GRPC_OP_SEND_STATUS_FROM_SERVER:
+      }
+      case GRPC_OP_SEND_STATUS_FROM_SERVER: {
         /* Flag validation: currently allow no flags */
         if (op->flags != 0) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
@@ -1914,7 +1918,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         stream_op_payload->send_trailing_metadata.send_trailing_metadata =
             &call->metadata_batch[0 /* is_receiving */][1 /* is_trailing */];
         break;
-      case GRPC_OP_RECV_INITIAL_METADATA:
+      }
+      case GRPC_OP_RECV_INITIAL_METADATA: {
         /* Flag validation: currently allow no flags */
         if (op->flags != 0) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
@@ -1941,7 +1946,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         }
         num_completion_callbacks_needed++;
         break;
-      case GRPC_OP_RECV_MESSAGE:
+      }
+      case GRPC_OP_RECV_MESSAGE: {
         /* Flag validation: currently allow no flags */
         if (op->flags != 0) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
@@ -1962,7 +1968,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
             &call->receiving_stream_ready;
         num_completion_callbacks_needed++;
         break;
-      case GRPC_OP_RECV_STATUS_ON_CLIENT:
+      }
+      case GRPC_OP_RECV_STATUS_ON_CLIENT: {
         /* Flag validation: currently allow no flags */
         if (op->flags != 0) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
@@ -1989,7 +1996,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         stream_op_payload->collect_stats.collect_stats =
             &call->final_info.stats.transport_stream_stats;
         break;
-      case GRPC_OP_RECV_CLOSE_ON_SERVER:
+      }
+      case GRPC_OP_RECV_CLOSE_ON_SERVER: {
         /* Flag validation: currently allow no flags */
         if (op->flags != 0) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
@@ -2013,6 +2021,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         stream_op_payload->collect_stats.collect_stats =
             &call->final_info.stats.transport_stream_stats;
         break;
+      }
     }
   }
 
