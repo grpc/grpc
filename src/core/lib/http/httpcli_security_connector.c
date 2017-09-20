@@ -138,7 +138,7 @@ typedef struct {
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *error) {
   grpc_handshaker_args *args = (grpc_handshaker_args*) arg;
-  on_done_closure *c = args->user_data;
+  on_done_closure *c = (on_done_closure *)args->user_data;
   if (error != GRPC_ERROR_NONE) {
     const char *msg = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Secure transport setup failed: %s", msg);
