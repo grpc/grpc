@@ -41,7 +41,7 @@ class ProxyBenchmarkClientServiceImpl < Grpc::Testing::ProxyClientService::Servi
     @histogram = Histogram.new(@histres, @histmax)
     @start_time = Time.now
     # TODO(vjpai): Support multiple client channels by spawning off a PHP client per channel
-    command = "php " + File.expand_path(File.dirname(__FILE__)) + "/../../php/tests/qps/client.php " + @mytarget
+    command = "php -d extension=" + File.expand_path(File.dirname(__FILE__)) + "/../../php/ext/grpc/modules/grpc.so " + File.expand_path(File.dirname(__FILE__)) + "/../../php/tests/qps/client.php " + @mytarget
     puts "Starting command: " + command
     @php_pid = spawn(command)
   end

@@ -56,7 +56,7 @@ grpc_lb_addresses* grpc_lb_addresses_copy(const grpc_lb_addresses* addresses) {
 }
 
 void grpc_lb_addresses_set_address(grpc_lb_addresses* addresses, size_t index,
-                                   const void* address, size_t address_len,
+                                   void* address, size_t address_len,
                                    bool is_balancer, const char* balancer_name,
                                    void* user_data) {
   GPR_ASSERT(index < addresses->num_addresses);
@@ -141,7 +141,7 @@ static const grpc_arg_pointer_vtable lb_addresses_arg_vtable = {
 grpc_arg grpc_lb_addresses_create_channel_arg(
     const grpc_lb_addresses* addresses) {
   return grpc_channel_arg_pointer_create(
-      GRPC_ARG_LB_ADDRESSES, (void*)addresses, &lb_addresses_arg_vtable);
+      (char*)GRPC_ARG_LB_ADDRESSES, (void*)addresses, &lb_addresses_arg_vtable);
 }
 
 grpc_lb_addresses* grpc_lb_addresses_find_channel_arg(

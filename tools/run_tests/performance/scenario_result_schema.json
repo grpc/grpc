@@ -122,12 +122,62 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_cqs_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_client_channels_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_client_subchannels_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_server_channels_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_syscall_poll", 
         "type": "INTEGER"
       }, 
       {
         "mode": "NULLABLE", 
         "name": "core_syscall_wait", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kick", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kicked_without_poller", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kicked_again", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kick_wakeup_fd", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kick_wakeup_cv", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kick_own_thread", 
         "type": "INTEGER"
       }, 
       {
@@ -227,6 +277,111 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_initial_write", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_start_new_stream", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_send_message", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_send_initial_metadata", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_send_trailing_metadata", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_retry_send_ping", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_continue_pings", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_goaway_sent", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_rst_stream", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_close_from_api", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_stream_flow_control", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_transport_flow_control", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_send_settings", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_bdp_estimator_ping", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_flow_control_unstalled_by_setting", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_flow_control_unstalled_by_update", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_application_ping", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_keepalive_ping", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_transport_flow_control_unstalled", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_ping_response", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_force_rst_stream", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_combiner_locks_initiated", 
         "type": "INTEGER"
       }, 
@@ -277,6 +432,16 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_executor_threads_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_threads_used", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_server_requested_calls", 
         "type": "INTEGER"
       }, 
@@ -284,6 +449,56 @@
         "mode": "NULLABLE", 
         "name": "core_server_slowpath_requests_queued", 
         "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned_99p", 
+        "type": "FLOAT"
       }, 
       {
         "mode": "NULLABLE", 
@@ -533,6 +748,31 @@
       {
         "mode": "NULLABLE", 
         "name": "core_http2_send_flowctl_per_write_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_closures_per_wakeup", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_closures_per_wakeup_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_closures_per_wakeup_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_closures_per_wakeup_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_closures_per_wakeup_99p", 
         "type": "FLOAT"
       }, 
       {
@@ -599,12 +839,62 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_cqs_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_client_channels_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_client_subchannels_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_server_channels_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_syscall_poll", 
         "type": "INTEGER"
       }, 
       {
         "mode": "NULLABLE", 
         "name": "core_syscall_wait", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kick", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kicked_without_poller", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kicked_again", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kick_wakeup_fd", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kick_wakeup_cv", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_kick_own_thread", 
         "type": "INTEGER"
       }, 
       {
@@ -704,6 +994,111 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_initial_write", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_start_new_stream", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_send_message", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_send_initial_metadata", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_send_trailing_metadata", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_retry_send_ping", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_continue_pings", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_goaway_sent", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_rst_stream", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_close_from_api", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_stream_flow_control", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_transport_flow_control", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_send_settings", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_bdp_estimator_ping", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_flow_control_unstalled_by_setting", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_flow_control_unstalled_by_update", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_application_ping", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_keepalive_ping", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_transport_flow_control_unstalled", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_ping_response", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_initiate_write_due_to_force_rst_stream", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_combiner_locks_initiated", 
         "type": "INTEGER"
       }, 
@@ -754,6 +1149,16 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_executor_threads_created", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_threads_used", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_server_requested_calls", 
         "type": "INTEGER"
       }, 
@@ -761,6 +1166,56 @@
         "mode": "NULLABLE", 
         "name": "core_server_slowpath_requests_queued", 
         "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_initial_size_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_poll_events_returned_99p", 
+        "type": "FLOAT"
       }, 
       {
         "mode": "NULLABLE", 
@@ -1010,6 +1465,31 @@
       {
         "mode": "NULLABLE", 
         "name": "core_http2_send_flowctl_per_write_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_closures_per_wakeup", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_closures_per_wakeup_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_closures_per_wakeup_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_closures_per_wakeup_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_executor_closures_per_wakeup_99p", 
         "type": "FLOAT"
       }, 
       {

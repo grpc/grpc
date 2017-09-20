@@ -574,6 +574,8 @@ grpc_cc_library(
         "src/core/lib/compression/compression.c",
         "src/core/lib/compression/message_compress.c",
         "src/core/lib/compression/stream_compression.c",
+        "src/core/lib/debug/stats.c",
+        "src/core/lib/debug/stats_data.c",
         "src/core/lib/http/format_request.c",
         "src/core/lib/http/httpcli.c",
         "src/core/lib/http/parser.c",
@@ -690,8 +692,6 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.c",
         "src/core/lib/transport/transport.c",
         "src/core/lib/transport/transport_op_string.c",
-        "src/core/lib/debug/stats.c",
-        "src/core/lib/debug/stats_data.c",
     ],
     hdrs = [
         "src/core/lib/channel/channel_args.h",
@@ -705,6 +705,8 @@ grpc_cc_library(
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/message_compress.h",
         "src/core/lib/compression/stream_compression.h",
+        "src/core/lib/debug/stats.h",
+        "src/core/lib/debug/stats_data.h",
         "src/core/lib/http/format_request.h",
         "src/core/lib/http/httpcli.h",
         "src/core/lib/http/parser.h",
@@ -807,8 +809,6 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
-        "src/core/lib/debug/stats.h",
-        "src/core/lib/debug/stats_data.h",
     ],
     external_deps = [
         "zlib",
@@ -989,7 +989,6 @@ grpc_cc_library(
     name = "grpc_codegen",
     language = "c",
     public_hdrs = [
-        "include/grpc/impl/codegen/byte_buffer.h",
         "include/grpc/impl/codegen/byte_buffer_reader.h",
         "include/grpc/impl/codegen/compression_types.h",
         "include/grpc/impl/codegen/connectivity_state.h",
@@ -1488,7 +1487,6 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc++/impl/codegen/async_stream.h",
         "include/grpc++/impl/codegen/async_unary_call.h",
-        "include/grpc++/impl/codegen/byte_buffer.h",
         "include/grpc++/impl/codegen/call.h",
         "include/grpc++/impl/codegen/call_hook.h",
         "include/grpc++/impl/codegen/channel_interface.h",

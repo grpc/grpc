@@ -21,24 +21,25 @@ import six
 import tests
 
 
-class Sanity(unittest.TestCase):
+class SanityTest(unittest.TestCase):
+
+    maxDiff = 32768
 
     def testTestsJsonUpToDate(self):
         """Autodiscovers all test suites and checks that tests.json is up to date"""
         loader = tests.Loader()
         loader.loadTestsFromNames(['tests'])
-        test_suite_names = [
+        test_suite_names = sorted({
             test_case_class.id().rsplit('.', 1)[0]
             for test_case_class in tests._loader.iterate_suite_cases(
                 loader.suite)
-        ]
-        test_suite_names = sorted(set(test_suite_names))
+        })
 
         tests_json_string = pkg_resources.resource_string('tests', 'tests.json')
-        if six.PY3:
-            tests_json_string = tests_json_string.decode()
-        tests_json = json.loads(tests_json_string)
-        self.assertListEqual(test_suite_names, tests_json)
+        tests_json = json.loads(tests_json_string.decode()
+                                if six.PY3 else tests_json_string)
+
+        self.assertSequenceEqual(tests_json, test_suite_names)
 
 
 if __name__ == '__main__':

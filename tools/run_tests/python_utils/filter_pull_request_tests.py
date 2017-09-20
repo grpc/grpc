@@ -86,7 +86,6 @@ _WHITELIST_DICT = {
   '^test/distrib/php/': [_PHP_TEST_SUITE],
   '^test/distrib/python/': [_PYTHON_TEST_SUITE],
   '^test/distrib/ruby/': [_RUBY_TEST_SUITE],
-  '^tools/internal_ci/': [],
   '^vsprojects/': [_WINDOWS_TEST_SUITE],
   'binding\.gyp$': [_NODE_TEST_SUITE],
   'composer\.json$': [_PHP_TEST_SUITE],

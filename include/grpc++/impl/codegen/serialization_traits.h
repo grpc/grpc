@@ -26,24 +26,15 @@ namespace grpc {
 /// Used for hooking different message serialization API's into GRPC.
 /// Each SerializationTraits implementation must provide the following
 /// functions:
-/// 1.  static Status Serialize(const Message& msg,
-///                             ByteBuffer* buffer,
-///                             bool* own_buffer);
-///     AND/OR
-///     static Status Serialize(const Message& msg,
-///                             grpc_byte_buffer** buffer,
-///                             bool* own_buffer);
-///     The former is preferred; the latter is deprecated
+///   static Status Serialize(const Message& msg,
+///                           grpc_byte_buffer** buffer,
+///                           bool* own_buffer);
+///   static Status Deserialize(grpc_byte_buffer* buffer,
+///                             Message* msg,
+///                             int max_receive_message_size);
 ///
-/// 2.  static Status Deserialize(const ByteBuffer& buffer,
-///                               Message* msg);
-///     AND/OR
-///     static Status Deserialize(grpc_byte_buffer* buffer,
-///                               Message* msg);
-///     The former is preferred; the latter is deprecated
-///
-/// Serialize is required to convert message to a ByteBuffer, and
-/// return that byte buffer through *buffer. *own_buffer should
+/// Serialize is required to convert message to a grpc_byte_buffer, and
+/// to store a pointer to that byte buffer at *buffer. *own_buffer should
 /// be set to true if the caller owns said byte buffer, or false if
 /// ownership is retained elsewhere.
 ///

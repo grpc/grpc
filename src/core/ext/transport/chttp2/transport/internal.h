@@ -79,16 +79,43 @@ typedef enum {
   GRPC_CHTTP2_PCL_COUNT /* must be last */
 } grpc_chttp2_ping_closure_list;
 
+typedef enum {
+  GRPC_CHTTP2_INITIATE_WRITE_INITIAL_WRITE,
+  GRPC_CHTTP2_INITIATE_WRITE_START_NEW_STREAM,
+  GRPC_CHTTP2_INITIATE_WRITE_SEND_MESSAGE,
+  GRPC_CHTTP2_INITIATE_WRITE_SEND_INITIAL_METADATA,
+  GRPC_CHTTP2_INITIATE_WRITE_SEND_TRAILING_METADATA,
+  GRPC_CHTTP2_INITIATE_WRITE_RETRY_SEND_PING,
+  GRPC_CHTTP2_INITIATE_WRITE_CONTINUE_PINGS,
+  GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT,
+  GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM,
+  GRPC_CHTTP2_INITIATE_WRITE_CLOSE_FROM_API,
+  GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL,
+  GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL,
+  GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS,
+  GRPC_CHTTP2_INITIATE_WRITE_BDP_ESTIMATOR_PING,
+  GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_SETTING,
+  GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_UPDATE,
+  GRPC_CHTTP2_INITIATE_WRITE_APPLICATION_PING,
+  GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING,
+  GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL_UNSTALLED,
+  GRPC_CHTTP2_INITIATE_WRITE_PING_RESPONSE,
+  GRPC_CHTTP2_INITIATE_WRITE_FORCE_RST_STREAM,
+} grpc_chttp2_initiate_write_reason;
+
+const char *grpc_chttp2_initiate_write_reason_string(
+    grpc_chttp2_initiate_write_reason reason);
+
 typedef struct {
   grpc_closure_list lists[GRPC_CHTTP2_PCL_COUNT];
   uint64_t inflight_id;
 } grpc_chttp2_ping_queue;
 
 typedef struct {
-  gpr_timespec min_time_between_pings;
   int max_pings_without_data;
   int max_ping_strikes;
-  gpr_timespec min_ping_interval_without_data;
+  gpr_timespec min_sent_ping_interval_without_data;
+  gpr_timespec min_recv_ping_interval_without_data;
 } grpc_chttp2_repeated_ping_policy;
 
 typedef struct {
@@ -599,7 +626,8 @@ struct grpc_chttp2_stream {
     The actual call chain is documented in the implementation of this function.
     */
 void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
-                                grpc_chttp2_transport *t, const char *reason);
+                                grpc_chttp2_transport *t,
+                                grpc_chttp2_initiate_write_reason reason);
 
 typedef struct {
   /** are we writing? */
@@ -851,10 +879,9 @@ void grpc_chttp2_add_ping_strike(grpc_exec_ctx *exec_ctx,
 
 /** add a ref to the stream and add it to the writable list;
     ref will be dropped in writing.c */
-void grpc_chttp2_become_writable(grpc_exec_ctx *exec_ctx,
-                                 grpc_chttp2_transport *t,
-                                 grpc_chttp2_stream *s,
-                                 bool also_initiate_write, const char *reason);
+void grpc_chttp2_mark_stream_writable(grpc_exec_ctx *exec_ctx,
+                                      grpc_chttp2_transport *t,
+                                      grpc_chttp2_stream *s);
 
 void grpc_chttp2_cancel_stream(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_transport *t, grpc_chttp2_stream *s,

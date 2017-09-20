@@ -5631,6 +5631,86 @@
     "deps": [
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "resolver_component_test_unsecure", 
+    "src": [
+      "test/cpp/naming/resolver_component_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_config", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "resolver_component_test", 
+    "src": [
+      "test/cpp/naming/resolver_component_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_config", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "resolver_component_tests_runner_invoker_unsecure", 
+    "src": [
+      "test/cpp/naming/resolver_component_tests_runner_invoker.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_config", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "resolver_component_tests_runner_invoker", 
+    "src": [
+      "test/cpp/naming/resolver_component_tests_runner_invoker.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -8395,7 +8475,6 @@
       "gpr_codegen"
     ], 
     "headers": [
-      "include/grpc/impl/codegen/byte_buffer.h", 
       "include/grpc/impl/codegen/byte_buffer_reader.h", 
       "include/grpc/impl/codegen/compression_types.h", 
       "include/grpc/impl/codegen/connectivity_state.h", 
@@ -8409,7 +8488,6 @@
     "language": "c", 
     "name": "grpc_codegen", 
     "src": [
-      "include/grpc/impl/codegen/byte_buffer.h", 
       "include/grpc/impl/codegen/byte_buffer_reader.h", 
       "include/grpc/impl/codegen/compression_types.h", 
       "include/grpc/impl/codegen/connectivity_state.h", 
@@ -9288,7 +9366,6 @@
     "headers": [
       "include/grpc++/impl/codegen/async_stream.h", 
       "include/grpc++/impl/codegen/async_unary_call.h", 
-      "include/grpc++/impl/codegen/byte_buffer.h", 
       "include/grpc++/impl/codegen/call.h", 
       "include/grpc++/impl/codegen/call_hook.h", 
       "include/grpc++/impl/codegen/channel_interface.h", 
@@ -9323,7 +9400,6 @@
     "src": [
       "include/grpc++/impl/codegen/async_stream.h", 
       "include/grpc++/impl/codegen/async_unary_call.h", 
-      "include/grpc++/impl/codegen/byte_buffer.h", 
       "include/grpc++/impl/codegen/call.h", 
       "include/grpc++/impl/codegen/call_hook.h", 
       "include/grpc++/impl/codegen/channel_interface.h", 

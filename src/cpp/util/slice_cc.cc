@@ -50,6 +50,4 @@ Slice::Slice(void* buf, size_t len, void (*destroy)(void*), void* user_data)
 Slice::Slice(void* buf, size_t len, void (*destroy)(void*, size_t))
     : slice_(grpc_slice_new_with_len(buf, len, destroy)) {}
 
-grpc_slice Slice::c_slice() const { return grpc_slice_ref(slice_); }
-
 }  // namespace grpc

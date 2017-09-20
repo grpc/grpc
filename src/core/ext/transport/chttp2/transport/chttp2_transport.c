@@ -64,6 +64,11 @@
 #define DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS false
 #define KEEPALIVE_TIME_BACKOFF_MULTIPLIER 2
 
+#define DEFAULT_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS 300000 /* 5 minutes */
+#define DEFAULT_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS 300000 /* 5 minutes */
+#define DEFAULT_MAX_PINGS_BETWEEN_DATA 0                      /* unlimited */
+#define DEFAULT_MAX_PING_STRIKES 2
+
 static int g_default_client_keepalive_time_ms =
     DEFAULT_CLIENT_KEEPALIVE_TIME_MS;
 static int g_default_client_keepalive_timeout_ms =
@@ -74,6 +79,13 @@ static int g_default_server_keepalive_timeout_ms =
     DEFAULT_SERVER_KEEPALIVE_TIMEOUT_MS;
 static bool g_default_keepalive_permit_without_calls =
     DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS;
+
+static int g_default_min_sent_ping_interval_without_data_ms =
+    DEFAULT_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS;
+static int g_default_min_recv_ping_interval_without_data_ms =
+    DEFAULT_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS;
+static int g_default_max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA;
+static int g_default_max_ping_strikes = DEFAULT_MAX_PING_STRIKES;
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
 grpc_tracer_flag grpc_http_trace = GRPC_TRACER_INITIALIZER(false, "http");
@@ -144,17 +156,13 @@ static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
 static void cancel_pings(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                          grpc_error *error);
-static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
-                             grpc_chttp2_ping_type ping_type,
-                             grpc_closure *on_initiate,
-                             grpc_closure *on_complete);
+static void send_ping_locked(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+    grpc_chttp2_ping_type ping_type, grpc_closure *on_initiate,
+    grpc_closure *on_complete,
+    grpc_chttp2_initiate_write_reason initiate_write_reason);
 static void retry_initiate_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                        grpc_error *error);
-
-#define DEFAULT_MIN_TIME_BETWEEN_PINGS_MS 0
-#define DEFAULT_MAX_PINGS_BETWEEN_DATA 3
-#define DEFAULT_MAX_PING_STRIKES 2
-#define DEFAULT_MIN_PING_INTERVAL_WITHOUT_DATA_MS 300000 /* 5 minutes */
 
 /** keepalive-relevant functions */
 static void init_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
@@ -346,7 +354,6 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   if (is_client) {
     grpc_slice_buffer_add(&t->outbuf, grpc_slice_from_copied_string(
                                           GRPC_CHTTP2_CLIENT_CONNECT_STRING));
-    grpc_chttp2_initiate_write(exec_ctx, t, "initial_write");
   }
 
   /* configure http2 the way we like it */
@@ -362,14 +369,12 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   queue_setting_update(exec_ctx, t,
                        GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA, 1);
 
-  t->ping_policy = (grpc_chttp2_repeated_ping_policy){
-      .max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA,
-      .min_time_between_pings =
-          gpr_time_from_millis(DEFAULT_MIN_TIME_BETWEEN_PINGS_MS, GPR_TIMESPAN),
-      .max_ping_strikes = DEFAULT_MAX_PING_STRIKES,
-      .min_ping_interval_without_data = gpr_time_from_millis(
-          DEFAULT_MIN_PING_INTERVAL_WITHOUT_DATA_MS, GPR_TIMESPAN),
-  };
+  t->ping_policy.max_pings_without_data = g_default_max_pings_without_data;
+  t->ping_policy.min_sent_ping_interval_without_data = gpr_time_from_millis(
+      g_default_min_sent_ping_interval_without_data_ms, GPR_TIMESPAN);
+  t->ping_policy.max_ping_strikes = g_default_max_ping_strikes;
+  t->ping_policy.min_recv_ping_interval_without_data = gpr_time_from_millis(
+      g_default_min_recv_ping_interval_without_data_ms, GPR_TIMESPAN);
 
   /* Keepalive setting */
   if (t->is_client) {
@@ -428,29 +433,37 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                              GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)) {
         t->ping_policy.max_pings_without_data = grpc_channel_arg_get_integer(
             &channel_args->args[i],
-            (grpc_integer_options){DEFAULT_MAX_PINGS_BETWEEN_DATA, 0, INT_MAX});
+            (grpc_integer_options){g_default_max_pings_without_data, 0,
+                                   INT_MAX});
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_MAX_PING_STRIKES)) {
         t->ping_policy.max_ping_strikes = grpc_channel_arg_get_integer(
             &channel_args->args[i],
-            (grpc_integer_options){DEFAULT_MAX_PING_STRIKES, 0, INT_MAX});
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS)) {
-        t->ping_policy.min_time_between_pings = gpr_time_from_millis(
-            grpc_channel_arg_get_integer(
-                &channel_args->args[i],
-                (grpc_integer_options){DEFAULT_MIN_TIME_BETWEEN_PINGS_MS, 0,
-                                       INT_MAX}),
-            GPR_TIMESPAN);
+            (grpc_integer_options){g_default_max_ping_strikes, 0, INT_MAX});
       } else if (0 ==
-                 strcmp(channel_args->args[i].key,
-                        GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_MS)) {
-        t->ping_policy.min_ping_interval_without_data = gpr_time_from_millis(
-            grpc_channel_arg_get_integer(
-                &channel_args->args[i],
-                (grpc_integer_options){
-                    DEFAULT_MIN_PING_INTERVAL_WITHOUT_DATA_MS, 0, INT_MAX}),
-            GPR_TIMESPAN);
+                 strcmp(
+                     channel_args->args[i].key,
+                     GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS)) {
+        t->ping_policy.min_sent_ping_interval_without_data =
+            gpr_time_from_millis(
+                grpc_channel_arg_get_integer(
+                    &channel_args->args[i],
+                    (grpc_integer_options){
+                        g_default_min_sent_ping_interval_without_data_ms, 0,
+                        INT_MAX}),
+                GPR_TIMESPAN);
+      } else if (0 ==
+                 strcmp(
+                     channel_args->args[i].key,
+                     GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS)) {
+        t->ping_policy.min_recv_ping_interval_without_data =
+            gpr_time_from_millis(
+                grpc_channel_arg_get_integer(
+                    &channel_args->args[i],
+                    (grpc_integer_options){
+                        g_default_min_recv_ping_interval_without_data_ms, 0,
+                        INT_MAX}),
+                GPR_TIMESPAN);
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE)) {
         t->write_buffer_size = (uint32_t)grpc_channel_arg_get_integer(
@@ -557,8 +570,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     }
   }
 
-  t->ping_state.pings_before_data_required =
-      t->ping_policy.max_pings_without_data;
+  /* No pings allowed before receiving a header or data frame. */
+  t->ping_state.pings_before_data_required = 0;
   t->ping_state.is_delayed_ping_timer_set = false;
 
   t->ping_recv_state.last_ping_recv_time = gpr_inf_past(GPR_CLOCK_MONOTONIC);
@@ -578,7 +591,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED;
   }
 
-  grpc_chttp2_initiate_write(exec_ctx, t, "init");
+  grpc_chttp2_initiate_write(exec_ctx, t,
+                             GRPC_CHTTP2_INITIATE_WRITE_INITIAL_WRITE);
   post_benign_reclaimer(exec_ctx, t);
 }
 
@@ -624,6 +638,9 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
     connectivity_state_set(exec_ctx, t, GRPC_CHANNEL_SHUTDOWN,
                            GRPC_ERROR_REF(error), "close_transport");
     grpc_endpoint_shutdown(exec_ctx, t->ep, GRPC_ERROR_REF(error));
+    if (t->ping_state.is_delayed_ping_timer_set) {
+      grpc_timer_cancel(exec_ctx, &t->ping_state.delayed_ping_timer);
+    }
     switch (t->keepalive_state) {
       case GRPC_CHTTP2_KEEPALIVE_STATE_WAITING:
         grpc_timer_cancel(exec_ctx, &t->keepalive_ping_timer);
@@ -846,13 +863,91 @@ static void set_write_state(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
 }
 
+static void inc_initiate_write_reason(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_initiate_write_reason reason) {
+  switch (reason) {
+    case GRPC_CHTTP2_INITIATE_WRITE_INITIAL_WRITE:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_INITIAL_WRITE(exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_START_NEW_STREAM:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_START_NEW_STREAM(exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_SEND_MESSAGE:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_SEND_MESSAGE(exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_SEND_INITIAL_METADATA:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_SEND_INITIAL_METADATA(
+          exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_SEND_TRAILING_METADATA:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_SEND_TRAILING_METADATA(
+          exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_RETRY_SEND_PING:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_RETRY_SEND_PING(exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_CONTINUE_PINGS:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_CONTINUE_PINGS(exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_GOAWAY_SENT(exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_RST_STREAM(exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_CLOSE_FROM_API:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_CLOSE_FROM_API(exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_STREAM_FLOW_CONTROL(exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_TRANSPORT_FLOW_CONTROL(
+          exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_SEND_SETTINGS(exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_BDP_ESTIMATOR_PING:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_BDP_ESTIMATOR_PING(exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_SETTING:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_FLOW_CONTROL_UNSTALLED_BY_SETTING(
+          exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_UPDATE:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_FLOW_CONTROL_UNSTALLED_BY_UPDATE(
+          exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_APPLICATION_PING:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_APPLICATION_PING(exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_KEEPALIVE_PING(exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL_UNSTALLED:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_TRANSPORT_FLOW_CONTROL_UNSTALLED(
+          exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_PING_RESPONSE:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_PING_RESPONSE(exec_ctx);
+      break;
+    case GRPC_CHTTP2_INITIATE_WRITE_FORCE_RST_STREAM:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_FORCE_RST_STREAM(exec_ctx);
+      break;
+  }
+}
+
 void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
-                                grpc_chttp2_transport *t, const char *reason) {
+                                grpc_chttp2_transport *t,
+                                grpc_chttp2_initiate_write_reason reason) {
   GPR_TIMER_BEGIN("grpc_chttp2_initiate_write", 0);
 
   switch (t->write_state) {
     case GRPC_CHTTP2_WRITE_STATE_IDLE:
-      set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_WRITING, reason);
+      inc_initiate_write_reason(exec_ctx, reason);
+      set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_WRITING,
+                      grpc_chttp2_initiate_write_reason_string(reason));
       t->is_first_write_in_batch = true;
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
       GRPC_CLOSURE_SCHED(
@@ -864,7 +959,7 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
       break;
     case GRPC_CHTTP2_WRITE_STATE_WRITING:
       set_write_state(exec_ctx, t, GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE,
-                      reason);
+                      grpc_chttp2_initiate_write_reason_string(reason));
       break;
     case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE:
       break;
@@ -872,15 +967,11 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
   GPR_TIMER_END("grpc_chttp2_initiate_write", 0);
 }
 
-void grpc_chttp2_become_writable(grpc_exec_ctx *exec_ctx,
-                                 grpc_chttp2_transport *t,
-                                 grpc_chttp2_stream *s,
-                                 bool also_initiate_write, const char *reason) {
+void grpc_chttp2_mark_stream_writable(grpc_exec_ctx *exec_ctx,
+                                      grpc_chttp2_transport *t,
+                                      grpc_chttp2_stream *s) {
   if (!t->closed && grpc_chttp2_list_add_writable_stream(t, s)) {
     GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing:become");
-  }
-  if (also_initiate_write) {
-    grpc_chttp2_initiate_write(exec_ctx, t, reason);
   }
 }
 
@@ -1105,7 +1196,9 @@ static void maybe_start_some_streams(grpc_exec_ctx *exec_ctx,
 
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
     post_destructive_reclaimer(exec_ctx, t);
-    grpc_chttp2_become_writable(exec_ctx, t, s, true, "new_stream");
+    grpc_chttp2_mark_stream_writable(exec_ctx, t, s);
+    grpc_chttp2_initiate_write(exec_ctx, t,
+                               GRPC_CHTTP2_INITIATE_WRITE_START_NEW_STREAM);
   }
   /* cancel out streams that will never be started */
   while (t->next_stream_id >= MAX_CLIENT_STREAM_ID &&
@@ -1202,7 +1295,9 @@ static void maybe_become_writable_due_to_send_msg(grpc_exec_ctx *exec_ctx,
                                                   grpc_chttp2_stream *s) {
   if (s->id != 0 && (!s->write_buffering ||
                      s->flow_controlled_buffer.length > t->write_buffer_size)) {
-    grpc_chttp2_become_writable(exec_ctx, t, s, true, "op.send_message");
+    grpc_chttp2_mark_stream_writable(exec_ctx, t, s);
+    grpc_chttp2_initiate_write(exec_ctx, t,
+                               GRPC_CHTTP2_INITIATE_WRITE_SEND_MESSAGE);
   }
 }
 
@@ -1404,14 +1499,13 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
           }
         } else {
           GPR_ASSERT(s->id != 0);
-          bool initiate_write = true;
-          if (op->send_message &&
-              (op->payload->send_message.send_message->flags &
-               GRPC_WRITE_BUFFER_HINT)) {
-            initiate_write = false;
+          grpc_chttp2_mark_stream_writable(exec_ctx, t, s);
+          if (!(op->send_message &&
+                (op->payload->send_message.send_message->flags &
+                 GRPC_WRITE_BUFFER_HINT))) {
+            grpc_chttp2_initiate_write(
+                exec_ctx, t, GRPC_CHTTP2_INITIATE_WRITE_SEND_INITIAL_METADATA);
           }
-          grpc_chttp2_become_writable(exec_ctx, t, s, initiate_write,
-                                      "op.send_initial_metadata");
         }
       } else {
         s->send_initial_metadata = NULL;
@@ -1519,8 +1613,9 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
       } else if (s->id != 0) {
         /* TODO(ctiller): check if there's flow control for any outstanding
            bytes before going writable */
-        grpc_chttp2_become_writable(exec_ctx, t, s, true,
-                                    "op.send_trailing_metadata");
+        grpc_chttp2_mark_stream_writable(exec_ctx, t, s);
+        grpc_chttp2_initiate_write(
+            exec_ctx, t, GRPC_CHTTP2_INITIATE_WRITE_SEND_TRAILING_METADATA);
       }
     }
   }
@@ -1632,15 +1727,17 @@ static void cancel_pings(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   GRPC_ERROR_UNREF(error);
 }
 
-static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
-                             grpc_chttp2_ping_type ping_type,
-                             grpc_closure *on_initiate, grpc_closure *on_ack) {
+static void send_ping_locked(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+    grpc_chttp2_ping_type ping_type, grpc_closure *on_initiate,
+    grpc_closure *on_ack,
+    grpc_chttp2_initiate_write_reason initiate_write_reason) {
   grpc_chttp2_ping_queue *pq = &t->ping_queues[ping_type];
   grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_INITIATE], on_initiate,
                            GRPC_ERROR_NONE);
   if (grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_NEXT], on_ack,
                                GRPC_ERROR_NONE)) {
-    grpc_chttp2_initiate_write(exec_ctx, t, "send_ping");
+    grpc_chttp2_initiate_write(exec_ctx, t, initiate_write_reason);
   }
 }
 
@@ -1648,7 +1745,10 @@ static void retry_initiate_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                        grpc_error *error) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)tp;
   t->ping_state.is_delayed_ping_timer_set = false;
-  grpc_chttp2_initiate_write(exec_ctx, t, "retry_send_ping");
+  if (error == GRPC_ERROR_NONE) {
+    grpc_chttp2_initiate_write(exec_ctx, t,
+                               GRPC_CHTTP2_INITIATE_WRITE_RETRY_SEND_PING);
+  }
 }
 
 void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
@@ -1663,7 +1763,8 @@ void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
   GRPC_CLOSURE_LIST_SCHED(exec_ctx, &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
   if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_NEXT])) {
-    grpc_chttp2_initiate_write(exec_ctx, t, "continue_pings");
+    grpc_chttp2_initiate_write(exec_ctx, t,
+                               GRPC_CHTTP2_INITIATE_WRITE_CONTINUE_PINGS);
   }
 }
 
@@ -1676,7 +1777,8 @@ static void send_goaway(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                         &slice, &http_error);
   grpc_chttp2_goaway_append(t->last_new_stream_id, (uint32_t)http_error,
                             grpc_slice_ref_internal(slice), &t->qbuf);
-  grpc_chttp2_initiate_write(exec_ctx, t, "goaway_sent");
+  grpc_chttp2_initiate_write(exec_ctx, t,
+                             GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT);
   GRPC_ERROR_UNREF(error);
 }
 
@@ -1723,7 +1825,8 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
 
   if (op->send_ping) {
     send_ping_locked(exec_ctx, t, GRPC_CHTTP2_PING_ON_NEXT_WRITE, NULL,
-                     op->send_ping);
+                     op->send_ping,
+                     GRPC_CHTTP2_INITIATE_WRITE_APPLICATION_PING);
   }
 
   if (op->on_connectivity_state_change != NULL) {
@@ -1968,7 +2071,8 @@ void grpc_chttp2_cancel_stream(grpc_exec_ctx *exec_ctx,
       grpc_slice_buffer_add(
           &t->qbuf, grpc_chttp2_rst_stream_create(s->id, (uint32_t)http_error,
                                                   &s->stats.outgoing));
-      grpc_chttp2_initiate_write(exec_ctx, t, "rst_stream");
+      grpc_chttp2_initiate_write(exec_ctx, t,
+                                 GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
     }
   }
   if (due_to_error != GRPC_ERROR_NONE && !s->seen_error) {
@@ -2289,7 +2393,8 @@ static void close_from_api(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                                               &s->stats.outgoing));
 
   grpc_chttp2_mark_stream_closed(exec_ctx, t, s, 1, 1, error);
-  grpc_chttp2_initiate_write(exec_ctx, t, "close_from_api");
+  grpc_chttp2_initiate_write(exec_ctx, t,
+                             GRPC_CHTTP2_INITIATE_WRITE_CLOSE_FROM_API);
 }
 
 typedef struct {
@@ -2324,19 +2429,20 @@ void grpc_chttp2_act_on_flowctl_action(grpc_exec_ctx *exec_ctx,
     case GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED:
       break;
     case GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY:
-      grpc_chttp2_become_writable(exec_ctx, t, s, true,
-                                  "immediate stream flowctl");
+      grpc_chttp2_mark_stream_writable(exec_ctx, t, s);
+      grpc_chttp2_initiate_write(
+          exec_ctx, t, GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL);
       break;
     case GRPC_CHTTP2_FLOWCTL_QUEUE_UPDATE:
-      grpc_chttp2_become_writable(exec_ctx, t, s, false,
-                                  "queue stream flowctl");
+      grpc_chttp2_mark_stream_writable(exec_ctx, t, s);
       break;
   }
   switch (action.send_transport_update) {
     case GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED:
       break;
     case GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY:
-      grpc_chttp2_initiate_write(exec_ctx, t, "immediate transport flowctl");
+      grpc_chttp2_initiate_write(
+          exec_ctx, t, GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL);
       break;
     // this is the same as no action b/c every time the transport enters the
     // writing path it will maybe do an update
@@ -2354,7 +2460,8 @@ void grpc_chttp2_act_on_flowctl_action(grpc_exec_ctx *exec_ctx,
                            (uint32_t)action.max_frame_size);
     }
     if (action.send_setting_update == GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY) {
-      grpc_chttp2_initiate_write(exec_ctx, t, "immediate setting update");
+      grpc_chttp2_initiate_write(exec_ctx, t,
+                                 GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS);
     }
   }
   if (action.need_ping) {
@@ -2362,7 +2469,8 @@ void grpc_chttp2_act_on_flowctl_action(grpc_exec_ctx *exec_ctx,
     grpc_bdp_estimator_schedule_ping(&t->flow_control.bdp_estimator);
     send_ping_locked(exec_ctx, t,
                      GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE,
-                     &t->start_bdp_ping_locked, &t->finish_bdp_ping_locked);
+                     &t->start_bdp_ping_locked, &t->finish_bdp_ping_locked,
+                     GRPC_CHTTP2_INITIATE_WRITE_BDP_ESTIMATOR_PING);
   }
 }
 
@@ -2441,7 +2549,10 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
       if (t->flow_control.initial_window_update > 0) {
         grpc_chttp2_stream *s;
         while (grpc_chttp2_list_pop_stalled_by_stream(t, &s)) {
-          grpc_chttp2_become_writable(exec_ctx, t, s, true, "unstalled");
+          grpc_chttp2_mark_stream_writable(exec_ctx, t, s);
+          grpc_chttp2_initiate_write(
+              exec_ctx, t,
+              GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_SETTING);
         }
       }
       t->flow_control.initial_window_update = 0;
@@ -2538,6 +2649,36 @@ void grpc_chttp2_config_default_keepalive_args(grpc_channel_args *args,
                 &args->args[i],
                 (grpc_integer_options){g_default_keepalive_permit_without_calls,
                                        0, 1});
+      } else if (0 ==
+                 strcmp(args->args[i].key, GRPC_ARG_HTTP2_MAX_PING_STRIKES)) {
+        g_default_max_ping_strikes = grpc_channel_arg_get_integer(
+            &args->args[i],
+            (grpc_integer_options){g_default_max_ping_strikes, 0, INT_MAX});
+      } else if (0 == strcmp(args->args[i].key,
+                             GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)) {
+        g_default_max_pings_without_data = grpc_channel_arg_get_integer(
+            &args->args[i], (grpc_integer_options){
+                                g_default_max_pings_without_data, 0, INT_MAX});
+      } else if (0 ==
+                 strcmp(
+                     args->args[i].key,
+                     GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS)) {
+        g_default_min_sent_ping_interval_without_data_ms =
+            grpc_channel_arg_get_integer(
+                &args->args[i],
+                (grpc_integer_options){
+                    g_default_min_sent_ping_interval_without_data_ms, 0,
+                    INT_MAX});
+      } else if (0 ==
+                 strcmp(
+                     args->args[i].key,
+                     GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS)) {
+        g_default_min_recv_ping_interval_without_data_ms =
+            grpc_channel_arg_get_integer(
+                &args->args[i],
+                (grpc_integer_options){
+                    g_default_min_recv_ping_interval_without_data_ms, 0,
+                    INT_MAX});
       }
     }
   }
@@ -2556,7 +2697,8 @@ static void init_keepalive_ping_locked(grpc_exec_ctx *exec_ctx, void *arg,
       GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive ping end");
       send_ping_locked(exec_ctx, t, GRPC_CHTTP2_PING_ON_NEXT_WRITE,
                        &t->start_keepalive_ping_locked,
-                       &t->finish_keepalive_ping_locked);
+                       &t->finish_keepalive_ping_locked,
+                       GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING);
     } else {
       GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
       grpc_timer_init(
@@ -3017,6 +3159,56 @@ static void destructive_reclaimer_locked(grpc_exec_ctx *exec_ctx, void *arg,
 /*******************************************************************************
  * MONITORING
  */
+
+const char *grpc_chttp2_initiate_write_reason_string(
+    grpc_chttp2_initiate_write_reason reason) {
+  switch (reason) {
+    case GRPC_CHTTP2_INITIATE_WRITE_INITIAL_WRITE:
+      return "INITIAL_WRITE";
+    case GRPC_CHTTP2_INITIATE_WRITE_START_NEW_STREAM:
+      return "START_NEW_STREAM";
+    case GRPC_CHTTP2_INITIATE_WRITE_SEND_MESSAGE:
+      return "SEND_MESSAGE";
+    case GRPC_CHTTP2_INITIATE_WRITE_SEND_INITIAL_METADATA:
+      return "SEND_INITIAL_METADATA";
+    case GRPC_CHTTP2_INITIATE_WRITE_SEND_TRAILING_METADATA:
+      return "SEND_TRAILING_METADATA";
+    case GRPC_CHTTP2_INITIATE_WRITE_RETRY_SEND_PING:
+      return "RETRY_SEND_PING";
+    case GRPC_CHTTP2_INITIATE_WRITE_CONTINUE_PINGS:
+      return "CONTINUE_PINGS";
+    case GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT:
+      return "GOAWAY_SENT";
+    case GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM:
+      return "RST_STREAM";
+    case GRPC_CHTTP2_INITIATE_WRITE_CLOSE_FROM_API:
+      return "CLOSE_FROM_API";
+    case GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL:
+      return "STREAM_FLOW_CONTROL";
+    case GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL:
+      return "TRANSPORT_FLOW_CONTROL";
+    case GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS:
+      return "SEND_SETTINGS";
+    case GRPC_CHTTP2_INITIATE_WRITE_BDP_ESTIMATOR_PING:
+      return "BDP_ESTIMATOR_PING";
+    case GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_SETTING:
+      return "FLOW_CONTROL_UNSTALLED_BY_SETTING";
+    case GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_UPDATE:
+      return "FLOW_CONTROL_UNSTALLED_BY_UPDATE";
+    case GRPC_CHTTP2_INITIATE_WRITE_APPLICATION_PING:
+      return "APPLICATION_PING";
+    case GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING:
+      return "KEEPALIVE_PING";
+    case GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL_UNSTALLED:
+      return "TRANSPORT_FLOW_CONTROL_UNSTALLED";
+    case GRPC_CHTTP2_INITIATE_WRITE_PING_RESPONSE:
+      return "PING_RESPONSE";
+    case GRPC_CHTTP2_INITIATE_WRITE_FORCE_RST_STREAM:
+      return "FORCE_RST_STREAM";
+  }
+  GPR_UNREACHABLE_CODE(return "unknown");
+}
+
 static grpc_endpoint *chttp2_get_endpoint(grpc_exec_ctx *exec_ctx,
                                           grpc_transport *t) {
   return ((grpc_chttp2_transport *)t)->ep;

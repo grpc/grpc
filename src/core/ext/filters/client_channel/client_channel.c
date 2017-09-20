@@ -375,7 +375,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   }
   // Extract the following fields from the resolver result, if non-NULL.
   bool lb_policy_updated = false;
-  char *lb_policy_name = NULL;
+  char *lb_policy_name_dup = NULL;
   bool lb_policy_name_changed = false;
   grpc_lb_policy *new_lb_policy = NULL;
   char *service_config_json = NULL;
@@ -383,6 +383,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   grpc_slice_hash_table *method_params_table = NULL;
   if (chand->resolver_result != NULL) {
     // Find LB policy name.
+    const char *lb_policy_name = NULL;
     const grpc_arg *channel_arg =
         grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_POLICY_NAME);
     if (channel_arg != NULL) {
@@ -473,7 +474,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     // Before we clean up, save a copy of lb_policy_name, since it might
     // be pointing to data inside chand->resolver_result.
     // The copy will be saved in chand->lb_policy_name below.
-    lb_policy_name = gpr_strdup(lb_policy_name);
+    lb_policy_name_dup = gpr_strdup(lb_policy_name);
     grpc_channel_args_destroy(exec_ctx, chand->resolver_result);
     chand->resolver_result = NULL;
   }
@@ -481,8 +482,8 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     gpr_log(GPR_DEBUG,
             "chand=%p: resolver result: lb_policy_name=\"%s\"%s, "
             "service_config=\"%s\"",
-            chand, lb_policy_name, lb_policy_name_changed ? " (changed)" : "",
-            service_config_json);
+            chand, lb_policy_name_dup,
+            lb_policy_name_changed ? " (changed)" : "", service_config_json);
   }
   // Now swap out fields in chand.  Note that the new values may still
   // be NULL if (e.g.) the resolver failed to return results or the
@@ -490,9 +491,9 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   //
   // First, swap out the data used by cc_get_channel_info().
   gpr_mu_lock(&chand->info_mu);
-  if (lb_policy_name != NULL) {
+  if (lb_policy_name_dup != NULL) {
     gpr_free(chand->info_lb_policy_name);
-    chand->info_lb_policy_name = lb_policy_name;
+    chand->info_lb_policy_name = lb_policy_name_dup;
   }
   if (service_config_json != NULL) {
     gpr_free(chand->info_service_config_json);

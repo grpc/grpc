@@ -145,7 +145,7 @@ grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error *grpc_pollset_kick(grpc_pollset *pollset,
+grpc_error *grpc_pollset_kick(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               grpc_pollset_worker *specific_worker) {
   GRPC_UV_ASSERT_SAME_THREAD();
   uv_timer_start(dummy_uv_handle, dummy_timer_cb, 0, 0);
