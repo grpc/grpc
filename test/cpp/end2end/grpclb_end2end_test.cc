@@ -711,9 +711,8 @@ TEST_F(SingleBalancerTest, Fallback) {
 TEST_F(SingleBalancerTest, FallbackUpdate) {
   const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
   const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
-  const size_t kNumBackendInResolution = backends_.size() / 4;
-  const size_t kNumBackendInResolutionUpdate = backends_.size() / 4;
-  const size_t kNumBackendInResolutionUpdate2 = backends_.size() / 4;
+  const size_t kNumBackendInResolution = backends_.size() / 3;
+  const size_t kNumBackendInResolutionUpdate = backends_.size() / 3;
 
   ResetStub(kFallbackTimeoutMs);
   std::vector<AddressData> addresses;
@@ -782,54 +781,12 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
     EXPECT_EQ(0U, backend_servers_[i].service_->request_count());
   }
 
-  addresses.clear();
-  for (size_t i = kNumBackendInResolution + kNumBackendInResolutionUpdate;
-       i < kNumBackendInResolution + kNumBackendInResolutionUpdate + 
-       kNumBackendInResolutionUpdate2; ++i) {
-    addresses.emplace_back(AddressData{backend_servers_[i].port_, false, ""});
-  }
-  SetNextResolution(addresses);
-
-  // Wait until the resolution update has been processed, as signaled by the
-  // backend in resolution update receiving a request.
-  do {
-    CheckRpcSendOk(1);
-  } while (
-      backend_servers_[kNumBackendInResolution + 
-        kNumBackendInResolutionUpdate].service_->request_count() == 0);
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    backend_servers_[i].service_->ResetCounters();
-  }
-
-  // Send out the second request.
-  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
-  CheckRpcSendOk(kNumBackendInResolutionUpdate2);
-  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
-
-  // The resolution update is used: each backend in the resolution update should
-  // have gotten one request.
-  for (size_t i = 0; i < kNumBackendInResolution + 
-    kNumBackendInResolutionUpdate; ++i) {
-    EXPECT_EQ(0U, backend_servers_[i].service_->request_count());
-  }
-  for (size_t i = kNumBackendInResolution + kNumBackendInResolutionUpdate;
-       i < kNumBackendInResolution + kNumBackendInResolutionUpdate + 
-       kNumBackendInResolutionUpdate2; ++i) {
-    EXPECT_EQ(1U, backend_servers_[i].service_->request_count());
-  }
-  for (size_t i = kNumBackendInResolution + kNumBackendInResolutionUpdate + 
-    kNumBackendInResolutionUpdate2;
-       i < backends_.size(); ++i) {
-    EXPECT_EQ(0U, backend_servers_[i].service_->request_count());
-  }
-
   // Wait until the serverlist reception has been processed, as signaled by the
   // backend returned by the balancer receiving a request.
   do {
     CheckRpcSendOk(1);
   } while (
-      backend_servers_[kNumBackendInResolution + kNumBackendInResolutionUpdate + 
-        kNumBackendInResolutionUpdate2]
+      backend_servers_[kNumBackendInResolution + kNumBackendInResolutionUpdate]
           .service_->request_count() == 0);
   for (size_t i = 0; i < backends_.size(); ++i) {
     backend_servers_[i].service_->ResetCounters();
@@ -838,18 +795,16 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
   // Send out the third request.
   gpr_log(GPR_INFO, "========= BEFORE THIRD BATCH ==========");
   CheckRpcSendOk(backends_.size() - kNumBackendInResolution -
-                 kNumBackendInResolutionUpdate - kNumBackendInResolutionUpdate2);
+                 kNumBackendInResolutionUpdate);
   gpr_log(GPR_INFO, "========= DONE WITH THIRD BATCH ==========");
 
   // Serverlist is used: each backend returned by the balancer should
   // have gotten one request.
   for (size_t i = 0;
-       i < kNumBackendInResolution + kNumBackendInResolutionUpdate + 
-       kNumBackendInResolutionUpdate2; ++i) {
+       i < kNumBackendInResolution + kNumBackendInResolutionUpdate; ++i) {
     EXPECT_EQ(0U, backend_servers_[i].service_->request_count());
   }
-  for (size_t i = kNumBackendInResolution + kNumBackendInResolutionUpdate + 
-    kNumBackendInResolutionUpdate2;
+  for (size_t i = kNumBackendInResolution + kNumBackendInResolutionUpdate;
        i < backends_.size(); ++i) {
     EXPECT_EQ(1U, backend_servers_[i].service_->request_count());
   }
