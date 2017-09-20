@@ -452,6 +452,18 @@ static int refill_heap(timer_shard *shard, gpr_atm now) {
   for (timer = shard->list.next; timer != &shard->list; timer = next) {
     next = timer->next;
 
+#ifndef NDEBUG
+    if (next == timer && next != &shard->list) {
+      grpc_closure *c = timer->closure;
+      gpr_log(GPR_ERROR,
+              "We have a problem!!!! - timer %p closure: %p, created-at: "
+              "[%s,%d], scheduled-at: [%s, %d]",
+              timer, c, c->file_initiated, c->line_created, c->file_initiated,
+              c->line_initiated);
+      abort();
+    }
+#endif
+
     if (timer->deadline < shard->queue_deadline_cap) {
       if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
         gpr_log(GPR_DEBUG, "  .. add timer with deadline %" PRIdPTR " to heap",
