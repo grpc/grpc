@@ -1812,6 +1812,7 @@ static void glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
               "ignoring.",
               (void *)glb_policy);
     }
+    return;
   }
   const grpc_lb_addresses *addresses =
       (const grpc_lb_addresses *)arg->value.pointer.p;
