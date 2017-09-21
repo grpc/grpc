@@ -13,7 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Measure the time between PR creation and completion of all tests"""
+"""Measure the time between PR creation and completion of all tests.
+
+You'll need a github API token to avoid being rate-limited. See
+https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/
+
+This script goes over the most recent 100 pull requests. For PRs with a single
+commit, it uses the PR's creation as the initial time; othewise, it uses the
+date of the last commit. This is somewhat fragile, and imposed by the fact that
+GitHub reports a PR's updated timestamp for any event that modifies the PR (e.g.
+comments), not just the addition of new commits.
+
+In addition, it ignores latencies greater than five hours, as that's likely due
+to a manual re-run of tests.
+"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -111,9 +124,13 @@ def get_status_data(statuses_url, system):
 def build_args_parser():
   import argparse
   parser = argparse.ArgumentParser()
-  parser.add_argument('--format', type=str, choices=['human', 'csv'], default='human')
-  parser.add_argument('--system', type=str, choices=['jenkins', 'kokoro'], required=True)
-  parser.add_argument('--token', type=str, default='')
+  parser.add_argument('--format', type=str, choices=['human', 'csv'],
+                      default='human',
+                      help='Output format: are you a human or a machine?')
+  parser.add_argument('--system', type=str, choices=['jenkins', 'kokoro'],
+                      required=True, help='Consider only the given CI system')
+  parser.add_argument('--token', type=str, default='',
+                      help='GitHub token to use its API with a higher rate limit')
   return parser
 
 
