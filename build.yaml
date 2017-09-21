@@ -4778,7 +4778,7 @@ configs:
     CXX: g++
     DEFINES: _DEBUG DEBUG GPR_GCOV
     LD: gcc
-    LDFLAGS: -fprofile-arcs -ftest-coverage -rdynamic
+    LDFLAGS: -fprofile-arcs -ftest-coverage -rdynamic -lstdc++
     LDXX: g++
   helgrind:
     CPPFLAGS: -O0
