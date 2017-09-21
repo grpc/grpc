@@ -83,12 +83,11 @@ static timer_shard *g_shard_queue[NUM_SHARDS];
 
 /* == Hash table for duplicate timer detection == */
 
-#define NUM_HASH_BUCKETS 1000
+#define NUM_HASH_BUCKETS 1009 /* Prime number close to 1000 */
 #define NUM_SLOTS_PER_BUCKET 30
 
 static gpr_mu g_hash_mu[NUM_HASH_BUCKETS]; /* One mutex per bucket */
-static grpc_timer *g_timer_ht[NUM_HASH_BUCKETS]
-                             [NUM_SLOTS_PER_BUCKET] = {{NULL, NULL}};
+static grpc_timer *g_timer_ht[NUM_HASH_BUCKETS] = {NULL};
 
 static void init_timer_ht() {
   for (int i = 0; i < NUM_HASH_BUCKETS; i++) {
@@ -98,60 +97,64 @@ static void init_timer_ht() {
 
 static bool is_in_ht(grpc_timer *t) {
   size_t i = GPR_HASH_POINTER(t, NUM_HASH_BUCKETS);
-  bool is_found = false;
+
   gpr_mu_lock(&g_hash_mu[i]);
-  for (int j = 0; j < NUM_SLOTS_PER_BUCKET; j++) {
-    if (g_timer_ht[i][j] == t) {
-      is_found = true;
-      break;
-    }
+  grpc_timer *p = g_timer_ht[i];
+  while (p != NULL && p != t) {
+    p = p->hash_table_next;
   }
   gpr_mu_unlock(&g_hash_mu[i]);
-  return is_found;
+
+  return (p == t);
 }
 
 static void add_to_ht(grpc_timer *t) {
+  GPR_ASSERT(!t->hash_table_next);
   size_t i = GPR_HASH_POINTER(t, NUM_HASH_BUCKETS);
-  bool added = false;
+
   gpr_mu_lock(&g_hash_mu[i]);
-  for (int j = 0; j < NUM_SLOTS_PER_BUCKET; j++) {
-    if (g_timer_ht[i][j] == NULL) {
-      g_timer_ht[i][j] = t;
-      added = true;
-      break;
-    } else if (g_timer_ht[i][j] == t) {
-      grpc_closure *c = t->closure;
-      gpr_log(GPR_ERROR,
-              "** Duplicate timer (%p) being added. Closure: (%p), created at: "
-              "(%s:%d), scheduled at: (%s:%d) **",
-              t, c, c->file_created, c->line_created, c->file_initiated,
-              c->line_initiated);
-      abort();
-    }
+  grpc_timer *p = g_timer_ht[i];
+  while (p != NULL && p != t) {
+    p = p->hash_table_next;
   }
 
-  gpr_mu_unlock(&g_hash_mu[i]);
-  if (!added) {
+  if (p == t) {
+    grpc_closure *c = t->closure;
     gpr_log(GPR_ERROR,
-            "** Not enough slots in the timer hash table. Please increase "
-            "NUM_SLOTS_PER_BUCKET **");
+            "** Duplicate timer (%p) being added. Closure: (%p), created at: "
+            "(%s:%d), scheduled at: (%s:%d) **",
+            t, c, c->file_created, c->line_created, c->file_initiated,
+            c->line_initiated);
     abort();
   }
+
+  /* Timer not present in the bucket. Insert at head of the list */
+  t->hash_table_next = g_timer_ht[i];
+  g_timer_ht[i] = t;
+  gpr_mu_unlock(&g_hash_mu[i]);
 }
 
 static void remove_from_ht(grpc_timer *t) {
   size_t i = GPR_HASH_POINTER(t, NUM_HASH_BUCKETS);
   bool removed = false;
+
   gpr_mu_lock(&g_hash_mu[i]);
-  for (int j = 0; j < NUM_SLOTS_PER_BUCKET; j++) {
-    if (g_timer_ht[i][j] == t) {
-      g_timer_ht[i][j] = 0;
+  if (g_timer_ht[i] == t) {
+    g_timer_ht[i] = g_timer_ht[i]->hash_table_next;
+    removed = true;
+  } else if (g_timer_ht[i] != NULL) {
+    grpc_timer *p = g_timer_ht[i];
+    while (p->hash_table_next != NULL && p->hash_table_next != t) {
+      p = p->hash_table_next;
+    }
+
+    if (p->hash_table_next == t) {
+      p->hash_table_next = t->hash_table_next;
       removed = true;
-      break;
     }
   }
-
   gpr_mu_unlock(&g_hash_mu[i]);
+
   if (!removed) {
     grpc_closure *c = t->closure;
     gpr_log(GPR_ERROR,
@@ -161,6 +164,8 @@ static void remove_from_ht(grpc_timer *t) {
             c->line_initiated);
     abort();
   }
+
+  t->hash_table_next = NULL;
 }
 
 /* If a timer is added to a timer shard (either heap or a list), it cannot
@@ -361,6 +366,10 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
   GPR_ASSERT(now.clock_type == g_clock_type);
   timer->closure = closure;
   gpr_atm deadline_atm = timer->deadline = timespec_to_atm_round_up(deadline);
+
+#ifndef NDEBUG
+  timer->hash_table_next = NULL;
+#endif
 
   if (GRPC_TRACER_ON(grpc_timer_trace)) {
     gpr_log(GPR_DEBUG, "TIMER %p: SET %" PRId64 ".%09d [%" PRIdPTR
