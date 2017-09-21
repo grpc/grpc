@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-extern grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable;
+extern const grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable;
 
 #ifdef __cplusplus
 }
