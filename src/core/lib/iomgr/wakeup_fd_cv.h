@@ -66,6 +66,8 @@ typedef struct cv_fd_table {
   grpc_poll_function_type poll;
 } cv_fd_table;
 
+extern grpc_wakeup_fd_vtable grpc_cv_wakeup_fd_vtable;
+
 #ifdef __cplusplus
 }
 #endif

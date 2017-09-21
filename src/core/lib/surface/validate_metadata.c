@@ -26,6 +26,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/surface/validate_metadata.h"
 
 static grpc_error *conforms_to(grpc_slice slice, const uint8_t *legal_bits,
                                const char *err_desc) {
