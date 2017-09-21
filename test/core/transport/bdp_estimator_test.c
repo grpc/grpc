@@ -24,6 +24,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 #include <limits.h>
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/util/test_config.h"
 
@@ -145,6 +146,7 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   gpr_now_impl = fake_gpr_now;
   grpc_init();
+  grpc_timer_manager_set_threading(false);
   test_noop();
   test_get_estimate_no_samples();
   test_get_estimate_1_sample();

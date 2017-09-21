@@ -308,7 +308,7 @@ static bool rq_alloc(grpc_exec_ctx *exec_ctx,
       resource_user->free_pool += aborted_allocations;
       GRPC_CLOSURE_LIST_SCHED(exec_ctx, &resource_user->on_allocated);
       gpr_mu_unlock(&resource_user->mu);
-      ru_unref_by(exec_ctx, resource_user, aborted_allocations);
+      ru_unref_by(exec_ctx, resource_user, (gpr_atm)aborted_allocations);
       continue;
     }
     if (resource_user->free_pool < 0 &&
