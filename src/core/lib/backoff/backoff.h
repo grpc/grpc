@@ -37,7 +37,7 @@ typedef struct {
   uint32_t rng_state;
 
   /// current retry timeout in milliseconds
-  int64_t current_timeout_millis;
+  grpc_millis current_timeout_millis;
 } grpc_backoff;
 
 /// Initialize backoff machinery - does not need to be destroyed

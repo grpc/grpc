@@ -34,7 +34,7 @@ void grpc_backoff_init(grpc_backoff *backoff,
 
 grpc_millis grpc_backoff_begin(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff) {
   backoff->current_timeout_millis = backoff->initial_connect_timeout;
-  const int64_t first_timeout =
+  const grpc_millis first_timeout =
       GPR_MAX(backoff->current_timeout_millis, backoff->min_timeout_millis);
   return grpc_exec_ctx_now(exec_ctx) + first_timeout;
 }
