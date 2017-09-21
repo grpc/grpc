@@ -547,8 +547,7 @@ Object HHVM_METHOD(Call, startBatch,
 
     bool callFailed{ false };
     grpc_status_code failCode{ GRPC_STATUS_OK };
-    auto callFailure = [&callFailed, &credentialedCall, &metadataSync, &opsManaged, pCallData]
-                       (bool timeOut = false)
+    auto callFailure = [&callFailed, &credentialedCall, &metadataSync, &opsManaged, pCallData]()
     {
         // clean up any meta data info
         if (credentialedCall)
@@ -560,18 +559,6 @@ Object HHVM_METHOD(Call, startBatch,
             // set call cancelled shared flag
             std::lock_guard<std::mutex> lock{ *(metadataSync.pMetadataMutex) };
             metadataSync.callCancelled = true;
-        }
-
-        if (timeOut)
-        {
-            // cancel the call with the server
-            grpc_call_cancel_with_status(pCallData->call(), GRPC_STATUS_DEADLINE_EXCEEDED,
-                                         "RPC Call Timeout Exceeded", nullptr);
-
-            // wait for failure after cancelling call
-            grpc_event event(grpc_completion_queue_pluck(pCallData->queue()->queue(), &opsManaged,
-                                                         gpr_inf_future(GPR_CLOCK_REALTIME),
-                                                         nullptr));
         }
 
         callFailed = true;
@@ -595,12 +582,12 @@ Object HHVM_METHOD(Call, startBatch,
     }
 
     grpc_event event (grpc_completion_queue_pluck(pCallData->queue()->queue(), &opsManaged,
-                                                 gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN),
+                                                 gpr_inf_future(GPR_CLOCK_REALTIME),
                                                  nullptr));
     if ((event.type != GRPC_OP_COMPLETE) || (event.tag != &opsManaged) || (event.success == 0))
     {
         // failed so clean up and return empty object
-        callFailure(event.type ==  GRPC_QUEUE_TIMEOUT);
+        callFailure();
         failCode = (event.type == GRPC_QUEUE_TIMEOUT) ? GRPC_STATUS_DEADLINE_EXCEEDED : GRPC_STATUS_UNKNOWN;
     }
 
