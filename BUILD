@@ -38,7 +38,7 @@ g_stands_for = "garcia"
 
 core_version = "4.0.0"
 
-version = "1.6.1"
+version = "1.6.2"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
