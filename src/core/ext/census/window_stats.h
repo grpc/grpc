@@ -21,6 +21,10 @@
 
 #include <grpc/support/time.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Keep rolling sums of a user-defined statistic (containing a number of
    measurements) over a a number of time intervals ("windows"). For example,
    you can use a window_stats object to answer questions such as
@@ -154,5 +158,9 @@ void census_window_stats_get_sums(const struct census_window_stats *wstats,
    calling them will most likely result in a NULL-pointer dereference or
    assertion failure). This function is thread-compatible. */
 void census_window_stats_destroy(struct census_window_stats *wstats);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_CENSUS_WINDOW_STATS_H */

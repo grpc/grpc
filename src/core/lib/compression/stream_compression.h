@@ -24,6 +24,10 @@
 #include <grpc/slice_buffer.h>
 #include <zlib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Stream compression/decompression context */
 typedef struct grpc_stream_compression_context {
   z_stream zs;
@@ -86,5 +90,9 @@ grpc_stream_compression_context *grpc_stream_compression_context_create(
  */
 void grpc_stream_compression_context_destroy(
     grpc_stream_compression_context *ctx);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -22,6 +22,10 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/http2_errors.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /// A utility function to get the status code and message to be returned
 /// to the application.  If not set in the top-level message, looks
 /// through child errors until it finds the first one with these attributes.
@@ -37,5 +41,9 @@ void grpc_error_get_status(grpc_error *error, gpr_timespec deadline,
 /// child has GRPC_ERROR_INT_GRPC_STATUS set, or that it is GRPC_ERROR_NONE or
 /// GRPC_ERROR_CANCELLED
 bool grpc_error_has_clear_grpc_status(grpc_error *error);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_ERROR_UTILS_H */

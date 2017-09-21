@@ -28,6 +28,10 @@
 #define CENSUS_LOG_2_MAX_RECORD_SIZE 14 /* 2^14 = 16KB */
 #define CENSUS_LOG_MAX_RECORD_SIZE (1 << CENSUS_LOG_2_MAX_RECORD_SIZE)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Initialize the statistics logging subsystem with the given log size. A log
    size of 0 will result in the smallest possible log for the platform
    (approximately CENSUS_LOG_MAX_RECORD_SIZE * gpr_cpu_num_cores()). If
@@ -76,5 +80,9 @@ size_t census_log_remaining_space(void);
 /* Returns the number of times grpc_stats_log_start_write() failed due to
    out-of-space. */
 int64_t census_log_out_of_space_count(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_CENSUS_MLOG_H */

@@ -28,6 +28,10 @@
 
 #define GRPC_JWT_OAUTH2_AUDIENCE "https://www.googleapis.com/oauth2/v3/token"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* --- auth_json_key parsing. --- */
 
 typedef struct {
@@ -69,5 +73,9 @@ typedef char *(*grpc_jwt_encode_and_sign_override)(
 /* Set a custom encode_and_sign override for testing. */
 void grpc_jwt_encode_and_sign_set_override(
     grpc_jwt_encode_and_sign_override func);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H */
