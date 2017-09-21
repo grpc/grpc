@@ -30,7 +30,6 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include "src/core/lib/iomgr/block_annotate.h"
 
 static struct timespec timespec_from_gpr(gpr_timespec gts) {
   struct timespec rv;
@@ -157,9 +156,7 @@ void gpr_sleep_until(gpr_timespec until) {
 
     delta = gpr_time_sub(until, now);
     delta_ts = timespec_from_gpr(delta);
-    GRPC_SCHEDULING_START_BLOCKING_REGION;
     ns_result = nanosleep(&delta_ts, NULL);
-    GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX;
     if (ns_result == 0) {
       break;
     }

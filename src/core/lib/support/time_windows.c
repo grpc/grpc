@@ -28,7 +28,6 @@
 #include <process.h>
 #include <sys/timeb.h>
 
-#include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/support/time_precise.h"
 
 static LARGE_INTEGER g_start_time;
@@ -92,9 +91,7 @@ void gpr_sleep_until(gpr_timespec until) {
     sleep_millis =
         delta.tv_sec * GPR_MS_PER_SEC + delta.tv_nsec / GPR_NS_PER_MS;
     GPR_ASSERT((sleep_millis >= 0) && (sleep_millis <= INT_MAX));
-    GRPC_SCHEDULING_START_BLOCKING_REGION;
     Sleep((DWORD)sleep_millis);
-    GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX;
   }
 }
 
