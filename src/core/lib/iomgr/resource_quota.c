@@ -523,6 +523,9 @@ static void ru_shutdown(grpc_exec_ctx *exec_ctx, void *ru, grpc_error *error) {
   resource_user->reclaimers[1] = NULL;
   rulist_remove(resource_user, GRPC_RULIST_RECLAIMER_BENIGN);
   rulist_remove(resource_user, GRPC_RULIST_RECLAIMER_DESTRUCTIVE);
+  if (resource_user->allocating) {
+    rq_step_sched(exec_ctx, resource_user->resource_quota);
+  }
 }
 
 static void ru_destroy(grpc_exec_ctx *exec_ctx, void *ru, grpc_error *error) {
