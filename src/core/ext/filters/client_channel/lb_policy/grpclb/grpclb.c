@@ -1722,10 +1722,36 @@ static void lb_on_server_status_received_locked(grpc_exec_ctx *exec_ctx,
   }
 }
 
+static void fallback_update_locked(grpc_exec_ctx *exec_ctx,
+                                   glb_lb_policy *glb_policy,
+                                   const grpc_lb_policy_args *args) {
+  const grpc_arg *arg =
+      grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
+  if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
+    return;
+  }
+  const grpc_lb_addresses *addresses =
+      (const grpc_lb_addresses *)arg->value.pointer.p;
+  GPR_ASSERT(glb_policy->fallback_backend_addresses != NULL);
+  grpc_lb_addresses_destroy(exec_ctx, glb_policy->fallback_backend_addresses);
+  glb_policy->fallback_backend_addresses =
+      extract_backend_addresses_locked(exec_ctx, addresses);
+  if (glb_policy->lb_fallback_timeout_ms > 0 &&
+      !glb_policy->fallback_timer_active) {
+    rr_handover_locked(exec_ctx, glb_policy);
+  }
+}
+
 static void glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                               const grpc_lb_policy_args *args) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)policy;
-  if (glb_policy->updating_lb_channel) {
+  // Propagate update to fallback_backend_addresses if a non-empty serverlist
+  // hasn't been received from the balancer.
+  if (glb_policy->serverlist == NULL) {
+    fallback_update_locked(exec_ctx, glb_policy, args);
+  }
+
+  if (glb_policy->updating_lb_channel && glb_policy->serverlist != NULL) {
     if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
       gpr_log(GPR_INFO,
               "Update already in progress for grpclb %p. Deferring update.",
@@ -1790,18 +1816,6 @@ static void glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
             glb_policy->base.interested_parties),
         &glb_policy->lb_channel_connectivity,
         &glb_policy->lb_channel_on_connectivity_changed, NULL);
-  }
-
-  // Propagate update to fallback_backend_addresses if a non-empty serverlist
-  // hasn't been received from the balancer.
-  if (glb_policy->serverlist == NULL) {
-    grpc_lb_addresses_destroy(exec_ctx, glb_policy->fallback_backend_addresses);
-    glb_policy->fallback_backend_addresses =
-        extract_backend_addresses_locked(exec_ctx, addresses);
-    if (glb_policy->lb_fallback_timeout_ms > 0 &&
-        !glb_policy->fallback_timer_active) {
-      rr_handover_locked(exec_ctx, glb_policy);
-    }
   }
 }
 

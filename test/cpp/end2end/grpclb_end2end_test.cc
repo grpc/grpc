@@ -746,6 +746,7 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
   }
 
   addresses.clear();
+  addresses.emplace_back(AddressData{balancer_servers_[0].port_, true, ""});
   for (size_t i = kNumBackendInResolution;
        i < kNumBackendInResolution + kNumBackendInResolutionUpdate; ++i) {
     addresses.emplace_back(AddressData{backend_servers_[i].port_, false, ""});
