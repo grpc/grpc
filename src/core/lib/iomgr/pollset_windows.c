@@ -110,7 +110,7 @@ void grpc_pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {}
 
 grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               grpc_pollset_worker **worker_hdl,
-                              gpr_timespec now, gpr_timespec deadline) {
+                              grpc_millis deadline) {
   grpc_pollset_worker worker;
   if (worker_hdl) *worker_hdl = &worker;
 
@@ -159,7 +159,8 @@ grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                       &worker);
     added_worker = 1;
     while (!worker.kicked) {
-      if (gpr_cv_wait(&worker.cv, &grpc_polling_mu, deadline)) {
+      if (gpr_cv_wait(&worker.cv, &grpc_polling_mu,
+                      grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME))) {
         break;
       }
     }
