@@ -20,6 +20,8 @@
 #include <grpc/support/time.h>
 #include <stdio.h>
 
+#include "src/core/lib/support/time_precise.h"
+
 #ifdef GRPC_TIMERS_RDTSC
 #if defined(__i386__)
 static void gpr_get_cycle_counter(int64_t int *clk) {

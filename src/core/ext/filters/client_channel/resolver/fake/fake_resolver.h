@@ -24,6 +24,10 @@
 #define GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR \
   "grpc.fake_resolver.response_generator"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void grpc_resolver_fake_init();
 
 // Instances of \a grpc_fake_resolver_response_generator are passed to the
@@ -55,6 +59,10 @@ grpc_fake_resolver_response_generator_ref(
     grpc_fake_resolver_response_generator* generator);
 void grpc_fake_resolver_response_generator_unref(
     grpc_fake_resolver_response_generator* generator);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H \
           */

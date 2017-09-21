@@ -18,9 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_BASIC_PROFILER
-
 #include "src/core/lib/profiling/timers.h"
+
+#ifdef GRPC_BASIC_PROFILER
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
