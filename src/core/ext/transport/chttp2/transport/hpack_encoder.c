@@ -365,6 +365,7 @@ static void emit_lithdr_incidx_v(grpc_exec_ctx *exec_ctx,
                                  grpc_chttp2_hpack_compressor *c,
                                  grpc_mdelem elem, framer_state *st) {
   GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX_V(exec_ctx);
+  GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED(exec_ctx);
   uint32_t len_key = (uint32_t)GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
   wire_value value =
       get_wire_value(exec_ctx, elem, st->use_true_binary_metadata);
@@ -386,6 +387,7 @@ static void emit_lithdr_noidx_v(grpc_exec_ctx *exec_ctx,
                                 grpc_chttp2_hpack_compressor *c,
                                 grpc_mdelem elem, framer_state *st) {
   GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX_V(exec_ctx);
+  GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED(exec_ctx);
   uint32_t len_key = (uint32_t)GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
   wire_value value =
       get_wire_value(exec_ctx, elem, st->use_true_binary_metadata);
