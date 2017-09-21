@@ -21,6 +21,7 @@
 #ifdef GRPC_POSIX_WAKEUP_FD
 
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#include "src/core/lib/iomgr/wakeup_fd_pipe.h"
 
 #include <errno.h>
 #include <string.h>

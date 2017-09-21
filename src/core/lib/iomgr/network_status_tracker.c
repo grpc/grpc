@@ -17,6 +17,7 @@
  */
 
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/network_status_tracker.h"
 
 void grpc_network_status_shutdown(void) {}
 

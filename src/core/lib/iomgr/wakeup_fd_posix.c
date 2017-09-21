@@ -25,7 +25,6 @@
 #include "src/core/lib/iomgr/wakeup_fd_pipe.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
-extern grpc_wakeup_fd_vtable grpc_cv_wakeup_fd_vtable;
 static const grpc_wakeup_fd_vtable *wakeup_fd_vtable = NULL;
 
 int grpc_allow_specialized_wakeup_fd = 1;
