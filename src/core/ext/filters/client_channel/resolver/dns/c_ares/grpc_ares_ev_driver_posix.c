@@ -118,9 +118,8 @@ static void fd_node_shutdown(grpc_exec_ctx *exec_ctx, fd_node *fdn) {
     gpr_mu_unlock(&fdn->mu);
     fd_node_destroy(exec_ctx, fdn);
   } else {
-    grpc_fd_shutdown(
-        exec_ctx, fdn->fd,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("c-ares fd shutdown"));
+    grpc_fd_shutdown(exec_ctx, fdn->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                            "c-ares fd shutdown"));
     gpr_mu_unlock(&fdn->mu);
   }
 }
