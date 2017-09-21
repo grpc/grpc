@@ -421,7 +421,9 @@ class CXXLanguage:
         minimal_stack=not secure,
         categories=smoketest_categories + [SCALABLE])
 
-      for rpc_type in ['unary', 'streaming', 'streaming_from_client', 'streaming_from_server']:
+      # TODO(vjpai): Add 'streaming_from_server' to rpc_type list once execution
+      # time for it is reasonably controlled.
+      for rpc_type in ['unary', 'streaming', 'streaming_from_client']:
         for synchronicity in ['sync', 'async']:
           yield _ping_pong_scenario(
               'cpp_protobuf_%s_%s_ping_pong_%s' % (synchronicity, rpc_type, secstr),
