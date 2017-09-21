@@ -1214,7 +1214,7 @@ add_library(grpc
   src/core/ext/filters/message_size/message_size_filter.c
   src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c
   src/core/ext/filters/workarounds/workaround_utils.c
-  src/core/plugin_registry/grpc_plugin_registry.c
+  src/core/plugin_registry/grpc_plugin_registry.cc
 )
 
 if(WIN32 AND MSVC)
@@ -1523,7 +1523,7 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/ext/filters/load_reporting/server_load_reporting_filter.c
   src/core/ext/filters/load_reporting/server_load_reporting_plugin.c
-  src/core/plugin_registry/grpc_cronet_plugin_registry.c
+  src/core/plugin_registry/grpc_cronet_plugin_registry.cc
 )
 
 if(WIN32 AND MSVC)
@@ -2364,7 +2364,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/message_size/message_size_filter.c
   src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c
   src/core/ext/filters/workarounds/workaround_utils.c
-  src/core/plugin_registry/grpc_unsecure_plugin_registry.c
+  src/core/plugin_registry/grpc_unsecure_plugin_registry.cc
 )
 
 if(WIN32 AND MSVC)

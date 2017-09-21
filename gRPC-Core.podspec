@@ -727,7 +727,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/message_size/message_size_filter.c',
                       'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c',
                       'src/core/ext/filters/workarounds/workaround_utils.c',
-                      'src/core/plugin_registry/grpc_plugin_registry.c'
+                      'src/core/plugin_registry/grpc_plugin_registry.cc'
 
     ss.private_header_files = 'src/core/lib/profiling/timers.h',
                               'src/core/lib/support/arena.h',

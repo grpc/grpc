@@ -321,7 +321,7 @@ CORE_SOURCE_FILES = [
   'src/core/ext/filters/message_size/message_size_filter.c',
   'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c',
   'src/core/ext/filters/workarounds/workaround_utils.c',
-  'src/core/plugin_registry/grpc_plugin_registry.c',
+  'src/core/plugin_registry/grpc_plugin_registry.cc',
   'src/boringssl/err_data.c',
   'third_party/boringssl/crypto/aes/aes.c',
   'third_party/boringssl/crypto/aes/key_wrap.c',

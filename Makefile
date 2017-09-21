@@ -3205,7 +3205,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/message_size/message_size_filter.c \
     src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c \
     src/core/ext/filters/workarounds/workaround_utils.c \
-    src/core/plugin_registry/grpc_plugin_registry.c \
+    src/core/plugin_registry/grpc_plugin_registry.cc \
 
 PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer.h \
@@ -3514,7 +3514,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/transport/chttp2/client/chttp2_connector.c \
     src/core/ext/filters/load_reporting/server_load_reporting_filter.c \
     src/core/ext/filters/load_reporting/server_load_reporting_plugin.c \
-    src/core/plugin_registry/grpc_cronet_plugin_registry.c \
+    src/core/plugin_registry/grpc_cronet_plugin_registry.cc \
 
 PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer.h \
@@ -4323,7 +4323,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/message_size/message_size_filter.c \
     src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c \
     src/core/ext/filters/workarounds/workaround_utils.c \
-    src/core/plugin_registry/grpc_unsecure_plugin_registry.c \
+    src/core/plugin_registry/grpc_unsecure_plugin_registry.cc \
 
 PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/byte_buffer.h \
@@ -20188,8 +20188,8 @@ src/core/lib/security/transport/server_auth_filter.c: $(OPENSSL_DEP)
 src/core/lib/security/transport/tsi_error.c: $(OPENSSL_DEP)
 src/core/lib/security/util/json_util.c: $(OPENSSL_DEP)
 src/core/lib/surface/init_secure.c: $(OPENSSL_DEP)
-src/core/plugin_registry/grpc_cronet_plugin_registry.c: $(OPENSSL_DEP)
-src/core/plugin_registry/grpc_plugin_registry.c: $(OPENSSL_DEP)
+src/core/plugin_registry/grpc_cronet_plugin_registry.cc: $(OPENSSL_DEP)
+src/core/plugin_registry/grpc_plugin_registry.cc: $(OPENSSL_DEP)
 src/core/tsi/fake_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/gts_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/ssl_transport_security.c: $(OPENSSL_DEP)

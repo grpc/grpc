@@ -679,7 +679,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/message_size/message_size_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_utils.c" role="src" />
-    <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.c" role="src" />
+    <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.cc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/aes/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/asn1_locl.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/bio/internal.h" role="src" />

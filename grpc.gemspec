@@ -667,7 +667,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/message_size/message_size_filter.c )
   s.files += %w( src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c )
   s.files += %w( src/core/ext/filters/workarounds/workaround_utils.c )
-  s.files += %w( src/core/plugin_registry/grpc_plugin_registry.c )
+  s.files += %w( src/core/plugin_registry/grpc_plugin_registry.cc )
   s.files += %w( third_party/boringssl/crypto/aes/internal.h )
   s.files += %w( third_party/boringssl/crypto/asn1/asn1_locl.h )
   s.files += %w( third_party/boringssl/crypto/bio/internal.h )
