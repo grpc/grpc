@@ -56,6 +56,7 @@ class ClientRpcContext {
   }
 
   virtual void Start(CompletionQueue* cq, const ClientConfig& config) = 0;
+  virtual void TryCancel() = 0;
 };
 
 template <class RequestType, class ResponseType>
@@ -110,6 +111,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
                                                 prepare_req_, callback_);
     clone->StartInternal(cq);
   }
+  void TryCancel() override { context_.TryCancel(); }
 
  private:
   grpc::ClientContext context_;
@@ -141,8 +143,6 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
     }
   }
 };
-
-typedef std::forward_list<ClientRpcContext*> context_list;
 
 template <class StubType, class RequestType>
 class AsyncClient : public ClientImpl<StubType, RequestType> {
@@ -247,6 +247,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
       // this thread isn't supposed to shut down
       std::lock_guard<std::mutex> l(shutdown_state_[thread_idx]->mutex);
       if (shutdown_state_[thread_idx]->shutdown) {
+        ctx->TryCancel();
         delete ctx;
         return true;
       }
@@ -388,6 +389,7 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
         stub_, req_, next_issue_, prepare_req_, callback_);
     clone->StartInternal(cq, messages_per_stream_);
   }
+  void TryCancel() override { context_.TryCancel(); }
 
  private:
   grpc::ClientContext context_;
@@ -527,6 +529,7 @@ class ClientRpcContextStreamingFromClientImpl : public ClientRpcContext {
         stub_, req_, next_issue_, prepare_req_, callback_);
     clone->StartInternal(cq);
   }
+  void TryCancel() override { context_.TryCancel(); }
 
  private:
   grpc::ClientContext context_;
@@ -644,6 +647,7 @@ class ClientRpcContextStreamingFromServerImpl : public ClientRpcContext {
         stub_, req_, next_issue_, prepare_req_, callback_);
     clone->StartInternal(cq);
   }
+  void TryCancel() override { context_.TryCancel(); }
 
  private:
   grpc::ClientContext context_;
@@ -786,6 +790,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
         stub_, req_, next_issue_, prepare_req_, callback_);
     clone->StartInternal(cq, messages_per_stream_);
   }
+  void TryCancel() override { context_.TryCancel(); }
 
  private:
   grpc::ClientContext context_;
