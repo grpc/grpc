@@ -88,16 +88,18 @@ typedef struct plugin_get_metadata_params
 {
     plugin_get_metadata_params(void* const _ptr, std::string&& _contextServiceUrl,
                                std::string&& _contextMethodName,
-                               grpc_credentials_plugin_metadata_cb&& _cb,
+                               const grpc_auth_context* const _pContext,
+                               grpc_credentials_plugin_metadata_cb _cb,
                                void* const _user_data, const bool _completed = false) :
         completed{ _completed }, ptr{ _ptr },
         contextServiceUrl{ std::move(_contextServiceUrl) },
-        contextMethodName{ std::move(_contextMethodName) },
-        cb{ std::move(_cb) }, user_data{ _user_data } {}
+        contextMethodName{ std::move(_contextMethodName) }, pContext{ _pContext }, cb{ _cb },
+         user_data{ _user_data } {}
     bool completed;
     void *ptr;
     std::string contextServiceUrl;
     std::string contextMethodName;
+    const grpc_auth_context* pContext;
     grpc_credentials_plugin_metadata_cb cb;
     void *user_data;
 } plugin_get_metadata_params;
@@ -114,9 +116,9 @@ public:
     {
     public:
         // constructors/destructors
-        MetadataInfo(const std::shared_ptr<MetadataPromise>& pMetadataPromise = std::shared_ptr<MetadataPromise>{ nullptr },
+        MetadataInfo(MetadataPromise* const pMetadataPromise = nullptr,
                      const std::shared_ptr<std::mutex>& pMetadataMutex = std::shared_ptr<std::mutex>{ nullptr },
-                     const std::shared_ptr<bool>& pCallCancelled = std::shared_ptr<bool>{ nullptr },
+                     bool* const pCallCancelled = nullptr ,
                      const std::thread::id& threadId = std::thread::id{ 0 }) :
             m_pMetadataPromise{ pMetadataPromise }, m_pMetadataMutex{ pMetadataMutex }, m_pCallCancelled{ pCallCancelled },
             m_ThreadId{ threadId } {}
@@ -139,16 +141,16 @@ public:
         }
 
         // interface functions
-        MetadataPromise* const metadataPromise(void) { return m_pMetadataPromise.get(); }
+        MetadataPromise* const metadataPromise(void) { return m_pMetadataPromise; }
         std::mutex* const metadataMutex(void) { return m_pMetadataMutex.get(); }
-        const bool* const callCancelled(void) const { return m_pCallCancelled.get(); }
+        bool* const callCancelled(void) const { return m_pCallCancelled; }
         const std::thread::id& threadId(void) const { return m_ThreadId; }
 
     private:
         // member variables
-        std::shared_ptr<MetadataPromise> m_pMetadataPromise;
+        MetadataPromise* m_pMetadataPromise;
         std::shared_ptr<std::mutex> m_pMetadataMutex;
-        std::shared_ptr<bool> m_pCallCancelled;
+        bool* m_pCallCancelled;
         std::thread::id m_ThreadId;
 
     private:
@@ -161,7 +163,6 @@ public:
             std::swap(m_pCallCancelled, otherMetadataInfo.m_pCallCancelled);
             std::swap(m_ThreadId, otherMetadataInfo.m_ThreadId);
         }
-
     } MetaDataInfo;
 
     // constructors/destructors
@@ -189,6 +190,7 @@ private:
 
 void plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
                             const std::string& methodName,
+                            const grpc_auth_context* pContext,
                             grpc_credentials_plugin_metadata_cb cb,
                             void *user_data);
 }

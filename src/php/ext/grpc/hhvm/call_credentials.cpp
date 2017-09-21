@@ -242,6 +242,7 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 // This work done in this function MUST be done on the same thread as the HHVM call request
 void plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
                             const std::string& methodName,
+                            const grpc_auth_context* pContext,
                             grpc_credentials_plugin_metadata_cb cb,
                             void *user_data)
 {
@@ -282,52 +283,56 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
     PluginMetadataInfo& pluginMetaDataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
     PluginMetadataInfo::MetaDataInfo metaDataInfo{ pluginMetaDataInfo.getInfo(pCallCrendentials) };
 
-    MetadataPromise* const pMetaDataPromise{ metaDataInfo.metadataPromise() };
-    if (!pMetaDataPromise)
+    if (metaDataInfo.metadataMutex())
     {
-        // failed to get promise associated with call credentials.  This can happen if the call timed
-        // out and the metadata was erased before this function was invoked
-        return;
-    }
+        std::mutex& metaDataMutex{ *(metaDataInfo.metadataMutex()) };
+        std::lock_guard<std::mutex> lock{ metaDataMutex };
 
-    std::string contextServiceUrl{ context.service_url ? context.service_url : "" };
-    std::string contextMethodName{ context.method_name ? context.method_name : "" };
-
-    std::mutex& metaDataMutex{ *(metaDataInfo.metadataMutex()) };
-    const bool& callCancelled{ *(metaDataInfo.callCancelled()) };
-    const std::thread::id& callThreadId{ metaDataInfo.threadId() };
-    if (callThreadId == std::this_thread::get_id())
-    {
-        HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata same thread") // Degug Trace
+        MetadataPromise* const pMetaDataPromise{ metaDataInfo.metadataPromise() };
+        if (!pMetaDataPromise)
         {
-            // check if call cancelled from timeout before performing callback function
-            std::lock_guard<std::mutex> lock{ metaDataMutex };
-            if (!callCancelled)
+            // failed to get promise associated with call credentials.  This can happen if the call timed
+            // out and the metadata was erased before this function was invoked
+            return;
+        }
+
+        std::string contextServiceUrl{ context.service_url ? context.service_url : "" };
+        std::string contextMethodName{ context.method_name ? context.method_name : "" };
+
+        const bool& callCancelled{ *(metaDataInfo.callCancelled()) };
+        const std::thread::id& callThreadId{ metaDataInfo.threadId() };
+        if (callThreadId == std::this_thread::get_id())
+        {
+            HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata same thread") // Degug Trace
             {
-                plugin_do_get_metadata(ptr, contextServiceUrl, contextMethodName,
-                                       cb, user_data);
-                plugin_get_metadata_params params{ ptr, std::move(contextServiceUrl),
-                                                   std::move(contextMethodName),
-                                                   std::move(cb), user_data,
-                                                   true };
-                pMetaDataPromise->set_value(std::move(params));
-            }
-            else
-            {
-                // call was cancelled
-                return;
+                // check if call cancelled from timeout before performing callback function
+                if (!callCancelled)
+                {
+                    plugin_do_get_metadata(ptr, contextServiceUrl, contextMethodName,
+                                           context.channel_auth_context, cb, user_data);
+                    plugin_get_metadata_params params{ ptr, std::move(contextServiceUrl),
+                                                       std::move(contextMethodName),
+                                                       context.channel_auth_context,
+                                                       cb, user_data, true };
+                    pMetaDataPromise->set_value(std::move(params));
+                }
+                else
+                {
+                    // call was cancelled
+                    return;
+                }
             }
         }
-    }
-    else
-    {
-        HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata different thread") // Degug Trace
-        plugin_get_metadata_params params{ ptr, std::move(contextServiceUrl),
-                                           std::move(contextMethodName), std::move(cb),
-                                           user_data };
+        else
+        {
+            HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata different thread") // Degug Trace
+            plugin_get_metadata_params params{ ptr, std::move(contextServiceUrl),
+                                               std::move(contextMethodName), context.channel_auth_context,
+                                               cb, user_data };
 
-        // return the meta data params in the promise
-        pMetaDataPromise->set_value(std::move(params));
+            // return the meta data params in the promise
+            pMetaDataPromise->set_value(std::move(params));
+        }
     }
 }
 
