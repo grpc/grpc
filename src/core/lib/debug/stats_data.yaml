@@ -189,6 +189,50 @@
   doc: Number of HTTP2 writes initiated due to 'ping_response'
 - counter: http2_initiate_write_due_to_force_rst_stream
   doc: Number of HTTP2 writes initiated due to 'force_rst_stream'
+- counter: hpack_recv_indexed
+  doc: Number of HPACK indexed fields received
+- counter: hpack_recv_lithdr_incidx
+  doc: Number of HPACK literal headers received with incremental indexing
+- counter: hpack_recv_lithdr_incidx_v
+  doc: Number of HPACK literal headers received with incremental indexing and literal keys
+- counter: hpack_recv_lithdr_notidx
+  doc: Number of HPACK literal headers received with no indexing
+- counter: hpack_recv_lithdr_notidx_v
+  doc: Number of HPACK literal headers received with no indexing and literal keys
+- counter: hpack_recv_lithdr_nvridx
+  doc: Number of HPACK literal headers received with never-indexing
+- counter: hpack_recv_lithdr_nvridx_v
+  doc: Number of HPACK literal headers received with never-indexing and literal keys
+- counter: hpack_recv_uncompressed
+  doc: Number of uncompressed strings received in metadata
+- counter: hpack_recv_huffman
+  doc: Number of huffman encoded strings received in metadata
+- counter: hpack_recv_binary
+  doc: Number of binary strings received in metadata
+- counter: hpack_recv_binary_base64
+  doc: Number of binary strings received encoded in base64 in metadata
+- counter: hpack_send_indexed
+  doc: Number of HPACK indexed fields sent
+- counter: hpack_send_lithdr_incidx
+  doc: Number of HPACK literal headers sent with incremental indexing
+- counter: hpack_send_lithdr_incidx_v
+  doc: Number of HPACK literal headers sent with incremental indexing and literal keys
+- counter: hpack_send_lithdr_notidx
+  doc: Number of HPACK literal headers sent with no indexing
+- counter: hpack_send_lithdr_notidx_v
+  doc: Number of HPACK literal headers sent with no indexing and literal keys
+- counter: hpack_send_lithdr_nvridx
+  doc: Number of HPACK literal headers sent with never-indexing
+- counter: hpack_send_lithdr_nvridx_v
+  doc: Number of HPACK literal headers sent with never-indexing and literal keys
+- counter: hpack_send_uncompressed
+  doc: Number of uncompressed strings sent in metadata
+- counter: hpack_send_huffman
+  doc: Number of huffman encoded strings sent in metadata
+- counter: hpack_send_binary
+  doc: Number of binary strings received in metadata
+- counter: hpack_send_binary_base64
+  doc: Number of binary strings received encoded in base64 in metadata
 # combiner locks
 - counter: combiner_locks_initiated
   doc: Number of combiner lock entries by process

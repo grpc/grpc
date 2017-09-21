@@ -33,6 +33,7 @@
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_table.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/metadata.h"
@@ -271,8 +272,10 @@ static void add_elem(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
   }
 }
 
-static void emit_indexed(grpc_chttp2_hpack_compressor *c, uint32_t elem_index,
+static void emit_indexed(grpc_exec_ctx *exec_ctx,
+                         grpc_chttp2_hpack_compressor *c, uint32_t elem_index,
                          framer_state *st) {
+  GRPC_STATS_INC_HPACK_SEND_INDEXED(exec_ctx);
   uint32_t len = GRPC_CHTTP2_VARINT_LENGTH(elem_index, 1);
   GRPC_CHTTP2_WRITE_VARINT(elem_index, 1, 0x80, add_tiny_header_data(st, len),
                            len);
@@ -284,15 +287,18 @@ typedef struct {
   bool insert_null_before_wire_value;
 } wire_value;
 
-static wire_value get_wire_value(grpc_mdelem elem, bool true_binary_enabled) {
+static wire_value get_wire_value(grpc_exec_ctx *exec_ctx, grpc_mdelem elem,
+                                 bool true_binary_enabled) {
   wire_value wire_val;
   if (grpc_is_binary_header(GRPC_MDKEY(elem))) {
     if (true_binary_enabled) {
+      GRPC_STATS_INC_HPACK_SEND_BINARY(exec_ctx);
       wire_val.huffman_prefix = 0x00;
       wire_val.insert_null_before_wire_value = true;
       wire_val.data = grpc_slice_ref_internal(GRPC_MDVALUE(elem));
 
     } else {
+      GRPC_STATS_INC_HPACK_SEND_BINARY_BASE64(exec_ctx);
       wire_val.huffman_prefix = 0x80;
       wire_val.insert_null_before_wire_value = false;
       wire_val.data =
@@ -300,6 +306,7 @@ static wire_value get_wire_value(grpc_mdelem elem, bool true_binary_enabled) {
     }
   } else {
     /* TODO(ctiller): opportunistically compress non-binary headers */
+    GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED(exec_ctx);
     wire_val.huffman_prefix = 0x00;
     wire_val.insert_null_before_wire_value = false;
     wire_val.data = grpc_slice_ref_internal(GRPC_MDVALUE(elem));
@@ -316,11 +323,14 @@ static void add_wire_value(framer_state *st, wire_value v) {
   add_header_data(st, v.data);
 }
 
-static void emit_lithdr_incidx(grpc_chttp2_hpack_compressor *c,
+static void emit_lithdr_incidx(grpc_exec_ctx *exec_ctx,
+                               grpc_chttp2_hpack_compressor *c,
                                uint32_t key_index, grpc_mdelem elem,
                                framer_state *st) {
+  GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX(exec_ctx);
   uint32_t len_pfx = GRPC_CHTTP2_VARINT_LENGTH(key_index, 2);
-  wire_value value = get_wire_value(elem, st->use_true_binary_metadata);
+  wire_value value =
+      get_wire_value(exec_ctx, elem, st->use_true_binary_metadata);
   size_t len_val = wire_value_length(value);
   uint32_t len_val_len;
   GPR_ASSERT(len_val <= UINT32_MAX);
@@ -332,11 +342,14 @@ static void emit_lithdr_incidx(grpc_chttp2_hpack_compressor *c,
   add_wire_value(st, value);
 }
 
-static void emit_lithdr_noidx(grpc_chttp2_hpack_compressor *c,
+static void emit_lithdr_noidx(grpc_exec_ctx *exec_ctx,
+                              grpc_chttp2_hpack_compressor *c,
                               uint32_t key_index, grpc_mdelem elem,
                               framer_state *st) {
+  GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX(exec_ctx);
   uint32_t len_pfx = GRPC_CHTTP2_VARINT_LENGTH(key_index, 4);
-  wire_value value = get_wire_value(elem, st->use_true_binary_metadata);
+  wire_value value =
+      get_wire_value(exec_ctx, elem, st->use_true_binary_metadata);
   size_t len_val = wire_value_length(value);
   uint32_t len_val_len;
   GPR_ASSERT(len_val <= UINT32_MAX);
@@ -348,10 +361,13 @@ static void emit_lithdr_noidx(grpc_chttp2_hpack_compressor *c,
   add_wire_value(st, value);
 }
 
-static void emit_lithdr_incidx_v(grpc_chttp2_hpack_compressor *c,
+static void emit_lithdr_incidx_v(grpc_exec_ctx *exec_ctx,
+                                 grpc_chttp2_hpack_compressor *c,
                                  grpc_mdelem elem, framer_state *st) {
+  GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX_V(exec_ctx);
   uint32_t len_key = (uint32_t)GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
-  wire_value value = get_wire_value(elem, st->use_true_binary_metadata);
+  wire_value value =
+      get_wire_value(exec_ctx, elem, st->use_true_binary_metadata);
   uint32_t len_val = (uint32_t)wire_value_length(value);
   uint32_t len_key_len = GRPC_CHTTP2_VARINT_LENGTH(len_key, 1);
   uint32_t len_val_len = GRPC_CHTTP2_VARINT_LENGTH(len_val, 1);
@@ -366,10 +382,13 @@ static void emit_lithdr_incidx_v(grpc_chttp2_hpack_compressor *c,
   add_wire_value(st, value);
 }
 
-static void emit_lithdr_noidx_v(grpc_chttp2_hpack_compressor *c,
+static void emit_lithdr_noidx_v(grpc_exec_ctx *exec_ctx,
+                                grpc_chttp2_hpack_compressor *c,
                                 grpc_mdelem elem, framer_state *st) {
+  GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX_V(exec_ctx);
   uint32_t len_key = (uint32_t)GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
-  wire_value value = get_wire_value(elem, st->use_true_binary_metadata);
+  wire_value value =
+      get_wire_value(exec_ctx, elem, st->use_true_binary_metadata);
   uint32_t len_val = (uint32_t)wire_value_length(value);
   uint32_t len_key_len = GRPC_CHTTP2_VARINT_LENGTH(len_key, 1);
   uint32_t len_val_len = GRPC_CHTTP2_VARINT_LENGTH(len_val, 1);
@@ -422,7 +441,7 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
     gpr_free(v);
   }
   if (!GRPC_MDELEM_IS_INTERNED(elem)) {
-    emit_lithdr_noidx_v(c, elem, st);
+    emit_lithdr_noidx_v(exec_ctx, c, elem, st);
     return;
   }
 
@@ -444,16 +463,16 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
   if (grpc_mdelem_eq(c->entries_elems[HASH_FRAGMENT_2(elem_hash)], elem) &&
       c->indices_elems[HASH_FRAGMENT_2(elem_hash)] > c->tail_remote_index) {
     /* HIT: complete element (first cuckoo hash) */
-    emit_indexed(c, dynidx(c, c->indices_elems[HASH_FRAGMENT_2(elem_hash)]),
-                 st);
+    emit_indexed(exec_ctx, c,
+                 dynidx(c, c->indices_elems[HASH_FRAGMENT_2(elem_hash)]), st);
     return;
   }
 
   if (grpc_mdelem_eq(c->entries_elems[HASH_FRAGMENT_3(elem_hash)], elem) &&
       c->indices_elems[HASH_FRAGMENT_3(elem_hash)] > c->tail_remote_index) {
     /* HIT: complete element (second cuckoo hash) */
-    emit_indexed(c, dynidx(c, c->indices_elems[HASH_FRAGMENT_3(elem_hash)]),
-                 st);
+    emit_indexed(exec_ctx, c,
+                 dynidx(c, c->indices_elems[HASH_FRAGMENT_3(elem_hash)]), st);
     return;
   }
 
@@ -471,11 +490,11 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
       indices_key > c->tail_remote_index) {
     /* HIT: key (first cuckoo hash) */
     if (should_add_elem) {
-      emit_lithdr_incidx(c, dynidx(c, indices_key), elem, st);
+      emit_lithdr_incidx(exec_ctx, c, dynidx(c, indices_key), elem, st);
       add_elem(exec_ctx, c, elem);
       return;
     } else {
-      emit_lithdr_noidx(c, dynidx(c, indices_key), elem, st);
+      emit_lithdr_noidx(exec_ctx, c, dynidx(c, indices_key), elem, st);
       return;
     }
     GPR_UNREACHABLE_CODE(return );
@@ -487,11 +506,11 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
       indices_key > c->tail_remote_index) {
     /* HIT: key (first cuckoo hash) */
     if (should_add_elem) {
-      emit_lithdr_incidx(c, dynidx(c, indices_key), elem, st);
+      emit_lithdr_incidx(exec_ctx, c, dynidx(c, indices_key), elem, st);
       add_elem(exec_ctx, c, elem);
       return;
     } else {
-      emit_lithdr_noidx(c, dynidx(c, indices_key), elem, st);
+      emit_lithdr_noidx(exec_ctx, c, dynidx(c, indices_key), elem, st);
       return;
     }
     GPR_UNREACHABLE_CODE(return );
@@ -500,11 +519,11 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
   /* no elem, key in the table... fall back to literal emission */
 
   if (should_add_elem) {
-    emit_lithdr_incidx_v(c, elem, st);
+    emit_lithdr_incidx_v(exec_ctx, c, elem, st);
     add_elem(exec_ctx, c, elem);
     return;
   } else {
-    emit_lithdr_noidx_v(c, elem, st);
+    emit_lithdr_noidx_v(exec_ctx, c, elem, st);
     return;
   }
   GPR_UNREACHABLE_CODE(return );

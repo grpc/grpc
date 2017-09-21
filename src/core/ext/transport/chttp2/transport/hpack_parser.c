@@ -30,6 +30,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
@@ -777,8 +778,7 @@ static grpc_error *parse_stream_dep0(grpc_exec_ctx *exec_ctx,
   return parse_stream_dep1(exec_ctx, p, cur + 1, end);
 }
 
-/* emit an indexed field; for now just logs it to console; jumps to
-   begin the next field on completion */
+/* emit an indexed field; jumps to begin the next field on completion */
 static grpc_error *finish_indexed_field(grpc_exec_ctx *exec_ctx,
                                         grpc_chttp2_hpack_parser *p,
                                         const uint8_t *cur,
@@ -792,6 +792,7 @@ static grpc_error *finish_indexed_field(grpc_exec_ctx *exec_ctx,
         GRPC_ERROR_INT_SIZE, (intptr_t)p->table.num_ents);
   }
   GRPC_MDELEM_REF(md);
+  GRPC_STATS_INC_HPACK_RECV_INDEXED(exec_ctx);
   grpc_error *err = on_hdr(exec_ctx, p, md, 0);
   if (err != GRPC_ERROR_NONE) return err;
   return parse_begin(exec_ctx, p, cur, end);
@@ -820,14 +821,14 @@ static grpc_error *parse_indexed_field_x(grpc_exec_ctx *exec_ctx,
   return parse_value0(exec_ctx, p, cur + 1, end);
 }
 
-/* finish a literal header with incremental indexing: just log, and jump to '
-   begin */
+/* finish a literal header with incremental indexing */
 static grpc_error *finish_lithdr_incidx(grpc_exec_ctx *exec_ctx,
                                         grpc_chttp2_hpack_parser *p,
                                         const uint8_t *cur,
                                         const uint8_t *end) {
   grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   GPR_ASSERT(!GRPC_MDISNULL(md)); /* handled in string parsing */
+  GRPC_STATS_INC_HPACK_RECV_LITHDR_INCIDX(exec_ctx);
   grpc_error *err = on_hdr(
       exec_ctx, p,
       grpc_mdelem_from_slices(exec_ctx, grpc_slice_ref_internal(GRPC_MDKEY(md)),
@@ -842,6 +843,7 @@ static grpc_error *finish_lithdr_incidx_v(grpc_exec_ctx *exec_ctx,
                                           grpc_chttp2_hpack_parser *p,
                                           const uint8_t *cur,
                                           const uint8_t *end) {
+  GRPC_STATS_INC_HPACK_RECV_LITHDR_INCIDX_V(exec_ctx);
   grpc_error *err = on_hdr(
       exec_ctx, p,
       grpc_mdelem_from_slices(exec_ctx, take_string(exec_ctx, p, &p->key, true),
@@ -898,6 +900,7 @@ static grpc_error *finish_lithdr_notidx(grpc_exec_ctx *exec_ctx,
                                         const uint8_t *end) {
   grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   GPR_ASSERT(!GRPC_MDISNULL(md)); /* handled in string parsing */
+  GRPC_STATS_INC_HPACK_RECV_LITHDR_NOTIDX(exec_ctx);
   grpc_error *err = on_hdr(
       exec_ctx, p,
       grpc_mdelem_from_slices(exec_ctx, grpc_slice_ref_internal(GRPC_MDKEY(md)),
@@ -912,6 +915,7 @@ static grpc_error *finish_lithdr_notidx_v(grpc_exec_ctx *exec_ctx,
                                           grpc_chttp2_hpack_parser *p,
                                           const uint8_t *cur,
                                           const uint8_t *end) {
+  GRPC_STATS_INC_HPACK_RECV_LITHDR_NOTIDX_V(exec_ctx);
   grpc_error *err = on_hdr(
       exec_ctx, p,
       grpc_mdelem_from_slices(exec_ctx, take_string(exec_ctx, p, &p->key, true),
@@ -968,6 +972,7 @@ static grpc_error *finish_lithdr_nvridx(grpc_exec_ctx *exec_ctx,
                                         const uint8_t *end) {
   grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   GPR_ASSERT(!GRPC_MDISNULL(md)); /* handled in string parsing */
+  GRPC_STATS_INC_HPACK_RECV_LITHDR_NVRIDX(exec_ctx);
   grpc_error *err = on_hdr(
       exec_ctx, p,
       grpc_mdelem_from_slices(exec_ctx, grpc_slice_ref_internal(GRPC_MDKEY(md)),
@@ -982,6 +987,7 @@ static grpc_error *finish_lithdr_nvridx_v(grpc_exec_ctx *exec_ctx,
                                           grpc_chttp2_hpack_parser *p,
                                           const uint8_t *cur,
                                           const uint8_t *end) {
+  GRPC_STATS_INC_HPACK_RECV_LITHDR_NVRIDX_V(exec_ctx);
   grpc_error *err = on_hdr(
       exec_ctx, p,
       grpc_mdelem_from_slices(exec_ctx, take_string(exec_ctx, p, &p->key, true),
@@ -1310,9 +1316,11 @@ static grpc_error *append_string(grpc_exec_ctx *exec_ctx,
         /* 'true-binary' case */
         ++cur;
         p->binary = NOT_BINARY;
+        GRPC_STATS_INC_HPACK_RECV_BINARY(exec_ctx);
         append_bytes(str, cur, (size_t)(end - cur));
         return GRPC_ERROR_NONE;
       }
+      GRPC_STATS_INC_HPACK_RECV_BINARY_BASE64(exec_ctx);
     /* fallthrough */
     b64_byte0:
     case B64_BYTE0:
@@ -1510,6 +1518,7 @@ static grpc_error *begin_parse_string(grpc_exec_ctx *exec_ctx,
                                       grpc_chttp2_hpack_parser_string *str) {
   if (!p->huff && binary == NOT_BINARY && (end - cur) >= (intptr_t)p->strlen &&
       p->current_slice_refcount != NULL) {
+    GRPC_STATS_INC_HPACK_RECV_UNCOMPRESSED(exec_ctx);
     str->copied = false;
     str->data.referenced.refcount = p->current_slice_refcount;
     str->data.referenced.data.refcounted.bytes = (uint8_t *)cur;
@@ -1523,6 +1532,20 @@ static grpc_error *begin_parse_string(grpc_exec_ctx *exec_ctx,
   p->parsing.str = str;
   p->huff_state = 0;
   p->binary = binary;
+  switch (p->binary) {
+    case NOT_BINARY:
+      if (p->huff) {
+        GRPC_STATS_INC_HPACK_RECV_HUFFMAN(exec_ctx);
+      } else {
+        GRPC_STATS_INC_HPACK_RECV_UNCOMPRESSED(exec_ctx);
+      }
+      break;
+    case BINARY_BEGIN:
+      /* stats incremented later: don't know true binary or not */
+      break;
+    default:
+      abort();
+  }
   return parse_string(exec_ctx, p, cur, end);
 }
 
