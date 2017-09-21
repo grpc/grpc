@@ -35,6 +35,9 @@ _DEFAULT_RUNTESTS_TIMEOUT = 1*60*60
 # clang docker.
 _CPP_RUNTESTS_TIMEOUT = 4*60*60
 
+# C++ TSAN takes longer than other sanitizers
+_CPP_TSAN_RUNTESTS_TIMEOUT = 8*60*60
+
 # Number of jobs assigned to each run_tests.py instance
 _DEFAULT_INNER_JOBS = 2
 
@@ -190,12 +193,19 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                               inner_jobs=inner_jobs,
                               timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
   test_jobs += _generate_jobs(languages=['c++'],
-                              configs=['asan', 'tsan'],
+                              configs=['asan'],
                               platforms=['linux'],
                               labels=['sanitizers', 'corelang'],
                               extra_args=extra_args,
                               inner_jobs=inner_jobs,
                               timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
+  test_jobs += _generate_jobs(languages=['c++'],
+                              configs=['tsan'],
+                              platforms=['linux'],
+                              labels=['sanitizers', 'corelang'],
+                              extra_args=extra_args,
+                              inner_jobs=inner_jobs,
+                              timeout_seconds=_CPP_TSAN_RUNTESTS_TIMEOUT)
 
   return test_jobs
 
