@@ -86,9 +86,8 @@ static void timer_callback(grpc_exec_ctx* exec_ctx, void* arg,
 // synchronized.
 static void start_timer_if_needed(grpc_exec_ctx* exec_ctx,
                                   grpc_call_element* elem,
-                                  gpr_timespec deadline) {
-  deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
-  if (gpr_time_cmp(deadline, gpr_inf_future(GPR_CLOCK_MONOTONIC)) == 0) {
+                                  grpc_millis deadline) {
+  if (deadline == GRPC_MILLIS_INF_FUTURE) {
     return;
   }
   grpc_deadline_state* deadline_state = (grpc_deadline_state*)elem->call_data;
@@ -114,8 +113,7 @@ static void start_timer_if_needed(grpc_exec_ctx* exec_ctx,
   }
   GPR_ASSERT(closure != NULL);
   GRPC_CALL_STACK_REF(deadline_state->call_stack, "deadline_timer");
-  grpc_timer_init(exec_ctx, &deadline_state->timer, deadline, closure,
-                  gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_timer_init(exec_ctx, &deadline_state->timer, deadline, closure);
 }
 
 // Cancels the deadline timer.
@@ -155,7 +153,7 @@ static void inject_on_complete_cb(grpc_deadline_state* deadline_state,
 struct start_timer_after_init_state {
   bool in_call_combiner;
   grpc_call_element* elem;
-  gpr_timespec deadline;
+  grpc_millis deadline;
   grpc_closure closure;
 };
 static void start_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
@@ -182,14 +180,13 @@ static void start_timer_after_init(grpc_exec_ctx* exec_ctx, void* arg,
 void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               grpc_call_stack* call_stack,
                               grpc_call_combiner* call_combiner,
-                              gpr_timespec deadline) {
+                              grpc_millis deadline) {
   grpc_deadline_state* deadline_state = (grpc_deadline_state*)elem->call_data;
   deadline_state->call_stack = call_stack;
   deadline_state->call_combiner = call_combiner;
   // Deadline will always be infinite on servers, so the timer will only be
   // set on clients with a finite deadline.
-  deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
-  if (gpr_time_cmp(deadline, gpr_inf_future(GPR_CLOCK_MONOTONIC)) != 0) {
+  if (deadline != GRPC_MILLIS_INF_FUTURE) {
     // When the deadline passes, we indicate the failure by sending down
     // an op with cancel_error set.  However, we can't send down any ops
     // until after the call stack is fully initialized.  If we start the
@@ -214,7 +211,7 @@ void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
 }
 
 void grpc_deadline_state_reset(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                               gpr_timespec new_deadline) {
+                               grpc_millis new_deadline) {
   grpc_deadline_state* deadline_state = (grpc_deadline_state*)elem->call_data;
   cancel_timer_if_needed(exec_ctx, deadline_state);
   start_timer_if_needed(exec_ctx, elem, new_deadline);

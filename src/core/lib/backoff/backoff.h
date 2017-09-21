@@ -16,41 +16,43 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_BACKOFF_H
-#define GRPC_CORE_LIB_SUPPORT_BACKOFF_H
+#ifndef GRPC_CORE_LIB_BACKOFF_BACKOFF_H
+#define GRPC_CORE_LIB_BACKOFF_BACKOFF_H
 
-#include <grpc/support/time.h>
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 typedef struct {
   /// const:  how long to wait after the first failure before retrying
-  int64_t initial_connect_timeout;
+  grpc_millis initial_connect_timeout;
   /// const: factor with which to multiply backoff after a failed retry
   double multiplier;
   /// const: amount to randomize backoffs
   double jitter;
   /// const: minimum time between retries in milliseconds
-  int64_t min_timeout_millis;
+  grpc_millis min_timeout_millis;
   /// const: maximum time between retries in milliseconds
-  int64_t max_timeout_millis;
+  grpc_millis max_timeout_millis;
 
   /// random number generator
   uint32_t rng_state;
 
   /// current retry timeout in milliseconds
-  int64_t current_timeout_millis;
-} gpr_backoff;
+  grpc_millis current_timeout_millis;
+} grpc_backoff;
 
 /// Initialize backoff machinery - does not need to be destroyed
-void gpr_backoff_init(gpr_backoff *backoff, int64_t initial_connect_timeout,
-                      double multiplier, double jitter,
-                      int64_t min_timeout_millis, int64_t max_timeout_millis);
+void grpc_backoff_init(grpc_backoff *backoff,
+                       grpc_millis initial_connect_timeout, double multiplier,
+                       double jitter, grpc_millis min_timeout_millis,
+                       grpc_millis max_timeout_millis);
 
 /// Begin retry loop: returns a timespec for the NEXT retry
-gpr_timespec gpr_backoff_begin(gpr_backoff *backoff, gpr_timespec now);
+grpc_millis grpc_backoff_begin(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff);
 /// Step a retry loop: returns a timespec for the NEXT retry
-gpr_timespec gpr_backoff_step(gpr_backoff *backoff, gpr_timespec now);
-/// Reset the backoff, so the next gpr_backoff_step will be a gpr_backoff_begin
+grpc_millis grpc_backoff_step(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff);
+/// Reset the backoff, so the next grpc_backoff_step will be a
+/// grpc_backoff_begin
 /// instead
-void gpr_backoff_reset(gpr_backoff *backoff);
+void grpc_backoff_reset(grpc_backoff *backoff);
 
-#endif /* GRPC_CORE_LIB_SUPPORT_BACKOFF_H */
+#endif /* GRPC_CORE_LIB_BACKOFF_BACKOFF_H */

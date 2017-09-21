@@ -40,25 +40,17 @@ static gpr_atm g_custom_events = 0;
 
 static HANDLE g_iocp;
 
-static DWORD deadline_to_millis_timeout(gpr_timespec deadline,
-                                        gpr_timespec now) {
+static DWORD deadline_to_millis_timeout(grpc_exec_ctx *exec_ctx,
+                                        grpc_millis deadline) {
   gpr_timespec timeout;
-  static const int64_t max_spin_polling_us = 10;
-  if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) == 0) {
+  if (deadline == GRPC_MILLIS_INF_FUTURE) == 0) {
     return INFINITE;
   }
-  if (gpr_time_cmp(deadline, gpr_time_add(now, gpr_time_from_micros(
-                                                   max_spin_polling_us,
-                                                   GPR_TIMESPAN))) <= 0) {
-    return 0;
-  }
-  timeout = gpr_time_sub(deadline, now);
-  return (DWORD)gpr_time_to_millis(gpr_time_add(
-      timeout, gpr_time_from_nanos(GPR_NS_PER_MS - 1, GPR_TIMESPAN)));
+  return (DWORD)GPR_MAX(0, deadline - grpc_exec_ctx_now(exec_ctx));
 }
 
 grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
-                                     gpr_timespec deadline) {
+                                     grpc_millis deadline) {
   BOOL success;
   DWORD bytes = 0;
   DWORD flags = 0;
@@ -67,9 +59,9 @@ grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
   grpc_winsocket *socket;
   grpc_winsocket_callback_info *info;
   GRPC_STATS_INC_SYSCALL_POLL(exec_ctx);
-  success = GetQueuedCompletionStatus(
-      g_iocp, &bytes, &completion_key, &overlapped,
-      deadline_to_millis_timeout(deadline, gpr_now(deadline.clock_type)));
+  success =
+      GetQueuedCompletionStatus(g_iocp, &bytes, &completion_key, &overlapped,
+                                deadline_to_millis_timeout(exec_ctx, deadline));
   if (success == 0 && overlapped == NULL) {
     return GRPC_IOCP_WORK_TIMEOUT;
   }

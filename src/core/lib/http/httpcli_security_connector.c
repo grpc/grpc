@@ -156,7 +156,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
 
 static void ssl_handshake(grpc_exec_ctx *exec_ctx, void *arg,
                           grpc_endpoint *tcp, const char *host,
-                          gpr_timespec deadline,
+                          grpc_millis deadline,
                           void (*on_done)(grpc_exec_ctx *exec_ctx, void *arg,
                                           grpc_endpoint *endpoint)) {
   on_done_closure *c = gpr_malloc(sizeof(*c));

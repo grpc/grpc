@@ -116,13 +116,14 @@ void grpc_pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
 
 grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               grpc_pollset_worker **worker_hdl,
-                              gpr_timespec now, gpr_timespec deadline) {
+                              grpc_millis deadline) {
   uint64_t timeout;
   GRPC_UV_ASSERT_SAME_THREAD();
   gpr_mu_unlock(&grpc_polling_mu);
   if (grpc_pollset_work_run_loop) {
-    if (gpr_time_cmp(deadline, now) >= 0) {
-      timeout = (uint64_t)gpr_time_to_millis(gpr_time_sub(deadline, now));
+    grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+    if (deadline >= now) {
+      timeout = deadline - now;
     } else {
       timeout = 0;
     }

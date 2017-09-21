@@ -104,6 +104,23 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "backoff_test", 
+    "src": [
+      "test/core/backoff/backoff_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
       "grpc_test_util", 
       "test_tcp_server"
     ], 
@@ -722,21 +739,6 @@
     "name": "gpr_avl_test", 
     "src": [
       "test/core/support/avl_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "gpr_backoff_test", 
-    "src": [
-      "test/core/support/backoff_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7773,7 +7775,6 @@
       "src/core/lib/support/arena.c", 
       "src/core/lib/support/atm.c", 
       "src/core/lib/support/avl.c", 
-      "src/core/lib/support/backoff.c", 
       "src/core/lib/support/cmdline.c", 
       "src/core/lib/support/cpu_iphone.c", 
       "src/core/lib/support/cpu_linux.c", 
@@ -7854,7 +7855,6 @@
       "src/core/lib/support/atomic.h", 
       "src/core/lib/support/atomic_with_atm.h", 
       "src/core/lib/support/atomic_with_std.h", 
-      "src/core/lib/support/backoff.h", 
       "src/core/lib/support/block_annotate.h", 
       "src/core/lib/support/env.h", 
       "src/core/lib/support/memory.h", 
@@ -7903,7 +7903,6 @@
       "src/core/lib/support/atomic.h", 
       "src/core/lib/support/atomic_with_atm.h", 
       "src/core/lib/support/atomic_with_std.h", 
-      "src/core/lib/support/backoff.h", 
       "src/core/lib/support/block_annotate.h", 
       "src/core/lib/support/env.h", 
       "src/core/lib/support/memory.h", 
@@ -7997,6 +7996,7 @@
     "language": "c", 
     "name": "grpc_base", 
     "src": [
+      "src/core/lib/backoff/backoff.c", 
       "src/core/lib/channel/channel_args.c", 
       "src/core/lib/channel/channel_stack.c", 
       "src/core/lib/channel/channel_stack_builder.c", 
@@ -8148,6 +8148,7 @@
       "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
       "include/grpc/support/workaround_list.h", 
+      "src/core/lib/backoff/backoff.h", 
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
@@ -8279,6 +8280,7 @@
       "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
       "include/grpc/support/workaround_list.h", 
+      "src/core/lib/backoff/backoff.h", 
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 

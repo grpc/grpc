@@ -52,7 +52,7 @@ static bool g_kicked;
 static bool g_has_timed_waiter;
 // the deadline of the current timed waiter thread (only relevant if
 // g_has_timed_waiter is true)
-static gpr_timespec g_timed_waiter_deadline;
+static grpc_millis g_timed_waiter_deadline;
 // generation counter to track which thread is waiting for the next timer
 static uint64_t g_timed_waiter_generation;
 
@@ -96,9 +96,8 @@ static void start_timer_thread_and_unlock(void) {
 
 void grpc_timer_manager_tick() {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  gpr_timespec next = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-  grpc_timer_check(&exec_ctx, now, &next);
+  grpc_millis next = GRPC_MILLIS_INF_FUTURE;
+  grpc_timer_check(&exec_ctx, &next);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -121,6 +120,9 @@ static void run_some_timers(grpc_exec_ctx *exec_ctx) {
     gpr_mu_unlock(&g_mu);
   }
   // without our lock, flush the exec_ctx
+  if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
+    gpr_log(GPR_DEBUG, "flush exec_ctx");
+  }
   grpc_exec_ctx_flush(exec_ctx);
   gpr_mu_lock(&g_mu);
   // garbage collect any threads hanging out that are dead
@@ -133,8 +135,7 @@ static void run_some_timers(grpc_exec_ctx *exec_ctx) {
 // wait until 'next' (or forever if there is already a timed waiter in the pool)
 // returns true if the thread should continue executing (false if it should
 // shutdown)
-static bool wait_until(gpr_timespec next) {
-  const gpr_timespec inf_future = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+static bool wait_until(grpc_exec_ctx *exec_ctx, grpc_millis next) {
   gpr_mu_lock(&g_mu);
   // if we're not threaded anymore, leave
   if (!g_threaded) {
@@ -168,30 +169,29 @@ static bool wait_until(gpr_timespec next) {
        unless their 'next' is earlier than the current timed-waiter's deadline
        (in which case the thread with earlier 'next' takes over as the new timed
        waiter) */
-    if (gpr_time_cmp(next, inf_future) != 0) {
-      if (!g_has_timed_waiter ||
-          (gpr_time_cmp(next, g_timed_waiter_deadline) < 0)) {
+    if (next != GRPC_MILLIS_INF_FUTURE) {
+      if (!g_has_timed_waiter || (next < g_timed_waiter_deadline)) {
         my_timed_waiter_generation = ++g_timed_waiter_generation;
         g_has_timed_waiter = true;
         g_timed_waiter_deadline = next;
 
         if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
-          gpr_timespec wait_time =
-              gpr_time_sub(next, gpr_now(GPR_CLOCK_MONOTONIC));
-          gpr_log(GPR_DEBUG, "sleep for a %" PRId64 ".%09d seconds",
-                  wait_time.tv_sec, wait_time.tv_nsec);
+          grpc_millis wait_time = next - grpc_exec_ctx_now(exec_ctx);
+          gpr_log(GPR_DEBUG, "sleep for a %" PRIdPTR " milliseconds",
+                  wait_time);
         }
       } else {  // g_timed_waiter == true && next >= g_timed_waiter_deadline
-        next = inf_future;
+        next = GRPC_MILLIS_INF_FUTURE;
       }
     }
 
     if (GRPC_TRACER_ON(grpc_timer_check_trace) &&
-        gpr_time_cmp(next, inf_future) == 0) {
+        next == GRPC_MILLIS_INF_FUTURE) {
       gpr_log(GPR_DEBUG, "sleep until kicked");
     }
 
-    gpr_cv_wait(&g_cv_wait, &g_mu, next);
+    gpr_cv_wait(&g_cv_wait, &g_mu,
+                grpc_millis_to_timespec(next, GPR_CLOCK_REALTIME));
 
     if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
       gpr_log(GPR_DEBUG, "wait ended: was_timed:%d kicked:%d",
@@ -203,7 +203,7 @@ static bool wait_until(gpr_timespec next) {
     // there's work to do after checking timers (code above)
     if (my_timed_waiter_generation == g_timed_waiter_generation) {
       g_has_timed_waiter = false;
-      g_timed_waiter_deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+      g_timed_waiter_deadline = GRPC_MILLIS_INF_FUTURE;
     }
   }
 
@@ -219,12 +219,11 @@ static bool wait_until(gpr_timespec next) {
 }
 
 static void timer_main_loop(grpc_exec_ctx *exec_ctx) {
-  const gpr_timespec inf_future = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   for (;;) {
-    gpr_timespec next = inf_future;
-    gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+    grpc_millis next = GRPC_MILLIS_INF_FUTURE;
+    grpc_exec_ctx_invalidate_now(exec_ctx);
     // check timer state, updates next to the next time to run a check
-    switch (grpc_timer_check(exec_ctx, now, &next)) {
+    switch (grpc_timer_check(exec_ctx, &next)) {
       case GRPC_TIMERS_FIRED:
         run_some_timers(exec_ctx);
         break;
@@ -241,10 +240,10 @@ static void timer_main_loop(grpc_exec_ctx *exec_ctx) {
         if (GRPC_TRACER_ON(grpc_timer_check_trace)) {
           gpr_log(GPR_DEBUG, "timers not checked: expect another thread to");
         }
-        next = inf_future;
+        next = GRPC_MILLIS_INF_FUTURE;
       /* fall through */
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
-        if (!wait_until(next)) {
+        if (!wait_until(exec_ctx, next)) {
           return;
         }
         break;
@@ -300,7 +299,7 @@ void grpc_timer_manager_init(void) {
   g_completed_threads = NULL;
 
   g_has_timed_waiter = false;
-  g_timed_waiter_deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  g_timed_waiter_deadline = GRPC_MILLIS_INF_FUTURE;
 
   start_threads();
 }
@@ -347,7 +346,7 @@ void grpc_kick_poller(void) {
   gpr_mu_lock(&g_mu);
   g_kicked = true;
   g_has_timed_waiter = false;
-  g_timed_waiter_deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  g_timed_waiter_deadline = GRPC_MILLIS_INF_FUTURE;
   ++g_timed_waiter_generation;
   gpr_cv_signal(&g_cv_wait);
   gpr_mu_unlock(&g_mu);

@@ -66,7 +66,6 @@ filegroups:
   - src/core/lib/support/arena.c
   - src/core/lib/support/atm.c
   - src/core/lib/support/avl.c
-  - src/core/lib/support/backoff.c
   - src/core/lib/support/cmdline.c
   - src/core/lib/support/cpu_iphone.c
   - src/core/lib/support/cpu_linux.c
@@ -143,7 +142,6 @@ filegroups:
   - src/core/lib/support/atomic.h
   - src/core/lib/support/atomic_with_atm.h
   - src/core/lib/support/atomic_with_std.h
-  - src/core/lib/support/backoff.h
   - src/core/lib/support/block_annotate.h
   - src/core/lib/support/env.h
   - src/core/lib/support/memory.h
@@ -185,6 +183,7 @@ filegroups:
   - grpc++_codegen_base
 - name: grpc_base
   src:
+  - src/core/lib/backoff/backoff.c
   - src/core/lib/channel/channel_args.c
   - src/core/lib/channel/channel_stack.c
   - src/core/lib/channel/channel_stack_builder.c
@@ -335,6 +334,7 @@ filegroups:
   - include/grpc/status.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/lib/backoff/backoff.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
@@ -1768,6 +1768,16 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+- name: backoff_test
+  build: test
+  language: c
+  src:
+  - test/core/backoff/backoff_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: bad_server_response_test
   build: test
   language: c
@@ -2193,14 +2203,6 @@ targets:
   language: c
   src:
   - test/core/support/avl_test.c
-  deps:
-  - gpr_test_util
-  - gpr
-- name: gpr_backoff_test
-  build: test
-  language: c
-  src:
-  - test/core/support/backoff_test.c
   deps:
   - gpr_test_util
   - gpr

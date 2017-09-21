@@ -87,4 +87,4 @@ grpc_stream_compression_context *grpc_stream_compression_context_create(
 void grpc_stream_compression_context_destroy(
     grpc_stream_compression_context *ctx);
 
-#endif
+#endif /* GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_H */

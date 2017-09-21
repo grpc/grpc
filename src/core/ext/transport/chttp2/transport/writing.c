@@ -70,19 +70,16 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
     }
     return;
   }
-  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-  gpr_timespec next_allowed_ping =
-      gpr_time_add(t->ping_state.last_ping_sent_time,
-                   t->ping_policy.min_sent_ping_interval_without_data);
+  grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+  grpc_millis next_allowed_ping =
+      t->ping_state.last_ping_sent_time +
+      t->ping_policy.min_sent_ping_interval_without_data;
   if (t->keepalive_permit_without_calls == 0 &&
       grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
-    next_allowed_ping = gpr_time_add(t->ping_recv_state.last_ping_recv_time,
-                                     gpr_time_from_seconds(7200, GPR_TIMESPAN));
+    next_allowed_ping =
+        t->ping_recv_state.last_ping_recv_time + 7200 * GPR_MS_PER_SEC;
   }
-  /* gpr_log(GPR_DEBUG, "next_allowed_ping:%d.%09d now:%d.%09d",
-          (int)next_allowed_ping.tv_sec, (int)next_allowed_ping.tv_nsec,
-          (int)now.tv_sec, (int)now.tv_nsec); */
-  if (gpr_time_cmp(next_allowed_ping, now) > 0) {
+  if (next_allowed_ping > now) {
     /* not enough elapsed time between successive pings */
     if (GRPC_TRACER_ON(grpc_http_trace) ||
         GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
@@ -93,8 +90,7 @@ static void maybe_initiate_ping(grpc_exec_ctx *exec_ctx,
     if (!t->ping_state.is_delayed_ping_timer_set) {
       t->ping_state.is_delayed_ping_timer_set = true;
       grpc_timer_init(exec_ctx, &t->ping_state.delayed_ping_timer,
-                      next_allowed_ping, &t->retry_initiate_ping_locked,
-                      gpr_now(GPR_CLOCK_MONOTONIC));
+                      next_allowed_ping, &t->retry_initiate_ping_locked);
     }
     return;
   }
@@ -279,8 +275,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                                   s->send_initial_metadata, &hopt, &t->outbuf);
         now_writing = true;
         if (!t->is_client) {
-          t->ping_recv_state.last_ping_recv_time =
-              gpr_inf_past(GPR_CLOCK_MONOTONIC);
+          t->ping_recv_state.last_ping_recv_time = GRPC_MILLIS_INF_PAST;
           t->ping_recv_state.ping_strikes = 0;
         }
         initial_metadata_writes++;
@@ -309,6 +304,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
           exec_ctx, t, s, &s->send_initial_metadata_finished, GRPC_ERROR_NONE,
           "send_initial_metadata_finished");
     }
+
     /* send any window updates */
     uint32_t stream_announce = grpc_chttp2_flowctl_maybe_send_stream_update(
         &t->flow_control, &s->flow_control);
@@ -317,8 +313,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
           &t->outbuf, grpc_chttp2_window_update_create(s->id, stream_announce,
                                                        &s->stats.outgoing));
       if (!t->is_client) {
-        t->ping_recv_state.last_ping_recv_time =
-            gpr_inf_past(GPR_CLOCK_MONOTONIC);
+        t->ping_recv_state.last_ping_recv_time = GRPC_MILLIS_INF_PAST;
         t->ping_recv_state.ping_strikes = 0;
       }
       flow_control_writes++;
@@ -393,8 +388,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             s->sending_bytes += send_bytes;
           }
           if (!t->is_client) {
-            t->ping_recv_state.last_ping_recv_time =
-                gpr_inf_past(GPR_CLOCK_MONOTONIC);
+            t->ping_recv_state.last_ping_recv_time = 0;
             t->ping_recv_state.ping_strikes = 0;
           }
           if (is_last_frame) {
@@ -463,8 +457,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
         s->send_trailing_metadata = NULL;
         s->sent_trailing_metadata = true;
         if (!t->is_client) {
-          t->ping_recv_state.last_ping_recv_time =
-              gpr_inf_past(GPR_CLOCK_MONOTONIC);
+          t->ping_recv_state.last_ping_recv_time = GRPC_MILLIS_INF_PAST;
           t->ping_recv_state.ping_strikes = 0;
         }
         if (!t->is_client && !s->read_closed) {
@@ -510,8 +503,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
         &t->outbuf, grpc_chttp2_window_update_create(0, transport_announce,
                                                      &throwaway_stats));
     if (!t->is_client) {
-      t->ping_recv_state.last_ping_recv_time =
-          gpr_inf_past(GPR_CLOCK_MONOTONIC);
+      t->ping_recv_state.last_ping_recv_time = GRPC_MILLIS_INF_PAST;
       t->ping_recv_state.ping_strikes = 0;
     }
   }

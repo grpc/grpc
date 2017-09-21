@@ -599,7 +599,6 @@
         'src/core/lib/support/arena.c',
         'src/core/lib/support/atm.c',
         'src/core/lib/support/avl.c',
-        'src/core/lib/support/backoff.c',
         'src/core/lib/support/cmdline.c',
         'src/core/lib/support/cpu_iphone.c',
         'src/core/lib/support/cpu_linux.c',
@@ -657,6 +656,7 @@
       ],
       'sources': [
         'src/core/lib/surface/init.c',
+        'src/core/lib/backoff/backoff.c',
         'src/core/lib/channel/channel_args.c',
         'src/core/lib/channel/channel_stack.c',
         'src/core/lib/channel/channel_stack_builder.c',

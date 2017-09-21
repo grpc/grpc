@@ -184,6 +184,7 @@ static void executor_thread(void *arg) {
       gpr_log(GPR_DEBUG, "EXECUTOR[%d]: execute", (int)(ts - g_thread_state));
     }
 
+    grpc_exec_ctx_invalidate_now(&exec_ctx);
     run_closures(&exec_ctx, &ts->local_elems);
   }
   grpc_exec_ctx_finish(&exec_ctx);

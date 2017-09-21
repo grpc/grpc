@@ -379,6 +379,7 @@ add_dependencies(buildtests_c algorithm_test)
 add_dependencies(buildtests_c alloc_test)
 add_dependencies(buildtests_c alpn_test)
 add_dependencies(buildtests_c arena_test)
+add_dependencies(buildtests_c backoff_test)
 add_dependencies(buildtests_c bad_server_response_test)
 add_dependencies(buildtests_c bdp_estimator_test)
 add_dependencies(buildtests_c bin_decoder_test)
@@ -428,7 +429,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c goaway_server_test)
 endif()
 add_dependencies(buildtests_c gpr_avl_test)
-add_dependencies(buildtests_c gpr_backoff_test)
 add_dependencies(buildtests_c gpr_cmdline_test)
 add_dependencies(buildtests_c gpr_cpu_test)
 add_dependencies(buildtests_c gpr_env_test)
@@ -786,7 +786,6 @@ add_library(gpr
   src/core/lib/support/arena.c
   src/core/lib/support/atm.c
   src/core/lib/support/avl.c
-  src/core/lib/support/backoff.c
   src/core/lib/support/cmdline.c
   src/core/lib/support/cpu_iphone.c
   src/core/lib/support/cpu_linux.c
@@ -955,6 +954,7 @@ endif (gRPC_BUILD_TESTS)
 
 add_library(grpc
   src/core/lib/surface/init.c
+  src/core/lib/backoff/backoff.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -1303,6 +1303,7 @@ endif()
 
 add_library(grpc_cronet
   src/core/lib/surface/init.c
+  src/core/lib/backoff/backoff.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -1619,6 +1620,7 @@ add_library(grpc_test_util
   test/core/util/port_server_client.c
   test/core/util/slice_splitter.c
   test/core/util/trickle_endpoint.c
+  src/core/lib/backoff/backoff.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -1879,6 +1881,7 @@ add_library(grpc_test_util_unsecure
   test/core/util/port_server_client.c
   test/core/util/slice_splitter.c
   test/core/util/trickle_endpoint.c
+  src/core/lib/backoff/backoff.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -2125,6 +2128,7 @@ endif (gRPC_BUILD_TESTS)
 add_library(grpc_unsecure
   src/core/lib/surface/init.c
   src/core/lib/surface/init_unsecure.c
+  src/core/lib/backoff/backoff.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -2877,6 +2881,7 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/transport/stream_map.c
   src/core/ext/transport/chttp2/transport/varint.c
   src/core/ext/transport/chttp2/transport/writing.c
+  src/core/lib/backoff/backoff.c
   src/core/lib/channel/channel_args.c
   src/core/lib/channel/channel_stack.c
   src/core/lib/channel/channel_stack_builder.c
@@ -5168,6 +5173,35 @@ target_link_libraries(arena_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(backoff_test
+  test/core/backoff/backoff_test.c
+)
+
+
+target_include_directories(backoff_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+)
+
+target_link_libraries(backoff_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(bad_server_response_test
   test/core/end2end/bad_server_response_test.c
 )
@@ -6260,33 +6294,6 @@ target_include_directories(gpr_avl_test
 )
 
 target_link_libraries(gpr_avl_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(gpr_backoff_test
-  test/core/support/backoff_test.c
-)
-
-
-target_include_directories(gpr_backoff_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(gpr_backoff_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr

@@ -41,7 +41,6 @@ typedef struct {
   grpc_closure *on_done;
   gpr_mu mu;
   grpc_winsocket *socket;
-  gpr_timespec deadline;
   grpc_timer alarm;
   grpc_closure on_alarm;
   char *addr_name;
@@ -124,7 +123,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
 static void tcp_client_connect_impl(
     grpc_exec_ctx *exec_ctx, grpc_closure *on_done, grpc_endpoint **endpoint,
     grpc_pollset_set *interested_parties, const grpc_channel_args *channel_args,
-    const grpc_resolved_address *addr, gpr_timespec deadline) {
+    const grpc_resolved_address *addr, grpc_millis deadline) {
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
   int status;
@@ -204,8 +203,7 @@ static void tcp_client_connect_impl(
   GRPC_CLOSURE_INIT(&ac->on_connect, on_connect, ac, grpc_schedule_on_exec_ctx);
 
   GRPC_CLOSURE_INIT(&ac->on_alarm, on_alarm, ac, grpc_schedule_on_exec_ctx);
-  grpc_timer_init(exec_ctx, &ac->alarm, deadline, &ac->on_alarm,
-                  gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_timer_init(exec_ctx, &ac->alarm, deadline, &ac->on_alarm, );
   grpc_socket_notify_on_write(exec_ctx, socket, &ac->on_connect);
   return;
 
@@ -230,14 +228,14 @@ void (*grpc_tcp_client_connect_impl)(
     grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep,
     grpc_pollset_set *interested_parties, const grpc_channel_args *channel_args,
     const grpc_resolved_address *addr,
-    gpr_timespec deadline) = tcp_client_connect_impl;
+    grpc_millis deadline) = tcp_client_connect_impl;
 
 void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                              grpc_endpoint **ep,
                              grpc_pollset_set *interested_parties,
                              const grpc_channel_args *channel_args,
                              const grpc_resolved_address *addr,
-                             gpr_timespec deadline) {
+                             grpc_millis deadline) {
   grpc_tcp_client_connect_impl(exec_ctx, closure, ep, interested_parties,
                                channel_args, addr, deadline);
 }
