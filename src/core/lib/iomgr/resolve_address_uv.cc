@@ -49,11 +49,12 @@ static int retry_named_port_failure(int status, request *r,
                                     uv_getaddrinfo_cb getaddrinfo_cb) {
   if (status != 0) {
     // This loop is copied from resolve_address_posix.c
-    char *svc[][2] = {{"http", "80"}, {"https", "443"}};
+    const char *svc[][2] = {{"http", "80"}, {"https", "443"}};
     for (size_t i = 0; i < GPR_ARRAY_SIZE(svc); i++) {
       if (strcmp(r->port, svc[i][0]) == 0) {
         int retry_status;
-        uv_getaddrinfo_t *req = gpr_malloc(sizeof(uv_getaddrinfo_t));
+        uv_getaddrinfo_t *req =
+            (uv_getaddrinfo_t *)gpr_malloc(sizeof(uv_getaddrinfo_t));
         req->data = r;
         r->port = gpr_strdup(svc[i][1]);
         retry_status = uv_getaddrinfo(uv_default_loop(), req, getaddrinfo_cb,
@@ -85,13 +86,14 @@ static grpc_error *handle_addrinfo_result(int status, struct addrinfo *result,
                            grpc_slice_from_static_string(uv_strerror(status)));
     return error;
   }
-  (*addresses) = gpr_malloc(sizeof(grpc_resolved_addresses));
+  (*addresses) =
+      (grpc_resolved_addresses *)gpr_malloc(sizeof(grpc_resolved_addresses));
   (*addresses)->naddrs = 0;
   for (resp = result; resp != NULL; resp = resp->ai_next) {
     (*addresses)->naddrs++;
   }
-  (*addresses)->addrs =
-      gpr_malloc(sizeof(grpc_resolved_address) * (*addresses)->naddrs);
+  (*addresses)->addrs = (grpc_resolved_address *)gpr_malloc(
+      sizeof(grpc_resolved_address) * (*addresses)->naddrs);
   i = 0;
   for (resp = result; resp != NULL; resp = resp->ai_next) {
     memcpy(&(*addresses)->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
@@ -174,6 +176,7 @@ static grpc_error *blocking_resolve_address_impl(
   int s;
   grpc_error *err;
   int retry_status;
+  request r;
 
   GRPC_UV_ASSERT_SAME_THREAD();
 
@@ -191,8 +194,10 @@ static grpc_error *blocking_resolve_address_impl(
   hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
 
   s = uv_getaddrinfo(uv_default_loop(), &req, NULL, host, port, &hints);
-  request r = {
-      .addresses = addresses, .hints = &hints, .host = host, .port = port};
+  r.addresses = addresses;
+  r.hints = &hints;
+  r.host = host;
+  r.port = port;
   retry_status = retry_named_port_failure(s, &r, NULL);
   if (retry_status <= 0) {
     s = retry_status;
@@ -239,16 +244,16 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
     gpr_free(port);
     return;
   }
-  r = gpr_malloc(sizeof(request));
+  r = (request *)gpr_malloc(sizeof(request));
   r->on_done = on_done;
   r->addresses = addrs;
   r->host = host;
   r->port = port;
-  req = gpr_malloc(sizeof(uv_getaddrinfo_t));
+  req = (uv_getaddrinfo_t *)gpr_malloc(sizeof(uv_getaddrinfo_t));
   req->data = r;
 
   /* Call getaddrinfo */
-  hints = gpr_malloc(sizeof(struct addrinfo));
+  hints = (addrinfo *)gpr_malloc(sizeof(struct addrinfo));
   memset(hints, 0, sizeof(struct addrinfo));
   hints->ai_family = AF_UNSPEC;     /* ipv4 or ipv6 */
   hints->ai_socktype = SOCK_STREAM; /* stream socket */
