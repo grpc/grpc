@@ -13,19 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+source ~/.rvm/scripts/rvm
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_run_tests_matrix.sh"
-timeout_mins: 240
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.xml"
-    regex: "github/grpc/reports/**"
-  }
-}
+repo=$(dirname $0)/../../..
 
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "-f c ubsan --inner_jobs 16 -j 1 --internal_ci --max_time=3600"
-}
+# First set up all dependences needed for PHP QPS test
+cd $repo
+cd src/php/tests/qps
+composer install
+# The proxy worker for PHP is implemented in Ruby
+cd ../../../..
+ruby src/ruby/qps/proxy-worker.rb $@
+

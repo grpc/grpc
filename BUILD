@@ -989,6 +989,7 @@ grpc_cc_library(
     name = "grpc_codegen",
     language = "c",
     public_hdrs = [
+        "include/grpc/impl/codegen/byte_buffer.h",
         "include/grpc/impl/codegen/byte_buffer_reader.h",
         "include/grpc/impl/codegen/compression_types.h",
         "include/grpc/impl/codegen/connectivity_state.h",
@@ -1487,6 +1488,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc++/impl/codegen/async_stream.h",
         "include/grpc++/impl/codegen/async_unary_call.h",
+        "include/grpc++/impl/codegen/byte_buffer.h",
         "include/grpc++/impl/codegen/call.h",
         "include/grpc++/impl/codegen/call_hook.h",
         "include/grpc++/impl/codegen/channel_interface.h",

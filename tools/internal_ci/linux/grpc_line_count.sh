@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,20 +12,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# This script counts the numbers of line in gRPC's repo and uploads to BQ
+set -ex
 
-# Config file for the internal CI (in protobuf text format)
+# Enter the gRPC repo root
+cd $(dirname $0)/../../..
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_run_tests_matrix.sh"
-timeout_mins: 240
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.xml"
-    regex: "github/grpc/reports/**"
-  }
-}
+git submodule update --init
 
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "-f c ubsan --inner_jobs 16 -j 1 --internal_ci --max_time=3600"
-}
+# Install cloc
+git clone -b v1.72 https://github.com/AlDanial/cloc/ ~/cloc
+PERL_MM_USE_DEFAULT=1 sudo perl -MCPAN -e 'install Regexp::Common; install Algorithm::Diff'
+sudo make install -C ~/cloc/Unix
+
+./tools/line_count/collect-now.sh

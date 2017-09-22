@@ -146,6 +146,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/support/tmpfile_posix.cc )
   s.files += %w( src/core/lib/support/tmpfile_windows.cc )
   s.files += %w( src/core/lib/support/wrap_memcpy.cc )
+  s.files += %w( include/grpc/impl/codegen/byte_buffer.h )
   s.files += %w( include/grpc/impl/codegen/byte_buffer_reader.h )
   s.files += %w( include/grpc/impl/codegen/compression_types.h )
   s.files += %w( include/grpc/impl/codegen/connectivity_state.h )
