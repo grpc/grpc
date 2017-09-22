@@ -16,19 +16,17 @@
  *
  */
 
-#include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/network_status_tracker.h"
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/transport/metadata.h"
 
-void grpc_network_status_shutdown(void) {}
-
-void grpc_network_status_init(void) {
-  // TODO(makarandd): Install callback with OS to monitor network status.
+extern "C" void grpc_chttp2_plugin_init(void) {
+  grpc_register_tracer(&grpc_http_trace);
+  grpc_register_tracer(&grpc_flowctl_trace);
+  grpc_register_tracer(&grpc_trace_http2_stream_state);
+#ifndef NDEBUG
+  grpc_register_tracer(&grpc_trace_chttp2_refcount);
+#endif
 }
 
-void grpc_destroy_network_status_monitor() {}
-
-void grpc_network_status_register_endpoint(grpc_endpoint *ep) { (void)ep; }
-
-void grpc_network_status_unregister_endpoint(grpc_endpoint *ep) { (void)ep; }
-
-void grpc_network_status_shutdown_all_endpoints() {}
+extern "C" void grpc_chttp2_plugin_shutdown(void) {}

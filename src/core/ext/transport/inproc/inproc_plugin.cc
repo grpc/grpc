@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2017 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,16 @@
  *
  */
 
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/transport/metadata.h"
 
-void grpc_chttp2_plugin_init(void) {
-  grpc_register_tracer(&grpc_http_trace);
-  grpc_register_tracer(&grpc_flowctl_trace);
-  grpc_register_tracer(&grpc_trace_http2_stream_state);
-#ifndef NDEBUG
-  grpc_register_tracer(&grpc_trace_chttp2_refcount);
-#endif
+grpc_tracer_flag grpc_inproc_trace = GRPC_TRACER_INITIALIZER(false, "inproc");
+
+extern "C" void grpc_inproc_plugin_init(void) {
+  grpc_register_tracer(&grpc_inproc_trace);
+  grpc_inproc_transport_init();
 }
 
-void grpc_chttp2_plugin_shutdown(void) {}
+extern "C" void grpc_inproc_plugin_shutdown(void) {
+  grpc_inproc_transport_shutdown();
+}

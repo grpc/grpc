@@ -65,7 +65,7 @@ static bool set_default_host_if_unset(grpc_exec_ctx *exec_ctx,
   return true;
 }
 
-void grpc_client_channel_init(void) {
+extern "C" void grpc_client_channel_init(void) {
   grpc_lb_policy_registry_init();
   grpc_resolver_registry_init();
   grpc_retry_throttle_map_init();
@@ -84,7 +84,7 @@ void grpc_client_channel_init(void) {
 #endif
 }
 
-void grpc_client_channel_shutdown(void) {
+extern "C" void grpc_client_channel_shutdown(void) {
   grpc_subchannel_index_shutdown();
   grpc_channel_init_shutdown();
   grpc_proxy_mapper_registry_shutdown();

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017 gRPC authors.
+ * Copyright 2015 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,19 @@
  *
  */
 
-#include "src/core/ext/transport/inproc/inproc_transport.h"
-#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/network_status_tracker.h"
+#include "src/core/lib/iomgr/endpoint.h"
 
-grpc_tracer_flag grpc_inproc_trace = GRPC_TRACER_INITIALIZER(false, "inproc");
+void grpc_network_status_shutdown(void) {}
 
-void grpc_inproc_plugin_init(void) {
-  grpc_register_tracer(&grpc_inproc_trace);
-  grpc_inproc_transport_init();
+void grpc_network_status_init(void) {
+  // TODO(makarandd): Install callback with OS to monitor network status.
 }
 
-void grpc_inproc_plugin_shutdown(void) { grpc_inproc_transport_shutdown(); }
+void grpc_destroy_network_status_monitor() {}
+
+void grpc_network_status_register_endpoint(grpc_endpoint *ep) { (void)ep; }
+
+void grpc_network_status_unregister_endpoint(grpc_endpoint *ep) { (void)ep; }
+
+void grpc_network_status_shutdown_all_endpoints() {}

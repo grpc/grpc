@@ -196,7 +196,7 @@ static bool register_workaround_cronet_compression(
       builder, &grpc_workaround_cronet_compression_filter, NULL, NULL);
 }
 
-void grpc_workaround_cronet_compression_filter_init(void) {
+extern "C" void grpc_workaround_cronet_compression_filter_init(void) {
   grpc_channel_init_register_stage(
       GRPC_SERVER_CHANNEL, GRPC_WORKAROUND_PRIORITY_HIGH,
       register_workaround_cronet_compression, NULL);
@@ -204,4 +204,4 @@ void grpc_workaround_cronet_compression_filter_init(void) {
                            parse_user_agent);
 }
 
-void grpc_workaround_cronet_compression_filter_shutdown(void) {}
+extern "C" void grpc_workaround_cronet_compression_filter_shutdown(void) {}
