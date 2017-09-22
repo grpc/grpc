@@ -104,7 +104,7 @@ struct run_once_func_arg {
   void (*init_function)(void);
 };
 static BOOL CALLBACK run_once_func(gpr_once *once, void *v, void **pv) {
-  struct run_once_func_arg *arg = v;
+  struct run_once_func_arg *arg = (struct run_once_func_arg *)v;
   (*arg->init_function)();
   return 1;
 }
