@@ -56,10 +56,10 @@ class CertsReloadManager(object):
       raise ValueError('just an error for fun, should not affect the test')
 
     if self.client_num != self.switch_creds_on_client_num:
-      return False, None
+      return None
     else:
       # switch credentials
-      return True, grpc.ssl_server_credentials(
+      return grpc.ssl_server_credentials(
         [(self.my_key_2_pem, self.my_cert_2_pem)],
         require_client_auth=True,
         root_certificates=self.client_ca_pem,

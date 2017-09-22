@@ -21,8 +21,8 @@ cdef grpc_get_server_credentials_result _get_server_credentials_cb_wrapper(
   """
   Args:
     cb_arg (callable): Callback that takes no arguments and should return
-      a (bool, grpc.ServerCredentials) tuple, where the bool specifies if
-      the returned credentials are new and should be used.
+      a grpc.ServerCredentials to replace the server's current credentials,
+      or None for no change.
 
   We are not catching any exception here, because cython will happily catch
   and ignore it, and will log for us, and also the core lib will continue
@@ -33,8 +33,8 @@ cdef grpc_get_server_credentials_result _get_server_credentials_cb_wrapper(
   if not cb_arg:
     raise ValueError('internal error: cb_arg must be specified')
   user_cb = <object>cb_arg
-  is_new, server_creds_wrapper = user_cb()
-  if not is_new:
+  server_creds_wrapper = user_cb()
+  if server_creds_wrapper is None:
     return GRPC_GET_SERVER_CREDENTIALS_UNCHANGED
   # TODO: perhaps make sure user gives us the correct stuff?
   # server_creds_wrapper should be a grpc.ServerCredentials, e.g.,
