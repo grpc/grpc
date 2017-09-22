@@ -121,14 +121,14 @@ void ChannelCredentialsData::sweep(void)
 }
 
 void ChannelCredentialsData::init(grpc_channel_credentials* const pChannelCredentials,
-                                  const String& hashKey)
+                                  const std::string& hashKey)
 {
     // forward
-    init(pChannelCredentials, std::move(String{ hashKey }));
+    init(pChannelCredentials, std::move(std::string{ hashKey }));
 }
 
 void ChannelCredentialsData::init(grpc_channel_credentials* const pChannelCredentials,
-                                  String&& hashKey)
+                                  std::string&& hashKey)
 {
     // destroy any existing channel credentials
     destroy();
@@ -171,46 +171,51 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault)
         SystemLib::throwBadMethodCallExceptionObject("Failed to create default channel credentials");
     }
 
-    pChannelCredentialsData->init(pChannelCredentials, String{});
+    pChannelCredentialsData->init(pChannelCredentials, std::string{});
 
     return newChannelCredentialsObj;
 }
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createSsl,
-                          const Variant& perm_root_certs /*=null*/,
-                          const Variant& perm_key_cert_pair__private_key /*= null*/,
-                          const Variant& perm_key_cert_pair__cert_chain /*=null*/
+                          const Variant& pem_root_certs /*=null*/,
+                          const Variant& pem_key_cert_pair__private_key /*= null*/,
+                          const Variant& pem_key_cert_pair__cert_chain /*=null*/
                           )
 {
     HHVM_TRACE_SCOPE("ChannelCredentials createSsl") // Debug Trace
 
-    const char* const pPermRootCerts{ (!perm_root_certs.isNull() && perm_root_certs.isString()) ?
-                                      perm_root_certs.toString().c_str() : nullptr };
+    std::string pemRootCerts{ (!pem_root_certs.isNull() && pem_root_certs.isString()) ?
+                              pem_root_certs.toString().toCppString() : "" };
 
     Object newChannelCredentialsObj{ ChannelCredentialsData::getClass() };
     ChannelCredentialsData* const pChannelCredentialsData{ Native::data<ChannelCredentialsData>(newChannelCredentialsObj) };
 
-    String unhashedKey{};
-    grpc_ssl_pem_key_cert_pair perm_key_cert_pair;
-    perm_key_cert_pair.private_key = perm_key_cert_pair.cert_chain = nullptr;
+    std::string unhashedKey{};
+    grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
+    pem_key_cert_pair.private_key = pem_key_cert_pair.cert_chain = nullptr;
 
-    if (!perm_key_cert_pair__private_key.isNull() && perm_key_cert_pair__private_key.isString())
+    std::string privateKey{};
+    if (!pem_key_cert_pair__private_key.isNull() && pem_key_cert_pair__private_key.isString())
     {
-        perm_key_cert_pair.private_key = perm_key_cert_pair__private_key.toString().c_str();
-        unhashedKey += perm_key_cert_pair__private_key.toString();
+        privateKey = std::move(pem_key_cert_pair__private_key.toString().toCppString());
+        pem_key_cert_pair.private_key = privateKey.c_str();
+        unhashedKey += privateKey;
     }
 
-    if (!perm_key_cert_pair__cert_chain.isNull() && perm_key_cert_pair__cert_chain.isString())
+    std::string certChain{};
+    if (!pem_key_cert_pair__cert_chain.isNull() && pem_key_cert_pair__cert_chain.isString())
     {
-        perm_key_cert_pair.cert_chain = perm_key_cert_pair__cert_chain.toString().c_str();
-        unhashedKey += perm_key_cert_pair__cert_chain.toString();
+        certChain = std::move(pem_key_cert_pair__cert_chain.toString().toCppString());
+        pem_key_cert_pair.cert_chain = certChain.c_str();
+        unhashedKey += certChain;
     }
 
-    String hashKey{ !unhashedKey.empty() ? StringUtil::SHA1(unhashedKey, false) : "" };
+    std::string hashKey{ !unhashedKey.empty() ?
+                         StringUtil::SHA1(unhashedKey, false).toCppString() : "" };
 
     grpc_channel_credentials* const pChannelCredentials{
-        grpc_ssl_credentials_create(pPermRootCerts,
-                                    !perm_key_cert_pair.private_key ? nullptr : &perm_key_cert_pair,
+        grpc_ssl_credentials_create(!pemRootCerts.empty() ? pemRootCerts.c_str() : nullptr,
+                                    !pem_key_cert_pair.private_key ? nullptr : &pem_key_cert_pair,
                                     nullptr) };
 
     if (!pChannelCredentials)

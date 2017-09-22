@@ -76,14 +76,14 @@ void ChannelData::sweep(void)
     destroy();
 }
 
-void ChannelData::init(grpc_channel* channel, const bool owned, String&& hashKey)
+void ChannelData::init(grpc_channel* channel, const bool owned, std::string&& hashKey)
 {
     // destroy any existing channel data
     destroy();
 
     m_pChannel = channel;
     m_Owned = owned;
-    m_HashKey = hashKey;
+    m_HashKey = std::move(hashKey);
 }
 
 void ChannelData::destroy(void)
@@ -192,10 +192,10 @@ bool ChannelArgs::init(const Array& argsArray)
 
     for(const auto& argPair : channelArgs)
     {
-        m_ConcatenatedArgs += String{ argPair.first } + String{ argPair.second };
+        m_ConcatenatedArgs += std::string{ argPair.first } + std::string{ argPair.second };
     }
 
-    m_HashKey = StringUtil::SHA1(m_ConcatenatedArgs, false);
+    m_HashKey = std::move(StringUtil::SHA1(m_ConcatenatedArgs, false).toCppString());
 
     return true;
 }
@@ -243,22 +243,21 @@ ChannelsCache& ChannelsCache::getChannelsCache(void)
 }
 
 std::pair<bool, grpc_channel* const>
-ChannelsCache::addChannel(const String& key, grpc_channel* const pChannel)
+ChannelsCache::addChannel(const std::string& key, grpc_channel* const pChannel)
 {
-    std::string keyString{ key.toCppString() };
     {
         WriteLock lock{ m_ChannelMapMutex };
-        auto insertPair = m_ChannelMap.emplace(keyString, pChannel);
+        auto insertPair = m_ChannelMap.emplace(key, pChannel);
         if (!insertPair.second) return std::make_pair(false, insertPair.first->second);
         else                    return std::make_pair(true, insertPair.first->second);
     }
 }
 
-grpc_channel* const ChannelsCache::getChannel(const String& channelHash)
+grpc_channel* const ChannelsCache::getChannel(const std::string& channelHash)
 {
     ReadLock lock{ m_ChannelMapMutex };
 
-    auto itrFind = m_ChannelMap.find(channelHash.toCppString());
+    auto itrFind = m_ChannelMap.find(channelHash);
     if (itrFind == m_ChannelMap.cend())
     {
         return nullptr;
@@ -269,18 +268,17 @@ grpc_channel* const ChannelsCache::getChannel(const String& channelHash)
     }
 }
 
-bool ChannelsCache::hasChannel(const String& channelHash)
+bool ChannelsCache::hasChannel(const std::string& channelHash)
 {
     return getChannel(channelHash) != nullptr;
 }
 
-void ChannelsCache::deleteChannel(const String& channelHash)
+void ChannelsCache::deleteChannel(const std::string& channelHash)
 {
-    std::string keyString{ channelHash.toCppString() };
     {
         WriteLock lock(m_ChannelMapMutex);
 
-        auto itrFind = m_ChannelMap.find(keyString);
+        auto itrFind = m_ChannelMap.find(channelHash);
         if (itrFind != m_ChannelMap.cend())
         {
             destroyChannel(itrFind->second);
@@ -371,7 +369,8 @@ void HHVM_METHOD(Channel, __construct,
         SystemLib::throwInvalidArgumentExceptionObject("invalid channel arguments");
     }
 
-    String fullCacheKey{ StringUtil::SHA1(target + channelArgs.concatenatedArgs(), false) };
+    std::string strTarget{ target.toCppString() };
+    std::string fullCacheKey{ StringUtil::SHA1(strTarget + channelArgs.concatenatedArgs(), false).toCppString() };
     if (pChannelCredentialsData != nullptr)
     {
         fullCacheKey += pChannelCredentialsData->hashKey();
@@ -398,13 +397,13 @@ void HHVM_METHOD(Channel, __construct,
         if (!pChannelCredentialsData)
         {
             // no credentials create insecure channel
-            pChannel = grpc_insecure_channel_create(target.c_str(), &channelArgs.args(), nullptr);
+            pChannel = grpc_insecure_channel_create(strTarget.c_str(), &channelArgs.args(), nullptr);
         }
         else
         {
             // create secure chhanel
-            pChannel = grpc_secure_channel_create(pChannelCredentialsData->credentials(), target.c_str(),
-                                                  &channelArgs.args(), nullptr);
+            pChannel = grpc_secure_channel_create(pChannelCredentialsData->credentials(),
+                                                  strTarget.c_str(), &channelArgs.args(), nullptr);
         }
 
         if (!pChannel)
@@ -522,7 +521,7 @@ void HHVM_METHOD(Channel, close)
     {
         SystemLib::throwBadMethodCallExceptionObject("Channel already closed.");
     }
-    pChannelData->init(nullptr, false, String{}); // mark channel closed
+    pChannelData->init(nullptr, false, std::string{}); // mark channel closed
 }
 
 } // namespace HPHP

@@ -93,10 +93,10 @@ public:
     void sweep(void);
 
     // interface functions
-    void init(grpc_channel_credentials* const pChannelCredentials, const String& hashKey);
-    void init(grpc_channel_credentials* const pChannelCredentials, String&& hashKey);
+    void init(grpc_channel_credentials* const pChannelCredentials, const std::string& hashKey);
+    void init(grpc_channel_credentials* const pChannelCredentials, std::string&& hashKey);
     grpc_channel_credentials* const credentials(void) { return m_pChannelCredentials; }
-    const String& hashKey(void) const { return m_HashKey; }
+    const std::string& hashKey(void) const { return m_HashKey; }
     static Class* const getClass(void);
     static const StaticString& className(void) { return s_ClassName; }
 
@@ -106,7 +106,7 @@ private:
 
     // member variables
     grpc_channel_credentials* m_pChannelCredentials;
-    String m_HashKey;
+    std::string m_HashKey;
     static Class* s_pClass;
     static const StaticString s_ClassName;
 
@@ -122,9 +122,9 @@ void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,
 Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault);
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createSsl,
-                          const Variant& perm_root_certs,
-                          const Variant& perm_key_cert_pair__private_key /*= null*/,
-                          const Variant& perm_key_cert_pair__cert_chain /*=null*/
+                          const Variant& pem_root_certs,
+                          const Variant& pem_key_cert_pair__private_key /*= null*/,
+                          const Variant& pem_key_cert_pair__cert_chain /*=null*/
                          );
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createComposite,

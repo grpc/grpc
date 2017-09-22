@@ -53,9 +53,9 @@ public:
     void sweep(void);
 
     // interface functions
-    void init(grpc_channel* channel, const bool owned, String&& hashKey);
+    void init(grpc_channel* channel, const bool owned, std::string&& hashKey);
     grpc_channel* const channel(void) { return m_pChannel; }
-    const String& hashKey(void) const { return m_HashKey; }
+    const std::string& hashKey(void) const { return m_HashKey; }
     static Class* const getClass(void);
     static const StaticString& className(void) { return s_ClassName; }
 
@@ -66,7 +66,7 @@ public:
     // member variables
     grpc_channel* m_pChannel;
     bool m_Owned;
-    String m_HashKey;
+    std::string m_HashKey;
     static Class* s_pClass;
     static const StaticString s_ClassName;
 };
@@ -90,16 +90,16 @@ public:
     // interface functions
     bool init(const Array& argsArray);
     const grpc_channel_args& args(void) const { return m_ChannelArgs; }
-    const String& hashKey(void) { return m_HashKey; }
-    const String& concatenatedArgs(void) const { return m_ConcatenatedArgs; }
+    const std::string& hashKey(void) { return m_HashKey; }
+    const std::string& concatenatedArgs(void) const { return m_ConcatenatedArgs; }
 
 private:
     // helper functions
     void destroyArgs(void);
 
     // member variables
-    String m_HashKey;
-    String m_ConcatenatedArgs;
+    std::string m_HashKey;
+    std::string m_ConcatenatedArgs;
     grpc_channel_args m_ChannelArgs;
     std::vector<std::pair<std::string, std::string>> m_PHPData; // the key, value PHP Data
 };
@@ -125,10 +125,11 @@ public:
     ChannelsCache& operator=(ChannelsCache&& rhsChannelsCache) = delete;
 
     // interface functions
-    std::pair<bool, grpc_channel* const> addChannel(const String& channelHash,grpc_channel* const pChannel);
-    grpc_channel* const getChannel(const String& channelHash);
-    bool hasChannel(const String& channelHash);
-    void deleteChannel(const String& channelHash);
+    std::pair<bool, grpc_channel* const> addChannel(const std::string& channelHash,
+                                                    grpc_channel* const pChannel);
+    grpc_channel* const getChannel(const std::string& channelHash);
+    bool hasChannel(const std::string& channelHash);
+    void deleteChannel(const std::string& channelHash);
     size_t numChannels(void) const;
 
     // singleton function

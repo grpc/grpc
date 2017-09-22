@@ -94,9 +94,6 @@ public:
     OpsManaged& operator=(const OpsManaged& rhsOpsManaged) = delete;
     OpsManaged& operator&(OpsManaged&& rhsOpsManaged) = delete;
 
-    // interface functions
-    void setCallCancelled(bool callCancelled);
-
 private:
     // helper fuctions
     void destroy(void);
@@ -104,21 +101,16 @@ private:
 
 public:
     // member variabes
-    static thread_local MetadataArray s_Send_metadata;          // owned by caller
-    static thread_local MetadataArray s_Send_trailing_metadata; // owned by caller
-    MetadataArray& send_metadata_ref;
-    MetadataArray& send_trailing_metadata_ref;
-    MetadataArray recv_metadata;                                // owned by call object
-    MetadataArray recv_trailing_metadata;                       // owned by call object
-    MessagesType send_messages;                                 // owned by caller
-    MessagesType recv_messages;                                 // owned by call object
-    Slice recv_status_details;                                  // owned by caller
-    Slice send_status_details;                                  // owned by caller
+    MetadataArray send_metadata;                   // owned by caller
+    MetadataArray send_trailing_metadata;          // owned by caller
+    MetadataArray recv_metadata;                   // owned by call object
+    MetadataArray recv_trailing_metadata;          // owned by call object
+    MessagesType send_messages;                    // owned by caller
+    MessagesType recv_messages;                    // owned by call object
+    Slice recv_status_details;                     // owned by caller
+    Slice send_status_details;                     // owned by caller
     int cancelled;
     grpc_status_code status;
-
-    bool m_CallCancelled;
-
 };
 
 /*****************************************************************************/
@@ -153,14 +145,8 @@ public:
     void setQueue(std::unique_ptr<CompletionQueue>&& pCompletionQueue);
     CompletionQueue* const queue(void) { return m_pCompletionQueue.get(); }
     int32_t getTimeout(void) const { return m_Timeout; }
-    std::shared_ptr<MetadataPromise>& sharedPromise(void) { return m_pMetadataPromise; }
-    std::shared_ptr<std::mutex>& sharedMutex(void) { return m_pMetadataMutex; }
-    std::shared_ptr<bool>& sharedCancelled(void) { return m_pCallCancelled; }
-    MetadataPromise& metadataPromise(void) { return *(m_pMetadataPromise.get()); }
-    std::mutex& metadataMutex(void) { return *(m_pMetadataMutex.get()); }
-    void setOpsManaged(std::unique_ptr<OpsManaged>&& pOpsManaged);
-    OpsManaged& opsManaged(void) { return *(m_pOpsManaged.get()); }
-    bool& callCancelled(void) { return *(m_pCallCancelled.get()); }
+    void incrementBatchCounter(void) { ++m_BatchCounter; }
+    uint64_t batchCounter(void) const{ return m_BatchCounter; }
     static Class* const getClass(void);
     static const StaticString& className(void) { return s_ClassName; }
 
@@ -174,11 +160,8 @@ private:
     CallCredentialsData* m_pCallCredentials;
     ChannelData* m_pChannel;
     int32_t m_Timeout;
-    std::shared_ptr<MetadataPromise> m_pMetadataPromise; // metadata synchronization
-    std::shared_ptr<std::mutex> m_pMetadataMutex;        // metadata synchronization
-    std::shared_ptr<bool> m_pCallCancelled;              // metadata synchronizations
     std::unique_ptr<CompletionQueue> m_pCompletionQueue;
-    std::unique_ptr<OpsManaged> m_pOpsManaged;
+    std::atomic<uint64_t> m_BatchCounter;
     static Class* s_pClass;
     static const StaticString s_ClassName;
 };

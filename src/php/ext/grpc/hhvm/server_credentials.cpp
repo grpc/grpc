@@ -86,16 +86,20 @@ Object HHVM_STATIC_METHOD(ServerCredentials, createSsl,
 {
     HHVM_TRACE_SCOPE("ServerCredentials createSsl") // Debug Trace
 
+    std::string pemRootCerts{ pem_root_certs.toCppString() };
+
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
-    pem_key_cert_pair.private_key = pem_private_key.c_str();
-    pem_key_cert_pair.cert_chain = pem_cert_chain.c_str();
+    std::string privateKey{ pem_private_key.toCppString() };
+    pem_key_cert_pair.private_key = privateKey.c_str();
+    std::string certChain{ pem_cert_chain.toCppString() };
+    pem_key_cert_pair.cert_chain = certChain.c_str();
 
     Object newServerCredentialsObj{ ServerCredentialsData::getClass() };
     ServerCredentialsData* const pServerCredentialsData{ Native::data<ServerCredentialsData>(newServerCredentialsObj) };
 
     // TODO: add a client_certificate_request field in ServerCredentials and pass it as the last parameter. */
     grpc_server_credentials* const pServerCredentials{
-        grpc_ssl_server_credentials_create_ex(pem_root_certs.c_str(), &pem_key_cert_pair,
+        grpc_ssl_server_credentials_create_ex(pemRootCerts.c_str(), &pem_key_cert_pair,
                                               1, GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, nullptr) };
 
     if (!pServerCredentials)

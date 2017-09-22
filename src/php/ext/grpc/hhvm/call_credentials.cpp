@@ -62,36 +62,34 @@ PluginMetadataInfo& PluginMetadataInfo::getPluginMetadataInfo(void)
 }
 
 void PluginMetadataInfo::setInfo(CallCredentialsData* const pCallCredentials,
-                                 MetaDataInfo&& metaDataInfo)
+                                 const std::shared_ptr<MetaDataInfo>& pMetaDataInfo)
 {
     std::lock_guard<std::mutex> lock{ m_Lock };
-    auto itrPair = m_MetaDataMap.emplace(pCallCredentials, std::move(metaDataInfo));
+    auto itrPair = m_MetaDataMap.emplace(pCallCredentials, std::weak_ptr<MetaDataInfo>{ pMetaDataInfo });
     if (!itrPair.second)
     {
         // call credentials exist already so update
-        // TODO:  The second entry may need to be a vector if we have multiple
-        // stacked but current thinking is this can't happen
-        itrPair.first->second = std::move(metaDataInfo);
+        itrPair.first->second = std::weak_ptr<MetaDataInfo>{ pMetaDataInfo };
     }
 }
 
-typename PluginMetadataInfo::MetaDataInfo
+std::weak_ptr<typename PluginMetadataInfo::MetaDataInfo>
 PluginMetadataInfo::getInfo(CallCredentialsData* const pCallCredentials)
 {
-    MetaDataInfo metaDataInfo{};
+    std::weak_ptr<MetaDataInfo> pMetaDataInfo{};
     {
         std::lock_guard<std::mutex> lock{ m_Lock };
         auto itrFind = m_MetaDataMap.find(pCallCredentials);
         if (itrFind != m_MetaDataMap.cend())
         {
             // get the metadata info
-            metaDataInfo = std::move(itrFind->second);
+            pMetaDataInfo = std::move(itrFind->second);
 
             // erase the entry
             m_MetaDataMap.erase(itrFind);
         }
     }
-    return metaDataInfo;
+    return pMetaDataInfo;
 }
 
 bool PluginMetadataInfo::deleteInfo(CallCredentialsData* const pCallCredentials)
@@ -240,22 +238,25 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 /*****************************************************************************/
 
 // This work done in this function MUST be done on the same thread as the HHVM call request
-void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
+bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
+                            const std::string& methodName,
+                            const grpc_auth_context* pContext,
                             grpc_credentials_plugin_metadata_cb cb,
                             void *user_data)
 {
     HHVM_TRACE_SCOPE("CallCredentials plugin_do_get_metadata") // Degug Trace
 
     Object returnObj{ SystemLib::AllocStdClassObject() };
-    returnObj.o_set("service_url", String(context.service_url, CopyString));
-    returnObj.o_set("method_name", String(context.method_name, CopyString));
+    returnObj.o_set("service_url", String(serviceURL.c_str(), CopyString));
+    returnObj.o_set("method_name", String(methodName.c_str(), CopyString));
 
     plugin_state* const pState{ reinterpret_cast<plugin_state *>(ptr) };
 
     Variant retVal{ vm_call_user_func(pState->callback, make_packed_array(returnObj)) };
     if (!retVal.isArray())
     {
-        SystemLib::throwInvalidArgumentExceptionObject("Callback return value expected an array.");
+        //SystemLib::throwInvalidArgumentExceptionObject("Callback return value expected an array.");
+        return false;
     }
 
     grpc_status_code code{ GRPC_STATUS_OK };
@@ -267,6 +268,8 @@ void plugin_do_get_metadata(void *ptr, grpc_auth_metadata_context context,
 
     // Pass control back to core
     cb(user_data, metadata.data(), metadata.size(), code, nullptr);
+
+    return (code == GRPC_STATUS_OK);
 }
 
 void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
@@ -279,46 +282,44 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
     CallCredentialsData* const pCallCrendentials{ pState->pCallCredentials };
 
     PluginMetadataInfo& pluginMetaDataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
-    PluginMetadataInfo::MetaDataInfo metaDataInfo{ pluginMetaDataInfo.getInfo(pCallCrendentials) };
+    std::weak_ptr<PluginMetadataInfo::MetaDataInfo> wpMetaDataInfo{ pluginMetaDataInfo.getInfo(pCallCrendentials) };
 
-    MetadataPromise* const pMetaDataPromise{ metaDataInfo.metadataPromise() };
-    if (!pMetaDataPromise)
+    if (std::shared_ptr<PluginMetadataInfo::MetaDataInfo> pMetaDataInfo = wpMetaDataInfo.lock())
     {
-        // failed to get promise associated with call credentials.  This can happen if the call timed
-        // out and the metadata was erased before this function was invoked
-        return;
-    }
+        MetadataPromise& metaDataPromise{ pMetaDataInfo->metadataPromise() };
+        const std::thread::id& callThreadId{ pMetaDataInfo->threadId() };
 
-    std::mutex& metaDataMutex{ *(metaDataInfo.metadataMutex()) };
-    const bool& callCancelled{ *(metaDataInfo.callCancelled()) };
-    const std::thread::id& callThreadId{ metaDataInfo.threadId() };
-    if (callThreadId == std::this_thread::get_id())
-    {
-        HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata same thread") // Degug Trace
+        // copy context info since it will be invalid after existing this routine
+        std::string contextServiceUrl{ context.service_url ? context.service_url : "" };
+        std::string contextMethodName{ context.method_name ? context.method_name : "" };
+
+        if (callThreadId == std::this_thread::get_id())
         {
-            // check if call cancelled from timeout before performing callback function
-            std::lock_guard<std::mutex> lock{ metaDataMutex };
-            if (!callCancelled)
-            {
-                plugin_do_get_metadata(ptr, context, cb, user_data);
-                plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data,
-                                                   true };
-                pMetaDataPromise->set_value(std::move(params));
-            }
-            else
-            {
-                // call was cancelled
-                return;
-            }
+            HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata same thread") // Degug Trace
+            bool result{ plugin_do_get_metadata(ptr, contextServiceUrl, contextMethodName,
+                                                context.channel_auth_context, cb, user_data) };
+            plugin_get_metadata_params params{ ptr, std::move(contextServiceUrl),
+                                               std::move(contextMethodName),
+                                               context.channel_auth_context,
+                                               cb, user_data, true, result };
+            metaDataPromise.set_value(std::move(params));
+        }
+        else
+        {
+            HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata different thread") // Degug Trace
+            plugin_get_metadata_params params{ ptr, std::move(contextServiceUrl),
+                                               std::move(contextMethodName), context.channel_auth_context,
+                                               cb, user_data };
+
+            // return the meta data params in the promise
+            metaDataPromise.set_value(std::move(params));
         }
     }
     else
     {
-        HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata different thread") // Degug Trace
-        plugin_get_metadata_params params{ ptr, std::move(context), std::move(cb), user_data };
-
-        // return the meta data params in the promise
-        pMetaDataPromise->set_value(std::move(params));
+        // failed to get shared_ptr.  This can happen if the call timed out and the metadata
+        // erased before this function was invoked
+        return;
     }
 }
 
