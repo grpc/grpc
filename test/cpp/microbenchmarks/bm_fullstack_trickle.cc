@@ -230,8 +230,8 @@ static void TrickleCQNext(TrickledCHTTP2* fixture, void** t, bool* ok,
                           int64_t iteration) {
   while (true) {
     fixture->Log(iteration);
-    switch (fixture->cq()->AsyncNext(
-        t, ok, gpr_inf_past(GPR_CLOCK_MONOTONIC))) {
+    switch (
+        fixture->cq()->AsyncNext(t, ok, gpr_inf_past(GPR_CLOCK_MONOTONIC))) {
       case CompletionQueue::TIMEOUT:
         fixture->Step(iteration != -1);
         break;
