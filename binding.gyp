@@ -63,6 +63,7 @@
         '-Wno-long-long',
         '-Wno-unused-parameter',
         '-DOSATOMIC_USE_INLINED=1',
+        '$(NO_W_EXTRA_SEMI)',
     ],
     'ldflags': [
         '-g',
@@ -183,6 +184,7 @@
               '-Wno-long-long',
               '-Wno-unused-parameter',
               '-DOSATOMIC_USE_INLINED=1',
+              '$(NO_W_EXTRA_SEMI)',
           ],
           'OTHER_CPLUSPLUSFLAGS': [
               '-g',
@@ -192,6 +194,7 @@
               '-Wno-long-long',
               '-Wno-unused-parameter',
               '-DOSATOMIC_USE_INLINED=1',
+              '$(NO_W_EXTRA_SEMI)',
             '-stdlib=libc++',
             '-std=c++11',
             '-Wno-error=deprecated-declarations'
