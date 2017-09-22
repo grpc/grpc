@@ -86,7 +86,7 @@ static char* fmt_uint32_diff_str(uint32_t old_val, uint32_t new_val) {
 
 static void posttrace(shadow_flow_control* shadow_fc,
                       grpc_chttp2_transport_flowctl* tfc,
-                      grpc_chttp2_stream_flowctl* sfc, char* reason) {
+                      grpc_chttp2_stream_flowctl* sfc, const char* reason) {
   uint32_t acked_local_window =
       tfc->t->settings[GRPC_SENT_SETTINGS]
                       [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
@@ -128,7 +128,7 @@ static void posttrace(shadow_flow_control* shadow_fc,
   gpr_free(saw_str);
 }
 
-static char* urgency_to_string(grpc_chttp2_flowctl_urgency urgency) {
+static const char* urgency_to_string(grpc_chttp2_flowctl_urgency urgency) {
   switch (urgency) {
     case GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED:
       return "no action";
