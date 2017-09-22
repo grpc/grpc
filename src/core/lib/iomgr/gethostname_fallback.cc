@@ -17,6 +17,7 @@
  */
 
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/gethostname.h"
 
 #ifdef GRPC_GETHOSTNAME_FALLBACK
 
