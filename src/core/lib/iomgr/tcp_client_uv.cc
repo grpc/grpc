@@ -58,7 +58,7 @@ static void tcp_close_callback(uv_handle_t *handle) { gpr_free(handle); }
 static void uv_tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp,
                            grpc_error *error) {
   int done;
-  grpc_uv_tcp_connect *connect = acp;
+  grpc_uv_tcp_connect *connect = (grpc_uv_tcp_connect *)acp;
   if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: error=%s",
@@ -77,7 +77,7 @@ static void uv_tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp,
 }
 
 static void uv_tc_on_connect(uv_connect_t *req, int status) {
-  grpc_uv_tcp_connect *connect = req->data;
+  grpc_uv_tcp_connect *connect = (grpc_uv_tcp_connect *)req->data;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_error *error = GRPC_ERROR_NONE;
   int done;
@@ -131,16 +131,16 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
     for (size_t i = 0; i < channel_args->num_args; i++) {
       if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
         grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
-        resource_quota = grpc_resource_quota_ref_internal(
+        resource_quota = grpc_resource_quota_ref_internal((grpc_resource_quota *)
             channel_args->args[i].value.pointer.p);
       }
     }
   }
 
-  connect = gpr_zalloc(sizeof(grpc_uv_tcp_connect));
+  connect = (grpc_uv_tcp_connect*)gpr_zalloc(sizeof(grpc_uv_tcp_connect));
   connect->closure = closure;
   connect->endpoint = ep;
-  connect->tcp_handle = gpr_malloc(sizeof(uv_tcp_t));
+  connect->tcp_handle = (uv_tcp_t*)gpr_malloc(sizeof(uv_tcp_t));
   connect->addr_name = grpc_sockaddr_to_uri(resolved_addr);
   connect->resource_quota = resource_quota;
   uv_tcp_init(uv_default_loop(), connect->tcp_handle);
