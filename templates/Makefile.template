@@ -36,7 +36,7 @@
     sources_that_don_t_need_openssl = set()
 
     # warnings we'd like, but that dont exist in all compilers
-    PREFERRED_WARNINGS=['shadow', 'extra-semi']
+    PREFERRED_WARNINGS=['shadow']
     CHECK_WARNINGS=PREFERRED_WARNINGS + ['no-shift-negative-value']
 
     def warning_var(fmt, warning):
