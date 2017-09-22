@@ -31,5 +31,4 @@ char *grpc_gethostname();
 }
 #endif
 
-
 #endif /* GRPC_CORE_LIB_IOMGR_GETHOSTNAME_H */

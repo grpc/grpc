@@ -16,23 +16,19 @@
  *
  */
 
-#include "src/core/lib/iomgr/gethostname.h"
-#include "src/core/lib/iomgr/port.h"
+#ifndef GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_GZIP_H
+#define GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_GZIP_H
 
-#ifdef GRPC_POSIX_SYSCONF
+#include "src/core/lib/compression/stream_compression.h"
 
-#include <unistd.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include <grpc/support/alloc.h>
+extern const grpc_stream_compression_vtable grpc_stream_compression_gzip_vtable;
 
-char *grpc_gethostname() {
-  size_t host_name_max = (size_t)sysconf(_SC_HOST_NAME_MAX);
-  char *hostname = (char *)gpr_malloc(host_name_max);
-  if (gethostname(hostname, host_name_max) != 0) {
-    gpr_free(hostname);
-    return NULL;
-  }
-  return hostname;
+#ifdef __cplusplus
 }
+#endif
 
-#endif  // GRPC_POSIX_SYSCONF
+#endif
