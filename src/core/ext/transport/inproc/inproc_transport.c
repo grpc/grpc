@@ -37,7 +37,6 @@
     if (GRPC_TRACER_ON(grpc_inproc_trace)) gpr_log(__VA_ARGS__); \
   } while (0)
 
-static const grpc_transport_vtable inproc_vtable;
 static grpc_slice g_empty_slice;
 static grpc_slice g_fake_path_key;
 static grpc_slice g_fake_path_value;
@@ -120,7 +119,7 @@ static void slice_buffer_list_append_entry(slice_buffer_list *l,
 }
 
 static grpc_slice_buffer *slice_buffer_list_append(slice_buffer_list *l) {
-  sb_list_entry *next = gpr_malloc(sizeof(*next));
+  sb_list_entry *next = (sb_list_entry *)gpr_malloc(sizeof(*next));
   grpc_slice_buffer_init(&next->sb);
   slice_buffer_list_append_entry(l, next);
   return &next->sb;
@@ -327,7 +326,8 @@ static grpc_error *fill_in_metadata(grpc_exec_ctx *exec_ctx, inproc_stream *s,
   grpc_error *error = GRPC_ERROR_NONE;
   for (grpc_linked_mdelem *elem = metadata->list.head;
        (elem != NULL) && (error == GRPC_ERROR_NONE); elem = elem->next) {
-    grpc_linked_mdelem *nelem = gpr_arena_alloc(s->arena, sizeof(*nelem));
+    grpc_linked_mdelem *nelem =
+        (grpc_linked_mdelem *)gpr_arena_alloc(s->arena, sizeof(*nelem));
     nelem->md = grpc_mdelem_from_slices(
         exec_ctx, grpc_slice_intern(GRPC_MDKEY(elem->md)),
         grpc_slice_intern(GRPC_MDVALUE(elem->md)));
@@ -531,12 +531,14 @@ static void fail_helper_locked(grpc_exec_ctx *exec_ctx, inproc_stream *s,
       // since it expects that as well as no error yet
       grpc_metadata_batch fake_md;
       grpc_metadata_batch_init(&fake_md);
-      grpc_linked_mdelem *path_md = gpr_arena_alloc(s->arena, sizeof(*path_md));
+      grpc_linked_mdelem *path_md =
+          (grpc_linked_mdelem *)gpr_arena_alloc(s->arena, sizeof(*path_md));
       path_md->md =
           grpc_mdelem_from_slices(exec_ctx, g_fake_path_key, g_fake_path_value);
       GPR_ASSERT(grpc_metadata_batch_link_tail(exec_ctx, &fake_md, path_md) ==
                  GRPC_ERROR_NONE);
-      grpc_linked_mdelem *auth_md = gpr_arena_alloc(s->arena, sizeof(*auth_md));
+      grpc_linked_mdelem *auth_md =
+          (grpc_linked_mdelem *)gpr_arena_alloc(s->arena, sizeof(*auth_md));
       auth_md->md =
           grpc_mdelem_from_slices(exec_ctx, g_fake_auth_key, g_fake_auth_value);
       GPR_ASSERT(grpc_metadata_batch_link_tail(exec_ctx, &fake_md, auth_md) ==
@@ -1164,6 +1166,55 @@ static void destroy_transport(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {
 }
 
 /*******************************************************************************
+ * INTEGRATION GLUE
+ */
+
+static void set_pollset(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
+                        grpc_stream *gs, grpc_pollset *pollset) {
+  // Nothing to do here
+}
+
+static void set_pollset_set(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
+                            grpc_stream *gs, grpc_pollset_set *pollset_set) {
+  // Nothing to do here
+}
+
+static grpc_endpoint *get_endpoint(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
+  return NULL;
+}
+
+/*******************************************************************************
+ * GLOBAL INIT AND DESTROY
+ */
+static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
+
+void grpc_inproc_transport_init(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  GRPC_CLOSURE_INIT(&do_nothing_closure, do_nothing, NULL,
+                    grpc_schedule_on_exec_ctx);
+  g_empty_slice = grpc_slice_from_static_buffer(NULL, 0);
+
+  grpc_slice key_tmp = grpc_slice_from_static_string(":path");
+  g_fake_path_key = grpc_slice_intern(key_tmp);
+  grpc_slice_unref_internal(&exec_ctx, key_tmp);
+
+  g_fake_path_value = grpc_slice_from_static_string("/");
+
+  grpc_slice auth_tmp = grpc_slice_from_static_string(":authority");
+  g_fake_auth_key = grpc_slice_intern(auth_tmp);
+  grpc_slice_unref_internal(&exec_ctx, auth_tmp);
+
+  g_fake_auth_value = grpc_slice_from_static_string("inproc-fail");
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+
+static const grpc_transport_vtable inproc_vtable = {
+    sizeof(inproc_stream), "inproc",        init_stream,
+    set_pollset,           set_pollset_set, perform_stream_op,
+    perform_transport_op,  destroy_stream,  destroy_transport,
+    get_endpoint};
+
+/*******************************************************************************
  * Main inproc transport functions
  */
 static void inproc_transports_create(grpc_exec_ctx *exec_ctx,
@@ -1172,10 +1223,10 @@ static void inproc_transports_create(grpc_exec_ctx *exec_ctx,
                                      grpc_transport **client_transport,
                                      const grpc_channel_args *client_args) {
   INPROC_LOG(GPR_DEBUG, "inproc_transports_create");
-  inproc_transport *st = gpr_zalloc(sizeof(*st));
-  inproc_transport *ct = gpr_zalloc(sizeof(*ct));
+  inproc_transport *st = (inproc_transport *)gpr_zalloc(sizeof(*st));
+  inproc_transport *ct = (inproc_transport *)gpr_zalloc(sizeof(*ct));
   // Share one lock between both sides since both sides get affected
-  st->mu = ct->mu = gpr_malloc(sizeof(*st->mu));
+  st->mu = ct->mu = (shared_mu *)gpr_malloc(sizeof(*st->mu));
   gpr_mu_init(&st->mu->mu);
   gpr_ref_init(&st->mu->refs, 2);
   st->base.vtable = &inproc_vtable;
@@ -1212,8 +1263,8 @@ grpc_channel *grpc_inproc_channel_create(grpc_server *server,
 
   grpc_arg default_authority_arg;
   default_authority_arg.type = GRPC_ARG_STRING;
-  default_authority_arg.key = GRPC_ARG_DEFAULT_AUTHORITY;
-  default_authority_arg.value.string = "inproc.authority";
+  default_authority_arg.key = (char *)GRPC_ARG_DEFAULT_AUTHORITY;
+  default_authority_arg.value.string = (char *)"inproc.authority";
   grpc_channel_args *client_args =
       grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
 
@@ -1235,61 +1286,6 @@ grpc_channel *grpc_inproc_channel_create(grpc_server *server,
   grpc_exec_ctx_finish(&exec_ctx);
 
   return channel;
-}
-
-/*******************************************************************************
- * INTEGRATION GLUE
- */
-
-static void set_pollset(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
-                        grpc_stream *gs, grpc_pollset *pollset) {
-  // Nothing to do here
-}
-
-static void set_pollset_set(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
-                            grpc_stream *gs, grpc_pollset_set *pollset_set) {
-  // Nothing to do here
-}
-
-static char *get_peer(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
-  return gpr_strdup("inproc");
-}
-
-static grpc_endpoint *get_endpoint(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
-  return NULL;
-}
-
-static const grpc_transport_vtable inproc_vtable = {
-    sizeof(inproc_stream), "inproc",
-    init_stream,           set_pollset,
-    set_pollset_set,       perform_stream_op,
-    perform_transport_op,  destroy_stream,
-    destroy_transport,     get_peer,
-    get_endpoint};
-
-/*******************************************************************************
- * GLOBAL INIT AND DESTROY
- */
-static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
-
-void grpc_inproc_transport_init(void) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  GRPC_CLOSURE_INIT(&do_nothing_closure, do_nothing, NULL,
-                    grpc_schedule_on_exec_ctx);
-  g_empty_slice = grpc_slice_from_static_buffer(NULL, 0);
-
-  grpc_slice key_tmp = grpc_slice_from_static_string(":path");
-  g_fake_path_key = grpc_slice_intern(key_tmp);
-  grpc_slice_unref_internal(&exec_ctx, key_tmp);
-
-  g_fake_path_value = grpc_slice_from_static_string("/");
-
-  grpc_slice auth_tmp = grpc_slice_from_static_string(":authority");
-  g_fake_auth_key = grpc_slice_intern(auth_tmp);
-  grpc_slice_unref_internal(&exec_ctx, auth_tmp);
-
-  g_fake_auth_value = grpc_slice_from_static_string("inproc-fail");
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 void grpc_inproc_transport_shutdown(void) {

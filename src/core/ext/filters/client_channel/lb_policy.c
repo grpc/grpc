@@ -67,7 +67,7 @@ void grpc_lb_policy_ref(grpc_lb_policy *policy REF_FUNC_EXTRA_ARGS) {
 
 static void shutdown_locked(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_error *error) {
-  grpc_lb_policy *policy = arg;
+  grpc_lb_policy *policy = (grpc_lb_policy *)arg;
   policy->vtable->shutdown_locked(exec_ctx, policy);
   GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, policy, "strong-unref");
 }

@@ -49,7 +49,9 @@ extern "C" {
 #include <grpc/impl/codegen/sync_posix.h>
 #elif defined(GPR_WINDOWS)
 #include <grpc/impl/codegen/sync_windows.h>
-#elif !defined(GPR_CUSTOM_SYNC)
+#elif defined(GPR_CUSTOM_SYNC)
+#include <grpc/impl/codegen/sync_custom.h>
+#else
 #error Unable to determine platform for sync
 #endif
 

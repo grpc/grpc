@@ -53,9 +53,9 @@ void grpc_channel_init_register_stage(grpc_channel_stack_type type,
   GPR_ASSERT(!g_finalized);
   if (g_slots[type].cap_slots == g_slots[type].num_slots) {
     g_slots[type].cap_slots = GPR_MAX(8, 3 * g_slots[type].cap_slots / 2);
-    g_slots[type].slots =
-        gpr_realloc(g_slots[type].slots,
-                    g_slots[type].cap_slots * sizeof(*g_slots[type].slots));
+    g_slots[type].slots = (stage_slot *)gpr_realloc(
+        g_slots[type].slots,
+        g_slots[type].cap_slots * sizeof(*g_slots[type].slots));
   }
   stage_slot *s = &g_slots[type].slots[g_slots[type].num_slots++];
   s->insertion_order = g_slots[type].num_slots;
@@ -65,8 +65,8 @@ void grpc_channel_init_register_stage(grpc_channel_stack_type type,
 }
 
 static int compare_slots(const void *a, const void *b) {
-  const stage_slot *sa = a;
-  const stage_slot *sb = b;
+  const stage_slot *sa = (const stage_slot *)a;
+  const stage_slot *sb = (const stage_slot *)b;
 
   int c = GPR_ICMP(sa->priority, sb->priority);
   if (c != 0) return c;
@@ -85,7 +85,7 @@ void grpc_channel_init_finalize(void) {
 void grpc_channel_init_shutdown(void) {
   for (int i = 0; i < GRPC_NUM_CHANNEL_STACK_TYPES; i++) {
     gpr_free(g_slots[i].slots);
-    g_slots[i].slots = (void *)(uintptr_t)0xdeadbeef;
+    g_slots[i].slots = (stage_slot *)(void *)(uintptr_t)0xdeadbeef;
   }
 }
 

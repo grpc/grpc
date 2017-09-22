@@ -83,12 +83,14 @@ def collect_latency(bm_name, args):
         jobset.JobSpec(['bins/basicprof/%s' % bm_name,
                         '--benchmark_filter=^%s$' % line,
                         '--benchmark_min_time=0.05'],
-                       environ={'LATENCY_TRACE': '%s.trace' % fnize(line)}))
+                       environ={'LATENCY_TRACE': '%s.trace' % fnize(line)},
+                       shortname='profile-%s' % fnize(line)))
     profile_analysis.append(
         jobset.JobSpec([sys.executable,
                         'tools/profiling/latency_profile/profile_analyzer.py',
                         '--source', '%s.trace' % fnize(line), '--fmt', 'simple',
-                        '--out', 'reports/%s.txt' % fnize(line)], timeout_seconds=None))
+                        '--out', 'reports/%s.txt' % fnize(line)], timeout_seconds=20*60,
+                        shortname='analyze-%s' % fnize(line)))
     cleanup.append(jobset.JobSpec(['rm', '%s.trace' % fnize(line)]))
     # periodically flush out the list of jobs: profile_analysis jobs at least
     # consume upwards of five gigabytes of ram in some cases, and so analysing
@@ -126,14 +128,16 @@ def collect_perf(bm_name, args):
                         '-g', '-F', '997',
                         'bins/mutrace/%s' % bm_name,
                         '--benchmark_filter=^%s$' % line,
-                        '--benchmark_min_time=10']))
+                        '--benchmark_min_time=10'],
+                        shortname='perf-%s' % fnize(line)))
     profile_analysis.append(
         jobset.JobSpec(['tools/run_tests/performance/process_local_perf_flamegraphs.sh'],
                        environ = {
                            'PERF_BASE_NAME': fnize(line),
                            'OUTPUT_DIR': 'reports',
                            'OUTPUT_FILENAME': fnize(line),
-                       }))
+                       },
+                       shortname='flame-%s' % fnize(line)))
     cleanup.append(jobset.JobSpec(['rm', '%s-perf.data' % fnize(line)]))
     cleanup.append(jobset.JobSpec(['rm', '%s-out.perf' % fnize(line)]))
     # periodically flush out the list of jobs: temporary space required for this

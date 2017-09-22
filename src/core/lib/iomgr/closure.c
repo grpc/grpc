@@ -109,7 +109,7 @@ typedef struct {
 
 static void closure_wrapper(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_error *error) {
-  wrapped_closure *wc = arg;
+  wrapped_closure *wc = (wrapped_closure *)arg;
   grpc_iomgr_cb_func cb = wc->cb;
   void *cb_arg = wc->cb_arg;
   gpr_free(wc);
@@ -124,7 +124,7 @@ grpc_closure *grpc_closure_create(const char *file, int line,
 grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg,
                                   grpc_closure_scheduler *scheduler) {
 #endif
-  wrapped_closure *wc = gpr_malloc(sizeof(*wc));
+  wrapped_closure *wc = (wrapped_closure *)gpr_malloc(sizeof(*wc));
   wc->cb = cb;
   wc->cb_arg = cb_arg;
 #ifndef NDEBUG
@@ -167,7 +167,14 @@ void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *c,
   GPR_TIMER_BEGIN("grpc_closure_sched", 0);
   if (c != NULL) {
 #ifndef NDEBUG
-    GPR_ASSERT(!c->scheduled);
+    if (c->scheduled) {
+      gpr_log(GPR_ERROR,
+              "Closure already scheduled. (closure: %p, created: [%s:%d], "
+              "previously scheduled at: [%s: %d] run?: %s",
+              c, c->file_created, c->line_created, c->file_initiated,
+              c->line_initiated, c->run ? "true" : "false");
+      abort();
+    }
     c->scheduled = true;
     c->file_initiated = file;
     c->line_initiated = line;
@@ -191,7 +198,14 @@ void grpc_closure_list_sched(grpc_exec_ctx *exec_ctx, grpc_closure_list *list) {
   while (c != NULL) {
     grpc_closure *next = c->next_data.next;
 #ifndef NDEBUG
-    GPR_ASSERT(!c->scheduled);
+    if (c->scheduled) {
+      gpr_log(GPR_ERROR,
+              "Closure already scheduled. (closure: %p, created: [%s:%d], "
+              "previously scheduled at: [%s: %d] run?: %s",
+              c, c->file_created, c->line_created, c->file_initiated,
+              c->line_initiated, c->run ? "true" : "false");
+      abort();
+    }
     c->scheduled = true;
     c->file_initiated = file;
     c->line_initiated = line;

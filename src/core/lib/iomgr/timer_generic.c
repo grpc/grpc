@@ -95,9 +95,7 @@ struct shared_mutables {
   gpr_mu mu;
 } GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
 
-static struct shared_mutables g_shared_mutables = {
-    .checker_mu = GPR_SPINLOCK_STATIC_INITIALIZER, .initialized = false,
-};
+static struct shared_mutables g_shared_mutables;
 
 static gpr_clock_type g_clock_type;
 static gpr_timespec g_start_time;
@@ -155,6 +153,7 @@ void grpc_timer_list_init(gpr_timespec now) {
   uint32_t i;
 
   g_shared_mutables.initialized = true;
+  g_shared_mutables.checker_mu = GPR_SPINLOCK_INITIALIZER;
   gpr_mu_init(&g_shared_mutables.mu);
   g_clock_type = now.clock_type;
   g_start_time = now;
@@ -233,6 +232,8 @@ static void note_deadline_change(timer_shard *shard) {
     swap_adjacent_shards_in_queue(shard->shard_queue_index);
   }
 }
+
+void grpc_timer_init_unset(grpc_timer *timer) { timer->pending = false; }
 
 void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
                      gpr_timespec deadline, grpc_closure *closure,

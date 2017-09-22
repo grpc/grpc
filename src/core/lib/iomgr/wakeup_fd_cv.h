@@ -37,8 +37,8 @@
 
 #include "src/core/lib/iomgr/ev_posix.h"
 
-#define FD_TO_IDX(fd) (-(fd)-1)
-#define IDX_TO_FD(idx) (-(idx)-1)
+#define GRPC_FD_TO_IDX(fd) (-(fd)-1)
+#define GRPC_IDX_TO_FD(idx) (-(idx)-1)
 
 typedef struct cv_node {
   gpr_cv* cv;

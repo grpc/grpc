@@ -24,6 +24,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/codegen/atm.h>
+#include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/connectivity_state.h>
@@ -36,6 +37,7 @@
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/impl/codegen/status.h>
 #include <grpc/impl/codegen/sync.h>
+#include <grpc/impl/codegen/sync_custom.h>
 #include <grpc/impl/codegen/sync_generic.h>
 #include <grpc/load_reporting.h>
 #include <grpc/slice.h>
@@ -53,6 +55,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/subprocess.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/sync_custom.h>
 #include <grpc/support/sync_generic.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>

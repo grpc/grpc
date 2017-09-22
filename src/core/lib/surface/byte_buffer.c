@@ -32,7 +32,8 @@ grpc_byte_buffer *grpc_raw_compressed_byte_buffer_create(
     grpc_slice *slices, size_t nslices,
     grpc_compression_algorithm compression) {
   size_t i;
-  grpc_byte_buffer *bb = gpr_malloc(sizeof(grpc_byte_buffer));
+  grpc_byte_buffer *bb =
+      (grpc_byte_buffer *)gpr_malloc(sizeof(grpc_byte_buffer));
   bb->type = GRPC_BB_RAW;
   bb->data.raw.compression = compression;
   grpc_slice_buffer_init(&bb->data.raw.slice_buffer);
@@ -45,7 +46,8 @@ grpc_byte_buffer *grpc_raw_compressed_byte_buffer_create(
 
 grpc_byte_buffer *grpc_raw_byte_buffer_from_reader(
     grpc_byte_buffer_reader *reader) {
-  grpc_byte_buffer *bb = gpr_malloc(sizeof(grpc_byte_buffer));
+  grpc_byte_buffer *bb =
+      (grpc_byte_buffer *)gpr_malloc(sizeof(grpc_byte_buffer));
   grpc_slice slice;
   bb->type = GRPC_BB_RAW;
   bb->data.raw.compression = GRPC_COMPRESS_NONE;

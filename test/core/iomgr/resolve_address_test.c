@@ -17,6 +17,7 @@
  */
 
 #include "src/core/lib/iomgr/resolve_address.h"
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -105,7 +106,8 @@ static void must_succeed(grpc_exec_ctx *exec_ctx, void *argsp,
   GPR_ASSERT(args->addrs->naddrs > 0);
   gpr_atm_rel_store(&args->done_atm, 1);
   gpr_mu_lock(args->mu);
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, NULL));
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(exec_ctx, args->pollset, NULL));
   gpr_mu_unlock(args->mu);
 }
 
@@ -114,7 +116,8 @@ static void must_fail(grpc_exec_ctx *exec_ctx, void *argsp, grpc_error *err) {
   GPR_ASSERT(err != GRPC_ERROR_NONE);
   gpr_atm_rel_store(&args->done_atm, 1);
   gpr_mu_lock(args->mu);
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, NULL));
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(exec_ctx, args->pollset, NULL));
   gpr_mu_unlock(args->mu);
 }
 
@@ -250,9 +253,8 @@ static void test_unparseable_hostports(void) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_iomgr_init(&exec_ctx);
-  grpc_iomgr_start(&exec_ctx);
   test_localhost();
   test_default_port();
   test_non_numeric_default_port();
@@ -262,7 +264,7 @@ int main(int argc, char **argv) {
   test_invalid_ip_addresses();
   test_unparseable_hostports();
   grpc_executor_shutdown(&exec_ctx);
-  grpc_iomgr_shutdown(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
+  grpc_shutdown();
   return 0;
 }

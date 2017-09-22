@@ -141,7 +141,7 @@ static char *decode_tag(struct raw_tag *tag, char *header, int offset) {
 // Make a copy (in 'to') of an existing tag_set.
 static void tag_set_copy(struct tag_set *to, const struct tag_set *from) {
   memcpy(to, from, sizeof(struct tag_set));
-  to->kvm = gpr_malloc(to->kvm_size);
+  to->kvm = (char *)gpr_malloc(to->kvm_size);
   memcpy(to->kvm, from->kvm, from->kvm_used);
 }
 
@@ -184,7 +184,7 @@ static bool tag_set_add_tag(struct tag_set *tags, const census_tag *tag,
   if (tags->kvm_used + tag_size > tags->kvm_size) {
     // allocate new memory if needed
     tags->kvm_size += 2 * CENSUS_MAX_TAG_KV_LEN + TAG_HEADER_SIZE;
-    char *new_kvm = gpr_malloc(tags->kvm_size);
+    char *new_kvm = (char *)gpr_malloc(tags->kvm_size);
     if (tags->kvm_used > 0) memcpy(new_kvm, tags->kvm, tags->kvm_used);
     gpr_free(tags->kvm);
     tags->kvm = new_kvm;
@@ -274,7 +274,8 @@ static void tag_set_flatten(struct tag_set *tags) {
 census_context *census_context_create(const census_context *base,
                                       const census_tag *tags, int ntags,
                                       census_context_status const **status) {
-  census_context *context = gpr_malloc(sizeof(census_context));
+  census_context *context =
+      (census_context *)gpr_malloc(sizeof(census_context));
   // If we are given a base, copy it into our new tag set. Otherwise set it
   // to zero/NULL everything.
   if (base == NULL) {
@@ -459,7 +460,7 @@ static void tag_set_decode(struct tag_set *tags, const char *buffer,
   }
   tags->kvm_used = size - header_size;
   tags->kvm_size = tags->kvm_used + CENSUS_MAX_TAG_KV_LEN;
-  tags->kvm = gpr_malloc(tags->kvm_size);
+  tags->kvm = (char *)gpr_malloc(tags->kvm_size);
   if (tag_header_size != TAG_HEADER_SIZE) {
     // something new in the tag information. I don't understand it, so
     // don't copy it over.
@@ -481,7 +482,8 @@ static void tag_set_decode(struct tag_set *tags, const char *buffer,
 }
 
 census_context *census_context_decode(const char *buffer, size_t size) {
-  census_context *context = gpr_malloc(sizeof(census_context));
+  census_context *context =
+      (census_context *)gpr_malloc(sizeof(census_context));
   memset(&context->tags[LOCAL_TAGS], 0, sizeof(struct tag_set));
   if (buffer == NULL) {
     memset(&context->tags[PROPAGATED_TAGS], 0, sizeof(struct tag_set));

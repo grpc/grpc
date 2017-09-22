@@ -38,6 +38,8 @@ struct grpc_pollset {
 namespace grpc {
 namespace testing {
 
+auto& force_library_initialization = Library::get();
+
 static void* g_tag = (void*)(intptr_t)10;  // Some random number
 static grpc_completion_queue* g_cq;
 static grpc_event_engine_vtable g_vtable;
@@ -57,7 +59,8 @@ static void pollset_destroy(grpc_exec_ctx* exec_ctx, grpc_pollset* ps) {
   gpr_mu_destroy(&ps->mu);
 }
 
-static grpc_error* pollset_kick(grpc_pollset* p, grpc_pollset_worker* worker) {
+static grpc_error* pollset_kick(grpc_exec_ctx* exec_ctx, grpc_pollset* p,
+                                grpc_pollset_worker* worker) {
   return GRPC_ERROR_NONE;
 }
 

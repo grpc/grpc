@@ -106,13 +106,13 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
                                 .value.integer = 0},
                                {.type = GRPC_ARG_INTEGER,
                                 .key = GRPC_ARG_HTTP2_BDP_PROBE,
-                                .value.integer = 1}};
+                                .value.integer = 0}};
 
-  grpc_channel_args *client_args = NULL;
-  client_args = grpc_channel_args_copy_and_add(client_args, keepalive_args, 2);
+  grpc_channel_args client_args = {.num_args = GPR_ARRAY_SIZE(keepalive_args),
+                                   .args = keepalive_args};
 
   grpc_end2end_test_fixture f =
-      begin_test(config, "keepalive_timeout", client_args, NULL);
+      begin_test(config, "keepalive_timeout", &client_args, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
@@ -215,12 +215,6 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
 
   grpc_byte_buffer_destroy(response_payload);
   grpc_byte_buffer_destroy(response_payload_recv);
-
-  if (client_args != NULL) {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, client_args);
-    grpc_exec_ctx_finish(&exec_ctx);
-  }
 
   end_test(&f);
   config.tear_down_data(&f);

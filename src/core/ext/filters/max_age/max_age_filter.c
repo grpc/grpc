@@ -273,7 +273,7 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
 static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {
-  channel_data* chand = elem->channel_data;
+  channel_data* chand = (channel_data*)elem->channel_data;
   decrease_call_count(exec_ctx, chand);
 }
 
@@ -391,7 +391,6 @@ const grpc_channel_filter grpc_max_age_filter = {
     sizeof(channel_data),
     init_channel_elem,
     destroy_channel_elem,
-    grpc_call_next_get_peer,
     grpc_channel_next_get_info,
     "max_age"};
 
@@ -403,7 +402,7 @@ static bool maybe_add_max_age_filter(grpc_exec_ctx* exec_ctx,
   bool enable =
       grpc_channel_arg_get_integer(
           grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_AGE_MS),
-          MAX_CONNECTION_AGE_INTEGER_OPTIONS) != INT_MAX &&
+          MAX_CONNECTION_AGE_INTEGER_OPTIONS) != INT_MAX ||
       grpc_channel_arg_get_integer(
           grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_IDLE_MS),
           MAX_CONNECTION_IDLE_INTEGER_OPTIONS) != INT_MAX;

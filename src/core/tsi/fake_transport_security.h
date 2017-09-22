@@ -39,6 +39,11 @@ tsi_handshaker *tsi_create_fake_handshaker(int is_client);
 tsi_frame_protector *tsi_create_fake_frame_protector(
     size_t *max_protected_frame_size);
 
+/* Creates a zero-copy protector directly without going through the handshake
+ * phase. */
+tsi_zero_copy_grpc_protector *tsi_create_fake_zero_copy_grpc_protector(
+    size_t *max_protected_frame_size);
+
 #ifdef __cplusplus
 }
 #endif

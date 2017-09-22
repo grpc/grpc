@@ -14,14 +14,9 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary", "grpc_package")
 
-package(
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
-)
+grpc_package(name = "test/cpp/qps")
 
 grpc_cc_library(
     name = "parse_json",
@@ -51,6 +46,7 @@ grpc_cc_library(
         ":usage_timer",
         "//:grpc",
         "//:grpc++",
+        "//:grpc++_core_stats",
         "//src/proto/grpc/testing:control_proto",
         "//src/proto/grpc/testing:payloads_proto",
         "//src/proto/grpc/testing:services_proto",

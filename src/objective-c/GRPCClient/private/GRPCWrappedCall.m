@@ -68,6 +68,8 @@
     _op.data.send_initial_metadata.metadata = metadata.grpc_metadataArray;
     _op.data.send_initial_metadata.maybe_compression_level.is_set = false;
     _op.data.send_initial_metadata.maybe_compression_level.level = 0;
+    _op.data.send_initial_metadata.maybe_stream_compression_level.is_set = false;
+    _op.data.send_initial_metadata.maybe_stream_compression_level.level = 0;
     _op.flags = flags;
     _handler = handler;
   }
@@ -236,12 +238,13 @@
 }
 
 - (instancetype)init {
-  return [self initWithHost:nil serverName:nil path:nil];
+  return [self initWithHost:nil serverName:nil path:nil timeout:0];
 }
 
 - (instancetype)initWithHost:(NSString *)host
                   serverName:(NSString *)serverName
-                        path:(NSString *)path {
+                        path:(NSString *)path
+                     timeout:(NSTimeInterval)timeout {
   if (!path || !host) {
     [NSException raise:NSInvalidArgumentException
                 format:@"path and host cannot be nil."];
@@ -253,7 +256,10 @@
     // queue. Currently we use a singleton queue.
     _queue = [GRPCCompletionQueue completionQueue];
 
-    _call = [[GRPCHost hostWithAddress:host] unmanagedCallWithPath:path serverName:serverName completionQueue:_queue];
+    _call = [[GRPCHost hostWithAddress:host] unmanagedCallWithPath:path
+                                                        serverName:serverName
+                                                           timeout:timeout
+                                                   completionQueue:_queue];
     if (_call == NULL) {
       return nil;
     }

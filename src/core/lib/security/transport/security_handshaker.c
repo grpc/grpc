@@ -32,6 +32,7 @@
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/tsi/transport_security_grpc.h"
 
 #define GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE 256
 
@@ -127,24 +128,36 @@ static void security_handshake_failed_locked(grpc_exec_ctx *exec_ctx,
   GRPC_CLOSURE_SCHED(exec_ctx, h->on_handshake_done, error);
 }
 
-static void on_peer_checked(grpc_exec_ctx *exec_ctx, void *arg,
-                            grpc_error *error) {
-  security_handshaker *h = arg;
-  gpr_mu_lock(&h->mu);
+static void on_peer_checked_inner(grpc_exec_ctx *exec_ctx,
+                                  security_handshaker *h, grpc_error *error) {
   if (error != GRPC_ERROR_NONE || h->shutdown) {
     security_handshake_failed_locked(exec_ctx, h, GRPC_ERROR_REF(error));
-    goto done;
+    return;
   }
-  // Create frame protector.
-  tsi_frame_protector *protector;
-  tsi_result result = tsi_handshaker_result_create_frame_protector(
-      h->handshaker_result, NULL, &protector);
-  if (result != TSI_OK) {
+  // Create zero-copy frame protector, if implemented.
+  tsi_zero_copy_grpc_protector *zero_copy_protector = NULL;
+  tsi_result result = tsi_handshaker_result_create_zero_copy_grpc_protector(
+      exec_ctx, h->handshaker_result, NULL, &zero_copy_protector);
+  if (result != TSI_OK && result != TSI_UNIMPLEMENTED) {
     error = grpc_set_tsi_error_result(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Frame protector creation failed"),
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Zero-copy frame protector creation failed"),
         result);
     security_handshake_failed_locked(exec_ctx, h, error);
-    goto done;
+    return;
+  }
+  // Create frame protector if zero-copy frame protector is NULL.
+  tsi_frame_protector *protector = NULL;
+  if (zero_copy_protector == NULL) {
+    result = tsi_handshaker_result_create_frame_protector(h->handshaker_result,
+                                                          NULL, &protector);
+    if (result != TSI_OK) {
+      error = grpc_set_tsi_error_result(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                            "Frame protector creation failed"),
+                                        result);
+      security_handshake_failed_locked(exec_ctx, h, error);
+      return;
+    }
   }
   // Get unused bytes.
   const unsigned char *unused_bytes = NULL;
@@ -155,12 +168,12 @@ static void on_peer_checked(grpc_exec_ctx *exec_ctx, void *arg,
   if (unused_bytes_size > 0) {
     grpc_slice slice =
         grpc_slice_from_copied_buffer((char *)unused_bytes, unused_bytes_size);
-    h->args->endpoint =
-        grpc_secure_endpoint_create(protector, h->args->endpoint, &slice, 1);
+    h->args->endpoint = grpc_secure_endpoint_create(
+        protector, zero_copy_protector, h->args->endpoint, &slice, 1);
     grpc_slice_unref_internal(exec_ctx, slice);
   } else {
-    h->args->endpoint =
-        grpc_secure_endpoint_create(protector, h->args->endpoint, NULL, 0);
+    h->args->endpoint = grpc_secure_endpoint_create(
+        protector, zero_copy_protector, h->args->endpoint, NULL, 0);
   }
   tsi_handshaker_result_destroy(h->handshaker_result);
   h->handshaker_result = NULL;
@@ -177,7 +190,13 @@ static void on_peer_checked(grpc_exec_ctx *exec_ctx, void *arg,
   // Set shutdown to true so that subsequent calls to
   // security_handshaker_shutdown() do nothing.
   h->shutdown = true;
-done:
+}
+
+static void on_peer_checked(grpc_exec_ctx *exec_ctx, void *arg,
+                            grpc_error *error) {
+  security_handshaker *h = (security_handshaker *)arg;
+  gpr_mu_lock(&h->mu);
+  on_peer_checked_inner(exec_ctx, h, error);
   gpr_mu_unlock(&h->mu);
   security_handshaker_unref(exec_ctx, h);
 }
@@ -239,7 +258,7 @@ static grpc_error *on_handshake_next_done_locked(
 static void on_handshake_next_done_grpc_wrapper(
     tsi_result result, void *user_data, const unsigned char *bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result *handshaker_result) {
-  security_handshaker *h = user_data;
+  security_handshaker *h = (security_handshaker *)user_data;
   // This callback will be invoked by TSI in a non-grpc thread, so it's
   // safe to create our own exec_ctx here.
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -281,7 +300,7 @@ static grpc_error *do_handshaker_next_locked(
 
 static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
                                                  void *arg, grpc_error *error) {
-  security_handshaker *h = arg;
+  security_handshaker *h = (security_handshaker *)arg;
   gpr_mu_lock(&h->mu);
   if (error != GRPC_ERROR_NONE || h->shutdown) {
     security_handshake_failed_locked(
@@ -298,7 +317,8 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
     bytes_received_size += GRPC_SLICE_LENGTH(h->args->read_buffer->slices[i]);
   }
   if (bytes_received_size > h->handshake_buffer_size) {
-    h->handshake_buffer = gpr_realloc(h->handshake_buffer, bytes_received_size);
+    h->handshake_buffer =
+        (uint8_t *)gpr_realloc(h->handshake_buffer, bytes_received_size);
     h->handshake_buffer_size = bytes_received_size;
   }
   size_t offset = 0;
@@ -323,7 +343,7 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
 
 static void on_handshake_data_sent_to_peer(grpc_exec_ctx *exec_ctx, void *arg,
                                            grpc_error *error) {
-  security_handshaker *h = arg;
+  security_handshaker *h = (security_handshaker *)arg;
   gpr_mu_lock(&h->mu);
   if (error != GRPC_ERROR_NONE || h->shutdown) {
     security_handshake_failed_locked(
@@ -400,14 +420,15 @@ static const grpc_handshaker_vtable security_handshaker_vtable = {
 static grpc_handshaker *security_handshaker_create(
     grpc_exec_ctx *exec_ctx, tsi_handshaker *handshaker,
     grpc_security_connector *connector) {
-  security_handshaker *h = gpr_zalloc(sizeof(security_handshaker));
+  security_handshaker *h =
+      (security_handshaker *)gpr_zalloc(sizeof(security_handshaker));
   grpc_handshaker_init(&security_handshaker_vtable, &h->base);
   h->handshaker = handshaker;
   h->connector = GRPC_SECURITY_CONNECTOR_REF(connector, "handshake");
   gpr_mu_init(&h->mu);
   gpr_ref_init(&h->refs, 1);
   h->handshake_buffer_size = GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE;
-  h->handshake_buffer = gpr_malloc(h->handshake_buffer_size);
+  h->handshake_buffer = (uint8_t *)gpr_malloc(h->handshake_buffer_size);
   GRPC_CLOSURE_INIT(&h->on_handshake_data_sent_to_peer,
                     on_handshake_data_sent_to_peer, h,
                     grpc_schedule_on_exec_ctx);
@@ -450,7 +471,7 @@ static const grpc_handshaker_vtable fail_handshaker_vtable = {
     fail_handshaker_do_handshake};
 
 static grpc_handshaker *fail_handshaker_create() {
-  grpc_handshaker *h = gpr_malloc(sizeof(*h));
+  grpc_handshaker *h = (grpc_handshaker *)gpr_malloc(sizeof(*h));
   grpc_handshaker_init(&fail_handshaker_vtable, h);
   return h;
 }

@@ -1,0 +1,37 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": ["Grpc.Core/Grpc.Core.csproj",
+                    "Grpc.Auth/Grpc.Auth.csproj",
+                    "Grpc.Core.Testing/Grpc.Core.Testing.csproj",
+                    "Grpc.HealthCheck/Grpc.HealthCheck.csproj",
+                    "Grpc.Reflection/Grpc.HealthCheck.csproj"],
+          "exclude": [ "**/bin/**", "**/obj/**" ],
+          "cwd": ".."
+        }
+      ],
+      "properties": { "TargetFramework": "net45" },
+      "dest": "obj/api"
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [ "**/*.yml" ],
+        "cwd": "obj/api",
+        "dest": "api"
+      },
+      {
+        "files": [ "toc.yml"],
+      }
+    ],
+    "globalMetadata": {
+      "_appTitle": "gRPC C#",
+      "_enableSearch": true,
+      "_disableContribution": true
+    },
+    "dest": "html"
+  }
+}

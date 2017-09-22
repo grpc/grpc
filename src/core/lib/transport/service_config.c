@@ -59,7 +59,8 @@ struct grpc_service_config {
 };
 
 grpc_service_config* grpc_service_config_create(const char* json_string) {
-  grpc_service_config* service_config = gpr_malloc(sizeof(*service_config));
+  grpc_service_config* service_config =
+      (grpc_service_config*)gpr_malloc(sizeof(*service_config));
   service_config->json_string = gpr_strdup(json_string);
   service_config->json_tree =
       grpc_json_parse_string(service_config->json_string);
@@ -198,7 +199,8 @@ grpc_slice_hash_table* grpc_service_config_create_method_config_table(
         num_entries += count_names_in_method_config_json(method);
       }
       // Populate method config table entries.
-      entries = gpr_malloc(num_entries * sizeof(grpc_slice_hash_table_entry));
+      entries = (grpc_slice_hash_table_entry*)gpr_malloc(
+          num_entries * sizeof(grpc_slice_hash_table_entry));
       size_t idx = 0;
       for (grpc_json* method = field->child; method != NULL;
            method = method->next) {
@@ -230,7 +232,7 @@ void* grpc_method_config_table_get(grpc_exec_ctx* exec_ctx,
     char* path_str = grpc_slice_to_c_string(path);
     const char* sep = strrchr(path_str, '/') + 1;
     const size_t len = (size_t)(sep - path_str);
-    char* buf = gpr_malloc(len + 2);  // '*' and NUL
+    char* buf = (char*)gpr_malloc(len + 2);  // '*' and NUL
     memcpy(buf, path_str, len);
     buf[len] = '*';
     buf[len + 1] = '\0';

@@ -42,8 +42,9 @@ grpc_error *grpc_chttp2_incoming_metadata_buffer_add(
     grpc_mdelem elem) {
   buffer->size += GRPC_MDELEM_LENGTH(elem);
   return grpc_metadata_batch_add_tail(
-      exec_ctx, &buffer->batch,
-      gpr_arena_alloc(buffer->arena, sizeof(grpc_linked_mdelem)), elem);
+      exec_ctx, &buffer->batch, (grpc_linked_mdelem *)gpr_arena_alloc(
+                                    buffer->arena, sizeof(grpc_linked_mdelem)),
+      elem);
 }
 
 grpc_error *grpc_chttp2_incoming_metadata_buffer_replace_or_add(

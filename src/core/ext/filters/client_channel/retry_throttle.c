@@ -99,7 +99,7 @@ static grpc_server_retry_throttle_data* grpc_server_retry_throttle_data_create(
     int max_milli_tokens, int milli_token_ratio,
     grpc_server_retry_throttle_data* old_throttle_data) {
   grpc_server_retry_throttle_data* throttle_data =
-      gpr_malloc(sizeof(*throttle_data));
+      (grpc_server_retry_throttle_data*)gpr_malloc(sizeof(*throttle_data));
   memset(throttle_data, 0, sizeof(*throttle_data));
   gpr_ref_init(&throttle_data->refs, 1);
   throttle_data->max_milli_tokens = max_milli_tokens;
@@ -131,20 +131,22 @@ static grpc_server_retry_throttle_data* grpc_server_retry_throttle_data_create(
 //
 
 static void* copy_server_name(void* key, void* unused) {
-  return gpr_strdup(key);
+  return gpr_strdup((const char*)key);
 }
 
 static long compare_server_name(void* key1, void* key2, void* unused) {
-  return strcmp(key1, key2);
+  return strcmp((const char*)key1, (const char*)key2);
 }
 
 static void destroy_server_retry_throttle_data(void* value, void* unused) {
-  grpc_server_retry_throttle_data* throttle_data = value;
+  grpc_server_retry_throttle_data* throttle_data =
+      (grpc_server_retry_throttle_data*)value;
   grpc_server_retry_throttle_data_unref(throttle_data);
 }
 
 static void* copy_server_retry_throttle_data(void* value, void* unused) {
-  grpc_server_retry_throttle_data* throttle_data = value;
+  grpc_server_retry_throttle_data* throttle_data =
+      (grpc_server_retry_throttle_data*)value;
   return grpc_server_retry_throttle_data_ref(throttle_data);
 }
 
@@ -175,7 +177,8 @@ grpc_server_retry_throttle_data* grpc_retry_throttle_map_get_data_for_server(
     const char* server_name, int max_milli_tokens, int milli_token_ratio) {
   gpr_mu_lock(&g_mu);
   grpc_server_retry_throttle_data* throttle_data =
-      gpr_avl_get(g_avl, (char*)server_name, NULL);
+      (grpc_server_retry_throttle_data*)gpr_avl_get(g_avl, (char*)server_name,
+                                                    NULL);
   if (throttle_data == NULL) {
     // Entry not found.  Create a new one.
     throttle_data = grpc_server_retry_throttle_data_create(

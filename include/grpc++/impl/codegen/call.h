@@ -25,6 +25,7 @@
 #include <map>
 #include <memory>
 
+#include <grpc++/impl/codegen/byte_buffer.h>
 #include <grpc++/impl/codegen/call_hook.h>
 #include <grpc++/impl/codegen/client_context.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>
@@ -38,8 +39,6 @@
 #include <grpc/impl/codegen/atm.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
-
-struct grpc_byte_buffer;
 
 namespace grpc {
 
@@ -169,6 +168,15 @@ class WriteOptions {
     return *this;
   }
 
+  /// Guarantee that all bytes have been written to the wire before completing
+  /// this write (usually writes are completed when they pass flow control)
+  inline WriteOptions& set_write_through() {
+    SetBit(GRPC_WRITE_THROUGH);
+    return *this;
+  }
+
+  inline bool is_write_through() const { return GetBit(GRPC_WRITE_THROUGH); }
+
   /// Get value for the flag indicating that this is the last message, and
   /// should be coalesced with trailing metadata.
   ///
@@ -204,12 +212,14 @@ class CallOpSendInitialMetadata {
  public:
   CallOpSendInitialMetadata() : send_(false) {
     maybe_compression_level_.is_set = false;
+    maybe_stream_compression_level_.is_set = false;
   }
 
   void SendInitialMetadata(
       const std::multimap<grpc::string, grpc::string>& metadata,
       uint32_t flags) {
     maybe_compression_level_.is_set = false;
+    maybe_stream_compression_level_.is_set = false;
     send_ = true;
     flags_ = flags;
     initial_metadata_ =
@@ -219,6 +229,11 @@ class CallOpSendInitialMetadata {
   void set_compression_level(grpc_compression_level level) {
     maybe_compression_level_.is_set = true;
     maybe_compression_level_.level = level;
+  }
+
+  void set_stream_compression_level(grpc_stream_compression_level level) {
+    maybe_stream_compression_level_.is_set = true;
+    maybe_stream_compression_level_.level = level;
   }
 
  protected:
@@ -236,6 +251,12 @@ class CallOpSendInitialMetadata {
       op->data.send_initial_metadata.maybe_compression_level.level =
           maybe_compression_level_.level;
     }
+    op->data.send_initial_metadata.maybe_stream_compression_level.is_set =
+        maybe_stream_compression_level_.is_set;
+    if (maybe_stream_compression_level_.is_set) {
+      op->data.send_initial_metadata.maybe_stream_compression_level.level =
+          maybe_stream_compression_level_.level;
+    }
   }
   void FinishOp(bool* status) {
     if (!send_) return;
@@ -251,11 +272,15 @@ class CallOpSendInitialMetadata {
     bool is_set;
     grpc_compression_level level;
   } maybe_compression_level_;
+  struct {
+    bool is_set;
+    grpc_stream_compression_level level;
+  } maybe_stream_compression_level_;
 };
 
 class CallOpSendMessage {
  public:
-  CallOpSendMessage() : send_buf_(nullptr), own_buf_(false) {}
+  CallOpSendMessage() : send_buf_() {}
 
   /// Send \a message using \a options for the write. The \a options are cleared
   /// after use.
@@ -268,30 +293,37 @@ class CallOpSendMessage {
 
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
-    if (send_buf_ == nullptr) return;
+    if (!send_buf_.Valid()) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_MESSAGE;
     op->flags = write_options_.flags();
     op->reserved = NULL;
-    op->data.send_message.send_message = send_buf_;
+    op->data.send_message.send_message = send_buf_.c_buffer();
     // Flags are per-message: clear them after use.
     write_options_.Clear();
   }
-  void FinishOp(bool* status) {
-    if (own_buf_) g_core_codegen_interface->grpc_byte_buffer_destroy(send_buf_);
-    send_buf_ = nullptr;
-  }
+  void FinishOp(bool* status) { send_buf_.Clear(); }
 
  private:
-  grpc_byte_buffer* send_buf_;
+  ByteBuffer send_buf_;
   WriteOptions write_options_;
-  bool own_buf_;
 };
+
+namespace internal {
+template <class T>
+T Example();
+}  // namespace internal
 
 template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
-  return SerializationTraits<M>::Serialize(message, &send_buf_, &own_buf_);
+  bool own_buf;
+  Status result = SerializationTraits<M>::Serialize(
+      message, send_buf_.bbuf_ptr(), &own_buf);
+  if (!own_buf) {
+    send_buf_.Duplicate();
+  }
+  return result;
 }
 
 template <class M>
@@ -321,18 +353,20 @@ class CallOpRecvMessage {
     op->op = GRPC_OP_RECV_MESSAGE;
     op->flags = 0;
     op->reserved = NULL;
-    op->data.recv_message.recv_message = &recv_buf_;
+    op->data.recv_message.recv_message = recv_buf_.c_buffer_ptr();
   }
 
   void FinishOp(bool* status) {
     if (message_ == nullptr) return;
-    if (recv_buf_) {
+    if (recv_buf_.Valid()) {
       if (*status) {
         got_message = *status =
-            SerializationTraits<R>::Deserialize(recv_buf_, message_).ok();
+            SerializationTraits<R>::Deserialize(recv_buf_.bbuf_ptr(), message_)
+                .ok();
+        recv_buf_.Release();
       } else {
         got_message = false;
-        g_core_codegen_interface->grpc_byte_buffer_destroy(recv_buf_);
+        recv_buf_.Clear();
       }
     } else {
       got_message = false;
@@ -345,14 +379,14 @@ class CallOpRecvMessage {
 
  private:
   R* message_;
-  grpc_byte_buffer* recv_buf_;
+  ByteBuffer recv_buf_;
   bool allow_not_getting_message_;
 };
 
 namespace CallOpGenericRecvMessageHelper {
 class DeserializeFunc {
  public:
-  virtual Status Deserialize(grpc_byte_buffer* buf) = 0;
+  virtual Status Deserialize(ByteBuffer* buf) = 0;
   virtual ~DeserializeFunc() {}
 };
 
@@ -360,8 +394,8 @@ template <class R>
 class DeserializeFuncType final : public DeserializeFunc {
  public:
   DeserializeFuncType(R* message) : message_(message) {}
-  Status Deserialize(grpc_byte_buffer* buf) override {
-    return SerializationTraits<R>::Deserialize(buf, message_);
+  Status Deserialize(ByteBuffer* buf) override {
+    return SerializationTraits<R>::Deserialize(buf->bbuf_ptr(), message_);
   }
 
   ~DeserializeFuncType() override {}
@@ -397,18 +431,19 @@ class CallOpGenericRecvMessage {
     op->op = GRPC_OP_RECV_MESSAGE;
     op->flags = 0;
     op->reserved = NULL;
-    op->data.recv_message.recv_message = &recv_buf_;
+    op->data.recv_message.recv_message = recv_buf_.c_buffer_ptr();
   }
 
   void FinishOp(bool* status) {
     if (!deserialize_) return;
-    if (recv_buf_) {
+    if (recv_buf_.Valid()) {
       if (*status) {
         got_message = true;
-        *status = deserialize_->Deserialize(recv_buf_).ok();
+        *status = deserialize_->Deserialize(&recv_buf_).ok();
+        recv_buf_.Release();
       } else {
         got_message = false;
-        g_core_codegen_interface->grpc_byte_buffer_destroy(recv_buf_);
+        recv_buf_.Clear();
       }
     } else {
       got_message = false;
@@ -421,7 +456,7 @@ class CallOpGenericRecvMessage {
 
  private:
   std::unique_ptr<CallOpGenericRecvMessageHelper::DeserializeFunc> deserialize_;
-  grpc_byte_buffer* recv_buf_;
+  ByteBuffer recv_buf_;
   bool allow_not_getting_message_;
 };
 

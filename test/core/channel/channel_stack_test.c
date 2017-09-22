@@ -67,10 +67,6 @@ static void channel_func(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
   ++*(int *)(elem->channel_data);
 }
 
-static char *get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
-  return gpr_strdup("peer");
-}
-
 static void free_channel(grpc_exec_ctx *exec_ctx, void *arg,
                          grpc_error *error) {
   grpc_channel_stack_destroy(exec_ctx, arg);
@@ -93,7 +89,6 @@ static void test_create_channel_stack(void) {
       sizeof(int),
       channel_init_func,
       channel_destroy_func,
-      get_peer,
       grpc_channel_next_get_info,
       "some_test_filter"};
   const grpc_channel_filter *filters = &filter;

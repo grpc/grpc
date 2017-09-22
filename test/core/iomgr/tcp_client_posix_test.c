@@ -53,8 +53,10 @@ static gpr_timespec test_deadline(void) {
 static void finish_connection() {
   gpr_mu_lock(g_mu);
   g_connections_complete++;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(&exec_ctx, g_pollset, NULL)));
+  grpc_exec_ctx_finish(&exec_ctx);
   gpr_mu_unlock(g_mu);
 }
 

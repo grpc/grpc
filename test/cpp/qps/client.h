@@ -31,10 +31,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/payloads.pb.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 
+#include "src/cpp/util/core_stats.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/usage_timer.h"
@@ -173,6 +173,9 @@ class Client {
       timer_result = timer_->Mark();
     }
 
+    grpc_stats_data core_stats;
+    grpc_stats_collect(&core_stats);
+
     ClientStats stats;
     latencies.FillProto(stats.mutable_latencies());
     for (StatusHistogram::const_iterator it = statuses.begin();
@@ -185,6 +188,7 @@ class Client {
     stats.set_time_system(timer_result.system);
     stats.set_time_user(timer_result.user);
     stats.set_cq_poll_count(poll_count);
+    CoreStatsToProto(core_stats, stats.mutable_core_stats());
     return stats;
   }
 
@@ -370,12 +374,11 @@ class ClientImpl : public Client {
   ClientImpl(const ClientConfig& config,
              std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
                  create_stub)
-      : cores_(gpr_cpu_num_cores()),
-        channels_(config.client_channels()),
-        create_stub_(create_stub) {
+      : cores_(gpr_cpu_num_cores()), create_stub_(create_stub) {
     for (int i = 0; i < config.client_channels(); i++) {
-      channels_[i].init(config.server_targets(i % config.server_targets_size()),
-                        config, create_stub_, i);
+      channels_.emplace_back(
+          config.server_targets(i % config.server_targets_size()), config,
+          create_stub_, i);
     }
 
     ClientRequestCreator<RequestType> create_req(&request_,
@@ -389,20 +392,11 @@ class ClientImpl : public Client {
 
   class ClientChannelInfo {
    public:
-    ClientChannelInfo() {}
-    ClientChannelInfo(const ClientChannelInfo& i) {
-      // The copy constructor is to satisfy old compilers
-      // that need it for using std::vector . It is only ever
-      // used for empty entries
-      GPR_ASSERT(!i.channel_ && !i.stub_);
-    }
-    void init(const grpc::string& target, const ClientConfig& config,
-              std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
-                  create_stub,
-              int shard) {
-      // We have to use a 2-phase init like this with a default
-      // constructor followed by an initializer function to make
-      // old compilers happy with using this in std::vector
+    ClientChannelInfo(
+        const grpc::string& target, const ClientConfig& config,
+        std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
+            create_stub,
+        int shard) {
       ChannelArguments args;
       args.SetInt("shard_to_ensure_no_subchannel_merges", shard);
       set_channel_args(config, &args);

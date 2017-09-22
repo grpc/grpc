@@ -23,11 +23,21 @@ def docker_for_windows_image()
   dockerfile = File.join(grpc_root, 'third_party', 'rake-compiler-dock', 'Dockerfile') 
   dockerpath = File.dirname(dockerfile)
   version = Digest::SHA1.file(dockerfile).hexdigest
-  image_name = 'grpc/rake-compiler-dock:' + version
-  cmd = "docker build -t #{image_name} --file #{dockerfile} #{dockerpath}"
-  puts cmd
-  system cmd
-  raise "Failed to build the docker image." unless $? == 0
+  image_name = 'rake-compiler-dock_' + version
+  # if "DOCKERHUB_ORGANIZATION" env is set, we try to pull the pre-built
+  # rake-compiler-dock image from dockerhub rather then building from scratch.
+  if ENV.has_key?('DOCKERHUB_ORGANIZATION')
+    image_name = ENV['DOCKERHUB_ORGANIZATION'] + '/' + image_name
+    cmd = "docker pull #{image_name}"
+    puts cmd
+    system cmd
+    raise "Failed to pull the docker image." unless $? == 0
+  else
+    cmd = "docker build -t #{image_name} --file #{dockerfile} #{dockerpath}"
+    puts cmd
+    system cmd
+    raise "Failed to build the docker image." unless $? == 0
+  end
   image_name
 end
 

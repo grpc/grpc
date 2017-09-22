@@ -28,11 +28,12 @@
 
 grpc_lb_addresses* grpc_lb_addresses_create(
     size_t num_addresses, const grpc_lb_user_data_vtable* user_data_vtable) {
-  grpc_lb_addresses* addresses = gpr_zalloc(sizeof(grpc_lb_addresses));
+  grpc_lb_addresses* addresses =
+      (grpc_lb_addresses*)gpr_zalloc(sizeof(grpc_lb_addresses));
   addresses->num_addresses = num_addresses;
   addresses->user_data_vtable = user_data_vtable;
   const size_t addresses_size = sizeof(grpc_lb_address) * num_addresses;
-  addresses->addresses = gpr_zalloc(addresses_size);
+  addresses->addresses = (grpc_lb_address*)gpr_zalloc(addresses_size);
   return addresses;
 }
 
@@ -125,13 +126,14 @@ void grpc_lb_addresses_destroy(grpc_exec_ctx* exec_ctx,
 }
 
 static void* lb_addresses_copy(void* addresses) {
-  return grpc_lb_addresses_copy(addresses);
+  return grpc_lb_addresses_copy((grpc_lb_addresses*)addresses);
 }
 static void lb_addresses_destroy(grpc_exec_ctx* exec_ctx, void* addresses) {
-  grpc_lb_addresses_destroy(exec_ctx, addresses);
+  grpc_lb_addresses_destroy(exec_ctx, (grpc_lb_addresses*)addresses);
 }
 static int lb_addresses_cmp(void* addresses1, void* addresses2) {
-  return grpc_lb_addresses_cmp(addresses1, addresses2);
+  return grpc_lb_addresses_cmp((grpc_lb_addresses*)addresses1,
+                               (grpc_lb_addresses*)addresses2);
 }
 static const grpc_arg_pointer_vtable lb_addresses_arg_vtable = {
     lb_addresses_copy, lb_addresses_destroy, lb_addresses_cmp};
@@ -139,7 +141,7 @@ static const grpc_arg_pointer_vtable lb_addresses_arg_vtable = {
 grpc_arg grpc_lb_addresses_create_channel_arg(
     const grpc_lb_addresses* addresses) {
   return grpc_channel_arg_pointer_create(
-      GRPC_ARG_LB_ADDRESSES, (void*)addresses, &lb_addresses_arg_vtable);
+      (char*)GRPC_ARG_LB_ADDRESSES, (void*)addresses, &lb_addresses_arg_vtable);
 }
 
 grpc_lb_addresses* grpc_lb_addresses_find_channel_arg(
@@ -148,7 +150,7 @@ grpc_lb_addresses* grpc_lb_addresses_find_channel_arg(
       grpc_channel_args_find(channel_args, GRPC_ARG_LB_ADDRESSES);
   if (lb_addresses_arg == NULL || lb_addresses_arg->type != GRPC_ARG_POINTER)
     return NULL;
-  return lb_addresses_arg->value.pointer.p;
+  return (grpc_lb_addresses*)lb_addresses_arg->value.pointer.p;
 }
 
 void grpc_lb_policy_factory_ref(grpc_lb_policy_factory* factory) {

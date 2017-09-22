@@ -32,6 +32,7 @@
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
@@ -125,7 +126,6 @@ static const grpc_resolver_vtable fake_resolver_vtable = {
 
 struct grpc_fake_resolver_response_generator {
   fake_resolver* resolver;  // Set by the fake_resolver constructor to itself.
-  grpc_channel_args* next_response;
   gpr_refcount refcount;
 };
 
@@ -151,19 +151,26 @@ void grpc_fake_resolver_response_generator_unref(
   }
 }
 
-static void set_response_cb(grpc_exec_ctx* exec_ctx, void* arg,
-                            grpc_error* error) {
-  grpc_fake_resolver_response_generator* generator =
-      (grpc_fake_resolver_response_generator*)arg;
+typedef struct set_response_closure_arg {
+  grpc_closure set_response_closure;
+  grpc_fake_resolver_response_generator* generator;
+  grpc_channel_args* next_response;
+} set_response_closure_arg;
+
+static void set_response_closure_fn(grpc_exec_ctx* exec_ctx, void* arg,
+                                    grpc_error* error) {
+  set_response_closure_arg* closure_arg = (set_response_closure_arg*)arg;
+  grpc_fake_resolver_response_generator* generator = closure_arg->generator;
   fake_resolver* r = generator->resolver;
   if (r->next_results != NULL) {
     grpc_channel_args_destroy(exec_ctx, r->next_results);
   }
-  r->next_results = generator->next_response;
+  r->next_results = closure_arg->next_response;
   if (r->results_upon_error != NULL) {
     grpc_channel_args_destroy(exec_ctx, r->results_upon_error);
   }
-  r->results_upon_error = grpc_channel_args_copy(generator->next_response);
+  r->results_upon_error = grpc_channel_args_copy(closure_arg->next_response);
+  gpr_free(closure_arg);
   fake_resolver_maybe_finish_next_locked(exec_ctx, r);
 }
 
@@ -171,12 +178,16 @@ void grpc_fake_resolver_response_generator_set_response(
     grpc_exec_ctx* exec_ctx, grpc_fake_resolver_response_generator* generator,
     grpc_channel_args* next_response) {
   GPR_ASSERT(generator->resolver != NULL);
-  generator->next_response = grpc_channel_args_copy(next_response);
-  GRPC_CLOSURE_SCHED(
-      exec_ctx, GRPC_CLOSURE_CREATE(set_response_cb, generator,
-                                    grpc_combiner_scheduler(
-                                        generator->resolver->base.combiner)),
-      GRPC_ERROR_NONE);
+  set_response_closure_arg* closure_arg =
+      (set_response_closure_arg*)gpr_zalloc(sizeof(*closure_arg));
+  closure_arg->generator = generator;
+  closure_arg->next_response = grpc_channel_args_copy(next_response);
+  GRPC_CLOSURE_SCHED(exec_ctx,
+                     GRPC_CLOSURE_INIT(&closure_arg->set_response_closure,
+                                       set_response_closure_fn, closure_arg,
+                                       grpc_combiner_scheduler(
+                                           generator->resolver->base.combiner)),
+                     GRPC_ERROR_NONE);
 }
 
 static void* response_generator_arg_copy(void* p) {
@@ -199,7 +210,7 @@ grpc_arg grpc_fake_resolver_response_generator_arg(
     grpc_fake_resolver_response_generator* generator) {
   grpc_arg arg;
   arg.type = GRPC_ARG_POINTER;
-  arg.key = GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR;
+  arg.key = (char*)GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR;
   arg.value.pointer.p = generator;
   arg.value.pointer.vtable = &response_generator_arg_vtable;
   return arg;

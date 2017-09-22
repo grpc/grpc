@@ -57,6 +57,7 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/string_util.h",
     "include/grpc/support/subprocess.h",
     "include/grpc/support/sync.h",
+    "include/grpc/support/sync_custom.h",
     "include/grpc/support/sync_generic.h",
     "include/grpc/support/sync_posix.h",
     "include/grpc/support/sync_windows.h",
@@ -523,7 +524,6 @@ grpc_cc_library(
         "src/core/lib/support/stack_lockfree.h",
         "src/core/lib/support/string.h",
         "src/core/lib/support/string_windows.h",
-        "src/core/lib/support/thd_internal.h",
         "src/core/lib/support/time_precise.h",
         "src/core/lib/support/tmpfile.h",
     ],
@@ -546,6 +546,7 @@ grpc_cc_library(
         "include/grpc/impl/codegen/gpr_types.h",
         "include/grpc/impl/codegen/port_platform.h",
         "include/grpc/impl/codegen/sync.h",
+        "include/grpc/impl/codegen/sync_custom.h",
         "include/grpc/impl/codegen/sync_generic.h",
         "include/grpc/impl/codegen/sync_posix.h",
         "include/grpc/impl/codegen/sync_windows.h",
@@ -573,9 +574,14 @@ grpc_cc_library(
         "src/core/lib/compression/compression.c",
         "src/core/lib/compression/message_compress.c",
         "src/core/lib/compression/stream_compression.c",
+        "src/core/lib/compression/stream_compression_gzip.c",
+        "src/core/lib/compression/stream_compression_identity.c",
+        "src/core/lib/debug/stats.c",
+        "src/core/lib/debug/stats_data.c",
         "src/core/lib/http/format_request.c",
         "src/core/lib/http/httpcli.c",
         "src/core/lib/http/parser.c",
+        "src/core/lib/iomgr/call_combiner.c",
         "src/core/lib/iomgr/closure.c",
         "src/core/lib/iomgr/combiner.c",
         "src/core/lib/iomgr/endpoint.c",
@@ -584,8 +590,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/endpoint_pair_windows.c",
         "src/core/lib/iomgr/error.c",
         "src/core/lib/iomgr/ev_epoll1_linux.c",
-        "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c",
-        "src/core/lib/iomgr/ev_epoll_thread_pool_linux.c",
         "src/core/lib/iomgr/ev_epollex_linux.c",
         "src/core/lib/iomgr/ev_epollsig_linux.c",
         "src/core/lib/iomgr/ev_poll_posix.c",
@@ -703,9 +707,14 @@ grpc_cc_library(
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/message_compress.h",
         "src/core/lib/compression/stream_compression.h",
+        "src/core/lib/compression/stream_compression_gzip.h",
+        "src/core/lib/compression/stream_compression_identity.h",
+        "src/core/lib/debug/stats.h",
+        "src/core/lib/debug/stats_data.h",
         "src/core/lib/http/format_request.h",
         "src/core/lib/http/httpcli.h",
         "src/core/lib/http/parser.h",
+        "src/core/lib/iomgr/call_combiner.h",
         "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/combiner.h",
         "src/core/lib/iomgr/endpoint.h",
@@ -713,8 +722,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/error.h",
         "src/core/lib/iomgr/error_internal.h",
         "src/core/lib/iomgr/ev_epoll1_linux.h",
-        "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h",
-        "src/core/lib/iomgr/ev_epoll_thread_pool_linux.h",
         "src/core/lib/iomgr/ev_epollex_linux.h",
         "src/core/lib/iomgr/ev_epollsig_linux.h",
         "src/core/lib/iomgr/ev_poll_posix.h",
@@ -840,7 +847,7 @@ grpc_cc_library(
         "grpc_deadline_filter",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
-        "grpc_load_reporting",
+        "grpc_server_load_reporting",
         "grpc_max_age_filter",
         "grpc_message_size_filter",
         "grpc_resolver_dns_ares",
@@ -986,6 +993,7 @@ grpc_cc_library(
     name = "grpc_codegen",
     language = "c",
     public_hdrs = [
+        "include/grpc/impl/codegen/byte_buffer.h",
         "include/grpc/impl/codegen/byte_buffer_reader.h",
         "include/grpc/impl/codegen/compression_types.h",
         "include/grpc/impl/codegen/connectivity_state.h",
@@ -1084,14 +1092,14 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_load_reporting",
+    name = "grpc_server_load_reporting",
     srcs = [
-        "src/core/ext/filters/load_reporting/load_reporting.c",
-        "src/core/ext/filters/load_reporting/load_reporting_filter.c",
+        "src/core/ext/filters/load_reporting/server_load_reporting_filter.c",
+        "src/core/ext/filters/load_reporting/server_load_reporting_plugin.c",
     ],
     hdrs = [
-        "src/core/ext/filters/load_reporting/load_reporting.h",
-        "src/core/ext/filters/load_reporting/load_reporting_filter.h",
+        "src/core/ext/filters/load_reporting/server_load_reporting_filter.h",
+        "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h",
     ],
     language = "c",
     deps = [
@@ -1484,6 +1492,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc++/impl/codegen/async_stream.h",
         "include/grpc++/impl/codegen/async_unary_call.h",
+        "include/grpc++/impl/codegen/byte_buffer.h",
         "include/grpc++/impl/codegen/call.h",
         "include/grpc++/impl/codegen/call_hook.h",
         "include/grpc++/impl/codegen/channel_interface.h",
@@ -1593,6 +1602,21 @@ grpc_cc_library(
     language = "c",
     deps = [
         "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_core_stats",
+    srcs = [
+        "src/cpp/util/core_stats.cc",
+    ],
+    hdrs = [
+        "src/cpp/util/core_stats.h",
+    ],
+    language = "c++",
+    deps = [
+        ":grpc++",
+        "//src/proto/grpc/core:stats_proto",
     ],
 )
 

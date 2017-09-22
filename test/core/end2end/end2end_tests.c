@@ -132,6 +132,12 @@ extern void simple_metadata(grpc_end2end_test_config config);
 extern void simple_metadata_pre_init(void);
 extern void simple_request(grpc_end2end_test_config config);
 extern void simple_request_pre_init(void);
+extern void stream_compression_compressed_payload(grpc_end2end_test_config config);
+extern void stream_compression_compressed_payload_pre_init(void);
+extern void stream_compression_payload(grpc_end2end_test_config config);
+extern void stream_compression_payload_pre_init(void);
+extern void stream_compression_ping_pong_streaming(grpc_end2end_test_config config);
+extern void stream_compression_ping_pong_streaming_pre_init(void);
 extern void streaming_error_response(grpc_end2end_test_config config);
 extern void streaming_error_response_pre_init(void);
 extern void trailing_metadata(grpc_end2end_test_config config);
@@ -198,6 +204,9 @@ void grpc_end2end_tests_pre_init(void) {
   simple_delayed_request_pre_init();
   simple_metadata_pre_init();
   simple_request_pre_init();
+  stream_compression_compressed_payload_pre_init();
+  stream_compression_payload_pre_init();
+  stream_compression_ping_pong_streaming_pre_init();
   streaming_error_response_pre_init();
   trailing_metadata_pre_init();
   workaround_cronet_compression_pre_init();
@@ -263,6 +272,9 @@ void grpc_end2end_tests(int argc, char **argv,
     simple_delayed_request(config);
     simple_metadata(config);
     simple_request(config);
+    stream_compression_compressed_payload(config);
+    stream_compression_payload(config);
+    stream_compression_ping_pong_streaming(config);
     streaming_error_response(config);
     trailing_metadata(config);
     workaround_cronet_compression(config);
@@ -474,6 +486,18 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("simple_request", argv[i])) {
       simple_request(config);
+      continue;
+    }
+    if (0 == strcmp("stream_compression_compressed_payload", argv[i])) {
+      stream_compression_compressed_payload(config);
+      continue;
+    }
+    if (0 == strcmp("stream_compression_payload", argv[i])) {
+      stream_compression_payload(config);
+      continue;
+    }
+    if (0 == strcmp("stream_compression_ping_pong_streaming", argv[i])) {
+      stream_compression_ping_pong_streaming(config);
       continue;
     }
     if (0 == strcmp("streaming_error_response", argv[i])) {

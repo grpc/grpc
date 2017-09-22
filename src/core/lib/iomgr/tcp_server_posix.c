@@ -74,7 +74,7 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
                                    grpc_tcp_server **server) {
   gpr_once_init(&check_init, init);
 
-  grpc_tcp_server *s = gpr_zalloc(sizeof(grpc_tcp_server));
+  grpc_tcp_server *s = (grpc_tcp_server *)gpr_zalloc(sizeof(grpc_tcp_server));
   s->so_reuseport = has_so_reuseport;
   s->expand_wildcard_addrs = false;
   for (size_t i = 0; i < (args == NULL ? 0 : args->num_args); i++) {
@@ -138,7 +138,7 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
 
 static void destroyed_port(grpc_exec_ctx *exec_ctx, void *server,
                            grpc_error *error) {
-  grpc_tcp_server *s = server;
+  grpc_tcp_server *s = (grpc_tcp_server *)server;
   gpr_mu_lock(&s->mu);
   s->destroyed_ports++;
   if (s->destroyed_ports == s->nports) {
@@ -197,13 +197,13 @@ static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
 
 /* event manager callback when reads are ready */
 static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
-  grpc_tcp_listener *sp = arg;
-
+  grpc_tcp_listener *sp = (grpc_tcp_listener *)arg;
+  grpc_pollset *read_notifier_pollset;
   if (err != GRPC_ERROR_NONE) {
     goto error;
   }
 
-  grpc_pollset *read_notifier_pollset =
+  read_notifier_pollset =
       sp->server->pollsets[(size_t)gpr_atm_no_barrier_fetch_add(
                                &sp->server->next_pollset_to_assign, 1) %
                            sp->server->pollset_count];
@@ -251,7 +251,8 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
     grpc_pollset_add_fd(exec_ctx, read_notifier_pollset, fdobj);
 
     // Create acceptor.
-    grpc_tcp_server_acceptor *acceptor = gpr_malloc(sizeof(*acceptor));
+    grpc_tcp_server_acceptor *acceptor =
+        (grpc_tcp_server_acceptor *)gpr_malloc(sizeof(*acceptor));
     acceptor->from_server = sp->server;
     acceptor->port_index = sp->port_index;
     acceptor->fd_index = sp->fd_index;
@@ -365,7 +366,7 @@ static grpc_error *clone_port(grpc_tcp_listener *listener, unsigned count) {
     listener->server->nports++;
     grpc_sockaddr_to_string(&addr_str, &listener->addr, 1);
     gpr_asprintf(&name, "tcp-server-listener:%s/clone-%d", addr_str, i);
-    sp = gpr_malloc(sizeof(grpc_tcp_listener));
+    sp = (grpc_tcp_listener *)gpr_malloc(sizeof(grpc_tcp_listener));
     sp->next = listener->next;
     listener->next = sp;
     /* sp (the new listener) is a sibling of 'listener' (the original

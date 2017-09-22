@@ -16,11 +16,12 @@
 import time
 
 from src.proto.grpc.testing import metrics_pb2
+from src.proto.grpc.testing import metrics_pb2_grpc
 
 GAUGE_NAME = 'python_overall_qps'
 
 
-class MetricsServer(metrics_pb2.MetricsServiceServicer):
+class MetricsServer(metrics_pb2_grpc.MetricsServiceServicer):
 
     def __init__(self, histogram):
         self._start_time = time.time()

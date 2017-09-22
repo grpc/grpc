@@ -25,7 +25,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/useful.h>
-#include "src/core/tsi/transport_security.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/tsi/transport_security_grpc.h"
 
 /* --- Constants. ---*/
 #define TSI_FAKE_FRAME_HEADER_SIZE 4
@@ -74,6 +75,14 @@ typedef struct {
   size_t max_frame_size;
 } tsi_fake_frame_protector;
 
+typedef struct {
+  tsi_zero_copy_grpc_protector base;
+  grpc_slice_buffer header_sb;
+  grpc_slice_buffer protected_sb;
+  size_t max_frame_size;
+  size_t parsed_frame_size;
+} tsi_fake_zero_copy_grpc_protector;
+
 /* --- Utils. ---*/
 
 static const char *tsi_fake_handshake_message_strings[] = {
@@ -111,6 +120,28 @@ static void store32_little_endian(uint32_t value, unsigned char *buf) {
   buf[2] = (unsigned char)((value >> 16) & 0xFF);
   buf[1] = (unsigned char)((value >> 8) & 0xFF);
   buf[0] = (unsigned char)((value)&0xFF);
+}
+
+static uint32_t read_frame_size(const grpc_slice_buffer *sb) {
+  GPR_ASSERT(sb != NULL && sb->length >= TSI_FAKE_FRAME_HEADER_SIZE);
+  uint8_t frame_size_buffer[TSI_FAKE_FRAME_HEADER_SIZE];
+  uint8_t *buf = frame_size_buffer;
+  /* Copies the first 4 bytes to a temporary buffer.  */
+  size_t remaining = TSI_FAKE_FRAME_HEADER_SIZE;
+  for (size_t i = 0; i < sb->count; i++) {
+    size_t slice_length = GRPC_SLICE_LENGTH(sb->slices[i]);
+    if (remaining <= slice_length) {
+      memcpy(buf, GRPC_SLICE_START_PTR(sb->slices[i]), remaining);
+      remaining = 0;
+      break;
+    } else {
+      memcpy(buf, GRPC_SLICE_START_PTR(sb->slices[i]), slice_length);
+      buf += slice_length;
+      remaining -= slice_length;
+    }
+  }
+  GPR_ASSERT(remaining == 0);
+  return load32_little_endian(frame_size_buffer);
 }
 
 static void tsi_fake_frame_reset(tsi_fake_frame *frame, int needs_draining) {
@@ -363,6 +394,84 @@ static const tsi_frame_protector_vtable frame_protector_vtable = {
     fake_protector_unprotect, fake_protector_destroy,
 };
 
+/* --- tsi_zero_copy_grpc_protector methods implementation. ---*/
+
+static tsi_result fake_zero_copy_grpc_protector_protect(
+    grpc_exec_ctx *exec_ctx, tsi_zero_copy_grpc_protector *self,
+    grpc_slice_buffer *unprotected_slices,
+    grpc_slice_buffer *protected_slices) {
+  if (self == NULL || unprotected_slices == NULL || protected_slices == NULL) {
+    return TSI_INVALID_ARGUMENT;
+  }
+  tsi_fake_zero_copy_grpc_protector *impl =
+      (tsi_fake_zero_copy_grpc_protector *)self;
+  /* Protects each frame. */
+  while (unprotected_slices->length > 0) {
+    size_t frame_length =
+        GPR_MIN(impl->max_frame_size,
+                unprotected_slices->length + TSI_FAKE_FRAME_HEADER_SIZE);
+    grpc_slice slice = GRPC_SLICE_MALLOC(TSI_FAKE_FRAME_HEADER_SIZE);
+    store32_little_endian((uint32_t)frame_length, GRPC_SLICE_START_PTR(slice));
+    grpc_slice_buffer_add(protected_slices, slice);
+    size_t data_length = frame_length - TSI_FAKE_FRAME_HEADER_SIZE;
+    grpc_slice_buffer_move_first(unprotected_slices, data_length,
+                                 protected_slices);
+  }
+  return TSI_OK;
+}
+
+static tsi_result fake_zero_copy_grpc_protector_unprotect(
+    grpc_exec_ctx *exec_ctx, tsi_zero_copy_grpc_protector *self,
+    grpc_slice_buffer *protected_slices,
+    grpc_slice_buffer *unprotected_slices) {
+  if (self == NULL || unprotected_slices == NULL || protected_slices == NULL) {
+    return TSI_INVALID_ARGUMENT;
+  }
+  tsi_fake_zero_copy_grpc_protector *impl =
+      (tsi_fake_zero_copy_grpc_protector *)self;
+  grpc_slice_buffer_move_into(protected_slices, &impl->protected_sb);
+  /* Unprotect each frame, if we get a full frame. */
+  while (impl->protected_sb.length >= TSI_FAKE_FRAME_HEADER_SIZE) {
+    if (impl->parsed_frame_size == 0) {
+      impl->parsed_frame_size = read_frame_size(&impl->protected_sb);
+      if (impl->parsed_frame_size <= 4) {
+        gpr_log(GPR_ERROR, "Invalid frame size.");
+        return TSI_DATA_CORRUPTED;
+      }
+    }
+    /* If we do not have a full frame, return with OK status. */
+    if (impl->protected_sb.length < impl->parsed_frame_size) break;
+    /* Strips header bytes. */
+    grpc_slice_buffer_move_first(&impl->protected_sb,
+                                 TSI_FAKE_FRAME_HEADER_SIZE, &impl->header_sb);
+    /* Moves data to unprotected slices. */
+    grpc_slice_buffer_move_first(
+        &impl->protected_sb,
+        impl->parsed_frame_size - TSI_FAKE_FRAME_HEADER_SIZE,
+        unprotected_slices);
+    impl->parsed_frame_size = 0;
+    grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &impl->header_sb);
+  }
+  return TSI_OK;
+}
+
+static void fake_zero_copy_grpc_protector_destroy(
+    grpc_exec_ctx *exec_ctx, tsi_zero_copy_grpc_protector *self) {
+  if (self == NULL) return;
+  tsi_fake_zero_copy_grpc_protector *impl =
+      (tsi_fake_zero_copy_grpc_protector *)self;
+  grpc_slice_buffer_destroy_internal(exec_ctx, &impl->header_sb);
+  grpc_slice_buffer_destroy_internal(exec_ctx, &impl->protected_sb);
+  gpr_free(impl);
+}
+
+static const tsi_zero_copy_grpc_protector_vtable
+    zero_copy_grpc_protector_vtable = {
+        fake_zero_copy_grpc_protector_protect,
+        fake_zero_copy_grpc_protector_unprotect,
+        fake_zero_copy_grpc_protector_destroy,
+};
+
 /* --- tsi_handshaker_result methods implementation. ---*/
 
 typedef struct {
@@ -381,6 +490,15 @@ static tsi_result fake_handshaker_result_extract_peer(
       &peer->properties[0]);
   if (result != TSI_OK) tsi_peer_destruct(peer);
   return result;
+}
+
+static tsi_result fake_handshaker_result_create_zero_copy_grpc_protector(
+    void *exec_ctx, const tsi_handshaker_result *self,
+    size_t *max_output_protected_frame_size,
+    tsi_zero_copy_grpc_protector **protector) {
+  *protector =
+      tsi_create_fake_zero_copy_grpc_protector(max_output_protected_frame_size);
+  return TSI_OK;
 }
 
 static tsi_result fake_handshaker_result_create_frame_protector(
@@ -407,7 +525,7 @@ static void fake_handshaker_result_destroy(tsi_handshaker_result *self) {
 
 static const tsi_handshaker_result_vtable handshaker_result_vtable = {
     fake_handshaker_result_extract_peer,
-    NULL, /* create_zero_copy_grpc_protector */
+    fake_handshaker_result_create_zero_copy_grpc_protector,
     fake_handshaker_result_create_frame_protector,
     fake_handshaker_result_get_unused_bytes,
     fake_handshaker_result_destroy,
@@ -629,5 +747,18 @@ tsi_frame_protector *tsi_create_fake_frame_protector(
                              ? TSI_FAKE_DEFAULT_FRAME_SIZE
                              : *max_protected_frame_size;
   impl->base.vtable = &frame_protector_vtable;
+  return &impl->base;
+}
+
+tsi_zero_copy_grpc_protector *tsi_create_fake_zero_copy_grpc_protector(
+    size_t *max_protected_frame_size) {
+  tsi_fake_zero_copy_grpc_protector *impl = gpr_zalloc(sizeof(*impl));
+  grpc_slice_buffer_init(&impl->header_sb);
+  grpc_slice_buffer_init(&impl->protected_sb);
+  impl->max_frame_size = (max_protected_frame_size == NULL)
+                             ? TSI_FAKE_DEFAULT_FRAME_SIZE
+                             : *max_protected_frame_size;
+  impl->parsed_frame_size = 0;
+  impl->base.vtable = &zero_copy_grpc_protector_vtable;
   return &impl->base;
 }

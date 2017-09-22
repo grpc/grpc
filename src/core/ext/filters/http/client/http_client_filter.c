@@ -36,6 +36,7 @@
 static const size_t kMaxPayloadSizeForGet = 2048;
 
 typedef struct call_data {
+  grpc_call_combiner *call_combiner;
   // State for handling send_initial_metadata ops.
   grpc_linked_mdelem method;
   grpc_linked_mdelem scheme;
@@ -138,8 +139,8 @@ static grpc_error *client_filter_incoming_metadata(grpc_exec_ctx *exec_ctx,
 
 static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
                                         void *user_data, grpc_error *error) {
-  grpc_call_element *elem = user_data;
-  call_data *calld = elem->call_data;
+  grpc_call_element *elem = (grpc_call_element *)user_data;
+  call_data *calld = (call_data *)elem->call_data;
   if (error == GRPC_ERROR_NONE) {
     error = client_filter_incoming_metadata(exec_ctx, elem,
                                             calld->recv_initial_metadata);
@@ -153,8 +154,8 @@ static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
 static void recv_trailing_metadata_on_complete(grpc_exec_ctx *exec_ctx,
                                                void *user_data,
                                                grpc_error *error) {
-  grpc_call_element *elem = user_data;
-  call_data *calld = elem->call_data;
+  grpc_call_element *elem = (grpc_call_element *)user_data;
+  call_data *calld = (call_data *)elem->call_data;
   if (error == GRPC_ERROR_NONE) {
     error = client_filter_incoming_metadata(exec_ctx, elem,
                                             calld->recv_trailing_metadata);
@@ -215,13 +216,13 @@ static void on_send_message_next_done(grpc_exec_ctx *exec_ctx, void *arg,
   call_data *calld = (call_data *)elem->call_data;
   if (error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(
-        exec_ctx, calld->send_message_batch, error);
+        exec_ctx, calld->send_message_batch, error, calld->call_combiner);
     return;
   }
   error = pull_slice_from_send_message(exec_ctx, calld);
   if (error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(
-        exec_ctx, calld->send_message_batch, error);
+        exec_ctx, calld->send_message_batch, error, calld->call_combiner);
     return;
   }
   // There may or may not be more to read, but we don't care.  If we got
@@ -233,7 +234,7 @@ static void on_send_message_next_done(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 static char *slice_buffer_to_string(grpc_slice_buffer *slice_buffer) {
-  char *payload_bytes = gpr_malloc(slice_buffer->length + 1);
+  char *payload_bytes = (char *)gpr_malloc(slice_buffer->length + 1);
   size_t offset = 0;
   for (size_t i = 0; i < slice_buffer->count; ++i) {
     memcpy(payload_bytes + offset,
@@ -299,10 +300,9 @@ static void remove_if_present(grpc_exec_ctx *exec_ctx,
 static void hc_start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *batch) {
-  call_data *calld = elem->call_data;
-  channel_data *channeld = elem->channel_data;
+  call_data *calld = (call_data *)elem->call_data;
+  channel_data *channeld = (channel_data *)elem->channel_data;
   GPR_TIMER_BEGIN("hc_start_transport_stream_op_batch", 0);
-  GRPC_CALL_LOG_OP(GPR_INFO, elem, batch);
 
   if (batch->recv_initial_metadata) {
     /* substitute our callback for the higher callback */
@@ -414,7 +414,7 @@ static void hc_start_transport_stream_op_batch(
 done:
   if (error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(
-        exec_ctx, calld->send_message_batch, error);
+        exec_ctx, calld->send_message_batch, error, calld->call_combiner);
   } else if (!batch_will_be_handled_asynchronously) {
     grpc_call_next_op(exec_ctx, elem, batch);
   }
@@ -426,6 +426,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   const grpc_call_element_args *args) {
   call_data *calld = (call_data *)elem->call_data;
+  calld->call_combiner = args->call_combiner;
   GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
                     recv_initial_metadata_ready, elem,
                     grpc_schedule_on_exec_ctx);
@@ -535,7 +536,7 @@ static grpc_slice user_agent_from_args(const grpc_channel_args *args,
 static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_channel_element *elem,
                                      grpc_channel_element_args *args) {
-  channel_data *chand = elem->channel_data;
+  channel_data *chand = (channel_data *)elem->channel_data;
   GPR_ASSERT(!args->is_last);
   GPR_ASSERT(args->optional_transport != NULL);
   chand->static_scheme = scheme_from_args(args->channel_args);
@@ -551,7 +552,7 @@ static grpc_error *init_channel_elem(grpc_exec_ctx *exec_ctx,
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {
-  channel_data *chand = elem->channel_data;
+  channel_data *chand = (channel_data *)elem->channel_data;
   GRPC_MDELEM_UNREF(exec_ctx, chand->user_agent);
 }
 
@@ -565,6 +566,5 @@ const grpc_channel_filter grpc_http_client_filter = {
     sizeof(channel_data),
     init_channel_elem,
     destroy_channel_elem,
-    grpc_call_next_get_peer,
     grpc_channel_next_get_info,
     "http-client"};

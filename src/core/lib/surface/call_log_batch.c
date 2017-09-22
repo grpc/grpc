@@ -103,7 +103,7 @@ char *grpc_op_string(const grpc_op *op) {
   return out;
 }
 
-void grpc_call_log_batch(char *file, int line, gpr_log_severity severity,
+void grpc_call_log_batch(const char *file, int line, gpr_log_severity severity,
                          grpc_call *call, const grpc_op *ops, size_t nops,
                          void *tag) {
   char *tmp;

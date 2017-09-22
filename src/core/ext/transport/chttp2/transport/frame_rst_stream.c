@@ -77,7 +77,7 @@ grpc_error *grpc_chttp2_rst_stream_parser_parse(grpc_exec_ctx *exec_ctx,
   uint8_t *const beg = GRPC_SLICE_START_PTR(slice);
   uint8_t *const end = GRPC_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
-  grpc_chttp2_rst_stream_parser *p = parser;
+  grpc_chttp2_rst_stream_parser *p = (grpc_chttp2_rst_stream_parser *)parser;
 
   while (p->byte != 4 && cur != end) {
     p->reason_bytes[p->byte] = *cur;

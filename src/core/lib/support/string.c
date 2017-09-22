@@ -276,7 +276,7 @@ static void add_string_to_split(const char *beg, const char *end, char ***strs,
 
 void gpr_string_split(const char *input, const char *sep, char ***strs,
                       size_t *nstrs) {
-  char *next;
+  const char *next;
   *strs = NULL;
   *nstrs = 0;
   size_t capstrs = 0;
@@ -297,4 +297,18 @@ void *gpr_memrchr(const void *s, int c, size_t n) {
     }
   }
   return NULL;
+}
+
+bool gpr_is_true(const char *s) {
+  size_t i;
+  if (s == NULL) {
+    return false;
+  }
+  static const char *truthy[] = {"yes", "true", "1"};
+  for (i = 0; i < GPR_ARRAY_SIZE(truthy); i++) {
+    if (0 == gpr_stricmp(s, truthy[i])) {
+      return true;
+    }
+  }
+  return false;
 }

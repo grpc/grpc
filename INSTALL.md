@@ -141,8 +141,6 @@ MINGW64$ make
 NOTE: While most of the make targets are buildable under Mingw, some haven't been ported to Windows yet
 and may fail to build (mostly trying to include POSIX headers not available on Mingw).
 
-### Pre-generated Visual Studio solution (DEPRECATED)
+### Pre-generated Visual Studio solution (DELETED)
 
-*WARNING: This used to be the recommended way to build on Windows, but because of significant limitations (hard to build dependencies including boringssl, .proto codegen is hard to support, ..), it is no longer recommended. Use cmake to build on Windows instead.*
-
-The pre-generated VS projects & solution are checked into the repository under the [vsprojects](/vsprojects) directory.
+*WARNING: This used to be the recommended way to build on Windows, but because of significant limitations (hard to build dependencies including boringssl, .proto codegen is hard to support, ..) we are no longer providing them. Use cmake to build on Windows instead.*

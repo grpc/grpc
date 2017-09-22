@@ -46,7 +46,7 @@ grpc_error *grpc_chttp2_goaway_parser_begin_frame(grpc_chttp2_goaway_parser *p,
 
   gpr_free(p->debug_data);
   p->debug_length = length - 8;
-  p->debug_data = gpr_malloc(p->debug_length);
+  p->debug_data = (char *)gpr_malloc(p->debug_length);
   p->debug_pos = 0;
   p->state = GRPC_CHTTP2_GOAWAY_LSI0;
   return GRPC_ERROR_NONE;
@@ -60,7 +60,7 @@ grpc_error *grpc_chttp2_goaway_parser_parse(grpc_exec_ctx *exec_ctx,
   uint8_t *const beg = GRPC_SLICE_START_PTR(slice);
   uint8_t *const end = GRPC_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
-  grpc_chttp2_goaway_parser *p = parser;
+  grpc_chttp2_goaway_parser *p = (grpc_chttp2_goaway_parser *)parser;
 
   switch (p->state) {
     case GRPC_CHTTP2_GOAWAY_LSI0:

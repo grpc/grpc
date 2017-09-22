@@ -767,9 +767,9 @@ bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
 
   ProtoBufFile pbfile(file);
   PrivateGenerator generator(config_, &pbfile);
-  if (parameter == "grpc_2_0") {
+  if (parameter == "" || parameter == "grpc_2_0") {
     return GenerateGrpc(context, generator, pb2_grpc_file_name, true);
-  } else if (parameter == "") {
+  } else if (parameter == "grpc_1_0") {
     return GenerateGrpc(context, generator, pb2_grpc_file_name, true) &&
            GenerateGrpc(context, generator, pb2_file_name, false);
   } else {

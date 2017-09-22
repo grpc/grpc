@@ -39,7 +39,7 @@ static tracer *tracers;
 #endif
 
 void grpc_register_tracer(grpc_tracer_flag *flag) {
-  tracer *t = gpr_malloc(sizeof(*t));
+  tracer *t = (tracer *)gpr_malloc(sizeof(*t));
   t->flag = flag;
   t->next = tracers;
   TRACER_SET(*flag, false);
@@ -53,10 +53,10 @@ static void add(const char *beg, const char *end, char ***ss, size_t *ns) {
   size_t len;
   GPR_ASSERT(end >= beg);
   len = (size_t)(end - beg);
-  s = gpr_malloc(len + 1);
+  s = (char *)gpr_malloc(len + 1);
   memcpy(s, beg, len);
   s[len] = 0;
-  *ss = gpr_realloc(*ss, sizeof(char **) * np);
+  *ss = (char **)gpr_realloc(*ss, sizeof(char **) * np);
   (*ss)[n] = s;
   *ns = np;
 }

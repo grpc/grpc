@@ -79,16 +79,43 @@ typedef enum {
   GRPC_CHTTP2_PCL_COUNT /* must be last */
 } grpc_chttp2_ping_closure_list;
 
+typedef enum {
+  GRPC_CHTTP2_INITIATE_WRITE_INITIAL_WRITE,
+  GRPC_CHTTP2_INITIATE_WRITE_START_NEW_STREAM,
+  GRPC_CHTTP2_INITIATE_WRITE_SEND_MESSAGE,
+  GRPC_CHTTP2_INITIATE_WRITE_SEND_INITIAL_METADATA,
+  GRPC_CHTTP2_INITIATE_WRITE_SEND_TRAILING_METADATA,
+  GRPC_CHTTP2_INITIATE_WRITE_RETRY_SEND_PING,
+  GRPC_CHTTP2_INITIATE_WRITE_CONTINUE_PINGS,
+  GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT,
+  GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM,
+  GRPC_CHTTP2_INITIATE_WRITE_CLOSE_FROM_API,
+  GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL,
+  GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL,
+  GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS,
+  GRPC_CHTTP2_INITIATE_WRITE_BDP_ESTIMATOR_PING,
+  GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_SETTING,
+  GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_UPDATE,
+  GRPC_CHTTP2_INITIATE_WRITE_APPLICATION_PING,
+  GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING,
+  GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL_UNSTALLED,
+  GRPC_CHTTP2_INITIATE_WRITE_PING_RESPONSE,
+  GRPC_CHTTP2_INITIATE_WRITE_FORCE_RST_STREAM,
+} grpc_chttp2_initiate_write_reason;
+
+const char *grpc_chttp2_initiate_write_reason_string(
+    grpc_chttp2_initiate_write_reason reason);
+
 typedef struct {
   grpc_closure_list lists[GRPC_CHTTP2_PCL_COUNT];
   uint64_t inflight_id;
 } grpc_chttp2_ping_queue;
 
 typedef struct {
-  gpr_timespec min_time_between_pings;
   int max_pings_without_data;
   int max_ping_strikes;
-  gpr_timespec min_ping_interval_without_data;
+  gpr_timespec min_sent_ping_interval_without_data;
+  gpr_timespec min_recv_ping_interval_without_data;
 } grpc_chttp2_repeated_ping_policy;
 
 typedef struct {
@@ -262,6 +289,10 @@ struct grpc_chttp2_transport {
 
   /** write execution state of the transport */
   grpc_chttp2_write_state write_state;
+  /** is this the first write in a series of writes?
+      set when we initiate writing from idle, cleared when we
+      initiate writing from writing+more */
+  bool is_first_write_in_batch;
 
   /** is the transport destroying itself? */
   uint8_t destroying;
@@ -483,6 +514,7 @@ struct grpc_chttp2_stream {
   grpc_slice fetching_slice;
   int64_t next_message_end_offset;
   int64_t flow_controlled_bytes_written;
+  int64_t flow_controlled_bytes_flowed;
   grpc_closure complete_fetch_locked;
   grpc_closure *fetching_send_message_finished;
 
@@ -509,6 +541,8 @@ struct grpc_chttp2_stream {
   /** Are we buffering writes on this stream? If yes, we won't become writable
       until there's enough queued up in the flow_controlled_buffer */
   bool write_buffering;
+  /** Has trailing metadata been received. */
+  bool received_trailing_metadata;
 
   /** the error that resulted in this stream being read-closed */
   grpc_error *read_closed_error;
@@ -553,29 +587,32 @@ struct grpc_chttp2_stream {
 
   grpc_slice_buffer flow_controlled_buffer;
 
+  grpc_chttp2_write_cb *on_flow_controlled_cbs;
   grpc_chttp2_write_cb *on_write_finished_cbs;
   grpc_chttp2_write_cb *finish_after_write;
   size_t sending_bytes;
 
-  /** Whether stream compression send is enabled */
-  bool stream_compression_recv_enabled;
-  /** Whether stream compression recv is enabled */
-  bool stream_compression_send_enabled;
-  /** Whether bytes stored in unprocessed_incoming_byte_stream is decompressed
-   */
-  bool unprocessed_incoming_frames_decompressed;
+  /* Stream compression method to be used. */
+  grpc_stream_compression_method stream_compression_method;
+  /* Stream decompression method to be used. */
+  grpc_stream_compression_method stream_decompression_method;
   /** Stream compression decompress context */
   grpc_stream_compression_context *stream_decompression_ctx;
   /** Stream compression compress context */
   grpc_stream_compression_context *stream_compression_ctx;
 
   /** Buffer storing data that is compressed but not sent */
-  grpc_slice_buffer *compressed_data_buffer;
+  grpc_slice_buffer compressed_data_buffer;
   /** Amount of uncompressed bytes sent out when compressed_data_buffer is
    * emptied */
   size_t uncompressed_data_size;
   /** Temporary buffer storing decompressed data */
-  grpc_slice_buffer *decompressed_data_buffer;
+  grpc_slice_buffer decompressed_data_buffer;
+  /** Whether bytes stored in unprocessed_incoming_byte_stream is decompressed
+   */
+  bool unprocessed_incoming_frames_decompressed;
+  /** gRPC header bytes that are already decompressed */
+  size_t decompressed_header_bytes;
 };
 
 /** Transport writing call flow:
@@ -591,12 +628,16 @@ struct grpc_chttp2_stream {
     The actual call chain is documented in the implementation of this function.
     */
 void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
-                                grpc_chttp2_transport *t, const char *reason);
+                                grpc_chttp2_transport *t,
+                                grpc_chttp2_initiate_write_reason reason);
 
-typedef enum {
-  GRPC_CHTTP2_NOTHING_TO_WRITE,
-  GRPC_CHTTP2_PARTIAL_WRITE,
-  GRPC_CHTTP2_FULL_WRITE,
+typedef struct {
+  /** are we writing? */
+  bool writing;
+  /** if writing: was it a complete flush (false) or a partial flush (true) */
+  bool partial;
+  /** did we queue any completions as part of beginning the write */
+  bool early_results_scheduled;
 } grpc_chttp2_begin_write_result;
 
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
@@ -838,22 +879,11 @@ void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 void grpc_chttp2_add_ping_strike(grpc_exec_ctx *exec_ctx,
                                  grpc_chttp2_transport *t);
 
-typedef enum {
-  /* don't initiate a transport write, but piggyback on the next one */
-  GRPC_CHTTP2_STREAM_WRITE_PIGGYBACK,
-  /* initiate a covered write */
-  GRPC_CHTTP2_STREAM_WRITE_INITIATE_COVERED,
-  /* initiate an uncovered write */
-  GRPC_CHTTP2_STREAM_WRITE_INITIATE_UNCOVERED
-} grpc_chttp2_stream_write_type;
-
 /** add a ref to the stream and add it to the writable list;
     ref will be dropped in writing.c */
-void grpc_chttp2_become_writable(grpc_exec_ctx *exec_ctx,
-                                 grpc_chttp2_transport *t,
-                                 grpc_chttp2_stream *s,
-                                 grpc_chttp2_stream_write_type type,
-                                 const char *reason);
+void grpc_chttp2_mark_stream_writable(grpc_exec_ctx *exec_ctx,
+                                      grpc_chttp2_transport *t,
+                                      grpc_chttp2_stream *s);
 
 void grpc_chttp2_cancel_stream(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_transport *t, grpc_chttp2_stream *s,

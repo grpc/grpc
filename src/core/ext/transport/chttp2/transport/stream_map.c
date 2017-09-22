@@ -27,8 +27,8 @@
 void grpc_chttp2_stream_map_init(grpc_chttp2_stream_map *map,
                                  size_t initial_capacity) {
   GPR_ASSERT(initial_capacity > 1);
-  map->keys = gpr_malloc(sizeof(uint32_t) * initial_capacity);
-  map->values = gpr_malloc(sizeof(void *) * initial_capacity);
+  map->keys = (uint32_t *)gpr_malloc(sizeof(uint32_t) * initial_capacity);
+  map->values = (void **)gpr_malloc(sizeof(void *) * initial_capacity);
   map->count = 0;
   map->free = 0;
   map->capacity = initial_capacity;
@@ -72,8 +72,10 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map *map, uint32_t key,
       /* resize when less than 25% of the table is free, because compaction
          won't help much */
       map->capacity = capacity = 3 * capacity / 2;
-      map->keys = keys = gpr_realloc(keys, capacity * sizeof(uint32_t));
-      map->values = values = gpr_realloc(values, capacity * sizeof(void *));
+      map->keys = keys =
+          (uint32_t *)gpr_realloc(keys, capacity * sizeof(uint32_t));
+      map->values = values =
+          (void **)gpr_realloc(values, capacity * sizeof(void *));
     }
   }
 

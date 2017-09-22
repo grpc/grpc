@@ -150,6 +150,7 @@ class PythonArtifact:
                              self.py_version,
                              '32' if self.arch == 'x86' else '64'],
                             environ=environ,
+                            timeout_seconds=45*60,
                             use_workspace=True)
     else:
       environ['PYTHON'] = self.py_version
@@ -157,6 +158,7 @@ class PythonArtifact:
       return create_jobspec(self.name,
                             ['tools/run_tests/artifacts/build_artifact_python.sh'],
                             environ=environ,
+                            timeout_seconds=60*60,
                             use_workspace=True)
 
   def __str__(self):
@@ -257,6 +259,7 @@ class NodeExtArtifact:
                             ['tools\\run_tests\\artifacts\\build_artifact_node.bat',
                              self.gyp_arch],
                             use_workspace=True,
+                            timeout_seconds=45*60,
                             cpu_cost=cpu_cost)
     else:
       if self.platform == 'linux':
@@ -328,12 +331,10 @@ class ProtocArtifact:
             environ=environ,
             use_workspace=True)
     else:
-      generator = 'Visual Studio 12 Win64' if self.arch == 'x64' else 'Visual Studio 12'
-      vcplatform = 'x64' if self.arch == 'x64' else 'Win32'
+      generator = 'Visual Studio 14 2015 Win64' if self.arch == 'x64' else 'Visual Studio 14 2015'
       return create_jobspec(self.name,
                             ['tools\\run_tests\\artifacts\\build_artifact_protoc.bat'],
-                            environ={'generator': generator,
-                                     'Platform': vcplatform},
+                            environ={'generator': generator},
                             use_workspace=True)
 
   def __str__(self):

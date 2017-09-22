@@ -39,6 +39,7 @@
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/lockfree_event.h"
@@ -362,7 +363,8 @@ static void polling_island_add_fds_locked(polling_island *pi, grpc_fd **fds,
 
     if (pi->fd_cnt == pi->fd_capacity) {
       pi->fd_capacity = GPR_MAX(pi->fd_capacity + 8, pi->fd_cnt * 3 / 2);
-      pi->fds = gpr_realloc(pi->fds, sizeof(grpc_fd *) * pi->fd_capacity);
+      pi->fds =
+          (grpc_fd **)gpr_realloc(pi->fds, sizeof(grpc_fd *) * pi->fd_capacity);
     }
 
     pi->fds[pi->fd_cnt++] = fds[i];
@@ -465,7 +467,7 @@ static polling_island *polling_island_create(grpc_exec_ctx *exec_ctx,
 
   *error = GRPC_ERROR_NONE;
 
-  pi = gpr_malloc(sizeof(*pi));
+  pi = (polling_island *)gpr_malloc(sizeof(*pi));
   gpr_mu_init(&pi->mu);
   pi->fd_cnt = 0;
   pi->fd_capacity = 0;
@@ -809,7 +811,7 @@ static grpc_fd *fd_create(int fd, const char *name) {
   gpr_mu_unlock(&fd_freelist_mu);
 
   if (new_fd == NULL) {
-    new_fd = gpr_malloc(sizeof(grpc_fd));
+    new_fd = (grpc_fd *)gpr_malloc(sizeof(grpc_fd));
     gpr_mu_init(&new_fd->po.mu);
   }
 
@@ -1019,10 +1021,11 @@ static void push_front_worker(grpc_pollset *p, grpc_pollset_worker *worker) {
 }
 
 /* p->mu must be held before calling this function */
-static grpc_error *pollset_kick(grpc_pollset *p,
+static grpc_error *pollset_kick(grpc_exec_ctx *exec_ctx, grpc_pollset *p,
                                 grpc_pollset_worker *specific_worker) {
   GPR_TIMER_BEGIN("pollset_kick", 0);
   grpc_error *error = GRPC_ERROR_NONE;
+  GRPC_STATS_INC_POLLSET_KICK(exec_ctx);
   const char *err_desc = "Kick Failure";
   grpc_pollset_worker *worker = specific_worker;
   if (worker != NULL) {
@@ -1130,7 +1133,8 @@ static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
 }
 
 static void pollset_release_polling_island(grpc_exec_ctx *exec_ctx,
-                                           grpc_pollset *ps, char *reason) {
+                                           grpc_pollset *ps,
+                                           const char *reason) {
   if (ps->po.pi != NULL) {
     PI_UNREF(exec_ctx, ps->po.pi, reason);
   }
@@ -1156,7 +1160,7 @@ static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   GPR_ASSERT(!pollset->shutting_down);
   pollset->shutting_down = true;
   pollset->shutdown_done = closure;
-  pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
+  pollset_kick(exec_ctx, pollset, GRPC_POLLSET_KICK_BROADCAST);
 
   /* If the pollset has any workers, we cannot call finish_shutdown_locked()
      because it would release the underlying polling island. In such a case, we
@@ -1236,6 +1240,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
   g_current_thread_polling_island = pi;
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
+  GRPC_STATS_INC_SYSCALL_POLL(exec_ctx);
   ep_rv =
       epoll_pwait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms, sig_mask);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
@@ -1271,7 +1276,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
          to the function pollset_work_and_unlock() will pick up the correct
          epoll_fd */
     } else {
-      grpc_fd *fd = data_ptr;
+      grpc_fd *fd = (grpc_fd *)data_ptr;
       int cancel = ep_ev[i].events & (EPOLLERR | EPOLLHUP);
       int read_ev = ep_ev[i].events & (EPOLLIN | EPOLLPRI);
       int write_ev = ep_ev[i].events & EPOLLOUT;
@@ -1567,7 +1572,7 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
  */
 
 static grpc_pollset_set *pollset_set_create(void) {
-  grpc_pollset_set *pss = gpr_malloc(sizeof(*pss));
+  grpc_pollset_set *pss = (grpc_pollset_set *)gpr_malloc(sizeof(*pss));
   gpr_mu_init(&pss->po.mu);
   pss->po.pi = NULL;
 #ifndef NDEBUG
@@ -1645,8 +1650,8 @@ void *grpc_pollset_get_polling_island(grpc_pollset *ps) {
 }
 
 bool grpc_are_polling_islands_equal(void *p, void *q) {
-  polling_island *p1 = p;
-  polling_island *p2 = q;
+  polling_island *p1 = (polling_island *)p;
+  polling_island *p2 = (polling_island *)q;
 
   /* Note: polling_island_lock_pair() may change p1 and p2 to point to the
      latest polling islands in their respective linked lists */
@@ -1667,34 +1672,34 @@ static void shutdown_engine(void) {
 }
 
 static const grpc_event_engine_vtable vtable = {
-    .pollset_size = sizeof(grpc_pollset),
+    sizeof(grpc_pollset),
 
-    .fd_create = fd_create,
-    .fd_wrapped_fd = fd_wrapped_fd,
-    .fd_orphan = fd_orphan,
-    .fd_shutdown = fd_shutdown,
-    .fd_is_shutdown = fd_is_shutdown,
-    .fd_notify_on_read = fd_notify_on_read,
-    .fd_notify_on_write = fd_notify_on_write,
-    .fd_get_read_notifier_pollset = fd_get_read_notifier_pollset,
+    fd_create,
+    fd_wrapped_fd,
+    fd_orphan,
+    fd_shutdown,
+    fd_notify_on_read,
+    fd_notify_on_write,
+    fd_is_shutdown,
+    fd_get_read_notifier_pollset,
 
-    .pollset_init = pollset_init,
-    .pollset_shutdown = pollset_shutdown,
-    .pollset_destroy = pollset_destroy,
-    .pollset_work = pollset_work,
-    .pollset_kick = pollset_kick,
-    .pollset_add_fd = pollset_add_fd,
+    pollset_init,
+    pollset_shutdown,
+    pollset_destroy,
+    pollset_work,
+    pollset_kick,
+    pollset_add_fd,
 
-    .pollset_set_create = pollset_set_create,
-    .pollset_set_destroy = pollset_set_destroy,
-    .pollset_set_add_pollset = pollset_set_add_pollset,
-    .pollset_set_del_pollset = pollset_set_del_pollset,
-    .pollset_set_add_pollset_set = pollset_set_add_pollset_set,
-    .pollset_set_del_pollset_set = pollset_set_del_pollset_set,
-    .pollset_set_add_fd = pollset_set_add_fd,
-    .pollset_set_del_fd = pollset_set_del_fd,
+    pollset_set_create,
+    pollset_set_destroy,
+    pollset_set_add_pollset,
+    pollset_set_del_pollset,
+    pollset_set_add_pollset_set,
+    pollset_set_del_pollset_set,
+    pollset_set_add_fd,
+    pollset_set_del_fd,
 
-    .shutdown_engine = shutdown_engine,
+    shutdown_engine,
 };
 
 /* It is possible that GLIBC has epoll but the underlying kernel doesn't.
@@ -1728,9 +1733,7 @@ const grpc_event_engine_vtable *grpc_init_epollsig_linux(
   }
 
   if (!is_grpc_wakeup_signal_initialized) {
-    /* TODO(ctiller): when other epoll engines are ready, remove the true || to
-     * force this to be explitly chosen if needed */
-    if (true || explicit_request) {
+    if (explicit_request) {
       grpc_use_signal(SIGRTMIN + 6);
     } else {
       return NULL;

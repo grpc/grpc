@@ -75,7 +75,7 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
   uint8_t *const beg = GRPC_SLICE_START_PTR(slice);
   uint8_t *const end = GRPC_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
-  grpc_chttp2_ping_parser *p = parser;
+  grpc_chttp2_ping_parser *p = (grpc_chttp2_ping_parser *)parser;
 
   while (p->byte != 8 && cur != end) {
     p->opaque_8bytes |= (((uint64_t)*cur) << (56 - 8 * p->byte));
@@ -92,7 +92,7 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
         gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
         gpr_timespec next_allowed_ping =
             gpr_time_add(t->ping_recv_state.last_ping_recv_time,
-                         t->ping_policy.min_ping_interval_without_data);
+                         t->ping_policy.min_recv_ping_interval_without_data);
 
         if (t->keepalive_permit_without_calls == 0 &&
             grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
@@ -113,11 +113,12 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
       if (!g_disable_ping_ack) {
         if (t->ping_ack_count == t->ping_ack_capacity) {
           t->ping_ack_capacity = GPR_MAX(t->ping_ack_capacity * 3 / 2, 3);
-          t->ping_acks = gpr_realloc(
+          t->ping_acks = (uint64_t *)gpr_realloc(
               t->ping_acks, t->ping_ack_capacity * sizeof(*t->ping_acks));
         }
         t->ping_acks[t->ping_ack_count++] = p->opaque_8bytes;
-        grpc_chttp2_initiate_write(exec_ctx, t, "ping response");
+        grpc_chttp2_initiate_write(exec_ctx, t,
+                                   GRPC_CHTTP2_INITIATE_WRITE_PING_RESPONSE);
       }
     }
   }

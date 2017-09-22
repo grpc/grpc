@@ -519,7 +519,7 @@ static grpc_channel *create_client(const servers_fixture *f) {
   arg_array[1].key = GRPC_ARG_LB_POLICY_NAME;
   arg_array[1].value.string = "ROUND_ROBIN";
   arg_array[2].type = GRPC_ARG_INTEGER;
-  arg_array[2].key = GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS;
+  arg_array[2].key = GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS;
   arg_array[2].value.integer = 0;
   args.num_args = GPR_ARRAY_SIZE(arg_array);
   args.args = arg_array;

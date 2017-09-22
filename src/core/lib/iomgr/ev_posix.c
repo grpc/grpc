@@ -31,8 +31,6 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
-#include "src/core/lib/iomgr/ev_epoll_limited_pollers_linux.h"
-#include "src/core/lib/iomgr/ev_epoll_thread_pool_linux.h"
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 #include "src/core/lib/iomgr/ev_epollsig_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
@@ -64,10 +62,8 @@ typedef struct {
 } event_engine_factory;
 
 static const event_engine_factory g_factories[] = {
-    {"epollsig", grpc_init_epollsig_linux},
     {"epoll1", grpc_init_epoll1_linux},
-    {"epoll-threadpool", grpc_init_epoll_thread_pool_linux},
-    {"epoll-limited", grpc_init_epoll_limited_pollers_linux},
+    {"epollsig", grpc_init_epollsig_linux},
     {"poll", grpc_init_poll_posix},
     {"poll-cv", grpc_init_poll_cv_posix},
     {"epollex", grpc_init_epollex_linux},
@@ -80,10 +76,10 @@ static void add(const char *beg, const char *end, char ***ss, size_t *ns) {
   size_t len;
   GPR_ASSERT(end >= beg);
   len = (size_t)(end - beg);
-  s = gpr_malloc(len + 1);
+  s = (char *)gpr_malloc(len + 1);
   memcpy(s, beg, len);
   s[len] = 0;
-  *ss = gpr_realloc(*ss, sizeof(char **) * np);
+  *ss = (char **)gpr_realloc(*ss, sizeof(char **) * np);
   (*ss)[n] = s;
   *ns = np;
 }
@@ -214,9 +210,9 @@ grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   return g_event_engine->pollset_work(exec_ctx, pollset, worker, now, deadline);
 }
 
-grpc_error *grpc_pollset_kick(grpc_pollset *pollset,
+grpc_error *grpc_pollset_kick(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               grpc_pollset_worker *specific_worker) {
-  return g_event_engine->pollset_kick(pollset, specific_worker);
+  return g_event_engine->pollset_kick(exec_ctx, pollset, specific_worker);
 }
 
 void grpc_pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,

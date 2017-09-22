@@ -49,7 +49,7 @@ typedef struct {
 
 static void on_complete_for_send(grpc_exec_ctx *exec_ctx, void *arg,
                                  grpc_error *error) {
-  call_data *calld = arg;
+  call_data *calld = (call_data *)arg;
   if (error == GRPC_ERROR_NONE) {
     calld->send_initial_metadata_succeeded = true;
   }
@@ -59,7 +59,7 @@ static void on_complete_for_send(grpc_exec_ctx *exec_ctx, void *arg,
 
 static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
                                         grpc_error *error) {
-  call_data *calld = arg;
+  call_data *calld = (call_data *)arg;
   if (error == GRPC_ERROR_NONE) {
     calld->recv_initial_metadata_succeeded = true;
   }
@@ -70,12 +70,13 @@ static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
 static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   const grpc_call_element_args *args) {
-  call_data *calld = elem->call_data;
+  call_data *calld = (call_data *)elem->call_data;
   // Get stats object from context and take a ref.
   GPR_ASSERT(args->context != NULL);
   GPR_ASSERT(args->context[GRPC_GRPCLB_CLIENT_STATS].value != NULL);
   calld->client_stats = grpc_grpclb_client_stats_ref(
-      args->context[GRPC_GRPCLB_CLIENT_STATS].value);
+      (grpc_grpclb_client_stats *)args->context[GRPC_GRPCLB_CLIENT_STATS]
+          .value);
   // Record call started.
   grpc_grpclb_client_stats_add_call_started(calld->client_stats);
   return GRPC_ERROR_NONE;
@@ -84,7 +85,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
                               grpc_closure *ignored) {
-  call_data *calld = elem->call_data;
+  call_data *calld = (call_data *)elem->call_data;
   // Record call finished, optionally setting client_failed_to_send and
   // received.
   grpc_grpclb_client_stats_add_call_finished(
@@ -98,7 +99,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 static void start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *batch) {
-  call_data *calld = elem->call_data;
+  call_data *calld = (call_data *)elem->call_data;
   GPR_TIMER_BEGIN("clr_start_transport_stream_op_batch", 0);
   // Intercept send_initial_metadata.
   if (batch->send_initial_metadata) {
@@ -132,6 +133,5 @@ const grpc_channel_filter grpc_client_load_reporting_filter = {
     0,  // sizeof(channel_data)
     init_channel_elem,
     destroy_channel_elem,
-    grpc_call_next_get_peer,
     grpc_channel_next_get_info,
     "client_load_reporting"};

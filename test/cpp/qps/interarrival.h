@@ -21,7 +21,7 @@
 
 #include <chrono>
 #include <cmath>
-#include <cstdlib>
+#include <random>
 #include <vector>
 
 #include <grpc++/support/config.h>
@@ -75,13 +75,13 @@ class InterarrivalTimer {
  public:
   InterarrivalTimer() {}
   void init(const RandomDistInterface& r, int threads, int entries = 1000000) {
+    std::random_device devrand;
+    std::mt19937_64 generator(devrand());
+    std::uniform_real_distribution<double> rando(0, 1);
     for (int i = 0; i < entries; i++) {
-      // rand is the only choice that is portable across POSIX and Windows
-      // and that supports new and old compilers
-      const double uniform_0_1 =
-          static_cast<double>(rand()) / static_cast<double>(RAND_MAX);
       random_table_.push_back(
-          static_cast<int64_t>(1e9 * r.transform(uniform_0_1)));
+          static_cast<int64_t>(1e9 * r.transform(rando(generator))));
+      ;
     }
     // Now set up the thread positions
     for (int i = 0; i < threads; i++) {

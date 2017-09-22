@@ -69,17 +69,22 @@ _POLLING_STRATEGIES = {
 }
 
 
-def get_flaky_tests(limit=None):
+BigQueryTestData = collections.namedtuple('BigQueryTestData', 'name flaky cpu')
+
+
+def get_bqtest_data(limit=None):
   import big_query_utils
 
   bq = big_query_utils.create_big_query()
   query = """
 SELECT
   filtered_test_name,
+  SUM(result != 'PASSED' AND result != 'SKIPPED') > 0 as flaky,
+  MAX(cpu_measured) + 0.01 as cpu
   FROM (
   SELECT
     REGEXP_REPLACE(test_name, r'/\d+', '') AS filtered_test_name,
-    result
+    result, cpu_measured
   FROM
     [grpc-testing:jenkins_test_results.aggregate_results]
   WHERE
@@ -87,17 +92,15 @@ SELECT
     AND platform = '"""+platform_string()+"""'
     AND NOT REGEXP_MATCH(job_name, '.*portability.*') )
 GROUP BY
-  filtered_test_name
-HAVING
-  SUM(result != 'PASSED' AND result != 'SKIPPED') > 0"""
+  filtered_test_name"""
   if limit:
     query += " limit {}".format(limit)
   query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)
   page = bq.jobs().getQueryResults(
       pageToken=None,
       **query_job['jobReference']).execute(num_retries=3)
-  flake_names = [row['f'][0]['v'] for row in page['rows']]
-  return flake_names
+  test_data = [BigQueryTestData(row['f'][0]['v'], row['f'][1]['v'] == 'true', float(row['f'][2]['v'])) for row in page['rows']]
+  return test_data
 
 
 def platform_string():
@@ -141,6 +144,9 @@ class Config(object):
     if not flaky and shortname and shortname in flaky_tests:
       print('Setting %s to flaky' % shortname)
       flaky = True
+    if shortname in shortname_to_cpu:
+      print('Update CPU cost for %s: %f -> %f' % (shortname, cpu_cost, shortname_to_cpu[shortname]))
+      cpu_cost = shortname_to_cpu[shortname]
     return jobset.JobSpec(cmdline=self.tool_prefix + cmdline,
                           shortname=shortname,
                           environ=actual_environ,
@@ -234,15 +240,19 @@ class CLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    if self.args.compiler == 'cmake':
+    if self.platform == 'windows':
+      _check_compiler(self.args.compiler, ['default', 'cmake', 'cmake_vs2015',
+                                           'cmake_vs2017'])
+      _check_arch(self.args.arch, ['default', 'x64', 'x86'])
+      self._cmake_generator_option = 'Visual Studio 15 2017' if self.args.compiler == 'cmake_vs2017' else 'Visual Studio 14 2015'
+      self._cmake_arch_option = 'x64' if self.args.arch == 'x64' else 'Win32'
+      self._use_cmake = True
+      self._make_options = []
+    elif self.args.compiler == 'cmake':
       _check_arch(self.args.arch, ['default'])
       self._use_cmake = True
       self._docker_distro = 'jessie'
       self._make_options = []
-    elif self.platform == 'windows':
-      self._use_cmake = False
-      self._make_options = [_windows_toolset_option(self.args.compiler),
-                            _windows_arch_option(self.args.arch)]
     else:
       self._use_cmake = False
       self._docker_distro, self._make_options = self._compiler_options(self.args.use_docker,
@@ -303,13 +313,7 @@ class CLanguage(object):
         if self.args.iomgr_platform in target.get('exclude_iomgrs', []):
           continue
         if self.platform == 'windows':
-          if self._use_cmake:
-            binary = 'cmake/build/%s/%s.exe' % (_MSBUILD_CONFIG[self.config.build_config], target['name'])
-          else:
-            binary = 'vsprojects/%s%s/%s.exe' % (
-                'x64/' if self.args.arch == 'x64' else '',
-                _MSBUILD_CONFIG[self.config.build_config],
-                target['name'])
+          binary = 'cmake/build/%s/%s.exe' % (_MSBUILD_CONFIG[self.config.build_config], target['name'])
         else:
           if self._use_cmake:
             binary = 'cmake/build/%s' % target['name']
@@ -346,11 +350,12 @@ class CLanguage(object):
                                                 environ=env))
           else:
             cmdline = [binary] + target['args']
+            shortname = target.get('shortname', ' '.join(
+                          pipes.quote(arg)
+                          for arg in cmdline))
+            shortname += shortname_ext
             out.append(self.config.job_spec(cmdline,
-                                            shortname=' '.join(
-                                                          pipes.quote(arg)
-                                                          for arg in cmdline) +
-                                                      shortname_ext,
+                                            shortname=shortname,
                                             cpu_cost=cpu_cost,
                                             flaky=target.get('flaky', False),
                                             timeout_seconds=target.get('timeout_seconds', _DEFAULT_TIMEOUT_SECONDS) * timeout_scaling,
@@ -367,19 +372,17 @@ class CLanguage(object):
             'check_epollexclusive']
 
   def make_options(self):
-    return self._make_options;
+    return self._make_options
 
   def pre_build_steps(self):
-    if self._use_cmake:
-      if self.platform == 'windows':
-        return [['tools\\run_tests\\helper_scripts\\pre_build_cmake.bat']]
-      else:
-        return [['tools/run_tests/helper_scripts/pre_build_cmake.sh']]
+    if self.platform == 'windows':
+      return [['tools\\run_tests\\helper_scripts\\pre_build_cmake.bat',
+               self._cmake_generator_option,
+               self._cmake_arch_option]]
+    elif self._use_cmake:
+      return [['tools/run_tests/helper_scripts/pre_build_cmake.sh']]
     else:
-      if self.platform == 'windows':
-        return [['tools\\run_tests\\helper_scripts\\pre_build_c.bat']]
-      else:
-        return []
+      return []
 
   def build_steps(self):
     return []
@@ -531,6 +534,7 @@ class PhpLanguage(object):
     self.config = config
     self.args = args
     _check_compiler(self.args.compiler, ['default'])
+    self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
   def test_specs(self):
     return [self.config.job_spec(['src/php/bin/run_tests.sh'],
@@ -543,7 +547,7 @@ class PhpLanguage(object):
     return ['static_c', 'shared_c']
 
   def make_options(self):
-    return []
+    return self._make_options;
 
   def build_steps(self):
     return [['tools/run_tests/helper_scripts/build_php.sh']]
@@ -567,6 +571,7 @@ class Php7Language(object):
     self.config = config
     self.args = args
     _check_compiler(self.args.compiler, ['default'])
+    self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
   def test_specs(self):
     return [self.config.job_spec(['src/php/bin/run_tests.sh'],
@@ -579,7 +584,7 @@ class Php7Language(object):
     return ['static_c', 'shared_c']
 
   def make_options(self):
-    return []
+    return self._make_options;
 
   def build_steps(self):
     return [['tools/run_tests/helper_scripts/build_php.sh']]
@@ -1111,30 +1116,6 @@ def _check_arch_option(arch):
       sys.exit(1)
 
 
-def _windows_build_bat(compiler):
-  """Returns name of build.bat for selected compiler."""
-  # For CoreCLR, fall back to the default compiler for C core
-  if compiler == 'default' or compiler == 'vs2013':
-    return 'vsprojects\\build_vs2013.bat'
-  elif compiler == 'vs2015':
-    return 'vsprojects\\build_vs2015.bat'
-  else:
-    print('Compiler %s not supported.' % compiler)
-    sys.exit(1)
-
-
-def _windows_toolset_option(compiler):
-  """Returns msbuild PlatformToolset for selected compiler."""
-  # For CoreCLR, fall back to the default compiler for C core
-  if compiler == 'default' or compiler == 'vs2013' or compiler == 'coreclr':
-    return '/p:PlatformToolset=v120'
-  elif compiler == 'vs2015':
-    return '/p:PlatformToolset=v140'
-  else:
-    print('Compiler %s not supported.' % compiler)
-    sys.exit(1)
-
-
 def _docker_arch_suffix(arch):
   """Returns suffix to dockerfile dir to use."""
   if arch == 'default' or arch == 'x64':
@@ -1233,12 +1214,11 @@ argp.add_argument('--compiler',
                   choices=['default',
                            'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc_musl',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
-                           'vs2013', 'vs2015',
                            'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3', 'python_alpine',
                            'node0.12', 'node4', 'node5', 'node6', 'node7', 'node8',
                            'electron1.3', 'electron1.6',
                            'coreclr',
-                           'cmake'],
+                           'cmake', 'cmake_vs2015', 'cmake_vs2017'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
 argp.add_argument('--iomgr_platform',
@@ -1283,9 +1263,12 @@ argp.add_argument('--disable_auto_set_flakes', default=False, const=True, action
 args = argp.parse_args()
 
 flaky_tests = set()
+shortname_to_cpu = {}
 if not args.disable_auto_set_flakes:
   try:
-    flaky_tests = set(get_flaky_tests())
+    for test in get_bqtest_data():
+      if test.flaky: flaky_tests.add(test.name)
+      if test.cpu > 0: shortname_to_cpu[test.name] = test.cpu
   except:
     print("Unexpected error getting flaky tests:", sys.exc_info()[0])
 
@@ -1397,27 +1380,11 @@ _check_arch_option(args.arch)
 
 def make_jobspec(cfg, targets, makefile='Makefile'):
   if platform_string() == 'windows':
-    if makefile.startswith('cmake/build/'):
-      return [jobset.JobSpec(['cmake', '--build', '.',
-                              '--target', '%s' % target,
-                              '--config', _MSBUILD_CONFIG[cfg]],
-                             cwd=os.path.dirname(makefile),
-                             timeout_seconds=None) for target in targets]
-    extra_args = []
-    # better do parallel compilation
-    # empirically /m:2 gives the best performance/price and should prevent
-    # overloading the windows workers.
-    extra_args.extend(['/m:2'])
-    # disable PDB generation: it's broken, and we don't need it during CI
-    extra_args.extend(['/p:Jenkins=true'])
-    return [
-      jobset.JobSpec([_windows_build_bat(args.compiler),
-                      'vsprojects\\%s.sln' % target,
-                      '/p:Configuration=%s' % _MSBUILD_CONFIG[cfg]] +
-                      extra_args +
-                      language_make_options,
-                      shell=True, timeout_seconds=None)
-      for target in targets]
+    return [jobset.JobSpec(['cmake', '--build', '.',
+                            '--target', '%s' % target,
+                            '--config', _MSBUILD_CONFIG[cfg]],
+                           cwd=os.path.dirname(makefile),
+                           timeout_seconds=None) for target in targets]
   else:
     if targets and makefile.startswith('cmake/build/'):
       # With cmake, we've passed all the build configuration in the pre-build step already
@@ -1561,7 +1528,7 @@ def _build_and_run(
     # When running on travis, we want out test runs to be as similar as possible
     # for reproducibility purposes.
     if args.travis and args.max_time <= 0:
-      massaged_one_run = sorted(one_run, key=lambda x: x.shortname)
+      massaged_one_run = sorted(one_run, key=lambda x: x.cpu_cost)
     else:
       # whereas otherwise, we want to shuffle things up to give all tests a
       # chance to run.

@@ -40,6 +40,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/support/arena.h"
 #include "src/core/lib/transport/transport.h"
@@ -71,6 +72,7 @@ typedef struct {
   gpr_timespec start_time;
   gpr_timespec deadline;
   gpr_arena *arena;
+  grpc_call_combiner *call_combiner;
 } grpc_call_element_args;
 
 typedef struct {
@@ -149,9 +151,6 @@ typedef struct {
      The filter does not need to do any chaining */
   void (*destroy_channel_elem)(grpc_exec_ctx *exec_ctx,
                                grpc_channel_element *elem);
-
-  /* Implement grpc_call_get_peer() */
-  char *(*get_peer)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
 
   /* Implement grpc_channel_get_info() */
   void (*get_channel_info)(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
@@ -271,8 +270,6 @@ void grpc_call_next_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
    stack */
 void grpc_channel_next_op(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
                           grpc_transport_op *op);
-/* Pass through a request to get_peer to the next child element */
-char *grpc_call_next_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
 /* Pass through a request to get_channel_info() to the next child element */
 void grpc_channel_next_get_info(grpc_exec_ctx *exec_ctx,
                                 grpc_channel_element *elem,
@@ -284,13 +281,9 @@ grpc_channel_stack *grpc_channel_stack_from_top_element(
 /* Given the top element of a call stack, get the call stack itself */
 grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem);
 
-void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
+void grpc_call_log_op(const char *file, int line, gpr_log_severity severity,
                       grpc_call_element *elem,
                       grpc_transport_stream_op_batch *op);
-
-void grpc_call_element_signal_error(grpc_exec_ctx *exec_ctx,
-                                    grpc_call_element *cur_elem,
-                                    grpc_error *error);
 
 extern grpc_tracer_flag grpc_trace_channel;
 

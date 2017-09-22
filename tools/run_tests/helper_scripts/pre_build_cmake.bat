@@ -14,6 +14,9 @@
 
 setlocal
 
+set GENERATOR=%1
+set ARCHITECTURE=%2
+
 cd /d %~dp0\..\..\..
 
 mkdir cmake
@@ -25,7 +28,7 @@ cd build
 @rem If yasm is not on the path, use hardcoded path instead.
 yasm --version || set USE_HARDCODED_YASM_PATH_MAYBE=-DCMAKE_ASM_NASM_COMPILER="C:/Program Files (x86)/yasm/yasm.exe"
 
-cmake -G "Visual Studio 14 2015" -DgRPC_BUILD_TESTS=ON %USE_HARDCODED_YASM_PATH_MAYBE% ../.. || goto :error
+cmake -G %GENERATOR% -A %ARCHITECTURE% -DgRPC_BUILD_TESTS=ON %USE_HARDCODED_YASM_PATH_MAYBE% ../.. || goto :error
 
 endlocal
 

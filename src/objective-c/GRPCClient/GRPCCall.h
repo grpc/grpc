@@ -170,6 +170,13 @@ extern id const kGRPCTrailersKey;
 @property (atomic, copy, readwrite) NSString *serverName;
 
 /**
+ * The timeout for the RPC call in seconds. If set to 0, the call will not timeout. If set to
+ * positive, the gRPC call returns with status GRPCErrorCodeDeadlineExceeded if it is not completed
+ * within \a timeout seconds. A negative value is not allowed.
+ */
+@property NSTimeInterval timeout;
+
+/**
  * The container of the request headers of an RPC conforms to this protocol, which is a subset of
  * NSMutableDictionary's interface. It will become a NSMutableDictionary later on.
  * The keys of this container are the header names, which per the HTTP standard are case-

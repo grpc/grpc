@@ -46,8 +46,21 @@ int grpc_compression_algorithm_parse(grpc_slice name,
   }
 }
 
+int grpc_stream_compression_algorithm_parse(
+    grpc_slice name, grpc_stream_compression_algorithm *algorithm) {
+  if (grpc_slice_eq(name, GRPC_MDSTR_IDENTITY)) {
+    *algorithm = GRPC_STREAM_COMPRESS_NONE;
+    return 1;
+  } else if (grpc_slice_eq(name, GRPC_MDSTR_GZIP)) {
+    *algorithm = GRPC_STREAM_COMPRESS_GZIP;
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
 int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
-                                    char **name) {
+                                    const char **name) {
   GRPC_API_TRACE("grpc_compression_algorithm_parse(algorithm=%d, name=%p)", 2,
                  ((int)algorithm, name));
   switch (algorithm) {
@@ -66,12 +79,37 @@ int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
   return 0;
 }
 
+int grpc_stream_compression_algorithm_name(
+    grpc_stream_compression_algorithm algorithm, const char **name) {
+  GRPC_API_TRACE(
+      "grpc_stream_compression_algorithm_parse(algorithm=%d, name=%p)", 2,
+      ((int)algorithm, name));
+  switch (algorithm) {
+    case GRPC_STREAM_COMPRESS_NONE:
+      *name = "identity";
+      return 1;
+    case GRPC_STREAM_COMPRESS_GZIP:
+      *name = "gzip";
+      return 1;
+    case GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT:
+      return 0;
+  }
+  return 0;
+}
+
 grpc_compression_algorithm grpc_compression_algorithm_from_slice(
     grpc_slice str) {
   if (grpc_slice_eq(str, GRPC_MDSTR_IDENTITY)) return GRPC_COMPRESS_NONE;
   if (grpc_slice_eq(str, GRPC_MDSTR_DEFLATE)) return GRPC_COMPRESS_DEFLATE;
   if (grpc_slice_eq(str, GRPC_MDSTR_GZIP)) return GRPC_COMPRESS_GZIP;
   return GRPC_COMPRESS_ALGORITHMS_COUNT;
+}
+
+grpc_stream_compression_algorithm grpc_stream_compression_algorithm_from_slice(
+    grpc_slice str) {
+  if (grpc_slice_eq(str, GRPC_MDSTR_IDENTITY)) return GRPC_STREAM_COMPRESS_NONE;
+  if (grpc_slice_eq(str, GRPC_MDSTR_GZIP)) return GRPC_STREAM_COMPRESS_GZIP;
+  return GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT;
 }
 
 grpc_slice grpc_compression_algorithm_slice(
@@ -84,6 +122,19 @@ grpc_slice grpc_compression_algorithm_slice(
     case GRPC_COMPRESS_GZIP:
       return GRPC_MDSTR_GZIP;
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
+      return grpc_empty_slice();
+  }
+  return grpc_empty_slice();
+}
+
+grpc_slice grpc_stream_compression_algorithm_slice(
+    grpc_stream_compression_algorithm algorithm) {
+  switch (algorithm) {
+    case GRPC_STREAM_COMPRESS_NONE:
+      return GRPC_MDSTR_IDENTITY;
+    case GRPC_STREAM_COMPRESS_GZIP:
+      return GRPC_MDSTR_GZIP;
+    case GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT:
       return grpc_empty_slice();
   }
   return grpc_empty_slice();
@@ -104,10 +155,25 @@ grpc_mdelem grpc_compression_encoding_mdelem(
   return GRPC_MDNULL;
 }
 
+grpc_mdelem grpc_stream_compression_encoding_mdelem(
+    grpc_stream_compression_algorithm algorithm) {
+  switch (algorithm) {
+    case GRPC_STREAM_COMPRESS_NONE:
+      return GRPC_MDELEM_CONTENT_ENCODING_IDENTITY;
+    case GRPC_STREAM_COMPRESS_GZIP:
+      return GRPC_MDELEM_CONTENT_ENCODING_GZIP;
+    default:
+      break;
+  }
+  return GRPC_MDNULL;
+}
+
 void grpc_compression_options_init(grpc_compression_options *opts) {
   memset(opts, 0, sizeof(*opts));
   /* all enabled by default */
   opts->enabled_algorithms_bitset = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
+  opts->enabled_stream_compression_algorithms_bitset =
+      (1u << GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT) - 1;
 }
 
 void grpc_compression_options_enable_algorithm(
@@ -124,6 +190,13 @@ int grpc_compression_options_is_algorithm_enabled(
     const grpc_compression_options *opts,
     grpc_compression_algorithm algorithm) {
   return GPR_BITGET(opts->enabled_algorithms_bitset, algorithm);
+}
+
+int grpc_compression_options_is_stream_compression_algorithm_enabled(
+    const grpc_compression_options *opts,
+    grpc_stream_compression_algorithm algorithm) {
+  return GPR_BITGET(opts->enabled_stream_compression_algorithms_bitset,
+                    algorithm);
 }
 
 /* TODO(dgq): Add the ability to specify parameters to the individual
@@ -180,4 +253,31 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
     default:
       abort();
   };
+}
+
+GRPCAPI grpc_stream_compression_algorithm
+grpc_stream_compression_algorithm_for_level(
+    grpc_stream_compression_level level, uint32_t accepted_stream_encodings) {
+  GRPC_API_TRACE("grpc_stream_compression_algorithm_for_level(level=%d)", 1,
+                 ((int)level));
+  if (level > GRPC_STREAM_COMPRESS_LEVEL_HIGH) {
+    gpr_log(GPR_ERROR, "Unknown compression level %d.", (int)level);
+    abort();
+  }
+
+  switch (level) {
+    case GRPC_STREAM_COMPRESS_LEVEL_NONE:
+      return GRPC_STREAM_COMPRESS_NONE;
+    case GRPC_STREAM_COMPRESS_LEVEL_LOW:
+    case GRPC_STREAM_COMPRESS_LEVEL_MED:
+    case GRPC_STREAM_COMPRESS_LEVEL_HIGH:
+      if (GPR_BITGET(accepted_stream_encodings, GRPC_STREAM_COMPRESS_GZIP) ==
+          1) {
+        return GRPC_STREAM_COMPRESS_GZIP;
+      } else {
+        return GRPC_STREAM_COMPRESS_NONE;
+      }
+    default:
+      abort();
+  }
 }

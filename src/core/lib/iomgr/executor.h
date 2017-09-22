@@ -21,6 +21,11 @@
 
 #include "src/core/lib/iomgr/closure.h"
 
+typedef enum {
+  GRPC_EXECUTOR_SHORT,
+  GRPC_EXECUTOR_LONG
+} grpc_executor_job_length;
+
 /** Initialize the global executor.
  *
  * This mechanism is meant to outsource work (grpc_closure instances) to a
@@ -28,7 +33,7 @@
  * non-blocking solution available. */
 void grpc_executor_init(grpc_exec_ctx *exec_ctx);
 
-extern grpc_closure_scheduler *grpc_executor_scheduler;
+grpc_closure_scheduler *grpc_executor_scheduler(grpc_executor_job_length);
 
 /** Shutdown the executor, running all pending work as part of the call */
 void grpc_executor_shutdown(grpc_exec_ctx *exec_ctx);

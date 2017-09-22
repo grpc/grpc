@@ -41,7 +41,7 @@ def run_gc_stress_test(test_proc)
   GC.enable
   construct_many(test_proc)
 
-  GC.start(full_mark: true, immediate_sweep: true)
+  GC.start
   construct_many(test_proc)
 end
 

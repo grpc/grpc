@@ -30,6 +30,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -74,9 +75,6 @@ typedef struct round_robin_lb_policy {
   bool started_picking;
   /** are we shutting down? */
   bool shutdown;
-  /** has the policy gotten into the GRPC_CHANNEL_SHUTDOWN? No picks can be
-   * service after this point, the policy will never transition out. */
-  bool in_connectivity_shutdown;
   /** List of picks that are waiting on connectivity */
   pending_pick *pending_picks;
 
@@ -147,10 +145,11 @@ struct rr_subchannel_list {
 
 static rr_subchannel_list *rr_subchannel_list_create(round_robin_lb_policy *p,
                                                      size_t num_subchannels) {
-  rr_subchannel_list *subchannel_list = gpr_zalloc(sizeof(*subchannel_list));
+  rr_subchannel_list *subchannel_list =
+      (rr_subchannel_list *)gpr_zalloc(sizeof(*subchannel_list));
   subchannel_list->policy = p;
   subchannel_list->subchannels =
-      gpr_zalloc(sizeof(subchannel_data) * num_subchannels);
+      (subchannel_data *)gpr_zalloc(sizeof(subchannel_data) * num_subchannels);
   subchannel_list->num_subchannels = num_subchannels;
   gpr_ref_init(&subchannel_list->refcount, 1);
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
@@ -312,6 +311,7 @@ static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
             (void *)pol, (void *)pol);
   }
   grpc_connectivity_state_destroy(exec_ctx, &p->state_tracker);
+  grpc_subchannel_index_unref();
   gpr_free(p);
 }
 
@@ -424,7 +424,6 @@ static int rr_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                           grpc_closure *on_complete) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   GPR_ASSERT(!p->shutdown);
-  GPR_ASSERT(!p->in_connectivity_shutdown);
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO, "[RR %p] Trying to pick", (void *)pol);
   }
@@ -456,7 +455,7 @@ static int rr_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   if (!p->started_picking) {
     start_picking_locked(exec_ctx, p);
   }
-  pending_pick *pp = gpr_malloc(sizeof(*pp));
+  pending_pick *pp = (pending_pick *)gpr_malloc(sizeof(*pp));
   pp->next = p->pending_picks;
   pp->target = target;
   pp->on_complete = on_complete;
@@ -537,7 +536,7 @@ static grpc_connectivity_state update_lb_connectivity_status_locked(
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                 GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
                                 "rr_shutdown");
-    p->in_connectivity_shutdown = true;
+    p->shutdown = true;
     new_state = GRPC_CHANNEL_SHUTDOWN;
   } else if (subchannel_list->num_transient_failures ==
              p->subchannel_list->num_subchannels) { /* 4) TRANSIENT_FAILURE */
@@ -557,7 +556,7 @@ static grpc_connectivity_state update_lb_connectivity_status_locked(
 
 static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                            grpc_error *error) {
-  subchannel_data *sd = arg;
+  subchannel_data *sd = (subchannel_data *)arg;
   round_robin_lb_policy *p = sd->subchannel_list->policy;
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
     gpr_log(
@@ -590,7 +589,7 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
   // Dispose of outdated subchannel lists.
   if (sd->subchannel_list != p->subchannel_list &&
       sd->subchannel_list != p->latest_pending_subchannel_list) {
-    char *reason = NULL;
+    const char *reason = NULL;
     if (sd->subchannel_list->shutting_down) {
       reason = "sl_outdated_straggler";
       rr_subchannel_list_unref(exec_ctx, sd->subchannel_list, reason);
@@ -741,8 +740,6 @@ static void rr_ping_one_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                              const grpc_lb_policy_args *args) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)policy;
-  /* Find the number of backend addresses. We ignore balancer addresses, since
-   * we don't know how to handle them. */
   const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
@@ -760,13 +757,10 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     }
     return;
   }
-  grpc_lb_addresses *addresses = arg->value.pointer.p;
-  size_t num_addrs = 0;
-  for (size_t i = 0; i < addresses->num_addresses; i++) {
-    if (!addresses->addresses[i].is_balancer) ++num_addrs;
-  }
-  rr_subchannel_list *subchannel_list = rr_subchannel_list_create(p, num_addrs);
-  if (num_addrs == 0) {
+  grpc_lb_addresses *addresses = (grpc_lb_addresses *)arg->value.pointer.p;
+  rr_subchannel_list *subchannel_list =
+      rr_subchannel_list_create(p, addresses->num_addresses);
+  if (addresses->num_addresses == 0) {
     grpc_connectivity_state_set(
         exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
@@ -798,9 +792,8 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                                          GRPC_ARG_LB_ADDRESSES};
   /* Create subchannels for addresses in the update. */
   for (size_t i = 0; i < addresses->num_addresses; i++) {
-    /* Skip balancer addresses, since we only know how to handle backends. */
-    if (addresses->addresses[i].is_balancer) continue;
-    GPR_ASSERT(i < num_addrs);
+    // If there were any balancer, we would have chosen grpclb policy instead.
+    GPR_ASSERT(!addresses->addresses[i].is_balancer);
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
     grpc_arg addr_arg =
         grpc_create_subchannel_address_arg(&addresses->addresses[i].address);
@@ -811,19 +804,30 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     sc_args.args = new_args;
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args);
+    grpc_channel_args_destroy(exec_ctx, new_args);
+    grpc_error *error;
+    // Get the connectivity state of the subchannel. Already existing ones may
+    // be in a state other than INIT.
+    const grpc_connectivity_state subchannel_connectivity_state =
+        grpc_subchannel_check_connectivity(subchannel, &error);
+    if (error != GRPC_ERROR_NONE) {
+      // The subchannel is in error (e.g. shutting down). Ignore it.
+      GRPC_SUBCHANNEL_UNREF(exec_ctx, subchannel, "new_sc_connectivity_error");
+      GRPC_ERROR_UNREF(error);
+      continue;
+    }
     if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
       char *address_uri =
           grpc_sockaddr_to_uri(&addresses->addresses[i].address);
       gpr_log(
           GPR_DEBUG,
           "[RR %p] index %lu: Created subchannel %p for address uri %s into "
-          "subchannel_list %p",
+          "subchannel_list %p. Connectivity state %s",
           (void *)p, (unsigned long)subchannel_index, (void *)subchannel,
-          address_uri, (void *)subchannel_list);
+          address_uri, (void *)subchannel_list,
+          grpc_connectivity_state_name(subchannel_connectivity_state));
       gpr_free(address_uri);
     }
-    grpc_channel_args_destroy(exec_ctx, new_args);
-
     subchannel_data *sd = &subchannel_list->subchannels[subchannel_index++];
     sd->subchannel_list = subchannel_list;
     sd->subchannel = subchannel;
@@ -835,7 +839,7 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
      * won't be referring to this value again and it'll be overwritten after
      * the first call to rr_connectivity_changed_locked */
     sd->prev_connectivity_state = GRPC_CHANNEL_INIT;
-    sd->curr_connectivity_state = GRPC_CHANNEL_IDLE;
+    sd->curr_connectivity_state = subchannel_connectivity_state;
     sd->user_data_vtable = addresses->user_data_vtable;
     if (sd->user_data_vtable != NULL) {
       sd->user_data =
@@ -886,8 +890,9 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
                                           grpc_lb_policy_factory *factory,
                                           grpc_lb_policy_args *args) {
   GPR_ASSERT(args->client_channel_factory != NULL);
-  round_robin_lb_policy *p = gpr_zalloc(sizeof(*p));
+  round_robin_lb_policy *p = (round_robin_lb_policy *)gpr_zalloc(sizeof(*p));
   grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable, args->combiner);
+  grpc_subchannel_index_ref();
   grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,
                                "round_robin");
   rr_update_locked(exec_ctx, &p->base, args);

@@ -39,6 +39,11 @@ bind(
 )
 
 bind(
+    name = "gmock",
+    actual = "@submodule_gtest//:gmock",
+)
+
+bind(
     name = "benchmark",
     actual = "@submodule_benchmark//:benchmark",
 )

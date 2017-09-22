@@ -35,10 +35,11 @@ extern "C" {
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
-#include "src/core/ext/filters/load_reporting/load_reporting_filter.h"
+#include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -396,10 +397,6 @@ grpc_error *InitChannelElem(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
 
 void DestroyChannelElem(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem) {}
 
-char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
-  return gpr_strdup("peer");
-}
-
 void GetChannelInfo(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
                     const grpc_channel_info *channel_info) {}
 
@@ -412,7 +409,6 @@ static const grpc_channel_filter dummy_filter = {StartTransportStreamOp,
                                                  0,
                                                  InitChannelElem,
                                                  DestroyChannelElem,
-                                                 GetPeer,
                                                  GetChannelInfo,
                                                  "dummy_filter"};
 
@@ -459,11 +455,6 @@ void DestroyStream(grpc_exec_ctx *exec_ctx, grpc_transport *self,
 /* implementation of grpc_transport_destroy */
 void Destroy(grpc_exec_ctx *exec_ctx, grpc_transport *self) {}
 
-/* implementation of grpc_transport_get_peer */
-char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_transport *self) {
-  return gpr_strdup("transport_peer");
-}
-
 /* implementation of grpc_transport_get_endpoint */
 grpc_endpoint *GetEndpoint(grpc_exec_ctx *exec_ctx, grpc_transport *self) {
   return nullptr;
@@ -473,7 +464,7 @@ static const grpc_transport_vtable dummy_transport_vtable = {
     0,          "dummy_http2", InitStream,
     SetPollset, SetPollsetSet, PerformStreamOp,
     PerformOp,  DestroyStream, Destroy,
-    GetPeer,    GetEndpoint};
+    GetEndpoint};
 
 static grpc_transport dummy_transport = {&dummy_transport_vtable};
 
@@ -629,7 +620,7 @@ BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, SendEmptyMetadata);
 typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, MessageSizeFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, MessageSizeFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_load_reporting_filter, CHECKS_NOT_LAST>
+typedef Fixture<&grpc_server_load_reporting_filter, CHECKS_NOT_LAST>
     LoadReportingFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, LoadReportingFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, LoadReportingFilter, SendEmptyMetadata);
@@ -639,18 +630,22 @@ BENCHMARK_TEMPLATE(BM_IsolatedFilter, LoadReportingFilter, SendEmptyMetadata);
 
 namespace isolated_call_filter {
 
+typedef struct { grpc_call_combiner *call_combiner; } call_data;
+
 static void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem,
                                    grpc_transport_stream_op_batch *op) {
+  call_data *calld = static_cast<call_data *>(elem->call_data);
   if (op->recv_initial_metadata) {
-    GRPC_CLOSURE_SCHED(
-        exec_ctx,
+    GRPC_CALL_COMBINER_START(
+        exec_ctx, calld->call_combiner,
         op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-        GRPC_ERROR_NONE);
+        GRPC_ERROR_NONE, "recv_initial_metadata");
   }
   if (op->recv_message) {
-    GRPC_CLOSURE_SCHED(exec_ctx, op->payload->recv_message.recv_message_ready,
-                       GRPC_ERROR_NONE);
+    GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
+                             op->payload->recv_message.recv_message_ready,
+                             GRPC_ERROR_NONE, "recv_message");
   }
   GRPC_CLOSURE_SCHED(exec_ctx, op->on_complete, GRPC_ERROR_NONE);
 }
@@ -667,6 +662,8 @@ static void StartTransportOp(grpc_exec_ctx *exec_ctx,
 static grpc_error *InitCallElem(grpc_exec_ctx *exec_ctx,
                                 grpc_call_element *elem,
                                 const grpc_call_element_args *args) {
+  call_data *calld = static_cast<call_data *>(elem->call_data);
+  calld->call_combiner = args->call_combiner;
   return GRPC_ERROR_NONE;
 }
 
@@ -687,24 +684,19 @@ grpc_error *InitChannelElem(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
 
 void DestroyChannelElem(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem) {}
 
-char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
-  return gpr_strdup("peer");
-}
-
 void GetChannelInfo(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
                     const grpc_channel_info *channel_info) {}
 
 static const grpc_channel_filter isolated_call_filter = {
     StartTransportStreamOp,
     StartTransportOp,
-    0,
+    sizeof(call_data),
     InitCallElem,
     SetPollsetOrPollsetSet,
     DestroyCallElem,
     0,
     InitChannelElem,
     DestroyChannelElem,
-    GetPeer,
     GetChannelInfo,
     "isolated_call_filter"};
 }  // namespace isolated_call_filter

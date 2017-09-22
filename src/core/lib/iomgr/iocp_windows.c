@@ -27,6 +27,7 @@
 #include <grpc/support/log_windows.h>
 #include <grpc/support/thd.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/socket_windows.h"
@@ -65,6 +66,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
   LPOVERLAPPED overlapped;
   grpc_winsocket *socket;
   grpc_winsocket_callback_info *info;
+  GRPC_STATS_INC_SYSCALL_POLL(exec_ctx);
   success = GetQueuedCompletionStatus(
       g_iocp, &bytes, &completion_key, &overlapped,
       deadline_to_millis_timeout(deadline, gpr_now(deadline.clock_type)));

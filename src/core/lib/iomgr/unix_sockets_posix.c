@@ -49,9 +49,11 @@ grpc_error *grpc_resolve_unix_domain_address(const char *name,
     gpr_free(err_msg);
     return err;
   }
-  *addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
+  *addrs =
+      (grpc_resolved_addresses *)gpr_malloc(sizeof(grpc_resolved_addresses));
   (*addrs)->naddrs = 1;
-  (*addrs)->addrs = gpr_malloc(sizeof(grpc_resolved_address));
+  (*addrs)->addrs =
+      (grpc_resolved_address *)gpr_malloc(sizeof(grpc_resolved_address));
   un = (struct sockaddr_un *)(*addrs)->addrs->addr;
   un->sun_family = AF_UNIX;
   strcpy(un->sun_path, name);

@@ -18,6 +18,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
+#include <limits.h>
 #include <math.h>
 #include <string.h>
 
@@ -59,24 +60,24 @@ static void pretrace(shadow_flow_control* shadow_fc,
 
 #define TRACE_PADDING 30
 
-static char* fmt_int64_diff_str(int64_t old, int64_t new) {
+static char* fmt_int64_diff_str(int64_t old_val, int64_t new_val) {
   char* str;
-  if (old != new) {
-    gpr_asprintf(&str, "%" PRId64 " -> %" PRId64 "", old, new);
+  if (old_val != new_val) {
+    gpr_asprintf(&str, "%" PRId64 " -> %" PRId64 "", old_val, new_val);
   } else {
-    gpr_asprintf(&str, "%" PRId64 "", old);
+    gpr_asprintf(&str, "%" PRId64 "", old_val);
   }
   char* str_lp = gpr_leftpad(str, ' ', TRACE_PADDING);
   gpr_free(str);
   return str_lp;
 }
 
-static char* fmt_uint32_diff_str(uint32_t old, uint32_t new) {
+static char* fmt_uint32_diff_str(uint32_t old_val, uint32_t new_val) {
   char* str;
-  if (new > 0 && old != new) {
-    gpr_asprintf(&str, "%" PRIu32 " -> %" PRIu32 "", old, new);
+  if (new_val > 0 && old_val != new_val) {
+    gpr_asprintf(&str, "%" PRIu32 " -> %" PRIu32 "", old_val, new_val);
   } else {
-    gpr_asprintf(&str, "%" PRIu32 "", old);
+    gpr_asprintf(&str, "%" PRIu32 "", old_val);
   }
   char* str_lp = gpr_leftpad(str, ' ', TRACE_PADDING);
   gpr_free(str);
@@ -482,8 +483,9 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_bdp_action(
     double bw_dbl = -1;
     if (grpc_bdp_estimator_get_bw(&tfc->bdp_estimator, &bw_dbl)) {
       // we target the max of BDP or bandwidth in microseconds.
-      int32_t frame_size =
-          GPR_CLAMP(GPR_MAX((int32_t)bw_dbl / 1000, bdp), 16384, 16777215);
+      int32_t frame_size = (int32_t)GPR_CLAMP(
+          GPR_MAX((int32_t)GPR_CLAMP(bw_dbl, 0, INT_MAX) / 1000, bdp), 16384,
+          16777215);
       grpc_chttp2_flowctl_urgency frame_size_urgency = delta_is_significant(
           tfc, frame_size, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE);
       if (frame_size_urgency != GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED) {

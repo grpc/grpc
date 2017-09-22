@@ -104,6 +104,9 @@ class GprLogReporter : public Reporter {
   void ReportCpuUsage(const ScenarioResult& result) override;
   void ReportPollCount(const ScenarioResult& result) override;
   void ReportQueriesPerCpuSec(const ScenarioResult& result) override;
+
+  void ReportCoreStats(const char* name, int idx,
+                       const grpc::core::Stats& stats);
 };
 
 /** Dumps the report to a JSON file. */

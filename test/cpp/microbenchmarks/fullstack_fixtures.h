@@ -41,6 +41,7 @@ extern "C" {
 #include "test/core/util/port.h"
 }
 
+#include "src/cpp/client/create_channel_internal.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
 namespace grpc {
