@@ -84,7 +84,6 @@ static timer_shard *g_shard_queue[NUM_SHARDS];
 /* == Hash table for duplicate timer detection == */
 
 #define NUM_HASH_BUCKETS 1009 /* Prime number close to 1000 */
-#define NUM_SLOTS_PER_BUCKET 30
 
 static gpr_mu g_hash_mu[NUM_HASH_BUCKETS]; /* One mutex per bucket */
 static grpc_timer *g_timer_ht[NUM_HASH_BUCKETS] = {NULL};
