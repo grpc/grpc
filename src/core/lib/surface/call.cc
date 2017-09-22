@@ -95,9 +95,12 @@ static gpr_atm pack_received_status(received_status r) {
 
 static received_status unpack_received_status(gpr_atm atm) {
   return (atm & 1) == 0
-             ? (received_status){.is_set = false, .error = GRPC_ERROR_NONE}
-             : (received_status){.is_set = true,
-                                 .error = (grpc_error *)(atm & ~(gpr_atm)1)};
+             ? (received_status){false, /* is_set */
+               GRPC_ERROR_NONE /*error */
+             }
+             : (received_status){true, /* is_set */
+                                 (grpc_error *)(atm & ~(gpr_atm)1) /* error */
+             };
 }
 
 #define MAX_ERRORS_PER_BATCH 4

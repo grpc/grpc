@@ -45,7 +45,7 @@ char *gpr_getenv(const char *name) {
   ret = GetEnvironmentVariable(tname, NULL, 0);
   if (ret == 0) return NULL;
   size = ret * (DWORD)sizeof(TCHAR);
-  tresult = gpr_malloc(size);
+  tresult = (LPTSTR)gpr_malloc(size);
   ret = GetEnvironmentVariable(tname, tresult, size);
   gpr_free(tname);
   if (ret == 0) {
