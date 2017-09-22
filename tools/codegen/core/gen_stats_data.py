@@ -255,7 +255,7 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
   print >>H
   print >>H, "#endif /* GRPC_CORE_LIB_DEBUG_STATS_DATA_H */"
 
-with open('src/core/lib/debug/stats_data.c', 'w') as C:
+with open('src/core/lib/debug/stats_data.cc', 'w') as C:
   # copy-paste copyright notice from this file
   with open(sys.argv[0]) as my_source:
     copyright = []
