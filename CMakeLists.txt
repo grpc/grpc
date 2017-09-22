@@ -1607,20 +1607,20 @@ add_library(grpc_test_util
   test/core/end2end/data/test_root_cert.c
   test/core/security/oauth2_utils.c
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
-  test/core/end2end/cq_verifier.cc
-  test/core/end2end/fixtures/http_proxy_fixture.cc
-  test/core/end2end/fixtures/proxy.cc
-  test/core/iomgr/endpoint_tests.cc
-  test/core/util/debugger_macros.cc
-  test/core/util/grpc_profiler.cc
-  test/core/util/memory_counters.cc
-  test/core/util/mock_endpoint.cc
-  test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
-  test/core/util/port.cc
-  test/core/util/port_server_client.cc
-  test/core/util/slice_splitter.cc
-  test/core/util/trickle_endpoint.cc
+  test/core/end2end/cq_verifier.c
+  test/core/end2end/fixtures/http_proxy_fixture.c
+  test/core/end2end/fixtures/proxy.c
+  test/core/iomgr/endpoint_tests.c
+  test/core/util/debugger_macros.c
+  test/core/util/grpc_profiler.c
+  test/core/util/memory_counters.c
+  test/core/util/mock_endpoint.c
+  test/core/util/parse_hexstring.c
+  test/core/util/passthru_endpoint.c
+  test/core/util/port.c
+  test/core/util/port_server_client.c
+  test/core/util/slice_splitter.c
+  test/core/util/trickle_endpoint.c
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
@@ -1868,20 +1868,20 @@ if (gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
-  test/core/end2end/cq_verifier.cc
-  test/core/end2end/fixtures/http_proxy_fixture.cc
-  test/core/end2end/fixtures/proxy.cc
-  test/core/iomgr/endpoint_tests.cc
-  test/core/util/debugger_macros.cc
-  test/core/util/grpc_profiler.cc
-  test/core/util/memory_counters.cc
-  test/core/util/mock_endpoint.cc
-  test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
-  test/core/util/port.cc
-  test/core/util/port_server_client.cc
-  test/core/util/slice_splitter.cc
-  test/core/util/trickle_endpoint.cc
+  test/core/end2end/cq_verifier.c
+  test/core/end2end/fixtures/http_proxy_fixture.c
+  test/core/end2end/fixtures/proxy.c
+  test/core/iomgr/endpoint_tests.c
+  test/core/util/debugger_macros.c
+  test/core/util/grpc_profiler.c
+  test/core/util/memory_counters.c
+  test/core/util/mock_endpoint.c
+  test/core/util/parse_hexstring.c
+  test/core/util/passthru_endpoint.c
+  test/core/util/port.c
+  test/core/util/port_server_client.c
+  test/core/util/slice_splitter.c
+  test/core/util/trickle_endpoint.c
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
