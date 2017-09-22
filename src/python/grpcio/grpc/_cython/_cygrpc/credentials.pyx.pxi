@@ -248,7 +248,16 @@ def call_credentials_metadata_plugin(CredentialsMetadataPlugin plugin):
   return credentials
 
 def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
-                           bint force_client_auth):
+                           bint force_client_auth,
+                           get_server_credentials_cb=None
+                           ):
+  """
+  Args:
+    get_server_credentials_cb (callable): Callback that takes no argument
+      and should return a (bool, grpc.ServerCredentials) tuple, where the
+      bool specifies if the credentials are new and should be used for
+      new connections.
+  """
   pem_root_certs = str_to_bytes(pem_root_certs)
   cdef char *c_pem_root_certs = NULL
   if pem_root_certs is not None: 
@@ -268,6 +277,17 @@ def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
             sizeof(grpc_ssl_pem_key_cert_pair) *
                 credentials.c_ssl_pem_key_cert_pairs_count
         ))
+
+  cdef void *options = NULL
+  cdef grpc_ssl_server_credentials_create_options create_options
+  if get_server_credentials_cb:
+    if not callable(get_server_credentials_cb):
+      raise ValueError('get_server_credentials_cb must be callable')
+    credentials.references.append(get_server_credentials_cb)
+    create_options.get_server_credentials_cb = _get_server_credentials_cb_wrapper
+    create_options.get_server_credentials_cb_arg = <void*>get_server_credentials_cb
+    options = <void *> &create_options
+
   for i in range(credentials.c_ssl_pem_key_cert_pairs_count):
     credentials.c_ssl_pem_key_cert_pairs[i] = (
         (<SslPemKeyCertPair>pem_key_cert_pairs[i]).c_pair)
@@ -275,6 +295,6 @@ def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
       c_pem_root_certs, credentials.c_ssl_pem_key_cert_pairs,
       credentials.c_ssl_pem_key_cert_pairs_count,
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY if force_client_auth else GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
-      NULL)
+      options)
   return credentials
 
