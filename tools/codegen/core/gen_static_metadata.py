@@ -304,7 +304,7 @@ else:
   C = open(
       os.path.join(
           os.path.dirname(sys.argv[0]),
-          '../../../src/core/lib/transport/static_metadata.c'), 'w')
+          '../../../src/core/lib/transport/static_metadata.cc'), 'w')
   D = open(
       os.path.join(
           os.path.dirname(sys.argv[0]),
