@@ -48,6 +48,12 @@ class Grpc(object):
   yaml = None
 
   def WriteFiles(self, files, asm_outputs):
+    # Check to see which tests are available under files
+    tests = []
+    for key in ['test', 'tests', 'crypto_test', 'ssl_test']:
+      if key in files.keys():
+        tests += files[key]
+
     self.yaml = {
       '#': 'generated with tools/buildgen/gen_boring_ssl_build_yaml.py',
       'raw_boringssl_build_output_for_debugging': {
@@ -98,7 +104,7 @@ class Grpc(object):
                 'boringssl',
             ]
           }
-          for test in sorted(files['test'])
+          for test in sorted(tests)
       ],
       'targets': [
           {
@@ -117,7 +123,7 @@ class Grpc(object):
                 'boringssl',
             ]
           }
-          for test in sorted(files['test'])
+          for test in sorted(tests)
       ],
       'tests': [
           {
@@ -132,7 +138,7 @@ class Grpc(object):
             'defaults': 'boringssl',
             'cpu_cost': 1.0
           }
-          for test in files['tests']
+          for test in sorted(tests)
       ]
     }
 
