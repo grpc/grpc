@@ -359,8 +359,9 @@ static grpc_error *init_data_frame_parser(grpc_exec_ctx *exec_ctx,
                                       s == NULL ? NULL : &s->flow_control,
                                       t->incoming_frame_size);
   grpc_chttp2_act_on_flowctl_action(
-      exec_ctx, grpc_chttp2_flowctl_get_action(
-                    &t->flow_control, s == NULL ? NULL : &s->flow_control),
+      exec_ctx,
+      grpc_chttp2_flowctl_get_action(exec_ctx, &t->flow_control,
+                                     s == NULL ? NULL : &s->flow_control),
       t, s);
   if (err != GRPC_ERROR_NONE) {
     goto error_handler;

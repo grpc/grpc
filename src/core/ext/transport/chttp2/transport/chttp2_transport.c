@@ -563,7 +563,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
 
   grpc_chttp2_act_on_flowctl_action(
-      exec_ctx, grpc_chttp2_flowctl_get_action(&t->flow_control, NULL), t,
+      exec_ctx,
+      grpc_chttp2_flowctl_get_action(exec_ctx, &t->flow_control, NULL), t,
       NULL);
 
   grpc_chttp2_initiate_write(exec_ctx, t,
@@ -1620,8 +1621,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
             &t->flow_control, &s->flow_control, GRPC_HEADER_SIZE_IN_BYTES,
             already_received);
         grpc_chttp2_act_on_flowctl_action(
-            exec_ctx,
-            grpc_chttp2_flowctl_get_action(&t->flow_control, &s->flow_control),
+            exec_ctx, grpc_chttp2_flowctl_get_action(exec_ctx, &t->flow_control,
+                                                     &s->flow_control),
             t, s);
       }
     }
@@ -2538,7 +2539,8 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     grpc_endpoint_read(exec_ctx, t->ep, &t->read_buffer,
                        &t->read_action_locked);
     grpc_chttp2_act_on_flowctl_action(
-        exec_ctx, grpc_chttp2_flowctl_get_action(&t->flow_control, NULL), t,
+        exec_ctx,
+        grpc_chttp2_flowctl_get_action(exec_ctx, &t->flow_control, NULL), t,
         NULL);
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keep_reading");
   } else {
@@ -2794,9 +2796,9 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
                                            bs->next_action.max_size_hint,
                                            cur_length);
     grpc_chttp2_act_on_flowctl_action(
-        exec_ctx,
-        grpc_chttp2_flowctl_get_action(&t->flow_control, &s->flow_control), t,
-        s);
+        exec_ctx, grpc_chttp2_flowctl_get_action(exec_ctx, &t->flow_control,
+                                                 &s->flow_control),
+        t, s);
   }
   GPR_ASSERT(s->unprocessed_incoming_frames_buffer.length == 0);
   if (s->frame_storage.length > 0) {

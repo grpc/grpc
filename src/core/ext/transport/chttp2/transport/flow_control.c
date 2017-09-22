@@ -391,9 +391,10 @@ static grpc_chttp2_flowctl_urgency delta_is_significant(
 
 // Takes in a target and uses the pid controller to return a stabilized
 // guess at the new bdp.
-static double get_pid_controller_guess(grpc_chttp2_transport_flowctl* tfc,
+static double get_pid_controller_guess(grpc_exec_ctx* exec_ctx,
+                                       grpc_chttp2_transport_flowctl* tfc,
                                        double target) {
-  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+  grpc_millis now = grpc_exec_ctx_now(exec_ctx);
   if (!tfc->pid_controller_initialized) {
     tfc->last_pid_update = now;
     tfc->pid_controller_initialized = true;
@@ -409,11 +410,7 @@ static double get_pid_controller_guess(grpc_chttp2_transport_flowctl* tfc,
     return pow(2, target);
   }
   double bdp_error = target - grpc_pid_controller_last(&tfc->pid_controller);
-  gpr_timespec dt_timespec = gpr_time_sub(now, tfc->last_pid_update);
-  double dt = (double)dt_timespec.tv_sec + dt_timespec.tv_nsec * 1e-9;
-  if (dt > 0.1) {
-    dt = 0.1;
-  }
+  double dt = (double)(now - tfc->last_pid_update) * 1e-3;
   double log2_bdp_guess =
       grpc_pid_controller_update(&tfc->pid_controller, bdp_error, dt);
   tfc->last_pid_update = now;
@@ -441,7 +438,8 @@ static double get_target_under_memory_pressure(
 }
 
 grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
-    grpc_chttp2_transport_flowctl* tfc, grpc_chttp2_stream_flowctl* sfc) {
+    grpc_exec_ctx* exec_ctx, grpc_chttp2_transport_flowctl* tfc,
+    grpc_chttp2_stream_flowctl* sfc) {
   grpc_chttp2_flowctl_action action;
   memset(&action, 0, sizeof(action));
   // TODO(ncteisen): tune this
@@ -473,7 +471,7 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
 
       // run our target through the pid controller to stabilize change.
       // TODO(ncteisen): experiment with other controllers here.
-      double bdp_guess = get_pid_controller_guess(tfc, target);
+      double bdp_guess = get_pid_controller_guess(exec_ctx, tfc, target);
 
       // Though initial window 'could' drop to 0, we keep the floor at 128
       tfc->target_initial_window_size =

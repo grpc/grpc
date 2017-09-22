@@ -269,7 +269,7 @@ typedef struct {
   /* pid controller */
   bool pid_controller_initialized;
   grpc_pid_controller pid_controller;
-  gpr_timespec last_pid_update;
+  grpc_millis last_pid_update;
 
   // pointer back to transport for tracing
   const grpc_chttp2_transport *t;
@@ -748,7 +748,8 @@ typedef struct {
 // Reads the flow control data and returns and actionable struct that will tell
 // chttp2 exactly what it needs to do
 grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
-    grpc_chttp2_transport_flowctl *tfc, grpc_chttp2_stream_flowctl *sfc);
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_flowctl *tfc,
+    grpc_chttp2_stream_flowctl *sfc);
 
 // Takes in a flow control action and performs all the needed operations.
 void grpc_chttp2_act_on_flowctl_action(grpc_exec_ctx *exec_ctx,
