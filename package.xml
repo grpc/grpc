@@ -772,7 +772,6 @@
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/rsa.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/safestack.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/sha.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/include/openssl/span.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/srtp.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/ssl.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/include/openssl/ssl3.h" role="src" />
@@ -1003,42 +1002,42 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509v3/v3_skey.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509v3/v3_sxnet.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/x509v3/v3_utl.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/bio_ssl.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/custom_extensions.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_both.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_lib.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_pkt.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_srtp.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/dtls_method.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/dtls_record.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/handshake.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/handshake_client.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/handshake_server.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_both.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_lib.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_pkt.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_aead_ctx.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_asn1.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_buffer.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_cert.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_cipher.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_file.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_key_share.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_lib.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_privkey.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_session.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_stat.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_transcript.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_versions.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_x509.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/t1_enc.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/t1_lib.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_both.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_client.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_enc.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_server.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_method.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_record.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/bio_ssl.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/custom_extensions.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_both.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_lib.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_pkt.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/d1_srtp.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/dtls_method.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/dtls_record.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/handshake_client.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/handshake_server.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_both.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_lib.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/s3_pkt.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_aead_ctx.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_asn1.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_buffer.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_cert.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_cipher.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_ecdh.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_file.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_lib.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_privkey.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_privkey_cc.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_session.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_stat.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_transcript.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_versions.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/ssl_x509.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/t1_enc.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/t1_lib.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_both.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_client.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_enc.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls13_server.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_method.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_record.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/crc32.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/deflate.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/gzguts.h" role="src" />

@@ -7179,51 +7179,6 @@
       "l", 
       "third_party/boringssl//", 
       "s", 
-      "p", 
-      "a", 
-      "n", 
-      "_", 
-      "t", 
-      "e", 
-      "s", 
-      "t", 
-      ".", 
-      "c", 
-      "c"
-    ], 
-    "boringssl": true, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "defaults": "boringssl", 
-    "exclude_configs": [
-      "asan", 
-      "ubsan"
-    ], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "boringssl_s", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "args": [
-      "r", 
-      "c", 
-      "third_party/boringssl//", 
-      "s", 
-      "s", 
-      "l", 
-      "third_party/boringssl//", 
-      "s", 
       "s", 
       "l", 
       "_", 

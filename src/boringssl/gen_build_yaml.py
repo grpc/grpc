@@ -104,7 +104,7 @@ class Grpc(object):
                 'boringssl',
             ]
           }
-          for test in sorted(tests)
+          for test in sorted(files['crypto_test'])
       ],
       'targets': [
           {
@@ -123,7 +123,7 @@ class Grpc(object):
                 'boringssl',
             ]
           }
-          for test in sorted(tests)
+          for test in sorted(files['crypto_test'])
       ],
       'tests': [
           {
