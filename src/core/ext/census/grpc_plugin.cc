@@ -50,7 +50,7 @@ static bool maybe_add_census_filter(grpc_exec_ctx *exec_ctx,
   return true;
 }
 
-void census_grpc_plugin_init(void) {
+extern "C" void census_grpc_plugin_init(void) {
   /* Only initialize census if no one else has and some features are
    * available. */
   if (census_enabled() == CENSUS_FEATURE_NONE &&
@@ -67,4 +67,4 @@ void census_grpc_plugin_init(void) {
                                    (void *)&grpc_server_census_filter);
 }
 
-void census_grpc_plugin_shutdown(void) { census_shutdown(); }
+extern "C" void census_grpc_plugin_shutdown(void) { census_shutdown(); }

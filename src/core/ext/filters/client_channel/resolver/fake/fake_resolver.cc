@@ -258,8 +258,8 @@ static const grpc_resolver_factory_vtable fake_resolver_factory_vtable = {
 static grpc_resolver_factory fake_resolver_factory = {
     &fake_resolver_factory_vtable};
 
-void grpc_resolver_fake_init(void) {
+extern "C" void grpc_resolver_fake_init(void) {
   grpc_register_resolver_type(&fake_resolver_factory);
 }
 
-void grpc_resolver_fake_shutdown(void) {}
+extern "C" void grpc_resolver_fake_shutdown(void) {}

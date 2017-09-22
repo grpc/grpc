@@ -2006,7 +2006,7 @@ static bool maybe_add_client_load_reporting_filter(
   return true;
 }
 
-void grpc_lb_policy_grpclb_init() {
+extern "C" void grpc_lb_policy_grpclb_init() {
   grpc_register_lb_policy(grpc_glb_lb_factory_create());
   grpc_register_tracer(&grpc_lb_glb_trace);
 #ifndef NDEBUG
@@ -2018,4 +2018,4 @@ void grpc_lb_policy_grpclb_init() {
                                    (void *)&grpc_client_load_reporting_filter);
 }
 
-void grpc_lb_policy_grpclb_shutdown() {}
+extern "C" void grpc_lb_policy_grpclb_shutdown() {}

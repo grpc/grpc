@@ -385,7 +385,7 @@ static bool maybe_add_deadline_filter(grpc_exec_ctx* exec_ctx,
              : true;
 }
 
-void grpc_deadline_filter_init(void) {
+extern "C" void grpc_deadline_filter_init(void) {
   grpc_channel_init_register_stage(
       GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       maybe_add_deadline_filter, (void*)&grpc_client_deadline_filter);
@@ -394,4 +394,4 @@ void grpc_deadline_filter_init(void) {
       maybe_add_deadline_filter, (void*)&grpc_server_deadline_filter);
 }
 
-void grpc_deadline_filter_shutdown(void) {}
+extern "C" void grpc_deadline_filter_shutdown(void) {}

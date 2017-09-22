@@ -20,7 +20,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/metadata.h"
 
-void grpc_chttp2_plugin_init(void) {
+extern "C" void grpc_chttp2_plugin_init(void) {
   grpc_register_tracer(&grpc_http_trace);
   grpc_register_tracer(&grpc_flowctl_trace);
   grpc_register_tracer(&grpc_trace_http2_stream_state);
@@ -29,4 +29,4 @@ void grpc_chttp2_plugin_init(void) {
 #endif
 }
 
-void grpc_chttp2_plugin_shutdown(void) {}
+extern "C" void grpc_chttp2_plugin_shutdown(void) {}

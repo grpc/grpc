@@ -21,9 +21,11 @@
 
 grpc_tracer_flag grpc_inproc_trace = GRPC_TRACER_INITIALIZER(false, "inproc");
 
-void grpc_inproc_plugin_init(void) {
+extern "C" void grpc_inproc_plugin_init(void) {
   grpc_register_tracer(&grpc_inproc_trace);
   grpc_inproc_transport_init();
 }
 
-void grpc_inproc_plugin_shutdown(void) { grpc_inproc_transport_shutdown(); }
+extern "C" void grpc_inproc_plugin_shutdown(void) {
+  grpc_inproc_transport_shutdown();
+}

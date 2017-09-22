@@ -414,10 +414,10 @@ static bool maybe_add_max_age_filter(grpc_exec_ctx* exec_ctx,
   }
 }
 
-void grpc_max_age_filter_init(void) {
+extern "C" void grpc_max_age_filter_init(void) {
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    maybe_add_max_age_filter, NULL);
 }
 
-void grpc_max_age_filter_shutdown(void) {}
+extern "C" void grpc_max_age_filter_shutdown(void) {}

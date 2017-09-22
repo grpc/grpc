@@ -28,6 +28,7 @@
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
