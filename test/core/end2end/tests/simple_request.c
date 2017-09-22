@@ -230,6 +230,8 @@ static void simple_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(after->counters[GRPC_STATS_COUNTER_SERVER_CALLS_CREATED] -
                  before->counters[GRPC_STATS_COUNTER_SERVER_CALLS_CREATED] ==
              expected_calls);
+  gpr_free(before);
+  gpr_free(after);
 }
 
 static void test_invoke_simple_request(grpc_end2end_test_config config) {
