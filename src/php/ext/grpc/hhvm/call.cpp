@@ -339,7 +339,8 @@ void HHVM_METHOD(Call, __construct,
                                                      pCompletionQueue->queue(),
                                                      method_slice.slice(),
                                                      !host_slice.empty() ? &host_slice.slice() : nullptr,
-                                                     pDeadlineTimevalData->time(), nullptr) };
+                                                     gpr_inf_future(GPR_CLOCK_REALTIME)/*pDeadlineTimevalData->time()*/,
+                                                     nullptr) };
 
     if (!pCall)
     {
@@ -524,13 +525,8 @@ Object HHVM_METHOD(Call, startBatch,
     }
 
     // metadata call credentials synchronization
-    struct MetadataSync
-    {
-        MetadataSync(void) : metadataPromise{}, pMetadataMutex{ new std::mutex }, callCancelled{ false } {}
-        MetadataPromise metadataPromise;
-        std::shared_ptr<std::mutex> pMetadataMutex;
-        bool callCancelled;
-    } metadataSync{};
+    std::shared_ptr<PluginMetadataInfo::MetaDataInfo>
+        pMetaDataInfo{ new PluginMetadataInfo::MetaDataInfo{ std::this_thread::get_id() } };
 
     // set up the crendential promise for the call credentials set up with this call for
     // the plugin_get_metadata routine
@@ -538,30 +534,22 @@ Object HHVM_METHOD(Call, startBatch,
     if (credentialedCall)
     {
         PluginMetadataInfo& pluginMetadataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
-        PluginMetadataInfo::MetaDataInfo metaDataInfo{ &(metadataSync.metadataPromise),
-                                                       metadataSync.pMetadataMutex,
-                                                       &(metadataSync.callCancelled),
-                                                       std::this_thread::get_id() };
-        pluginMetadataInfo.setInfo(pCallData->callCredentials(), std::move(metaDataInfo));
+        pluginMetadataInfo.setInfo(pCallData->callCredentials(), pMetaDataInfo);
     }
-
-    static std::mutex s_StartBatchMutex;
 
     bool callFailed{ false };
     grpc_status_code failCode{ GRPC_STATUS_OK };
-    auto callFailure = [&callFailed, &credentialedCall, &metadataSync, &opsManaged, pCallData]
+    auto callFailure = [&callFailed, &credentialedCall, &pMetaDataInfo, &opsManaged, pCallData]
                        (bool timeOut = false)
     {
+        // invalidate metadata info
+        pMetaDataInfo.reset();
+
         // clean up any meta data info
         if (credentialedCall)
         {
             PluginMetadataInfo& pluginMetadataInfo{ PluginMetadataInfo::getPluginMetadataInfo() };
             pluginMetadataInfo.deleteInfo(pCallData->callCredentials());
-        }
-        {
-            // set call cancelled shared flag
-            std::lock_guard<std::mutex> lock{ *(metadataSync.pMetadataMutex) };
-            metadataSync.callCancelled = true;
         }
 
         if (timeOut)
@@ -570,46 +558,20 @@ Object HHVM_METHOD(Call, startBatch,
             grpc_call_cancel_with_status(pCallData->call(), GRPC_STATUS_DEADLINE_EXCEEDED,
                                          "RPC Call Timeout Exceeded", nullptr);
 
-            // create a new ops managed for this cancel call
-            std::unique_ptr<OpsManaged> pCancelledOpsManage{ new OpsManaged{} };
-            OpsManaged& cancelledOpsManaged{ *(pCancelledOpsManage.get()) };
-
-            std::array<grpc_op, OpsManaged::s_MaxActions> cancelOps;
-            cancelOps[0].data.recv_status_on_client.trailing_metadata = &cancelledOpsManaged.recv_trailing_metadata.array();
-            cancelOps[0].data.recv_status_on_client.status = &cancelledOpsManaged.status;
-            cancelOps[0].data.recv_status_on_client.status_details = &cancelledOpsManaged.recv_status_details.slice();
-            cancelOps[0].op = static_cast<grpc_op_type>(GRPC_OP_RECV_STATUS_ON_CLIENT);
-            cancelOps[0].reserved = nullptr;
-
-            {
-                std::unique_lock<std::mutex> lock{ s_StartBatchMutex };
-                grpc_call_error errorCode{ grpc_call_start_batch(pCallData->call(), cancelOps.data(), 1, &cancelledOpsManaged, nullptr) };
-
-                if (errorCode != GRPC_CALL_OK)
-                {
-                    lock.unlock();
-                    std::stringstream oSS;
-                    oSS << "start_batch during cancel was called incorrectly: " << errorCode << std::endl;
-                    SystemLib::throwBadMethodCallExceptionObject(oSS.str());
-                }
-            }
-
             // wait for failure after cancelling call
-            grpc_event cancel_event(grpc_completion_queue_pluck(pCallData->queue()->queue(), &cancelledOpsManaged,
+            grpc_event event(grpc_completion_queue_pluck(pCallData->queue()->queue(), &opsManaged,
                                                          gpr_inf_future(GPR_CLOCK_REALTIME),
                                                          nullptr));
-            if ((cancel_event.type != GRPC_OP_COMPLETE) || (cancel_event.tag != &opsManaged) || (cancel_event.success == 0))
-            {
-                std::stringstream oSS;
-                oSS << "queue_pluck during cancel was had an error: " << cancel_event.type << " Success: " << cancel_event.success << std::endl;
-                SystemLib::throwBadMethodCallExceptionObject(oSS.str());
-            }
+            callFailed = true /*(event.type != GRPC_OP_COMPLETE) || (event.success == 0)*/;
         }
-
-        callFailed = true;
+        else
+        {
+            callFailed = true;
+        }
 
     };
 
+    static std::mutex s_StartBatchMutex;
     {
         std::unique_lock<std::mutex> lock{ s_StartBatchMutex };
         grpc_call_error errorCode{ grpc_call_start_batch(pCallData->call(), ops.data(),
@@ -643,24 +605,28 @@ Object HHVM_METHOD(Call, startBatch,
     if (credentialedCall && !callFailed)
     {
         // wait on the plugin_get_metadata to complete
-        auto getPluginMetadataFuture = metadataSync.metadataPromise.get_future();
-        getPluginMetadataFuture.wait();
-        //std::future_status status{ getPluginMetadataFuture.wait_for(std::chrono::milliseconds{ pCallData->getTimeout() }) };
-        /*if (status == std::future_status::timeout)
+        auto getPluginMetadataFuture = pMetaDataInfo->metadataPromise().get_future();
+        std::future_status status{ getPluginMetadataFuture.wait_for(std::chrono::milliseconds{ 1000 }) };
+        if (status == std::future_status::timeout)
         {
             // failed so clean up and return empty object
             callFailure();
             failCode = GRPC_STATUS_DEADLINE_EXCEEDED;
         }
         else
-        */{
+        {
             plugin_get_metadata_params metaDataParams{ getPluginMetadataFuture.get() };
             if (!metaDataParams.completed)
             {
                 // call the plugin in this thread if it wasn't completed already
-                plugin_do_get_metadata(metaDataParams.ptr, metaDataParams.contextServiceUrl,
-                                       metaDataParams.contextMethodName, metaDataParams.pContext,
-                                       metaDataParams.cb, metaDataParams.user_data);
+                bool result { plugin_do_get_metadata(metaDataParams.ptr, metaDataParams.contextServiceUrl,
+                                                     metaDataParams.contextMethodName, metaDataParams.pContext,
+                                                     metaDataParams.cb, metaDataParams.user_data) };
+                if (!result) callFailure();
+            }
+            else
+            {
+                if (!metaDataParams.result) callFailure();
             }
         }
     }
