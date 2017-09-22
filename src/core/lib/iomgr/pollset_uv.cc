@@ -65,7 +65,7 @@ void dummy_handle_close_cb(uv_handle_t *handle) { gpr_free(handle); }
 
 void grpc_pollset_global_init(void) {
   gpr_mu_init(&grpc_polling_mu);
-  dummy_uv_handle = gpr_malloc(sizeof(uv_timer_t));
+  dummy_uv_handle = (uv_timer_t *)gpr_malloc(sizeof(uv_timer_t));
   uv_timer_init(uv_default_loop(), dummy_uv_handle);
   grpc_pollset_work_run_loop = 1;
 }
