@@ -1250,6 +1250,7 @@ target_link_libraries(grpc
 )
 
 foreach(_hdr
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -1557,6 +1558,7 @@ target_link_libraries(grpc_cronet
 )
 
 foreach(_hdr
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -1834,6 +1836,7 @@ target_link_libraries(grpc_test_util
 )
 
 foreach(_hdr
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -2095,6 +2098,7 @@ target_link_libraries(grpc_test_util_unsecure
 )
 
 foreach(_hdr
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -2391,6 +2395,7 @@ target_link_libraries(grpc_unsecure
 )
 
 foreach(_hdr
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -2700,6 +2705,7 @@ foreach(_hdr
   include/grpc/slice_buffer.h
   include/grpc/status.h
   include/grpc/support/workaround_list.h
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -2710,6 +2716,7 @@ foreach(_hdr
   include/grpc/impl/codegen/status.h
   include/grpc++/impl/codegen/async_stream.h
   include/grpc++/impl/codegen/async_unary_call.h
+  include/grpc++/impl/codegen/byte_buffer.h
   include/grpc++/impl/codegen/call.h
   include/grpc++/impl/codegen/call_hook.h
   include/grpc++/impl/codegen/channel_interface.h
@@ -3193,6 +3200,7 @@ foreach(_hdr
   include/grpc/slice_buffer.h
   include/grpc/status.h
   include/grpc/support/workaround_list.h
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -3203,6 +3211,7 @@ foreach(_hdr
   include/grpc/impl/codegen/status.h
   include/grpc++/impl/codegen/async_stream.h
   include/grpc++/impl/codegen/async_unary_call.h
+  include/grpc++/impl/codegen/byte_buffer.h
   include/grpc++/impl/codegen/call.h
   include/grpc++/impl/codegen/call_hook.h
   include/grpc++/impl/codegen/channel_interface.h
@@ -3563,6 +3572,7 @@ target_link_libraries(grpc++_test_util
 foreach(_hdr
   include/grpc++/impl/codegen/async_stream.h
   include/grpc++/impl/codegen/async_unary_call.h
+  include/grpc++/impl/codegen/byte_buffer.h
   include/grpc++/impl/codegen/call.h
   include/grpc++/impl/codegen/call_hook.h
   include/grpc++/impl/codegen/channel_interface.h
@@ -3590,6 +3600,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -3701,6 +3712,7 @@ target_link_libraries(grpc++_test_util_unsecure
 foreach(_hdr
   include/grpc++/impl/codegen/async_stream.h
   include/grpc++/impl/codegen/async_unary_call.h
+  include/grpc++/impl/codegen/byte_buffer.h
   include/grpc++/impl/codegen/call.h
   include/grpc++/impl/codegen/call_hook.h
   include/grpc++/impl/codegen/channel_interface.h
@@ -3728,6 +3740,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -3930,6 +3943,7 @@ foreach(_hdr
   include/grpc/slice_buffer.h
   include/grpc/status.h
   include/grpc/support/workaround_list.h
+  include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
   include/grpc/impl/codegen/connectivity_state.h
@@ -3940,6 +3954,7 @@ foreach(_hdr
   include/grpc/impl/codegen/status.h
   include/grpc++/impl/codegen/async_stream.h
   include/grpc++/impl/codegen/async_unary_call.h
+  include/grpc++/impl/codegen/byte_buffer.h
   include/grpc++/impl/codegen/call.h
   include/grpc++/impl/codegen/call_hook.h
   include/grpc++/impl/codegen/channel_interface.h
