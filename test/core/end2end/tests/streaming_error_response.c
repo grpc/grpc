@@ -183,7 +183,6 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
-  cq_verify(cqv);
 
   if (!request_status_early) {
     memset(ops, 0, sizeof(ops));

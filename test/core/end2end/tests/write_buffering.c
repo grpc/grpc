@@ -26,6 +26,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/event_string.h"
 #include "test/core/end2end/cq_verifier.h"
 
 static void *tag(intptr_t t) { return (void *)t; }
@@ -190,10 +192,35 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(4), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  /* now the first send should match up with the first recv */
-  CQ_EXPECT_COMPLETION(cqv, tag(103), true);
-  CQ_EXPECT_COMPLETION(cqv, tag(4), true);
-  cq_verify(cqv);
+  /* We can't use the typical CQ verifier here as in other tests because
+   * the time at which the send with tag(4) gets completed depends on the
+   * transport. All the HTTP/2 transports can buffer it but the in-proc
+   * transport won't complete the send until it actually matches a receive.
+   * However, we must clear the recv with tag(103) before we can issue the
+   * receive with tag(104) */
+
+  int tags_ending_with_4_needed = 2;
+  bool got_tag_103 = false;
+  while (!got_tag_103) {
+    grpc_event ev;
+    ev = grpc_completion_queue_next(f.cq, n_seconds_from_now(1), NULL);
+    if (ev.type != GRPC_OP_COMPLETE || !ev.success) {
+      char *ev_str = grpc_event_string(&ev);
+      gpr_log(GPR_ERROR, "problem with tag 103 or 4 %s", ev_str);
+      gpr_free(s);
+      abort();
+    }
+    if (ev.tag == tag(103)) {
+      got_tag_103 = true;
+    } else if (ev.tag == tag(4)) {
+      tags_ending_with_4_needed--;
+    } else {
+      char *ev_str = grpc_event_string(&ev);
+      gpr_log(GPR_ERROR, "Unexpected event %s", ev_str);
+      gpr_free(s);
+      abort();
+    }
+  }
 
   /* and the next recv should be ready immediately also */
   memset(ops, 0, sizeof(ops));
@@ -204,8 +231,24 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(104), true);
-  cq_verify(cqv);
+  while (tags_ending_with_4_needed > 0) {
+    grpc_event ev;
+    ev = grpc_completion_queue_next(f.cq, n_seconds_from_now(1), NULL);
+    if (ev.type != GRPC_OP_COMPLETE || !ev.success) {
+      char *ev_str = grpc_event_string(&ev);
+      gpr_log(GPR_ERROR, "problem with tag 104 or 4 %s", ev_str);
+      gpr_free(s);
+      abort();
+    }
+    if (ev.tag == tag(4) || ev.tag == tag(104)) {
+      tags_ending_with_4_needed--;
+    } else {
+      char *ev_str = grpc_event_string(&ev);
+      gpr_log(GPR_ERROR, "Unexpected event %s", ev_str);
+      gpr_free(s);
+      abort();
+    }
+  }
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -220,7 +263,7 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(4), NULL);
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(5), NULL);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -241,7 +284,7 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(105), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(4), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(5), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
