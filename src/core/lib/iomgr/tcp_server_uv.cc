@@ -83,8 +83,8 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
     if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_POINTER) {
         grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
-        s->resource_quota =
-            grpc_resource_quota_ref_internal((grpc_resource_quota*)args->args[i].value.pointer.p);
+        s->resource_quota = grpc_resource_quota_ref_internal(
+            (grpc_resource_quota *)args->args[i].value.pointer.p);
       } else {
         grpc_resource_quota_unref_internal(exec_ctx, s->resource_quota);
         gpr_free(s);
@@ -190,7 +190,8 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
 }
 
 static void finish_accept(grpc_exec_ctx *exec_ctx, grpc_tcp_listener *sp) {
-  grpc_tcp_server_acceptor *acceptor = (grpc_tcp_server_acceptor *)gpr_malloc(sizeof(*acceptor));
+  grpc_tcp_server_acceptor *acceptor =
+      (grpc_tcp_server_acceptor *)gpr_malloc(sizeof(*acceptor));
   uv_tcp_t *client = NULL;
   grpc_endpoint *ep = NULL;
   grpc_resolved_address peer_name;
@@ -303,7 +304,7 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, uv_tcp_t *handle,
 
   GPR_ASSERT(port >= 0);
   GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
-  sp = (grpc_tcp_listener*)gpr_zalloc(sizeof(grpc_tcp_listener));
+  sp = (grpc_tcp_listener *)gpr_zalloc(sizeof(grpc_tcp_listener));
   sp->next = NULL;
   if (s->head == NULL) {
     s->head = sp;
@@ -355,7 +356,8 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s,
                                   (int *)&sockname_temp.len)) {
         *port = grpc_sockaddr_get_port(&sockname_temp);
         if (*port > 0) {
-          allocated_addr = (grpc_resolved_address*)gpr_malloc(sizeof(grpc_resolved_address));
+          allocated_addr = (grpc_resolved_address *)gpr_malloc(
+              sizeof(grpc_resolved_address));
           memcpy(allocated_addr, addr, sizeof(grpc_resolved_address));
           grpc_sockaddr_set_port(allocated_addr, *port);
           addr = allocated_addr;
@@ -376,7 +378,7 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s,
     addr = &wildcard;
   }
 
-  handle = (uv_tcp_t*)gpr_malloc(sizeof(uv_tcp_t));
+  handle = (uv_tcp_t *)gpr_malloc(sizeof(uv_tcp_t));
 
   family = grpc_sockaddr_get_family(addr);
   status = uv_tcp_init_ex(uv_default_loop(), handle, (unsigned int)family);
