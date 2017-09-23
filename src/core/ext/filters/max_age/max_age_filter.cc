@@ -33,9 +33,9 @@
 #define MAX_CONNECTION_AGE_JITTER 0.1
 
 #define MAX_CONNECTION_AGE_INTEGER_OPTIONS \
-  (grpc_integer_options) { DEFAULT_MAX_CONNECTION_AGE_MS, 1, INT_MAX }
+  { DEFAULT_MAX_CONNECTION_AGE_MS, 1, INT_MAX }
 #define MAX_CONNECTION_IDLE_INTEGER_OPTIONS \
-  (grpc_integer_options) { DEFAULT_MAX_CONNECTION_IDLE_MS, 1, INT_MAX }
+  { DEFAULT_MAX_CONNECTION_IDLE_MS, 1, INT_MAX }
 
 typedef struct channel_data {
   /* We take a reference to the channel stack for the timer callback */
