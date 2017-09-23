@@ -128,7 +128,7 @@ static grpc_slice alloc_read_slice(grpc_exec_ctx *exec_ctx,
 static void alloc_uv_buf(uv_handle_t *handle, size_t suggested_size,
                          uv_buf_t *buf) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_tcp *tcp = (grpc_tcp*)handle->data;
+  grpc_tcp *tcp = (grpc_tcp *)handle->data;
   (void)suggested_size;
   buf->base = (char *)GRPC_SLICE_START_PTR(tcp->read_slice);
   buf->len = GRPC_SLICE_LENGTH(tcp->read_slice);
@@ -140,7 +140,7 @@ static void read_callback(uv_stream_t *stream, ssize_t nread,
   grpc_slice sub;
   grpc_error *error;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_tcp *tcp = (grpc_tcp*)stream->data;
+  grpc_tcp *tcp = (grpc_tcp *)stream->data;
   grpc_closure *cb = tcp->read_cb;
   if (nread == 0) {
     // Nothing happened. Wait for the next callback
@@ -207,7 +207,7 @@ static void uv_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 }
 
 static void write_callback(uv_write_t *req, int status) {
-  grpc_tcp *tcp = (grpc_tcp*)req->data;
+  grpc_tcp *tcp = (grpc_tcp *)req->data;
   grpc_error *error;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure *cb = tcp->write_cb;
