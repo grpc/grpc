@@ -313,7 +313,7 @@ GRPCAPI grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
                                                      void *reserved);
 
 /** Ref a call.
-    THREAD SAFETY: grpc_call_unref is thread-compatible */
+    THREAD SAFETY: grpc_call_ref is thread-compatible */
 GRPCAPI void grpc_call_ref(grpc_call *call);
 
 /** Unref a call.
