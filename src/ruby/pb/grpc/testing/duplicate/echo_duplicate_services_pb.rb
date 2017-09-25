@@ -34,6 +34,7 @@ module Grpc
           self.service_name = 'grpc.testing.duplicate.EchoTestService'
 
           rpc :Echo, Grpc::Testing::EchoRequest, Grpc::Testing::EchoResponse
+          rpc :ResponseStream, Grpc::Testing::EchoRequest, stream(Grpc::Testing::EchoResponse)
         end
 
         Stub = Service.rpc_stub_class
