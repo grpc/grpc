@@ -94,13 +94,11 @@ static gpr_atm pack_received_status(received_status r) {
 }
 
 static received_status unpack_received_status(gpr_atm atm) {
-  return (atm & 1) == 0
-             ? (received_status){false, /* is_set */
-               GRPC_ERROR_NONE /*error */
-             }
-             : (received_status){true, /* is_set */
-                                 (grpc_error *)(atm & ~(gpr_atm)1) /* error */
-             };
+  if ((atm & 1) == 0) {
+    return {false, GRPC_ERROR_NONE};
+  } else {
+    return {true, (grpc_error *)(atm & ~(gpr_atm)1)};
+  }
 }
 
 #define MAX_ERRORS_PER_BATCH 4
@@ -443,15 +441,14 @@ grpc_error *grpc_call_create(grpc_exec_ctx *exec_ctx,
 
   GRPC_CHANNEL_INTERNAL_REF(args->channel, "call");
   /* initial refcount dropped by grpc_call_unref */
-  grpc_call_element_args call_args = {
-      .call_stack = CALL_STACK_FROM_CALL(call),
-      .server_transport_data = args->server_transport_data,
-      .context = call->context,
-      .path = path,
-      .start_time = call->start_time,
-      .deadline = send_deadline,
-      .arena = call->arena,
-      .call_combiner = &call->call_combiner};
+  grpc_call_element_args call_args = {CALL_STACK_FROM_CALL(call),
+                                      args->server_transport_data,
+                                      call->context,
+                                      path,
+                                      call->start_time,
+                                      send_deadline,
+                                      call->arena,
+                                      &call->call_combiner};
   add_init_error(&error, grpc_call_stack_init(exec_ctx, channel_stack, 1,
                                               destroy_call, call, &call_args));
   if (error != GRPC_ERROR_NONE) {

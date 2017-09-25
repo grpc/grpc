@@ -45,12 +45,12 @@ void define_base_resources() {
                 0,                                        // n_denominators
                 NULL};                                    // denominators
   define_resource(&r);
-  r = (resource){(char *)"server_rpc_latency",             // name
-                 (char *)"Server RPC latency in seconds",  // description
-                 0,                                        // prefix
-                 1,                                        // n_numerators
-                 &numerator,                               // numerators
-                 0,                                        // n_denominators
-                 NULL};                                    // denominators
+  r = {(char *)"server_rpc_latency",             // name
+       (char *)"Server RPC latency in seconds",  // description
+       0,                                        // prefix
+       1,                                        // n_numerators
+       &numerator,                               // numerators
+       0,                                        // n_denominators
+       NULL};                                    // denominators
   define_resource(&r);
 }

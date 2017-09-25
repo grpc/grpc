@@ -315,8 +315,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
                            GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS)) {
       const int value = grpc_channel_arg_get_integer(
           &args->channel_args->args[i],
-          (grpc_integer_options){DEFAULT_MAX_CONNECTION_AGE_GRACE_MS, 0,
-                                 INT_MAX});
+          {DEFAULT_MAX_CONNECTION_AGE_GRACE_MS, 0, INT_MAX});
       chand->max_connection_age_grace =
           value == INT_MAX ? gpr_inf_future(GPR_TIMESPAN)
                            : gpr_time_from_millis(value, GPR_TIMESPAN);

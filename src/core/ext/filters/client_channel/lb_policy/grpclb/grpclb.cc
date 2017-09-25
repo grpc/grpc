@@ -456,11 +456,11 @@ static bool is_server_valid(const grpc_grpclb_server *server, size_t idx,
 static void *lb_token_copy(void *token) {
   return token == NULL
              ? NULL
-             : (void *)GRPC_MDELEM_REF((grpc_mdelem){(uintptr_t)token}).payload;
+             : (void *)GRPC_MDELEM_REF(grpc_mdelem{(uintptr_t)token}).payload;
 }
 static void lb_token_destroy(grpc_exec_ctx *exec_ctx, void *token) {
   if (token != NULL) {
-    GRPC_MDELEM_UNREF(exec_ctx, (grpc_mdelem){(uintptr_t)token});
+    GRPC_MDELEM_UNREF(exec_ctx, grpc_mdelem{(uintptr_t)token});
   }
 }
 static int lb_token_cmp(void *token1, void *token2) {
@@ -1925,7 +1925,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
 
   arg = grpc_channel_args_find(args->args, GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS);
   glb_policy->lb_call_timeout_ms =
-      grpc_channel_arg_get_integer(arg, (grpc_integer_options){0, 0, INT_MAX});
+      grpc_channel_arg_get_integer(arg, {0, 0, INT_MAX});
 
   arg = grpc_channel_args_find(args->args, GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS);
   glb_policy->lb_fallback_timeout_ms = grpc_channel_arg_get_integer(
