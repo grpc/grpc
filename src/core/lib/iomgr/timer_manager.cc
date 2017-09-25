@@ -18,6 +18,8 @@
 
 #include "src/core/lib/iomgr/timer_manager.h"
 
+#include <inttypes.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>

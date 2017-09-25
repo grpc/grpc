@@ -18,6 +18,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>

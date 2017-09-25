@@ -66,7 +66,7 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
   }
   timer->pending = 1;
   timeout = (uint64_t)gpr_time_to_millis(gpr_time_sub(deadline, now));
-  uv_timer = gpr_malloc(sizeof(uv_timer_t));
+  uv_timer = (uv_timer_t *)gpr_malloc(sizeof(uv_timer_t));
   uv_timer_init(uv_default_loop(), uv_timer);
   uv_timer->data = timer;
   timer->uv_timer = uv_timer;

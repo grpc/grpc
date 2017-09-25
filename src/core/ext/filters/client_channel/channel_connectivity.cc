@@ -18,6 +18,8 @@
 
 #include "src/core/lib/surface/channel.h"
 
+#include <inttypes.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 

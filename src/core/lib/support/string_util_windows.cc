@@ -26,6 +26,7 @@
    anything else, especially strsafe.h. */
 #include <wchar.h>
 
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
