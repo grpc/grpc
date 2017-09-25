@@ -158,7 +158,7 @@ static void tcp_ref(grpc_tcp *tcp) { gpr_ref(&tcp->refcount); }
 
 /* Asynchronous callback from the IOCP, or the background thread. */
 static void on_read(grpc_exec_ctx *exec_ctx, void *tcpp, grpc_error *error) {
-  grpc_tcp *tcp = tcpp;
+  grpc_tcp *tcp = (grpc_tcp*)tcpp;
   grpc_closure *cb = tcp->read_cb;
   grpc_winsocket *socket = tcp->socket;
   grpc_slice sub;
@@ -425,7 +425,7 @@ grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
       if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
         grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
         resource_quota = grpc_resource_quota_ref_internal(
-            channel_args->args[i].value.pointer.p);
+            (grpc_resource_quota*)channel_args->args[i].value.pointer.p);
       }
     }
   }
