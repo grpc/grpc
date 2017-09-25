@@ -17,6 +17,7 @@
  */
 
 #include <algorithm>
+#include <functional>
 #include <vector>
 
 #ifdef HAVE_CONFIG_H
@@ -119,12 +120,15 @@ bool ChannelArgs::init(const Array& argsArray)
     destroyArgs();
 
     size_t elements{ static_cast<size_t>(argsArray.size()) };
-    std::vector<std::pair<const char*, const char*>> channelArgs;
+    typedef std::pair<std::reference_wrapper<const std::string>,
+                      std::reference_wrapper<const std::string>> ChannelArgsType;
+    std::vector<ChannelArgsType> channelArgs;
     if (elements > 0)
     {
-        m_ChannelArgs.args = req::calloc_raw_array<grpc_arg>(argsArray.size());
-        m_ChannelArgs.num_args = argsArray.size();
-
+        m_ChannelArgs.args = req::calloc_raw_array<grpc_arg>(elements);
+        m_ChannelArgs.num_args = elements;
+        // reserve is needed so emplace_back below does not invalidate memory
+        m_PHPData.reserve(elements);
         size_t count{ 0 };
         for (ArrayIter iter(argsArray); iter; ++iter, ++count)
         {
@@ -164,7 +168,8 @@ bool ChannelArgs::init(const Array& argsArray)
                     return false;
                 }
                 m_ChannelArgs.args[count].key = const_cast<char*>(m_PHPData[count].first.c_str());
-                channelArgs.emplace_back(m_PHPData[count].first.c_str(), m_PHPData[count].second.c_str());
+                channelArgs.emplace_back(std::cref(m_PHPData[count].first),
+                                         std::cref(m_PHPData[count].second));
             }
             else
             {
@@ -175,24 +180,28 @@ bool ChannelArgs::init(const Array& argsArray)
     }
 
     // sort the channel arguments via key then value
-    auto sortLambda = [](const std::pair<const char*, const char*>& pair1,
-                         const std::pair<const char*, const char*>& pair2)
+    auto sortLambda = [](const ChannelArgsType& pair1, const ChannelArgsType& pair2)
     {
-        int keyCmp{ strcmp(pair1.first, pair2.first) };
-        if (keyCmp != 0)
+        const std::string& p1String1{ pair1.first };
+        const std::string& p1String2{ pair1.second };
+        if (p1String1 != p1String2)
         {
-            return keyCmp < 0;
+            return (p1String1 < p1String2);
         }
         else
         {
-            return (strcmp(pair1.second, pair2.second) < 0);
+            const std::string& p2String1{ pair2.first };
+            const std::string& p2String2{ pair2.second };
+            return (p2String1 < p2String2);
         }
     };
     std::sort(channelArgs.begin(), channelArgs.end(), sortLambda);
 
     for(const auto& argPair : channelArgs)
     {
-        m_ConcatenatedArgs += std::string{ argPair.first } + std::string{ argPair.second };
+        const std::string& string1{ argPair.first };
+        const std::string& string2{ argPair.second };
+        m_ConcatenatedArgs += string1 + string2;
     }
 
     m_HashKey = std::move(StringUtil::SHA1(m_ConcatenatedArgs, false).toCppString());

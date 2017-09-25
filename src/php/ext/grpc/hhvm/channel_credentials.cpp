@@ -70,15 +70,13 @@ grpc_ssl_roots_override_result DefaultPEMRootCerts::get_ssl_roots_override(char*
     }
 }
 
-void DefaultPEMRootCerts::setCerts(const String& pemRootsCerts)
+void DefaultPEMRootCerts::setCerts(std::string&& pemRootsCerts)
 {
-    std::string certsString{ pemRootsCerts.toCppString() };
-
     {
         WriteLock lock{ m_CertsLock };
 
         // copy new certs
-        m_PEMRootCerts = std::move(certsString);
+        m_PEMRootCerts = std::move(pemRootsCerts);
     }
 }
 
@@ -155,7 +153,7 @@ void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,
 {
     HHVM_TRACE_SCOPE("ChannelCredentials setDefaultRootsPem") // Debug Trace
 
-    DefaultPEMRootCerts::getDefaultPEMRootCerts().setCerts(pem_root_certs);
+    DefaultPEMRootCerts::getDefaultPEMRootCerts().setCerts(pem_root_certs.toCppString());
 }
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault)
