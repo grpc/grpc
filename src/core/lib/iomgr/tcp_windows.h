@@ -41,7 +41,7 @@ extern "C" {
  */
 grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
                                grpc_channel_args *channel_args,
-                               char *peer_string);
+                               const char *peer_string);
 
 grpc_error *grpc_tcp_prepare_socket(SOCKET sock);
 
