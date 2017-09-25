@@ -257,15 +257,15 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
           s->send_trailing_metadata == NULL ||
           !is_default_initial_metadata(s->send_initial_metadata)) {
         grpc_encode_header_options hopt = {
-            .stream_id = s->id,
-            .is_eof = false,
-            .use_true_binary_metadata =
-                t->settings
-                    [GRPC_PEER_SETTINGS]
-                    [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] != 0,
-            .max_frame_size = t->settings[GRPC_PEER_SETTINGS]
-                                         [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-            .stats = &s->stats.outgoing};
+            s->id,  // stream_id
+            false,  // is_eof
+            t->settings[GRPC_PEER_SETTINGS]
+                       [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
+                0,  // use_true_binary_metadata
+            t->settings[GRPC_PEER_SETTINGS]
+                       [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],  // max_frame_size
+            &s->stats.outgoing                                 // stats
+        };
         grpc_chttp2_encode_header(exec_ctx, &t->hpack_compressor, NULL, 0,
                                   s->send_initial_metadata, &hopt, &t->outbuf);
         now_writing = true;

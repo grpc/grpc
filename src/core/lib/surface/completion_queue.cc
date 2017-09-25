@@ -164,32 +164,15 @@ static void non_polling_poller_shutdown(grpc_exec_ctx *exec_ctx,
 
 static const cq_poller_vtable g_poller_vtable_by_poller_type[] = {
     /* GRPC_CQ_DEFAULT_POLLING */
-    {.can_get_pollset = true,
-     .can_listen = true,
-     .size = grpc_pollset_size,
-     .init = grpc_pollset_init,
-     .kick = grpc_pollset_kick,
-     .work = grpc_pollset_work,
-     .shutdown = grpc_pollset_shutdown,
-     .destroy = grpc_pollset_destroy},
+    {true, true, grpc_pollset_size, grpc_pollset_init, grpc_pollset_kick,
+     grpc_pollset_work, grpc_pollset_shutdown, grpc_pollset_destroy},
     /* GRPC_CQ_NON_LISTENING */
-    {.can_get_pollset = true,
-     .can_listen = false,
-     .size = grpc_pollset_size,
-     .init = grpc_pollset_init,
-     .kick = grpc_pollset_kick,
-     .work = grpc_pollset_work,
-     .shutdown = grpc_pollset_shutdown,
-     .destroy = grpc_pollset_destroy},
+    {true, false, grpc_pollset_size, grpc_pollset_init, grpc_pollset_kick,
+     grpc_pollset_work, grpc_pollset_shutdown, grpc_pollset_destroy},
     /* GRPC_CQ_NON_POLLING */
-    {.can_get_pollset = false,
-     .can_listen = false,
-     .size = non_polling_poller_size,
-     .init = non_polling_poller_init,
-     .kick = non_polling_poller_kick,
-     .work = non_polling_poller_work,
-     .shutdown = non_polling_poller_shutdown,
-     .destroy = non_polling_poller_destroy},
+    {false, false, non_polling_poller_size, non_polling_poller_init,
+     non_polling_poller_kick, non_polling_poller_work,
+     non_polling_poller_shutdown, non_polling_poller_destroy},
 };
 
 typedef struct cq_vtable {
@@ -838,13 +821,13 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
   GRPC_CQ_INTERNAL_REF(cq, "next");
 
   cq_is_finished_arg is_finished_arg = {
-      .last_seen_things_queued_ever =
-          gpr_atm_no_barrier_load(&cqd->things_queued_ever),
-      .cq = cq,
-      .deadline = deadline,
-      .stolen_completion = NULL,
-      .tag = NULL,
-      .first_loop = true};
+
+      gpr_atm_no_barrier_load(&cqd->things_queued_ever),
+      cq,
+      deadline,
+      NULL,
+      NULL,
+      true};
   grpc_exec_ctx exec_ctx =
       GRPC_EXEC_CTX_INITIALIZER(0, cq_is_next_finished, &is_finished_arg);
 

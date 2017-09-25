@@ -995,13 +995,14 @@ static void create_subchannel_call_locked(grpc_exec_ctx *exec_ctx,
   channel_data *chand = (channel_data *)elem->channel_data;
   call_data *calld = (call_data *)elem->call_data;
   const grpc_connected_subchannel_call_args call_args = {
-      .pollent = calld->pollent,
-      .path = calld->path,
-      .start_time = calld->call_start_time,
-      .deadline = calld->deadline,
-      .arena = calld->arena,
-      .context = calld->subchannel_call_context,
-      .call_combiner = calld->call_combiner};
+      calld->pollent,                  // pollent
+      calld->path,                     // path
+      calld->call_start_time,          // start_time
+      calld->deadline,                 // deadline
+      calld->arena,                    // arena
+      calld->subchannel_call_context,  // context
+      calld->call_combiner             // call_combiner
+  };
   grpc_error *new_error = grpc_connected_subchannel_create_call(
       exec_ctx, calld->connected_subchannel, &call_args,
       &calld->subchannel_call);

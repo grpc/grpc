@@ -343,27 +343,23 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
                       "grpc.testing.fixed_reconnect_backoff_ms")) {
         fixed_reconnect_backoff = true;
         initial_backoff_ms = min_backoff_ms = max_backoff_ms =
-            grpc_channel_arg_get_integer(
-                &c->args->args[i],
-                (grpc_integer_options){initial_backoff_ms, 100, INT_MAX});
+            grpc_channel_arg_get_integer(&c->args->args[i],
+                                         {initial_backoff_ms, 100, INT_MAX});
       } else if (0 == strcmp(c->args->args[i].key,
                              GRPC_ARG_MIN_RECONNECT_BACKOFF_MS)) {
         fixed_reconnect_backoff = false;
         min_backoff_ms = grpc_channel_arg_get_integer(
-            &c->args->args[i],
-            (grpc_integer_options){min_backoff_ms, 100, INT_MAX});
+            &c->args->args[i], {min_backoff_ms, 100, INT_MAX});
       } else if (0 == strcmp(c->args->args[i].key,
                              GRPC_ARG_MAX_RECONNECT_BACKOFF_MS)) {
         fixed_reconnect_backoff = false;
         max_backoff_ms = grpc_channel_arg_get_integer(
-            &c->args->args[i],
-            (grpc_integer_options){max_backoff_ms, 100, INT_MAX});
+            &c->args->args[i], {max_backoff_ms, 100, INT_MAX});
       } else if (0 == strcmp(c->args->args[i].key,
                              GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS)) {
         fixed_reconnect_backoff = false;
         initial_backoff_ms = grpc_channel_arg_get_integer(
-            &c->args->args[i],
-            (grpc_integer_options){initial_backoff_ms, 100, INT_MAX});
+            &c->args->args[i], {initial_backoff_ms, 100, INT_MAX});
       }
     }
   }
@@ -759,14 +755,15 @@ grpc_error *grpc_connected_subchannel_create_call(
   grpc_call_stack *callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
   (*call)->connection = GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
   const grpc_call_element_args call_args = {
-      .call_stack = callstk,
-      .server_transport_data = NULL,
-      .context = args->context,
-      .path = args->path,
-      .start_time = args->start_time,
-      .deadline = args->deadline,
-      .arena = args->arena,
-      .call_combiner = args->call_combiner};
+      callstk,            /* call_stack */
+      NULL,               /* server_transport_data */
+      args->context,      /* context */
+      args->path,         /* path */
+      args->start_time,   /* start_time */
+      args->deadline,     /* deadline */
+      args->arena,        /* arena */
+      args->call_combiner /* call_combiner */
+  };
   grpc_error *error = grpc_call_stack_init(
       exec_ctx, chanstk, 1, subchannel_call_destroy, *call, &call_args);
   if (error != GRPC_ERROR_NONE) {

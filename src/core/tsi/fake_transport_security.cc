@@ -98,8 +98,7 @@ static const char *tsi_fake_handshake_message_to_string(int msg) {
 
 static tsi_result tsi_fake_handshake_message_from_string(
     const char *msg_string, tsi_fake_handshake_message *msg) {
-  int i;
-  for (i = 0; i < TSI_FAKE_HANDSHAKE_MESSAGE_MAX; i++) {
+  for (int i = 0; i < TSI_FAKE_HANDSHAKE_MESSAGE_MAX; i++) {
     if (strncmp(msg_string, tsi_fake_handshake_message_strings[i],
                 strlen(tsi_fake_handshake_message_strings[i])) == 0) {
       *msg = (tsi_fake_handshake_message)i;

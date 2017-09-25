@@ -114,11 +114,12 @@ static void *scv_avl_copy(void *p, void *unused) {
 }
 
 static const gpr_avl_vtable subchannel_avl_vtable = {
-    .destroy_key = sck_avl_destroy,
-    .copy_key = sck_avl_copy,
-    .compare_keys = sck_avl_compare,
-    .destroy_value = scv_avl_destroy,
-    .copy_value = scv_avl_copy};
+    sck_avl_destroy,  // destroy_key
+    sck_avl_copy,     // copy_key
+    sck_avl_compare,  // compare_keys
+    scv_avl_destroy,  // destroy_value
+    scv_avl_copy      // copy_value
+};
 
 void grpc_subchannel_index_init(void) {
   g_subchannel_index = gpr_avl_create(&subchannel_avl_vtable);

@@ -315,15 +315,16 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
   grpc_bdp_estimator_init(&t->flow_control.bdp_estimator, t->peer_string);
   t->flow_control.last_pid_update = gpr_now(GPR_CLOCK_MONOTONIC);
-  grpc_pid_controller_init(
-      &t->flow_control.pid_controller,
-      (grpc_pid_controller_args){.gain_p = 4,
-                                 .gain_i = 8,
-                                 .gain_d = 0,
-                                 .initial_control_value = log2(DEFAULT_WINDOW),
-                                 .min_control_value = -1,
-                                 .max_control_value = 25,
-                                 .integral_range = 10});
+  grpc_pid_controller_init(&t->flow_control.pid_controller,
+                           {
+                               4,                    /* gain_p */
+                               8,                    /* gain_t */
+                               0,                    /* gain_d */
+                               log2(DEFAULT_WINDOW), /* initial_control_value */
+                               -1,                   /* min_control_value */
+                               25,                   /* max_control_value */
+                               10                    /* integral_range */
+                           });
 
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
   grpc_chttp2_hpack_parser_init(exec_ctx, &t->hpack_parser);
