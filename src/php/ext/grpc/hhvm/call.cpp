@@ -184,6 +184,7 @@ bool MetadataArray::init(const Array& phpArray)
     if (count > m_Array.capacity) resizeMetadata(count);
 
     // create metadata array
+    m_PHPData.reserve(count); // reserve to avoid memory reallocations
     size_t elem{ 0 };
     for (ArrayIter iter(phpArray); iter; ++iter)
     {
