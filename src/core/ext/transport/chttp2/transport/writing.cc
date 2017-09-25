@@ -341,6 +341,23 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                   (send_bytes == s->compressed_data_buffer.length &&
                    s->flow_controlled_buffer.length == 0 &&
                    s->fetching_send_message == NULL);
+              if (is_last_data_frame && s->send_trailing_metadata != NULL &&
+                  s->stream_compression_ctx != NULL) {
+                if (!grpc_stream_compress(
+                        s->stream_compression_ctx, &s->flow_controlled_buffer,
+                        &s->compressed_data_buffer, NULL, MAX_SIZE_T,
+                        GRPC_STREAM_COMPRESSION_FLUSH_FINISH)) {
+                  gpr_log(GPR_ERROR, "Stream compression failed.");
+                }
+                grpc_stream_compression_context_destroy(
+                    s->stream_compression_ctx);
+                s->stream_compression_ctx = NULL;
+                /* After finish, bytes in s->compressed_data_buffer may be
+                 * more than max_outgoing. Start another round of the current
+                 * while loop so that send_bytes and is_last_data_frame are
+                 * recalculated. */
+                continue;
+              }
               is_last_frame =
                   is_last_data_frame && s->send_trailing_metadata != NULL &&
                   grpc_metadata_batch_is_empty(s->send_trailing_metadata);
@@ -360,10 +377,12 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                         s->stream_compression_method);
               }
               s->uncompressed_data_size = s->flow_controlled_buffer.length;
-              GPR_ASSERT(grpc_stream_compress(
-                  s->stream_compression_ctx, &s->flow_controlled_buffer,
-                  &s->compressed_data_buffer, NULL, MAX_SIZE_T,
-                  GRPC_STREAM_COMPRESSION_FLUSH_SYNC));
+              if (!grpc_stream_compress(
+                      s->stream_compression_ctx, &s->flow_controlled_buffer,
+                      &s->compressed_data_buffer, NULL, MAX_SIZE_T,
+                      GRPC_STREAM_COMPRESSION_FLUSH_SYNC)) {
+                gpr_log(GPR_ERROR, "Stream compression failed.");
+              }
             }
           }
           if (!t->is_client) {
