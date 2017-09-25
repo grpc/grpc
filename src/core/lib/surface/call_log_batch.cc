@@ -18,6 +18,8 @@
 
 #include "src/core/lib/surface/call.h"
 
+#include <inttypes.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include "src/core/lib/slice/slice_string_helpers.h"

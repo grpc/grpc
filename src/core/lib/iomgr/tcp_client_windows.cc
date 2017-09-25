@@ -18,6 +18,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#include <inttypes.h>
+
 #ifdef GRPC_WINSOCK_SOCKET
 
 #include "src/core/lib/iomgr/sockaddr_windows.h"

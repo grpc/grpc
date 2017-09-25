@@ -19,6 +19,7 @@
 #include "src/core/lib/transport/metadata.h"
 
 #include <assert.h>
+#include <inttypes.h>
 #include <stddef.h>
 #include <string.h>
 

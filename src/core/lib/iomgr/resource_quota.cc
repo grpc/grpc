@@ -18,6 +18,7 @@
 
 #include "src/core/lib/iomgr/resource_quota.h"
 
+#include <inttypes.h>
 #include <limits.h>
 #include <stdint.h>
 #include <string.h>

@@ -17,6 +17,7 @@
  */
 #include "src/core/lib/surface/completion_queue.h"
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 

@@ -20,6 +20,7 @@
 
 #include <grpc/grpc.h>
 
+#include <inttypes.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>

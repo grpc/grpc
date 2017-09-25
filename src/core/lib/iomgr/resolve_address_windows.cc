@@ -23,6 +23,7 @@
 
 #include "src/core/lib/iomgr/resolve_address.h"
 
+#include <inttypes.h>
 #include <string.h>
 #include <sys/types.h>
 

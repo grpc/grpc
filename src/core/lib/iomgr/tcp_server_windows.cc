@@ -22,6 +22,7 @@
 
 #include "src/core/lib/iomgr/sockaddr.h"
 
+#include <inttypes.h>
 #include <io.h>
 
 #include <grpc/support/alloc.h>

@@ -19,6 +19,7 @@
 #include "src/core/lib/iomgr/combiner.h"
 
 #include <assert.h>
+#include <inttypes.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>

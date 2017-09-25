@@ -18,6 +18,7 @@
 
 #include "src/core/lib/slice/slice_internal.h"
 
+#include <inttypes.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>

@@ -80,6 +80,7 @@
    headers. Therefore, sockaddr.h must always be included first */
 #include "src/core/lib/iomgr/sockaddr.h"
 
+#include <inttypes.h>
 #include <limits.h>
 #include <string.h>
 

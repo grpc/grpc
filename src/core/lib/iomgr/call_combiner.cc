@@ -18,6 +18,8 @@
 
 #include "src/core/lib/iomgr/call_combiner.h"
 
+#include <inttypes.h>
+
 #include <grpc/support/log.h>
 
 grpc_tracer_flag grpc_call_combiner_trace =

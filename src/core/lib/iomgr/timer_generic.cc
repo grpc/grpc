@@ -18,6 +18,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#include <inttypes.h>
+
 #ifdef GRPC_TIMER_USE_GENERIC
 
 #include "src/core/lib/iomgr/timer.h"

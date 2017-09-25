@@ -18,6 +18,7 @@
 
 #include "src/core/lib/surface/channel.h"
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 

@@ -18,6 +18,7 @@
 
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 
+#include <inttypes.h>
 #include <string.h>
 
 #include "src/core/lib/surface/api_trace.h"

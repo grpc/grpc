@@ -18,6 +18,7 @@
 
 #include "src/core/lib/transport/bdp_estimator.h"
 
+#include <inttypes.h>
 #include <stdlib.h>
 
 #include <grpc/support/log.h>
