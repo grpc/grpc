@@ -827,6 +827,33 @@ class PhpLanguage:
     return 'php'
 
 
+class PhpLanguage_ext:
+
+  def __init__(self):
+    pass
+    self.safename = str(self)
+
+  def worker_cmdline(self):
+    return ['tools/run_tests/performance/run_worker_php.sh -c']
+
+  def worker_port_offset(self):
+    return 800
+
+  def scenarios(self):
+    yield _ping_pong_scenario(
+        'php_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        server_language='c++', async_server_threads=1)
+
+    yield _ping_pong_scenario(
+        'php_to_cpp_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        server_language='c++', async_server_threads=1)
+
+  def __str__(self):
+    return 'php'
+
+
 class JavaLanguage:
 
   def __init__(self):
@@ -1025,6 +1052,7 @@ LANGUAGES = {
     'node_express': NodeExpressLanguage(),
     'ruby' : RubyLanguage(),
     'php' : PhpLanguage(),
+    'php_ext' : PhpLanguage_ext(),
     'java' : JavaLanguage(),
     'python' : PythonLanguage(),
     'go' : GoLanguage(),
