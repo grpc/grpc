@@ -13,6 +13,8 @@
 # limitations under the License.
 
 require 'grpc'
+require 'socket'
+require 'fcntl' if Object.const_defined?('UNIXSocket')
 
 def load_test_certs
   test_root = File.join(File.dirname(File.dirname(__FILE__)), 'testdata')
@@ -753,6 +755,60 @@ describe GRPC::RpcServer do
         @srv_thd.join
 
         check_multi_req_view_of_finished_call(@service.server_side_call)
+      end
+    end
+
+    if Object.const_defined?('UNIXSocket')
+      context 'using existing file descriptors' do
+        let(:server_opts) { { poll_period: 1 } }
+
+        it 'can create server ports', server: true do
+          srv = RpcServer.new(**server_opts)
+          sock = TCPServer.new('127.0.0.1', 0)
+          addr = "localhost:#{sock.connect_address.ip_port}"
+
+          srv.handle(EchoService)
+          t = Thread.new { srv.run }
+          srv.wait_till_running
+
+          t2 = Thread.new do
+            client_sock = sock.accept
+            sock_flags = client_sock.fcntl(Fcntl::F_GETFL)
+            client_sock.fcntl(Fcntl::F_SETFL, sock_flags | Fcntl::O_NONBLOCK)
+            srv.add_insecure_channel_from_fd(client_sock.fileno)
+          end
+
+          ch = GRPC::Core::Channel.new(addr, nil, :this_channel_is_insecure)
+
+          stub = EchoStub.new(
+            'localhost-via-fd', :this_channel_is_insecure, channel_override: ch)
+          req = EchoMsg.new
+          deadline = GRPC::Core::TimeConsts.from_relative_time(1.0)
+          expect(stub.an_rpc(req, deadline: deadline)).to be_a(EchoMsg)
+          srv.stop
+          t.join
+          t2.join
+        end
+
+        it 'can create channels', server: true do
+          srv = RpcServer.new(**server_opts)
+          server_port = srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
+
+          sock = TCPSocket.new('localhost', server_port)
+          ch = GRPC::Core::Channel.insecure_create_from_fd(
+            'channel-from-fd', sock.fileno, {})
+
+          srv.handle(EchoService)
+          t = Thread.new { srv.run }
+          srv.wait_till_running
+          stub = EchoStub.new(
+            'localhost-via-fd', :this_channel_is_insecure, channel_override: ch)
+          req = EchoMsg.new
+          deadline = GRPC::Core::TimeConsts.from_relative_time(1.0)
+          expect(stub.an_rpc(req, deadline: deadline)).to be_a(EchoMsg)
+          srv.stop
+          t.join
+        end
       end
     end
   end
