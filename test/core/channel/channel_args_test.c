@@ -63,8 +63,8 @@ static void test_set_compression_algorithm(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_channel_args *ch_args;
 
-  ch_args =
-      grpc_channel_args_set_compression_algorithm(NULL, GRPC_COMPRESS_MESSAGE_GZIP);
+  ch_args = grpc_channel_args_set_compression_algorithm(
+      NULL, GRPC_COMPRESS_MESSAGE_GZIP);
   GPR_ASSERT(ch_args->num_args == 1);
   GPR_ASSERT(strcmp(ch_args->args[0].key,
                     GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM) == 0);
@@ -76,7 +76,8 @@ static void test_set_compression_algorithm(void) {
 
 static void test_compression_algorithm_states(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_channel_args *ch_args, *ch_args_wo_gzip, *ch_args_wo_gzip_deflate, *ch_args_wo_gzip_deflate_gzip;
+  grpc_channel_args *ch_args, *ch_args_wo_gzip, *ch_args_wo_gzip_deflate,
+      *ch_args_wo_gzip_deflate_gzip;
   unsigned states_bitset;
   size_t i;
 
@@ -96,14 +97,16 @@ static void test_compression_algorithm_states(void) {
   ch_args_wo_gzip_deflate = grpc_channel_args_compression_algorithm_set_state(
       &exec_ctx, &ch_args_wo_gzip, GRPC_COMPRESS_MESSAGE_DEFLATE, 0);
   GPR_ASSERT(ch_args_wo_gzip == ch_args_wo_gzip_deflate);
-  ch_args_wo_gzip_deflate_gzip = grpc_channel_args_compression_algorithm_set_state(
-      &exec_ctx, &ch_args_wo_gzip_deflate, GRPC_COMPRESS_STREAM_GZIP, 0);
+  ch_args_wo_gzip_deflate_gzip =
+      grpc_channel_args_compression_algorithm_set_state(
+          &exec_ctx, &ch_args_wo_gzip_deflate, GRPC_COMPRESS_STREAM_GZIP, 0);
   GPR_ASSERT(ch_args_wo_gzip_deflate == ch_args_wo_gzip_deflate_gzip);
 
   states_bitset = (unsigned)grpc_channel_args_compression_algorithm_get_states(
       ch_args_wo_gzip_deflate);
   for (i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
-    if (i == GRPC_COMPRESS_MESSAGE_GZIP || i == GRPC_COMPRESS_MESSAGE_DEFLATE || i == GRPC_COMPRESS_STREAM_GZIP) {
+    if (i == GRPC_COMPRESS_MESSAGE_GZIP || i == GRPC_COMPRESS_MESSAGE_DEFLATE ||
+        i == GRPC_COMPRESS_STREAM_GZIP) {
       GPR_ASSERT(GPR_BITGET(states_bitset, i) == 0);
     } else {
       GPR_ASSERT(GPR_BITGET(states_bitset, i) != 0);

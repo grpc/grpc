@@ -167,7 +167,8 @@ static grpc_error *process_send_initial_metadata(
              GRPC_MESSAGE_COMPRESS_NONE) {
     error = grpc_metadata_batch_add_tail(
         exec_ctx, initial_metadata, &calld->compression_algorithm_storage,
-        grpc_message_compression_encoding_mdelem(calld->message_compression_algorithm));
+        grpc_message_compression_encoding_mdelem(
+            calld->message_compression_algorithm));
   }
 
   if (error != GRPC_ERROR_NONE) return error;

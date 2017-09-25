@@ -56,7 +56,8 @@ static int slice_find_separator_offset(const grpc_slice str, const char *sep,
   return 0;
 }
 
-static void skip_leading_trailing_spaces(const uint8_t *str_buffer, size_t *begin, size_t *end) {
+static void skip_leading_trailing_spaces(const uint8_t *str_buffer,
+                                         size_t *begin, size_t *end) {
   while (*begin < *end && str_buffer[*begin] == ' ') {
     (*begin)++;
   }
@@ -65,7 +66,8 @@ static void skip_leading_trailing_spaces(const uint8_t *str_buffer, size_t *begi
   }
 }
 
-static void grpc_slice_split_inner(grpc_slice str, const char *sep, grpc_slice_buffer *dst, bool no_space) {
+static void grpc_slice_split_inner(grpc_slice str, const char *sep,
+                                   grpc_slice_buffer *dst, bool no_space) {
   const size_t sep_len = strlen(sep);
   size_t begin, end;
   const uint8_t *str_buffer = GRPC_SLICE_START_PTR(str);
@@ -87,8 +89,7 @@ static void grpc_slice_split_inner(grpc_slice str, const char *sep, grpc_slice_b
     if (no_space) {
       skip_leading_trailing_spaces(str_buffer, &begin, &end);
     }
-    grpc_slice_buffer_add_indexed(
-        dst, grpc_slice_sub(str, begin, end));
+    grpc_slice_buffer_add_indexed(dst, grpc_slice_sub(str, begin, end));
   } else { /* no sep found, add whole input */
     begin = 0;
     end = GRPC_SLICE_LENGTH(str);
@@ -103,7 +104,8 @@ void grpc_slice_split(grpc_slice str, const char *sep, grpc_slice_buffer *dst) {
   grpc_slice_split_inner(str, sep, dst, false);
 }
 
-void grpc_slice_split_without_space(grpc_slice str, const char *sep, grpc_slice_buffer *dst) {
+void grpc_slice_split_without_space(grpc_slice str, const char *sep,
+                                    grpc_slice_buffer *dst) {
   grpc_slice_split_inner(str, sep, dst, true);
 }
 

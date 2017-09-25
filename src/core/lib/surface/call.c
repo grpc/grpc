@@ -831,8 +831,8 @@ static void set_incoming_stream_compression_algorithm(
   call->incoming_stream_compression_algorithm = algo;
 }
 
-grpc_compression_algorithm
-grpc_call_test_only_get_compression_algorithm(grpc_call *call) {
+grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
+    grpc_call *call) {
   grpc_compression_algorithm algorithm = GRPC_COMPRESS_NONE;
   grpc_compression_algorithm_from_message_stream_compression_algorithm(
       &algorithm, call->incoming_message_compression_algorithm,
@@ -876,7 +876,8 @@ static void set_encodings_accepted_by_peer(grpc_exec_ctx *exec_ctx,
 
   accept_encoding_slice = GRPC_MDVALUE(mdel);
   grpc_slice_buffer_init(&accept_encoding_parts);
-  grpc_slice_split_without_space(accept_encoding_slice, ",", &accept_encoding_parts);
+  grpc_slice_split_without_space(accept_encoding_slice, ",",
+                                 &accept_encoding_parts);
 
   GPR_BITSET(encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
   for (i = 0; i < accept_encoding_parts.count; i++) {
@@ -1017,7 +1018,8 @@ static uint32_t decode_status(grpc_mdelem md) {
   return status;
 }
 
-static grpc_message_compression_algorithm decode_message_compression(grpc_mdelem md) {
+static grpc_message_compression_algorithm decode_message_compression(
+    grpc_mdelem md) {
   grpc_message_compression_algorithm algorithm =
       grpc_message_compression_algorithm_from_slice(GRPC_MDVALUE(md));
   if (algorithm == GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT) {
@@ -1401,12 +1403,14 @@ static void process_data_after_md(grpc_exec_ctx *exec_ctx,
   } else {
     call->test_only_last_message_flags = call->receiving_stream->flags;
     if ((call->receiving_stream->flags & GRPC_WRITE_INTERNAL_COMPRESS) &&
-        (call->incoming_message_compression_algorithm > GRPC_MESSAGE_COMPRESS_NONE)) {
+        (call->incoming_message_compression_algorithm >
+         GRPC_MESSAGE_COMPRESS_NONE)) {
       grpc_compression_algorithm algo;
-      GPR_ASSERT(grpc_compression_algorithm_from_message_stream_compression_algorithm(
-          &algo, call->incoming_message_compression_algorithm, 0));
-      *call->receiving_buffer = grpc_raw_compressed_byte_buffer_create(
-          NULL, 0, algo);
+      GPR_ASSERT(
+          grpc_compression_algorithm_from_message_stream_compression_algorithm(
+              &algo, call->incoming_message_compression_algorithm, 0));
+      *call->receiving_buffer =
+          grpc_raw_compressed_byte_buffer_create(NULL, 0, algo);
     } else {
       *call->receiving_buffer = grpc_raw_byte_buffer_create(NULL, 0);
     }
@@ -1456,7 +1460,8 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
   grpc_call *call = bctl->call;
   if (call->incoming_stream_compression_algorithm !=
           GRPC_STREAM_COMPRESS_NONE &&
-      call->incoming_message_compression_algorithm != GRPC_MESSAGE_COMPRESS_NONE) {
+      call->incoming_message_compression_algorithm !=
+          GRPC_MESSAGE_COMPRESS_NONE) {
     char *error_msg = NULL;
     gpr_asprintf(&error_msg,
                  "Incoming stream has both stream compression (%d) and message "

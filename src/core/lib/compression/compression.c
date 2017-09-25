@@ -30,11 +30,12 @@
 int grpc_compression_algorithm_is_message(
     grpc_compression_algorithm algorithm) {
   return (algorithm >= GRPC_COMPRESS_MESSAGE_DEFLATE &&
-          algorithm <= GRPC_COMPRESS_MESSAGE_GZIP) ? 1 : 0;
+          algorithm <= GRPC_COMPRESS_MESSAGE_GZIP)
+             ? 1
+             : 0;
 }
 
-int grpc_compression_algorithm_is_stream(
-    grpc_compression_algorithm algorithm) {
+int grpc_compression_algorithm_is_stream(grpc_compression_algorithm algorithm) {
   return (algorithm == GRPC_COMPRESS_STREAM_GZIP) ? 1 : 0;
 }
 
@@ -92,8 +93,7 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
             &algo,
             grpc_message_compression_algorithm_for_level(
                 grpc_compression_level_to_message_compression_level(level),
-                grpc_compression_bitset_to_message_bitset(
-                    accepted_encodings)),
+                grpc_compression_bitset_to_message_bitset(accepted_encodings)),
             0));
     return algo;
   } else if (level <= GRPC_COMPRESS_LEVEL_STREAM_HIGH) {
@@ -102,8 +102,7 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
             &algo, 0,
             grpc_stream_compression_algorithm_for_level(
                 grpc_compression_level_to_stream_compression_level(level),
-                grpc_compression_bitset_to_stream_bitset(
-                    accepted_encodings))));
+                grpc_compression_bitset_to_stream_bitset(accepted_encodings))));
     return algo;
   } else {
     gpr_log(GPR_ERROR, "Unknown compression level: %d", level);
@@ -151,11 +150,14 @@ grpc_slice grpc_compression_algorithm_slice(
 }
 
 grpc_compression_algorithm grpc_compression_algorithm_from_slice(
-        grpc_slice str) {
+    grpc_slice str) {
   if (grpc_slice_eq(str, GRPC_MDSTR_IDENTITY)) return GRPC_COMPRESS_NONE;
-  if (grpc_slice_eq(str, GRPC_MDSTR_MESSAGE_SLASH_DEFLATE)) return GRPC_COMPRESS_MESSAGE_DEFLATE;
-  if (grpc_slice_eq(str, GRPC_MDSTR_MESSAGE_SLASH_GZIP)) return GRPC_COMPRESS_MESSAGE_GZIP;
-  if (grpc_slice_eq(str, GRPC_MDSTR_STREAM_SLASH_GZIP)) return GRPC_COMPRESS_STREAM_GZIP;
+  if (grpc_slice_eq(str, GRPC_MDSTR_MESSAGE_SLASH_DEFLATE))
+    return GRPC_COMPRESS_MESSAGE_DEFLATE;
+  if (grpc_slice_eq(str, GRPC_MDSTR_MESSAGE_SLASH_GZIP))
+    return GRPC_COMPRESS_MESSAGE_GZIP;
+  if (grpc_slice_eq(str, GRPC_MDSTR_STREAM_SLASH_GZIP))
+    return GRPC_COMPRESS_STREAM_GZIP;
   return GRPC_COMPRESS_ALGORITHMS_COUNT;
 }
 
@@ -175,4 +177,3 @@ grpc_mdelem grpc_compression_encoding_mdelem(
   }
   return GRPC_MDNULL;
 }
-

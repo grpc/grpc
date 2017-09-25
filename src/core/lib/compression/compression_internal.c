@@ -94,7 +94,8 @@ grpc_compression_level_to_stream_compression_level(
     return GRPC_STREAM_COMPRESS_LEVEL_NONE;
   }
   return (grpc_stream_compression_level)(
-      (uint32_t)(level - (GRPC_MESSAGE_COMPRESS_LEVEL_COUNT - 1) - GRPC_COMPRESS_LEVEL_NONE) +
+      (uint32_t)(level - (GRPC_MESSAGE_COMPRESS_LEVEL_COUNT - 1) -
+                 GRPC_COMPRESS_LEVEL_NONE) +
       (uint32_t)GRPC_STREAM_COMPRESS_LEVEL_NONE);
 }
 
@@ -136,7 +137,9 @@ uint32_t grpc_compression_bitset_to_stream_bitset(uint32_t bitset) {
 
 uint32_t grpc_compression_bitset_from_message_stream_compression_bitset(
     uint32_t message_bitset, uint32_t stream_bitset) {
-  uint32_t offset_stream_bitset = (stream_bitset & 1u) | ((stream_bitset & (~1u)) << (GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT - 1));
+  uint32_t offset_stream_bitset =
+      (stream_bitset & 1u) |
+      ((stream_bitset & (~1u)) << (GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT - 1));
   return message_bitset | offset_stream_bitset;
 }
 
@@ -184,8 +187,9 @@ int grpc_compression_algorithm_from_message_stream_compression_algorithm(
 
 int grpc_message_compression_algorithm_name(
     grpc_message_compression_algorithm algorithm, const char **name) {
-  GRPC_API_TRACE("grpc_message_compression_algorithm_parse(algorithm=%d, name=%p)", 2,
-                 ((int)algorithm, name));
+  GRPC_API_TRACE(
+      "grpc_message_compression_algorithm_parse(algorithm=%d, name=%p)", 2,
+      ((int)algorithm, name));
   switch (algorithm) {
     case GRPC_MESSAGE_COMPRESS_NONE:
       *name = "identity";
@@ -307,4 +311,3 @@ int grpc_stream_compression_algorithm_parse(
   }
   return 0;
 }
-

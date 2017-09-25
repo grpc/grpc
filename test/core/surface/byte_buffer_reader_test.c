@@ -133,8 +133,10 @@ static void read_compressed_slice(grpc_compression_algorithm algorithm,
   grpc_slice_buffer_add(&sliceb_in, input_slice); /* takes ownership */
   {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    GPR_ASSERT(
-        grpc_msg_compress(&exec_ctx, grpc_compression_algorithm_to_message_compression_algorithm(algorithm), &sliceb_in, &sliceb_out));
+    GPR_ASSERT(grpc_msg_compress(
+        &exec_ctx,
+        grpc_compression_algorithm_to_message_compression_algorithm(algorithm),
+        &sliceb_in, &sliceb_out));
     grpc_exec_ctx_finish(&exec_ctx);
   }
 

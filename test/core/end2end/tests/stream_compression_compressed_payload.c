@@ -232,8 +232,8 @@ static void request_for_disabled_algorithm(
   const char *algo_name = NULL;
   GPR_ASSERT(grpc_compression_algorithm_name(algorithm_to_disable, &algo_name));
   char *expected_details = NULL;
-  gpr_asprintf(&expected_details,
-               "Compression algorithm '%s' is disabled.", algo_name);
+  gpr_asprintf(&expected_details, "Compression algorithm '%s' is disabled.",
+               algo_name);
   /* and we expect a specific reason for it */
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, expected_details));
   gpr_free(expected_details);
@@ -582,7 +582,8 @@ static void test_invoke_request_with_compressed_payload_md_override(
 
   gzip_compression_override.key =
       GRPC_MDSTR_GRPC_INTERNAL_STREAM_ENCODING_REQUEST;
-  gzip_compression_override.value = grpc_slice_from_static_string("stream/gzip");
+  gzip_compression_override.value =
+      grpc_slice_from_static_string("stream/gzip");
   memset(&gzip_compression_override.internal_data, 0,
          sizeof(gzip_compression_override.internal_data));
 
