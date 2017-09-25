@@ -415,4 +415,8 @@ typedef unsigned __int64 uint64_t;
 #endif /* GPR_ATTRIBUTE_NO_TSAN (2) */
 #endif /* GPR_ATTRIBUTE_NO_TSAN (1) */
 
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
+
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */
