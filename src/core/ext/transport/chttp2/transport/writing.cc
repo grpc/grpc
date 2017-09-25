@@ -431,17 +431,16 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                                   &s->stats.outgoing, &t->outbuf);
         } else {
           grpc_encode_header_options hopt = {
-              .stream_id = s->id,
-              .is_eof = true,
-              .use_true_binary_metadata =
-                  t->settings
+              s->id, true,
+
+              t->settings
                       [GRPC_PEER_SETTINGS]
                       [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
                   0,
-              .max_frame_size =
-                  t->settings[GRPC_PEER_SETTINGS]
-                             [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-              .stats = &s->stats.outgoing};
+
+              t->settings[GRPC_PEER_SETTINGS]
+                         [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+              &s->stats.outgoing};
           grpc_chttp2_encode_header(exec_ctx, &t->hpack_compressor,
                                     extra_headers_for_trailing_metadata,
                                     num_extra_headers_for_trailing_metadata,

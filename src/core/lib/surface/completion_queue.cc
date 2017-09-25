@@ -15,6 +15,8 @@
  * limitations under the License.
  *
  */
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/surface/completion_queue.h"
 
 #include <inttypes.h>
@@ -1064,13 +1066,12 @@ static grpc_event cq_pluck(grpc_completion_queue *cq, void *tag,
   GRPC_CQ_INTERNAL_REF(cq, "pluck");
   gpr_mu_lock(cq->mu);
   cq_is_finished_arg is_finished_arg = {
-      .last_seen_things_queued_ever =
-          gpr_atm_no_barrier_load(&cqd->things_queued_ever),
-      .cq = cq,
-      .deadline = deadline,
-      .stolen_completion = NULL,
-      .tag = tag,
-      .first_loop = true};
+      gpr_atm_no_barrier_load(&cqd->things_queued_ever),
+      cq,
+      deadline,
+      NULL,
+      tag,
+      true};
   grpc_exec_ctx exec_ctx =
       GRPC_EXEC_CTX_INITIALIZER(0, cq_is_pluck_finished, &is_finished_arg);
   for (;;) {

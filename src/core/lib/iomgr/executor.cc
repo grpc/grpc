@@ -101,7 +101,7 @@ void grpc_executor_set_threading(grpc_exec_ctx *exec_ctx, bool threading) {
     for (size_t i = 0; i < g_max_threads; i++) {
       gpr_mu_init(&g_thread_state[i].mu);
       gpr_cv_init(&g_thread_state[i].cv);
-      g_thread_state[i].elems = (grpc_closure_list)GRPC_CLOSURE_LIST_INIT;
+      g_thread_state[i].elems = GRPC_CLOSURE_LIST_INIT;
     }
 
     gpr_thd_options opt = gpr_thd_options_default();
@@ -178,7 +178,7 @@ static void executor_thread(void *arg) {
     GRPC_STATS_INC_EXECUTOR_QUEUE_DRAINED(&exec_ctx);
     GPR_ASSERT(grpc_closure_list_empty(ts->local_elems));
     ts->local_elems = ts->elems;
-    ts->elems = (grpc_closure_list)GRPC_CLOSURE_LIST_INIT;
+    ts->elems = GRPC_CLOSURE_LIST_INIT;
     gpr_mu_unlock(&ts->mu);
     if (GRPC_TRACER_ON(executor_trace)) {
       gpr_log(GPR_DEBUG, "EXECUTOR[%d]: execute", (int)(ts - g_thread_state));

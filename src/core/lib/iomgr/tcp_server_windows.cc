@@ -98,7 +98,7 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
                                    grpc_closure *shutdown_complete,
                                    const grpc_channel_args *args,
                                    grpc_tcp_server **server) {
-  grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
+  grpc_tcp_server *s = (grpc_tcp_server *)gpr_malloc(sizeof(grpc_tcp_server));
   s->channel_args = grpc_channel_args_copy(args);
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
@@ -116,7 +116,7 @@ grpc_error *grpc_tcp_server_create(grpc_exec_ctx *exec_ctx,
 
 static void destroy_server(grpc_exec_ctx *exec_ctx, void *arg,
                            grpc_error *error) {
-  grpc_tcp_server *s = arg;
+  grpc_tcp_server *s = (grpc_tcp_server *)arg;
 
   /* Now that the accepts have been aborted, we can destroy the sockets.
      The IOCP won't get notified on these, so we can flag them as already
@@ -189,6 +189,7 @@ static grpc_error *prepare_socket(SOCKET sock,
                                   int *port) {
   grpc_resolved_address sockname_temp;
   grpc_error *error = GRPC_ERROR_NONE;
+  int sockname_temp_len;
 
   error = grpc_tcp_prepare_socket(sock);
   if (error != GRPC_ERROR_NONE) {
@@ -206,7 +207,7 @@ static grpc_error *prepare_socket(SOCKET sock,
     goto failure;
   }
 
-  int sockname_temp_len = sizeof(struct sockaddr_storage);
+  sockname_temp_len = sizeof(struct sockaddr_storage);
   if (getsockname(sock, (struct sockaddr *)sockname_temp.addr,
                   &sockname_temp_len) == SOCKET_ERROR) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "getsockname");
@@ -295,7 +296,7 @@ failure:
 
 /* Event manager callback when reads are ready. */
 static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  grpc_tcp_listener *sp = arg;
+  grpc_tcp_listener *sp = (grpc_tcp_listener *)arg;
   SOCKET sock = sp->new_socket;
   grpc_winsocket_callback_info *info = &sp->socket->read_info;
   grpc_endpoint *ep = NULL;
@@ -369,7 +370,8 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
      managed to accept a connection, and created an endpoint. */
   if (ep) {
     // Create acceptor.
-    grpc_tcp_server_acceptor *acceptor = gpr_malloc(sizeof(*acceptor));
+    grpc_tcp_server_acceptor *acceptor =
+        (grpc_tcp_server_acceptor *)gpr_malloc(sizeof(*acceptor));
     acceptor->from_server = sp->server;
     acceptor->port_index = sp->port_index;
     acceptor->fd_index = 0;
@@ -422,7 +424,7 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
   GPR_ASSERT(port >= 0);
   gpr_mu_lock(&s->mu);
   GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
-  sp = gpr_malloc(sizeof(grpc_tcp_listener));
+  sp = (grpc_tcp_listener *)gpr_malloc(sizeof(grpc_tcp_listener));
   sp->next = NULL;
   if (s->head == NULL) {
     s->head = sp;
@@ -473,7 +475,8 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s,
         sockname_temp.len = (size_t)sockname_temp_len;
         *port = grpc_sockaddr_get_port(&sockname_temp);
         if (*port > 0) {
-          allocated_addr = gpr_malloc(sizeof(grpc_resolved_address));
+          allocated_addr = (grpc_resolved_address *)gpr_malloc(
+              sizeof(grpc_resolved_address));
           memcpy(allocated_addr, addr, sizeof(grpc_resolved_address));
           grpc_sockaddr_set_port(allocated_addr, *port);
           addr = allocated_addr;

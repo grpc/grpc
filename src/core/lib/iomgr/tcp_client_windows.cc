@@ -68,7 +68,7 @@ static void async_connect_unlock_and_cleanup(grpc_exec_ctx *exec_ctx,
 }
 
 static void on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
-  async_connect *ac = acp;
+  async_connect *ac = (async_connect *)acp;
   gpr_mu_lock(&ac->mu);
   grpc_winsocket *socket = ac->socket;
   ac->socket = NULL;
@@ -79,7 +79,7 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
 }
 
 static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
-  async_connect *ac = acp;
+  async_connect *ac = (async_connect *)acp;
   grpc_endpoint **ep = ac->endpoint;
   GPR_ASSERT(*ep == NULL);
   grpc_closure *on_done = ac->on_done;
@@ -195,7 +195,7 @@ static void tcp_client_connect_impl(
     }
   }
 
-  ac = gpr_malloc(sizeof(async_connect));
+  ac = (async_connect *)gpr_malloc(sizeof(async_connect));
   ac->on_done = on_done;
   ac->socket = socket;
   gpr_mu_init(&ac->mu);

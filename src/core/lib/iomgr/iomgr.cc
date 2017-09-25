@@ -16,8 +16,11 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/iomgr.h"
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 
