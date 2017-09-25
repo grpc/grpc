@@ -1349,7 +1349,7 @@ static void lb_call_destroy_locked(grpc_exec_ctx *exec_ctx,
   grpc_byte_buffer_destroy(glb_policy->lb_request_payload);
   grpc_slice_unref_internal(exec_ctx, glb_policy->lb_call_status_details);
 
-  if (!glb_policy->client_load_report_timer_pending) {
+  if (glb_policy->client_load_report_timer_pending) {
     grpc_timer_cancel(exec_ctx, &glb_policy->client_load_report_timer);
   }
 }
