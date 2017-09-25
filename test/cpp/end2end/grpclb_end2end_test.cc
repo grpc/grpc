@@ -656,14 +656,18 @@ TEST_F(SingleBalancerTest, Fallback) {
   }
   SetNextResolution(addresses);
 
-  // Send non-empty serverlist only after kServerlistDelayMs
+  // Send non-empty serverlist only after kServerlistDelayMs.
   ScheduleResponseForBalancer(
       0, BalancerServiceImpl::BuildResponseForBackends(
              GetBackendPorts(kNumBackendInResolution /* start_index */), {}),
       kServerlistDelayMs);
 
-  // The first request. The client will block while it's still trying to
-  // contact the balancer.
+  // Wait until all the fallback backends are reachable.
+  for (size_t i = 0; i < kNumBackendInResolution; ++i) {
+    WaitForBackend(i);
+  }
+
+  // The first request.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
   CheckRpcSendOk(kNumBackendInResolution);
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
@@ -677,14 +681,9 @@ TEST_F(SingleBalancerTest, Fallback) {
     EXPECT_EQ(0U, backend_servers_[i].service_->request_count());
   }
 
-  // Wait until update has been processed, as signaled by the backend returned
-  // by the balancer receiving a request.
-  do {
-    CheckRpcSendOk(1);
-  } while (
-      backend_servers_[kNumBackendInResolution].service_->request_count() == 0);
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    backend_servers_[i].service_->ResetCounters();
+  // Wait until the serverlist reception has been processed.
+  for (size_t i = kNumBackendInResolution; i < backends_.size(); ++i) {
+    WaitForBackend(i);
   }
 
   // Send out the second request.
@@ -729,6 +728,8 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
                              kNumBackendInResolutionUpdate /* start_index */),
              {}),
       kServerlistDelayMs);
+
+
 
   // The first request. The client will block while it's still trying to
   // contact the balancer.
