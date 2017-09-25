@@ -20,16 +20,18 @@
 
 /* This method creates a tsi_zero_copy_grpc_protector object.  */
 tsi_result tsi_handshaker_result_create_zero_copy_grpc_protector(
-    const tsi_handshaker_result *self, size_t *max_output_protected_frame_size,
+    grpc_exec_ctx *exec_ctx, const tsi_handshaker_result *self,
+    size_t *max_output_protected_frame_size,
     tsi_zero_copy_grpc_protector **protector) {
-  if (self == NULL || self->vtable == NULL || protector == NULL) {
+  if (exec_ctx == NULL || self == NULL || self->vtable == NULL ||
+      protector == NULL) {
     return TSI_INVALID_ARGUMENT;
   }
   if (self->vtable->create_zero_copy_grpc_protector == NULL) {
     return TSI_UNIMPLEMENTED;
   }
   return self->vtable->create_zero_copy_grpc_protector(
-      self, max_output_protected_frame_size, protector);
+      exec_ctx, self, max_output_protected_frame_size, protector);
 }
 
 /* --- tsi_zero_copy_grpc_protector common implementation. ---

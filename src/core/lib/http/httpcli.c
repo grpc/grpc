@@ -130,7 +130,7 @@ static void do_read(grpc_exec_ctx *exec_ctx, internal_request *req) {
 
 static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
                     grpc_error *error) {
-  internal_request *req = user_data;
+  internal_request *req = (internal_request *)user_data;
   size_t i;
 
   for (i = 0; i < req->incoming.count; i++) {
@@ -159,7 +159,7 @@ static void on_written(grpc_exec_ctx *exec_ctx, internal_request *req) {
 }
 
 static void done_write(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  internal_request *req = arg;
+  internal_request *req = (internal_request *)arg;
   if (error == GRPC_ERROR_NONE) {
     on_written(exec_ctx, req);
   } else {
@@ -175,7 +175,7 @@ static void start_write(grpc_exec_ctx *exec_ctx, internal_request *req) {
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_endpoint *ep) {
-  internal_request *req = arg;
+  internal_request *req = (internal_request *)arg;
 
   if (!ep) {
     next_address(exec_ctx, req, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -189,7 +189,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
 
 static void on_connected(grpc_exec_ctx *exec_ctx, void *arg,
                          grpc_error *error) {
-  internal_request *req = arg;
+  internal_request *req = (internal_request *)arg;
 
   if (!req->ep) {
     next_address(exec_ctx, req, GRPC_ERROR_REF(error));
@@ -217,7 +217,7 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
   GRPC_CLOSURE_INIT(&req->connected, on_connected, req,
                     grpc_schedule_on_exec_ctx);
   grpc_arg arg = grpc_channel_arg_pointer_create(
-      GRPC_ARG_RESOURCE_QUOTA, req->resource_quota,
+      (char *)GRPC_ARG_RESOURCE_QUOTA, req->resource_quota,
       grpc_resource_quota_arg_vtable());
   grpc_channel_args args = {1, &arg};
   grpc_tcp_client_connect(exec_ctx, &req->connected, &req->ep,
@@ -226,7 +226,7 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
 }
 
 static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  internal_request *req = arg;
+  internal_request *req = (internal_request *)arg;
   if (error != GRPC_ERROR_NONE) {
     finish(exec_ctx, req, GRPC_ERROR_REF(error));
     return;
@@ -243,7 +243,8 @@ static void internal_request_begin(grpc_exec_ctx *exec_ctx,
                                    gpr_timespec deadline, grpc_closure *on_done,
                                    grpc_httpcli_response *response,
                                    const char *name, grpc_slice request_text) {
-  internal_request *req = gpr_malloc(sizeof(internal_request));
+  internal_request *req =
+      (internal_request *)gpr_malloc(sizeof(internal_request));
   memset(req, 0, sizeof(*req));
   req->request_text = request_text;
   grpc_http_parser_init(&req->parser, GRPC_HTTP_RESPONSE, response);

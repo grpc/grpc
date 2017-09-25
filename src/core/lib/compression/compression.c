@@ -60,7 +60,7 @@ int grpc_stream_compression_algorithm_parse(
 }
 
 int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
-                                    char **name) {
+                                    const char **name) {
   GRPC_API_TRACE("grpc_compression_algorithm_parse(algorithm=%d, name=%p)", 2,
                  ((int)algorithm, name));
   switch (algorithm) {
@@ -80,7 +80,7 @@ int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
 }
 
 int grpc_stream_compression_algorithm_name(
-    grpc_stream_compression_algorithm algorithm, char **name) {
+    grpc_stream_compression_algorithm algorithm, const char **name) {
   GRPC_API_TRACE(
       "grpc_stream_compression_algorithm_parse(algorithm=%d, name=%p)", 2,
       ((int)algorithm, name));

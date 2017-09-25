@@ -86,13 +86,14 @@ grpc_channel_args *grpc_channel_args_copy_and_add_and_remove(
     }
   }
   // Create result.
-  grpc_channel_args *dst = gpr_malloc(sizeof(grpc_channel_args));
+  grpc_channel_args *dst =
+      (grpc_channel_args *)gpr_malloc(sizeof(grpc_channel_args));
   dst->num_args = num_args_to_copy + num_to_add;
   if (dst->num_args == 0) {
     dst->args = NULL;
     return dst;
   }
-  dst->args = gpr_malloc(sizeof(grpc_arg) * dst->num_args);
+  dst->args = (grpc_arg *)gpr_malloc(sizeof(grpc_arg) * dst->num_args);
   // Copy args from src that are not being removed.
   size_t dst_idx = 0;
   if (src != NULL) {
@@ -117,7 +118,7 @@ grpc_channel_args *grpc_channel_args_copy(const grpc_channel_args *src) {
 grpc_channel_args *grpc_channel_args_union(const grpc_channel_args *a,
                                            const grpc_channel_args *b) {
   const size_t max_out = (a->num_args + b->num_args);
-  grpc_arg *uniques = gpr_malloc(sizeof(*uniques) * max_out);
+  grpc_arg *uniques = (grpc_arg *)gpr_malloc(sizeof(*uniques) * max_out);
   for (size_t i = 0; i < a->num_args; ++i) uniques[i] = a->args[i];
 
   size_t uniques_idx = a->num_args;
@@ -160,24 +161,25 @@ static int cmp_arg(const grpc_arg *a, const grpc_arg *b) {
 /* stabilizing comparison function: since channel_args ordering matters for
  * keys with the same name, we need to preserve that ordering */
 static int cmp_key_stable(const void *ap, const void *bp) {
-  const grpc_arg *const *a = ap;
-  const grpc_arg *const *b = bp;
+  const grpc_arg *const *a = (const grpc_arg *const *)ap;
+  const grpc_arg *const *b = (const grpc_arg *const *)bp;
   int c = strcmp((*a)->key, (*b)->key);
   if (c == 0) c = GPR_ICMP(*a, *b);
   return c;
 }
 
 grpc_channel_args *grpc_channel_args_normalize(const grpc_channel_args *a) {
-  grpc_arg **args = gpr_malloc(sizeof(grpc_arg *) * a->num_args);
+  grpc_arg **args = (grpc_arg **)gpr_malloc(sizeof(grpc_arg *) * a->num_args);
   for (size_t i = 0; i < a->num_args; i++) {
     args[i] = &a->args[i];
   }
   if (a->num_args > 1)
     qsort(args, a->num_args, sizeof(grpc_arg *), cmp_key_stable);
 
-  grpc_channel_args *b = gpr_malloc(sizeof(grpc_channel_args));
+  grpc_channel_args *b =
+      (grpc_channel_args *)gpr_malloc(sizeof(grpc_channel_args));
   b->num_args = a->num_args;
-  b->args = gpr_malloc(sizeof(grpc_arg) * b->num_args);
+  b->args = (grpc_arg *)gpr_malloc(sizeof(grpc_arg) * b->num_args);
   for (size_t i = 0; i < a->num_args; i++) {
     b->args[i] = copy_arg(args[i]);
   }
@@ -210,7 +212,7 @@ void grpc_channel_args_destroy(grpc_exec_ctx *exec_ctx, grpc_channel_args *a) {
 grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
     const grpc_channel_args *a) {
   size_t i;
-  if (a == NULL) return 0;
+  if (a == NULL) return GRPC_COMPRESS_NONE;
   for (i = 0; i < a->num_args; ++i) {
     if (a->args[i].type == GRPC_ARG_INTEGER &&
         !strcmp(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, a->args[i].key)) {
@@ -224,7 +226,7 @@ grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
 grpc_stream_compression_algorithm
 grpc_channel_args_get_stream_compression_algorithm(const grpc_channel_args *a) {
   size_t i;
-  if (a == NULL) return 0;
+  if (a == NULL) return GRPC_STREAM_COMPRESS_NONE;
   for (i = 0; i < a->num_args; ++i) {
     if (a->args[i].type == GRPC_ARG_INTEGER &&
         !strcmp(GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
@@ -241,7 +243,7 @@ grpc_channel_args *grpc_channel_args_set_compression_algorithm(
   GPR_ASSERT(algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT);
   grpc_arg tmp;
   tmp.type = GRPC_ARG_INTEGER;
-  tmp.key = GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM;
+  tmp.key = (char *)GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM;
   tmp.value.integer = algorithm;
   return grpc_channel_args_copy_and_add(a, &tmp, 1);
 }
@@ -251,7 +253,7 @@ grpc_channel_args *grpc_channel_args_set_stream_compression_algorithm(
   GPR_ASSERT(algorithm < GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT);
   grpc_arg tmp;
   tmp.type = GRPC_ARG_INTEGER;
-  tmp.key = GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM;
+  tmp.key = (char *)GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM;
   tmp.value.integer = algorithm;
   return grpc_channel_args_copy_and_add(a, &tmp, 1);
 }
@@ -306,7 +308,7 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
 
   if (grpc_channel_args_get_compression_algorithm(*a) == algorithm &&
       state == 0) {
-    char *algo_name = NULL;
+    const char *algo_name = NULL;
     GPR_ASSERT(grpc_compression_algorithm_name(algorithm, &algo_name) != 0);
     gpr_log(GPR_ERROR,
             "Tried to disable default compression algorithm '%s'. The "
@@ -322,7 +324,7 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
     /* create a new arg */
     grpc_arg tmp;
     tmp.type = GRPC_ARG_INTEGER;
-    tmp.key = GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET;
+    tmp.key = (char *)GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET;
     /* all enabled by default */
     tmp.value.integer = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
     if (state != 0) {
@@ -347,7 +349,7 @@ grpc_channel_args *grpc_channel_args_stream_compression_algorithm_set_state(
 
   if (grpc_channel_args_get_stream_compression_algorithm(*a) == algorithm &&
       state == 0) {
-    char *algo_name = NULL;
+    const char *algo_name = NULL;
     GPR_ASSERT(grpc_stream_compression_algorithm_name(algorithm, &algo_name) !=
                0);
     gpr_log(GPR_ERROR,
@@ -364,7 +366,7 @@ grpc_channel_args *grpc_channel_args_stream_compression_algorithm_set_state(
     /* create a new arg */
     grpc_arg tmp;
     tmp.type = GRPC_ARG_INTEGER;
-    tmp.key = GRPC_STREAM_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET;
+    tmp.key = (char *)GRPC_STREAM_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET;
     /* all enabled by default */
     tmp.value.integer = (1u << GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT) - 1;
     if (state != 0) {

@@ -106,7 +106,8 @@ grpc_error *grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
           return err;
         }
         ++cur;
-        ++t->deframe_state;
+        t->deframe_state =
+            (grpc_chttp2_deframe_transport_state)(1 + (int)t->deframe_state);
       }
       if (cur == end) {
         return GRPC_ERROR_NONE;
@@ -382,6 +383,9 @@ error_handler:
     /* t->parser = grpc_chttp2_data_parser_parse;*/
     t->parser = grpc_chttp2_data_parser_parse;
     t->parser_data = &s->data_parser;
+    t->ping_state.pings_before_data_required =
+        t->ping_policy.max_pings_without_data;
+    t->ping_state.last_ping_sent_time = gpr_inf_past(GPR_CLOCK_MONOTONIC);
     return GRPC_ERROR_NONE;
   } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, NULL)) {
     /* handle stream errors by closing the stream */
@@ -557,6 +561,10 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
     t->header_eof =
         (t->incoming_frame_flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) != 0;
   }
+
+  t->ping_state.pings_before_data_required =
+      t->ping_policy.max_pings_without_data;
+  t->ping_state.last_ping_sent_time = gpr_inf_past(GPR_CLOCK_MONOTONIC);
 
   /* could be a new grpc_chttp2_stream or an existing grpc_chttp2_stream */
   s = grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);

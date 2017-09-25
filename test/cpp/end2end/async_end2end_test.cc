@@ -266,6 +266,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   }
 
   void TearDown() override {
+    gpr_tls_set(&g_is_async_end2end_test, 0);
     server_->Shutdown();
     void* ignored_tag;
     bool ignored_ok;
@@ -274,7 +275,6 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
       ;
     stub_.reset();
     poll_overrider_.reset();
-    gpr_tls_set(&g_is_async_end2end_test, 0);
     grpc_recycle_unused_port(port_);
   }
 
@@ -396,6 +396,7 @@ TEST_P(AsyncEnd2endTest, WaitAndShutdownTest) {
   ResetStub();
   SendRpc(1);
   EXPECT_EQ(0, notify);
+  gpr_tls_set(&g_is_async_end2end_test, 0);
   server_->Shutdown();
   wait_thread.join();
   EXPECT_EQ(1, notify);
@@ -404,8 +405,9 @@ TEST_P(AsyncEnd2endTest, WaitAndShutdownTest) {
 TEST_P(AsyncEnd2endTest, ShutdownThenWait) {
   ResetStub();
   SendRpc(1);
-  server_->Shutdown();
+  std::thread t([this]() { server_->Shutdown(); });
   server_->Wait();
+  t.join();
 }
 
 // Test a simple RPC using the async version of Next

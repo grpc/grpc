@@ -276,7 +276,7 @@ static void timer_thread(void *completed_thread_ptr) {
       GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, NULL);
   timer_main_loop(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
-  timer_thread_cleanup(completed_thread_ptr);
+  timer_thread_cleanup((completed_thread *)completed_thread_ptr);
 }
 
 static void start_threads(void) {

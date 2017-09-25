@@ -148,7 +148,8 @@ grpc_slice grpc_grpclb_request_encode(const grpc_grpclb_request *request) {
 void grpc_grpclb_request_destroy(grpc_grpclb_request *request) {
   if (request->has_client_stats) {
     grpc_grpclb_dropped_call_counts *drop_entries =
-        request->client_stats.calls_finished_with_drop.arg;
+        (grpc_grpclb_dropped_call_counts *)
+            request->client_stats.calls_finished_with_drop.arg;
     grpc_grpclb_dropped_call_counts_destroy(drop_entries);
   }
   gpr_free(request);
@@ -170,7 +171,8 @@ grpc_grpclb_initial_response *grpc_grpclb_initial_response_parse(
   if (!res.has_initial_response) return NULL;
 
   grpc_grpclb_initial_response *initial_res =
-      gpr_malloc(sizeof(grpc_grpclb_initial_response));
+      (grpc_grpclb_initial_response *)gpr_malloc(
+          sizeof(grpc_grpclb_initial_response));
   memcpy(initial_res, &res.initial_response,
          sizeof(grpc_grpclb_initial_response));
 

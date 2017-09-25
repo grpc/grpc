@@ -244,7 +244,7 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
                                         &calld->slices, &tmp);
   if (did_compress) {
     if (GRPC_TRACER_ON(grpc_compression_trace)) {
-      char *algo_name;
+      const char *algo_name;
       const size_t before_size = calld->slices.length;
       const size_t after_size = tmp.length;
       const float savings_ratio = 1.0f - (float)after_size / (float)before_size;
@@ -258,7 +258,7 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
     send_flags |= GRPC_WRITE_INTERNAL_COMPRESS;
   } else {
     if (GRPC_TRACER_ON(grpc_compression_trace)) {
-      char *algo_name;
+      const char *algo_name;
       GPR_ASSERT(grpc_compression_algorithm_name(calld->compression_algorithm,
                                                  &algo_name));
       gpr_log(GPR_DEBUG,

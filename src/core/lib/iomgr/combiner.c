@@ -81,7 +81,8 @@ grpc_combiner *grpc_combiner_create(void) {
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
   gpr_mpscq_init(&lock->queue);
   grpc_closure_list_init(&lock->final_list);
-  GRPC_CLOSURE_INIT(&lock->offload, offload, lock, grpc_executor_scheduler);
+  GRPC_CLOSURE_INIT(&lock->offload, offload, lock,
+                    grpc_executor_scheduler(GRPC_EXECUTOR_SHORT));
   GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG, "C:%p create", lock));
   return lock;
 }
@@ -355,7 +356,8 @@ static void combiner_finally_exec(grpc_exec_ctx *exec_ctx,
 
 static void enqueue_finally(grpc_exec_ctx *exec_ctx, void *closure,
                             grpc_error *error) {
-  combiner_finally_exec(exec_ctx, closure, GRPC_ERROR_REF(error));
+  combiner_finally_exec(exec_ctx, (grpc_closure *)closure,
+                        GRPC_ERROR_REF(error));
 }
 
 grpc_closure_scheduler *grpc_combiner_scheduler(grpc_combiner *combiner) {

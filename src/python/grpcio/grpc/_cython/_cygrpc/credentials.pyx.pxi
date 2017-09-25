@@ -77,7 +77,7 @@ cdef class CredentialsMetadataPlugin:
     """
     Args:
       plugin_callback (callable): Callback accepting a service URL (str/bytes)
-        and callback object (accepting a Metadata,
+        and callback object (accepting a MetadataArray,
         grpc_status_code, and a str/bytes error message). This argument
         when called should be non-blocking and eventually call the callback
         object with the appropriate status code/details and metadata (if
@@ -133,8 +133,7 @@ cdef int plugin_get_metadata(
   def python_callback(
       Metadata metadata, grpc_status_code status,
       bytes error_details):
-    cb(user_data, metadata.c_metadata_array.metadata,
-       metadata.c_metadata_array.count, status, error_details)
+    cb(user_data, metadata.c_metadata, metadata.c_count, status, error_details)
     called_flag[0] = True
   cdef CredentialsMetadataPlugin self = <CredentialsMetadataPlugin>state
   cdef AuthMetadataContext cy_context = AuthMetadataContext()
@@ -144,8 +143,8 @@ cdef int plugin_get_metadata(
       self.plugin_callback(cy_context, python_callback)
     except Exception as error:
       if not called_flag[0]:
-        cb(user_data, Metadata([]).c_metadata_array.metadata,
-          0, StatusCode.unknown, traceback.format_exc().encode())
+        cb(user_data, NULL, 0, StatusCode.unknown,
+           traceback.format_exc().encode())
   threading.Thread(group=None, target=async_callback).start()
   return 0  # Asynchronous return
 

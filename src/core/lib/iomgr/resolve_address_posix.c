@@ -85,7 +85,7 @@ static grpc_error *blocking_resolve_address_impl(
 
   if (s != 0) {
     /* Retry if well-known service name is recognized */
-    char *svc[][2] = {{"http", "80"}, {"https", "443"}};
+    const char *svc[][2] = {{"http", "80"}, {"https", "443"}};
     for (i = 0; i < GPR_ARRAY_SIZE(svc); i++) {
       if (strcmp(port, svc[i][0]) == 0) {
         GRPC_SCHEDULING_START_BLOCKING_REGION;
@@ -177,7 +177,7 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
                                  grpc_resolved_addresses **addrs) {
   request *r = (request *)gpr_malloc(sizeof(request));
   GRPC_CLOSURE_INIT(&r->request_closure, do_request_thread, r,
-                    grpc_executor_scheduler);
+                    grpc_executor_scheduler(GRPC_EXECUTOR_SHORT));
   r->name = gpr_strdup(name);
   r->default_port = gpr_strdup(default_port);
   r->on_done = on_done;

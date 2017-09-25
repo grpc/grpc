@@ -43,7 +43,8 @@ static void httpcli_ssl_destroy(grpc_exec_ctx *exec_ctx,
   grpc_httpcli_ssl_channel_security_connector *c =
       (grpc_httpcli_ssl_channel_security_connector *)sc;
   if (c->handshaker_factory != NULL) {
-    tsi_ssl_client_handshaker_factory_destroy(c->handshaker_factory);
+    tsi_ssl_client_handshaker_factory_unref(c->handshaker_factory);
+    c->handshaker_factory = NULL;
   }
   if (c->secure_peer_name != NULL) gpr_free(c->secure_peer_name);
   gpr_free(sc);

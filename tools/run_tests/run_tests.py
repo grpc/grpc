@@ -80,7 +80,7 @@ def get_bqtest_data(limit=None):
 SELECT
   filtered_test_name,
   SUM(result != 'PASSED' AND result != 'SKIPPED') > 0 as flaky,
-  MAX(cpu_measured) as cpu
+  MAX(cpu_measured) + 0.01 as cpu
   FROM (
   SELECT
     REGEXP_REPLACE(test_name, r'/\d+', '') AS filtered_test_name,
@@ -92,9 +92,7 @@ SELECT
     AND platform = '"""+platform_string()+"""'
     AND NOT REGEXP_MATCH(job_name, '.*portability.*') )
 GROUP BY
-  filtered_test_name
-HAVING
-  flaky OR cpu > 0"""
+  filtered_test_name"""
   if limit:
     query += " limit {}".format(limit)
   query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)
@@ -352,11 +350,12 @@ class CLanguage(object):
                                                 environ=env))
           else:
             cmdline = [binary] + target['args']
+            shortname = target.get('shortname', ' '.join(
+                          pipes.quote(arg)
+                          for arg in cmdline))
+            shortname += shortname_ext
             out.append(self.config.job_spec(cmdline,
-                                            shortname=' '.join(
-                                                          pipes.quote(arg)
-                                                          for arg in cmdline) +
-                                                      shortname_ext,
+                                            shortname=shortname,
                                             cpu_cost=cpu_cost,
                                             flaky=target.get('flaky', False),
                                             timeout_seconds=target.get('timeout_seconds', _DEFAULT_TIMEOUT_SECONDS) * timeout_scaling,
@@ -535,6 +534,7 @@ class PhpLanguage(object):
     self.config = config
     self.args = args
     _check_compiler(self.args.compiler, ['default'])
+    self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
   def test_specs(self):
     return [self.config.job_spec(['src/php/bin/run_tests.sh'],
@@ -547,7 +547,7 @@ class PhpLanguage(object):
     return ['static_c', 'shared_c']
 
   def make_options(self):
-    return []
+    return self._make_options;
 
   def build_steps(self):
     return [['tools/run_tests/helper_scripts/build_php.sh']]
@@ -571,6 +571,7 @@ class Php7Language(object):
     self.config = config
     self.args = args
     _check_compiler(self.args.compiler, ['default'])
+    self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
   def test_specs(self):
     return [self.config.job_spec(['src/php/bin/run_tests.sh'],
@@ -583,7 +584,7 @@ class Php7Language(object):
     return ['static_c', 'shared_c']
 
   def make_options(self):
-    return []
+    return self._make_options;
 
   def build_steps(self):
     return [['tools/run_tests/helper_scripts/build_php.sh']]

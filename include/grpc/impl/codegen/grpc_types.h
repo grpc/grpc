@@ -188,9 +188,14 @@ typedef struct {
 #define GRPC_ARG_HTTP2_MAX_FRAME_SIZE "grpc.http2.max_frame_size"
 /** Should BDP probing be performed? */
 #define GRPC_ARG_HTTP2_BDP_PROBE "grpc.http2.bdp_probe"
-/** Minimum time (in milliseconds) between successive ping frames being sent */
-#define GRPC_ARG_HTTP2_MIN_TIME_BETWEEN_PINGS_MS \
+/** Minimum time between sending successive ping frames without receiving any
+    data frame, Int valued, milliseconds. */
+#define GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS \
   "grpc.http2.min_time_between_pings_ms"
+/** Minimum allowed time between receiving successive ping frames without
+    sending any data frame. Int valued, milliseconds */
+#define GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS \
+  "grpc.http2.min_ping_interval_without_data_ms"
 /** Channel arg to override the http2 :scheme header */
 #define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
 /** How many pings can we send before needing to send a data frame or header
@@ -202,10 +207,6 @@ typedef struct {
     closing the transport? (0 indicates that the server can bear an infinite
     number of misbehaving pings) */
 #define GRPC_ARG_HTTP2_MAX_PING_STRIKES "grpc.http2.max_ping_strikes"
-/** Minimum allowed time between two pings without sending any data frame. Int
-    valued, seconds */
-#define GRPC_ARG_HTTP2_MIN_PING_INTERVAL_WITHOUT_DATA_MS \
-  "grpc.http2.min_ping_interval_without_data_ms"
 /** How much data are we willing to queue up per stream if
     GRPC_WRITE_BUFFER_HINT is set? This is an upper bound */
 #define GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE "grpc.http2.write_buffer_size"
@@ -355,8 +356,11 @@ typedef enum grpc_call_error {
 /** Force compression to be disabled for a particular write
     (start_write/add_metadata). Illegal on invoke/accept. */
 #define GRPC_WRITE_NO_COMPRESS (0x00000002u)
+/** Force this message to be written to the socket before completing it */
+#define GRPC_WRITE_THROUGH (0x00000004u)
 /** Mask of all valid flags. */
-#define GRPC_WRITE_USED_MASK (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS)
+#define GRPC_WRITE_USED_MASK \
+  (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS | GRPC_WRITE_THROUGH)
 
 /** Initial metadata flags */
 /** Signal that the call is idempotent */
@@ -377,7 +381,7 @@ typedef enum grpc_call_error {
    GRPC_INITIAL_METADATA_WAIT_FOR_READY |                \
    GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |             \
    GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET | \
-   GRPC_INITIAL_METADATA_CORKED)
+   GRPC_INITIAL_METADATA_CORKED | GRPC_WRITE_THROUGH)
 
 /** A single metadata element */
 typedef struct grpc_metadata {

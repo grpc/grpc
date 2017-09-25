@@ -37,7 +37,7 @@ typedef void (*grpc_ioreq_completion_func)(grpc_exec_ctx *exec_ctx,
 typedef struct grpc_call_create_args {
   grpc_channel *channel;
 
-  grpc_call *parent_call;
+  grpc_call *parent;
   uint32_t propagation_mask;
 
   grpc_completion_queue *cq;

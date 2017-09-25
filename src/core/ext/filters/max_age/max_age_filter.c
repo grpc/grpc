@@ -402,7 +402,7 @@ static bool maybe_add_max_age_filter(grpc_exec_ctx* exec_ctx,
   bool enable =
       grpc_channel_arg_get_integer(
           grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_AGE_MS),
-          MAX_CONNECTION_AGE_INTEGER_OPTIONS) != INT_MAX &&
+          MAX_CONNECTION_AGE_INTEGER_OPTIONS) != INT_MAX ||
       grpc_channel_arg_get_integer(
           grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_IDLE_MS),
           MAX_CONNECTION_IDLE_INTEGER_OPTIONS) != INT_MAX;

@@ -100,8 +100,8 @@ static callback_state *get_state_for_batch(
 static void con_start_transport_stream_op_batch(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     grpc_transport_stream_op_batch *batch) {
-  call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
+  call_data *calld = (call_data *)elem->call_data;
+  channel_data *chand = (channel_data *)elem->channel_data;
   if (batch->recv_initial_metadata) {
     callback_state *state = &calld->recv_initial_metadata_ready;
     intercept_callback(
@@ -136,7 +136,7 @@ static void con_start_transport_stream_op_batch(
 static void con_start_transport_op(grpc_exec_ctx *exec_ctx,
                                    grpc_channel_element *elem,
                                    grpc_transport_op *op) {
-  channel_data *chand = elem->channel_data;
+  channel_data *chand = (channel_data *)elem->channel_data;
   grpc_transport_perform_op(exec_ctx, chand->transport, op);
 }
 
@@ -144,8 +144,8 @@ static void con_start_transport_op(grpc_exec_ctx *exec_ctx,
 static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   const grpc_call_element_args *args) {
-  call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
+  call_data *calld = (call_data *)elem->call_data;
+  channel_data *chand = (channel_data *)elem->channel_data;
   calld->call_combiner = args->call_combiner;
   int r = grpc_transport_init_stream(
       exec_ctx, chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld),
@@ -158,8 +158,8 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
                                        grpc_call_element *elem,
                                        grpc_polling_entity *pollent) {
-  call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
+  call_data *calld = (call_data *)elem->call_data;
+  channel_data *chand = (channel_data *)elem->channel_data;
   grpc_transport_set_pops(exec_ctx, chand->transport,
                           TRANSPORT_STREAM_FROM_CALL_DATA(calld), pollent);
 }
@@ -168,8 +168,8 @@ static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_final_info *final_info,
                               grpc_closure *then_schedule_closure) {
-  call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
+  call_data *calld = (call_data *)elem->call_data;
+  channel_data *chand = (channel_data *)elem->channel_data;
   grpc_transport_destroy_stream(exec_ctx, chand->transport,
                                 TRANSPORT_STREAM_FROM_CALL_DATA(calld),
                                 then_schedule_closure);
@@ -218,7 +218,7 @@ static void bind_transport(grpc_channel_stack *channel_stack,
   channel_data *cd = (channel_data *)elem->channel_data;
   GPR_ASSERT(elem->filter == &grpc_connected_filter);
   GPR_ASSERT(cd->transport == NULL);
-  cd->transport = t;
+  cd->transport = (grpc_transport *)t;
 
   /* HACK(ctiller): increase call stack size for the channel to make space
      for channel data. We need a cleaner (but performant) way to do this,
@@ -226,7 +226,8 @@ static void bind_transport(grpc_channel_stack *channel_stack,
      This is only "safe" because call stacks place no additional data after
      the last call element, and the last call element MUST be the connected
      channel. */
-  channel_stack->call_stack_size += grpc_transport_stream_size(t);
+  channel_stack->call_stack_size +=
+      grpc_transport_stream_size((grpc_transport *)t);
 }
 
 bool grpc_add_connected_filter(grpc_exec_ctx *exec_ctx,
@@ -240,6 +241,6 @@ bool grpc_add_connected_filter(grpc_exec_ctx *exec_ctx,
 }
 
 grpc_stream *grpc_connected_channel_get_stream(grpc_call_element *elem) {
-  call_data *calld = elem->call_data;
+  call_data *calld = (call_data *)elem->call_data;
   return TRANSPORT_STREAM_FROM_CALL_DATA(calld);
 }

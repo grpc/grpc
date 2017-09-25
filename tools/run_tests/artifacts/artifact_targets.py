@@ -158,6 +158,7 @@ class PythonArtifact:
       return create_jobspec(self.name,
                             ['tools/run_tests/artifacts/build_artifact_python.sh'],
                             environ=environ,
+                            timeout_seconds=60*60,
                             use_workspace=True)
 
   def __str__(self):

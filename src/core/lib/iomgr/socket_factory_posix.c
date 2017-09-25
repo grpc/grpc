@@ -69,11 +69,11 @@ void grpc_socket_factory_unref(grpc_socket_factory *factory) {
 }
 
 static void *socket_factory_arg_copy(void *p) {
-  return grpc_socket_factory_ref(p);
+  return grpc_socket_factory_ref((grpc_socket_factory *)p);
 }
 
 static void socket_factory_arg_destroy(grpc_exec_ctx *exec_ctx, void *p) {
-  grpc_socket_factory_unref(p);
+  grpc_socket_factory_unref((grpc_socket_factory *)p);
 }
 
 static int socket_factory_cmp(void *a, void *b) {
@@ -85,8 +85,8 @@ static const grpc_arg_pointer_vtable socket_factory_arg_vtable = {
     socket_factory_arg_copy, socket_factory_arg_destroy, socket_factory_cmp};
 
 grpc_arg grpc_socket_factory_to_arg(grpc_socket_factory *factory) {
-  return grpc_channel_arg_pointer_create(GRPC_ARG_SOCKET_FACTORY, factory,
-                                         &socket_factory_arg_vtable);
+  return grpc_channel_arg_pointer_create((char *)GRPC_ARG_SOCKET_FACTORY,
+                                         factory, &socket_factory_arg_vtable);
 }
 
 #endif

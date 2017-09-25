@@ -12,7 +12,7 @@ if test "$PHP_GRPC" != "no"; then
   LIBS="-lpthread $LIBS"
 
   CFLAGS="-Wall -Werror -Wno-parentheses-equality -Wno-unused-value -std=c11"
-  CXXFLAGS="-std=c++11"
+  CXXFLAGS="-std=c++11 -fno-exceptions -fno-rtti"
   GRPC_SHARED_LIBADD="-lpthread $GRPC_SHARED_LIBADD"
   PHP_REQUIRE_CXX()
   PHP_ADD_LIBRARY(pthread)
@@ -96,6 +96,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
+    src/core/lib/compression/stream_compression_gzip.c \
+    src/core/lib/compression/stream_compression_identity.c \
     src/core/lib/debug/stats.c \
     src/core/lib/debug/stats_data.c \
     src/core/lib/http/format_request.c \

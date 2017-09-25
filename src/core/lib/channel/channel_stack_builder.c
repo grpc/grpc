@@ -51,7 +51,8 @@ struct grpc_channel_stack_builder_iterator {
 };
 
 grpc_channel_stack_builder *grpc_channel_stack_builder_create(void) {
-  grpc_channel_stack_builder *b = gpr_zalloc(sizeof(*b));
+  grpc_channel_stack_builder *b =
+      (grpc_channel_stack_builder *)gpr_zalloc(sizeof(*b));
 
   b->begin.filter = NULL;
   b->end.filter = NULL;
@@ -76,7 +77,8 @@ const char *grpc_channel_stack_builder_get_target(
 
 static grpc_channel_stack_builder_iterator *create_iterator_at_filter_node(
     grpc_channel_stack_builder *builder, filter_node *node) {
-  grpc_channel_stack_builder_iterator *it = gpr_malloc(sizeof(*it));
+  grpc_channel_stack_builder_iterator *it =
+      (grpc_channel_stack_builder_iterator *)gpr_malloc(sizeof(*it));
   it->builder = builder;
   it->node = node;
   return it;
@@ -212,13 +214,13 @@ bool grpc_channel_stack_builder_prepend_filter(
 static void add_after(filter_node *before, const grpc_channel_filter *filter,
                       grpc_post_filter_create_init_func post_init_func,
                       void *user_data) {
-  filter_node *new = (filter_node *)gpr_malloc(sizeof(*new));
-  new->next = before->next;
-  new->prev = before;
-  new->next->prev = new->prev->next = new;
-  new->filter = filter;
-  new->init = post_init_func;
-  new->init_arg = user_data;
+  filter_node *new_node = (filter_node *)gpr_malloc(sizeof(*new_node));
+  new_node->next = before->next;
+  new_node->prev = before;
+  new_node->next->prev = new_node->prev->next = new_node;
+  new_node->filter = filter;
+  new_node->init = post_init_func;
+  new_node->init_arg = user_data;
 }
 
 bool grpc_channel_stack_builder_add_filter_before(
@@ -266,7 +268,7 @@ grpc_error *grpc_channel_stack_builder_finish(
 
   // create an array of filters
   const grpc_channel_filter **filters =
-      gpr_malloc(sizeof(*filters) * num_filters);
+      (const grpc_channel_filter **)gpr_malloc(sizeof(*filters) * num_filters);
   size_t i = 0;
   for (filter_node *p = builder->begin.next; p != &builder->end; p = p->next) {
     filters[i++] = p->filter;

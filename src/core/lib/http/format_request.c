@@ -98,7 +98,7 @@ grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
   gpr_strvec_destroy(&out);
 
   if (body_bytes) {
-    tmp = gpr_realloc(tmp, out_len + body_size);
+    tmp = (char *)gpr_realloc(tmp, out_len + body_size);
     memcpy(tmp + out_len, body_bytes, body_size);
     out_len += body_size;
   }

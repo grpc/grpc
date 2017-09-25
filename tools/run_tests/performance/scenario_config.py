@@ -156,7 +156,7 @@ def _ping_pong_scenario(name, rpc_type,
 
   # Optimization target of 'throughput' does not work well with epoll1 polling
   # engine. Use the default value of 'blend'
-  optimization_target = 'blend'
+  optimization_target = 'throughput'
 
   if unconstrained_client:
     outstanding_calls = outstanding if outstanding is not None else OUTSTANDING_REQUESTS[unconstrained_client]
@@ -175,6 +175,7 @@ def _ping_pong_scenario(name, rpc_type,
     scenario['client_config']['outstanding_rpcs_per_channel'] = 1
     scenario['client_config']['client_channels'] = 1
     scenario['client_config']['async_client_threads'] = 1
+    optimization_target = 'latency'
 
   optimization_channel_arg = {
     'name': 'grpc.optimization_target',
@@ -452,6 +453,8 @@ class CXXLanguage:
               unconstrained_client=synchronicity,
               secure=secure,
               minimal_stack=not secure,
+              server_threads_per_cq=3,
+              client_threads_per_cq=3,
               categories=smoketest_categories+[SCALABLE])
 
           # TODO(vjpai): Re-enable this test. It has a lot of timeouts
@@ -797,6 +800,33 @@ class RubyLanguage:
     return 'ruby'
 
 
+class PhpLanguage:
+
+  def __init__(self):
+    pass
+    self.safename = str(self)
+
+  def worker_cmdline(self):
+    return ['tools/run_tests/performance/run_worker_php.sh']
+
+  def worker_port_offset(self):
+    return 800
+
+  def scenarios(self):
+    yield _ping_pong_scenario(
+        'php_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        server_language='c++', async_server_threads=1)
+
+    yield _ping_pong_scenario(
+        'php_to_cpp_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        server_language='c++', async_server_threads=1)
+
+  def __str__(self):
+    return 'php'
+
+
 class JavaLanguage:
 
   def __init__(self):
@@ -994,6 +1024,7 @@ LANGUAGES = {
     'node' : NodeLanguage(),
     'node_express': NodeExpressLanguage(),
     'ruby' : RubyLanguage(),
+    'php' : PhpLanguage(),
     'java' : JavaLanguage(),
     'python' : PythonLanguage(),
     'go' : GoLanguage(),

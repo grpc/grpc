@@ -73,12 +73,29 @@ grpc_cc_binary(
     deps = [":helpers"],
 )
 
+grpc_cc_library(
+    name = "fullstack_streaming_ping_pong_h",
+    testonly = 1,
+    hdrs = [
+        "fullstack_streaming_ping_pong.h",
+    ],
+    deps = [":helpers"],
+)
+
 grpc_cc_binary(
     name = "bm_fullstack_streaming_ping_pong",
     testonly = 1,
     srcs = [
         "bm_fullstack_streaming_ping_pong.cc",
-        "fullstack_streaming_ping_pong.h",
+    ],
+    deps = [":fullstack_streaming_ping_pong_h"],
+)
+
+grpc_cc_library(
+    name = "fullstack_streaming_pump_h",
+    testonly = 1,
+    hdrs = [
+        "fullstack_streaming_pump.h",
     ],
     deps = [":helpers"],
 )
@@ -88,9 +105,8 @@ grpc_cc_binary(
     testonly = 1,
     srcs = [
         "bm_fullstack_streaming_pump.cc",
-        "fullstack_streaming_pump.h",
     ],
-    deps = [":helpers"],
+    deps = [":fullstack_streaming_pump_h"],
 )
 
 grpc_cc_binary(
@@ -103,14 +119,22 @@ grpc_cc_binary(
     ],
 )
 
+grpc_cc_library(
+    name = "fullstack_unary_ping_pong_h",
+    testonly = 1,
+    hdrs = [
+        "fullstack_unary_ping_pong.h",
+    ],
+    deps = [":helpers"],
+)
+
 grpc_cc_binary(
     name = "bm_fullstack_unary_ping_pong",
     testonly = 1,
     srcs = [
         "bm_fullstack_unary_ping_pong.cc",
-        "fullstack_unary_ping_pong.h",
     ],
-    deps = [":helpers"],
+    deps = [":fullstack_unary_ping_pong_h"],
 )
 
 grpc_cc_binary(

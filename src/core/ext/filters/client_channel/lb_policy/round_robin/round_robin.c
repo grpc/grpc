@@ -30,6 +30,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -310,6 +311,7 @@ static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
             (void *)pol, (void *)pol);
   }
   grpc_connectivity_state_destroy(exec_ctx, &p->state_tracker);
+  grpc_subchannel_index_unref();
   gpr_free(p);
 }
 
@@ -587,7 +589,7 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
   // Dispose of outdated subchannel lists.
   if (sd->subchannel_list != p->subchannel_list &&
       sd->subchannel_list != p->latest_pending_subchannel_list) {
-    char *reason = NULL;
+    const char *reason = NULL;
     if (sd->subchannel_list->shutting_down) {
       reason = "sl_outdated_straggler";
       rr_subchannel_list_unref(exec_ctx, sd->subchannel_list, reason);
@@ -890,6 +892,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(args->client_channel_factory != NULL);
   round_robin_lb_policy *p = (round_robin_lb_policy *)gpr_zalloc(sizeof(*p));
   grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable, args->combiner);
+  grpc_subchannel_index_ref();
   grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,
                                "round_robin");
   rr_update_locked(exec_ctx, &p->base, args);

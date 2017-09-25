@@ -75,7 +75,8 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(args->context != NULL);
   GPR_ASSERT(args->context[GRPC_GRPCLB_CLIENT_STATS].value != NULL);
   calld->client_stats = grpc_grpclb_client_stats_ref(
-      args->context[GRPC_GRPCLB_CLIENT_STATS].value);
+      (grpc_grpclb_client_stats *)args->context[GRPC_GRPCLB_CLIENT_STATS]
+          .value);
   // Record call started.
   grpc_grpclb_client_stats_add_call_started(calld->client_stats);
   return GRPC_ERROR_NONE;

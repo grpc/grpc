@@ -32,6 +32,7 @@
 #include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
@@ -290,6 +291,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
     return c;
   }
 
+  GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED(exec_ctx);
   c = (grpc_subchannel *)gpr_zalloc(sizeof(*c));
   c->key = key;
   gpr_atm_no_barrier_store(&c->ref_pair, 1 << INTERNAL_REF_BITS);
@@ -809,6 +811,6 @@ const char *grpc_get_subchannel_address_uri_arg(const grpc_channel_args *args) {
 
 grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address *addr) {
   return grpc_channel_arg_string_create(
-      GRPC_ARG_SUBCHANNEL_ADDRESS,
+      (char *)GRPC_ARG_SUBCHANNEL_ADDRESS,
       addr->len > 0 ? grpc_sockaddr_to_uri(addr) : gpr_strdup(""));
 }

@@ -42,7 +42,7 @@ grpc_channel *grpc_insecure_channel_create_from_fd(
                  (target, fd, args));
 
   grpc_arg default_authority_arg = grpc_channel_arg_string_create(
-      GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
+      (char *)GRPC_ARG_DEFAULT_AUTHORITY, (char *)"test.authority");
   grpc_channel_args *final_args =
       grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
 
