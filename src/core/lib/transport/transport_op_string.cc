@@ -16,8 +16,11 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/channel_stack.h"
 
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>

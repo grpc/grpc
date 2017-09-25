@@ -16,6 +16,9 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
+#include <inttypes.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>

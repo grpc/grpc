@@ -808,10 +808,8 @@ static void get_final_status(grpc_call *call,
 static void set_status_from_error(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                   status_source source, grpc_error *error) {
   if (!gpr_atm_rel_cas(&call->status[source],
-                       pack_received_status((received_status){
-                           .is_set = false, .error = GRPC_ERROR_NONE}),
-                       pack_received_status((received_status){
-                           .is_set = true, .error = error}))) {
+                       pack_received_status({false, GRPC_ERROR_NONE}),
+                       pack_received_status({true, error}))) {
     GRPC_ERROR_UNREF(error);
   }
 }

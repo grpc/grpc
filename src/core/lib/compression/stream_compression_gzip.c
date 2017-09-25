@@ -222,7 +222,6 @@ static void grpc_stream_compression_context_destroy_gzip(
 }
 
 const grpc_stream_compression_vtable grpc_stream_compression_gzip_vtable = {
-    .compress = grpc_stream_compress_gzip,
-    .decompress = grpc_stream_decompress_gzip,
-    .context_create = grpc_stream_compression_context_create_gzip,
-    .context_destroy = grpc_stream_compression_context_destroy_gzip};
+    grpc_stream_compress_gzip, grpc_stream_decompress_gzip,
+    grpc_stream_compression_context_create_gzip,
+    grpc_stream_compression_context_destroy_gzip};

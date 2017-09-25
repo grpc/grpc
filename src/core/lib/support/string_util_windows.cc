@@ -43,7 +43,7 @@ gpr_char_to_tchar(LPCSTR input) {
   LPTSTR ret;
   int needed = MultiByteToWideChar(CP_UTF8, 0, input, -1, NULL, 0);
   if (needed <= 0) return NULL;
-  ret = gpr_malloc((unsigned)needed * sizeof(TCHAR));
+  ret = (LPTSTR)gpr_malloc((unsigned)needed * sizeof(TCHAR));
   MultiByteToWideChar(CP_UTF8, 0, input, -1, ret, needed);
   return ret;
 }
@@ -53,7 +53,7 @@ gpr_tchar_to_char(LPCTSTR input) {
   LPSTR ret;
   int needed = WideCharToMultiByte(CP_UTF8, 0, input, -1, NULL, 0, NULL, NULL);
   if (needed <= 0) return NULL;
-  ret = gpr_malloc((unsigned)needed);
+  ret = (LPSTR)gpr_malloc((unsigned)needed);
   WideCharToMultiByte(CP_UTF8, 0, input, -1, ret, needed, NULL, NULL);
   return ret;
 }

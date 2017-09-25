@@ -15,9 +15,11 @@
  * limitations under the License.
  *
  */
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/error.h"
 
+#include <inttypes.h>
 #include <string.h>
 
 #include <grpc/status.h>

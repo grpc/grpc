@@ -27,7 +27,7 @@
 
 /* Singleton context used for all identity streams. */
 static grpc_stream_compression_context identity_ctx = {
-    .vtable = &grpc_stream_compression_identity_vtable};
+    &grpc_stream_compression_identity_vtable};
 
 static void grpc_stream_compression_pass_through(grpc_slice_buffer *in,
                                                  grpc_slice_buffer *out,
@@ -88,7 +88,6 @@ static void grpc_stream_compression_context_destroy_identity(
 }
 
 const grpc_stream_compression_vtable grpc_stream_compression_identity_vtable = {
-    .compress = grpc_stream_compress_identity,
-    .decompress = grpc_stream_decompress_identity,
-    .context_create = grpc_stream_compression_context_create_identity,
-    .context_destroy = grpc_stream_compression_context_destroy_identity};
+    grpc_stream_compress_identity, grpc_stream_decompress_identity,
+    grpc_stream_compression_context_create_identity,
+    grpc_stream_compression_context_destroy_identity};
