@@ -238,7 +238,7 @@ cdef class Event:
   def __cinit__(self, grpc_completion_type type, bint success,
                 object tag, Call operation_call,
                 CallDetails request_call_details,
-                Metadata request_metadata,
+                object request_metadata,
                 bint is_new_request,
                 Operations batch_operations):
     self.type = type
@@ -437,48 +437,79 @@ cdef class Metadatum:
 cdef class _MetadataIterator:
 
   cdef size_t i
-  cdef Metadata metadata
+  cdef size_t _length
+  cdef object _metadatum_indexable
 
-  def __cinit__(self, Metadata metadata not None):
+  def __cinit__(self, length, metadatum_indexable):
+    self._length = length
+    self._metadatum_indexable = metadatum_indexable
     self.i = 0
-    self.metadata = metadata
 
   def __iter__(self):
     return self
 
   def __next__(self):
-    if self.i < len(self.metadata):
-      result = self.metadata[self.i]
+    if self.i < self._length:
+      result = self._metadatum_indexable[self.i]
       self.i = self.i + 1
       return result
     else:
       raise StopIteration
 
 
+# TODO(https://github.com/grpc/grpc/issues/7950): Eliminate this; just use an
+# ordinary sequence of pairs of bytestrings all the way down to the
+# grpc_call_start_batch call.
 cdef class Metadata:
+  """Metadata being passed from application to core."""
 
   def __cinit__(self, metadata_iterable):
+    metadata_sequence = tuple(metadata_iterable)
+    cdef size_t count = len(metadata_sequence)
     with nogil:
       grpc_init()
-      grpc_metadata_array_init(&self.c_metadata_array)
-    metadata = list(metadata_iterable)
-    for metadatum in metadata:
-      if not isinstance(metadatum, Metadatum):
-        raise TypeError("expected list of Metadatum")
-    self.c_metadata_array.count = len(metadata)
-    self.c_metadata_array.capacity = len(metadata)
-    with nogil:
-      self.c_metadata_array.metadata = <grpc_metadata *>gpr_malloc(
-          self.c_metadata_array.count*sizeof(grpc_metadata)
-      )
-    for i in range(self.c_metadata_array.count):
-      (<Metadatum>metadata[i])._copy_metadatum(&self.c_metadata_array.metadata[i])
+      self.c_metadata = <grpc_metadata *>gpr_malloc(
+          count * sizeof(grpc_metadata))
+      self.c_count = count
+    for index, metadatum in enumerate(metadata_sequence):
+      self.c_metadata[index].key = grpc_slice_copy(
+          (<Metadatum>metadatum).c_metadata.key)
+      self.c_metadata[index].value = grpc_slice_copy(
+          (<Metadatum>metadatum).c_metadata.value)
 
   def __dealloc__(self):
     with nogil:
-      # this frees the allocated memory for the grpc_metadata_array (although
-      # it'd be nice if that were documented somewhere...)
-      # TODO(atash): document this in the C core
+      for index in range(self.c_count):
+        grpc_slice_unref(self.c_metadata[index].key)
+        grpc_slice_unref(self.c_metadata[index].value)
+      gpr_free(self.c_metadata)
+      grpc_shutdown()
+
+  def __len__(self):
+    return self.c_count
+
+  def __getitem__(self, size_t index):
+    if index < self.c_count:
+      key = _slice_bytes(self.c_metadata[index].key)
+      value = _slice_bytes(self.c_metadata[index].value)
+      return Metadatum(key, value)
+    else:
+      raise IndexError()
+
+  def __iter__(self):
+    return _MetadataIterator(self.c_count, self)
+
+
+cdef class MetadataArray:
+  """Metadata being passed from core to application."""
+
+  def __cinit__(self):
+    with nogil:
+      grpc_init()
+      grpc_metadata_array_init(&self.c_metadata_array)
+
+  def __dealloc__(self):
+    with nogil:
       grpc_metadata_array_destroy(&self.c_metadata_array)
       grpc_shutdown()
 
@@ -493,21 +524,7 @@ cdef class Metadata:
     return Metadatum(key=key, value=value)
 
   def __iter__(self):
-    return _MetadataIterator(self)
-
-  cdef void _claim_slice_ownership(self):
-    cdef grpc_metadata_array new_c_metadata_array
-    grpc_metadata_array_init(&new_c_metadata_array)
-    new_c_metadata_array.metadata = <grpc_metadata *>gpr_malloc(
-        self.c_metadata_array.count*sizeof(grpc_metadata))
-    new_c_metadata_array.count = self.c_metadata_array.count
-    for i in range(self.c_metadata_array.count):
-      new_c_metadata_array.metadata[i].key = _copy_slice(
-          self.c_metadata_array.metadata[i].key)
-      new_c_metadata_array.metadata[i].value = _copy_slice(
-          self.c_metadata_array.metadata[i].value)
-    grpc_metadata_array_destroy(&self.c_metadata_array)
-    self.c_metadata_array = new_c_metadata_array
+    return _MetadataIterator(self.c_metadata_array.count, self)
 
 
 cdef class Operation:
@@ -547,14 +564,13 @@ cdef class Operation:
     if (self.c_op.type != GRPC_OP_RECV_INITIAL_METADATA and
         self.c_op.type != GRPC_OP_RECV_STATUS_ON_CLIENT):
       raise TypeError("self must be an operation receiving metadata")
-    return self._received_metadata
-
-  @property
-  def received_metadata_or_none(self):
-    if (self.c_op.type != GRPC_OP_RECV_INITIAL_METADATA and
-        self.c_op.type != GRPC_OP_RECV_STATUS_ON_CLIENT):
-      return None
-    return self._received_metadata
+    # TODO(https://github.com/grpc/grpc/issues/7950): Drop the "all Cython
+    # objects must be legitimate for use from Python at any time" policy in
+    # place today, shift the policy toward "Operation objects are only usable
+    # while their calls are active", and move this making-a-copy-because-this-
+    # data-needs-to-live-much-longer-than-the-call-from-which-it-arose to the
+    # lowest Python layer.
+    return tuple(self._received_metadata)
 
   @property
   def received_status_code(self):
@@ -601,9 +617,8 @@ def operation_send_initial_metadata(Metadata metadata, int flags):
   cdef Operation op = Operation()
   op.c_op.type = GRPC_OP_SEND_INITIAL_METADATA
   op.c_op.flags = flags
-  op.c_op.data.send_initial_metadata.count = metadata.c_metadata_array.count
-  op.c_op.data.send_initial_metadata.metadata = (
-      metadata.c_metadata_array.metadata)
+  op.c_op.data.send_initial_metadata.count = metadata.c_count
+  op.c_op.data.send_initial_metadata.metadata = metadata.c_metadata
   op.references.append(metadata)
   op.is_valid = True
   return op
@@ -631,9 +646,8 @@ def operation_send_status_from_server(
   op.c_op.type = GRPC_OP_SEND_STATUS_FROM_SERVER
   op.c_op.flags = flags
   op.c_op.data.send_status_from_server.trailing_metadata_count = (
-      metadata.c_metadata_array.count)
-  op.c_op.data.send_status_from_server.trailing_metadata = (
-      metadata.c_metadata_array.metadata)
+      metadata.c_count)
+  op.c_op.data.send_status_from_server.trailing_metadata = metadata.c_metadata
   op.c_op.data.send_status_from_server.status = code
   grpc_slice_unref(op._status_details)
   op._status_details = _slice_from_bytes(details)
@@ -646,7 +660,7 @@ def operation_receive_initial_metadata(int flags):
   cdef Operation op = Operation()
   op.c_op.type = GRPC_OP_RECV_INITIAL_METADATA
   op.c_op.flags = flags
-  op._received_metadata = Metadata([])
+  op._received_metadata = MetadataArray()
   op.c_op.data.receive_initial_metadata.receive_initial_metadata = (
       &op._received_metadata.c_metadata_array)
   op.is_valid = True
@@ -669,7 +683,7 @@ def operation_receive_status_on_client(int flags):
   cdef Operation op = Operation()
   op.c_op.type = GRPC_OP_RECV_STATUS_ON_CLIENT
   op.c_op.flags = flags
-  op._received_metadata = Metadata([])
+  op._received_metadata = MetadataArray()
   op.c_op.data.receive_status_on_client.trailing_metadata = (
       &op._received_metadata.c_metadata_array)
   op.c_op.data.receive_status_on_client.status = (
@@ -768,7 +782,7 @@ cdef class CompressionOptions:
 
 
 def compression_algorithm_name(grpc_compression_algorithm algorithm):
-  cdef char* name
+  cdef const char* name
   with nogil:
     grpc_compression_algorithm_name(algorithm, &name)
   # Let Cython do the right thing with string casting

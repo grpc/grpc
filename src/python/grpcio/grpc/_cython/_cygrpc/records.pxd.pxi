@@ -37,7 +37,7 @@ cdef class OperationTag:
   cdef Server shutting_down_server
   cdef Call operation_call
   cdef CallDetails request_call_details
-  cdef Metadata request_metadata
+  cdef MetadataArray request_metadata
   cdef Operations batch_operations
   cdef bint is_new_request
 
@@ -51,7 +51,7 @@ cdef class Event:
   # For Server.request_call
   cdef readonly bint is_new_request
   cdef readonly CallDetails request_call_details
-  cdef readonly Metadata request_metadata
+  cdef readonly object request_metadata
 
   # For server calls
   cdef readonly Call operation_call
@@ -92,15 +92,20 @@ cdef class Metadatum:
 
 cdef class Metadata:
 
+  cdef grpc_metadata *c_metadata
+  cdef readonly size_t c_count
+
+
+cdef class MetadataArray:
+
   cdef grpc_metadata_array c_metadata_array
-  cdef void _claim_slice_ownership(self)
 
 
 cdef class Operation:
 
   cdef grpc_op c_op
   cdef ByteBuffer _received_message
-  cdef Metadata _received_metadata
+  cdef MetadataArray _received_metadata
   cdef grpc_status_code _received_status_code
   cdef grpc_slice _status_details
   cdef int _received_cancelled

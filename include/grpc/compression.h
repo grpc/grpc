@@ -47,7 +47,7 @@ GRPCAPI int grpc_compression_algorithm_parse(
  * algorithm. Note that \a name is statically allocated and must *not* be freed.
  * Returns 1 upon success, 0 otherwise. */
 GRPCAPI int grpc_compression_algorithm_name(
-    grpc_compression_algorithm algorithm, char **name);
+    grpc_compression_algorithm algorithm, const char **name);
 
 /** Returns the compression algorithm corresponding to \a level for the
  * compression algorithms encoded in the \a accepted_encodings bitset.

@@ -25,13 +25,10 @@
 #include <memory>
 #include <vector>
 
+#include <grpc++/impl/codegen/byte_buffer.h>
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/rpc_method.h>
 #include <grpc++/impl/codegen/status.h>
-
-extern "C" {
-struct grpc_byte_buffer;
-}
 
 namespace grpc {
 class ServerContext;
@@ -43,11 +40,14 @@ class MethodHandler {
   virtual ~MethodHandler() {}
   struct HandlerParameter {
     HandlerParameter(Call* c, ServerContext* context, grpc_byte_buffer* req)
-        : call(c), server_context(context), request(req) {}
+        : call(c), server_context(context) {
+      request.set_buffer(req);
+    }
+    ~HandlerParameter() { request.Release(); }
     Call* call;
     ServerContext* server_context;
-    // Handler required to grpc_byte_buffer_destroy this
-    grpc_byte_buffer* request;
+    // Handler required to destroy these contents
+    ByteBuffer request;
   };
   virtual void RunHandler(const HandlerParameter& param) = 0;
 };

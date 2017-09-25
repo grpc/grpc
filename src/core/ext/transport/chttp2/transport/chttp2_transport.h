@@ -25,6 +25,7 @@
 
 extern grpc_tracer_flag grpc_http_trace;
 extern grpc_tracer_flag grpc_flowctl_trace;
+extern grpc_tracer_flag grpc_trace_http2_stream_state;
 
 #ifndef NDEBUG
 extern grpc_tracer_flag grpc_trace_chttp2_refcount;

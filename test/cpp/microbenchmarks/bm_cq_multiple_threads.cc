@@ -59,7 +59,8 @@ static void pollset_destroy(grpc_exec_ctx* exec_ctx, grpc_pollset* ps) {
   gpr_mu_destroy(&ps->mu);
 }
 
-static grpc_error* pollset_kick(grpc_pollset* p, grpc_pollset_worker* worker) {
+static grpc_error* pollset_kick(grpc_exec_ctx* exec_ctx, grpc_pollset* p,
+                                grpc_pollset_worker* worker) {
   return GRPC_ERROR_NONE;
 }
 

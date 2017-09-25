@@ -111,8 +111,8 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   gpr_mu_lock(g_mu);
   g_result = temp_result;
   g_nconnects++;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(exec_ctx, g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 

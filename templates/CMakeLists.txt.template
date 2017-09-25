@@ -168,10 +168,8 @@
       set(gRPC_INSTALL FALSE)
     endif()
   elseif("<%text>${gRPC_ZLIB_PROVIDER}</%text>" STREQUAL "package")
-    find_package(ZLIB)
-    if(TARGET ZLIB::ZLIB)
-      set(_gRPC_ZLIB_LIBRARIES ZLIB::ZLIB)
-    endif()
+    find_package(ZLIB REQUIRED)
+    set(_gRPC_ZLIB_LIBRARIES <%text>${ZLIB_LIBRARIES}</%text>)
     set(_gRPC_FIND_ZLIB "if(NOT ZLIB_FOUND)\n  find_package(ZLIB)\nendif()")
   endif()
 
@@ -179,7 +177,8 @@
     if(NOT CARES_ROOT_DIR)
       set(CARES_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/cares/cares)
     endif()
-    set(CARES_STATIC ON)
+    set(CARES_SHARED OFF CACHE BOOL "disable shared library")
+    set(CARES_STATIC ON CACHE BOOL "link cares statically")
     set(CARES_INCLUDE_DIR "<%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/cares/cares")
     add_subdirectory(third_party/cares/cares)
     if(TARGET c-ares)
@@ -190,7 +189,7 @@
       set(gRPC_INSTALL FALSE)
     endif()
   elseif("<%text>${gRPC_CARES_PROVIDER}</%text>" STREQUAL "package")
-    find_package(c-ares CONFIG)
+    find_package(c-ares REQUIRED CONFIG)
     if(TARGET c-ares::cares)
       set(_gRPC_CARES_LIBRARIES c-ares::cares)
     endif()
@@ -234,7 +233,7 @@
       set(gRPC_INSTALL FALSE)
     endif()
   elseif("<%text>${gRPC_PROTOBUF_PROVIDER}</%text>" STREQUAL "package")
-    find_package(Protobuf <%text>${gRPC_PROTOBUF_PACKAGE_TYPE}</%text>)
+    find_package(Protobuf REQUIRED <%text>${gRPC_PROTOBUF_PACKAGE_TYPE}</%text>)
     if(Protobuf_FOUND OR PROTOBUF_FOUND)
       if(TARGET protobuf::<%text>${_gRPC_PROTOBUF_LIBRARY_NAME}</%text>)
         set(_gRPC_PROTOBUF_LIBRARIES protobuf::<%text>${_gRPC_PROTOBUF_LIBRARY_NAME}</%text>)
@@ -279,11 +278,9 @@
       set(gRPC_INSTALL FALSE)
     endif()
   elseif("<%text>${gRPC_SSL_PROVIDER}</%text>" STREQUAL "package")
-    find_package(OpenSSL)
-    if(TARGET OpenSSL::SSL)
-      set(_gRPC_SSL_LIBRARIES OpenSSL::SSL)
-    endif()
-    set(_gRPC_FIND_SSL "if(NOT OpenSSL_FOUND)\n  find_package(OpenSSL)\nendif()")
+    find_package(OpenSSL REQUIRED)
+    set(_gRPC_SSL_LIBRARIES <%text>${OPENSSL_LIBRARIES}</%text>)
+    set(_gRPC_FIND_SSL "if(NOT OPENSSL_FOUND)\n  find_package(OpenSSL)\nendif()")
   endif()
 
   if("<%text>${gRPC_GFLAGS_PROVIDER}</%text>" STREQUAL "module")
@@ -515,7 +512,7 @@
   % endfor
 
   target_include_directories(${lib.name}
-    PUBLIC <%text>$<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include></%text>
+    PUBLIC <%text>$<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include></%text>
     PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
     PRIVATE <%text>${BORINGSSL_ROOT_DIR}</%text>/include
     PRIVATE <%text>${PROTOBUF_ROOT_DIR}</%text>/src

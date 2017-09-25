@@ -52,7 +52,7 @@ static void on_finish(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   g_done = 1;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "pollset_kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&g_pops), NULL)));
+      grpc_pollset_kick(exec_ctx, grpc_polling_entity_pollset(&g_pops), NULL)));
   gpr_mu_unlock(g_mu);
 }
 

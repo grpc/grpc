@@ -212,7 +212,7 @@ void grpc_channel_args_destroy(grpc_exec_ctx *exec_ctx, grpc_channel_args *a) {
 grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
     const grpc_channel_args *a) {
   size_t i;
-  if (a == NULL) return 0;
+  if (a == NULL) return GRPC_COMPRESS_NONE;
   for (i = 0; i < a->num_args; ++i) {
     if (a->args[i].type == GRPC_ARG_INTEGER &&
         !strcmp(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, a->args[i].key)) {
@@ -228,7 +228,7 @@ grpc_channel_args *grpc_channel_args_set_compression_algorithm(
   GPR_ASSERT(algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT);
   grpc_arg tmp;
   tmp.type = GRPC_ARG_INTEGER;
-  tmp.key = GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM;
+  tmp.key = (char *)GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM;
   tmp.value.integer = algorithm;
   return grpc_channel_args_copy_and_add(a, &tmp, 1);
 }
@@ -263,7 +263,7 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
 
   if (grpc_channel_args_get_compression_algorithm(*a) == algorithm &&
       state == 0) {
-    char *algo_name = NULL;
+    const char *algo_name = NULL;
     GPR_ASSERT(grpc_compression_algorithm_name(algorithm, &algo_name) != 0);
     gpr_log(GPR_ERROR,
             "Tried to disable default compression algorithm '%s'. The "
@@ -279,7 +279,7 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
     /* create a new arg */
     grpc_arg tmp;
     tmp.type = GRPC_ARG_INTEGER;
-    tmp.key = GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET;
+    tmp.key = (char *)GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET;
     /* all enabled by default */
     tmp.value.integer = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
     if (state != 0) {

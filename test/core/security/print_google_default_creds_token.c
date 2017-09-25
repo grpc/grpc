@@ -57,7 +57,8 @@ static void on_metadata_response(grpc_exec_ctx *exec_ctx, void *arg,
   sync->is_done = true;
   GRPC_LOG_IF_ERROR(
       "pollset_kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&sync->pops), NULL));
+      grpc_pollset_kick(exec_ctx, grpc_polling_entity_pollset(&sync->pops),
+                        NULL));
   gpr_mu_unlock(sync->mu);
 }
 

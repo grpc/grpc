@@ -227,6 +227,10 @@ static void on_c2p_recv_msg(void *arg, int success) {
                                   new_closure(on_p2s_sent_close, pc), NULL);
       GPR_ASSERT(err == GRPC_CALL_OK);
     }
+  } else {
+    if (pc->c2p_msg != NULL) {
+      grpc_byte_buffer_destroy(pc->c2p_msg);
+    }
   }
 
   unrefpc(pc, "on_c2p_recv_msg");

@@ -137,7 +137,7 @@ static void on_peer_checked_inner(grpc_exec_ctx *exec_ctx,
   // Create zero-copy frame protector, if implemented.
   tsi_zero_copy_grpc_protector *zero_copy_protector = NULL;
   tsi_result result = tsi_handshaker_result_create_zero_copy_grpc_protector(
-      h->handshaker_result, NULL, &zero_copy_protector);
+      exec_ctx, h->handshaker_result, NULL, &zero_copy_protector);
   if (result != TSI_OK && result != TSI_UNIMPLEMENTED) {
     error = grpc_set_tsi_error_result(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING(

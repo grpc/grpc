@@ -91,7 +91,7 @@ int grpc_compression_algorithm_from_message_stream_compression_algorithm(
 /* Interfaces for message compression. */
 
 int grpc_message_compression_algorithm_name(
-    grpc_message_compression_algorithm algorithm, char **name);
+    grpc_message_compression_algorithm algorithm, const char **name);
 
 grpc_message_compression_algorithm grpc_message_compression_algorithm_for_level(
     grpc_message_compression_level level, uint32_t accepted_encodings);

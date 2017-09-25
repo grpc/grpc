@@ -161,7 +161,7 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       grpc_endpoint_shutdown(exec_ctx, c->endpoint, GRPC_ERROR_REF(error));
     }
     gpr_mu_unlock(&c->mu);
-    chttp2_connector_unref(exec_ctx, arg);
+    chttp2_connector_unref(exec_ctx, (grpc_connector *)arg);
   } else {
     GPR_ASSERT(c->endpoint != NULL);
     start_handshake_locked(exec_ctx, c);

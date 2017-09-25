@@ -356,7 +356,8 @@ static void combiner_finally_exec(grpc_exec_ctx *exec_ctx,
 
 static void enqueue_finally(grpc_exec_ctx *exec_ctx, void *closure,
                             grpc_error *error) {
-  combiner_finally_exec(exec_ctx, closure, GRPC_ERROR_REF(error));
+  combiner_finally_exec(exec_ctx, (grpc_closure *)closure,
+                        GRPC_ERROR_REF(error));
 }
 
 grpc_closure_scheduler *grpc_combiner_scheduler(grpc_combiner *combiner) {

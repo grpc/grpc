@@ -54,7 +54,8 @@ static void freed_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
   pr->done = 1;
   GRPC_LOG_IF_ERROR(
       "pollset_kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&pr->pops), NULL));
+      grpc_pollset_kick(exec_ctx, grpc_polling_entity_pollset(&pr->pops),
+                        NULL));
   gpr_mu_unlock(pr->mu);
 }
 
@@ -153,7 +154,8 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
       pr->port = 0;
       GRPC_LOG_IF_ERROR(
           "pollset_kick",
-          grpc_pollset_kick(grpc_polling_entity_pollset(&pr->pops), NULL));
+          grpc_pollset_kick(exec_ctx, grpc_polling_entity_pollset(&pr->pops),
+                            NULL));
       gpr_mu_unlock(pr->mu);
       return;
     }
@@ -189,7 +191,8 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
   pr->port = port;
   GRPC_LOG_IF_ERROR(
       "pollset_kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&pr->pops), NULL));
+      grpc_pollset_kick(exec_ctx, grpc_polling_entity_pollset(&pr->pops),
+                        NULL));
   gpr_mu_unlock(pr->mu);
 }
 

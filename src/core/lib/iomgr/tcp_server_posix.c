@@ -198,12 +198,12 @@ static void tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
 /* event manager callback when reads are ready */
 static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
   grpc_tcp_listener *sp = (grpc_tcp_listener *)arg;
-
+  grpc_pollset *read_notifier_pollset;
   if (err != GRPC_ERROR_NONE) {
     goto error;
   }
 
-  grpc_pollset *read_notifier_pollset =
+  read_notifier_pollset =
       sp->server->pollsets[(size_t)gpr_atm_no_barrier_fetch_add(
                                &sp->server->next_pollset_to_assign, 1) %
                            sp->server->pollset_count];

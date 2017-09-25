@@ -25,6 +25,11 @@ tools/run_tests/run_tests_matrix.py $RUN_TESTS_FLAGS || FAILED="true"
 # kill port_server.py to prevent the build from hanging
 ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
 
+# Reveal leftover processes that might be left behind by the build
+ps aux | grep -i kbuilder
+
+echo 'Exiting gRPC main test script.'
+
 if [ "$FAILED" != "" ]
 then
   exit 1

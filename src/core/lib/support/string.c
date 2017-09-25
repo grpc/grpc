@@ -276,7 +276,7 @@ static void add_string_to_split(const char *beg, const char *end, char ***strs,
 
 void gpr_string_split(const char *input, const char *sep, char ***strs,
                       size_t *nstrs) {
-  char *next;
+  const char *next;
   *strs = NULL;
   *nstrs = 0;
   size_t capstrs = 0;

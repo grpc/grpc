@@ -217,7 +217,7 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
   GRPC_CLOSURE_INIT(&req->connected, on_connected, req,
                     grpc_schedule_on_exec_ctx);
   grpc_arg arg = grpc_channel_arg_pointer_create(
-      GRPC_ARG_RESOURCE_QUOTA, req->resource_quota,
+      (char *)GRPC_ARG_RESOURCE_QUOTA, req->resource_quota,
       grpc_resource_quota_arg_vtable());
   grpc_channel_args args = {1, &arg};
   grpc_tcp_client_connect(exec_ctx, &req->connected, &req->ep,

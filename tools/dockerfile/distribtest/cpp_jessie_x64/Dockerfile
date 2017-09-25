@@ -27,4 +27,6 @@ RUN apt-get update && apt-get install -y \
       pkg-config \
       unzip && apt-get clean
 
+RUN apt-get update && apt-get install -y cmake golang && apt-get clean
+
 CMD ["bash"]

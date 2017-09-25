@@ -1,14 +1,4 @@
 EXPORTS
-    grpc_raw_byte_buffer_create
-    grpc_raw_compressed_byte_buffer_create
-    grpc_byte_buffer_copy
-    grpc_byte_buffer_length
-    grpc_byte_buffer_destroy
-    grpc_byte_buffer_reader_init
-    grpc_byte_buffer_reader_destroy
-    grpc_byte_buffer_reader_next
-    grpc_byte_buffer_reader_readall
-    grpc_raw_byte_buffer_from_reader
     census_initialize
     census_shutdown
     census_supported
@@ -37,6 +27,8 @@ EXPORTS
     census_delete_resource
     census_resource_id
     census_record_values
+    grpc_compression_algorithm_is_message
+    grpc_compression_algorithm_is_stream
     grpc_compression_algorithm_parse
     grpc_compression_algorithm_name
     grpc_compression_algorithm_for_level
@@ -142,6 +134,16 @@ EXPORTS
     grpc_server_add_secure_http2_port
     grpc_call_set_credentials
     grpc_server_credentials_set_auth_metadata_processor
+    grpc_raw_byte_buffer_create
+    grpc_raw_compressed_byte_buffer_create
+    grpc_byte_buffer_copy
+    grpc_byte_buffer_length
+    grpc_byte_buffer_destroy
+    grpc_byte_buffer_reader_init
+    grpc_byte_buffer_reader_destroy
+    grpc_byte_buffer_reader_next
+    grpc_byte_buffer_reader_readall
+    grpc_raw_byte_buffer_from_reader
     grpc_slice_ref
     grpc_slice_unref
     grpc_slice_copy

@@ -24,15 +24,20 @@
 #include <grpc/slice_buffer.h>
 #include <zlib.h>
 
+#include "src/core/lib/transport/static_metadata.h"
+
+typedef struct grpc_stream_compression_vtable grpc_stream_compression_vtable;
+
 /* Stream compression/decompression context */
 typedef struct grpc_stream_compression_context {
-  z_stream zs;
-  int (*flate)(z_stream *zs, int flush);
+  const grpc_stream_compression_vtable *vtable;
 } grpc_stream_compression_context;
 
 typedef enum grpc_stream_compression_method {
-  GRPC_STREAM_COMPRESSION_COMPRESS = 0,
-  GRPC_STREAM_COMPRESSION_DECOMPRESS,
+  GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS = 0,
+  GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS,
+  GRPC_STREAM_COMPRESSION_GZIP_COMPRESS,
+  GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS,
   GRPC_STREAM_COMPRESSION_METHOD_COUNT
 } grpc_stream_compression_method;
 
@@ -42,6 +47,19 @@ typedef enum grpc_stream_compression_flush {
   GRPC_STREAM_COMPRESSION_FLUSH_FINISH,
   GRPC_STREAM_COMPRESSION_FLUSH_COUNT
 } grpc_stream_compression_flush;
+
+struct grpc_stream_compression_vtable {
+  bool (*compress)(grpc_stream_compression_context *ctx, grpc_slice_buffer *in,
+                   grpc_slice_buffer *out, size_t *output_size,
+                   size_t max_output_size, grpc_stream_compression_flush flush);
+  bool (*decompress)(grpc_stream_compression_context *ctx,
+                     grpc_slice_buffer *in, grpc_slice_buffer *out,
+                     size_t *output_size, size_t max_output_size,
+                     bool *end_of_context);
+  grpc_stream_compression_context *(*context_create)(
+      grpc_stream_compression_method method);
+  void (*context_destroy)(grpc_stream_compression_context *ctx);
+};
 
 /**
  * Compress bytes provided in \a in with a given context, with an optional flush
@@ -86,5 +104,11 @@ grpc_stream_compression_context *grpc_stream_compression_context_create(
  */
 void grpc_stream_compression_context_destroy(
     grpc_stream_compression_context *ctx);
+
+/**
+ * Parse stream compression method based on algorithm name
+ */
+int grpc_stream_compression_method_parse(
+    grpc_slice value, bool is_compress, grpc_stream_compression_method *method);
 
 #endif
