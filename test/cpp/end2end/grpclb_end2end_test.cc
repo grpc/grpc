@@ -729,10 +729,12 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
              {}),
       kServerlistDelayMs);
 
+  // Wait until all the fallback backends are reachable.
+  for (size_t i = 0; i < kNumBackendInResolution; ++i) {
+    WaitForBackend(i);
+  }
 
-
-  // The first request. The client will block while it's still trying to
-  // contact the balancer.
+  // The first request.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
   CheckRpcSendOk(kNumBackendInResolution);
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
@@ -754,14 +756,10 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
   }
   SetNextResolution(addresses);
 
-  // Wait until the resolution update has been processed, as signaled by the
-  // backend in resolution update receiving a request.
-  do {
-    CheckRpcSendOk(1);
-  } while (
-      backend_servers_[kNumBackendInResolution].service_->request_count() == 0);
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    backend_servers_[i].service_->ResetCounters();
+  // Wait until the resolution update has been processed.
+  for (size_t i = kNumBackendInResolution;
+       i < kNumBackendInResolution + kNumBackendInResolutionUpdate; ++i) {
+    WaitForBackend(i);
   }
 
   // Send out the second request.
@@ -783,15 +781,10 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
     EXPECT_EQ(0U, backend_servers_[i].service_->request_count());
   }
 
-  // Wait until the serverlist reception has been processed, as signaled by the
-  // backend returned by the balancer receiving a request.
-  do {
-    CheckRpcSendOk(1);
-  } while (
-      backend_servers_[kNumBackendInResolution + kNumBackendInResolutionUpdate]
-          .service_->request_count() == 0);
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    backend_servers_[i].service_->ResetCounters();
+  // Wait until the serverlist reception has been processed.
+  for (size_t i = kNumBackendInResolution + kNumBackendInResolutionUpdate;
+       i < backends_.size(); ++i) {
+    WaitForBackend(i);
   }
 
   // Send out the third request.
