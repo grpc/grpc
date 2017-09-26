@@ -153,7 +153,8 @@ void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,
 {
     HHVM_TRACE_SCOPE("ChannelCredentials setDefaultRootsPem") // Debug Trace
 
-    DefaultPEMRootCerts::getDefaultPEMRootCerts().setCerts(pem_root_certs.toCppString());
+    std::string pemRootCerts{ pem_root_certs.toCppString() };
+    DefaultPEMRootCerts::getDefaultPEMRootCerts().setCerts(std::move(pemRootCerts));
 }
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault)
