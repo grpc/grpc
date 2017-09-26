@@ -183,6 +183,12 @@ filegroups:
   uses:
   - grpc++_common
   - grpc++_codegen_base
+- name: grpc++_base_unsecure_minimal
+  deps:
+  - grpc_unsecure_minimal
+  uses:
+  - grpc++_common
+  - grpc++_codegen_base
 - name: grpc_base
   src:
   - src/core/lib/channel/channel_args.c
@@ -1252,6 +1258,17 @@ libs:
   - grpc_test_util_base
   secure: false
   vs_project_guid: '{0A7E7F92-FDEA-40F1-A9EC-3BA484F98BBF}'
+- name: grpc_test_util_unsecure_minimal
+  build: private
+  language: c
+  deps:
+  - gpr
+  - gpr_test_util
+  - grpc_unsecure_minimal
+  filegroups:
+  - grpc_test_util_base
+  secure: false
+  vs_project_guid: '{0A7E7F92-FDEA-40F1-A9EC-3BA484F98BBF}'
 - name: grpc_unsecure
   build: all
   language: c
@@ -1280,6 +1297,31 @@ libs:
   - grpc_deadline_filter
   - grpc_workaround_cronet_compression_filter
   - grpc_server_backward_compatibility
+  generate_plugin_registry: true
+  secure: false
+  vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
+- name: grpc_unsecure_minimal
+  build: all
+  language: c
+  src:
+  - src/core/lib/surface/init.c
+  - src/core/lib/surface/init_unsecure.c
+  baselib: true
+  deps_linkage: static
+  dll: true
+  filegroups:
+  - grpc_base
+  - grpc_transport_chttp2_server_insecure
+  - grpc_transport_chttp2_client_insecure
+  - grpc_transport_inproc
+  - grpc_resolver_dns_native
+  - grpc_resolver_sockaddr
+  - grpc_resolver_fake
+  - grpc_server_load_reporting
+  - census
+  - grpc_max_age_filter
+  - grpc_message_size_filter
+  - grpc_deadline_filter
   generate_plugin_registry: true
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
@@ -1472,6 +1514,32 @@ libs:
   - grpc++_codegen_base_src
   - grpc++_codegen_proto
   - grpc++_config_proto
+- name: grpc++_test_util_unsecure_minimal
+  build: private
+  language: c++
+  headers:
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/util/byte_buffer_proto_helper.h
+  - test/cpp/util/string_ref_helper.h
+  - test/cpp/util/subprocess.h
+  src:
+  - src/proto/grpc/health/v1/health.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/util/byte_buffer_proto_helper.cc
+  - test/cpp/util/string_ref_helper.cc
+  - test/cpp/util/subprocess.cc
+  deps:
+  - grpc++_unsecure_minimal
+  - grpc_test_util_unsecure_minimal
+  - grpc_unsecure_minimal
+  filegroups:
+  - grpc++_codegen_base
+  - grpc++_codegen_base_src
+  - grpc++_codegen_proto
+  - grpc++_config_proto
 - name: grpc++_unsecure
   build: all
   language: c++
@@ -1486,6 +1554,24 @@ libs:
   dll: true
   filegroups:
   - grpc++_base_unsecure
+  - grpc++_codegen_base
+  - grpc++_codegen_base_src
+  secure: false
+  vs_project_guid: '{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}'
+- name: grpc++_unsecure_minimal
+  build: all
+  language: c++
+  src:
+  - src/cpp/client/insecure_credentials.cc
+  - src/cpp/common/insecure_create_auth_context.cc
+  - src/cpp/server/insecure_server_credentials.cc
+  deps:
+  - gpr
+  - grpc_unsecure_minimal
+  baselib: true
+  dll: true
+  filegroups:
+  - grpc++_base_unsecure_minimal
   - grpc++_codegen_base
   - grpc++_codegen_base_src
   secure: false
@@ -4512,11 +4598,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - test/cpp/server/server_builder_test.cc
   deps:
-  - grpc++_test_util_unsecure
-  - grpc_test_util_unsecure
+  - grpc++_test_util_unsecure_minimal
+  - grpc_test_util_unsecure_minimal
   - gpr_test_util
-  - grpc++_unsecure
-  - grpc_unsecure
+  - grpc++_unsecure_minimal
+  - grpc_unsecure_minimal
   - gpr
 - name: server_context_test_spouse_test
   gtest: true

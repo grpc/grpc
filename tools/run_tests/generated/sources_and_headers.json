@@ -3955,10 +3955,10 @@
     "deps": [
       "gpr", 
       "gpr_test_util", 
-      "grpc++_test_util_unsecure", 
-      "grpc++_unsecure", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
+      "grpc++_test_util_unsecure_minimal", 
+      "grpc++_unsecure_minimal", 
+      "grpc_test_util_unsecure_minimal", 
+      "grpc_unsecure_minimal"
     ], 
     "headers": [
       "src/proto/grpc/testing/echo.grpc.pb.h", 
@@ -6079,6 +6079,21 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_base", 
+      "grpc_unsecure_minimal"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "grpc_test_util_unsecure_minimal", 
+    "src": [], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
       "census", 
       "gpr", 
       "grpc_base", 
@@ -6103,6 +6118,33 @@
     "is_filegroup": false, 
     "language": "c", 
     "name": "grpc_unsecure", 
+    "src": [
+      "src/core/lib/surface/init.c", 
+      "src/core/lib/surface/init_unsecure.c"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "census", 
+      "gpr", 
+      "grpc_base", 
+      "grpc_deadline_filter", 
+      "grpc_max_age_filter", 
+      "grpc_message_size_filter", 
+      "grpc_resolver_dns_native", 
+      "grpc_resolver_fake", 
+      "grpc_resolver_sockaddr", 
+      "grpc_server_load_reporting", 
+      "grpc_transport_chttp2_client_insecure", 
+      "grpc_transport_chttp2_server_insecure", 
+      "grpc_transport_inproc"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "grpc_unsecure_minimal", 
     "src": [
       "src/core/lib/surface/init.c", 
       "src/core/lib/surface/init_unsecure.c"
@@ -6404,6 +6446,50 @@
   }, 
   {
     "deps": [
+      "grpc++_codegen_base", 
+      "grpc++_codegen_base_src", 
+      "grpc++_codegen_proto", 
+      "grpc++_config_proto", 
+      "grpc++_unsecure_minimal", 
+      "grpc_test_util_unsecure_minimal", 
+      "grpc_unsecure_minimal"
+    ], 
+    "headers": [
+      "src/proto/grpc/health/v1/health.grpc.pb.h", 
+      "src/proto/grpc/health/v1/health.pb.h", 
+      "src/proto/grpc/health/v1/health_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h", 
+      "src/proto/grpc/testing/duplicate/echo_duplicate.pb.h", 
+      "src/proto/grpc/testing/duplicate/echo_duplicate_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/echo.grpc.pb.h", 
+      "src/proto/grpc/testing/echo.pb.h", 
+      "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_messages.pb.h", 
+      "src/proto/grpc/testing/echo_messages_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
+      "test/cpp/end2end/test_service_impl.h", 
+      "test/cpp/util/byte_buffer_proto_helper.h", 
+      "test/cpp/util/string_ref_helper.h", 
+      "test/cpp/util/subprocess.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc++_test_util_unsecure_minimal", 
+    "src": [
+      "test/cpp/end2end/test_service_impl.cc", 
+      "test/cpp/end2end/test_service_impl.h", 
+      "test/cpp/util/byte_buffer_proto_helper.cc", 
+      "test/cpp/util/byte_buffer_proto_helper.h", 
+      "test/cpp/util/string_ref_helper.cc", 
+      "test/cpp/util/string_ref_helper.h", 
+      "test/cpp/util/subprocess.cc", 
+      "test/cpp/util/subprocess.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
       "gpr", 
       "grpc++_base_unsecure", 
       "grpc++_codegen_base", 
@@ -6414,6 +6500,26 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "grpc++_unsecure", 
+    "src": [
+      "src/cpp/client/insecure_credentials.cc", 
+      "src/cpp/common/insecure_create_auth_context.cc", 
+      "src/cpp/server/insecure_server_credentials.cc"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc++_base_unsecure_minimal", 
+      "grpc++_codegen_base", 
+      "grpc++_codegen_base_src", 
+      "grpc_unsecure_minimal"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc++_unsecure_minimal", 
     "src": [
       "src/cpp/client/insecure_credentials.cc", 
       "src/cpp/common/insecure_create_auth_context.cc", 
@@ -7981,6 +8087,21 @@
     "is_filegroup": true, 
     "language": "c", 
     "name": "grpc++_base_unsecure", 
+    "src": [], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc++_codegen_base", 
+      "grpc++_common", 
+      "grpc_unsecure_minimal"
+    ], 
+    "headers": [], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc++_base_unsecure_minimal", 
     "src": [], 
     "third_party": false, 
     "type": "filegroup"

@@ -89,6 +89,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_test_util_unsecure_minimal",
+    srcs = [],
+    hdrs = [],
+    language = "C",
+    deps = [
+        ":grpc_test_util_base",
+        "//:grpc_unsecure_minimal",
+    ],
+)
+
+grpc_cc_library(
     name = "one_corpus_entry_fuzzer",
     srcs = ["one_corpus_entry_fuzzer.c"],
     deps = [
