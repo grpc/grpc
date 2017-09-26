@@ -419,7 +419,7 @@ static grpc_endpoint_vtable vtable = {
 
 grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
                                grpc_channel_args *channel_args,
-                               char *peer_string) {
+                               const char *peer_string) {
   grpc_resource_quota *resource_quota = grpc_resource_quota_create(NULL);
   if (channel_args != NULL) {
     for (size_t i = 0; i < channel_args->num_args; i++) {

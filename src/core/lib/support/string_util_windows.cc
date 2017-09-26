@@ -60,9 +60,9 @@ gpr_tchar_to_char(LPCTSTR input) {
   return ret;
 }
 #else
-char *gpr_tchar_to_char(LPTSTR input) { return gpr_strdup(input); }
+LPSTR gpr_tchar_to_char(LPCTSTR input) { return (LPSTR)gpr_strdup(input); }
 
-char *gpr_char_to_tchar(LPTSTR input) { return gpr_strdup(input); }
+LPTSTR gpr_char_to_tchar(LPCTSTR input) { return (LPTSTR)gpr_strdup(input); }
 #endif
 
 char *gpr_format_message(int messageid) {
