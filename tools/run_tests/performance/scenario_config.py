@@ -802,52 +802,32 @@ class RubyLanguage:
 
 class PhpLanguage:
 
-  def __init__(self):
+  def __init__(self, use_protobuf_c_extension=False):
     pass
+    self.use_protobuf_c_extension=use_protobuf_c_extension
     self.safename = str(self)
 
   def worker_cmdline(self):
+    if self.use_protobuf_c_extension:
+        return ['tools/run_tests/performance/run_worker_php.sh -c']
     return ['tools/run_tests/performance/run_worker_php.sh']
 
   def worker_port_offset(self):
     return 800
 
   def scenarios(self):
+    php_extension_mode='php_protobuf_php_extension'
+    if self.use_protobuf_c_extension:
+        php_extension_mode='php_protobuf_c_extension'
+    
     yield _ping_pong_scenario(
-        'php_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
-        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        '%s_to_cpp_protobuf_sync_unary_ping_pong' % php_extension_mode, 
+        rpc_type='UNARY', client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
         server_language='c++', async_server_threads=1)
 
     yield _ping_pong_scenario(
-        'php_to_cpp_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
-        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-        server_language='c++', async_server_threads=1)
-
-  def __str__(self):
-    return 'php'
-
-
-class PhpLanguage_ext:
-
-  def __init__(self):
-    pass
-    self.safename = str(self)
-
-  def worker_cmdline(self):
-    return ['tools/run_tests/performance/run_worker_php.sh -c']
-
-  def worker_port_offset(self):
-    return 800
-
-  def scenarios(self):
-    yield _ping_pong_scenario(
-        'php_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
-        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-        server_language='c++', async_server_threads=1)
-
-    yield _ping_pong_scenario(
-        'php_to_cpp_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
-        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        '%s_to_cpp_protobuf_sync_streaming_ping_pong' % php_extension_mode, 
+        rpc_type='STREAMING', client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
         server_language='c++', async_server_threads=1)
 
   def __str__(self):
@@ -1051,8 +1031,8 @@ LANGUAGES = {
     'node' : NodeLanguage(),
     'node_express': NodeExpressLanguage(),
     'ruby' : RubyLanguage(),
-    'php' : PhpLanguage(),
-    'php_ext' : PhpLanguage_ext(),
+    'php_protobuf_php' : PhpLanguage(),
+    'php_protobuf_c' : PhpLanguage(use_protobuf_c_extension=True),
     'java' : JavaLanguage(),
     'python' : PythonLanguage(),
     'go' : GoLanguage(),
