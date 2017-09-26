@@ -33,7 +33,7 @@ typedef struct completed_thread {
   struct completed_thread *next;
 } completed_thread;
 
-extern grpc_tracer_flag grpc_timer_check_trace;
+extern "C" grpc_tracer_flag grpc_timer_check_trace;
 
 // global mutex
 static gpr_mu g_mu;

@@ -18,10 +18,10 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#include "src/core/lib/iomgr/ev_epoll1_linux.h"
+
 /* This polling engine is only relevant on linux kernels supporting epoll() */
 #ifdef GRPC_LINUX_EPOLL
-
-#include "src/core/lib/iomgr/ev_epoll1_linux.h"
 
 #include <assert.h>
 #include <errno.h>
