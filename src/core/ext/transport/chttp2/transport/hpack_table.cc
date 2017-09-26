@@ -28,7 +28,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/support/murmur_hash.h"
 
-extern grpc_tracer_flag grpc_http_trace;
+extern "C" grpc_tracer_flag grpc_http_trace;
 
 static struct {
   const char *key;
