@@ -16,6 +16,7 @@
  *
  */
 
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
 #include <grpc/support/log.h>

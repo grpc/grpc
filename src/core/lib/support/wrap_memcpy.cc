@@ -26,6 +26,7 @@
  * Enable by setting LDFLAGS=-Wl,-wrap,memcpy when linking.
  */
 
+extern "C" {
 #ifdef __linux__
 #if defined(__x86_64__) && !defined(GPR_MUSL_LIBC_COMPAT)
 __asm__(".symver memcpy,memcpy@GLIBC_2.2.5");
@@ -38,3 +39,4 @@ void *__wrap_memcpy(void *destination, const void *source, size_t num) {
 }
 #endif
 #endif
+}

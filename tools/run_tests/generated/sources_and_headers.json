@@ -8953,6 +8953,7 @@
   {
     "deps": [
       "gpr", 
+      "grpc_base_headers", 
       "grpc_trace_headers"
     ], 
     "headers": [], 
