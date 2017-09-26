@@ -681,7 +681,8 @@ TEST_F(SingleBalancerTest, Fallback) {
     EXPECT_EQ(0U, backend_servers_[i].service_->request_count());
   }
 
-  // Wait until the serverlist reception has been processed.
+  // Wait until the serverlist reception has been processed and all backends
+  // in the serverlist are reachable.
   for (size_t i = kNumBackendInResolution; i < backends_.size(); ++i) {
     WaitForBackend(i);
   }
@@ -756,7 +757,8 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
   }
   SetNextResolution(addresses);
 
-  // Wait until the resolution update has been processed.
+  // Wait until the resolution update has been processed and all the new
+  // fallback backends are reachable.
   for (size_t i = kNumBackendInResolution;
        i < kNumBackendInResolution + kNumBackendInResolutionUpdate; ++i) {
     WaitForBackend(i);
@@ -781,7 +783,8 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
     EXPECT_EQ(0U, backend_servers_[i].service_->request_count());
   }
 
-  // Wait until the serverlist reception has been processed.
+  // Wait until the serverlist reception has been processed and all backends
+  // in the serverlist are reachable.
   for (size_t i = kNumBackendInResolution + kNumBackendInResolutionUpdate;
        i < backends_.size(); ++i) {
     WaitForBackend(i);
