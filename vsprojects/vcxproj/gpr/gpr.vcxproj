@@ -163,6 +163,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\string_util.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\subprocess.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync_custom.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync_windows.h" />
@@ -181,6 +182,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_custom.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h" />
@@ -191,8 +193,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\atomic.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\atomic_with_atm.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\atomic_with_std.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\backoff.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\block_annotate.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\env.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\memory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\mpscq.h" />
@@ -201,102 +201,99 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\stack_lockfree.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\string.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\string_windows.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\thd_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\time_precise.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\tmpfile.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\profiling\basic_timers.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\profiling\basic_timers.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\profiling\stap_timers.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\profiling\stap_timers.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\alloc.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\alloc.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\arena.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\arena.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\atm.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\atm.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\avl.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\avl.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\backoff.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\cmdline.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\cmdline.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\cpu_iphone.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\cpu_iphone.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\cpu_linux.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\cpu_linux.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\cpu_posix.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\cpu_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\cpu_windows.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\cpu_windows.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\env_linux.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\env_linux.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\env_posix.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\env_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\env_windows.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\env_windows.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\histogram.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\histogram.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\host_port.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\host_port.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log_android.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log_android.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log_linux.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log_linux.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log_posix.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log_windows.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log_windows.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\mpscq.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\mpscq.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\stack_lockfree.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\stack_lockfree.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_posix.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_util_windows.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_util_windows.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_windows.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_windows.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\subprocess_posix.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\subprocess_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\subprocess_windows.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\subprocess_windows.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\sync.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\sync.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\sync_posix.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\sync_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\sync_windows.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\sync_windows.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\thd.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\thd.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\thd_posix.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\thd_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\thd_windows.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\thd_windows.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time_posix.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time_precise.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time_precise.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time_windows.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time_windows.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tls_pthread.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tls_pthread.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tmpfile_msys.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tmpfile_msys.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tmpfile_posix.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tmpfile_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tmpfile_windows.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tmpfile_windows.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\wrap_memcpy.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\wrap_memcpy.cc">
     </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\h2_ssl_cert.c">
-      <Filter>test\core\end2end\fixtures</Filter>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\h2_ssl_cert_test.cc">
+      <Filter>test\core\end2end</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\end2end_tests.h">
+      <Filter>test\core\end2end</Filter>
+    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
@@ -15,9 +20,6 @@
     </Filter>
     <Filter Include="test\core\end2end">
       <UniqueIdentifier>{903c738d-3c85-534d-d26e-01138f2e96c6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="test\core\end2end\fixtures">
-      <UniqueIdentifier>{f5bca83d-8278-22b4-7999-c50cea11b90b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

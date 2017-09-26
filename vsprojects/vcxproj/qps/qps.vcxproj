@@ -228,6 +228,9 @@
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_test_util\grpc++_test_util.vcxproj">
       <Project>{0BE77741-552A-929B-A497-4EF7ECE17A64}</Project>
     </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_core_stats\grpc++_core_stats.vcxproj">
+      <Project>{9C414328-9FA8-C214-15C0-E4AB962014D5}</Project>
+    </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++\grpc++.vcxproj">
       <Project>{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}</Project>
     </ProjectReference>

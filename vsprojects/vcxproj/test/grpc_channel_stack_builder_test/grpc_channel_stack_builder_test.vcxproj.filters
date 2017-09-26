@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\channel\channel_stack_builder_test.c">
+      <Filter>test\core\channel</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{bd69a85b-1f5c-2730-decd-705bb45f7ee7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{431484ef-eda0-ac61-390d-0bd1840915e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\channel">
+      <UniqueIdentifier>{ad0d36d9-6a99-139d-9f6d-95a3833a5085}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

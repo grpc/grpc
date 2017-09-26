@@ -163,6 +163,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\proto_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\async_stream.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\async_unary_call.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\byte_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\call.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\call_hook.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\channel_interface.h" />
@@ -190,6 +191,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\stub_options.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_stream.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\time.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
@@ -206,6 +208,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_custom.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h" />

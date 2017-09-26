@@ -162,6 +162,7 @@
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\async_stream.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\async_unary_call.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\byte_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\call.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\call_hook.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\channel_interface.h" />
@@ -189,6 +190,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\stub_options.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\sync_stream.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\time.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
@@ -205,6 +207,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\gpr_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_custom.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h" />
@@ -256,6 +259,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++_core_stats\grpc++_core_stats.vcxproj">
+      <Project>{9C414328-9FA8-C214-15C0-E4AB962014D5}</Project>
+    </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc\grpc.vcxproj">
       <Project>{29D16885-7228-4C31-81ED-5F9187C7F2A9}</Project>
     </ProjectReference>
