@@ -1021,6 +1021,26 @@ grpc_jwt_verifier_test: $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test
 grpc_print_google_default_creds_token: $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token
 grpc_security_connector_test: $(BINDIR)/$(CONFIG)/grpc_security_connector_test
 grpc_verify_jwt: $(BINDIR)/$(CONFIG)/grpc_verify_jwt
+h2_ssl_cert_test_no_request_bad: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_bad
+h2_ssl_cert_test_no_request_none: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_none
+h2_ssl_cert_test_no_request_self: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_self
+h2_ssl_cert_test_no_request_signed: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_signed
+h2_ssl_cert_test_request_and_verify_bad: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_bad
+h2_ssl_cert_test_request_and_verify_none: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_none
+h2_ssl_cert_test_request_and_verify_self: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_self
+h2_ssl_cert_test_request_and_verify_signed: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_signed
+h2_ssl_cert_test_request_no_verify_bad: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_bad
+h2_ssl_cert_test_request_no_verify_none: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_none
+h2_ssl_cert_test_request_no_verify_self: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_self
+h2_ssl_cert_test_request_no_verify_signed: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_signed
+h2_ssl_cert_test_request_require_and_verify_bad: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_bad
+h2_ssl_cert_test_request_require_and_verify_none: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_none
+h2_ssl_cert_test_request_require_and_verify_self: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_self
+h2_ssl_cert_test_request_require_and_verify_signed: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_signed
+h2_ssl_cert_test_request_require_no_verify_bad: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_bad
+h2_ssl_cert_test_request_require_no_verify_none: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_none
+h2_ssl_cert_test_request_require_no_verify_self: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_self
+h2_ssl_cert_test_request_require_no_verify_signed: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_signed
 handshake_client: $(BINDIR)/$(CONFIG)/handshake_client
 handshake_server: $(BINDIR)/$(CONFIG)/handshake_server
 hpack_parser_fuzzer_test: $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test
@@ -1247,7 +1267,6 @@ h2_sockpair_test: $(BINDIR)/$(CONFIG)/h2_sockpair_test
 h2_sockpair+trace_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_test
 h2_sockpair_1byte_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_test
 h2_ssl_test: $(BINDIR)/$(CONFIG)/h2_ssl_test
-h2_ssl_cert_test: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test
 h2_ssl_proxy_test: $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test
 h2_uds_test: $(BINDIR)/$(CONFIG)/h2_uds_test
 inproc_test: $(BINDIR)/$(CONFIG)/inproc_test
@@ -1413,6 +1432,26 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/grpc_json_token_test \
   $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test \
   $(BINDIR)/$(CONFIG)/grpc_security_connector_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_bad \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_none \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_self \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_signed \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_bad \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_none \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_self \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_signed \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_bad \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_none \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_self \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_signed \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_bad \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_none \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_self \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_signed \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_bad \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_none \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_self \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_signed \
   $(BINDIR)/$(CONFIG)/handshake_client \
   $(BINDIR)/$(CONFIG)/handshake_server \
   $(BINDIR)/$(CONFIG)/hpack_parser_test \
@@ -1507,7 +1546,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_sockpair+trace_test \
   $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_test \
   $(BINDIR)/$(CONFIG)/h2_ssl_test \
-  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test \
   $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test \
   $(BINDIR)/$(CONFIG)/h2_uds_test \
   $(BINDIR)/$(CONFIG)/inproc_test \
@@ -1881,6 +1919,46 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test || ( echo test grpc_jwt_verifier_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_security_connector_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_security_connector_test || ( echo test grpc_security_connector_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_no_request_bad"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_bad || ( echo test h2_ssl_cert_test_no_request_bad failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_no_request_none"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_none || ( echo test h2_ssl_cert_test_no_request_none failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_no_request_self"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_self || ( echo test h2_ssl_cert_test_no_request_self failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_no_request_signed"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_signed || ( echo test h2_ssl_cert_test_no_request_signed failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_request_and_verify_bad"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_bad || ( echo test h2_ssl_cert_test_request_and_verify_bad failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_request_and_verify_none"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_none || ( echo test h2_ssl_cert_test_request_and_verify_none failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_request_and_verify_self"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_self || ( echo test h2_ssl_cert_test_request_and_verify_self failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_request_and_verify_signed"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_signed || ( echo test h2_ssl_cert_test_request_and_verify_signed failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_request_no_verify_bad"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_bad || ( echo test h2_ssl_cert_test_request_no_verify_bad failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_request_no_verify_none"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_none || ( echo test h2_ssl_cert_test_request_no_verify_none failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_request_no_verify_self"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_self || ( echo test h2_ssl_cert_test_request_no_verify_self failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_request_no_verify_signed"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_signed || ( echo test h2_ssl_cert_test_request_no_verify_signed failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_request_require_and_verify_bad"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_bad || ( echo test h2_ssl_cert_test_request_require_and_verify_bad failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_request_require_and_verify_none"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_none || ( echo test h2_ssl_cert_test_request_require_and_verify_none failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_request_require_and_verify_self"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_self || ( echo test h2_ssl_cert_test_request_require_and_verify_self failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_request_require_and_verify_signed"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_signed || ( echo test h2_ssl_cert_test_request_require_and_verify_signed failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_request_require_no_verify_bad"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_bad || ( echo test h2_ssl_cert_test_request_require_no_verify_bad failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_request_require_no_verify_none"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_none || ( echo test h2_ssl_cert_test_request_require_no_verify_none failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_request_require_no_verify_self"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_self || ( echo test h2_ssl_cert_test_request_require_no_verify_self failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test_request_require_no_verify_signed"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_signed || ( echo test h2_ssl_cert_test_request_require_no_verify_signed failed ; exit 1 )
 	$(E) "[RUN]     Testing handshake_client"
 	$(Q) $(BINDIR)/$(CONFIG)/handshake_client || ( echo test handshake_client failed ; exit 1 )
 	$(E) "[RUN]     Testing handshake_server"
@@ -11167,6 +11245,706 @@ endif
 endif
 
 
+H2_SSL_CERT_TEST_NO_REQUEST_BAD_SRC = \
+    test/core/end2end/h2_ssl_cert/config_no_request_bad.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_NO_REQUEST_BAD_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_NO_REQUEST_BAD_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_bad: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_bad: $(H2_SSL_CERT_TEST_NO_REQUEST_BAD_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_NO_REQUEST_BAD_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_bad
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_no_request_bad.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_no_request_bad: $(H2_SSL_CERT_TEST_NO_REQUEST_BAD_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_NO_REQUEST_BAD_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_NO_REQUEST_NONE_SRC = \
+    test/core/end2end/h2_ssl_cert/config_no_request_none.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_NO_REQUEST_NONE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_NO_REQUEST_NONE_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_none: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_none: $(H2_SSL_CERT_TEST_NO_REQUEST_NONE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_NO_REQUEST_NONE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_none
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_no_request_none.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_no_request_none: $(H2_SSL_CERT_TEST_NO_REQUEST_NONE_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_NO_REQUEST_NONE_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_NO_REQUEST_SELF_SRC = \
+    test/core/end2end/h2_ssl_cert/config_no_request_self.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_NO_REQUEST_SELF_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_NO_REQUEST_SELF_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_self: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_self: $(H2_SSL_CERT_TEST_NO_REQUEST_SELF_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_NO_REQUEST_SELF_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_self
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_no_request_self.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_no_request_self: $(H2_SSL_CERT_TEST_NO_REQUEST_SELF_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_NO_REQUEST_SELF_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_NO_REQUEST_SIGNED_SRC = \
+    test/core/end2end/h2_ssl_cert/config_no_request_signed.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_NO_REQUEST_SIGNED_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_NO_REQUEST_SIGNED_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_signed: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_signed: $(H2_SSL_CERT_TEST_NO_REQUEST_SIGNED_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_NO_REQUEST_SIGNED_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_no_request_signed
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_no_request_signed.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_no_request_signed: $(H2_SSL_CERT_TEST_NO_REQUEST_SIGNED_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_NO_REQUEST_SIGNED_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_BAD_SRC = \
+    test/core/end2end/h2_ssl_cert/config_request_and_verify_bad.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_BAD_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_BAD_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_bad: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_bad: $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_BAD_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_BAD_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_bad
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_request_and_verify_bad.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_request_and_verify_bad: $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_BAD_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_BAD_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_NONE_SRC = \
+    test/core/end2end/h2_ssl_cert/config_request_and_verify_none.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_NONE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_NONE_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_none: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_none: $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_NONE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_NONE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_none
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_request_and_verify_none.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_request_and_verify_none: $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_NONE_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_NONE_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_SELF_SRC = \
+    test/core/end2end/h2_ssl_cert/config_request_and_verify_self.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_SELF_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_SELF_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_self: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_self: $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_SELF_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_SELF_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_self
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_request_and_verify_self.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_request_and_verify_self: $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_SELF_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_SELF_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_SIGNED_SRC = \
+    test/core/end2end/h2_ssl_cert/config_request_and_verify_signed.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_SIGNED_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_SIGNED_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_signed: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_signed: $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_SIGNED_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_SIGNED_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_and_verify_signed
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_request_and_verify_signed.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_request_and_verify_signed: $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_SIGNED_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_REQUEST_AND_VERIFY_SIGNED_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_BAD_SRC = \
+    test/core/end2end/h2_ssl_cert/config_request_no_verify_bad.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_BAD_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_BAD_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_bad: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_bad: $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_BAD_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_BAD_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_bad
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_request_no_verify_bad.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_request_no_verify_bad: $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_BAD_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_BAD_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_NONE_SRC = \
+    test/core/end2end/h2_ssl_cert/config_request_no_verify_none.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_NONE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_NONE_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_none: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_none: $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_NONE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_NONE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_none
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_request_no_verify_none.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_request_no_verify_none: $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_NONE_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_NONE_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_SELF_SRC = \
+    test/core/end2end/h2_ssl_cert/config_request_no_verify_self.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_SELF_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_SELF_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_self: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_self: $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_SELF_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_SELF_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_self
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_request_no_verify_self.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_request_no_verify_self: $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_SELF_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_SELF_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_SIGNED_SRC = \
+    test/core/end2end/h2_ssl_cert/config_request_no_verify_signed.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_SIGNED_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_SIGNED_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_signed: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_signed: $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_SIGNED_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_SIGNED_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_no_verify_signed
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_request_no_verify_signed.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_request_no_verify_signed: $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_SIGNED_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_REQUEST_NO_VERIFY_SIGNED_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_BAD_SRC = \
+    test/core/end2end/h2_ssl_cert/config_request_require_and_verify_bad.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_BAD_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_BAD_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_bad: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_bad: $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_BAD_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_BAD_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_bad
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_request_require_and_verify_bad.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_request_require_and_verify_bad: $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_BAD_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_BAD_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_NONE_SRC = \
+    test/core/end2end/h2_ssl_cert/config_request_require_and_verify_none.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_NONE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_NONE_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_none: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_none: $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_NONE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_NONE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_none
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_request_require_and_verify_none.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_request_require_and_verify_none: $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_NONE_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_NONE_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_SELF_SRC = \
+    test/core/end2end/h2_ssl_cert/config_request_require_and_verify_self.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_SELF_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_SELF_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_self: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_self: $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_SELF_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_SELF_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_self
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_request_require_and_verify_self.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_request_require_and_verify_self: $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_SELF_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_SELF_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_SIGNED_SRC = \
+    test/core/end2end/h2_ssl_cert/config_request_require_and_verify_signed.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_SIGNED_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_SIGNED_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_signed: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_signed: $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_SIGNED_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_SIGNED_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_and_verify_signed
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_request_require_and_verify_signed.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_request_require_and_verify_signed: $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_SIGNED_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_AND_VERIFY_SIGNED_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_BAD_SRC = \
+    test/core/end2end/h2_ssl_cert/config_request_require_no_verify_bad.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_BAD_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_BAD_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_bad: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_bad: $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_BAD_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_BAD_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_bad
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_request_require_no_verify_bad.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_request_require_no_verify_bad: $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_BAD_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_BAD_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_NONE_SRC = \
+    test/core/end2end/h2_ssl_cert/config_request_require_no_verify_none.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_NONE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_NONE_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_none: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_none: $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_NONE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_NONE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_none
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_request_require_no_verify_none.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_request_require_no_verify_none: $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_NONE_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_NONE_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_SELF_SRC = \
+    test/core/end2end/h2_ssl_cert/config_request_require_no_verify_self.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_SELF_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_SELF_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_self: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_self: $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_SELF_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_SELF_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_self
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_request_require_no_verify_self.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_request_require_no_verify_self: $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_SELF_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_SELF_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_SIGNED_SRC = \
+    test/core/end2end/h2_ssl_cert/config_request_require_no_verify_signed.c \
+    test/core/end2end/h2_ssl_cert/ssl_cert_test.c \
+
+H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_SIGNED_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_SIGNED_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_signed: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_signed: $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_SIGNED_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_SIGNED_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test_request_require_no_verify_signed
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/config_request_require_no_verify_signed.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert/ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cert_test_request_require_no_verify_signed: $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_SIGNED_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CERT_TEST_REQUEST_REQUIRE_NO_VERIFY_SIGNED_OBJS:.o=.dep)
+endif
+endif
+
+
 HANDSHAKE_CLIENT_SRC = \
     test/core/handshake/client_ssl.c \
 
@@ -19091,38 +19869,6 @@ deps_h2_ssl_test: $(H2_SSL_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(H2_SSL_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-H2_SSL_CERT_TEST_SRC = \
-    test/core/end2end/fixtures/h2_ssl_cert.c \
-
-H2_SSL_CERT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/h2_ssl_cert_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/h2_ssl_cert_test: $(H2_SSL_CERT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_ssl_cert.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_h2_ssl_cert_test: $(H2_SSL_CERT_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(H2_SSL_CERT_TEST_OBJS:.o=.dep)
 endif
 endif
 

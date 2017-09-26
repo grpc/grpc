@@ -1256,6 +1256,426 @@
       "grpc", 
       "grpc_test_util"
     ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_no_request_bad", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_no_request_bad.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_no_request_none", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_no_request_none.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_no_request_self", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_no_request_self.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_no_request_signed", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_no_request_signed.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_request_and_verify_bad", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_request_and_verify_bad.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_request_and_verify_none", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_request_and_verify_none.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_request_and_verify_self", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_request_and_verify_self.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_request_and_verify_signed", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_request_and_verify_signed.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_request_no_verify_bad", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_request_no_verify_bad.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_request_no_verify_none", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_request_no_verify_none.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_request_no_verify_self", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_request_no_verify_self.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_request_no_verify_signed", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_request_no_verify_signed.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_request_require_and_verify_bad", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_request_require_and_verify_bad.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_request_require_and_verify_none", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_request_require_and_verify_none.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_request_require_and_verify_self", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_request_require_and_verify_self.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_request_require_and_verify_signed", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_request_require_and_verify_signed.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_request_require_no_verify_bad", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_request_require_no_verify_bad.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_request_require_no_verify_none", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_request_require_no_verify_none.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_request_require_no_verify_self", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_request_require_no_verify_self.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cert_test_request_require_no_verify_signed", 
+    "src": [
+      "test/core/end2end/h2_ssl_cert/config_request_require_no_verify_signed.c", 
+      "test/core/end2end/h2_ssl_cert/config_wrapper.h", 
+      "test/core/end2end/h2_ssl_cert/ssl_cert_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
@@ -5281,24 +5701,6 @@
     "name": "h2_ssl_test", 
     "src": [
       "test/core/end2end/fixtures/h2_ssl.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "h2_ssl_cert_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_ssl_cert.c"
     ], 
     "third_party": false, 
     "type": "target"

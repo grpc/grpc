@@ -2508,6 +2508,326 @@ targets:
   deps:
   - grpc
   - gpr
+- name: h2_ssl_cert_test_no_request_bad
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_no_request_bad.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_no_request_none
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_no_request_none.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_no_request_self
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_no_request_self.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_no_request_signed
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_no_request_signed.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_request_and_verify_bad
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_request_and_verify_bad.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_request_and_verify_none
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_request_and_verify_none.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_request_and_verify_self
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_request_and_verify_self.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_request_and_verify_signed
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_request_and_verify_signed.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_request_no_verify_bad
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_request_no_verify_bad.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_request_no_verify_none
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_request_no_verify_none.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_request_no_verify_self
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_request_no_verify_self.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_request_no_verify_signed
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_request_no_verify_signed.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_request_require_and_verify_bad
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_request_require_and_verify_bad.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_request_require_and_verify_none
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_request_require_and_verify_none.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_request_require_and_verify_self
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_request_require_and_verify_self.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_request_require_and_verify_signed
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_request_require_and_verify_signed.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_request_require_no_verify_bad
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_request_require_no_verify_bad.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_request_require_no_verify_none
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_request_require_no_verify_none.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_request_require_no_verify_self
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_request_require_no_verify_self.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
+- name: h2_ssl_cert_test_request_require_no_verify_signed
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/h2_ssl_cert/config_wrapper.h
+  src:
+  - test/core/end2end/h2_ssl_cert/config_request_require_no_verify_signed.c
+  - test/core/end2end/h2_ssl_cert/ssl_cert_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  secure: true
 - name: handshake_client
   build: test
   language: c
