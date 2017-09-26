@@ -337,12 +337,17 @@ void HHVM_METHOD(Call, __construct,
     std::unique_ptr<CompletionQueue> pCompletionQueue{ nullptr };
     CompletionQueue::getClientQueue(pCompletionQueue);
 
+    // NOTE: This must be called before the create call so the timespan is not
+    // encrouched upon
+    int32_t timeout{ gpr_time_to_millis(gpr_convert_clock_type(pDeadlineTimevalData->time(),
+                                                           GPR_TIMESPAN)) };
+
     grpc_call* const pCall{ grpc_channel_create_call(pChannelData->channel(),
                                                      nullptr, GRPC_PROPAGATE_DEFAULTS,
                                                      pCompletionQueue->queue(),
                                                      method_slice.slice(),
                                                      !host_slice.empty() ? &host_slice.slice() : nullptr,
-                                                     gpr_inf_future(GPR_CLOCK_REALTIME)/*pDeadlineTimevalData->time()*/,
+                                                     /*gpr_inf_future(GPR_CLOCK_REALTIME)*/pDeadlineTimevalData->time(),
                                                      nullptr) };
 
     if (!pCall)
@@ -350,8 +355,7 @@ void HHVM_METHOD(Call, __construct,
         SystemLib::throwBadMethodCallExceptionObject("failed to create call");
     }
 
-    int32_t timeout{ gpr_time_to_millis(gpr_convert_clock_type(pDeadlineTimevalData->time(),
-                                                               GPR_TIMESPAN)) };
+
     pCallData->init(pCall, true, timeout);
     pCallData->setQueue(std::move(pCompletionQueue));
 
@@ -641,6 +645,7 @@ Object HHVM_METHOD(Call, startBatch,
     {
         // wait for call batch to complete
         grpc_event event (grpc_completion_queue_pluck(pCallData->queue()->queue(), pTag,
+                                                     /*gpr_inf_future(GPR_CLOCK_REALTIME),*/
                                                      gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN),
                                                      nullptr));
         if ((event.type != GRPC_OP_COMPLETE) || (event.tag != &opsManaged) || (event.success == 0))
