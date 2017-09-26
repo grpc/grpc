@@ -28,6 +28,7 @@
 #include "hphp/runtime/base/array-init.h"
 #include "hphp/runtime/base/builtin-functions.h"
 #include "hphp/runtime/vm/native-data.h"
+#include "hphp/runtime/vm/vm-regs.h"
 
 #include "grpc/support/alloc.h"
 
@@ -172,6 +173,8 @@ Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
                           const Object& cred1_obj,
                           const Object& cred2_obj)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("CallCredentials createComposite") // Degug Trace
 
     CallCredentialsData* const pCallCredentialsData1{ Native::data<CallCredentialsData>(cred1_obj) };
@@ -202,6 +205,8 @@ Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
 Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
                           const Variant& callback)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("CallCredentials createFromPlugin") // Degug Trace
 
     if (callback.isNull() || !is_callable(callback))

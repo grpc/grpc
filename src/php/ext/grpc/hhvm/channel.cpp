@@ -39,6 +39,7 @@
 #include "hphp/runtime/base/builtin-functions.h"
 #include "hphp/runtime/base/string-util.h"
 #include "hphp/runtime/vm/native-data.h"
+#include "hphp/runtime/vm/vm-regs.h"
 
 namespace HPHP {
 
@@ -335,6 +336,8 @@ void HHVM_METHOD(Channel, __construct,
                  const String& target,
                  const Array& args_array)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Channel Construct") // Debug Trace
 
     ChannelData* const pChannelData{ Native::data<ChannelData>(this_) };
@@ -444,6 +447,8 @@ void HHVM_METHOD(Channel, __construct,
  */
 String HHVM_METHOD(Channel, getTarget)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Channel getTarget") // Debug Trace
 
     ChannelData* const pChannelData{ Native::data<ChannelData>(this_) };
@@ -464,6 +469,8 @@ String HHVM_METHOD(Channel, getTarget)
 int64_t HHVM_METHOD(Channel, getConnectivityState,
                     bool try_to_connect /* = false */)
 {
+    VMRegGuard _;
+
     ChannelData* const pChannelData{ Native::data<ChannelData>(this_) };
 
     if (!pChannelData->channel())
@@ -488,6 +495,8 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
                  int64_t last_state,
                  const Object& deadline)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Channel watchConnectivityState") // Debug Trace
 
     ChannelData* const pChannelData{ Native::data<ChannelData>(this_) };
@@ -522,6 +531,8 @@ bool HHVM_METHOD(Channel, watchConnectivityState,
  */
 void HHVM_METHOD(Channel, close)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Channel close") // Debug Trace
 
     ChannelData* const pChannelData{ Native::data<ChannelData>(this_) };

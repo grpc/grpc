@@ -315,6 +315,8 @@ void HHVM_METHOD(Call, __construct,
                  const Object& deadline_obj,
                  const Variant& host_override /* = null */)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Call construct") // Degug Trace
 
     CallData* const pCallData{ Native::data<CallData>(this_) };
@@ -756,6 +758,8 @@ Object HHVM_METHOD(Call, startBatch,
 
 String HHVM_METHOD(Call, getPeer)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Call getPeer") // Degug Trace
 
     CallData* const pCallData{ Native::data<CallData>(this_) };
@@ -773,6 +777,8 @@ void HHVM_METHOD(Call, cancel)
 int64_t HHVM_METHOD(Call, setCredentials,
                     const Object& creds_obj)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Call setCredentials") // Degug Trace
 
     CallData* const pCallData{ Native::data<CallData>(this_) };

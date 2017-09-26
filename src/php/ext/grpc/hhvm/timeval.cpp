@@ -26,6 +26,7 @@
 
 #include "hphp/runtime/ext/extension.h"
 #include "hphp/runtime/vm/native-data.h"
+#include "hphp/runtime/vm/vm-regs.h"
 
 #include "grpc/grpc.h"
 
@@ -78,6 +79,8 @@ void TimevalData::destroy(void)
 void HHVM_METHOD(Timeval, __construct,
                  int64_t microseconds)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Timeval construct") // Debug Trace
 
     TimevalData* const pTimeval{ Native::data<TimevalData>(this_) };
@@ -87,6 +90,8 @@ void HHVM_METHOD(Timeval, __construct,
 Object HHVM_METHOD(Timeval, add,
                    const Object& other_obj)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Timeval add") // Debug Trace
 
     TimevalData* const pTimeval{ Native::data<TimevalData>(this_) };
@@ -102,6 +107,8 @@ Object HHVM_METHOD(Timeval, add,
 Object HHVM_METHOD(Timeval, subtract,
                    const Object& other_obj)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Timeval subtract") // Debug Trace
 
     TimevalData* const pTimeval{ Native::data<TimevalData>(this_) };
@@ -118,6 +125,8 @@ int64_t HHVM_STATIC_METHOD(Timeval, compare,
                            const Object& a_obj,
                            const Object& b_obj)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Timeval compare") // Debug Trace
 
     TimevalData* const pATimeval{ Native::data<TimevalData>(a_obj) };
@@ -133,6 +142,8 @@ bool HHVM_STATIC_METHOD(Timeval, similar,
                         const Object& b_obj,
                         const Object& thresh_obj)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Timeval similar") // Debug Trace
 
     TimevalData* const pATimeval{ Native::data<TimevalData>(a_obj) };
@@ -147,6 +158,8 @@ bool HHVM_STATIC_METHOD(Timeval, similar,
 
 Object HHVM_STATIC_METHOD(Timeval, now)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Timeval now") // Debug Trace
 
     Object newTimevalObj{ TimevalData::getClass() };
@@ -158,6 +171,8 @@ Object HHVM_STATIC_METHOD(Timeval, now)
 
 Object HHVM_STATIC_METHOD(Timeval, zero)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Timeval zero") // Debug Trace
 
     Object newTimevalObj{ TimevalData::getClass() };
@@ -169,6 +184,8 @@ Object HHVM_STATIC_METHOD(Timeval, zero)
 
 Object HHVM_STATIC_METHOD(Timeval, infFuture)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Timeval infFuture") // Debug Trace
 
     Object newTimevalObj{ TimevalData::getClass() };
@@ -180,6 +197,8 @@ Object HHVM_STATIC_METHOD(Timeval, infFuture)
 
 Object HHVM_STATIC_METHOD(Timeval, infPast)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Timeval infPast") // Debug Trace
 
     Object newTimevalObj{ TimevalData::getClass() };
@@ -191,6 +210,8 @@ Object HHVM_STATIC_METHOD(Timeval, infPast)
 
 void HHVM_METHOD(Timeval, sleepUntil)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Timeval sleepUntil") // Debug Trace
 
     TimevalData* const pTimeval{ Native::data<TimevalData>(this_) };
