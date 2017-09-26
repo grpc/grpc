@@ -58,6 +58,7 @@ some configuration as environment variables that can be set.
     completion queue
   - round_robin - traces the round_robin load balancing policy
   - pick_first - traces the pick first load balancing policy
+  - plugin_credentials - traces plugin credentials
   - resource_quota - trace resource quota objects internals
   - glb - traces the grpclb load balancer
   - queue_pluck
