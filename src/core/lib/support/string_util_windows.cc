@@ -36,6 +36,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/support/string.h"
+#include "src/core/lib/support/string_windows.h"
 
 #if defined UNICODE || defined _UNICODE
 LPTSTR

@@ -3169,7 +3169,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
@@ -3186,8 +3186,8 @@ LIBGRPC_SRC = \
     src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc \
     src/core/ext/census/base_resources.cc \
     src/core/ext/census/context.cc \
-    src/core/ext/census/gen/census.pb.cc \
-    src/core/ext/census/gen/trace_context.pb.cc \
+    src/core/ext/census/gen/census.pb.c \
+    src/core/ext/census/gen/trace_context.pb.c \
     src/core/ext/census/grpc_context.cc \
     src/core/ext/census/grpc_filter.cc \
     src/core/ext/census/grpc_plugin.cc \
@@ -4288,7 +4288,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
@@ -4296,8 +4296,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
     src/core/ext/census/base_resources.cc \
     src/core/ext/census/context.cc \
-    src/core/ext/census/gen/census.pb.cc \
-    src/core/ext/census/gen/trace_context.pb.cc \
+    src/core/ext/census/gen/census.pb.c \
+    src/core/ext/census/gen/trace_context.pb.c \
     src/core/ext/census/grpc_context.cc \
     src/core/ext/census/grpc_filter.cc \
     src/core/ext/census/grpc_plugin.cc \
@@ -4987,8 +4987,8 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
     src/core/ext/census/base_resources.cc \
     src/core/ext/census/context.cc \
-    src/core/ext/census/gen/census.pb.cc \
-    src/core/ext/census/gen/trace_context.pb.cc \
+    src/core/ext/census/gen/census.pb.c \
+    src/core/ext/census/gen/trace_context.pb.c \
     src/core/ext/census/grpc_context.cc \
     src/core/ext/census/grpc_filter.cc \
     src/core/ext/census/grpc_plugin.cc \

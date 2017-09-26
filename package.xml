@@ -643,7 +643,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_common.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_encode.c" role="src" />
@@ -660,8 +660,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/base_resources.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/context.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/census/gen/trace_context.pb.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/gen/census.pb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/census/gen/trace_context.pb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_plugin.cc" role="src" />
