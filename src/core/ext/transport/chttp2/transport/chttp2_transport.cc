@@ -2648,8 +2648,7 @@ void grpc_chttp2_config_default_keepalive_args(grpc_channel_args *args,
       } else if (0 ==
                  strcmp(args->args[i].key, GRPC_ARG_HTTP2_MAX_PING_STRIKES)) {
         g_default_max_ping_strikes = grpc_channel_arg_get_integer(
-            &args->args[i],
-            (grpc_integer_options){g_default_max_ping_strikes, 0, INT_MAX});
+            &args->args[i], {g_default_max_ping_strikes, 0, INT_MAX});
       } else if (0 == strcmp(args->args[i].key,
                              GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)) {
         g_default_max_pings_without_data = grpc_channel_arg_get_integer(

@@ -26,7 +26,10 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
+
+extern "C" {
 #include <openssl/pem.h>
+}
 
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/polling_entity.h"

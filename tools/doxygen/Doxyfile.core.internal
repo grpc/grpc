@@ -878,9 +878,9 @@ src/core/ext/census/census_interface.h \
 src/core/ext/census/census_rpc_stats.h \
 src/core/ext/census/context.cc \
 src/core/ext/census/gen/README.md \
-src/core/ext/census/gen/census.pb.cc \
+src/core/ext/census/gen/census.pb.c \
 src/core/ext/census/gen/census.pb.h \
-src/core/ext/census/gen/trace_context.pb.cc \
+src/core/ext/census/gen/trace_context.pb.c \
 src/core/ext/census/gen/trace_context.pb.h \
 src/core/ext/census/grpc_context.cc \
 src/core/ext/census/grpc_filter.cc \
@@ -930,7 +930,7 @@ src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h \
-src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.cc \
+src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
 src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h \
 src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
 src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \

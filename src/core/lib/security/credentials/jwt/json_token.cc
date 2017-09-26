@@ -30,9 +30,11 @@
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/support/string.h"
 
+extern "C" {
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
+}
 
 /* --- Constants. --- */
 

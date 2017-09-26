@@ -15,6 +15,10 @@
  * limitations under the License.
  *
  */
+#include <grpc/support/port_platform.h>
+
+#include <inttypes.h>
+
 #include "src/core/lib/surface/alarm_internal.h"
 
 #include <grpc/grpc.h>

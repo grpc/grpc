@@ -19,6 +19,10 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <grpc/slice.h>
 #include <openssl/rsa.h>
 
@@ -27,10 +31,6 @@
 /* --- Constants. --- */
 
 #define GRPC_JWT_OAUTH2_AUDIENCE "https://www.googleapis.com/oauth2/v3/token"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* --- auth_json_key parsing. --- */
 
