@@ -24,6 +24,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>

@@ -763,6 +763,7 @@ filegroups:
   - gpr
   filegroups:
   - grpc_trace_headers
+  - grpc_base_headers
 - name: grpc_trace_headers
   headers:
   - src/core/lib/debug/trace.h

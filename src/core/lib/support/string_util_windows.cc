@@ -33,6 +33,7 @@
 #include <strsafe.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/support/string.h"
