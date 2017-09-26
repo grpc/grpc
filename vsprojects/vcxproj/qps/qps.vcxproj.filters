@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.proto">
+      <Filter>src\proto\grpc\testing</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\payloads.proto">
+      <Filter>src\proto\grpc\testing</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.proto">
+      <Filter>src\proto\grpc\testing</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.proto">
+      <Filter>src\proto\grpc\testing</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\services.proto">
+      <Filter>src\proto\grpc\testing</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\benchmark_config.cc">
+      <Filter>test\cpp\qps</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\client_async.cc">
+      <Filter>test\cpp\qps</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\client_sync.cc">
+      <Filter>test\cpp\qps</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\driver.cc">
+      <Filter>test\cpp\qps</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\parse_json.cc">
+      <Filter>test\cpp\qps</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\qps_worker.cc">
+      <Filter>test\cpp\qps</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\report.cc">
+      <Filter>test\cpp\qps</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\server_async.cc">
+      <Filter>test\cpp\qps</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\server_sync.cc">
+      <Filter>test\cpp\qps</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\usage_timer.cc">
+      <Filter>test\cpp\qps</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\benchmark_config.h">
+      <Filter>test\cpp\qps</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\client.h">
+      <Filter>test\cpp\qps</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\driver.h">
+      <Filter>test\cpp\qps</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\histogram.h">
+      <Filter>test\cpp\qps</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\interarrival.h">
+      <Filter>test\cpp\qps</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\parse_json.h">
+      <Filter>test\cpp\qps</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\qps_worker.h">
+      <Filter>test\cpp\qps</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\report.h">
+      <Filter>test\cpp\qps</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\server.h">
+      <Filter>test\cpp\qps</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\stats.h">
+      <Filter>test\cpp\qps</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\usage_timer.h">
+      <Filter>test\cpp\qps</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{0a68b7ce-1b1a-8927-e173-5e8d7ebecf8a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto">
+      <UniqueIdentifier>{7e654fb3-2440-c5ad-9cc1-c6c425cd91bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc">
+      <UniqueIdentifier>{d95c9d8c-ad29-576f-c974-aafa292a361e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\testing">
+      <UniqueIdentifier>{0878a4bc-7ae5-7cad-e2e1-3a91cc0e7b59}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test">
+      <UniqueIdentifier>{2d898a55-573b-f256-2336-bddd04eb7c70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{10aaf291-3f7c-55fe-d0c5-0d09e3f6dd5a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\qps">
+      <UniqueIdentifier>{b57fa0e4-f88d-fe46-8885-956fc582de3d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

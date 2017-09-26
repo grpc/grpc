@@ -1,0 +1,53 @@
+<%def name="get_name(vspackages, package)">${''.join('%s.%s' % (p.name, p.version) for p in vspackages if p.name == package)}</%def>
+<%def name="gen_packages_config(packages)">\
+<?xml version="1.0" encoding="utf-8"?>
+<packages>
+  % for package in vspackages:
+  %  if packages == 'all' or package.name in packages:
+  <package id="${package.name}" version="${package.version}" targetFramework="Native" />
+  %   if package.redist:
+  <package id="${package.name}.redist" version="${package.version}" targetFramework="Native" />
+  %   endif
+  %  endif
+  % endfor
+</packages>
+</%def>\
+<%def name="gen_package_props(packages, repo_root)">\
+  % for package in vspackages:
+  %  if packages == 'all' or package.name in packages:
+  %   if package.props:
+  <Import Project="${repo_root}\vsprojects\packages\${package.name}.${package.version}\build\native\${package.name}.props" Condition="Exists('${repo_root}\vsprojects\packages\${package.name}.${package.version}\build\native\${package.version}.props')" />
+  %   endif
+  %  endif
+  % endfor
+</%def>\
+<%def name="gen_package_targets(packages, repo_root)">\
+  % for package in vspackages:
+  %  if packages == 'all' or package.name in packages:
+  %   if package.redist:
+  <Import Project="${repo_root}\vsprojects\packages\${package.name}.redist.${package.version}\build\native\${package.name}.redist.targets" Condition="Exists('${repo_root}\vsprojects\packages\${package.name}.redist.${package.version}\build\native\grpc.dependencies\${package.name}.targets')" />
+  %   endif
+  <Import Project="${repo_root}\vsprojects\packages\${package.name}.${package.version}\build\native\${package.name}.targets" Condition="Exists('${repo_root}\vsprojects\packages\${package.name}.${package.version}\build\native\grpc.dependencies\${package.name}.targets')" />
+  %  endif
+  % endfor
+</%def>\
+<%def name="check_file_inner(file)"><Error Condition="!Exists('${file}')" Text="$([System.String]::Format('$(ErrorText)', '${file}')" /></%def>\
+<%def name="check_file(file, repo_root, package)">${check_file_inner(file % {'root':repo_root, 'name':package.name, 'version':package.version})}</%def>\
+<%def name="gen_package_ensure(packages, repo_root)">\
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    % for package in vspackages:
+    %  if packages == 'all' or package.name in packages:
+    %   if package.redist:
+    ${check_file('%(root)s\\vsprojects\\packages\\%(name)s.redist.%(version)s\\build\\native\\%(name)s.redist.targets', repo_root, package)}
+    %   endif
+    %   if package.props:
+    ${check_file('%(root)s\\vsprojects\\packages\\%(name)s.%(version)s\\build\\native\\%(name)s.props', repo_root, package)}
+    %   endif
+    ${check_file('%(root)s\\vsprojects\\packages\\%(name)s.%(version)s\\build\\native\\%(name)s.targets', repo_root, package)}
+    %  endif
+    % endfor
+  </Target>
+</%def>\

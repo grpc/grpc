@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\client_channel\resolvers\sockaddr_resolver_test.c">
+      <Filter>test\core\client_channel\resolvers</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{94ca5ded-0ab6-f1eb-c873-37df77826ae8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{efc6f7cf-eb13-376c-85bb-64fae70baf03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\client_channel">
+      <UniqueIdentifier>{a3fef8b1-3b99-63c9-5f35-feff99af1381}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\client_channel\resolvers">
+      <UniqueIdentifier>{d32b4315-4e08-e492-5e10-4dc0c5c8cd55}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

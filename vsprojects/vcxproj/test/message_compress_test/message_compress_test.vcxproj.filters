@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\compression\message_compress_test.c">
+      <Filter>test\core\compression</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{80514ec2-1521-1e52-80eb-aa537fa0c30f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{619fbd0a-16e2-c875-c4cd-1e7e1dd3266e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\compression">
+      <UniqueIdentifier>{a7b5cbf3-2666-c973-69c4-9a2e037cd83a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

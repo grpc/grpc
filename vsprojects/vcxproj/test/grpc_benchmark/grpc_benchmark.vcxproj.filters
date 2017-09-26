@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\microbenchmarks\helpers.cc">
+      <Filter>test\cpp\microbenchmarks</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\microbenchmarks\fullstack_context_mutators.h">
+      <Filter>test\cpp\microbenchmarks</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\microbenchmarks\fullstack_fixtures.h">
+      <Filter>test\cpp\microbenchmarks</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\microbenchmarks\helpers.h">
+      <Filter>test\cpp\microbenchmarks</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{46d1162d-13b8-d144-8b76-77a6d982a9f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{1d2b47d7-8fc3-a5b6-cc85-47e31600e9d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\microbenchmarks">
+      <UniqueIdentifier>{2a1ac913-6c7b-fbd2-6e8f-1215e92b4af8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

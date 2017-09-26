@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\worker.cc">
+      <Filter>test\cpp\qps</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\client.h">
+      <Filter>test\cpp\qps</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\server.h">
+      <Filter>test\cpp\qps</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{bc4b8555-fcc7-4f70-96d9-581f535382e1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{79b85b26-c29a-b8a0-06a4-d4e44f2350aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\qps">
+      <UniqueIdentifier>{1c2b326f-ab54-97da-d40e-b0e99dd76de6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

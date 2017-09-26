@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\surface\public_headers_must_be_c89.c">
+      <Filter>test\core\surface</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{87bb3378-6dc2-7e41-947f-dbeba834e3f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{a1fc85a8-33ea-5dc6-1b6c-4dc6356d779c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\surface">
+      <UniqueIdentifier>{0ba52425-ab5b-445b-fd01-f11aa5d9e28c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

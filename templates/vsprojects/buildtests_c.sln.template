@@ -1,0 +1,13 @@
+%YAML 1.2
+--- |
+  <%namespace file="sln_defs.include" import="gen_solution"/>\
+  <%
+  solution_projects = [
+    p for p in vsprojects
+    if p.build in ['test', 'tool']
+    and p.language == 'c'
+    and not p.boringssl
+    and not p.zlib
+  ]
+  %>\
+  ${gen_solution(solution_projects, use_dlls='yes')}
