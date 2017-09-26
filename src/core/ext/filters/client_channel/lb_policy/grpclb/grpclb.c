@@ -1672,22 +1672,19 @@ static void lb_call_on_retry_timer_locked(grpc_exec_ctx *exec_ctx, void *arg,
 static void lb_on_fallback_timer_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                         grpc_error *error) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)arg;
-  /* If we receive a serverlist after the timer fires but before this callback
-   * actually runs, don't do anything. */
-  if (glb_policy->serverlist != NULL) {
-    GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
-                              "grpclb_fallback_timer");
-    return;
-  }
   glb_policy->fallback_timer_active = false;
-  if (!glb_policy->shutting_down && error == GRPC_ERROR_NONE) {
-    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
-      gpr_log(GPR_INFO,
-              "Falling back to use backends from resolver (grpclb %p)",
-              (void *)glb_policy);
+  /* If we receive a serverlist after the timer fires but before this callback
+   * actually runs, don't fall back. */
+  if (glb_policy->serverlist == NULL) {
+    if (!glb_policy->shutting_down && error == GRPC_ERROR_NONE) {
+      if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+        gpr_log(GPR_INFO,
+                "Falling back to use backends from resolver (grpclb %p)",
+                (void *)glb_policy);
+      }
+      GPR_ASSERT(glb_policy->fallback_backend_addresses != NULL);
+      rr_handover_locked(exec_ctx, glb_policy);
     }
-    GPR_ASSERT(glb_policy->fallback_backend_addresses != NULL);
-    rr_handover_locked(exec_ctx, glb_policy);
   }
   GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
                             "grpclb_fallback_timer");
@@ -1746,14 +1743,7 @@ static void lb_on_server_status_received_locked(grpc_exec_ctx *exec_ctx,
 
 static void fallback_update_locked(grpc_exec_ctx *exec_ctx,
                                    glb_lb_policy *glb_policy,
-                                   const grpc_lb_policy_args *args) {
-  const grpc_arg *arg =
-      grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
-  if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
-    return;
-  }
-  const grpc_lb_addresses *addresses =
-      (const grpc_lb_addresses *)arg->value.pointer.p;
+                                   const grpc_lb_addresses *addresses) {
   GPR_ASSERT(glb_policy->fallback_backend_addresses != NULL);
   grpc_lb_addresses_destroy(exec_ctx, glb_policy->fallback_backend_addresses);
   glb_policy->fallback_backend_addresses =
@@ -1767,34 +1757,6 @@ static void fallback_update_locked(grpc_exec_ctx *exec_ctx,
 static void glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                               const grpc_lb_policy_args *args) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)policy;
-  // Propagate update to fallback_backend_addresses if a non-empty serverlist
-  // hasn't been received from the balancer.
-  if (glb_policy->serverlist == NULL) {
-    fallback_update_locked(exec_ctx, glb_policy, args);
-  }
-
-  if (glb_policy->updating_lb_channel && glb_policy->serverlist != NULL) {
-    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
-      gpr_log(GPR_INFO,
-              "Update already in progress for grpclb %p. Deferring update.",
-              (void *)glb_policy);
-    }
-    if (glb_policy->pending_update_args != NULL) {
-      grpc_channel_args_destroy(exec_ctx,
-                                glb_policy->pending_update_args->args);
-      gpr_free(glb_policy->pending_update_args);
-    }
-    glb_policy->pending_update_args = (grpc_lb_policy_args *)gpr_zalloc(
-        sizeof(*glb_policy->pending_update_args));
-    glb_policy->pending_update_args->client_channel_factory =
-        args->client_channel_factory;
-    glb_policy->pending_update_args->args = grpc_channel_args_copy(args->args);
-    glb_policy->pending_update_args->combiner = args->combiner;
-    return;
-  }
-
-  glb_policy->updating_lb_channel = true;
-  // Propagate update to lb_channel (pick first).
   const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
@@ -1816,10 +1778,40 @@ static void glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
   }
   const grpc_lb_addresses *addresses =
       (const grpc_lb_addresses *)arg->value.pointer.p;
+
+  if (glb_policy->serverlist == NULL) {
+    // If a non-empty serverlist hasn't been received from the balancer,
+    // propagate
+    // the update to fallback_backend_addresses.
+    fallback_update_locked(exec_ctx, glb_policy, addresses);
+  } else if (glb_policy->updating_lb_channel) {
+    // If we have recieved serverlist from the balancer, we need to defer update
+    // when there is an in-progress one.
+    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+      gpr_log(GPR_INFO,
+              "Update already in progress for grpclb %p. Deferring update.",
+              (void *)glb_policy);
+    }
+    if (glb_policy->pending_update_args != NULL) {
+      grpc_channel_args_destroy(exec_ctx,
+                                glb_policy->pending_update_args->args);
+      gpr_free(glb_policy->pending_update_args);
+    }
+    glb_policy->pending_update_args = (grpc_lb_policy_args *)gpr_zalloc(
+        sizeof(*glb_policy->pending_update_args));
+    glb_policy->pending_update_args->client_channel_factory =
+        args->client_channel_factory;
+    glb_policy->pending_update_args->args = grpc_channel_args_copy(args->args);
+    glb_policy->pending_update_args->combiner = args->combiner;
+    return;
+  }
+
+  glb_policy->updating_lb_channel = true;
   GPR_ASSERT(glb_policy->lb_channel != NULL);
   grpc_channel_args *lb_channel_args = build_lb_channel_args(
       exec_ctx, addresses, glb_policy->response_generator, args->args);
-  /* Propagate updates to the LB channel through the fake resolver */
+  /* Propagate updates to the LB channel (pick first) through the fake resolver
+   */
   grpc_fake_resolver_response_generator_set_response(
       exec_ctx, glb_policy->response_generator, lb_channel_args);
   grpc_channel_args_destroy(exec_ctx, lb_channel_args);
