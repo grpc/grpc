@@ -1169,6 +1169,58 @@ static void glb_notify_on_state_change_locked(grpc_exec_ctx *exec_ctx,
       exec_ctx, &glb_policy->state_tracker, current, notify);
 }
 
+static void lb_call_on_retry_timer_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                          grpc_error *error) {
+  glb_lb_policy *glb_policy = (glb_lb_policy *)arg;
+  glb_policy->retry_timer_active = false;
+  if (!glb_policy->shutting_down && error == GRPC_ERROR_NONE) {
+    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+      gpr_log(GPR_INFO, "Restaring call to LB server (grpclb %p)",
+              (void *)glb_policy);
+    }
+    GPR_ASSERT(glb_policy->lb_call == NULL);
+    query_for_backends_locked(exec_ctx, glb_policy);
+  }
+  GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base, "grpclb_retry_timer");
+}
+
+static void maybe_restart_lb_call(grpc_exec_ctx *exec_ctx,
+                                  glb_lb_policy *glb_policy) {
+  if (glb_policy->started_picking && glb_policy->updating_lb_call) {
+    if (glb_policy->retry_timer_active) {
+      grpc_timer_cancel(exec_ctx, &glb_policy->lb_call_retry_timer);
+    }
+    if (!glb_policy->shutting_down) start_picking_locked(exec_ctx, glb_policy);
+    glb_policy->updating_lb_call = false;
+  } else if (!glb_policy->shutting_down) {
+    /* if we aren't shutting down, restart the LB client call after some time */
+    gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+    gpr_timespec next_try =
+        gpr_backoff_step(&glb_policy->lb_call_backoff_state, now);
+    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
+      gpr_log(GPR_DEBUG, "Connection to LB server lost (grpclb: %p)...",
+              (void *)glb_policy);
+      gpr_timespec timeout = gpr_time_sub(next_try, now);
+      if (gpr_time_cmp(timeout, gpr_time_0(timeout.clock_type)) > 0) {
+        gpr_log(GPR_DEBUG,
+                "... retry_timer_active in %" PRId64 ".%09d seconds.",
+                timeout.tv_sec, timeout.tv_nsec);
+      } else {
+        gpr_log(GPR_DEBUG, "... retry_timer_active immediately.");
+      }
+    }
+    GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "grpclb_retry_timer");
+    GRPC_CLOSURE_INIT(&glb_policy->lb_on_call_retry,
+                      lb_call_on_retry_timer_locked, glb_policy,
+                      grpc_combiner_scheduler(glb_policy->base.combiner));
+    glb_policy->retry_timer_active = true;
+    grpc_timer_init(exec_ctx, &glb_policy->lb_call_retry_timer, next_try,
+                    &glb_policy->lb_on_call_retry, now);
+  }
+  GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
+                            "lb_on_server_status_received_locked");
+}
+
 static void send_client_load_report_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                            grpc_error *error);
 
@@ -1218,6 +1270,9 @@ static void send_client_load_report_locked(grpc_exec_ctx *exec_ctx, void *arg,
     glb_policy->client_load_report_timer_pending = false;
     GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
                               "client_load_report");
+    if (glb_policy->lb_call == NULL) {
+      maybe_restart_lb_call(exec_ctx, glb_policy);
+    }
     return;
   }
   // Construct message payload.
@@ -1252,7 +1307,10 @@ static void send_client_load_report_locked(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_call_error call_error = grpc_call_start_batch_and_execute(
       exec_ctx, glb_policy->lb_call, &op, 1,
       &glb_policy->client_load_report_closure);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
+  if (call_error != GRPC_CALL_OK) {
+    gpr_log(GPR_ERROR, "call_error=%d", call_error);
+    GPR_ASSERT(GRPC_CALL_OK == call_error);
+  }
 }
 
 static void lb_on_server_status_received_locked(grpc_exec_ctx *exec_ctx,
@@ -1534,21 +1592,6 @@ static void lb_on_response_received_locked(grpc_exec_ctx *exec_ctx, void *arg,
   }
 }
 
-static void lb_call_on_retry_timer_locked(grpc_exec_ctx *exec_ctx, void *arg,
-                                          grpc_error *error) {
-  glb_lb_policy *glb_policy = (glb_lb_policy *)arg;
-  glb_policy->retry_timer_active = false;
-  if (!glb_policy->shutting_down && error == GRPC_ERROR_NONE) {
-    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
-      gpr_log(GPR_INFO, "Restaring call to LB server (grpclb %p)",
-              (void *)glb_policy);
-    }
-    GPR_ASSERT(glb_policy->lb_call == NULL);
-    query_for_backends_locked(exec_ctx, glb_policy);
-  }
-  GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base, "grpclb_retry_timer");
-}
-
 static void lb_on_server_status_received_locked(grpc_exec_ctx *exec_ctx,
                                                 void *arg, grpc_error *error) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)arg;
@@ -1565,39 +1608,12 @@ static void lb_on_server_status_received_locked(grpc_exec_ctx *exec_ctx,
   }
   /* We need to perform cleanups no matter what. */
   lb_call_destroy_locked(exec_ctx, glb_policy);
-  if (glb_policy->started_picking && glb_policy->updating_lb_call) {
-    if (glb_policy->retry_timer_active) {
-      grpc_timer_cancel(exec_ctx, &glb_policy->lb_call_retry_timer);
-    }
-    if (!glb_policy->shutting_down) start_picking_locked(exec_ctx, glb_policy);
-    glb_policy->updating_lb_call = false;
-  } else if (!glb_policy->shutting_down) {
-    /* if we aren't shutting down, restart the LB client call after some time */
-    gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-    gpr_timespec next_try =
-        gpr_backoff_step(&glb_policy->lb_call_backoff_state, now);
-    if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
-      gpr_log(GPR_DEBUG, "Connection to LB server lost (grpclb: %p)...",
-              (void *)glb_policy);
-      gpr_timespec timeout = gpr_time_sub(next_try, now);
-      if (gpr_time_cmp(timeout, gpr_time_0(timeout.clock_type)) > 0) {
-        gpr_log(GPR_DEBUG,
-                "... retry_timer_active in %" PRId64 ".%09d seconds.",
-                timeout.tv_sec, timeout.tv_nsec);
-      } else {
-        gpr_log(GPR_DEBUG, "... retry_timer_active immediately.");
-      }
-    }
-    GRPC_LB_POLICY_WEAK_REF(&glb_policy->base, "grpclb_retry_timer");
-    GRPC_CLOSURE_INIT(&glb_policy->lb_on_call_retry,
-                      lb_call_on_retry_timer_locked, glb_policy,
-                      grpc_combiner_scheduler(glb_policy->base.combiner));
-    glb_policy->retry_timer_active = true;
-    grpc_timer_init(exec_ctx, &glb_policy->lb_call_retry_timer, next_try,
-                    &glb_policy->lb_on_call_retry, now);
+  // If the load report timer is still pending, we wait for it to be
+  // called before restarting the call.  Otherwise, we restart the call
+  // here.
+  if (!glb_policy->client_load_report_timer_pending) {
+    maybe_restart_lb_call(exec_ctx, glb_policy);
   }
-  GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &glb_policy->base,
-                            "lb_on_server_status_received_locked");
 }
 
 static void glb_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
