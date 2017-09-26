@@ -1756,7 +1756,7 @@ const grpc_event_engine_vtable *grpc_init_epollsig_linux(
 
 #else /* defined(GRPC_LINUX_EPOLL) */
 #if defined(GRPC_POSIX_SOCKET)
-#include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/ev_epollsig_linux.h"
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
 const grpc_event_engine_vtable *grpc_init_epollsig_linux(
