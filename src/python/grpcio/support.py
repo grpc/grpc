@@ -107,8 +107,9 @@ def diagnose_attribute_error(build_ext, error):
 
 _ERROR_DIAGNOSES = {
     errors.CompileError: diagnose_compile_error,
-    AttributeError: diagnose_attribute_error
+    AttributeError: diagnose_attribute_error,
 }
+
 
 def diagnose_build_ext_error(build_ext, error, formatted):
     diagnostic = _ERROR_DIAGNOSES.get(type(error))
