@@ -1148,9 +1148,11 @@ add_library(grpc
   src/core/ext/transport/chttp2/server/chttp2_server.c
   src/core/ext/transport/chttp2/client/secure/secure_channel_create.c
   src/core/ext/filters/client_channel/channel_connectivity.c
+  src/core/ext/filters/client_channel/channel_connectivity_internal.c
   src/core/ext/filters/client_channel/client_channel.c
   src/core/ext/filters/client_channel/client_channel_factory.c
   src/core/ext/filters/client_channel/client_channel_plugin.c
+  src/core/ext/filters/client_channel/connectivity_watcher.c
   src/core/ext/filters/client_channel/connector.c
   src/core/ext/filters/client_channel/http_connect_handshaker.c
   src/core/ext/filters/client_channel/http_proxy.c
@@ -1470,9 +1472,11 @@ add_library(grpc_cronet
   src/core/ext/filters/http/message_compress/message_compress_filter.c
   src/core/ext/filters/http/server/http_server_filter.c
   src/core/ext/filters/client_channel/channel_connectivity.c
+  src/core/ext/filters/client_channel/channel_connectivity_internal.c
   src/core/ext/filters/client_channel/client_channel.c
   src/core/ext/filters/client_channel/client_channel_factory.c
   src/core/ext/filters/client_channel/client_channel_plugin.c
+  src/core/ext/filters/client_channel/connectivity_watcher.c
   src/core/ext/filters/client_channel/connector.c
   src/core/ext/filters/client_channel/http_connect_handshaker.c
   src/core/ext/filters/client_channel/http_proxy.c
@@ -1758,9 +1762,11 @@ add_library(grpc_test_util
   src/core/lib/transport/transport_op_string.c
   src/core/lib/debug/trace.c
   src/core/ext/filters/client_channel/channel_connectivity.c
+  src/core/ext/filters/client_channel/channel_connectivity_internal.c
   src/core/ext/filters/client_channel/client_channel.c
   src/core/ext/filters/client_channel/client_channel_factory.c
   src/core/ext/filters/client_channel/client_channel_plugin.c
+  src/core/ext/filters/client_channel/connectivity_watcher.c
   src/core/ext/filters/client_channel/connector.c
   src/core/ext/filters/client_channel/http_connect_handshaker.c
   src/core/ext/filters/client_channel/http_proxy.c
@@ -2021,9 +2027,11 @@ add_library(grpc_test_util_unsecure
   src/core/lib/transport/transport_op_string.c
   src/core/lib/debug/trace.c
   src/core/ext/filters/client_channel/channel_connectivity.c
+  src/core/ext/filters/client_channel/channel_connectivity_internal.c
   src/core/ext/filters/client_channel/client_channel.c
   src/core/ext/filters/client_channel/client_channel_factory.c
   src/core/ext/filters/client_channel/client_channel_plugin.c
+  src/core/ext/filters/client_channel/connectivity_watcher.c
   src/core/ext/filters/client_channel/connector.c
   src/core/ext/filters/client_channel/http_connect_handshaker.c
   src/core/ext/filters/client_channel/http_proxy.c
@@ -2303,9 +2311,11 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
   src/core/ext/transport/chttp2/client/chttp2_connector.c
   src/core/ext/filters/client_channel/channel_connectivity.c
+  src/core/ext/filters/client_channel/channel_connectivity_internal.c
   src/core/ext/filters/client_channel/client_channel.c
   src/core/ext/filters/client_channel/client_channel_factory.c
   src/core/ext/filters/client_channel/client_channel_plugin.c
+  src/core/ext/filters/client_channel/connectivity_watcher.c
   src/core/ext/filters/client_channel/connector.c
   src/core/ext/filters/client_channel/http_connect_handshaker.c
   src/core/ext/filters/client_channel/http_proxy.c
@@ -3032,9 +3042,11 @@ add_library(grpc++_cronet
   src/core/ext/filters/http/message_compress/message_compress_filter.c
   src/core/ext/filters/http/server/http_server_filter.c
   src/core/ext/filters/client_channel/channel_connectivity.c
+  src/core/ext/filters/client_channel/channel_connectivity_internal.c
   src/core/ext/filters/client_channel/client_channel.c
   src/core/ext/filters/client_channel/client_channel_factory.c
   src/core/ext/filters/client_channel/client_channel_plugin.c
+  src/core/ext/filters/client_channel/connectivity_watcher.c
   src/core/ext/filters/client_channel/connector.c
   src/core/ext/filters/client_channel/http_connect_handshaker.c
   src/core/ext/filters/client_channel/http_proxy.c
