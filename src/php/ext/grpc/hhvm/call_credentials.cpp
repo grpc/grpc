@@ -266,6 +266,9 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
 
     *error_details = nullptr;
     *status = GRPC_STATUS_OK;
+
+    MetadataArray metadata{ true };
+
     if (retVal.isNull() || !retVal.isArray())
     {
         *status = GRPC_STATUS_UNKNOWN;
@@ -273,7 +276,6 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
     }
     else
     {
-        MetadataArray metadata{ true };
         if (!metadata.init(retVal.toArray()))
         {
             *status = GRPC_STATUS_INVALID_ARGUMENT;
@@ -281,11 +283,7 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
         }
         else
         {
-            if (async == true)
-            {
-                cb(user_data, metadata.data(), metadata.size(), code, nullptr);
-            }
-            else
+            if (async == false)
             {
                 // Return data to core.
                 *num_creds_md = metadata.size();
@@ -304,6 +302,11 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
                 }
             }
         }
+    }
+
+    if (async == true)
+    {
+        cb(user_data, metadata.data(), metadata.size(), *status, *error_details);
     }
 
     return ((*status) == GRPC_STATUS_OK);
@@ -340,7 +343,7 @@ int plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
             bool result{ plugin_do_get_metadata(ptr, contextServiceUrl, contextMethodName,
                                                 cb, user_data,
                                                 creds_md, num_creds_md,
-                                                status, error_detail,
+                                                status, error_details,
                                                 false) };
 
             plugin_get_metadata_params params{ ptr, std::move(contextServiceUrl),
@@ -366,7 +369,7 @@ int plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
             // return the meta data params in the promise
             metaDataPromise.set_value(std::move(params));
 
-            return 0;
+            return 0; // asynchronous operation
         }
     }
     else
