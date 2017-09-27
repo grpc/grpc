@@ -100,7 +100,7 @@ EXTRA_ENV_COMPILE_ARGS = os.environ.get('GRPC_PYTHON_CFLAGS', None)
 EXTRA_ENV_LINK_ARGS = os.environ.get('GRPC_PYTHON_LDFLAGS', None)
 if EXTRA_ENV_COMPILE_ARGS is None:
   EXTRA_ENV_COMPILE_ARGS = ''
-  if 'win32' in sys.platform: #and sys.version_info < (3, 5):
+  if 'win32' in sys.platform and sys.version_info < (3, 5):
     EXTRA_ENV_COMPILE_ARGS += ' -std=c++11'
     # We use define flags here and don't directly add to DEFINE_MACROS below to
     # ensure that the expert user/builder has a way of turning it off (via the

@@ -27,7 +27,7 @@
 
 const char *grpc_inet_ntop(int af, const void *src, char *dst, size_t size) {
   /* Windows InetNtopA wants a mutable ip pointer */
-  return InetNtopA(af, (void *)src, dst, size);
+  return InetNtop(af, (void *)src, dst, size);
 }
 
 #endif /* GRPC_WINDOWS_SOCKETUTILS */
