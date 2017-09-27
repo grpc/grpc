@@ -681,7 +681,7 @@ Object HHVM_METHOD(Call, startBatch,
                                                      metaDataParams.user_data,
                                                      metaDataParams.creds_md, metaDataParams.num_creds_md,
                                                      metaDataParams.status, metaDataParams.error_details,
-                                                     metaDataParams.completed) };
+                                                     true) };
 
                 // Send result back
                 metaDataParams.returnPromise().set_value(result);
