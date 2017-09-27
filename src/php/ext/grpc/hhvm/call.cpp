@@ -642,16 +642,21 @@ Object HHVM_METHOD(Call, startBatch,
         failCode = GRPC_STATUS_UNKNOWN;
     }
 
-    std::future<grpc_event> pluck_async;
-
     if (!callFailed)
     {
         // wait for call batch to complete
-        pluck_async = std::async(grpc_completion_queue_pluck,
+        grpc_event event ( grpc_completion_queue_pluck(
                                 pCallData->queue()->queue(), pTag,
                                 gpr_inf_future(GPR_CLOCK_REALTIME),
                                 /*gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN),*/
-                                nullptr);
+                                nullptr) );
+
+        if ((event.type != GRPC_OP_COMPLETE) || (event.tag != &opsManaged) || (event.success == 0))
+        {
+            // failed so clean up and return empty object
+            callFailure(event.type ==  GRPC_QUEUE_TIMEOUT);
+            failCode = (event.type == GRPC_QUEUE_TIMEOUT) ? GRPC_STATUS_DEADLINE_EXCEEDED : GRPC_STATUS_UNKNOWN;
+        }
     }
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
@@ -693,15 +698,6 @@ Object HHVM_METHOD(Call, startBatch,
                 if (!metaDataParams.result) callFailure();
             }
         }
-    }
-
-    grpc_event event ( pluck_async.get() );
-
-    if ((event.type != GRPC_OP_COMPLETE) || (event.tag != &opsManaged) || (event.success == 0))
-    {
-        // failed so clean up and return empty object
-        callFailure(event.type ==  GRPC_QUEUE_TIMEOUT);
-        failCode = (event.type == GRPC_QUEUE_TIMEOUT) ? GRPC_STATUS_DEADLINE_EXCEEDED : GRPC_STATUS_UNKNOWN;
     }
 
     // process results of call

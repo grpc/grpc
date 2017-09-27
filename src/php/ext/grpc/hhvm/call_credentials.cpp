@@ -251,7 +251,7 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
                             grpc_credentials_plugin_metadata_cb cb, void* const user_data,
                             grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
                             size_t* const num_creds_md, grpc_status_code* const status,
-                            const char** error_details, bool async)
+                            const char** error_details, const bool async)
 {
     HHVM_TRACE_SCOPE("CallCredentials plugin_do_get_metadata") // Debug Trace
 
@@ -266,26 +266,42 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
 
     *error_details = nullptr;
     *status = GRPC_STATUS_OK;
-
-    MetadataArray metadata{ true };
-
     if (retVal.isNull() || !retVal.isArray())
     {
         *status = GRPC_STATUS_UNKNOWN;
-        *num_creds_md = 0;
-    }
-    else
-    {
-        if (!metadata.init(retVal.toArray()))
+        if (async)
         {
-            *status = GRPC_STATUS_INVALID_ARGUMENT;
-            *num_creds_md = 0;
+            cb(user_data, nullptr, 0, *status, nullptr);
         }
         else
         {
-            if (async == false)
+            *num_creds_md = 0;
+        }
+    }
+    else
+    {
+        MetadataArray metadata{ true };
+        if (!metadata.init(retVal.toArray()))
+        {
+            *status = GRPC_STATUS_INVALID_ARGUMENT;
+            if (async)
             {
-                // Return data to core.
+                cb(user_data, nullptr, 0, *status, nullptr);
+            }
+            else
+            {
+                *num_creds_md = 0;
+            }
+        }
+        else
+        {
+            // Return data to core.
+            if (async)
+            {
+                cb(user_data, metadata.data(), metadata.size(), *status, nullptr);
+            }
+            else
+            {
                 *num_creds_md = metadata.size();
                 for (size_t i{ 0 }; i < *num_creds_md; ++i)
                 {
@@ -302,11 +318,6 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
                 }
             }
         }
-    }
-
-    if (async == true)
-    {
-        cb(user_data, metadata.data(), metadata.size(), *status, *error_details);
     }
 
     return ((*status) == GRPC_STATUS_OK);
@@ -343,8 +354,7 @@ int plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
             bool result{ plugin_do_get_metadata(ptr, contextServiceUrl, contextMethodName,
                                                 cb, user_data,
                                                 creds_md, num_creds_md,
-                                                status, error_details,
-                                                false) };
+                                                status, error_details, false) };
 
             plugin_get_metadata_params params{ ptr, std::move(contextServiceUrl),
                                                std::move(contextMethodName),
@@ -354,6 +364,8 @@ int plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
                                                true, result };
 
             metaDataPromise.set_value(std::move(params));
+
+            return 1; // synchronous
         }
         else
         {
@@ -369,7 +381,7 @@ int plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
             // return the meta data params in the promise
             metaDataPromise.set_value(std::move(params));
 
-            return 0; // asynchronous operation
+            return 0; // asynchronous
         }
     }
     else
@@ -379,9 +391,9 @@ int plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
         *error_details = nullptr;
         *status = GRPC_STATUS_DEADLINE_EXCEEDED;
         *num_creds_md = 0;
-    }
 
-    return 1; // synchronous operation
+        return 1; // synchronous operation
+    }
 }
 
 void plugin_destroy_state(void *ptr)
