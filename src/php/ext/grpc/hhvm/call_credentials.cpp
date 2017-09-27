@@ -251,28 +251,34 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
 {
     HHVM_TRACE_SCOPE("CallCredentials plugin_do_get_metadata") // Degug Trace
 
-    Object returnObj{ SystemLib::AllocStdClassObject() };
-    returnObj.o_set("service_url", String(serviceURL.c_str(), CopyString));
-    returnObj.o_set("method_name", String(methodName.c_str(), CopyString));
-
     plugin_state* const pState{ reinterpret_cast<plugin_state *>(ptr) };
 
-    Variant retVal{ vm_call_user_func(pState->callback, make_packed_array(returnObj)) };
-    if (!retVal.isArray())
-    {
-        //SystemLib::throwInvalidArgumentExceptionObject("Callback return value expected an array.");
-        return false;
-    }
+    Object returnObj{ SystemLib::AllocStdClassObject() };
+    returnObj.o_set("service_url", String(serviceURL, CopyString));
+    returnObj.o_set("method_name", String(methodName, CopyString));
+    Variant params{ make_packed_array(returnObj) };
 
     grpc_status_code code{ GRPC_STATUS_OK };
-    MetadataArray metadata{ true };
-    if (!metadata.init(retVal.toArray()))
+    Variant retVal{ vm_call_user_func(pState->callback, params) };
+    if (retVal.isNull() || !retVal.isArray())
     {
-        code = GRPC_STATUS_INVALID_ARGUMENT;
+        code = GRPC_STATUS_UNKNOWN;
+        cb(user_data, nullptr, 0, code, nullptr);
     }
-
-    // Pass control back to core
-    cb(user_data, metadata.data(), metadata.size(), code, nullptr);
+    else
+    {
+        MetadataArray metadata{ true };
+        if (!metadata.init(retVal.toArray()))
+        {
+            code = GRPC_STATUS_INVALID_ARGUMENT;
+            cb(user_data, nullptr, 0, code, nullptr);
+        }
+        else
+        {
+            // Pass control back to core
+            cb(user_data, metadata.data(), metadata.size(), code, nullptr);
+        }
+    }
 
     return (code == GRPC_STATUS_OK);
 }
