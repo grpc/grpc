@@ -339,15 +339,17 @@ void HHVM_METHOD(Call, __construct,
 
     // NOTE: This must be called before the create call so the timespan is not
     // encrouched upon
-    int32_t timeout{ gpr_time_to_millis(gpr_convert_clock_type(pDeadlineTimevalData->time(),
-                                                           GPR_TIMESPAN)) };
+    // encrouched upon
+    gpr_timespec deadlineTime{ gpr_convert_clock_type(pDeadlineTimevalData->time(),
+                                                      GPR_TIMESPAN) };
+    int32_t timeout{ gpr_time_to_millis(deadlineTime) };
 
     grpc_call* const pCall{ grpc_channel_create_call(pChannelData->channel(),
                                                      nullptr, GRPC_PROPAGATE_DEFAULTS,
                                                      pCompletionQueue->queue(),
                                                      method_slice.slice(),
                                                      !host_slice.empty() ? &host_slice.slice() : nullptr,
-                                                     pDeadlineTimevalData->time(),
+                                                     deadlineTime,/*gpr_inf_future(GPR_CLOCK_REALTIME),*//*pDeadlineTimevalData->time(),*/
                                                      nullptr) };
 
     if (!pCall)
@@ -639,19 +641,16 @@ Object HHVM_METHOD(Call, startBatch,
         failCode = GRPC_STATUS_UNKNOWN;
     }
 
+    std::future<grpc_event> pluck_async;
+
     if (!callFailed)
     {
         // wait for call batch to complete
-        grpc_event event (grpc_completion_queue_pluck(pCallData->queue()->queue(), pTag,
-                                                     gpr_inf_future(GPR_CLOCK_REALTIME),
-                                                     /*gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN)*/,
-                                                     nullptr));
-        if ((event.type != GRPC_OP_COMPLETE) || (event.tag != &opsManaged) || (event.success == 0))
-        {
-            // failed so clean up and return empty object
-            callFailure(event.type ==  GRPC_QUEUE_TIMEOUT);
-            failCode = (event.type == GRPC_QUEUE_TIMEOUT) ? GRPC_STATUS_DEADLINE_EXCEEDED : GRPC_STATUS_UNKNOWN;
-        }
+        pluck_async = std::async(grpc_completion_queue_pluck,
+                                pCallData->queue()->queue(), pTag,
+                                gpr_inf_future(GPR_CLOCK_REALTIME),
+                                /*gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN),*/
+                                nullptr);
     }
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
@@ -677,8 +676,14 @@ Object HHVM_METHOD(Call, startBatch,
             {
                 // call the plugin in this thread if it wasn't completed already
                 bool result { plugin_do_get_metadata(metaDataParams.ptr, metaDataParams.contextServiceUrl,
-                                                     metaDataParams.contextMethodName, metaDataParams.pContext,
-                                                     metaDataParams.cb, metaDataParams.user_data) };
+                                                     metaDataParams.contextMethodName, metaDataParams.cb,
+                                                     metaDataParams.user_data,
+                                                     metaDataParams.creds_md, metaDataParams.num_creds_md,
+                                                     metaDataParams.status, metaDataParams.error_details) };
+
+                // Send result back
+                metaDataParams.returnPromise().set_value(result);
+
                 if (!result) callFailure();
             }
             else
@@ -686,6 +691,15 @@ Object HHVM_METHOD(Call, startBatch,
                 if (!metaDataParams.result) callFailure();
             }
         }
+    }
+
+    grpc_event event ( pluck_async.get() );
+
+    if ((event.type != GRPC_OP_COMPLETE) || (event.tag != &opsManaged) || (event.success == 0))
+    {
+        // failed so clean up and return empty object
+        callFailure(event.type ==  GRPC_QUEUE_TIMEOUT);
+        failCode = (event.type == GRPC_QUEUE_TIMEOUT) ? GRPC_STATUS_DEADLINE_EXCEEDED : GRPC_STATUS_UNKNOWN;
     }
 
     // process results of call

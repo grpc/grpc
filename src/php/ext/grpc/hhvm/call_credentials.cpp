@@ -45,9 +45,12 @@ typedef struct plugin_state
 } plugin_state;
 
 // forward declarations
-void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
-                         grpc_credentials_plugin_metadata_cb cb,
-                         void *user_data);
+int plugin_get_metadata(
+    void *ptr, grpc_auth_metadata_context context,
+    grpc_credentials_plugin_metadata_cb cb, void *user_data,
+    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+    size_t *num_creds_md, grpc_status_code *status,
+    const char **error_details);
 void plugin_destroy_state(void *ptr);
 
 PluginMetadataInfo::~PluginMetadataInfo(void)
@@ -175,7 +178,7 @@ Object HHVM_STATIC_METHOD(CallCredentials, createComposite,
 {
     VMRegGuard _;
 
-    HHVM_TRACE_SCOPE("CallCredentials createComposite") // Degug Trace
+    HHVM_TRACE_SCOPE("CallCredentials createComposite") // Debug Trace
 
     CallCredentialsData* const pCallCredentialsData1{ Native::data<CallCredentialsData>(cred1_obj) };
     CallCredentialsData* const pCallCredentialsData2{ Native::data<CallCredentialsData>(cred2_obj) };
@@ -207,7 +210,7 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 {
     VMRegGuard _;
 
-    HHVM_TRACE_SCOPE("CallCredentials createFromPlugin") // Degug Trace
+    HHVM_TRACE_SCOPE("CallCredentials createFromPlugin") // Debug Trace
 
     if (callback.isNull() || !is_callable(callback))
     {
@@ -243,13 +246,15 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 /*****************************************************************************/
 
 // This work done in this function MUST be done on the same thread as the HHVM call request
-bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
-                            const std::string& methodName,
-                            const grpc_auth_context* pContext,
-                            grpc_credentials_plugin_metadata_cb cb,
-                            void *user_data)
+bool plugin_do_get_metadata(
+  void *ptr, const std::string& serviceURL,
+  const std::string& methodName,
+  grpc_credentials_plugin_metadata_cb cb, void *user_data,
+  grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+  size_t *num_creds_md, grpc_status_code *status,
+  const char **error_details)
 {
-    HHVM_TRACE_SCOPE("CallCredentials plugin_do_get_metadata") // Degug Trace
+    HHVM_TRACE_SCOPE("CallCredentials plugin_do_get_metadata") // Debug Trace
 
     plugin_state* const pState{ reinterpret_cast<plugin_state *>(ptr) };
 
@@ -258,36 +263,55 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
     returnObj.o_set("method_name", String(methodName, CopyString));
     Variant params{ make_packed_array(returnObj) };
 
-    grpc_status_code code{ GRPC_STATUS_OK };
     Variant retVal{ vm_call_user_func(pState->callback, params) };
+
     if (retVal.isNull() || !retVal.isArray())
     {
-        code = GRPC_STATUS_UNKNOWN;
-        cb(user_data, nullptr, 0, code, nullptr);
+        *status = GRPC_STATUS_UNKNOWN;
+        return false;
     }
     else
     {
         MetadataArray metadata{ true };
         if (!metadata.init(retVal.toArray()))
         {
-            code = GRPC_STATUS_INVALID_ARGUMENT;
-            cb(user_data, nullptr, 0, code, nullptr);
+            *status = GRPC_STATUS_INVALID_ARGUMENT;
+            return false;
         }
         else
         {
-            // Pass control back to core
-            cb(user_data, metadata.data(), metadata.size(), code, nullptr);
+            // Return data to core.
+            *num_creds_md = metadata.size();
+            for (size_t i = 0; i < *num_creds_md; ++i) {
+              creds_md[i] = metadata.data()[i];
+
+              // TODO:
+              // Right now we Increase the ref of each slice by 1 because it will be decreased by 1
+              // when this function goes out of scope and MetadataArray is destructed
+              // which then destructs (derefs) the Slice's it's holding.
+              // Really what we probably need to add some sort of copy method MetadataArray
+              // so that the slices it holds don't become invalid
+              gpr_slice_ref(creds_md[i].key);
+              gpr_slice_ref(creds_md[i].value);
+            }
         }
     }
 
-    return (code == GRPC_STATUS_OK);
+    return (*status == GRPC_STATUS_OK);
 }
 
-void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
-                         grpc_credentials_plugin_metadata_cb cb,
-                         void *user_data)
+int plugin_get_metadata(
+    void *ptr, grpc_auth_metadata_context context,
+    grpc_credentials_plugin_metadata_cb cb, void *user_data,
+    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+    size_t *num_creds_md, grpc_status_code *status,
+    const char **error_details)
 {
-    HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata") // Degug Trace
+    HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata") // Debug Trace
+
+    *num_creds_md = 0;
+    *status = GRPC_STATUS_OK;
+    *error_details = NULL;
 
     plugin_state *pState{ reinterpret_cast<plugin_state *>(ptr) };
     CallCredentialsData* const pCallCrendentials{ pState->pCallCredentials };
@@ -300,43 +324,63 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
         MetadataPromise& metaDataPromise{ pMetaDataInfo->metadataPromise() };
         const std::thread::id& callThreadId{ pMetaDataInfo->threadId() };
 
-        // copy context info since it will be invalid after existing this routine
+        // copy context info since it will be invalid after exiting this routine
         std::string contextServiceUrl{ context.service_url ? context.service_url : "" };
         std::string contextMethodName{ context.method_name ? context.method_name : "" };
 
         if (callThreadId == std::this_thread::get_id())
         {
-            HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata same thread") // Degug Trace
+            HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata same thread") // Debug Trace
+            std::cout << "CallCredentials plugin_get_metadata same thread" << std::endl;
+
             bool result{ plugin_do_get_metadata(ptr, contextServiceUrl, contextMethodName,
-                                                context.channel_auth_context, cb, user_data) };
+                                                cb, user_data,
+                                                creds_md, num_creds_md,
+                                                status, error_details) };
+
             plugin_get_metadata_params params{ ptr, std::move(contextServiceUrl),
                                                std::move(contextMethodName),
-                                               context.channel_auth_context,
-                                               cb, user_data, true, result };
+                                               cb, user_data,
+                                               creds_md, num_creds_md,
+                                               status, error_details,
+                                               true, result };
+
             metaDataPromise.set_value(std::move(params));
         }
         else
         {
-            HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata different thread") // Degug Trace
+            HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata different thread") // Debug Trace
+            std::cout << "CallCredentials plugin_get_metadata different thread" << std::endl;
+
             plugin_get_metadata_params params{ ptr, std::move(contextServiceUrl),
-                                               std::move(contextMethodName), context.channel_auth_context,
-                                               cb, user_data };
+                                               std::move(contextMethodName),
+                                               cb, user_data,
+                                               creds_md, num_creds_md,
+                                               status, error_details };
 
             // return the meta data params in the promise
             metaDataPromise.set_value(std::move(params));
+
+            // wait for the result to come back to us
+            auto metadataReturnPromiseFuture = params.returnPromise().get_future();
+            metadataReturnPromiseFuture.wait();
+
+            metadataReturnPromiseFuture.get(); // could get result but not needed atm 
         }
+
+        return true;  // Synchronous return.
     }
     else
     {
         // failed to get shared_ptr.  This can happen if the call timed out and the metadata
         // erased before this function was invoked
-        return;
+        return true;  // Synchronous return.
     }
 }
 
 void plugin_destroy_state(void *ptr)
 {
-    HHVM_TRACE_SCOPE("CallCredentials plugin_destroy_state") // Degug Trace
+    HHVM_TRACE_SCOPE("CallCredentials plugin_destroy_state") // Debug Trace
 
     plugin_state* const pState{ reinterpret_cast<plugin_state *>(ptr) };
     if (pState) gpr_free(pState);
