@@ -31,12 +31,11 @@ describe 'conversion from a status struct to a google protobuf status' do
     expect(exception.message.include?('bad type')).to be true
   end
 
-  it 'fails with some error if the header key is missing' do
+  it 'returns nil if the header key is missing' do
     status = Struct::Status.new(1, 'details', key: 'val')
     expect(status.metadata.nil?).to be false
-    expect do
-      GRPC::GoogleRpcStatusUtils.extract_google_rpc_status(status)
-    end.to raise_error(StandardError)
+    expect(GRPC::GoogleRpcStatusUtils.extract_google_rpc_status(
+             status)).to be(nil)
   end
 
   it 'fails with some error if the header key fails to deserialize' do
@@ -219,5 +218,75 @@ describe 'receving a google rpc status from a remote endpoint' do
     # as "status" on the "op view".
     expect(GRPC::GoogleRpcStatusUtils.extract_google_rpc_status(
              status_from_exception)).to eq(rpc_status)
+  end
+end
+
+# A test service that fails without explicitly setting the
+# grpc-status-details-bin trailer. Tests assumptions about value
+# of grpc-status-details-bin on the client side when the trailer wasn't
+# set explicitly.
+class NoStatusDetailsBinTestService
+  include GRPC::GenericService
+  rpc :an_rpc, EchoMsg, EchoMsg
+
+  def an_rpc(_, _)
+    fail GRPC::Unknown
+  end
+end
+
+NoStatusDetailsBinTestServiceStub = NoStatusDetailsBinTestService.rpc_stub_class
+
+describe 'when the endpoint doesnt send grpc-status-details-bin' do
+  def start_server
+    @srv = GRPC::RpcServer.new(pool_size: 1)
+    @server_port = @srv.add_http2_port('localhost:0',
+                                       :this_port_is_insecure)
+    @srv.handle(NoStatusDetailsBinTestService)
+    @server_thd = Thread.new { @srv.run }
+    @srv.wait_till_running
+  end
+
+  def stop_server
+    expect(@srv.stopped?).to be(false)
+    @srv.stop
+    @server_thd.join
+    expect(@srv.stopped?).to be(true)
+  end
+
+  before(:each) do
+    start_server
+  end
+
+  after(:each) do
+    stop_server
+  end
+
+  it 'should receive nil when we extract try to extract a google '\
+    'rpc status from a BadStatus exception that didnt have it' do
+    stub = NoStatusDetailsBinTestServiceStub.new("localhost:#{@server_port}",
+                                                 :this_channel_is_insecure)
+    begin
+      stub.an_rpc(EchoMsg.new)
+    rescue GRPC::Unknown => e
+      rpc_status = GRPC::GoogleRpcStatusUtils.extract_google_rpc_status(
+        e.to_status)
+    end
+    expect(rpc_status).to be(nil)
+  end
+
+  it 'should receive nil when we extract try to extract a google '\
+    'rpc status from an op views status object that didnt have it' do
+    stub = NoStatusDetailsBinTestServiceStub.new("localhost:#{@server_port}",
+                                                 :this_channel_is_insecure)
+    op = stub.an_rpc(EchoMsg.new, return_op: true)
+    begin
+      op.execute
+    rescue GRPC::Unknown => e
+      status_from_exception = e.to_status
+    end
+    expect(GRPC::GoogleRpcStatusUtils.extract_google_rpc_status(
+             status_from_exception)).to be(nil)
+    expect(GRPC::GoogleRpcStatusUtils.extract_google_rpc_status(
+             op.status)).to be nil
   end
 end
