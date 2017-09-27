@@ -876,6 +876,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/client_channel.cc",
         "src/core/ext/filters/client_channel/client_channel_factory.cc",
         "src/core/ext/filters/client_channel/client_channel_plugin.cc",
+        "src/core/ext/filters/client_channel/connectivity_watcher.cc",
         "src/core/ext/filters/client_channel/connector.cc",
         "src/core/ext/filters/client_channel/http_connect_handshaker.cc",
         "src/core/ext/filters/client_channel/http_proxy.cc",
@@ -894,8 +895,10 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/uri_parser.cc",
     ],
     hdrs = [
+        "src/core/ext/filters/client_channel/channel_connectivity_internal.h",
         "src/core/ext/filters/client_channel/client_channel.h",
         "src/core/ext/filters/client_channel/client_channel_factory.h",
+        "src/core/ext/filters/client_channel/connectivity_watcher.h",
         "src/core/ext/filters/client_channel/connector.h",
         "src/core/ext/filters/client_channel/http_connect_handshaker.h",
         "src/core/ext/filters/client_channel/http_proxy.h",
