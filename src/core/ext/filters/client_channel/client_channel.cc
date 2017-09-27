@@ -31,6 +31,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/ext/filters/client_channel/connectivity_watcher.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
@@ -753,6 +754,8 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   }
   chand->deadline_checking_enabled =
       grpc_deadline_checking_enabled(args->channel_args);
+  grpc_client_channel_start_watching_connectivity(exec_ctx, elem,
+                                                  chand->owning_stack);
   return GRPC_ERROR_NONE;
 }
 
