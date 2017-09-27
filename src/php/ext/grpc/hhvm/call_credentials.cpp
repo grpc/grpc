@@ -246,13 +246,12 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 /*****************************************************************************/
 
 // This work done in this function MUST be done on the same thread as the HHVM call request
-bool plugin_do_get_metadata(
-  void *ptr, const std::string& serviceURL,
-  const std::string& methodName,
-  grpc_credentials_plugin_metadata_cb cb, void *user_data,
-  grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
-  size_t *num_creds_md, grpc_status_code *status,
-  const char **error_details)
+bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
+                            const std::string& methodName,
+                            grpc_credentials_plugin_metadata_cb cb, void* const user_data,
+                            grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+                            size_t* const num_creds_md, grpc_status_code* const status,
+                            const char** error_details)
 {
     HHVM_TRACE_SCOPE("CallCredentials plugin_do_get_metadata") // Debug Trace
 
@@ -265,10 +264,12 @@ bool plugin_do_get_metadata(
 
     Variant retVal{ vm_call_user_func(pState->callback, params) };
 
+    *error_details = nullptr;
+    *status = GRPC_STATUS_OK;
     if (retVal.isNull() || !retVal.isArray())
     {
         *status = GRPC_STATUS_UNKNOWN;
-        return false;
+        *num_creds_md = 0;
     }
     else
     {
@@ -276,42 +277,38 @@ bool plugin_do_get_metadata(
         if (!metadata.init(retVal.toArray()))
         {
             *status = GRPC_STATUS_INVALID_ARGUMENT;
-            return false;
+            *num_creds_md = 0;
         }
         else
         {
             // Return data to core.
             *num_creds_md = metadata.size();
-            for (size_t i = 0; i < *num_creds_md; ++i) {
-              creds_md[i] = metadata.data()[i];
+            for (size_t i{ 0 }; i < *num_creds_md; ++i)
+            {
+                creds_md[i] = metadata.data()[i];
 
-              // TODO:
-              // Right now we Increase the ref of each slice by 1 because it will be decreased by 1
-              // when this function goes out of scope and MetadataArray is destructed
-              // which then destructs (derefs) the Slice's it's holding.
-              // Really what we probably need to add some sort of copy method MetadataArray
-              // so that the slices it holds don't become invalid
-              gpr_slice_ref(creds_md[i].key);
-              gpr_slice_ref(creds_md[i].value);
+                // TODO:
+                // Right now we Increase the ref of each slice by 1 because it will be decreased by 1
+                // when this function goes out of scope and MetadataArray is destructed
+                // which then destructs (derefs) the Slice's it's holding.
+                // Really what we probably need to add some sort of copy method MetadataArray
+                // so that the slices it holds don't become invalid
+                gpr_slice_ref(creds_md[i].key);
+                gpr_slice_ref(creds_md[i].value);
             }
         }
     }
 
-    return (*status == GRPC_STATUS_OK);
+    return ((*status) == GRPC_STATUS_OK);
 }
 
-int plugin_get_metadata(
-    void *ptr, grpc_auth_metadata_context context,
-    grpc_credentials_plugin_metadata_cb cb, void *user_data,
-    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
-    size_t *num_creds_md, grpc_status_code *status,
-    const char **error_details)
+int plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
+                        grpc_credentials_plugin_metadata_cb cb, void* user_data,
+                        grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+                        size_t* num_creds_md, grpc_status_code* status,
+                        const char** error_details)
 {
     HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata") // Debug Trace
-
-    *num_creds_md = 0;
-    *status = GRPC_STATUS_OK;
-    *error_details = NULL;
 
     plugin_state *pState{ reinterpret_cast<plugin_state *>(ptr) };
     CallCredentialsData* const pCallCrendentials{ pState->pCallCredentials };
@@ -360,22 +357,18 @@ int plugin_get_metadata(
 
             // return the meta data params in the promise
             metaDataPromise.set_value(std::move(params));
-
-            // wait for the result to come back to us
-            auto metadataReturnPromiseFuture = params.returnPromise().get_future();
-            metadataReturnPromiseFuture.wait();
-
-            metadataReturnPromiseFuture.get(); // could get result but not needed atm 
         }
-
-        return true;  // Synchronous return.
     }
     else
     {
         // failed to get shared_ptr.  This can happen if the call timed out and the metadata
         // erased before this function was invoked
-        return true;  // Synchronous return.
+        *error_details = nullptr;
+        *status = GRPC_STATUS_DEADLINE_EXCEEDED;
+        *num_creds_md = 0;
     }
+
+    return 1; // synchronous operation
 }
 
 void plugin_destroy_state(void *ptr)

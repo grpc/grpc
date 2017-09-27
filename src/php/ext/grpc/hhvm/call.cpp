@@ -339,10 +339,11 @@ void HHVM_METHOD(Call, __construct,
 
     // NOTE: This must be called before the create call so the timespan is not
     // encrouched upon
-    // encrouched upon
     gpr_timespec deadlineTime{ gpr_convert_clock_type(pDeadlineTimevalData->time(),
                                                       GPR_TIMESPAN) };
+
     int32_t timeout{ gpr_time_to_millis(deadlineTime) };
+
 
     grpc_call* const pCall{ grpc_channel_create_call(pChannelData->channel(),
                                                      nullptr, GRPC_PROPAGATE_DEFAULTS,

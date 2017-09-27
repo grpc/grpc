@@ -92,7 +92,7 @@ typedef struct plugin_get_metadata_params
                              const std::string& _contextMethodName,
                              grpc_credentials_plugin_metadata_cb _cb,
                              void* const _user_data,
-                             grpc_metadata* _creds_md,
+                             grpc_metadata* const _creds_md,
                              size_t* const _num_creds_md, grpc_status_code* const _status,
                              const char** const _error_details, const bool _completed = false,
                              const bool _result = false) :
@@ -196,10 +196,10 @@ private:
 
 bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
                             const std::string& methodName,
-                            grpc_credentials_plugin_metadata_cb cb, void *user_data,
+                            grpc_credentials_plugin_metadata_cb cb, void* const user_data,
                             grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
-                            size_t *num_creds_md, grpc_status_code *status,
-                            const char **error_details);
+                            size_t* const num_creds_md, grpc_status_code* const status,
+                            const char** error_details);
 }
 
 #endif /* NET_GRPC_HHVM_GRPC_CALL_CREDENTIALS_H_ */
