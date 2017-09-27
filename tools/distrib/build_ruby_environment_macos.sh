@@ -40,7 +40,14 @@ MAKE="make -j8"
 
 for v in 2.4.0 2.3.0 2.2.2 2.1.5 2.0.0-p645 ; do
   ccache -c
-  rake -f $CROSS_RUBY cross-ruby VERSION=$v HOST=x86_64-darwin11
+
+  # retry a few times as building older versions of ruby is flaky
+  # https://github.com/grpc/grpc/issues/12161
+  for attempt in $(seq 1 3)
+  do
+    echo "Building cross-ruby ${v}, attempt ${attempt}"
+    rake -f $CROSS_RUBY cross-ruby VERSION=$v HOST=x86_64-darwin11 && break
+  done
 done
 
 sed 's/x86_64-darwin-11/universal-darwin/' ~/.rake-compiler/config.yml > $CROSS_RUBY
