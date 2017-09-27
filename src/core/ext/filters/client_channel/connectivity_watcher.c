@@ -30,6 +30,8 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 
+#define DEFAULT_CONNECTIVITY_CHECK_INTERVAL_MS 500
+
 typedef struct connectivity_watcher {
   grpc_timer watcher_timer;
   grpc_closure check_connectivity_closure;
@@ -104,7 +106,9 @@ static void check_connectivity_state(grpc_exec_ctx* exec_ctx, void* ignored,
           gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
           grpc_timer_init(
               exec_ctx, &g_watcher->watcher_timer,
-              gpr_time_add(now, gpr_time_from_millis(500, GPR_TIMESPAN)),
+              gpr_time_add(now, gpr_time_from_millis(
+                                    DEFAULT_CONNECTIVITY_CHECK_INTERVAL_MS,
+                                    GPR_TIMESPAN)),
               &g_watcher->check_connectivity_closure, now);
           gpr_mu_unlock(&g_watcher_mu);
           break;
@@ -149,9 +153,12 @@ void grpc_client_channel_start_watching_connectivity(
                       check_connectivity_state, NULL,
                       grpc_schedule_on_exec_ctx);
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-    grpc_timer_init(exec_ctx, &g_watcher->watcher_timer,
-                    gpr_time_add(now, gpr_time_from_millis(500, GPR_TIMESPAN)),
-                    &g_watcher->check_connectivity_closure, now);
+    grpc_timer_init(
+        exec_ctx, &g_watcher->watcher_timer,
+        gpr_time_add(
+            now, gpr_time_from_millis(DEFAULT_CONNECTIVITY_CHECK_INTERVAL_MS,
+                                      GPR_TIMESPAN)),
+        &g_watcher->check_connectivity_closure, now);
   }
   start_watching_locked(exec_ctx, client_channel_elem, channel_stack);
   gpr_mu_init(&g_watcher_mu);
