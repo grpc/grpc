@@ -21,6 +21,8 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
+extern grpc_tracer_flag grpc_plugin_credentials_trace;
+
 struct grpc_plugin_credentials;
 
 typedef struct grpc_plugin_credentials_pending_request {

@@ -17,7 +17,7 @@ import argparse
 
 import grpc
 import time
-from src.proto.grpc.testing import test_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 from src.proto.grpc.testing import messages_pb2
 
 
@@ -147,7 +147,7 @@ def _stub(server_host, server_port):
     target = '{}:{}'.format(server_host, server_port)
     channel = grpc.insecure_channel(target)
     grpc.channel_ready_future(channel).result()
-    return test_pb2.TestServiceStub(channel)
+    return test_pb2_grpc.TestServiceStub(channel)
 
 
 def main():
