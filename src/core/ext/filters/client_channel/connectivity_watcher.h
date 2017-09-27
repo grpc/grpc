@@ -23,6 +23,8 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+/* Constantly watches client channel connectivity status to reconnect a
+ * transiently disconnected channel */
 void grpc_client_channel_start_watching_connectivity(
     grpc_exec_ctx* exec_ctx, grpc_channel_element* client_channel_elem,
     grpc_channel_stack* channel_stack);
