@@ -251,7 +251,7 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
                             grpc_credentials_plugin_metadata_cb cb, void* const user_data,
                             grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
                             size_t* const num_creds_md, grpc_status_code* const status,
-                            const char** error_details)
+                            const char** error_details, bool async)
 {
     HHVM_TRACE_SCOPE("CallCredentials plugin_do_get_metadata") // Debug Trace
 
@@ -281,20 +281,27 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
         }
         else
         {
-            // Return data to core.
-            *num_creds_md = metadata.size();
-            for (size_t i{ 0 }; i < *num_creds_md; ++i)
+            if (async == true)
             {
-                creds_md[i] = metadata.data()[i];
+                cb(user_data, metadata.data(), metadata.size(), code, nullptr);
+            }
+            else
+            {
+                // Return data to core.
+                *num_creds_md = metadata.size();
+                for (size_t i{ 0 }; i < *num_creds_md; ++i)
+                {
+                    creds_md[i] = metadata.data()[i];
 
-                // TODO:
-                // Right now we Increase the ref of each slice by 1 because it will be decreased by 1
-                // when this function goes out of scope and MetadataArray is destructed
-                // which then destructs (derefs) the Slice's it's holding.
-                // Really what we probably need to add some sort of copy method MetadataArray
-                // so that the slices it holds don't become invalid
-                gpr_slice_ref(creds_md[i].key);
-                gpr_slice_ref(creds_md[i].value);
+                    // TODO:
+                    // Right now we Increase the ref of each slice by 1 because it will be decreased by 1
+                    // when this function goes out of scope and MetadataArray is destructed
+                    // which then destructs (derefs) the Slice's it's holding.
+                    // Really what we probably need to add some sort of copy method MetadataArray
+                    // so that the slices it holds don't become invalid
+                    gpr_slice_ref(creds_md[i].key);
+                    gpr_slice_ref(creds_md[i].value);
+                }
             }
         }
     }
@@ -333,7 +340,8 @@ int plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
             bool result{ plugin_do_get_metadata(ptr, contextServiceUrl, contextMethodName,
                                                 cb, user_data,
                                                 creds_md, num_creds_md,
-                                                status, error_details) };
+                                                status, error_detail,
+                                                false) };
 
             plugin_get_metadata_params params{ ptr, std::move(contextServiceUrl),
                                                std::move(contextMethodName),
@@ -357,6 +365,8 @@ int plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
 
             // return the meta data params in the promise
             metaDataPromise.set_value(std::move(params));
+
+            return 0;
         }
     }
     else

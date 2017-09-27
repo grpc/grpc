@@ -339,8 +339,8 @@ void HHVM_METHOD(Call, __construct,
 
     // NOTE: This must be called before the create call so the timespan is not
     // encrouched upon
-    gpr_timespec deadlineTime{ gpr_convert_clock_type(pDeadlineTimevalData->time(),
-                                                      GPR_TIMESPAN) };
+    gpr_timespec deadlineTime( gpr_convert_clock_type(pDeadlineTimevalData->time(),
+                                                      GPR_TIMESPAN) );
 
     int32_t timeout{ gpr_time_to_millis(deadlineTime) };
 
@@ -680,7 +680,8 @@ Object HHVM_METHOD(Call, startBatch,
                                                      metaDataParams.contextMethodName, metaDataParams.cb,
                                                      metaDataParams.user_data,
                                                      metaDataParams.creds_md, metaDataParams.num_creds_md,
-                                                     metaDataParams.status, metaDataParams.error_details) };
+                                                     metaDataParams.status, metaDataParams.error_details,
+                                                     metaDataParams.completed) };
 
                 // Send result back
                 metaDataParams.returnPromise().set_value(result);

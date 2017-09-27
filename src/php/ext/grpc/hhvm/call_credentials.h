@@ -199,7 +199,7 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
                             grpc_credentials_plugin_metadata_cb cb, void* const user_data,
                             grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
                             size_t* const num_creds_md, grpc_status_code* const status,
-                            const char** error_details);
+                            const char** error_details, bool async);
 }
 
 #endif /* NET_GRPC_HHVM_GRPC_CALL_CREDENTIALS_H_ */
