@@ -91,6 +91,7 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
   char* user_cred = NULL;
   *name_to_resolve = get_http_proxy_server(exec_ctx, &user_cred);
   if (*name_to_resolve == NULL) return false;
+  char* no_proxy_str = NULL;
   grpc_uri* uri =
       grpc_uri_parse(exec_ctx, server_uri, false /* suppress_errors */);
   if (uri == NULL || uri->path[0] == '\0') {
@@ -105,7 +106,7 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
             server_uri);
     goto no_use_proxy;
   }
-  char* no_proxy_str = gpr_getenv("no_proxy");
+  no_proxy_str = gpr_getenv("no_proxy");
   if (no_proxy_str != NULL) {
     static const char* NO_PROXY_SEPARATOR = ",";
     bool use_proxy = true;
