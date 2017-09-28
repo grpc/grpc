@@ -42,6 +42,8 @@ LIB_DIRS = [
 
 windows = RUBY_PLATFORM =~ /mingw|mswin/
 
+termux = false
+
 grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
 
 grpc_config = ENV['GRPC_CONFIG'] || 'opt'
@@ -62,11 +64,18 @@ ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
 ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if RUBY_PLATFORM =~ /darwin/
 ENV['CFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
 
-output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
-grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
-ENV['BUILDDIR'] = output_dir
+if ENV['PREFIX'] == '/data/data/com.termux/files/usr'
+  output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
+  termux = true
+  ENV['BUILDDIR'] = output_dir
+else
+  output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
+  grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
+  ENV['BUILDDIR'] = output_dir
+  termux = false
+end
 
-unless windows
+unless windows || termux
   puts 'Building internal gRPC into ' + grpc_lib_dir
   nproc = 4
   nproc = Etc.nprocessors * 2 if Etc.respond_to? :nprocessors
@@ -74,8 +83,13 @@ unless windows
   exit 1 unless $? == 0
 end
 
-$CFLAGS << ' -I' + File.join(grpc_root, 'include')
-$LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
+if termux
+  $CFLAGS << ' -I' + File.join(grpc_root, 'include')
+  $LDFLAGS << ' ' + File.join(ENV['PREFIX'] + '/lib', 'libgrpc.a') unless windows
+else
+  $CFLAGS << ' -I' + File.join(grpc_root, 'include')
+  $LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
+end
 if grpc_config == 'gcov'
   $CFLAGS << ' -O0 -fprofile-arcs -ftest-coverage'
   $LDFLAGS << ' -fprofile-arcs -ftest-coverage -rdynamic'
