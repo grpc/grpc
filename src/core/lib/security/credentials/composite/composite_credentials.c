@@ -87,6 +87,7 @@ static bool composite_call_get_request_metadata(
   ctx->on_request_metadata = on_request_metadata;
   GRPC_CLOSURE_INIT(&ctx->internal_on_request_metadata,
                     composite_call_metadata_cb, ctx, grpc_schedule_on_exec_ctx);
+  bool synchronous = true;
   while (ctx->creds_index < ctx->composite_creds->inner.num_creds) {
     grpc_call_credentials *inner_creds =
         ctx->composite_creds->inner.creds_array[ctx->creds_index++];
@@ -95,19 +96,12 @@ static bool composite_call_get_request_metadata(
             ctx->md_array, &ctx->internal_on_request_metadata, error)) {
       if (*error != GRPC_ERROR_NONE) break;
     } else {
+      synchronous = false;  // Async return.
       break;
     }
   }
-  // If we got through all creds synchronously or we got a synchronous
-  // error on one of them, return synchronously.
-  if (ctx->creds_index == ctx->composite_creds->inner.num_creds ||
-      *error != GRPC_ERROR_NONE) {
-    gpr_free(ctx);
-    return true;
-  }
-  // At least one inner cred is returning asynchronously, so we'll
-  // return asynchronously as well.
-  return false;
+  if (synchronous) gpr_free(ctx);
+  return synchronous;
 }
 
 static void composite_call_cancel_get_request_metadata(
