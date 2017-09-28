@@ -77,11 +77,7 @@ else not windows
 end
 
 $CFLAGS << ' -I' + File.join(grpc_root, 'include')
-if ENV['PREFIX']
-  $LDFLAGS << ' ' + File.join(ENV['PREFIX'] + '/lib', 'libgrpc.a') unless windows
-else
-  $LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
-end
+$LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
 if grpc_config == 'gcov'
   $CFLAGS << ' -O0 -fprofile-arcs -ftest-coverage'
   $LDFLAGS << ' -fprofile-arcs -ftest-coverage -rdynamic'
