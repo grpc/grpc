@@ -75,7 +75,9 @@ else
   termux = false
 end
 
-unless windows || termux
+if ENV['PREFIX']
+  grpc_lib_dir = ENV['PREFIX'] + '/lib'
+else not windows
   puts 'Building internal gRPC into ' + grpc_lib_dir
   nproc = 4
   nproc = Etc.nprocessors * 2 if Etc.respond_to? :nprocessors
