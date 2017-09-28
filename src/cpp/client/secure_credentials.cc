@@ -178,12 +178,12 @@ int MetadataCredentialsPluginWrapper::GetMetadata(
     w->thread_pool_->Add(
         std::bind(&MetadataCredentialsPluginWrapper::InvokePlugin, w, context,
                   cb, user_data, nullptr, nullptr, nullptr, nullptr));
-    return false;
+    return 0;
   } else {
     // Synchronous return.
     w->InvokePlugin(context, cb, user_data, creds_md, num_creds_md, status,
                     error_details);
-    return true;
+    return 1;
   }
 }
 
