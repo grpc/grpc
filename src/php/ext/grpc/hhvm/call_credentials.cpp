@@ -31,6 +31,7 @@
 #include "hphp/runtime/vm/vm-regs.h"
 
 #include "grpc/support/alloc.h"
+#include "grpc/support/string_util.h"
 
 namespace HPHP {
 
@@ -302,19 +303,27 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
             }
             else
             {
-                *num_creds_md = metadata.size();
-                for (size_t i{ 0 }; i < *num_creds_md; ++i)
+                if (metadata.size() > GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX)
                 {
-                    creds_md[i] = metadata.data()[i];
+                    *status = GRPC_STATUS_INTERNAL;
+                    *error_details = gpr_strdup("PHP plugin credentials returned too many metadata entries");
+                }
+                else
+                {
+                    *num_creds_md = metadata.size();
+                    for (size_t i{ 0 }; i < *num_creds_md; ++i)
+                    {
+                        creds_md[i] = metadata.data()[i];
 
-                    // TODO:
-                    // Right now we Increase the ref of each slice by 1 because it will be decreased by 1
-                    // when this function goes out of scope and MetadataArray is destructed
-                    // which then destructs (derefs) the Slice's it's holding.
-                    // Really what we probably need to add some sort of copy method MetadataArray
-                    // so that the slices it holds don't become invalid
-                    gpr_slice_ref(creds_md[i].key);
-                    gpr_slice_ref(creds_md[i].value);
+                        // TODO:
+                        // Right now we Increase the ref of each slice by 1 because it will be decreased by 1
+                        // when this function goes out of scope and MetadataArray is destructed
+                        // which then destructs (derefs) the Slice's it's holding.
+                        // Really what we probably need to add some sort of copy method MetadataArray
+                        // so that the slices it holds don't become invalid
+                        gpr_slice_ref(creds_md[i].key);
+                        gpr_slice_ref(creds_md[i].value);
+                    }
                 }
             }
         }
