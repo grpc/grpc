@@ -625,7 +625,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_utils_linux.cc",
         "src/core/lib/iomgr/socket_utils_posix.cc",
         "src/core/lib/iomgr/socket_utils_uv.cc",
-        "src/core/lib/iomgr/socket_utils_windows.c",
+        "src/core/lib/iomgr/socket_utils_windows.cc",
         "src/core/lib/iomgr/socket_windows.cc",
         "src/core/lib/iomgr/tcp_client_posix.cc",
         "src/core/lib/iomgr/tcp_client_uv.cc",

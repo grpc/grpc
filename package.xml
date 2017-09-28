@@ -479,7 +479,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_linux.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_uv.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_uv.cc" role="src" />
