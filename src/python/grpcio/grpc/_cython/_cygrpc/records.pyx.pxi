@@ -171,14 +171,6 @@ cdef class Timespec:
         gpr_convert_clock_type(self.c_time, GPR_CLOCK_REALTIME))
     return <double>real_time.seconds + <double>real_time.nanoseconds / 1e9
 
-  @staticmethod
-  def infinite_future():
-    return Timespec(float("+inf"))
-
-  @staticmethod
-  def infinite_past():
-    return Timespec(float("-inf"))
-
   def __richcmp__(Timespec self not None, Timespec other not None, int op):
     cdef gpr_timespec self_c_time = self.c_time
     cdef gpr_timespec other_c_time = other.c_time
