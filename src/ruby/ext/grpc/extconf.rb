@@ -64,7 +64,7 @@ ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
 ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if RUBY_PLATFORM =~ /darwin/
 ENV['CFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
 
-if ENV['PREFIX'] == '/data/data/com.termux/files/usr'
+if ENV['PREFIX']
   output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
   termux = true
   ENV['BUILDDIR'] = output_dir
