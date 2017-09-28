@@ -24,6 +24,7 @@
 #include "common.h"
 
 #include "hphp/runtime/vm/native-data.h"
+#include "hphp/runtime/vm/vm-regs.h"
 
 namespace HPHP {
 
@@ -84,6 +85,8 @@ Object HHVM_STATIC_METHOD(ServerCredentials, createSsl,
                           const String& pem_private_key,
                           const String& pem_cert_chain)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("ServerCredentials createSsl") // Debug Trace
 
     std::string pemRootCerts{ pem_root_certs.toCppString() };

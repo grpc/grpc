@@ -574,6 +574,8 @@ grpc_cc_library(
         "src/core/lib/compression/compression.c",
         "src/core/lib/compression/message_compress.c",
         "src/core/lib/compression/stream_compression.c",
+        "src/core/lib/compression/stream_compression_gzip.c",
+        "src/core/lib/compression/stream_compression_identity.c",
         "src/core/lib/debug/stats.c",
         "src/core/lib/debug/stats_data.c",
         "src/core/lib/http/format_request.c",
@@ -705,6 +707,8 @@ grpc_cc_library(
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/message_compress.h",
         "src/core/lib/compression/stream_compression.h",
+        "src/core/lib/compression/stream_compression_gzip.h",
+        "src/core/lib/compression/stream_compression_identity.h",
         "src/core/lib/debug/stats.h",
         "src/core/lib/debug/stats_data.h",
         "src/core/lib/http/format_request.h",
@@ -989,6 +993,7 @@ grpc_cc_library(
     name = "grpc_codegen",
     language = "c",
     public_hdrs = [
+        "include/grpc/impl/codegen/byte_buffer.h",
         "include/grpc/impl/codegen/byte_buffer_reader.h",
         "include/grpc/impl/codegen/compression_types.h",
         "include/grpc/impl/codegen/connectivity_state.h",
@@ -1487,6 +1492,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc++/impl/codegen/async_stream.h",
         "include/grpc++/impl/codegen/async_unary_call.h",
+        "include/grpc++/impl/codegen/byte_buffer.h",
         "include/grpc++/impl/codegen/call.h",
         "include/grpc++/impl/codegen/call_hook.h",
         "include/grpc++/impl/codegen/channel_interface.h",

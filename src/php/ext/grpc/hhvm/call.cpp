@@ -110,7 +110,7 @@ void CallData::destroy(void)
     m_pCallCredentials = nullptr;
 }
 
- void CallData::setQueue(std::unique_ptr<CompletionQueue>&& pCompletionQueue)
+void CallData::setQueue(std::unique_ptr<CompletionQueue>&& pCompletionQueue)
 {
     m_pCompletionQueue = std::move(pCompletionQueue);
 }
@@ -184,6 +184,7 @@ bool MetadataArray::init(const Array& phpArray)
     if (count > m_Array.capacity) resizeMetadata(count);
 
     // create metadata array
+    m_PHPData.reserve(count); // reserve to avoid memory reallocations
     size_t elem{ 0 };
     for (ArrayIter iter(phpArray); iter; ++iter)
     {
@@ -279,8 +280,8 @@ OpsManaged::OpsManaged(void) : send_metadata{ true },
     recv_trailing_metadata{ false }, recv_status_details{},
     send_status_details{}, cancelled{ 0 }, status{ GRPC_STATUS_OK }
 {
-    send_messages.fill(nullptr);
-    recv_messages.fill(nullptr);
+    send_messages.reserve(s_MaxActions);
+    recv_messages.reserve(s_MaxActions);
 }
 
 OpsManaged::~OpsManaged(void)
@@ -314,6 +315,8 @@ void HHVM_METHOD(Call, __construct,
                  const Object& deadline_obj,
                  const Variant& host_override /* = null */)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Call construct") // Degug Trace
 
     CallData* const pCallData{ Native::data<CallData>(this_) };
@@ -334,12 +337,20 @@ void HHVM_METHOD(Call, __construct,
     std::unique_ptr<CompletionQueue> pCompletionQueue{ nullptr };
     CompletionQueue::getClientQueue(pCompletionQueue);
 
+    // NOTE: This must be called before the create call so the timespan is not
+    // encrouched upon
+    gpr_timespec deadlineTime( gpr_convert_clock_type(pDeadlineTimevalData->time(),
+                                                      GPR_TIMESPAN) );
+
+    int32_t timeout{ gpr_time_to_millis(deadlineTime) };
+
+
     grpc_call* const pCall{ grpc_channel_create_call(pChannelData->channel(),
                                                      nullptr, GRPC_PROPAGATE_DEFAULTS,
                                                      pCompletionQueue->queue(),
                                                      method_slice.slice(),
                                                      !host_slice.empty() ? &host_slice.slice() : nullptr,
-                                                     gpr_inf_future(GPR_CLOCK_REALTIME)/*pDeadlineTimevalData->time()*/,
+                                                     deadlineTime,/*gpr_inf_future(GPR_CLOCK_REALTIME),*//*pDeadlineTimevalData->time(),*/
                                                      nullptr) };
 
     if (!pCall)
@@ -347,8 +358,7 @@ void HHVM_METHOD(Call, __construct,
         SystemLib::throwBadMethodCallExceptionObject("failed to create call");
     }
 
-    int32_t timeout{ gpr_time_to_millis(gpr_convert_clock_type(pDeadlineTimevalData->time(),
-                                                               GPR_TIMESPAN)) };
+
     pCallData->init(pCall, true, timeout);
     pCallData->setQueue(std::move(pCompletionQueue));
 
@@ -364,7 +374,11 @@ Object HHVM_METHOD(Call, startBatch,
 
     Object resultObj{ SystemLib::AllocStdClassObject() };
 
-    if (actions.size() > OpsManaged::s_MaxActions)
+    // check if nothing to do
+    size_t numActions{ static_cast<size_t>(actions.size()) };
+    if (numActions == 0) return resultObj;
+
+    if (numActions > OpsManaged::s_MaxActions)
     {
         std::stringstream oSS;
         oSS << "actions array must not be longer than " << OpsManaged::s_MaxActions << " operations" << std::endl;
@@ -372,8 +386,8 @@ Object HHVM_METHOD(Call, startBatch,
     }
 
     // clear any existing ops data
-    static thread_local std::array<grpc_op, OpsManaged::s_MaxActions> ops;
-    std::memset(ops.data(), 0, sizeof(grpc_op) * OpsManaged::s_MaxActions);
+    std::vector<grpc_op> ops(numActions);
+    std::memset(ops.data(), 0, sizeof(grpc_op) * ops.size());
 
     CallData* const pCallData{ Native::data<CallData>(this_) };
     pCallData->incrementBatchCounter();
@@ -384,7 +398,7 @@ Object HHVM_METHOD(Call, startBatch,
 
     size_t op_num{ 0 };
     bool sending_initial_metadata{ false };
-    for (ArrayIter iter(actions); iter && (op_num < OpsManaged::s_MaxActions); ++iter, ++op_num)
+    for (ArrayIter iter(actions); iter; ++iter, ++op_num)
     {
         Variant key{ iter.first() };
         Variant value{ iter.second() };
@@ -442,8 +456,8 @@ Object HHVM_METHOD(Call, startBatch,
                 // convert string to byte buffer and store message in managed data
                 String messageValueString{ messageValue.toString() };
                 const Slice send_message{ messageValueString };
-                opsManaged.send_messages[op_num] = send_message.byteBuffer();
-                ops[op_num].data.send_message.send_message = opsManaged.send_messages[op_num];
+                opsManaged.send_messages.emplace_back(send_message.byteBuffer());
+                ops[op_num].data.send_message.send_message = opsManaged.send_messages.back();
             }
             break;
         }
@@ -506,7 +520,8 @@ Object HHVM_METHOD(Call, startBatch,
             ops[op_num].data.recv_initial_metadata.recv_initial_metadata = &opsManaged.recv_metadata.array();
             break;
         case GRPC_OP_RECV_MESSAGE:
-            ops[op_num].data.recv_message.recv_message = &opsManaged.recv_messages[op_num];
+            opsManaged.recv_messages.emplace_back(nullptr);
+            ops[op_num].data.recv_message.recv_message = &(opsManaged.recv_messages.back());
             break;
         case GRPC_OP_RECV_STATUS_ON_CLIENT:
             ops[op_num].data.recv_status_on_client.trailing_metadata = &opsManaged.recv_trailing_metadata.array();
@@ -537,11 +552,33 @@ Object HHVM_METHOD(Call, startBatch,
         pluginMetadataInfo.setInfo(pCallData->callCredentials(), pMetaDataInfo);
     }
 
-    static std::mutex s_StartBatchMutex;
+    auto startBatch = [&pCallData](grpc_op* const pOps, const size_t numOps, void* const pTag,
+                                   const bool noThrow) -> bool
+    {
+        static std::mutex s_StartBatchMutex;
+        std::unique_lock<std::mutex> lock{ s_StartBatchMutex };
+        grpc_call_error errorCode{ grpc_call_start_batch(pCallData->call(), pOps, numOps,
+                                                         pTag, nullptr) };
 
+        if (errorCode != GRPC_CALL_OK)
+        {
+            lock.unlock();
+            if (!noThrow)
+            {
+                std::stringstream oSS;
+                oSS << "start_batch was called incorrectly: " << errorCode << std::endl;
+                SystemLib::throwBadMethodCallExceptionObject(oSS.str());
+            }
+            return false;
+        }
+        return true;
+    };
+
+    void* const pTag{ &opsManaged };
     bool callFailed{ false };
     grpc_status_code failCode{ GRPC_STATUS_OK };
-    auto callFailure = [&callFailed, &credentialedCall, &pMetaDataInfo, &opsManaged, pCallData]
+    auto callFailure = [&callFailed, &credentialedCall, &pMetaDataInfo, &pCallData, &pTag,
+                        &startBatch]
                        (bool timeOut = false)
     {
         // invalidate metadata info
@@ -554,7 +591,7 @@ Object HHVM_METHOD(Call, startBatch,
             pluginMetadataInfo.deleteInfo(pCallData->callCredentials());
         }
 
-        if (timeOut)
+        /*if (timeOut)
         {
             // cancel the call with the server
             grpc_call_cancel_with_status(pCallData->call(), GRPC_STATUS_DEADLINE_EXCEEDED,
@@ -564,63 +601,62 @@ Object HHVM_METHOD(Call, startBatch,
             std::unique_ptr<OpsManaged> pCancelledOpsManage{ new OpsManaged{} };
             OpsManaged& cancelledOpsManaged{ *(pCancelledOpsManage.get()) };
 
-            std::array<grpc_op, OpsManaged::s_MaxActions> cancelOps;
+            // request receive status on cient
+            std::array<grpc_op, 1> cancelOps;
+            std::memset(cancelOps.data(), 0, sizeof(grpc_op) * cancelOps.size());
             cancelOps[0].data.recv_status_on_client.trailing_metadata = &cancelledOpsManaged.recv_trailing_metadata.array();
             cancelOps[0].data.recv_status_on_client.status = &cancelledOpsManaged.status;
             cancelOps[0].data.recv_status_on_client.status_details = &cancelledOpsManaged.recv_status_details.slice();
             cancelOps[0].op = static_cast<grpc_op_type>(GRPC_OP_RECV_STATUS_ON_CLIENT);
+            cancelOps[0].flags = 0;
             cancelOps[0].reserved = nullptr;
 
+            void* const pCancelledTag{ &cancelledOpsManaged};
+            if (startBatch(cancelOps.data(), cancelOps.size(), pCancelledTag, true))
             {
-                std::unique_lock<std::mutex> lock{ s_StartBatchMutex };
-                grpc_call_error errorCode{ grpc_call_start_batch(pCallData->call(), cancelOps.data(), 1, &cancelledOpsManaged, nullptr) };
-
-                if (errorCode != GRPC_CALL_OK)
-                {
-                    lock.unlock();
-                    std::stringstream oSS;
-                    oSS << "start_batch during cancel was called incorrectly: " << errorCode << std::endl;
-                    SystemLib::throwBadMethodCallExceptionObject(oSS.str());
-                }
+                // wait for failure after cancelling call
+                grpc_event event(grpc_completion_queue_pluck(pCallData->queue()->queue(),
+                                                             pCancelledTag,
+                                                             gpr_inf_future(GPR_CLOCK_REALTIME),
+                                                             nullptr));
             }
 
-
             // wait for failure after cancelling call
-            grpc_event event(grpc_completion_queue_pluck(pCallData->queue()->queue(), &cancelledOpsManaged,
+            grpc_event event(grpc_completion_queue_pluck(pCallData->queue()->queue(), pTag,
                                                          gpr_inf_future(GPR_CLOCK_REALTIME),
                                                          nullptr));
-            callFailed = true /*(event.type != GRPC_OP_COMPLETE) || (event.success == 0)*/;
-        }
-        else
-        {
+
             callFailed = true;
         }
+        else
+        {*/
+            callFailed = true;
+        //}
 
     };
 
+    // start the normal call batch operation
+    if (!startBatch(ops.data(), op_num, pTag, true))
     {
-        std::unique_lock<std::mutex> lock{ s_StartBatchMutex };
-        grpc_call_error errorCode{ grpc_call_start_batch(pCallData->call(), ops.data(),
-                                                         op_num, &opsManaged, nullptr) };
-
-        if (errorCode != GRPC_CALL_OK)
-        {
-            lock.unlock();
-            callFailure();
-            std::stringstream oSS;
-            oSS << "start_batch was called incorrectly: " << errorCode << std::endl;
-            SystemLib::throwBadMethodCallExceptionObject(oSS.str());
-        }
+        callFailed = true;
+        failCode = GRPC_STATUS_UNKNOWN;
     }
 
-    grpc_event event (grpc_completion_queue_pluck(pCallData->queue()->queue(), &opsManaged,
-                                                 gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN),
-                                                 nullptr));
-    if ((event.type != GRPC_OP_COMPLETE) || (event.tag != &opsManaged) || (event.success == 0))
+    if (!callFailed)
     {
-        // failed so clean up and return empty object
-        callFailure(event.type ==  GRPC_QUEUE_TIMEOUT);
-        failCode = (event.type == GRPC_QUEUE_TIMEOUT) ? GRPC_STATUS_DEADLINE_EXCEEDED : GRPC_STATUS_UNKNOWN;
+        // wait for call batch to complete
+        grpc_event event ( grpc_completion_queue_pluck(
+                                pCallData->queue()->queue(), pTag,
+                                gpr_inf_future(GPR_CLOCK_REALTIME),
+                                /*gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN),*/
+                                nullptr) );
+
+        if ((event.type != GRPC_OP_COMPLETE) || (event.tag != &opsManaged) || (event.success == 0))
+        {
+            // failed so clean up and return empty object
+            callFailure(event.type ==  GRPC_QUEUE_TIMEOUT);
+            failCode = (event.type == GRPC_QUEUE_TIMEOUT) ? GRPC_STATUS_DEADLINE_EXCEEDED : GRPC_STATUS_UNKNOWN;
+        }
     }
 
     // This might look weird but it's required due to the way HHVM works. Each request in HHVM
@@ -646,8 +682,15 @@ Object HHVM_METHOD(Call, startBatch,
             {
                 // call the plugin in this thread if it wasn't completed already
                 bool result { plugin_do_get_metadata(metaDataParams.ptr, metaDataParams.contextServiceUrl,
-                                                     metaDataParams.contextMethodName, metaDataParams.pContext,
-                                                     metaDataParams.cb, metaDataParams.user_data) };
+                                                     metaDataParams.contextMethodName, metaDataParams.cb,
+                                                     metaDataParams.user_data,
+                                                     metaDataParams.creds_md, metaDataParams.num_creds_md,
+                                                     metaDataParams.status, metaDataParams.error_details,
+                                                     true) };
+
+                // Send result back
+                metaDataParams.returnPromise().set_value(result);
+
                 if (!result) callFailure();
             }
             else
@@ -658,6 +701,7 @@ Object HHVM_METHOD(Call, startBatch,
     }
 
     // process results of call
+    size_t recvMsgCount{ 0 };
     for (size_t i{ 0 }; i < op_num; ++i)
     {
         switch(ops[i].op)
@@ -680,17 +724,19 @@ Object HHVM_METHOD(Call, startBatch,
         case GRPC_OP_RECV_MESSAGE:
         {
             // TODO: Modify this for multiple receive messages most likely an array assoicated with "message"
-            if (!opsManaged.recv_messages[i] || callFailed)
+            if (callFailed || (opsManaged.recv_messages.size() <= recvMsgCount) ||
+                !opsManaged.recv_messages[recvMsgCount])
             {
                 resultObj.o_set("message", Variant());
             }
             else
             {
-                Slice slice{ opsManaged.recv_messages[i] };
+                Slice slice{ opsManaged.recv_messages[recvMsgCount] };
                 resultObj.o_set("message",
                                 Variant{ String{ reinterpret_cast<const char*>(slice.data()),
                                                  slice.length(), CopyString } });
             }
+            ++recvMsgCount;
             break;
         }
         case GRPC_OP_RECV_STATUS_ON_CLIENT:
@@ -727,6 +773,8 @@ Object HHVM_METHOD(Call, startBatch,
 
 String HHVM_METHOD(Call, getPeer)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Call getPeer") // Degug Trace
 
     CallData* const pCallData{ Native::data<CallData>(this_) };
@@ -744,6 +792,8 @@ void HHVM_METHOD(Call, cancel)
 int64_t HHVM_METHOD(Call, setCredentials,
                     const Object& creds_obj)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Call setCredentials") // Degug Trace
 
     CallData* const pCallData{ Native::data<CallData>(this_) };

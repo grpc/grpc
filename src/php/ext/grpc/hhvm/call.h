@@ -84,7 +84,7 @@ struct OpsManaged
 public:
     // typedef's
     const static size_t s_MaxActions{ 8 };
-    typedef std::array<grpc_byte_buffer*, s_MaxActions> MessagesType;
+    typedef std::vector<grpc_byte_buffer*> MessagesType;
 
     // constructors/destructors
     OpsManaged(void);

@@ -61,7 +61,7 @@ public:
     DefaultPEMRootCerts& operator=(DefaultPEMRootCerts&& rhsDefaultPEMRootCerts) = delete;
 
     // interface functions
-    void setCerts(const String& pemRootsCerts);
+    void setCerts(std::string&& pemRootsCerts);
     static grpc_ssl_roots_override_result get_ssl_roots_override(char** pPEMRootsCerts);
 
     // singleton accessors

@@ -34,7 +34,7 @@
 
 #include "hphp/runtime/base/req-containers.h"
 #include "hphp/runtime/vm/native-data.h"
-
+#include "hphp/runtime/vm/vm-regs.h"
 
 namespace HPHP {
 
@@ -110,6 +110,8 @@ void ServerData::destroy(void)
 void HHVM_METHOD(Server, __construct,
                  const Variant& args_array_or_null /* = null */)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Server construct") // Debug Trace
 
     ServerData* const pServerData{ Native::data<ServerData>(this_) };
@@ -146,6 +148,8 @@ void HHVM_METHOD(Server, __construct,
 
 Object HHVM_METHOD(Server, requestCall)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Server requestCall") // Debug Trace
 
     Object resultObj{ SystemLib::AllocStdClassObject() };
@@ -225,6 +229,8 @@ Object HHVM_METHOD(Server, requestCall)
 bool HHVM_METHOD(Server, addHttp2Port,
                  const String& addr)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Server addHttp2Port") // Debug Trace
 
     ServerData* const pServerData{ Native::data<ServerData>(this_) };
@@ -237,6 +243,8 @@ bool HHVM_METHOD(Server, addSecureHttp2Port,
                  const String& addr,
                  const Object& server_credentials)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Server addSecureHttp2Port") // Debug Trace
 
     ServerData* const pServerData{ Native::data<ServerData>(this_) };
@@ -249,6 +257,8 @@ bool HHVM_METHOD(Server, addSecureHttp2Port,
 
 void HHVM_METHOD(Server, start)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("Server start") // Debug Trace
 
     ServerData* const pServerData{ Native::data<ServerData>(this_) };

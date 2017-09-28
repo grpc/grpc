@@ -398,11 +398,40 @@ class GrpclbEnd2endTest : public ::testing::Test {
     return true;
   }
 
-  void WaitForAllBackends() {
+  void SendRpcAndCount(int* num_total, int* num_ok, int* num_failure,
+                       int* num_drops) {
+    const Status status = SendRpc();
+    if (status.ok()) {
+      ++*num_ok;
+    } else {
+      if (status.error_message() == "Call dropped by load balancing policy") {
+        ++*num_drops;
+      } else {
+        ++*num_failure;
+      }
+    }
+    ++*num_total;
+  }
+
+  std::tuple<int, int, int> WaitForAllBackends(
+      int num_requests_multiple_of = 1) {
+    int num_ok = 0;
+    int num_failure = 0;
+    int num_drops = 0;
+    int num_total = 0;
     while (!SeenAllBackends()) {
-      CheckRpcSendOk();
+      SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_drops);
+    }
+    while (num_total % num_requests_multiple_of != 0) {
+      SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_drops);
     }
     ResetBackendCounters();
+    gpr_log(GPR_INFO,
+            "Performed %d warm up requests (a multiple of %d) against the "
+            "backends. %d succeeded, %d failed, %d dropped.",
+            num_total, num_requests_multiple_of, num_ok, num_failure,
+            num_drops);
+    return std::make_tuple(num_ok, num_failure, num_drops);
   }
 
   void WaitForBackend(size_t backend_idx) {
@@ -556,10 +585,8 @@ TEST_F(SingleBalancerTest, Vanilla) {
       0);
   // Make sure that trying to connect works without a call.
   channel_->GetState(true /* try_to_connect */);
-
   // We need to wait for all backends to come online.
   WaitForAllBackends();
-
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
 
@@ -863,13 +890,22 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
 
 TEST_F(SingleBalancerTest, Drop) {
   const size_t kNumRpcsPerAddress = 100;
+  const int num_of_drop_by_rate_limiting_addresses = 1;
+  const int num_of_drop_by_load_balancing_addresses = 2;
+  const int num_of_drop_addresses = num_of_drop_by_rate_limiting_addresses +
+                                    num_of_drop_by_load_balancing_addresses;
+  const int num_total_addresses = num_backends_ + num_of_drop_addresses;
   ScheduleResponseForBalancer(
       0, BalancerServiceImpl::BuildResponseForBackends(
-             GetBackendPorts(), {{"rate_limiting", 1}, {"load_balancing", 2}}),
+             GetBackendPorts(),
+             {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
+              {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
       0);
+  // Wait until all backends are ready.
+  WaitForAllBackends();
   // Send kNumRpcsPerAddress RPCs for each server and drop address.
   size_t num_drops = 0;
-  for (size_t i = 0; i < kNumRpcsPerAddress * (num_backends_ + 3); ++i) {
+  for (size_t i = 0; i < kNumRpcsPerAddress * num_total_addresses; ++i) {
     EchoResponse response;
     const Status status = SendRpc(&response);
     if (!status.ok() &&
@@ -881,7 +917,7 @@ TEST_F(SingleBalancerTest, Drop) {
       EXPECT_EQ(response.message(), kMessage_);
     }
   }
-  EXPECT_EQ(kNumRpcsPerAddress * 3, num_drops);
+  EXPECT_EQ(kNumRpcsPerAddress * num_of_drop_addresses, num_drops);
 
   // Each backend should have gotten 100 requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
@@ -896,9 +932,12 @@ TEST_F(SingleBalancerTest, Drop) {
 
 TEST_F(SingleBalancerTest, DropAllFirst) {
   // All registered addresses are marked as "drop".
+  const int num_of_drop_by_rate_limiting_addresses = 1;
+  const int num_of_drop_by_load_balancing_addresses = 1;
   ScheduleResponseForBalancer(
       0, BalancerServiceImpl::BuildResponseForBackends(
-             {}, {{"rate_limiting", 1}, {"load_balancing", 1}}),
+             {}, {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
+                  {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
       0);
   const Status status = SendRpc();
   EXPECT_FALSE(status.ok());
@@ -909,9 +948,12 @@ TEST_F(SingleBalancerTest, DropAll) {
   ScheduleResponseForBalancer(
       0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
       0);
+  const int num_of_drop_by_rate_limiting_addresses = 1;
+  const int num_of_drop_by_load_balancing_addresses = 1;
   ScheduleResponseForBalancer(
       0, BalancerServiceImpl::BuildResponseForBackends(
-             {}, {{"rate_limiting", 1}, {"load_balancing", 1}}),
+             {}, {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
+                  {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
       1000);
 
   // First call succeeds.
@@ -936,6 +978,11 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Vanilla) {
   ScheduleResponseForBalancer(
       0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
       0);
+  // Wait until all backends are ready.
+  int num_ok = 0;
+  int num_failure = 0;
+  int num_drops = 0;
+  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends();
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
   // Each backend should have gotten 100 requests.
@@ -950,24 +997,39 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Vanilla) {
   EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
 
   const ClientStats client_stats = WaitForLoadReports();
-  EXPECT_EQ(kNumRpcsPerAddress * num_backends_, client_stats.num_calls_started);
-  EXPECT_EQ(kNumRpcsPerAddress * num_backends_,
+  EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_ok,
+            client_stats.num_calls_started);
+  EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_ok,
             client_stats.num_calls_finished);
   EXPECT_EQ(0U, client_stats.num_calls_finished_with_client_failed_to_send);
-  EXPECT_EQ(kNumRpcsPerAddress * num_backends_,
+  EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + (num_ok + num_drops),
             client_stats.num_calls_finished_known_received);
   EXPECT_THAT(client_stats.drop_token_counts, ::testing::ElementsAre());
 }
 
 TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
   const size_t kNumRpcsPerAddress = 3;
+  const int num_of_drop_by_rate_limiting_addresses = 2;
+  const int num_of_drop_by_load_balancing_addresses = 1;
+  const int num_of_drop_addresses = num_of_drop_by_rate_limiting_addresses +
+                                    num_of_drop_by_load_balancing_addresses;
+  const int num_total_addresses = num_backends_ + num_of_drop_addresses;
   ScheduleResponseForBalancer(
       0, BalancerServiceImpl::BuildResponseForBackends(
-             GetBackendPorts(), {{"rate_limiting", 2}, {"load_balancing", 1}}),
+             GetBackendPorts(),
+             {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
+              {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
       0);
-
+  // Wait until all backends are ready.
+  int num_warmup_ok = 0;
+  int num_warmup_failure = 0;
+  int num_warmup_drops = 0;
+  std::tie(num_warmup_ok, num_warmup_failure, num_warmup_drops) =
+      WaitForAllBackends(num_total_addresses /* num_requests_multiple_of */);
+  const int num_total_warmup_requests =
+      num_warmup_ok + num_warmup_failure + num_warmup_drops;
   size_t num_drops = 0;
-  for (size_t i = 0; i < kNumRpcsPerAddress * (num_backends_ + 3); ++i) {
+  for (size_t i = 0; i < kNumRpcsPerAddress * num_total_addresses; ++i) {
     EchoResponse response;
     const Status status = SendRpc(&response);
     if (!status.ok() &&
@@ -979,8 +1041,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
       EXPECT_EQ(response.message(), kMessage_);
     }
   }
-  EXPECT_EQ(kNumRpcsPerAddress * 3, num_drops);
-
+  EXPECT_EQ(kNumRpcsPerAddress * num_of_drop_addresses, num_drops);
   // Each backend should have gotten 100 requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
     EXPECT_EQ(kNumRpcsPerAddress,
@@ -993,17 +1054,28 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
   EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
 
   const ClientStats client_stats = WaitForLoadReports();
-  EXPECT_EQ(kNumRpcsPerAddress * (num_backends_ + 3),
-            client_stats.num_calls_started);
-  EXPECT_EQ(kNumRpcsPerAddress * (num_backends_ + 3),
-            client_stats.num_calls_finished);
+  EXPECT_EQ(
+      kNumRpcsPerAddress * num_total_addresses + num_total_warmup_requests,
+      client_stats.num_calls_started);
+  EXPECT_EQ(
+      kNumRpcsPerAddress * num_total_addresses + num_total_warmup_requests,
+      client_stats.num_calls_finished);
   EXPECT_EQ(0U, client_stats.num_calls_finished_with_client_failed_to_send);
-  EXPECT_EQ(kNumRpcsPerAddress * num_backends_,
+  EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_warmup_ok,
             client_stats.num_calls_finished_known_received);
-  EXPECT_THAT(client_stats.drop_token_counts,
-              ::testing::ElementsAre(
-                  ::testing::Pair("load_balancing", kNumRpcsPerAddress),
-                  ::testing::Pair("rate_limiting", kNumRpcsPerAddress * 2)));
+  // The number of warmup request is a multiple of the number of addresses.
+  // Therefore, all addresses in the scheduled balancer response are hit the
+  // same number of times.
+  const int num_times_drop_addresses_hit =
+      num_warmup_drops / num_of_drop_addresses;
+  EXPECT_THAT(
+      client_stats.drop_token_counts,
+      ::testing::ElementsAre(
+          ::testing::Pair("load_balancing",
+                          (kNumRpcsPerAddress + num_times_drop_addresses_hit)),
+          ::testing::Pair(
+              "rate_limiting",
+              (kNumRpcsPerAddress + num_times_drop_addresses_hit) * 2)));
 }
 
 }  // namespace

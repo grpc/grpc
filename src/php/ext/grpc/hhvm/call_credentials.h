@@ -83,27 +83,42 @@ Object HHVM_STATIC_METHOD(CallCredentials, createFromPlugin,
 /*                       Crendentials Plugin Functions                       */
 /*****************************************************************************/
 
+typedef std::promise<bool> MetadataReturnPromise;
+
 // this is the data passed back via promise from plugin_get_metadata
 typedef struct plugin_get_metadata_params
 {
-    plugin_get_metadata_params(void* const _ptr, std::string&& _contextServiceUrl,
-                               std::string&& _contextMethodName,
-                               const grpc_auth_context* const _pContext,
-                               grpc_credentials_plugin_metadata_cb _cb,
-                               void* const _user_data, const bool _completed = false,
-                               const bool _result = false) :
-        completed{ _completed }, ptr{ _ptr },
+  plugin_get_metadata_params(void* const _ptr, const std::string& _contextServiceUrl,
+                             const std::string& _contextMethodName,
+                             grpc_credentials_plugin_metadata_cb _cb,
+                             void* const _user_data,
+                             grpc_metadata* const _creds_md,
+                             size_t* const _num_creds_md, grpc_status_code* const _status,
+                             const char** const _error_details, const bool _completed = false,
+                             const bool _result = false) :
+        ptr{ _ptr },
         contextServiceUrl{ std::move(_contextServiceUrl) },
-        contextMethodName{ std::move(_contextMethodName) }, pContext{ _pContext }, cb{ _cb },
-         user_data{ _user_data }, result{ _result} {}
-    bool completed;
-    void *ptr;
-    std::string contextServiceUrl;
-    std::string contextMethodName;
-    const grpc_auth_context* pContext;
-    grpc_credentials_plugin_metadata_cb cb;
-    void *user_data;
-    bool result;
+        contextMethodName{ std::move(_contextMethodName) }, cb{ _cb },
+        user_data{ _user_data }, creds_md{ _creds_md },
+        num_creds_md{ _num_creds_md }, status { _status },
+        error_details { _error_details },
+        completed{ _completed }, result{ _result } {}
+
+  MetadataReturnPromise& returnPromise(void) { return m_ReturnPromise; }
+
+  void *ptr;
+  std::string contextServiceUrl;
+  std::string contextMethodName;
+  grpc_credentials_plugin_metadata_cb cb;
+  void *user_data;
+  grpc_metadata* creds_md;
+  size_t *num_creds_md;
+  grpc_status_code *status;
+  const char ** error_details;
+  bool completed;
+  bool result;
+
+  MetadataReturnPromise m_ReturnPromise;
 } plugin_get_metadata_params;
 
 typedef std::promise<plugin_get_metadata_params> MetadataPromise;
@@ -181,9 +196,10 @@ private:
 
 bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
                             const std::string& methodName,
-                            const grpc_auth_context* pContext,
-                            grpc_credentials_plugin_metadata_cb cb,
-                            void *user_data);
+                            grpc_credentials_plugin_metadata_cb cb, void* const user_data,
+                            grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+                            size_t* const num_creds_md, grpc_status_code* const status,
+                            const char** error_details, const bool aynsc);
 }
 
 #endif /* NET_GRPC_HHVM_GRPC_CALL_CREDENTIALS_H_ */

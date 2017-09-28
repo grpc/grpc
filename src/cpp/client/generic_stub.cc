@@ -47,4 +47,14 @@ std::unique_ptr<GenericClientAsyncReaderWriter> GenericStub::PrepareCall(
   return CallInternal(channel_.get(), context, method, cq, false, nullptr);
 }
 
+// setup a unary call to a named method
+std::unique_ptr<GenericClientAsyncResponseReader> GenericStub::PrepareUnaryCall(
+    ClientContext* context, const grpc::string& method,
+    const ByteBuffer& request, CompletionQueue* cq) {
+  return std::unique_ptr<GenericClientAsyncResponseReader>(
+      GenericClientAsyncResponseReader::Create(
+          channel_.get(), cq, RpcMethod(method.c_str(), RpcMethod::NORMAL_RPC),
+          context, request, false));
+}
+
 }  // namespace grpc

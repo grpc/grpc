@@ -26,6 +26,7 @@
 
 #include "hphp/runtime/vm/native-data.h"
 #include "hphp/runtime/base/string-util.h"
+#include "hphp/runtime/vm/vm-regs.h"
 
 #include "grpc/support/alloc.h"
 
@@ -70,15 +71,13 @@ grpc_ssl_roots_override_result DefaultPEMRootCerts::get_ssl_roots_override(char*
     }
 }
 
-void DefaultPEMRootCerts::setCerts(const String& pemRootsCerts)
+void DefaultPEMRootCerts::setCerts(std::string&& pemRootsCerts)
 {
-    std::string certsString{ pemRootsCerts.toCppString() };
-
     {
         WriteLock lock{ m_CertsLock };
 
         // copy new certs
-        m_PEMRootCerts = std::move(certsString);
+        m_PEMRootCerts = std::move(pemRootsCerts);
     }
 }
 
@@ -153,13 +152,18 @@ void ChannelCredentialsData::destroy(void)
 void HHVM_STATIC_METHOD(ChannelCredentials, setDefaultRootsPem,
                         const String& pem_root_certs)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("ChannelCredentials setDefaultRootsPem") // Debug Trace
 
-    DefaultPEMRootCerts::getDefaultPEMRootCerts().setCerts(pem_root_certs);
+    std::string pemRootCerts{ pem_root_certs.toCppString() };
+    DefaultPEMRootCerts::getDefaultPEMRootCerts().setCerts(std::move(pemRootCerts));
 }
 
 Object HHVM_STATIC_METHOD(ChannelCredentials, createDefault)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("ChannelCredentials createDefault") // Debug Trace
 
     Object newChannelCredentialsObj{ ChannelCredentialsData::getClass() };
@@ -182,6 +186,8 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createSsl,
                           const Variant& pem_key_cert_pair__cert_chain /*=null*/
                           )
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("ChannelCredentials createSsl") // Debug Trace
 
     std::string pemRootCerts{ (!pem_root_certs.isNull() && pem_root_certs.isString()) ?
@@ -232,6 +238,8 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createComposite,
                           const Object& cred1_obj,
                           const Object& cred2_obj)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("ChannelCredentials createComposite") // Debug Trace
 
     ChannelCredentialsData* pChannelCredentialsData{ Native::data<ChannelCredentialsData>(cred1_obj) };
@@ -255,6 +263,8 @@ Object HHVM_STATIC_METHOD(ChannelCredentials, createComposite,
 
 Variant HHVM_STATIC_METHOD(ChannelCredentials, createInsecure)
 {
+    VMRegGuard _;
+
     HHVM_TRACE_SCOPE("ChannelCredentials createInsecure") // Debug Trace
 
     return Variant{};

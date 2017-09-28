@@ -11,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-require 'grpc'
+require 'spec_helper'
 
 def load_test_certs
   test_root = File.join(File.dirname(File.dirname(__FILE__)), 'testdata')
@@ -28,17 +27,6 @@ def check_md(wanted_md, received_md)
   end
 end
 
-# A test message
-class EchoMsg
-  def self.marshal(_o)
-    ''
-  end
-
-  def self.unmarshal(_o)
-    EchoMsg.new
-  end
-end
-
 # A test service with no methods.
 class EmptyService
   include GRPC::GenericService
@@ -49,27 +37,6 @@ class NoRpcImplementation
   include GRPC::GenericService
   rpc :an_rpc, EchoMsg, EchoMsg
 end
-
-# A test service with an echo implementation.
-class EchoService
-  include GRPC::GenericService
-  rpc :an_rpc, EchoMsg, EchoMsg
-  attr_reader :received_md
-
-  def initialize(**kw)
-    @trailing_metadata = kw
-    @received_md = []
-  end
-
-  def an_rpc(req, call)
-    GRPC.logger.info('echo service received a request')
-    call.output_metadata.update(@trailing_metadata)
-    @received_md << call.metadata unless call.metadata.nil?
-    req
-  end
-end
-
-EchoStub = EchoService.rpc_stub_class
 
 # A test service with an implementation that fails with BadStatus
 class FailingService
