@@ -202,7 +202,7 @@ grpc_cc_library(
         "src/core/lib/surface/init_unsecure.cc",
         "src/core/plugin_registry/grpc_unsecure_plugin_registry.cc",
     ],
-    language = "c",
+    language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
     standalone = True,
     deps = [
@@ -217,7 +217,7 @@ grpc_cc_library(
         "src/core/lib/surface/init.cc",
         "src/core/plugin_registry/grpc_plugin_registry.cc",
     ],
-    language = "c",
+    language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
     standalone = True,
     deps = [
@@ -235,7 +235,7 @@ grpc_cc_library(
         "src/core/lib/surface/init.cc",
         "src/core/plugin_registry/grpc_cronet_plugin_registry.cc",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_http_filters",
@@ -449,7 +449,7 @@ grpc_cc_library(
         "nanopb",
         "libssl",
     ],
-    language = "c",
+    language = "c++",
     public_hdrs = [
         "include/grpc/census.h",
     ],
@@ -527,7 +527,7 @@ grpc_cc_library(
         "src/core/lib/support/time_precise.h",
         "src/core/lib/support/tmpfile.h",
     ],
-    language = "c",
+    language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     deps = [
         "gpr_codegen",
@@ -557,7 +557,7 @@ grpc_cc_library(
     name = "grpc_trace",
     srcs = ["src/core/lib/debug/trace.cc"],
     hdrs = ["src/core/lib/debug/trace.h"],
-    language = "c",
+    language = "c++",
     deps = [":gpr"],
 )
 
@@ -817,7 +817,7 @@ grpc_cc_library(
     external_deps = [
         "zlib",
     ],
-    language = "c",
+    language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
     deps = [
         "gpr_base",
@@ -906,7 +906,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/subchannel_index.h",
         "src/core/ext/filters/client_channel/uri_parser.h",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_deadline_filter",
@@ -921,7 +921,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/max_age/max_age_filter.h",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
     ],
@@ -935,7 +935,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/deadline/deadline_filter.h",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
     ],
@@ -949,7 +949,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/message_size/message_size_filter.h",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
     ],
@@ -968,7 +968,7 @@ grpc_cc_library(
         "src/core/ext/filters/http/message_compress/message_compress_filter.h",
         "src/core/ext/filters/http/server/http_server_filter.h",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
     ],
@@ -982,7 +982,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_server_backward_compatibility",
@@ -1029,7 +1029,7 @@ grpc_cc_library(
     external_deps = [
         "nanopb",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
@@ -1058,7 +1058,7 @@ grpc_cc_library(
     external_deps = [
         "nanopb",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
@@ -1072,7 +1072,7 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
@@ -1084,7 +1084,7 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
@@ -1101,7 +1101,7 @@ grpc_cc_library(
         "src/core/ext/filters/load_reporting/server_load_reporting_filter.h",
         "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
     ],
@@ -1112,7 +1112,7 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
@@ -1134,7 +1134,7 @@ grpc_cc_library(
     external_deps = [
         "cares",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
@@ -1146,7 +1146,7 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
@@ -1157,7 +1157,7 @@ grpc_cc_library(
     name = "grpc_resolver_fake",
     srcs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc"],
     hdrs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"],
-    language = "c",
+    language = "c++",
     visibility = ["//test:__subpackages__"],
     deps = [
         "grpc_base",
@@ -1214,7 +1214,7 @@ grpc_cc_library(
         "src/core/lib/security/transport/tsi_error.h",
         "src/core/lib/security/util/json_util.h",
     ],
-    language = "c",
+    language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "grpc_base",
@@ -1270,7 +1270,7 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/stream_map.h",
         "src/core/ext/transport/chttp2/transport/varint.h",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_http_filters",
@@ -1286,7 +1286,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/transport/chttp2/alpn/alpn.h",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "gpr",
     ],
@@ -1300,7 +1300,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/transport/chttp2/client/chttp2_connector.h",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
@@ -1314,7 +1314,7 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/client/insecure/channel_create.cc",
         "src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
@@ -1328,7 +1328,7 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
@@ -1346,7 +1346,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/transport/chttp2/server/chttp2_server.h",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_transport_chttp2",
@@ -1359,7 +1359,7 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc",
         "src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_transport_chttp2",
@@ -1372,7 +1372,7 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_secure",
@@ -1392,7 +1392,7 @@ grpc_cc_library(
         "src/core/ext/transport/cronet/transport/cronet_transport.h",
         "third_party/objective_c/Cronet/bidirectional_stream_c.h",
     ],
-    language = "c",
+    language = "c++",
     public_hdrs = [
         "include/grpc/grpc_cronet.h",
         "include/grpc/grpc_security.h",
@@ -1413,7 +1413,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/transport/inproc/inproc_transport.h",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
     ],
@@ -1430,7 +1430,7 @@ grpc_cc_library(
         "src/core/tsi/transport_security_adapter.h",
         "src/core/tsi/transport_security_interface.h",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "gpr",
         "grpc_trace",
@@ -1455,7 +1455,7 @@ grpc_cc_library(
     external_deps = [
         "libssl",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         "tsi_interface",
@@ -1599,7 +1599,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/workarounds/workaround_utils.h",
     ],
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
     ],
