@@ -1930,7 +1930,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
 
   arg = grpc_channel_args_find(args->args, GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS);
   glb_policy->lb_fallback_timeout_ms = grpc_channel_arg_get_integer(
-      arg, (grpc_integer_options){GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS, 0,
+      arg, {GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS, 0,
                                   INT_MAX});
 
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
