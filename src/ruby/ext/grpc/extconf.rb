@@ -62,7 +62,7 @@ ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
 ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if RUBY_PLATFORM =~ /darwin/
 ENV['CFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
 
-output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
+output_dir = File.expand_path(RbConfig::CONFIG['topdir']) 
 grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
 ENV['BUILDDIR'] = output_dir
 
@@ -77,7 +77,11 @@ else not windows
 end
 
 $CFLAGS << ' -I' + File.join(grpc_root, 'include')
-$LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
+if ENV['PREFIX']
+  $LDFLAGS << ' ' + File.join(ENV['PREFIX'] + '/lib', 'libgrpc.a') unless windows
+else
+  $LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
+end
 if grpc_config == 'gcov'
   $CFLAGS << ' -O0 -fprofile-arcs -ftest-coverage'
   $LDFLAGS << ' -fprofile-arcs -ftest-coverage -rdynamic'
