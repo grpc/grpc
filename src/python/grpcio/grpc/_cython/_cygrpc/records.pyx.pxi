@@ -454,7 +454,7 @@ cdef class _MetadataIterator:
       self.i = self.i + 1
       return result
     else:
-      raise StopIteration
+      raise StopIteration()
 
 
 # TODO(https://github.com/grpc/grpc/issues/7950): Eliminate this; just use an
@@ -518,7 +518,7 @@ cdef class MetadataArray:
 
   def __getitem__(self, size_t i):
     if i >= self.c_metadata_array.count:
-      raise IndexError
+      raise IndexError()
     key = _slice_bytes(self.c_metadata_array.metadata[i].key)
     value = _slice_bytes(self.c_metadata_array.metadata[i].value)
     return Metadatum(key=key, value=value)
@@ -720,7 +720,7 @@ cdef class _OperationsIterator:
       self.i = self.i + 1
       return result
     else:
-      raise StopIteration
+      raise StopIteration()
 
 
 cdef class Operations:
