@@ -228,7 +228,7 @@ int main(int argc, char **argv) {
       client_payload + sizeof(PFX_TOO_MUCH_METADATA_FROM_CLIENT_PREFIX_STR) - 1,
       client_headers, headers_len);
   GRPC_RUN_BAD_CLIENT_TEST(server_verifier, client_validator, client_payload,
-                           0);
+                           GRPC_BAD_CLIENT_LARGE_REQUEST);
   gpr_free((void *)client_headers);
 
   // Test sending more metadata than the client will accept.
