@@ -181,7 +181,6 @@ static bool plugin_get_request_metadata(grpc_exec_ctx *exec_ctx,
     size_t num_creds_md = 0;
     grpc_status_code status = GRPC_STATUS_OK;
     const char *error_details = NULL;
-
     if (!c->plugin.get_metadata(c->plugin.state, context,
                                 plugin_md_request_metadata_ready,
                                 pending_request, creds_md, &num_creds_md,
@@ -194,7 +193,6 @@ static bool plugin_get_request_metadata(grpc_exec_ctx *exec_ctx,
       }
       return false;  // Asynchronous return.
     }
-
     // Returned synchronously.
     // Remove request from pending list if not previously cancelled.
     pending_request_complete(exec_ctx, pending_request);
