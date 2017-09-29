@@ -46,7 +46,7 @@ CompletionQueue::~CompletionQueue(void)
     {
          int dummyTag{ 0 };
          grpc_event event( grpc_completion_queue_pluck(m_pCompletionQueue, &dummyTag,
-                                                      gpr_time_from_millis(100, GPR_TIMESPAN),
+                                                      gpr_inf_future(GPR_CLOCK_REALTIME),
                                                       nullptr) );
         if (event.type == GRPC_QUEUE_SHUTDOWN ||
             event.type == GRPC_QUEUE_TIMEOUT) break;

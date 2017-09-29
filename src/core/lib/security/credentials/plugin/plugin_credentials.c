@@ -181,6 +181,12 @@ static bool plugin_get_request_metadata(grpc_exec_ctx *exec_ctx,
     size_t num_creds_md = 0;
     grpc_status_code status = GRPC_STATUS_OK;
     const char *error_details = NULL;
+
+    if (GRPC_TRACER_ON(grpc_plugin_credentials_trace)) {
+      gpr_log(GPR_INFO, "plugin_credentials[%p]: request %p: real invoking plugin (c->plugin.get_metadata(...))",
+              c, pending_request);
+    }
+
     if (!c->plugin.get_metadata(c->plugin.state, context,
                                 plugin_md_request_metadata_ready,
                                 pending_request, creds_md, &num_creds_md,
@@ -192,6 +198,11 @@ static bool plugin_get_request_metadata(grpc_exec_ctx *exec_ctx,
                 c, pending_request);
       }
       return false;  // Asynchronous return.
+    }
+
+    if (GRPC_TRACER_ON(grpc_plugin_credentials_trace)) {
+      gpr_log(GPR_INFO, "plugin_credentials[%p]: request %p: completed invoke plugin (c->plugin.get_metadata(...))",
+              c, pending_request);
     }
     // Returned synchronously.
     // Remove request from pending list if not previously cancelled.
