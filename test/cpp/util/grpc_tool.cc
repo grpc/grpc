@@ -569,7 +569,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       std::ifstream input_file;
 
       if (FLAGS_infile.empty()) {
-        if (isatty(STDIN_FILENO)) {
+        if (isatty(fileno(stdin))) {
           print_mode = true;
           fprintf(stderr, "reading request messages from stdin...\n");
         }
