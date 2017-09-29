@@ -104,9 +104,11 @@ static void pf_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 
 static void pf_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
-  pending_pick *pp;
+  if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
+    gpr_log(GPR_DEBUG, "Pick First %p shutting down", (void *)p);
+  }
   p->shutdown = true;
-  pp = p->pending_picks;
+  pending_pick *pp = p->pending_picks;
   p->pending_picks = NULL;
   grpc_connectivity_state_set(
       exec_ctx, &p->state_tracker, GRPC_CHANNEL_SHUTDOWN,
@@ -466,16 +468,18 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
   if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
     gpr_log(
         GPR_DEBUG,
-        "Pick First %p connectivity changed. Updating selected: %d; Updating "
-        "subchannels: %d; Checking %lu index (%lu total); State: %d; ",
-        (void *)p, p->updating_selected, p->updating_subchannels,
+        "Pick First %p connectivity changed. Shutdown: %d, Updating selected: "
+        "%d; Updating subchannels: %d; Checking index %lu (%lu total); "
+        "State: %s, error: %s",
+        (void *)p, p->shutdown, p->updating_selected, p->updating_subchannels,
         (unsigned long)p->checking_subchannel,
-        (unsigned long)p->num_subchannels, p->checking_connectivity);
+        (unsigned long)p->num_subchannels,
+        grpc_connectivity_state_name(p->checking_connectivity),
+        grpc_error_string(error));
   }
   bool restart = false;
   if (p->updating_selected && error != GRPC_ERROR_NONE) {
     /* Captured the unsubscription for p->selected */
-    GPR_ASSERT(p->selected != NULL);
     GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, p->selected,
                                     "pf_update_connectivity");
     if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
@@ -491,7 +495,6 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
   }
   if (p->updating_subchannels && error != GRPC_ERROR_NONE) {
     /* Captured the unsubscription for the checking subchannel */
-    GPR_ASSERT(p->selected == NULL);
     for (size_t i = 0; i < p->num_subchannels; i++) {
       GRPC_SUBCHANNEL_UNREF(exec_ctx, p->subchannels[i],
                             "pf_update_connectivity");
@@ -507,7 +510,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
     if (p->num_new_subchannels == 0) return;
     restart = true;
   }
-  if (restart) {
+  if (restart && !p->shutdown) {
     p->selected = NULL;
     p->selected_key = NULL;
     GPR_ASSERT(p->new_subchannels != NULL);
