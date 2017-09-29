@@ -18,7 +18,7 @@
 
 #include "src/core/lib/transport/status_conversion.h"
 
-int grpc_status_to_http2_error(grpc_status_code status) {
+grpc_http2_error_code grpc_status_to_http2_error(grpc_status_code status) {
   switch (status) {
     case GRPC_STATUS_OK:
       return GRPC_HTTP2_NO_ERROR;

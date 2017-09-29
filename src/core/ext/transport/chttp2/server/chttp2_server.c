@@ -201,6 +201,7 @@ grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
   grpc_error *err = GRPC_ERROR_NONE;
   server_state *state = NULL;
   grpc_error **errors = NULL;
+  size_t naddrs = 0;
 
   *port_num = -1;
 
@@ -225,7 +226,7 @@ grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
   state->shutdown = true;
   gpr_mu_init(&state->mu);
 
-  const size_t naddrs = resolved->naddrs;
+  naddrs = resolved->naddrs;
   errors = (grpc_error **)gpr_malloc(sizeof(*errors) * naddrs);
   for (i = 0; i < naddrs; i++) {
     errors[i] =

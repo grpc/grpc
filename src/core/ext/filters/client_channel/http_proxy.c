@@ -44,6 +44,8 @@ static char* get_http_proxy_server(grpc_exec_ctx* exec_ctx, char** user_cred) {
   GPR_ASSERT(user_cred != NULL);
   char* proxy_name = NULL;
   char* uri_str = gpr_getenv("http_proxy");
+  char** authority_strs = NULL;
+  size_t authority_nstrs;
   if (uri_str == NULL) return NULL;
   grpc_uri* uri =
       grpc_uri_parse(exec_ctx, uri_str, false /* suppress_errors */);
@@ -56,8 +58,6 @@ static char* get_http_proxy_server(grpc_exec_ctx* exec_ctx, char** user_cred) {
     goto done;
   }
   /* Split on '@' to separate user credentials from host */
-  char** authority_strs = NULL;
-  size_t authority_nstrs;
   gpr_string_split(uri->authority, "@", &authority_strs, &authority_nstrs);
   GPR_ASSERT(authority_nstrs != 0); /* should have at least 1 string */
   if (authority_nstrs == 1) {
@@ -91,6 +91,7 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
   char* user_cred = NULL;
   *name_to_resolve = get_http_proxy_server(exec_ctx, &user_cred);
   if (*name_to_resolve == NULL) return false;
+  char* no_proxy_str = NULL;
   grpc_uri* uri =
       grpc_uri_parse(exec_ctx, server_uri, false /* suppress_errors */);
   if (uri == NULL || uri->path[0] == '\0') {
@@ -98,20 +99,14 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
             "'http_proxy' environment variable set, but cannot "
             "parse server URI '%s' -- not using proxy",
             server_uri);
-    if (uri != NULL) {
-      gpr_free(user_cred);
-      grpc_uri_destroy(uri);
-    }
-    return false;
+    goto no_use_proxy;
   }
   if (strcmp(uri->scheme, "unix") == 0) {
     gpr_log(GPR_INFO, "not using proxy for Unix domain socket '%s'",
             server_uri);
-    gpr_free(user_cred);
-    grpc_uri_destroy(uri);
-    return false;
+    goto no_use_proxy;
   }
-  char* no_proxy_str = gpr_getenv("no_proxy");
+  no_proxy_str = gpr_getenv("no_proxy");
   if (no_proxy_str != NULL) {
     static const char* NO_PROXY_SEPARATOR = ",";
     bool use_proxy = true;
@@ -147,12 +142,7 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
       gpr_free(no_proxy_hosts);
       gpr_free(server_host);
       gpr_free(server_port);
-      if (!use_proxy) {
-        grpc_uri_destroy(uri);
-        gpr_free(*name_to_resolve);
-        *name_to_resolve = NULL;
-        return false;
-      }
+      if (!use_proxy) goto no_use_proxy;
     }
   }
   grpc_arg args_to_add[2];
@@ -173,9 +163,15 @@ static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
   } else {
     *new_args = grpc_channel_args_copy_and_add(args, args_to_add, 1);
   }
-  gpr_free(user_cred);
   grpc_uri_destroy(uri);
+  gpr_free(user_cred);
   return true;
+no_use_proxy:
+  if (uri != NULL) grpc_uri_destroy(uri);
+  gpr_free(*name_to_resolve);
+  *name_to_resolve = NULL;
+  gpr_free(user_cred);
+  return false;
 }
 
 static bool proxy_mapper_map_address(grpc_exec_ctx* exec_ctx,

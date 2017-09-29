@@ -370,8 +370,8 @@ for i, elem in enumerate(all_strs):
 
 
 def slice_def(i):
-  return ('{.refcount = &grpc_static_metadata_refcounts[%d], .data.refcounted ='
-          ' {g_bytes+%d, %d}}') % (
+  return ('{&grpc_static_metadata_refcounts[%d],'
+          ' {{g_bytes+%d, %d}}}') % (
       i, id2strofs[i], len(all_strs[i]))
 
 

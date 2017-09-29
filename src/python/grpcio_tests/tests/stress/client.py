@@ -20,7 +20,7 @@ import threading
 import grpc
 from six.moves import queue
 from src.proto.grpc.testing import metrics_pb2_grpc
-from src.proto.grpc.testing import test_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 
 from tests.interop import methods
 from tests.interop import resources
@@ -133,7 +133,7 @@ def run_test(args):
         for _ in xrange(args.num_channels_per_server):
             channel = _get_channel(test_server_target, args)
             for _ in xrange(args.num_stubs_per_channel):
-                stub = test_pb2.TestServiceStub(channel)
+                stub = test_pb2_grpc.TestServiceStub(channel)
                 runner = test_runner.TestRunner(stub, test_cases, hist,
                                                 exception_queue, stop_event)
                 runners.append(runner)

@@ -76,6 +76,6 @@ static const grpc_arg_pointer_vtable socket_mutator_arg_vtable = {
     socket_mutator_arg_copy, socket_mutator_arg_destroy, socket_mutator_cmp};
 
 grpc_arg grpc_socket_mutator_to_arg(grpc_socket_mutator *mutator) {
-  return grpc_channel_arg_pointer_create(GRPC_ARG_SOCKET_MUTATOR, mutator,
-                                         &socket_mutator_arg_vtable);
+  return grpc_channel_arg_pointer_create((char *)GRPC_ARG_SOCKET_MUTATOR,
+                                         mutator, &socket_mutator_arg_vtable);
 }

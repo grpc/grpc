@@ -79,6 +79,125 @@ static timer_shard g_shards[NUM_SHARDS];
  * Access to this is protected by g_shared_mutables.mu */
 static timer_shard *g_shard_queue[NUM_SHARDS];
 
+#ifndef NDEBUG
+
+/* == Hash table for duplicate timer detection == */
+
+#define NUM_HASH_BUCKETS 1009 /* Prime number close to 1000 */
+
+static gpr_mu g_hash_mu[NUM_HASH_BUCKETS]; /* One mutex per bucket */
+static grpc_timer *g_timer_ht[NUM_HASH_BUCKETS] = {NULL};
+
+static void init_timer_ht() {
+  for (int i = 0; i < NUM_HASH_BUCKETS; i++) {
+    gpr_mu_init(&g_hash_mu[i]);
+  }
+}
+
+static bool is_in_ht(grpc_timer *t) {
+  size_t i = GPR_HASH_POINTER(t, NUM_HASH_BUCKETS);
+
+  gpr_mu_lock(&g_hash_mu[i]);
+  grpc_timer *p = g_timer_ht[i];
+  while (p != NULL && p != t) {
+    p = p->hash_table_next;
+  }
+  gpr_mu_unlock(&g_hash_mu[i]);
+
+  return (p == t);
+}
+
+static void add_to_ht(grpc_timer *t) {
+  GPR_ASSERT(!t->hash_table_next);
+  size_t i = GPR_HASH_POINTER(t, NUM_HASH_BUCKETS);
+
+  gpr_mu_lock(&g_hash_mu[i]);
+  grpc_timer *p = g_timer_ht[i];
+  while (p != NULL && p != t) {
+    p = p->hash_table_next;
+  }
+
+  if (p == t) {
+    grpc_closure *c = t->closure;
+    gpr_log(GPR_ERROR,
+            "** Duplicate timer (%p) being added. Closure: (%p), created at: "
+            "(%s:%d), scheduled at: (%s:%d) **",
+            t, c, c->file_created, c->line_created, c->file_initiated,
+            c->line_initiated);
+    abort();
+  }
+
+  /* Timer not present in the bucket. Insert at head of the list */
+  t->hash_table_next = g_timer_ht[i];
+  g_timer_ht[i] = t;
+  gpr_mu_unlock(&g_hash_mu[i]);
+}
+
+static void remove_from_ht(grpc_timer *t) {
+  size_t i = GPR_HASH_POINTER(t, NUM_HASH_BUCKETS);
+  bool removed = false;
+
+  gpr_mu_lock(&g_hash_mu[i]);
+  if (g_timer_ht[i] == t) {
+    g_timer_ht[i] = g_timer_ht[i]->hash_table_next;
+    removed = true;
+  } else if (g_timer_ht[i] != NULL) {
+    grpc_timer *p = g_timer_ht[i];
+    while (p->hash_table_next != NULL && p->hash_table_next != t) {
+      p = p->hash_table_next;
+    }
+
+    if (p->hash_table_next == t) {
+      p->hash_table_next = t->hash_table_next;
+      removed = true;
+    }
+  }
+  gpr_mu_unlock(&g_hash_mu[i]);
+
+  if (!removed) {
+    grpc_closure *c = t->closure;
+    gpr_log(GPR_ERROR,
+            "** Removing timer (%p) that is not added to hash table. Closure "
+            "(%p), created at: (%s:%d), scheduled at: (%s:%d) **",
+            t, c, c->file_created, c->line_created, c->file_initiated,
+            c->line_initiated);
+    abort();
+  }
+
+  t->hash_table_next = NULL;
+}
+
+/* If a timer is added to a timer shard (either heap or a list), it cannot
+ * be pending. A timer is added to hash table only-if it is added to the
+ * timer shard.
+ * Therefore, if timer->pending is false, it cannot be in hash table */
+static void validate_non_pending_timer(grpc_timer *t) {
+  if (!t->pending && is_in_ht(t)) {
+    grpc_closure *c = t->closure;
+    gpr_log(GPR_ERROR,
+            "** gpr_timer_cancel() called on a non-pending timer (%p) which "
+            "is in the hash table. Closure: (%p), created at: (%s:%d), "
+            "scheduled at: (%s:%d) **",
+            t, c, c->file_created, c->line_created, c->file_initiated,
+            c->line_initiated);
+    abort();
+  }
+}
+
+#define INIT_TIMER_HASH_TABLE() init_timer_ht()
+#define ADD_TO_HASH_TABLE(t) add_to_ht((t))
+#define REMOVE_FROM_HASH_TABLE(t) remove_from_ht((t))
+#define VALIDATE_NON_PENDING_TIMER(t) validate_non_pending_timer((t))
+
+#else
+
+#define INIT_TIMER_HASH_TABLE()
+#define ADD_TO_HASH_TABLE(t)
+#define REMOVE_FROM_HASH_TABLE(t)
+#define VALIDATE_NON_PENDING_TIMER(t)
+
+#endif
+
 /* Thread local variable that stores the deadline of the next timer the thread
  * has last-seen. This is an optimization to prevent the thread from checking
  * shared_mutables.min_timer (which requires acquiring shared_mutables.mu lock,
@@ -95,9 +214,7 @@ struct shared_mutables {
   gpr_mu mu;
 } GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
 
-static struct shared_mutables g_shared_mutables = {
-    .checker_mu = GPR_SPINLOCK_STATIC_INITIALIZER, .initialized = false,
-};
+static struct shared_mutables g_shared_mutables;
 
 static gpr_clock_type g_clock_type;
 static gpr_timespec g_start_time;
@@ -155,6 +272,7 @@ void grpc_timer_list_init(gpr_timespec now) {
   uint32_t i;
 
   g_shared_mutables.initialized = true;
+  g_shared_mutables.checker_mu = GPR_SPINLOCK_INITIALIZER;
   gpr_mu_init(&g_shared_mutables.mu);
   g_clock_type = now.clock_type;
   g_start_time = now;
@@ -176,6 +294,8 @@ void grpc_timer_list_init(gpr_timespec now) {
     shard->min_deadline = compute_min_deadline(shard);
     g_shard_queue[i] = shard;
   }
+
+  INIT_TIMER_HASH_TABLE();
 }
 
 void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx) {
@@ -246,6 +366,10 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
   timer->closure = closure;
   gpr_atm deadline_atm = timer->deadline = timespec_to_atm_round_up(deadline);
 
+#ifndef NDEBUG
+  timer->hash_table_next = NULL;
+#endif
+
   if (GRPC_TRACER_ON(grpc_timer_trace)) {
     gpr_log(GPR_DEBUG, "TIMER %p: SET %" PRId64 ".%09d [%" PRIdPTR
                        "] now %" PRId64 ".%09d [%" PRIdPTR "] call %p[%p]",
@@ -273,6 +397,9 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
 
   grpc_time_averaged_stats_add_sample(&shard->stats,
                                       ts_to_dbl(gpr_time_sub(deadline, now)));
+
+  ADD_TO_HASH_TABLE(timer);
+
   if (deadline_atm < shard->queue_deadline_cap) {
     is_first_timer = grpc_timer_heap_add(&shard->heap, timer);
   } else {
@@ -334,7 +461,10 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
     gpr_log(GPR_DEBUG, "TIMER %p: CANCEL pending=%s", timer,
             timer->pending ? "true" : "false");
   }
+
   if (timer->pending) {
+    REMOVE_FROM_HASH_TABLE(timer);
+
     GRPC_CLOSURE_SCHED(exec_ctx, timer->closure, GRPC_ERROR_CANCELLED);
     timer->pending = false;
     if (timer->heap_index == INVALID_HEAP_INDEX) {
@@ -342,6 +472,8 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
     } else {
       grpc_timer_heap_remove(&shard->heap, timer);
     }
+  } else {
+    VALIDATE_NON_PENDING_TIMER(timer);
   }
   gpr_mu_unlock(&shard->mu);
 }
@@ -425,6 +557,7 @@ static size_t pop_timers(grpc_exec_ctx *exec_ctx, timer_shard *shard,
   grpc_timer *timer;
   gpr_mu_lock(&shard->mu);
   while ((timer = pop_one(shard, now))) {
+    REMOVE_FROM_HASH_TABLE(timer);
     GRPC_CLOSURE_SCHED(exec_ctx, timer->closure, GRPC_ERROR_REF(error));
     n++;
   }

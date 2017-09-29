@@ -171,14 +171,6 @@ cdef class Timespec:
         gpr_convert_clock_type(self.c_time, GPR_CLOCK_REALTIME))
     return <double>real_time.seconds + <double>real_time.nanoseconds / 1e9
 
-  @staticmethod
-  def infinite_future():
-    return Timespec(float("+inf"))
-
-  @staticmethod
-  def infinite_past():
-    return Timespec(float("-inf"))
-
   def __richcmp__(Timespec self not None, Timespec other not None, int op):
     cdef gpr_timespec self_c_time = self.c_time
     cdef gpr_timespec other_c_time = other.c_time
@@ -454,7 +446,7 @@ cdef class _MetadataIterator:
       self.i = self.i + 1
       return result
     else:
-      raise StopIteration
+      raise StopIteration()
 
 
 # TODO(https://github.com/grpc/grpc/issues/7950): Eliminate this; just use an
@@ -518,7 +510,7 @@ cdef class MetadataArray:
 
   def __getitem__(self, size_t i):
     if i >= self.c_metadata_array.count:
-      raise IndexError
+      raise IndexError()
     key = _slice_bytes(self.c_metadata_array.metadata[i].key)
     value = _slice_bytes(self.c_metadata_array.metadata[i].value)
     return Metadatum(key=key, value=value)
@@ -720,7 +712,7 @@ cdef class _OperationsIterator:
       self.i = self.i + 1
       return result
     else:
-      raise StopIteration
+      raise StopIteration()
 
 
 cdef class Operations:
@@ -782,7 +774,7 @@ cdef class CompressionOptions:
 
 
 def compression_algorithm_name(grpc_compression_algorithm algorithm):
-  cdef char* name
+  cdef const char* name
   with nogil:
     grpc_compression_algorithm_name(algorithm, &name)
   # Let Cython do the right thing with string casting
