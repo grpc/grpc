@@ -120,7 +120,8 @@ void CallData::setQueue(std::unique_ptr<CompletionQueue>&& pCompletionQueue)
 /*                              Metadata Array                               */
 /*****************************************************************************/
 
-MetadataArray::MetadataArray(const bool owned) : m_PHPData{}, m_Owned{ owned }
+MetadataArray::MetadataArray(const bool owned) : m_PHPData{}, m_Owned{ owned },
+    m_Released{ false }
 {
     grpc_metadata_array_init(&m_Array);
     // NOTE: Do not intialize the metadata array here with any members as
@@ -205,6 +206,30 @@ bool MetadataArray::init(const Array& phpArray)
     }
     m_Array.count = count;
     return true;
+}
+
+// this will increase the ref on the PHP data slices so they will not go out
+// of scope when the metadata is destructed
+void MetadataArray::release(void)
+{
+    if (!owned())
+    {
+        SystemLib::throwRuntimeExceptionObject("can only release an owned metadata array");
+    }
+
+    if (!m_Released)
+    {
+        // increase ref count on the slices so that they do get deleted when the
+        // phpData is deleted
+        for(size_t elem{ 0 }; elem < m_PHPData.size(); ++elem)
+        {
+            std::pair<Slice, Slice>& slicePair{ m_PHPData[elem] };
+            slicePair.first.increaseRef();
+            slicePair.second.increaseRef();
+        }
+
+        m_Released = true;
+    }
 }
 
 // Creates and returns a PHP array object with the data in a

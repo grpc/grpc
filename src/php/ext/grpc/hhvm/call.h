@@ -63,6 +63,7 @@ public:
     grpc_metadata_array& array(void) { return m_Array; } // several methods need non const &
     Variant phpData(void) const;
     bool owned(void) const { return m_Owned; }
+    void release(void);
 
 private:
     // helper functions
@@ -73,6 +74,7 @@ private:
     grpc_metadata_array m_Array;
     std::vector<std::pair<Slice, Slice>> m_PHPData; // the key, value PHP Data
     bool m_Owned;
+    bool m_Released;
 };
 
 /*****************************************************************************/
