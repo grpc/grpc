@@ -289,16 +289,16 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
     }
     catch(Exception& e)
     {
-        gpr_log(GPR_DEBUG, "plugin_credentials[....]: request %p: Finished vm_call_user_func with error", cb);
+        gpr_log(GPR_DEBUG, "plugin_credentials[....]: request %p: Finished vm_call_user_func with error (1)", cb);
         // catch PHP exception
         failCredentials(GRPC_STATUS_UNKNOWN);
-        //*error_details = e.getMessage().c_str();
+        //*error_details = gpr_strdup(e.getMessage().c_str());
 
         return false;
     }
     catch(...)
     {
-        gpr_log(GPR_DEBUG, "plugin_credentials[....]: request %p: Finished vm_call_user_func with error", cb);
+        gpr_log(GPR_DEBUG, "plugin_credentials[....]: request %p: Finished vm_call_user_func with error (2)", cb);
         // catch other exception
         failCredentials(GRPC_STATUS_UNKNOWN);
 
