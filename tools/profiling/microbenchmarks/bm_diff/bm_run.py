@@ -95,6 +95,7 @@ def _collect_bm_data(bm, cfg, name, regex, idx, loops):
         shortname='%s %s %s %s %d/%d' % (bm, line, cfg, name, idx + 1,
                          loops),
         verbose_success=True,
+        cpu_cost=2,
         timeout_seconds=60 * 60)) # one hour
   return jobs_list
 
