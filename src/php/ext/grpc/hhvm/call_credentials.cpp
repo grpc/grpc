@@ -266,7 +266,13 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
     Variant params{ make_packed_array(returnObj) };
 
     gpr_log(GPR_INFO, "plugin_credentials[....]: request %p: Starting vm_call_user_func", cb);
-    Variant retVal{ vm_call_user_func(pState->callback, params) };
+    Variant retVal;
+
+    try {
+        retVal = vm_call_user_func(pState->callback, params);
+    } catch(Exception& e) {
+        std::cout << "Exception!!! " << e.getMessage() << std::endl;
+    }
     gpr_log(GPR_INFO, "plugin_credentials[....]: request %p: Finished vm_call_user_func", cb);
 
     *error_details = nullptr;
