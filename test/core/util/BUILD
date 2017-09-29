@@ -89,11 +89,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "one_corpus_entry_fuzzer",
-    srcs = ["one_corpus_entry_fuzzer.c"],
+    name = "fuzzer_corpus_test",
+    srcs = ["fuzzer_corpus_test.cc"],
     deps = [
         ":gpr_test_util",
         "//:grpc",
+    ],
+    external_deps = [
+        "gtest",
+        "gflags",
     ],
 )
 
