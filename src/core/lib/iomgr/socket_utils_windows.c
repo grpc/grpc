@@ -26,12 +26,8 @@
 #include <grpc/support/log.h>
 
 const char *grpc_inet_ntop(int af, const void *src, char *dst, size_t size) {
-#ifdef GPR_WIN_INET_NTOP
-  return inet_ntop(af, src, dst, size);
-#else
   /* Windows InetNtopA wants a mutable ip pointer */
   return InetNtopA(af, (void *)src, dst, size);
-#endif /* GPR_WIN_INET_NTOP */
 }
 
 #endif /* GRPC_WINDOWS_SOCKETUTILS */

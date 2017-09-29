@@ -66,7 +66,7 @@ def start_local_dns_server(args):
 
   with open(args.records_config_path) as config:
     test_records_config = yaml.load(config)
-  common_zone_name = test_records_config['resolver_component_tests_common_zone_name']
+  common_zone_name = test_records_config['resolver_tests_common_zone_name']
   for group in test_records_config['resolver_component_tests']:
     for name in group['records'].keys():
       for record in group['records'][name]:
