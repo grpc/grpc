@@ -150,6 +150,18 @@ std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
   return nullptr;
 }
 
+std::shared_ptr<CallCredentials> CompositeCallCredentials(
+    const std::shared_ptr<CallCredentials>& creds1,
+    const std::shared_ptr<CallCredentials>& creds2) {
+  SecureCallCredentials* s_creds1 = creds1->AsSecureCredentials();
+  SecureCallCredentials* s_creds2 = creds2->AsSecureCredentials();
+  if (s_creds1 != nullptr && s_creds2 != nullptr) {
+    return WrapCallCredentials(grpc_composite_call_credentials_create(
+        s_creds1->GetRawCreds(), s_creds2->GetRawCreds(), nullptr));
+  }
+  return nullptr;
+}
+
 void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
   if (wrapper == nullptr) return;
   MetadataCredentialsPluginWrapper* w =
