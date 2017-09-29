@@ -3612,6 +3612,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/parse_hexstring.c \
     test/core/util/passthru_endpoint.c \
     test/core/util/port.c \
+    test/core/util/port_hermetic.c \
     test/core/util/port_server_client.c \
     test/core/util/slice_splitter.c \
     test/core/util/trickle_endpoint.c \
@@ -3866,6 +3867,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/util/parse_hexstring.c \
     test/core/util/passthru_endpoint.c \
     test/core/util/port.c \
+    test/core/util/port_hermetic.c \
     test/core/util/port_server_client.c \
     test/core/util/slice_splitter.c \
     test/core/util/trickle_endpoint.c \

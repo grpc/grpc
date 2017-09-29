@@ -40,6 +40,7 @@ grpc_cc_library(
         "parse_hexstring.c",
         "passthru_endpoint.c",
         "port.c",
+        "port_hermetic.c",
         "port_server_client.c",
         "reconnect_server.c",
         "slice_splitter.c",
@@ -58,6 +59,9 @@ grpc_cc_library(
         "slice_splitter.h",
         "test_tcp_server.h",
         "trickle_endpoint.h",
+    ],
+    defines = [
+        "GRPC_HERMETIC_TESTS=1",
     ],
     language = "C",
     deps = [

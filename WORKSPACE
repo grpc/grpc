@@ -92,3 +92,13 @@ new_local_repository(
     path = "third_party/cares",
     build_file = "third_party/cares/cares.BUILD",
 )
+
+http_archive(
+    name = "bazel_toolchains",
+    urls = [
+        "http://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/9dbd803ad3b9447430a296810197b09b3a710956.tar.gz",
+        "https://github.com/bazelbuild/bazel-toolchains/archive/9dbd803ad3b9447430a296810197b09b3a710956.tar.gz",
+    ],
+    strip_prefix = "bazel-toolchains-9dbd803ad3b9447430a296810197b09b3a710956",
+    sha256 = "0799aa12db5260a499beb40f81744e760c59d055bfc5d271dd2c2ed4d5419faa",
+)
