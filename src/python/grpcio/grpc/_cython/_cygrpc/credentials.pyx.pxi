@@ -89,18 +89,18 @@ cdef class CredentialsMetadataPlugin:
     self.plugin_callback = plugin_callback
     self.plugin_name = name
 
-  @staticmethod
-  cdef grpc_metadata_credentials_plugin make_c_plugin(self):
-    cdef grpc_metadata_credentials_plugin result
-    result.get_metadata = plugin_get_metadata
-    result.destroy = plugin_destroy_c_plugin_state
-    result.state = <void *>self
-    result.type = self.plugin_name
-    cpython.Py_INCREF(self)
-    return result
-
   def __dealloc__(self):
     grpc_shutdown()
+
+
+cdef grpc_metadata_credentials_plugin _c_plugin(CredentialsMetadataPlugin plugin):
+  cdef grpc_metadata_credentials_plugin c_plugin
+  c_plugin.get_metadata = plugin_get_metadata
+  c_plugin.destroy = plugin_destroy_c_plugin_state
+  c_plugin.state = <void *>plugin
+  c_plugin.type = plugin.plugin_name
+  cpython.Py_INCREF(plugin)
+  return c_plugin
 
 
 cdef class AuthMetadataContext:
@@ -239,7 +239,7 @@ def call_credentials_google_iam(authorization_token, authority_selector):
 
 def call_credentials_metadata_plugin(CredentialsMetadataPlugin plugin):
   cdef CallCredentials credentials = CallCredentials()
-  cdef grpc_metadata_credentials_plugin c_plugin = plugin.make_c_plugin()
+  cdef grpc_metadata_credentials_plugin c_plugin = _c_plugin(plugin)
   with nogil:
     credentials.c_credentials = (
         grpc_metadata_credentials_create_from_plugin(c_plugin, NULL))
