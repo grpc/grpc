@@ -271,7 +271,19 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
     try {
         retVal = vm_call_user_func(pState->callback, params);
     } catch(Exception& e) {
-        std::cout << "Exception!!! " << e.getMessage() << std::endl;
+        *status = GRPC_STATUS_UNKNOWN;
+        *error_details = e.getMessage().c_str();
+
+        if (async)
+        {
+            cb(user_data, nullptr, 0, *status, nullptr);
+        }
+        else
+        {
+            *num_creds_md = 0;
+        }
+
+        return false;
     }
     gpr_log(GPR_INFO, "plugin_credentials[....]: request %p: Finished vm_call_user_func", cb);
 
@@ -374,7 +386,6 @@ int plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
         if (callThreadId == std::this_thread::get_id())
         {
             HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata same thread") // Debug Trace
-            std::cout << "CallCredentials plugin_get_metadata same thread" << std::endl;
 
             bool result{ plugin_do_get_metadata(ptr, contextServiceUrl, contextMethodName,
                                                 cb, user_data,
@@ -395,7 +406,6 @@ int plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
         else
         {
             HHVM_TRACE_SCOPE("CallCredentials plugin_get_metadata different thread") // Debug Trace
-            std::cout << "CallCredentials plugin_get_metadata different thread" << std::endl;
 
             plugin_get_metadata_params params{ ptr, std::move(contextServiceUrl),
                                                std::move(contextMethodName),
