@@ -32,6 +32,7 @@
 
 #include "grpc/support/alloc.h"
 #include "grpc/support/string_util.h"
+#include "grpc/support/log.h"
 
 namespace HPHP {
 
