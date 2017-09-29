@@ -41,7 +41,8 @@ cdef class CredentialsMetadataPlugin:
   cdef object plugin_callback
   cdef bytes plugin_name
 
-  cdef grpc_metadata_credentials_plugin make_c_plugin(self)
+
+cdef grpc_metadata_credentials_plugin _c_plugin(CredentialsMetadataPlugin plugin)
 
 
 cdef class AuthMetadataContext:
