@@ -79,6 +79,7 @@
     "binding.gyp"
   ],
   "main": "src/node/index.js",
+  "typings": "src/node/index.d.ts",
   "license": "Apache-2.0",
   "jshintConfig": {
     "bitwise": true,
