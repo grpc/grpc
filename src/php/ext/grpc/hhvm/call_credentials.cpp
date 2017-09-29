@@ -256,7 +256,6 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
                             const char** error_details, const bool async)
 {
     HHVM_TRACE_SCOPE("CallCredentials plugin_do_get_metadata") // Debug Trace
-    gpr_log(GPR_INFO, "plugin_credentials[....]: request %p: Starting plugin_do_get_metadata", cb);
 
     plugin_state* const pState{ reinterpret_cast<plugin_state *>(ptr) };
 
@@ -265,7 +264,7 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
     returnObj.o_set("method_name", String(methodName, CopyString));
     Variant params{ make_packed_array(returnObj) };
 
-    gpr_log(GPR_INFO, "plugin_credentials[....]: request %p: Starting vm_call_user_func", cb);
+    gpr_log(GPR_DEBUG, "plugin_credentials[....]: request %p: Starting vm_call_user_func", cb);
     Variant retVal;
 
     try {
@@ -285,13 +284,12 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
 
         return false;
     }
-    gpr_log(GPR_INFO, "plugin_credentials[....]: request %p: Finished vm_call_user_func", cb);
+    gpr_log(GPR_DEBUG, "plugin_credentials[....]: request %p: Finished vm_call_user_func", cb);
 
     *error_details = nullptr;
     *status = GRPC_STATUS_OK;
     if (retVal.isNull() || !retVal.isArray())
     {
-        gpr_log(GPR_INFO, "plugin_credentials[....]: request %p: vm_call_user_func failed", cb);
         *status = GRPC_STATUS_UNKNOWN;
         if (async)
         {
@@ -307,7 +305,6 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
         MetadataArray metadata{ true };
         if (!metadata.init(retVal.toArray()))
         {
-            gpr_log(GPR_INFO, "plugin_credentials[....]: request %p: Invalid metadata", cb);
             *status = GRPC_STATUS_INVALID_ARGUMENT;
             if (async)
             {
@@ -329,13 +326,11 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
             {
                 if (metadata.size() > GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX)
                 {
-                    gpr_log(GPR_INFO, "plugin_credentials[....]: request %p: Too many credentials", cb);
                     *status = GRPC_STATUS_INTERNAL;
                     *error_details = gpr_strdup("PHP plugin credentials returned too many metadata entries");
                 }
                 else
                 {
-                    gpr_log(GPR_INFO, "plugin_credentials[....]: request %p: Saving metadata to creds_md", cb);
                     *num_creds_md = metadata.size();
                     for (size_t i{ 0 }; i < *num_creds_md; ++i)
                     {
@@ -354,8 +349,6 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
             }
         }
     }
-
-    gpr_log(GPR_INFO, "plugin_credentials[....]: request %p: Finished plugin_do_get_metadata", cb);
 
     return ((*status) == GRPC_STATUS_OK);
 }

@@ -249,7 +249,7 @@ typedef struct {
   void *reserved;
 } grpc_auth_metadata_context;
 
-/** Maximum number of credentials returnable by a credentials plugin via
+/** Maximum number of metadata entries returnable by a credentials plugin via
     a synchronous return. */
 #define GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX 4
 
