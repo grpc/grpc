@@ -25,6 +25,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/security_connector.h"
@@ -84,4 +85,7 @@ void grpc_register_security_filters(void) {
                                    maybe_prepend_server_auth_filter, NULL);
 }
 
-void grpc_security_init() { grpc_security_register_handshaker_factories(); }
+void grpc_security_init() {
+  grpc_security_register_handshaker_factories();
+  grpc_register_tracer(&grpc_plugin_credentials_trace);
+}

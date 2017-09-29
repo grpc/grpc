@@ -112,9 +112,12 @@ static void grpc_rb_call_credentials_callback_with_gil(void *param) {
   gpr_free(params);
 }
 
-static void grpc_rb_call_credentials_plugin_get_metadata(
+static int grpc_rb_call_credentials_plugin_get_metadata(
     void *state, grpc_auth_metadata_context context,
-    grpc_credentials_plugin_metadata_cb cb, void *user_data) {
+    grpc_credentials_plugin_metadata_cb cb, void *user_data,
+    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+    size_t *num_creds_md, grpc_status_code *status,
+    const char **error_details) {
   callback_params *params = gpr_malloc(sizeof(callback_params));
   params->get_metadata = (VALUE)state;
   params->context = context;
@@ -123,6 +126,7 @@ static void grpc_rb_call_credentials_plugin_get_metadata(
 
   grpc_rb_event_queue_enqueue(grpc_rb_call_credentials_callback_with_gil,
                               (void *)(params));
+  return 0;  // Async return.
 }
 
 static void grpc_rb_call_credentials_plugin_destroy(void *state) {

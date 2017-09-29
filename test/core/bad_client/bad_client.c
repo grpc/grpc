@@ -134,9 +134,12 @@ void grpc_run_bad_client_test(
   grpc_endpoint_write(&exec_ctx, sfd.client, &outgoing, &done_write_closure);
   grpc_exec_ctx_finish(&exec_ctx);
 
-  /* Await completion */
-  GPR_ASSERT(
-      gpr_event_wait(&a.done_write, grpc_timeout_seconds_to_deadline(5)));
+  /* Await completion, unless the request is large and write may not finish
+   * before the peer shuts down. */
+  if (!(flags & GRPC_BAD_CLIENT_LARGE_REQUEST)) {
+    GPR_ASSERT(
+        gpr_event_wait(&a.done_write, grpc_timeout_seconds_to_deadline(5)));
+  }
 
   if (flags & GRPC_BAD_CLIENT_DISCONNECT) {
     grpc_endpoint_shutdown(
@@ -186,6 +189,8 @@ void grpc_run_bad_client_test(
     grpc_exec_ctx_finish(&exec_ctx);
   }
 
+  GPR_ASSERT(
+      gpr_event_wait(&a.done_write, grpc_timeout_seconds_to_deadline(1)));
   shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
   grpc_server_shutdown_and_notify(a.server, shutdown_cq, NULL);
   GPR_ASSERT(grpc_completion_queue_pluck(
