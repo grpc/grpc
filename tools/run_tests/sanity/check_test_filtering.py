@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.abspath('tools/run_tests/'))
 from run_tests_matrix import _create_test_jobs, _create_portability_test_jobs
 import python_utils.filter_pull_request_tests as filter_pull_request_tests
 
-_LIST_OF_LANGUAGE_LABELS = ['c', 'c++', 'csharp', 'node', 'objc', 'php', 'php7', 'python', 'ruby']
+_LIST_OF_LANGUAGE_LABELS = ['c', 'c++', 'csharp', 'grpc-node', 'node', 'objc', 'php', 'php7', 'python', 'ruby']
 _LIST_OF_PLATFORM_LABELS = ['linux', 'macos', 'windows']
 
 class TestFilteringTest(unittest.TestCase):

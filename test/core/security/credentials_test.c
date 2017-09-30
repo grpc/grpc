@@ -1036,39 +1036,46 @@ typedef enum {
 
 static const expected_md plugin_md[] = {{"foo", "bar"}, {"hi", "there"}};
 
-static void plugin_get_metadata_success(void *state,
-                                        grpc_auth_metadata_context context,
-                                        grpc_credentials_plugin_metadata_cb cb,
-                                        void *user_data) {
-  size_t i;
-  grpc_metadata md[GPR_ARRAY_SIZE(plugin_md)];
-  plugin_state *s = (plugin_state *)state;
+static int plugin_get_metadata_success(
+    void *state, grpc_auth_metadata_context context,
+    grpc_credentials_plugin_metadata_cb cb, void *user_data,
+    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+    size_t *num_creds_md, grpc_status_code *status,
+    const char **error_details) {
   GPR_ASSERT(strcmp(context.service_url, test_service_url) == 0);
   GPR_ASSERT(strcmp(context.method_name, test_method) == 0);
   GPR_ASSERT(context.channel_auth_context == NULL);
   GPR_ASSERT(context.reserved == NULL);
+  GPR_ASSERT(GPR_ARRAY_SIZE(plugin_md) <
+             GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX);
+  plugin_state *s = (plugin_state *)state;
   *s = PLUGIN_GET_METADATA_CALLED_STATE;
-  for (i = 0; i < GPR_ARRAY_SIZE(plugin_md); i++) {
-    memset(&md[i], 0, sizeof(grpc_metadata));
-    md[i].key = grpc_slice_from_copied_string(plugin_md[i].key);
-    md[i].value = grpc_slice_from_copied_string(plugin_md[i].value);
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(plugin_md); ++i) {
+    memset(&creds_md[i], 0, sizeof(grpc_metadata));
+    creds_md[i].key = grpc_slice_from_copied_string(plugin_md[i].key);
+    creds_md[i].value = grpc_slice_from_copied_string(plugin_md[i].value);
   }
-  cb(user_data, md, GPR_ARRAY_SIZE(md), GRPC_STATUS_OK, NULL);
+  *num_creds_md = GPR_ARRAY_SIZE(plugin_md);
+  return true;  // Synchronous return.
 }
 
 static const char *plugin_error_details = "Could not get metadata for plugin.";
 
-static void plugin_get_metadata_failure(void *state,
-                                        grpc_auth_metadata_context context,
-                                        grpc_credentials_plugin_metadata_cb cb,
-                                        void *user_data) {
-  plugin_state *s = (plugin_state *)state;
+static int plugin_get_metadata_failure(
+    void *state, grpc_auth_metadata_context context,
+    grpc_credentials_plugin_metadata_cb cb, void *user_data,
+    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+    size_t *num_creds_md, grpc_status_code *status,
+    const char **error_details) {
   GPR_ASSERT(strcmp(context.service_url, test_service_url) == 0);
   GPR_ASSERT(strcmp(context.method_name, test_method) == 0);
   GPR_ASSERT(context.channel_auth_context == NULL);
   GPR_ASSERT(context.reserved == NULL);
+  plugin_state *s = (plugin_state *)state;
   *s = PLUGIN_GET_METADATA_CALLED_STATE;
-  cb(user_data, NULL, 0, GRPC_STATUS_UNAUTHENTICATED, plugin_error_details);
+  *status = GRPC_STATUS_UNAUTHENTICATED;
+  *error_details = gpr_strdup(plugin_error_details);
+  return true;  // Synchronous return.
 }
 
 static void plugin_destroy(void *state) {

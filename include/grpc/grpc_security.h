@@ -249,19 +249,40 @@ typedef struct {
   void *reserved;
 } grpc_auth_metadata_context;
 
+/** Maximum number of metadata entries returnable by a credentials plugin via
+    a synchronous return. */
+#define GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX 4
+
 /** grpc_metadata_credentials plugin is an API user provided structure used to
    create grpc_credentials objects that can be set on a channel (composed) or
    a call. See grpc_credentials_metadata_create_from_plugin below.
    The grpc client stack will call the get_metadata method of the plugin for
    every call in scope for the credentials created from it. */
 typedef struct {
-  /** The implementation of this method has to be non-blocking.
-     - context is the information that can be used by the plugin to create auth
-       metadata.
-     - cb is the callback that needs to be called when the metadata is ready.
-     - user_data needs to be passed as the first parameter of the callback. */
-  void (*get_metadata)(void *state, grpc_auth_metadata_context context,
-                       grpc_credentials_plugin_metadata_cb cb, void *user_data);
+  /** The implementation of this method has to be non-blocking, but can
+     be performed synchronously or asynchronously.
+
+     If processing occurs synchronously, returns non-zero and populates
+     creds_md, num_creds_md, status, and error_details.  In this case,
+     the caller takes ownership of the entries in creds_md and of
+     error_details.  Note that if the plugin needs to return more than
+     GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX entries in creds_md, it must
+     return asynchronously.
+
+     If processing occurs asynchronously, returns zero and invokes \a cb
+     when processing is completed.  \a user_data will be passed as the
+     first parameter of the callback.  NOTE: \a cb MUST be invoked in a
+     different thread, not from the thread in which \a get_metadata() is
+     invoked.
+
+     \a context is the information that can be used by the plugin to create
+     auth metadata. */
+  int (*get_metadata)(
+      void *state, grpc_auth_metadata_context context,
+      grpc_credentials_plugin_metadata_cb cb, void *user_data,
+      grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+      size_t *num_creds_md, grpc_status_code *status,
+      const char **error_details);
 
   /** Destroys the plugin state. */
   void (*destroy)(void *state);

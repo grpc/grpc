@@ -47,7 +47,7 @@ class TestSuite:
 _CORE_TEST_SUITE = TestSuite(['c'])
 _CPP_TEST_SUITE = TestSuite(['c++'])
 _CSHARP_TEST_SUITE = TestSuite(['csharp'])
-_NODE_TEST_SUITE = TestSuite(['node'])
+_NODE_TEST_SUITE = TestSuite(['node', 'grpc-node'])
 _OBJC_TEST_SUITE = TestSuite(['objc'])
 _PHP_TEST_SUITE = TestSuite(['php', 'php7'])
 _PYTHON_TEST_SUITE = TestSuite(['python'])
