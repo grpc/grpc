@@ -2576,7 +2576,7 @@ static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
   if (GRPC_TRACER_ON(grpc_http_trace)) {
     gpr_log(GPR_DEBUG, "%s: Complete BDP ping", t->peer_string);
   }
-  grpc_bdp_estimator_complete_ping(&t->flow_control.bdp_estimator);
+  grpc_bdp_estimator_complete_ping(exec_ctx, &t->flow_control.bdp_estimator);
 
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "bdp_ping");
 }

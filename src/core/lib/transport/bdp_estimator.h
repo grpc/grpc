@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 #define GRPC_BDP_SAMPLES 16
 #define GRPC_BDP_MIN_SAMPLES_FOR_ESTIMATE 3
@@ -39,10 +40,10 @@ typedef struct grpc_bdp_estimator {
   grpc_bdp_estimator_ping_state ping_state;
   int64_t accumulator;
   int64_t estimate;
-  // case ping_state of
-  //  GRPC_BDP_PING_UNSCHEDULED => when to start the next ping
-  //  GRPC_BDP_PING_STARTED => when the current ping was started
+  // when was the current ping started?
   gpr_timespec ping_start_time;
+  // when should the next ping start?
+  grpc_millis next_ping_scheduled;
   int inter_ping_delay;
   int stable_estimate_count;
   double bw_est;
@@ -60,7 +61,8 @@ bool grpc_bdp_estimator_get_bw(const grpc_bdp_estimator *estimator, double *bw);
 void grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
                                            int64_t num_bytes);
 // Returns true if the user should schedule a ping
-bool grpc_bdp_estimator_need_ping(const grpc_bdp_estimator *estimator);
+bool grpc_bdp_estimator_need_ping(grpc_exec_ctx *exec_ctx,
+                                  const grpc_bdp_estimator *estimator);
 // Schedule a ping: call in response to receiving a true from
 // grpc_bdp_estimator_add_incoming_bytes once a ping has been scheduled by a
 // transport (but not necessarily started)
@@ -69,6 +71,7 @@ void grpc_bdp_estimator_schedule_ping(grpc_bdp_estimator *estimator);
 // the ping is on the wire
 void grpc_bdp_estimator_start_ping(grpc_bdp_estimator *estimator);
 // Completes a previously started ping
-void grpc_bdp_estimator_complete_ping(grpc_bdp_estimator *estimator);
+void grpc_bdp_estimator_complete_ping(grpc_exec_ctx *exec_ctx,
+                                      grpc_bdp_estimator *estimator);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H */

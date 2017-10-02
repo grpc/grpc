@@ -30,6 +30,7 @@ void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator, const char *name) {
   estimator->estimate = 65536;
   estimator->ping_state = GRPC_BDP_PING_UNSCHEDULED;
   estimator->ping_start_time = gpr_time_0(GPR_CLOCK_MONOTONIC);
+  estimator->next_ping_scheduled = 0;
   estimator->name = name;
   estimator->bw_est = 0;
   estimator->inter_ping_delay = 100.0;  // start at 100ms
@@ -53,11 +54,11 @@ void grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
   estimator->accumulator += num_bytes;
 }
 
-bool grpc_bdp_estimator_need_ping(const grpc_bdp_estimator *estimator) {
+bool grpc_bdp_estimator_need_ping(grpc_exec_ctx *exec_ctx,
+                                  const grpc_bdp_estimator *estimator) {
   switch (estimator->ping_state) {
     case GRPC_BDP_PING_UNSCHEDULED:
-      return gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC),
-                          estimator->ping_start_time) >= 0;
+      return grpc_exec_ctx_now(exec_ctx) >= estimator->next_ping_scheduled;
     case GRPC_BDP_PING_SCHEDULED:
       return false;
     case GRPC_BDP_PING_STARTED:
@@ -87,7 +88,8 @@ void grpc_bdp_estimator_start_ping(grpc_bdp_estimator *estimator) {
   estimator->ping_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
 }
 
-void grpc_bdp_estimator_complete_ping(grpc_bdp_estimator *estimator) {
+void grpc_bdp_estimator_complete_ping(grpc_exec_ctx *exec_ctx,
+                                      grpc_bdp_estimator *estimator) {
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_timespec dt_ts = gpr_time_sub(now, estimator->ping_start_time);
   double dt = (double)dt_ts.tv_sec + 1e-9 * (double)dt_ts.tv_nsec;
@@ -129,6 +131,6 @@ void grpc_bdp_estimator_complete_ping(grpc_bdp_estimator *estimator) {
   }
   estimator->ping_state = GRPC_BDP_PING_UNSCHEDULED;
   estimator->accumulator = 0;
-  estimator->ping_start_time = gpr_time_add(
-      now, gpr_time_from_millis(estimator->inter_ping_delay, GPR_TIMESPAN));
+  estimator->next_ping_scheduled =
+      grpc_exec_ctx_now(exec_ctx) + estimator->inter_ping_delay;
 }

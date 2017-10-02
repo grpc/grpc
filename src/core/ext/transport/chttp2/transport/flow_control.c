@@ -457,7 +457,8 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
     }
   }
   if (tfc->enable_bdp_probe) {
-    action.need_ping = grpc_bdp_estimator_need_ping(&tfc->bdp_estimator);
+    action.need_ping =
+        grpc_bdp_estimator_need_ping(exec_ctx, &tfc->bdp_estimator);
 
     // get bdp estimate and update initial_window accordingly.
     int64_t estimate = -1;

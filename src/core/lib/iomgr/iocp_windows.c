@@ -43,7 +43,7 @@ static HANDLE g_iocp;
 static DWORD deadline_to_millis_timeout(grpc_exec_ctx *exec_ctx,
                                         grpc_millis deadline) {
   gpr_timespec timeout;
-  if (deadline == GRPC_MILLIS_INF_FUTURE) == 0) {
+  if (deadline == GRPC_MILLIS_INF_FUTURE) {
     return INFINITE;
   }
   return (DWORD)GPR_MAX(0, deadline - grpc_exec_ctx_now(exec_ctx));
@@ -113,7 +113,7 @@ void grpc_iocp_flush(void) {
   grpc_iocp_work_status work_status;
 
   do {
-    work_status = grpc_iocp_work(&exec_ctx, gpr_inf_past(GPR_CLOCK_MONOTONIC));
+    work_status = grpc_iocp_work(&exec_ctx, GRPC_MILLIS_INF_PAST);
   } while (work_status == GRPC_IOCP_WORK_KICK ||
            grpc_exec_ctx_flush(&exec_ctx));
 }
@@ -121,7 +121,7 @@ void grpc_iocp_flush(void) {
 void grpc_iocp_shutdown(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   while (gpr_atm_acq_load(&g_custom_events)) {
-    grpc_iocp_work(&exec_ctx, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    grpc_iocp_work(&exec_ctx, GRPC_MILLIS_INF_FUTURE);
     grpc_exec_ctx_flush(&exec_ctx);
   }
   grpc_exec_ctx_finish(&exec_ctx);
