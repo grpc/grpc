@@ -51,7 +51,6 @@ export LANG=en_US.UTF-8
 pod repo update  # needed by python
 
 # python
-brew install coreutils  # we need grealpath
 pip install virtualenv --user python
 pip install -U six tox setuptools twisted pyyaml --user python
 export PYTHONPATH=/Library/Python/3.4/site-packages
