@@ -653,6 +653,7 @@ static grpc_error *fd_become_pollable(grpc_fd *fd, pollable **p) {
   if (fd->pollable_obj == NULL) {
     if (append_error(&error, pollable_create(PO_FD, &fd->pollable_obj),
                      err_desc)) {
+fd->pollable_obj->owner_fd = fd;
       if (!append_error(&error, pollable_add_fd(fd->pollable_obj, fd),
                         err_desc)) {
         pollable_unref(fd->pollable_obj);
