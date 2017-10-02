@@ -428,6 +428,7 @@ static grpc_error *pollable_create(pollable_type type, pollable **p) {
   *p = gpr_malloc(sizeof(**p));
   (*p)->type = type;
   gpr_ref_init(&(*p)->refs, 1);
+  gpr_mu_init(&(*p)->mu);
   (*p)->epfd = epfd;
   (*p)->wakeup = wakeup_fd;
   (*p)->owner_fd = NULL;
