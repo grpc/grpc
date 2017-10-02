@@ -122,7 +122,7 @@ def max_parallel_tests_for_current_platform():
   # so far on windows.
   if jobset.platform_string() == 'windows':
     return 64
-  return 1e6
+  return 128
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class Config(object):
