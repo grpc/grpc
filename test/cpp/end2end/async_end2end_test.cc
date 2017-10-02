@@ -105,6 +105,13 @@ class Verifier {
     expectations_[tag(i)] = expect_ok;
     return *this;
   }
+  // AcceptOnce sets the expected ok value for a specific tag, but does not
+  // require it to appear
+  // If it does, sets *seen to true
+  Verifier& AcceptOnce(int i, bool expect_ok, bool* seen) {
+    maybe_expectations_[tag(i)] = MaybeExpect{expect_ok, seen};
+    return *this;
+  }
 
   // Next waits for 1 async tag to complete, checks its
   // expectations, and returns the tag
@@ -122,12 +129,7 @@ class Verifier {
     } else {
       EXPECT_TRUE(cq->Next(&got_tag, &ok));
     }
-    auto it = expectations_.find(got_tag);
-    EXPECT_TRUE(it != expectations_.end());
-    if (!ignore_ok) {
-      EXPECT_EQ(it->second, ok);
-    }
-    expectations_.erase(it);
+    GotTag(got_tag, ok, ignore_ok);
     return detag(got_tag);
   }
 
@@ -138,7 +140,7 @@ class Verifier {
   // This version of Verify allows optionally ignoring the
   // outcome of the expectation
   void Verify(CompletionQueue* cq, bool ignore_ok) {
-    GPR_ASSERT(!expectations_.empty());
+    GPR_ASSERT(!expectations_.empty() || !maybe_expectations_.empty());
     while (!expectations_.empty()) {
       Next(cq, ignore_ok);
     }
@@ -177,16 +179,43 @@ class Verifier {
           EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, deadline),
                     CompletionQueue::GOT_EVENT);
         }
-        auto it = expectations_.find(got_tag);
-        EXPECT_TRUE(it != expectations_.end());
-        EXPECT_EQ(it->second, ok);
-        expectations_.erase(it);
+        GotTag(got_tag, ok, false);
       }
     }
   }
 
  private:
+  void GotTag(void* got_tag, bool ok, bool ignore_ok) {
+    auto it = expectations_.find(got_tag);
+    if (it != expectations_.end()) {
+      if (!ignore_ok) {
+        EXPECT_EQ(it->second, ok);
+      }
+      expectations_.erase(it);
+    } else {
+      auto it2 = maybe_expectations_.find(got_tag);
+      if (it2 != maybe_expectations_.end()) {
+        if (it2->second.seen != nullptr) {
+          EXPECT_FALSE(*it2->second.seen);
+          *it2->second.seen = true;
+        }
+        if (!ignore_ok) {
+          EXPECT_EQ(it2->second.ok, ok);
+        }
+      } else {
+        gpr_log(GPR_ERROR, "Unexpected tag: %p", tag);
+        abort();
+      }
+    }
+  }
+
+  struct MaybeExpect {
+    bool ok;
+    bool* seen;
+  };
+
   std::map<void*, bool> expectations_;
+  std::map<void*, MaybeExpect> maybe_expectations_;
   bool spin_;
 };
 
@@ -539,31 +568,19 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreamingWithCoalescingApi) {
 
   cli_stream->Write(send_request, tag(3));
 
-  // 65536(64KB) is the default flow control window size. Should change this
-  // number when default flow control window size changes. For the write of
-  // send_request larger than the flow control window size, tag:3 will not come
-  // up until server read is initiated. For write of send_request smaller than
-  // the flow control window size, the request can take the free ride with
-  // initial metadata due to coalescing, thus write tag:3 will come up here.
-  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
-    Verifier(GetParam().disable_blocking)
-        .Expect(2, true)
-        .Expect(3, true)
-        .Verify(cq_.get());
-  } else {
-    Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
-  }
+  bool seen3 = false;
+
+  Verifier(GetParam().disable_blocking)
+      .Expect(2, true)
+      .AcceptOnce(3, true, &seen3)
+      .Verify(cq_.get());
 
   srv_stream.Read(&recv_request, tag(4));
 
-  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
-    Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
-  } else {
-    Verifier(GetParam().disable_blocking)
-        .Expect(3, true)
-        .Expect(4, true)
-        .Verify(cq_.get());
-  }
+  Verifier(GetParam().disable_blocking)
+      .AcceptOnce(3, true, &seen3)
+      .Expect(4, true)
+      .Verify(cq_.get());
 
   EXPECT_EQ(send_request.message(), recv_request.message());
 
@@ -588,6 +605,7 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreamingWithCoalescingApi) {
 
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
+  EXPECT_TRUE(seen3);
 }
 
 // One ping, two pongs.
@@ -834,31 +852,19 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWAF) {
 
   cli_stream->WriteLast(send_request, WriteOptions(), tag(3));
 
-  // 65536(64KB) is the default flow control window size. Should change this
-  // number when default flow control window size changes. For the write of
-  // send_request larger than the flow control window size, tag:3 will not come
-  // up until server read is initiated. For write of send_request smaller than
-  // the flow control window size, the request can take the free ride with
-  // initial metadata due to coalescing, thus write tag:3 will come up here.
-  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
-    Verifier(GetParam().disable_blocking)
-        .Expect(2, true)
-        .Expect(3, true)
-        .Verify(cq_.get());
-  } else {
-    Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
-  }
+  bool seen3 = false;
+
+  Verifier(GetParam().disable_blocking)
+      .Expect(2, true)
+      .AcceptOnce(3, true, &seen3)
+      .Verify(cq_.get());
 
   srv_stream.Read(&recv_request, tag(4));
 
-  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
-    Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
-  } else {
-    Verifier(GetParam().disable_blocking)
-        .Expect(3, true)
-        .Expect(4, true)
-        .Verify(cq_.get());
-  }
+  Verifier(GetParam().disable_blocking)
+      .AcceptOnce(3, true, &seen3)
+      .Expect(4, true)
+      .Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   srv_stream.Read(&recv_request, tag(5));
@@ -877,6 +883,7 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWAF) {
   Verifier(GetParam().disable_blocking).Expect(8, true).Verify(cq_.get());
 
   EXPECT_TRUE(recv_status.ok());
+  EXPECT_TRUE(seen3);
 }
 
 // One ping, one pong. Using server:WriteLast api
@@ -902,31 +909,19 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWL) {
 
   cli_stream->WriteLast(send_request, WriteOptions(), tag(3));
 
-  // 65536(64KB) is the default flow control window size. Should change this
-  // number when default flow control window size changes. For the write of
-  // send_request larger than the flow control window size, tag:3 will not come
-  // up until server read is initiated. For write of send_request smaller than
-  // the flow control window size, the request can take the free ride with
-  // initial metadata due to coalescing, thus write tag:3 will come up here.
-  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
-    Verifier(GetParam().disable_blocking)
-        .Expect(2, true)
-        .Expect(3, true)
-        .Verify(cq_.get());
-  } else {
-    Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
-  }
+  bool seen3 = false;
+
+  Verifier(GetParam().disable_blocking)
+      .Expect(2, true)
+      .AcceptOnce(3, true, &seen3)
+      .Verify(cq_.get());
 
   srv_stream.Read(&recv_request, tag(4));
 
-  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
-    Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
-  } else {
-    Verifier(GetParam().disable_blocking)
-        .Expect(3, true)
-        .Expect(4, true)
-        .Verify(cq_.get());
-  }
+  Verifier(GetParam().disable_blocking)
+      .AcceptOnce(3, true, &seen3)
+      .Expect(4, true)
+      .Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   srv_stream.Read(&recv_request, tag(5));
@@ -947,6 +942,7 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWL) {
   Verifier(GetParam().disable_blocking).Expect(9, true).Verify(cq_.get());
 
   EXPECT_TRUE(recv_status.ok());
+  EXPECT_TRUE(seen3);
 }
 
 // Metadata tests
