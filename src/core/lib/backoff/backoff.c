@@ -49,7 +49,7 @@ grpc_millis grpc_backoff_step(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff) {
   const double new_timeout_millis =
       backoff->multiplier * (double)backoff->current_timeout_millis;
   backoff->current_timeout_millis =
-      GPR_MIN((int64_t)new_timeout_millis, backoff->max_timeout_millis);
+      GPR_MIN((grpc_millis)new_timeout_millis, backoff->max_timeout_millis);
 
   const double jitter_range_width = backoff->jitter * new_timeout_millis;
   const double jitter =
@@ -57,7 +57,7 @@ grpc_millis grpc_backoff_step(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff) {
       jitter_range_width;
 
   backoff->current_timeout_millis =
-      (int64_t)((double)(backoff->current_timeout_millis) + jitter);
+      (grpc_millis)((double)(backoff->current_timeout_millis) + jitter);
 
   const grpc_millis current_deadline =
       grpc_exec_ctx_now(exec_ctx) + backoff->current_timeout_millis;
