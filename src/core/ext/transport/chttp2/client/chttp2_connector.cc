@@ -115,6 +115,8 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     }
     memset(c->result, 0, sizeof(*c->result));
   } else {
+    grpc_endpoint_delete_from_pollset_set(exec_ctx, args->endpoint,
+                                          c->args.interested_parties);
     c->result->transport =
         grpc_create_chttp2_transport(exec_ctx, args->args, args->endpoint, 1);
     GPR_ASSERT(c->result->transport);
