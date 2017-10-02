@@ -203,7 +203,7 @@ static void tcp_client_connect_impl(
   GRPC_CLOSURE_INIT(&ac->on_connect, on_connect, ac, grpc_schedule_on_exec_ctx);
 
   GRPC_CLOSURE_INIT(&ac->on_alarm, on_alarm, ac, grpc_schedule_on_exec_ctx);
-  grpc_timer_init(exec_ctx, &ac->alarm, deadline, &ac->on_alarm, );
+  grpc_timer_init(exec_ctx, &ac->alarm, deadline, &ac->on_alarm);
   grpc_socket_notify_on_write(exec_ctx, socket, &ac->on_connect);
   return;
 
