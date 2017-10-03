@@ -552,6 +552,11 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_cq_failed_queue_trylocks", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_call_initial_size", 
         "type": "STRING"
       }, 
@@ -1340,6 +1345,11 @@
       {
         "mode": "NULLABLE", 
         "name": "core_server_slowpath_requests_queued", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_cq_failed_queue_trylocks", 
         "type": "INTEGER"
       }, 
       {

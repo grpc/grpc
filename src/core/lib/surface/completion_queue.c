@@ -378,6 +378,10 @@ static grpc_cq_completion *cq_event_queue_pop(grpc_cq_event_queue *q) {
   if (gpr_spinlock_trylock(&q->queue_lock)) {
     c = (grpc_cq_completion *)gpr_mpscq_pop(&q->queue);
     gpr_spinlock_unlock(&q->queue_lock);
+  } else {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    GRPC_STATS_INC_CQ_FAILED_QUEUE_TRYLOCKS(&exec_ctx);
+    grpc_exec_ctx_finish(&exec_ctx);
   }
 
   if (c) {

@@ -108,6 +108,7 @@ def massage_qps_stats(scenario_result):
     stats["core_executor_push_retries"] = massage_qps_stats_helpers.counter(core_stats, "executor_push_retries")
     stats["core_server_requested_calls"] = massage_qps_stats_helpers.counter(core_stats, "server_requested_calls")
     stats["core_server_slowpath_requests_queued"] = massage_qps_stats_helpers.counter(core_stats, "server_slowpath_requests_queued")
+    stats["core_cq_failed_queue_trylocks"] = massage_qps_stats_helpers.counter(core_stats, "cq_failed_queue_trylocks")
     h = massage_qps_stats_helpers.histogram(core_stats, "call_initial_size")
     stats["core_call_initial_size"] = ",".join("%f" % x for x in h.buckets)
     stats["core_call_initial_size_bkts"] = ",".join("%f" % x for x in h.boundaries)

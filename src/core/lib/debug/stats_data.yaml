@@ -270,3 +270,7 @@
 - counter: server_slowpath_requests_queued
   doc: How many times was the server slow path taken (indicates too few
        outstanding requests)
+# cq
+- counter: cq_failed_queue_trylocks
+  doc: Number of lock (trylock) acquisition failures on completion queue event
+       queue. High value here indicates high contention on completion queues

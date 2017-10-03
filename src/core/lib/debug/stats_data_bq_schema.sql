@@ -85,4 +85,5 @@ executor_wakeup_initiated_per_iteration:FLOAT,
 executor_queue_drained_per_iteration:FLOAT,
 executor_push_retries_per_iteration:FLOAT,
 server_requested_calls_per_iteration:FLOAT,
-server_slowpath_requests_queued_per_iteration:FLOAT
+server_slowpath_requests_queued_per_iteration:FLOAT,
+cq_failed_queue_trylocks_per_iteration:FLOAT
