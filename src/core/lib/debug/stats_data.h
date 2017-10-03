@@ -113,7 +113,9 @@ typedef enum {
   GRPC_STATS_COUNTER_EXECUTOR_PUSH_RETRIES,
   GRPC_STATS_COUNTER_SERVER_REQUESTED_CALLS,
   GRPC_STATS_COUNTER_SERVER_SLOWPATH_REQUESTS_QUEUED,
-  GRPC_STATS_COUNTER_CQ_FAILED_QUEUE_TRYLOCKS,
+  GRPC_STATS_COUNTER_CQ_EV_QUEUE_TRYLOCK_FAILURES,
+  GRPC_STATS_COUNTER_CQ_EV_QUEUE_TRYLOCK_SUCCESSES,
+  GRPC_STATS_COUNTER_CQ_EV_QUEUE_TRANSIENT_POP_FAILURES,
   GRPC_STATS_COUNTER_COUNT
 } grpc_stats_counters;
 extern const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT];
@@ -418,9 +420,15 @@ typedef enum {
 #define GRPC_STATS_INC_SERVER_SLOWPATH_REQUESTS_QUEUED(exec_ctx) \
   GRPC_STATS_INC_COUNTER((exec_ctx),                             \
                          GRPC_STATS_COUNTER_SERVER_SLOWPATH_REQUESTS_QUEUED)
-#define GRPC_STATS_INC_CQ_FAILED_QUEUE_TRYLOCKS(exec_ctx) \
-  GRPC_STATS_INC_COUNTER((exec_ctx),                      \
-                         GRPC_STATS_COUNTER_CQ_FAILED_QUEUE_TRYLOCKS)
+#define GRPC_STATS_INC_CQ_EV_QUEUE_TRYLOCK_FAILURES(exec_ctx) \
+  GRPC_STATS_INC_COUNTER((exec_ctx),                          \
+                         GRPC_STATS_COUNTER_CQ_EV_QUEUE_TRYLOCK_FAILURES)
+#define GRPC_STATS_INC_CQ_EV_QUEUE_TRYLOCK_SUCCESSES(exec_ctx) \
+  GRPC_STATS_INC_COUNTER((exec_ctx),                           \
+                         GRPC_STATS_COUNTER_CQ_EV_QUEUE_TRYLOCK_SUCCESSES)
+#define GRPC_STATS_INC_CQ_EV_QUEUE_TRANSIENT_POP_FAILURES(exec_ctx) \
+  GRPC_STATS_INC_COUNTER(                                           \
+      (exec_ctx), GRPC_STATS_COUNTER_CQ_EV_QUEUE_TRANSIENT_POP_FAILURES)
 #define GRPC_STATS_INC_CALL_INITIAL_SIZE(exec_ctx, value) \
   grpc_stats_inc_call_initial_size((exec_ctx), (int)(value))
 void grpc_stats_inc_call_initial_size(grpc_exec_ctx *exec_ctx, int x);

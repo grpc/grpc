@@ -552,7 +552,17 @@
       }, 
       {
         "mode": "NULLABLE", 
-        "name": "core_cq_failed_queue_trylocks", 
+        "name": "core_cq_ev_queue_trylock_failures", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_cq_ev_queue_trylock_successes", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_cq_ev_queue_transient_pop_failures", 
         "type": "INTEGER"
       }, 
       {
@@ -1349,7 +1359,17 @@
       }, 
       {
         "mode": "NULLABLE", 
-        "name": "core_cq_failed_queue_trylocks", 
+        "name": "core_cq_ev_queue_trylock_failures", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_cq_ev_queue_trylock_successes", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_cq_ev_queue_transient_pop_failures", 
         "type": "INTEGER"
       }, 
       {

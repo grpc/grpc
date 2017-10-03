@@ -271,6 +271,12 @@
   doc: How many times was the server slow path taken (indicates too few
        outstanding requests)
 # cq
-- counter: cq_failed_queue_trylocks
+- counter: cq_ev_queue_trylock_failures
   doc: Number of lock (trylock) acquisition failures on completion queue event
        queue. High value here indicates high contention on completion queues
+- counter: cq_ev_queue_trylock_successes
+  doc: Number of lock (trylock) acquisition successes on completion queue event
+       queue.
+- counter: cq_ev_queue_transient_pop_failures
+  doc: Number of times NULL was popped out of completion queue's event queue
+       even though the event queue was not empty
