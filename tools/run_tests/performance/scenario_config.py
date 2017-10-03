@@ -809,7 +809,7 @@ class PhpLanguage:
 
   def worker_cmdline(self):
     if self.use_protobuf_c_extension:
-        return ['tools/run_tests/performance/run_worker_php.sh -c']
+        return ['tools/run_tests/performance/run_worker_php.sh', '-c']
     return ['tools/run_tests/performance/run_worker_php.sh']
 
   def worker_port_offset(self):
@@ -819,14 +819,14 @@ class PhpLanguage:
     php_extension_mode='php_protobuf_php_extension'
     if self.use_protobuf_c_extension:
         php_extension_mode='php_protobuf_c_extension'
-    
+
     yield _ping_pong_scenario(
-        '%s_to_cpp_protobuf_sync_unary_ping_pong' % php_extension_mode, 
+        '%s_to_cpp_protobuf_sync_unary_ping_pong' % php_extension_mode,
         rpc_type='UNARY', client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
         server_language='c++', async_server_threads=1)
 
     yield _ping_pong_scenario(
-        '%s_to_cpp_protobuf_sync_streaming_ping_pong' % php_extension_mode, 
+        '%s_to_cpp_protobuf_sync_streaming_ping_pong' % php_extension_mode,
         rpc_type='STREAMING', client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
         server_language='c++', async_server_threads=1)
 
