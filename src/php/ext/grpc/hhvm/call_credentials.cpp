@@ -296,11 +296,25 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
 
         return false;
     }
+    catch(Object& e)
+    {
+        try
+        {
+            *error_details = gpr_strdup(e->invokeToString().data());
+        }
+        catch(...)
+        {
+            *error_details = gpr_strdup("PHP exception which cannot be turned into a string");
+        }
+        gpr_log(GPR_DEBUG, "plugin_credentials[....]: request %p: Finished vm_call_user_func with error (2): %s", cb, *error_details);
+        // catch PHP exception
+        failCredentials(GRPC_STATUS_UNKNOWN);
+    }
     catch(std::exception& e)
     {
       *error_details = gpr_strdup(e.what());
-      gpr_log(GPR_DEBUG, "plugin_credentials[....]: request %p: Finished vm_call_user_func with error (2): %s", cb, *error_details);
-      // catch PHP exception
+      gpr_log(GPR_DEBUG, "plugin_credentials[....]: request %p: Finished vm_call_user_func with error (3): %s", cb, *error_details);
+      // catch std::exception's
       failCredentials(GRPC_STATUS_UNKNOWN);
 
       return false;
@@ -314,7 +328,7 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
         catch (const char           *e) { *error_details = gpr_strdup(e)          ; }
         catch (...)                     { *error_details = gpr_strdup("unknown exception"); }
 
-        gpr_log(GPR_DEBUG, "plugin_credentials[....]: request %p: Finished vm_call_user_func with unknown error (3): %s", cb, *error_details);
+        gpr_log(GPR_DEBUG, "plugin_credentials[....]: request %p: Finished vm_call_user_func with unknown error (4): %s", cb, *error_details);
 
         // catch other exception
         failCredentials(GRPC_STATUS_UNKNOWN);
