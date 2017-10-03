@@ -264,13 +264,13 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
     returnObj.o_set("method_name", String(methodName, CopyString));
     Variant params{ make_packed_array(returnObj) };
 
-    auto failCredentials = [&async, &cb, &num_creds_md, &status, &user_data]
+    auto failCredentials = [&async, &cb, &num_creds_md, &status, &user_data, &error_details]
                            (const grpc_status_code errorCode)
     {
         *status = errorCode;
         if (async)
         {
-            cb(user_data, nullptr, 0, *status, nullptr);
+            cb(user_data, nullptr, 0, *status, *error_details);
         }
         else
         {
@@ -292,13 +292,22 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
         gpr_log(GPR_DEBUG, "plugin_credentials[....]: request %p: Finished vm_call_user_func with error (1)", cb);
         // catch PHP exception
         failCredentials(GRPC_STATUS_UNKNOWN);
-        //*error_details = gpr_strdup(e.getMessage().c_str());
+        *error_details = gpr_strdup(e.getMessage().c_str());
 
         return false;
     }
+    catch(std::exception& e)
+    {
+      gpr_log(GPR_DEBUG, "plugin_credentials[....]: request %p: Finished vm_call_user_func with error (2)", cb);
+      // catch PHP exception
+      failCredentials(GRPC_STATUS_UNKNOWN);
+      *error_details = gpr_strdup(e.what());
+
+      return false;
+    }
     catch(...)
     {
-        gpr_log(GPR_DEBUG, "plugin_credentials[....]: request %p: Finished vm_call_user_func with error (2)", cb);
+        gpr_log(GPR_DEBUG, "plugin_credentials[....]: request %p: Finished vm_call_user_func with unknown error (3)", cb);
         // catch other exception
         failCredentials(GRPC_STATUS_UNKNOWN);
 
@@ -325,14 +334,12 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
             }
             else
             {
-                if (metadata.size() <= GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX)
+                bool copyResult{ metadata.copyMetadata(creds_md,
+                                                       GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX) };
+
+                if (copyResult)
                 {
                     *num_creds_md = metadata.size();
-                    for (size_t i{ 0 }; i < metadata.size(); ++i)
-                    {
-                        creds_md[i] = metadata.data()[i];
-                    }
-                    metadata.release();
                 }
                 else
                 {

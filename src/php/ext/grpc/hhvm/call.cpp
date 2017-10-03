@@ -19,6 +19,7 @@
 #include <array>
 #include <atomic>
 #include <cstdint>
+#include <cstring>
 #include <future>
 #include <mutex>
 #include <sstream>
@@ -120,8 +121,7 @@ void CallData::setQueue(std::unique_ptr<CompletionQueue>&& pCompletionQueue)
 /*                              Metadata Array                               */
 /*****************************************************************************/
 
-MetadataArray::MetadataArray(const bool owned) : m_PHPData{}, m_Owned{ owned },
-    m_Released{ false }
+MetadataArray::MetadataArray(const bool owned) : m_PHPData{}, m_Owned{ owned }
 {
     grpc_metadata_array_init(&m_Array);
     // NOTE: Do not intialize the metadata array here with any members as
@@ -208,28 +208,27 @@ bool MetadataArray::init(const Array& phpArray)
     return true;
 }
 
-// this will increase the ref on the PHP data slices so they will not go out
-// of scope when the metadata is destructed
-void MetadataArray::release(void)
+// copy the metadata array untothe passed metadata array of size
+// metadataSize
+bool MetadataArray::copyMetadata(grpc_metadata* const pMetadataArray,
+                                 const size_t metadataArraySize)
 {
-    if (!owned())
-    {
-        SystemLib::throwRuntimeExceptionObject("can only release an owned metadata array");
-    }
+    // check for enough room in destination array
+    if (m_Array.count > metadataArraySize) return false;
 
-    if (!m_Released)
+    for(size_t elem{ 0 }; elem < m_Array.count; ++elem)
     {
-        // increase ref count on the slices so that they do get deleted when the
-        // phpData is deleted
-        for(size_t elem{ 0 }; elem < m_PHPData.size(); ++elem)
-        {
-            std::pair<Slice, Slice>& slicePair{ m_PHPData[elem] };
-            slicePair.first.increaseRef();
-            slicePair.second.increaseRef();
-        }
+        // copy metadata
+        std::memcpy(reinterpret_cast<void*>(&(pMetadataArray[elem])),
+                    reinterpret_cast<const void*>(&(m_Array.metadata[elem])),
+                    sizeof(grpc_metadata));
 
-        m_Released = true;
+        // increase ref counts on slices so they stay valid when
+        // original metadata goes out of scope
+        gpr_slice_ref(pMetadataArray[elem].key);
+        gpr_slice_ref(pMetadataArray[elem].value);
     }
+    return true;
 }
 
 // Creates and returns a PHP array object with the data in a
@@ -342,7 +341,7 @@ void HHVM_METHOD(Call, __construct,
 {
     VMRegGuard _;
 
-    HHVM_TRACE_SCOPE("Call construct") // Degug Trace
+    HHVM_TRACE_SCOPE("Call construct") // Debug Trace
 
     CallData* const pCallData{ Native::data<CallData>(this_) };
     ChannelData* const pChannelData{ Native::data<ChannelData>(channel_obj) };
@@ -375,7 +374,7 @@ void HHVM_METHOD(Call, __construct,
                                                      pCompletionQueue->queue(),
                                                      method_slice.slice(),
                                                      !host_slice.empty() ? &host_slice.slice() : nullptr,
-                                                     deadlineTime,/*gpr_inf_future(GPR_CLOCK_REALTIME),*//*pDeadlineTimevalData->time(),*/
+                                                     deadlineTime,
                                                      nullptr) };
 
     if (!pCall)
@@ -395,7 +394,7 @@ Object HHVM_METHOD(Call, startBatch,
 {
     VMRegGuard _;
 
-    HHVM_TRACE_SCOPE("Call startBatch") // Degug Trace
+    HHVM_TRACE_SCOPE("Call startBatch") // Debug Trace
 
     Object resultObj{ SystemLib::AllocStdClassObject() };
 
@@ -604,7 +603,7 @@ Object HHVM_METHOD(Call, startBatch,
     grpc_status_code failCode{ GRPC_STATUS_OK };
     auto callFailure = [&callFailed, &credentialedCall, &pMetaDataInfo, &pCallData, &pTag,
                         &startBatch]
-                       (bool timeOut = false)
+                       ()
     {
         // invalidate metadata info
         pMetaDataInfo.reset();
@@ -616,48 +615,7 @@ Object HHVM_METHOD(Call, startBatch,
             pluginMetadataInfo.deleteInfo(pCallData->callCredentials());
         }
 
-        /*if (timeOut)
-        {
-            // cancel the call with the server
-            grpc_call_cancel_with_status(pCallData->call(), GRPC_STATUS_DEADLINE_EXCEEDED,
-                                         "RPC Call Timeout Exceeded", nullptr);
-
-            // create a new ops managed for this cancel call
-            std::unique_ptr<OpsManaged> pCancelledOpsManage{ new OpsManaged{} };
-            OpsManaged& cancelledOpsManaged{ *(pCancelledOpsManage.get()) };
-
-            // request receive status on cient
-            std::array<grpc_op, 1> cancelOps;
-            std::memset(cancelOps.data(), 0, sizeof(grpc_op) * cancelOps.size());
-            cancelOps[0].data.recv_status_on_client.trailing_metadata = &cancelledOpsManaged.recv_trailing_metadata.array();
-            cancelOps[0].data.recv_status_on_client.status = &cancelledOpsManaged.status;
-            cancelOps[0].data.recv_status_on_client.status_details = &cancelledOpsManaged.recv_status_details.slice();
-            cancelOps[0].op = static_cast<grpc_op_type>(GRPC_OP_RECV_STATUS_ON_CLIENT);
-            cancelOps[0].flags = 0;
-            cancelOps[0].reserved = nullptr;
-
-            void* const pCancelledTag{ &cancelledOpsManaged};
-            if (startBatch(cancelOps.data(), cancelOps.size(), pCancelledTag, true))
-            {
-                // wait for failure after cancelling call
-                grpc_event event(grpc_completion_queue_pluck(pCallData->queue()->queue(),
-                                                             pCancelledTag,
-                                                             gpr_inf_future(GPR_CLOCK_REALTIME),
-                                                             nullptr));
-            }
-
-            // wait for failure after cancelling call
-            grpc_event event(grpc_completion_queue_pluck(pCallData->queue()->queue(), pTag,
-                                                         gpr_inf_future(GPR_CLOCK_REALTIME),
-                                                         nullptr));
-
-            callFailed = true;
-        }
-        else
-        {*/
-            callFailed = true;
-        //}
-
+        callFailed = true;
     };
 
     // start the normal call batch operation
@@ -673,13 +631,12 @@ Object HHVM_METHOD(Call, startBatch,
         grpc_event event ( grpc_completion_queue_pluck(
                                 pCallData->queue()->queue(), pTag,
                                 gpr_inf_future(GPR_CLOCK_REALTIME),
-                                /*gpr_time_from_millis(pCallData->getTimeout(), GPR_TIMESPAN),*/
                                 nullptr) );
 
         if ((event.type != GRPC_OP_COMPLETE) || (event.tag != &opsManaged) || (event.success == 0))
         {
             // failed so clean up and return empty object
-            callFailure(event.type ==  GRPC_QUEUE_TIMEOUT);
+            callFailure();
             failCode = (event.type == GRPC_QUEUE_TIMEOUT) ? GRPC_STATUS_DEADLINE_EXCEEDED : GRPC_STATUS_UNKNOWN;
         }
     }
@@ -800,7 +757,7 @@ String HHVM_METHOD(Call, getPeer)
 {
     VMRegGuard _;
 
-    HHVM_TRACE_SCOPE("Call getPeer") // Degug Trace
+    HHVM_TRACE_SCOPE("Call getPeer") // Debug Trace
 
     CallData* const pCallData{ Native::data<CallData>(this_) };
     return String{ grpc_call_get_peer(pCallData->call()), CopyString };
@@ -808,7 +765,7 @@ String HHVM_METHOD(Call, getPeer)
 
 void HHVM_METHOD(Call, cancel)
 {
-    HHVM_TRACE_SCOPE("Call cancel") // Degug Trace
+    HHVM_TRACE_SCOPE("Call cancel") // Debug Trace
 
     CallData* const pCallData{ Native::data<CallData>(this_) };
     grpc_call_cancel(pCallData->call(), nullptr);
@@ -819,7 +776,7 @@ int64_t HHVM_METHOD(Call, setCredentials,
 {
     VMRegGuard _;
 
-    HHVM_TRACE_SCOPE("Call setCredentials") // Degug Trace
+    HHVM_TRACE_SCOPE("Call setCredentials") // Debug Trace
 
     CallData* const pCallData{ Native::data<CallData>(this_) };
     CallCredentialsData* const pCallCredentialsData{ Native::data<CallCredentialsData>(creds_obj) };
