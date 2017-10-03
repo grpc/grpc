@@ -58,16 +58,18 @@ static void add_samples(grpc_bdp_estimator *estimator, int64_t *samples,
                         size_t n) {
   grpc_bdp_estimator_add_incoming_bytes(estimator, 1234567);
   inc_time();
-  GPR_ASSERT(grpc_bdp_estimator_need_ping(estimator) == true);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  GPR_ASSERT(grpc_bdp_estimator_need_ping(&exec_ctx, estimator) == true);
   grpc_bdp_estimator_schedule_ping(estimator);
   grpc_bdp_estimator_start_ping(estimator);
   for (size_t i = 0; i < n; i++) {
     grpc_bdp_estimator_add_incoming_bytes(estimator, samples[i]);
-    GPR_ASSERT(grpc_bdp_estimator_need_ping(estimator) == false);
+    GPR_ASSERT(grpc_bdp_estimator_need_ping(&exec_ctx, estimator) == false);
   }
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_millis(1, GPR_TIMESPAN)));
-  grpc_bdp_estimator_complete_ping(estimator);
+  grpc_bdp_estimator_complete_ping(&exec_ctx, estimator);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void add_sample(grpc_bdp_estimator *estimator, int64_t sample) {
