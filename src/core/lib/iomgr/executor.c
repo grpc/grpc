@@ -45,8 +45,13 @@ typedef struct {
 } thread_state;
 
 static thread_state *g_thread_state;
+/* Refcount to prevent g_thread_state from getting destroyed in cases where
+   executor_push() races with grpc_executor_shutdown() */
+static gpr_atm g_ts_refcount;
+
 static size_t g_max_threads;
 static gpr_atm g_cur_threads;
+
 static gpr_spinlock g_adding_thread_lock = GPR_SPINLOCK_STATIC_INITIALIZER;
 
 GPR_TLS_DECL(g_this_thread_state);
@@ -55,6 +60,34 @@ static grpc_tracer_flag executor_trace =
     GRPC_TRACER_INITIALIZER(false, "executor");
 
 static void executor_thread(void *arg);
+
+static void ts_destroy(grpc_exec_ctx *exec_ctx);
+
+/* Adds a ref to the executor's thread state iff the current ref count == 0 */
+static bool ts_init_ref() { return gpr_atm_full_cas(&g_ts_refcount, 0, 1); }
+
+/* Adds a ref to the executor's thread state iff the current ref count is > 0 */
+static bool ts_ref() {
+  gpr_atm old_count;
+  while (true) {
+    old_count = gpr_atm_acq_load(&g_ts_refcount);
+    if (old_count == 0) {
+      return false;
+    }
+
+    if (gpr_atm_full_cas(&g_ts_refcount, old_count, old_count + 1)) {
+      return true;
+    }
+  }
+  GPR_UNREACHABLE_CODE(return false);
+}
+
+static void ts_unref(grpc_exec_ctx *exec_ctx) {
+  if (gpr_atm_full_fetch_add(&g_ts_refcount, -1) == 1) {
+    ts_destroy(exec_ctx);
+    grpc_exec_ctx_flush(exec_ctx);
+  }
+}
 
 static size_t run_closures(grpc_exec_ctx *exec_ctx, grpc_closure_list list) {
   size_t n = 0;
@@ -92,6 +125,9 @@ void grpc_executor_set_threading(grpc_exec_ctx *exec_ctx, bool threading) {
   gpr_atm cur_threads = gpr_atm_no_barrier_load(&g_cur_threads);
   if (threading) {
     if (cur_threads > 0) return;
+
+    GPR_ASSERT(ts_init_ref());  // Add the initial ref
+
     g_max_threads = GPR_MAX(1, 2 * gpr_cpu_num_cores());
     gpr_atm_no_barrier_store(&g_cur_threads, 1);
     gpr_tls_init(&g_this_thread_state);
@@ -119,23 +155,30 @@ void grpc_executor_set_threading(grpc_exec_ctx *exec_ctx, bool threading) {
        no thread will try to add a new one either (since shutdown is true) */
     gpr_spinlock_lock(&g_adding_thread_lock);
     gpr_spinlock_unlock(&g_adding_thread_lock);
-    for (gpr_atm i = 0; i < g_cur_threads; i++) {
+    for (gpr_atm i = 0; i < gpr_atm_no_barrier_load(&g_cur_threads); i++) {
       gpr_thd_join(g_thread_state[i].id);
     }
+
     gpr_atm_no_barrier_store(&g_cur_threads, 0);
-    for (size_t i = 0; i < g_max_threads; i++) {
-      gpr_mu_destroy(&g_thread_state[i].mu);
-      gpr_cv_destroy(&g_thread_state[i].cv);
-      run_closures(exec_ctx, g_thread_state[i].elems);
-    }
-    gpr_free(g_thread_state);
     gpr_tls_destroy(&g_this_thread_state);
+
+    ts_unref(exec_ctx);  // Remove ref
   }
+}
+
+static void ts_destroy(grpc_exec_ctx *exec_ctx) {
+  for (size_t i = 0; i < g_max_threads; i++) {
+    gpr_mu_destroy(&g_thread_state[i].mu);
+    gpr_cv_destroy(&g_thread_state[i].cv);
+    run_closures(exec_ctx, g_thread_state[i].elems);
+  }
+  gpr_free(g_thread_state);
 }
 
 void grpc_executor_init(grpc_exec_ctx *exec_ctx) {
   grpc_register_tracer(&executor_trace);
   gpr_atm_no_barrier_store(&g_cur_threads, 0);
+  gpr_atm_rel_store(&g_ts_refcount, 0);
   grpc_executor_set_threading(exec_ctx, true);
 }
 
@@ -191,10 +234,17 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   } else {
     GRPC_STATS_INC_EXECUTOR_SCHEDULED_LONG_ITEMS(exec_ctx);
   }
+
+  /* Add a reference to g_thread_state to prevent it from getting destroyed */
+  bool is_ref = ts_ref();
+
   do {
     retry_push = false;
     size_t cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
-    if (cur_thread_count == 0) {
+    /* If current thread count is zero or if we do not have a reference to the
+       thread state (i.e executor is shutdown and no longer available), just
+       queue the closure on exec_ctx instead of the executor */
+    if (cur_thread_count == 0 || !is_ref) {
       if (GRPC_TRACER_ON(executor_trace)) {
 #ifndef NDEBUG
         gpr_log(GPR_DEBUG, "EXECUTOR: schedule %p (created %s:%d) inline",
@@ -229,7 +279,19 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                 (int)(ts - g_thread_state));
 #endif
       }
+
       gpr_mu_lock(&ts->mu);
+
+      /* If thread state is shutdown, there is no point in continuing (since
+         other thread states are also either shutdown or in the process of
+         shutting down). */
+      if (ts->shutdown) {
+        gpr_mu_unlock(&ts->mu);
+        ts_unref(exec_ctx);
+        is_ref = false;
+        continue;
+      }
+
       if (ts->queued_long_job) {
         // if there's a long job queued, we never queue anything else to this
         // queue (since long jobs can take 'infinite' time and we need to
@@ -240,6 +302,8 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
         ts = &g_thread_state[(idx + 1) % cur_thread_count];
         if (ts == orig_ts) {
           retry_push = true;
+          /* TODO (sreek). This should probably be try_new_thread =
+           * !ts->shutdown */
           try_new_thread = true;
           break;
         }
@@ -257,6 +321,7 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
       gpr_mu_unlock(&ts->mu);
       break;
     }
+
     if (try_new_thread && gpr_spinlock_trylock(&g_adding_thread_lock)) {
       cur_thread_count = (size_t)gpr_atm_no_barrier_load(&g_cur_threads);
       if (cur_thread_count < g_max_threads) {
@@ -269,10 +334,15 @@ static void executor_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
       }
       gpr_spinlock_unlock(&g_adding_thread_lock);
     }
+
     if (retry_push) {
       GRPC_STATS_INC_EXECUTOR_PUSH_RETRIES(exec_ctx);
     }
   } while (retry_push);
+
+  if (is_ref) {
+    ts_unref(exec_ctx);
+  }
 }
 
 static void executor_push_short(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
