@@ -187,7 +187,7 @@ GRPCXX_PUBLIC_HDRS = [
 
 grpc_cc_library(
     name = "gpr",
-    language = "c",
+    language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     standalone = True,
     deps = [
@@ -536,7 +536,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "gpr_codegen",
-    language = "c",
+    language = "c++",
     public_hdrs = [
         "include/grpc/impl/codegen/atm.h",
         "include/grpc/impl/codegen/atm_gcc_atomic.h",
@@ -839,7 +839,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_common",
-    language = "c",
+    language = "c++",
     deps = [
         "grpc_base",
         # standard plugins
@@ -991,7 +991,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_codegen",
-    language = "c",
+    language = "c++",
     public_hdrs = [
         "include/grpc/impl/codegen/byte_buffer.h",
         "include/grpc/impl/codegen/byte_buffer_reader.h",
