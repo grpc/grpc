@@ -180,7 +180,6 @@ void grpc_shutdown(void) {
       GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, NULL);
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
-    grpc_executor_shutdown(&exec_ctx);
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
     for (i = g_number_of_plugins; i >= 0; i--) {
       if (g_all_of_the_plugins[i].destroy != NULL) {
