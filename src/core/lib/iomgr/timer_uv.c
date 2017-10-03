@@ -64,7 +64,7 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
     return;
   }
   timer->pending = 1;
-  timeout = (uint64_t)(deadline - now);
+  timeout = (uint64_t)(deadline - grpc_exec_ctx_now(exec_ctx));
   uv_timer = gpr_malloc(sizeof(uv_timer_t));
   uv_timer_init(uv_default_loop(), uv_timer);
   uv_timer->data = timer;
@@ -88,7 +88,7 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
 }
 
 grpc_timer_check_result grpc_timer_check(grpc_exec_ctx *exec_ctx,
-                                         gpr_timespec now, gpr_timespec *next) {
+                                         grpc_millis *next) {
   return GRPC_TIMERS_NOT_CHECKED;
 }
 
