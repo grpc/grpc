@@ -257,6 +257,31 @@ class RepresentativeClientInitialMetadata {
         GRPC_MDELEM_SCHEME_HTTP, GRPC_MDELEM_METHOD_POST,
         grpc_mdelem_from_slices(
             exec_ctx, GRPC_MDSTR_PATH,
+            grpc_slice_intern(grpc_slice_from_static_string("/foo/bar"))),
+        grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_AUTHORITY,
+                                grpc_slice_intern(grpc_slice_from_static_string(
+                                    "foo.test.google.fr:1234"))),
+        GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP,
+        GRPC_MDELEM_TE_TRAILERS,
+        GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC,
+        grpc_mdelem_from_slices(
+            exec_ctx, GRPC_MDSTR_USER_AGENT,
+            grpc_slice_intern(grpc_slice_from_static_string(
+                "grpc-c/3.0.0-dev (linux; chttp2; green)")))};
+  }
+};
+
+// This fixture reflects how initial metadata are sent by a production client,
+// with non-indexed :path and binary headers. The metadata here are the same as
+// the corresponding parser benchmark below.
+class MoreRepresentativeClientInitialMetadata {
+ public:
+  static constexpr bool kEnableTrueBinary = true;
+  static std::vector<grpc_mdelem> GetElems(grpc_exec_ctx *exec_ctx) {
+    return {
+        GRPC_MDELEM_SCHEME_HTTP, GRPC_MDELEM_METHOD_POST,
+        grpc_mdelem_from_slices(
+            exec_ctx, GRPC_MDSTR_PATH,
             grpc_slice_from_static_string("/grpc.test.FooService/BarMethod")),
         grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_AUTHORITY,
                                 grpc_slice_intern(grpc_slice_from_static_string(
@@ -380,6 +405,9 @@ BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleNonInternedElem)
 
 BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
                    RepresentativeClientInitialMetadata)
+    ->Args({0, 16384});
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
+                   MoreRepresentativeClientInitialMetadata)
     ->Args({0, 16384});
 BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
                    RepresentativeServerInitialMetadata)
@@ -603,6 +631,39 @@ class NonIndexedBinaryElem<100, false> {
 class RepresentativeClientInitialMetadata {
  public:
   static std::vector<grpc_slice> GetInitSlices() {
+    return {grpc_slice_from_static_string(
+        // generated with:
+        // ```
+        // tools/codegen/core/gen_header_frame.py --compression inc --no_framing
+        // < test/core/bad_client/tests/simple_request.headers
+        // ```
+        "@\x05:path\x08/foo/bar"
+        "@\x07:scheme\x04http"
+        "@\x07:method\x04POST"
+        "@\x0a:authority\x09localhost"
+        "@\x0c"
+        "content-type\x10"
+        "application/grpc"
+        "@\x14grpc-accept-encoding\x15identity,deflate,gzip"
+        "@\x02te\x08trailers"
+        "@\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)")};
+  }
+  static std::vector<grpc_slice> GetBenchmarkSlices() {
+    // generated with:
+    // ```
+    // tools/codegen/core/gen_header_frame.py --compression pre --no_framing
+    // --hex < test/core/bad_client/tests/simple_request.headers
+    // ```
+    return {MakeSlice({0xc5, 0xc4, 0xc3, 0xc2, 0xc1, 0xc0, 0xbf, 0xbe})};
+  }
+};
+
+// This fixture reflects how initial metadata are sent by a production client,
+// with non-indexed :path and binary headers. The metadata here are the same as
+// the corresponding encoder benchmark above.
+class MoreRepresentativeClientInitialMetadata {
+ public:
+  static std::vector<grpc_slice> GetInitSlices() {
     return {MakeSlice(
         {0x40, 0x07, ':',  's',  'c',  'h',  'e',  'm',  'e',  0x04, 'h',  't',
          't',  'p',  0x40, 0x07, ':',  'm',  'e',  't',  'h',  'o',  'd',  0x04,
@@ -724,6 +785,8 @@ BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<31, true>);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<100, true>);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
                    RepresentativeClientInitialMetadata);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
+                   MoreRepresentativeClientInitialMetadata);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
                    RepresentativeServerInitialMetadata);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
