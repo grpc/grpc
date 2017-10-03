@@ -112,15 +112,15 @@ class OperationType:
 
 class CompressionAlgorithm:
   none = GRPC_COMPRESS_NONE
-  deflate = GRPC_COMPRESS_DEFLATE
-  gzip = GRPC_COMPRESS_GZIP
+  deflate = GRPC_COMPRESS_MESSAGE_DEFLATE
+  gzip = GRPC_COMPRESS_MESSAGE_GZIP
 
 
 class CompressionLevel:
   none = GRPC_COMPRESS_LEVEL_NONE
-  low = GRPC_COMPRESS_LEVEL_LOW
-  medium = GRPC_COMPRESS_LEVEL_MED
-  high = GRPC_COMPRESS_LEVEL_HIGH
+  low = GRPC_COMPRESS_LEVEL_MESSAGE_LOW
+  medium = GRPC_COMPRESS_LEVEL_MESSAGE_MED
+  high = GRPC_COMPRESS_LEVEL_MESSAGE_HIGH
 
 
 cdef class Timespec:
