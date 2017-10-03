@@ -300,9 +300,9 @@ int grpc_grpclb_duration_compare(const grpc_grpclb_duration *lhs,
 }
 
 grpc_millis grpc_grpclb_duration_to_millis(grpc_grpclb_duration *duration_pb) {
-  return (duration_pb->has_seconds ? duration_pb->seconds : 0) *
-             GPR_MS_PER_SEC +
-         (duration_pb->has_nanos ? duration_pb->nanos : 0) / GPR_NS_PER_MS;
+  return (grpc_millis)(
+      (duration_pb->has_seconds ? duration_pb->seconds : 0) * GPR_MS_PER_SEC +
+      (duration_pb->has_nanos ? duration_pb->nanos : 0) / GPR_NS_PER_MS);
 }
 
 void grpc_grpclb_initial_response_destroy(
