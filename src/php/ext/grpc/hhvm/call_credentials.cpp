@@ -308,17 +308,11 @@ bool plugin_do_get_metadata(void *ptr, const std::string& serviceURL,
     catch(...)
     {
         std::exception_ptr eptr { std::current_exception() };
-        try
-        {
-            if (eptr)
-            {
-                std::rethrow_exception(eptr);
-            }
-        }
-        catch(const std::exception& e)
-        {
-            *error_details = gpr_strdup(e.what());
-        }
+        try { std::rethrow_exception(eptr); }
+        catch (const std::exception &e) { *error_details = gpr_strdup(e.what())   ; }
+        catch (const std::string    &e) { *error_details = gpr_strdup(e.c_str())  ; }
+        catch (const char           *e) { *error_details = gpr_strdup(e)          ; }
+        catch (...)                     { *error_details = gpr_strdup("unknown exception"); }
 
         gpr_log(GPR_DEBUG, "plugin_credentials[....]: request %p: Finished vm_call_user_func with unknown error (3): %s", cb, *error_details);
 
