@@ -418,6 +418,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/compression/compression.cc )
   s.files += %w( src/core/lib/compression/message_compress.cc )
   s.files += %w( src/core/lib/compression/stream_compression.cc )
+  s.files += %w( src/core/lib/compression/stream_compression_gzip.cc )
+  s.files += %w( src/core/lib/compression/stream_compression_identity.cc )
   s.files += %w( src/core/lib/debug/stats.cc )
   s.files += %w( src/core/lib/debug/stats_data.cc )
   s.files += %w( src/core/lib/http/format_request.cc )

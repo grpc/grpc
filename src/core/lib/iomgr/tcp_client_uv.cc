@@ -131,16 +131,16 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
     for (size_t i = 0; i < channel_args->num_args; i++) {
       if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
         grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
-        resource_quota = grpc_resource_quota_ref_internal((grpc_resource_quota *)
-            channel_args->args[i].value.pointer.p);
+        resource_quota = grpc_resource_quota_ref_internal(
+            (grpc_resource_quota *)channel_args->args[i].value.pointer.p);
       }
     }
   }
 
-  connect = (grpc_uv_tcp_connect*)gpr_zalloc(sizeof(grpc_uv_tcp_connect));
+  connect = (grpc_uv_tcp_connect *)gpr_zalloc(sizeof(grpc_uv_tcp_connect));
   connect->closure = closure;
   connect->endpoint = ep;
-  connect->tcp_handle = (uv_tcp_t*)gpr_malloc(sizeof(uv_tcp_t));
+  connect->tcp_handle = (uv_tcp_t *)gpr_malloc(sizeof(uv_tcp_t));
   connect->addr_name = grpc_sockaddr_to_uri(resolved_addr);
   connect->resource_quota = resource_quota;
   uv_tcp_init(uv_default_loop(), connect->tcp_handle);
