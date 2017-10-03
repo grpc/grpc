@@ -98,6 +98,7 @@
           '-fprofile-arcs',
           '-ftest-coverage',
           '-rdynamic',
+          '-lstdc++',
         ],
       }],
       ['grpc_alpine=="true"', {
