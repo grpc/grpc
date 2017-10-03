@@ -27,8 +27,7 @@ python3.5 -m pip install cython setuptools wheel
 python3.6 -m pip install cython setuptools wheel
 
 # needed to build ruby artifacts
-wget https://raw.githubusercontent.com/grpc/grpc/master/tools/distrib/build_ruby_environment_macos.sh
-bash build_ruby_environment_macos.sh
+time bash tools/distrib/build_ruby_environment_macos.sh
 
 gem install rubygems-update
 update_rubygems

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc/_grpcio_metadata.py.template`!!!
+set -ex
 
-__version__ = """1.8.0.dev0"""
+# Enter the gRPC repo root
+cd $(dirname $0)/../../..
+
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+
+python tools/run_tests/run_tests.py \
+  --use_docker				        \
+  -t                                \
+  -l all                            \
+  -c gcov                           \
+  -x report.xml                     \
+  -j 16
+  

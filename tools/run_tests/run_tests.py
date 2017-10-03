@@ -701,7 +701,7 @@ class PythonLanguage(object):
     return [config.build for config in self.pythons]
 
   def post_tests_steps(self):
-    if self.config != 'gcov':
+    if self.config.build_config != 'gcov':
       return []
     else:
       return [['tools/run_tests/helper_scripts/post_tests_python.sh']]
@@ -1641,7 +1641,7 @@ def _build_and_run(
                                            suite_name=args.report_suite_name)
 
   number_failures, _ = jobset.run(
-      post_tests_steps, maxjobs=1, stop_on_failure=True,
+      post_tests_steps, maxjobs=1, stop_on_failure=False,
       newline_on_success=newline_on_success, travis=args.travis)
 
   out = []
