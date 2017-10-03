@@ -38,6 +38,7 @@ DEFINE_string(directory, "", "Use this directory as test data");
 class FuzzerCorpusTest : public ::testing::TestWithParam<std::string> {};
 
 TEST_P(FuzzerCorpusTest, RunOneExample) {
+  gpr_log(GPR_DEBUG, "Example file: %s", GetParam().c_str());
   grpc_slice buffer;
   squelch = false;
   leak_check = false;
@@ -62,10 +63,14 @@ class ExampleGenerator
       if (!FLAGS_directory.empty()) {
         DIR* dp;
         struct dirent* ep;
-        dp = opendir("./");
+        dp = opendir(FLAGS_directory.c_str());
 
         if (dp != NULL) {
-          while ((ep = readdir(dp)) != nullptr) examples_.push_back(ep->d_name);
+          while ((ep = readdir(dp)) != nullptr) {
+            if (ep->d_type == DT_REG) {
+              examples_.push_back(FLAGS_directory + "/" + ep->d_name);
+            }
+          }
 
           (void)closedir(dp);
         } else {
@@ -84,18 +89,13 @@ class ExampleIterator
  public:
   ExampleIterator(const ExampleGenerator& base_,
                   std::vector<std::string>::const_iterator begin)
-      : base_(base_), begin_(begin), current_(begin), current_string_(NULL) {}
+      : base_(base_), begin_(begin), current_(begin) {}
 
-  ~ExampleIterator() { delete current_string_; }
   virtual const ExampleGenerator* BaseGenerator() const { return &base_; }
 
-  virtual void Advance() {
-    current_++;
-    delete current_string_;
-    current_string_ = NULL;
-  }
+  virtual void Advance() { current_++; }
   virtual ExampleIterator* Clone() const { return new ExampleIterator(*this); }
-  virtual const std::string* Current() const;
+  virtual const std::string* Current() const { return &*current_; }
 
   virtual bool Equals(const ParamIteratorInterface<std::string>& other) const {
     return &base_ == other.BaseGenerator() &&
@@ -104,15 +104,11 @@ class ExampleIterator
 
  private:
   ExampleIterator(const ExampleIterator& other)
-      : base_(other.base_),
-        begin_(other.begin_),
-        current_(other.current_),
-        current_string_(NULL) {}
+      : base_(other.base_), begin_(other.begin_), current_(other.current_) {}
 
   const ExampleGenerator& base_;
   const std::vector<std::string>::const_iterator begin_;
   std::vector<std::string>::const_iterator current_;
-  mutable const std::string* current_string_;
 };
 
 ::testing::internal::ParamIteratorInterface<std::string>*
@@ -133,6 +129,7 @@ INSTANTIATE_TEST_CASE_P(
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  ::gflags::ParseCommandLineFlags(&argc, &argv, true);
   ::testing::InitGoogleTest(&argc, argv);
 
   return RUN_ALL_TESTS();
