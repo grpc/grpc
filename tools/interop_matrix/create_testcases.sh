@@ -31,9 +31,10 @@ TESTCASES_DIR=${GRPC_ROOT}/tools/interop_matrix/testcases
 
 echo "Create '$LANG' test cases for gRPC release '${RELEASE:=master}'"
 
+echo $client_lang
 # Invoke run_interop_test in manual mode.
 ${GRPC_ROOT}/tools/run_tests/run_interop_tests.py -l $LANG --use_docker \
-  --cloud_to_prod --manual_run
+  --cloud_to_prod --cloud_to_prod_auth --prod_servers default cloud_gateway_v4 --manual_run
 
 # Clean up
 function cleanup {
@@ -52,11 +53,19 @@ function cleanup {
   [ -e "$CMDS_SH" ] && rm $CMDS_SH
 }
 trap cleanup EXIT
+# TODO(adelez): skip sanity checks b/c auth tests only work in GCE. Need to be
+# able to filter them out and bring back the check.
 # Running the testcases as sanity unless we are asked to skip.
-[ -z "$SKIP_TEST" ] && (echo "Running test cases: $CMDS_SH"; sh $CMDS_SH)
+#[ -z "$SKIP_TEST" ] && (echo "Running test cases: $CMDS_SH"; sh $CMDS_SH)
 
+# Convert c++ to cxx. 
+client_lang=$LANG
+if [ $LANG=="c++" ]
+  then 
+    client_lang="cxx"
+fi
 mkdir -p $TESTCASES_DIR
-testcase=$TESTCASES_DIR/${LANG}__$RELEASE
+testcase=$TESTCASES_DIR/${client_lang}__$RELEASE
 if [ -e $testcase ]; then
   echo "Updating: $testcase"
   diff $testcase $CMDS_SH || true
