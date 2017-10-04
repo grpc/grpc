@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.7.0-dev'
+  version = '1.8.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -105,8 +105,6 @@ Pod::Spec.new do |s|
     ss.source_files = 'include/grpc/support/alloc.h',
                       'include/grpc/support/atm.h',
                       'include/grpc/support/atm_gcc_atomic.h',
-                      'include/grpc/support/atm_gcc_sync.h',
-                      'include/grpc/support/atm_windows.h',
                       'include/grpc/support/avl.h',
                       'include/grpc/support/cmdline.h',
                       'include/grpc/support/cpu.h',
@@ -121,18 +119,13 @@ Pod::Spec.new do |s|
                       'include/grpc/support/sync_custom.h',
                       'include/grpc/support/sync_generic.h',
                       'include/grpc/support/sync_posix.h',
-                      'include/grpc/support/sync_windows.h',
                       'include/grpc/support/thd.h',
                       'include/grpc/support/time.h',
                       'include/grpc/support/tls.h',
-                      'include/grpc/support/tls_gcc.h',
-                      'include/grpc/support/tls_msvc.h',
                       'include/grpc/support/tls_pthread.h',
                       'include/grpc/support/useful.h',
                       'include/grpc/impl/codegen/atm.h',
                       'include/grpc/impl/codegen/atm_gcc_atomic.h',
-                      'include/grpc/impl/codegen/atm_gcc_sync.h',
-                      'include/grpc/impl/codegen/atm_windows.h',
                       'include/grpc/impl/codegen/gpr_slice.h',
                       'include/grpc/impl/codegen/gpr_types.h',
                       'include/grpc/impl/codegen/port_platform.h',
@@ -140,7 +133,6 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/codegen/sync_custom.h',
                       'include/grpc/impl/codegen/sync_generic.h',
                       'include/grpc/impl/codegen/sync_posix.h',
-                      'include/grpc/impl/codegen/sync_windows.h',
                       'include/grpc/impl/codegen/byte_buffer.h',
                       'include/grpc/impl/codegen/byte_buffer_reader.h',
                       'include/grpc/impl/codegen/compression_types.h',
@@ -152,8 +144,6 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/codegen/status.h',
                       'include/grpc/impl/codegen/atm.h',
                       'include/grpc/impl/codegen/atm_gcc_atomic.h',
-                      'include/grpc/impl/codegen/atm_gcc_sync.h',
-                      'include/grpc/impl/codegen/atm_windows.h',
                       'include/grpc/impl/codegen/gpr_slice.h',
                       'include/grpc/impl/codegen/gpr_types.h',
                       'include/grpc/impl/codegen/port_platform.h',
@@ -161,7 +151,6 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/codegen/sync_custom.h',
                       'include/grpc/impl/codegen/sync_generic.h',
                       'include/grpc/impl/codegen/sync_posix.h',
-                      'include/grpc/impl/codegen/sync_windows.h',
                       'include/grpc/grpc_security.h',
                       'include/grpc/byte_buffer.h',
                       'include/grpc/byte_buffer_reader.h',
@@ -330,6 +319,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/compression/algorithm_metadata.h',
                       'src/core/lib/compression/message_compress.h',
                       'src/core/lib/compression/stream_compression.h',
+                      'src/core/lib/compression/stream_compression_gzip.h',
+                      'src/core/lib/compression/stream_compression_identity.h',
                       'src/core/lib/debug/stats.h',
                       'src/core/lib/debug/stats_data.h',
                       'src/core/lib/http/format_request.h',
@@ -479,6 +470,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/compression/compression.c',
                       'src/core/lib/compression/message_compress.c',
                       'src/core/lib/compression/stream_compression.c',
+                      'src/core/lib/compression/stream_compression_gzip.c',
+                      'src/core/lib/compression/stream_compression_identity.c',
                       'src/core/lib/debug/stats.c',
                       'src/core/lib/debug/stats_data.c',
                       'src/core/lib/http/format_request.c',
@@ -825,6 +818,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/compression/algorithm_metadata.h',
                               'src/core/lib/compression/message_compress.h',
                               'src/core/lib/compression/stream_compression.h',
+                              'src/core/lib/compression/stream_compression_gzip.h',
+                              'src/core/lib/compression/stream_compression_identity.h',
                               'src/core/lib/debug/stats.h',
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/http/format_request.h',

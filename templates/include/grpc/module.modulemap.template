@@ -1,0 +1,32 @@
+%YAML 1.2
+--- |
+  <%!
+  def grpc_public_headers_no_dir(libs):
+    excluded_files = ["include/grpc/support/atm_gcc_sync.h",
+                      "include/grpc/support/atm_windows.h",
+                      "include/grpc/support/sync_windows.h",
+                      "include/grpc/support/tls_gcc.h",
+                      "include/grpc/support/tls_msvc.h",
+                      "include/grpc/impl/codegen/atm_gcc_sync.h",
+                      "include/grpc/impl/codegen/atm_windows.h",
+                      "include/grpc/impl/codegen/sync_windows.h"]
+    out = []
+    for lib in libs:
+      if lib.name in ("grpc", "gpr"):
+        out += lib.get('public_headers', [])
+    out = [f for f in out if f not in excluded_files]
+    out = [hdr.split('/', 2)[2] for hdr in out]
+    return out
+
+  def header_lines(files):
+    return ('\n  ').join('header "%s"' % f for f in files)
+  %>
+  framework module grpc {
+    umbrella header "grpc.h"
+
+    ${header_lines(grpc_public_headers_no_dir(libs))}
+
+    export *
+    module * { export * }
+  }
+

@@ -34,11 +34,11 @@ load(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gambit"
+g_stands_for = "generous"
 
-core_version = "4.0.0-dev"
+core_version = "5.0.0-dev"
 
-version = "1.7.0-dev"
+version = "1.8.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -574,6 +574,8 @@ grpc_cc_library(
         "src/core/lib/compression/compression.c",
         "src/core/lib/compression/message_compress.c",
         "src/core/lib/compression/stream_compression.c",
+        "src/core/lib/compression/stream_compression_gzip.c",
+        "src/core/lib/compression/stream_compression_identity.c",
         "src/core/lib/debug/stats.c",
         "src/core/lib/debug/stats_data.c",
         "src/core/lib/http/format_request.c",
@@ -705,6 +707,8 @@ grpc_cc_library(
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/message_compress.h",
         "src/core/lib/compression/stream_compression.h",
+        "src/core/lib/compression/stream_compression_gzip.h",
+        "src/core/lib/compression/stream_compression_identity.h",
         "src/core/lib/debug/stats.h",
         "src/core/lib/debug/stats_data.h",
         "src/core/lib/http/format_request.h",

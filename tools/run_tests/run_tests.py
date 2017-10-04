@@ -116,6 +116,13 @@ def run_shell_command(cmd, env=None, cwd=None):
                        e.cmd, e.returncode, e.output)
     raise
 
+def max_parallel_tests_for_current_platform():
+  # Too much test parallelization has only been seen to be a problem
+  # so far on windows.
+  if jobset.platform_string() == 'windows':
+    return 64
+  return 128
+
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class Config(object):
 
@@ -443,6 +450,67 @@ class CLanguage(object):
     return self.make_target
 
 
+# This tests Node on grpc/grpc-node and will become the standard for Node testing
+class RemoteNodeLanguage(object):
+
+  def __init__(self):
+    self.platform = platform_string()
+
+  def configure(self, config, args):
+    self.config = config
+    self.args = args
+    # Note: electron ABI only depends on major and minor version, so that's all
+    # we should specify in the compiler argument
+    _check_compiler(self.args.compiler, ['default', 'node0.12',
+                                         'node4', 'node5', 'node6',
+                                         'node7', 'node8',
+                                         'electron1.3', 'electron1.6'])
+    if self.args.compiler == 'default':
+      self.runtime = 'node'
+      self.node_version = '8'
+    else:
+      if self.args.compiler.startswith('electron'):
+        self.runtime = 'electron'
+        self.node_version = self.args.compiler[8:]
+      else:
+        self.runtime = 'node'
+        # Take off the word "node"
+        self.node_version = self.args.compiler[4:]
+
+  # TODO: update with Windows/electron scripts when available for grpc/grpc-node
+  def test_specs(self):
+    if self.platform == 'windows':
+      return [self.config.job_spec(['tools\\run_tests\\helper_scripts\\run_node.bat'])]
+    else:
+      return [self.config.job_spec(['tools/run_tests/helper_scripts/run_grpc-node.sh'],
+                                   None,
+                                   environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+
+  def pre_build_steps(self):
+    return []
+
+  def make_targets(self):
+    return []
+
+  def make_options(self):
+    return []
+
+  def build_steps(self):
+    return []
+
+  def post_tests_steps(self):
+    return []
+
+  def makefile_name(self):
+    return 'Makefile'
+
+  def dockerfile_dir(self):
+    return 'tools/dockerfile/test/node_jessie_%s' % _docker_arch_suffix(self.args.arch)
+
+  def __str__(self):
+    return 'grpc-node'
+
+
 class NodeLanguage(object):
 
   def __init__(self):
@@ -639,7 +707,7 @@ class PythonLanguage(object):
     return [config.build for config in self.pythons]
 
   def post_tests_steps(self):
-    if self.config != 'gcov':
+    if self.config.build_config != 'gcov':
       return []
     else:
       return [['tools/run_tests/helper_scripts/post_tests_python.sh']]
@@ -716,6 +784,9 @@ class PythonLanguage(object):
       return (pypy32_config,)
     elif args.compiler == 'python_alpine':
       return (python27_config,)
+    elif args.compiler == 'all_the_cpythons':
+      return (python27_config, python34_config, python35_config,
+              python36_config,)
     else:
       raise Exception('Compiler %s not supported.' % args.compiler)
 
@@ -1063,6 +1134,7 @@ with open('tools/run_tests/generated/configs.json') as f:
 _LANGUAGES = {
     'c++': CLanguage('cxx', 'c++'),
     'c': CLanguage('c', 'c'),
+    'grpc-node': RemoteNodeLanguage(),
     'node': NodeLanguage(),
     'node_express': NodeExpressLanguage(),
     'php': PhpLanguage(),
@@ -1213,7 +1285,7 @@ argp.add_argument('--compiler',
                   choices=['default',
                            'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc_musl',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
-                           'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3', 'python_alpine',
+                           'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3', 'python_alpine', 'all_the_cpythons',
                            'node0.12', 'node4', 'node5', 'node6', 'node7', 'node8',
                            'electron1.3', 'electron1.6',
                            'coreclr',
@@ -1552,7 +1624,7 @@ def _build_and_run(
       jobset.message('START', 'Running tests quietly, only failing tests will be reported', do_newline=True)
     num_test_failures, resultset = jobset.run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
-        travis=args.travis, maxjobs=args.jobs,
+        travis=args.travis, maxjobs=args.jobs, maxjobs_cpu_agnostic=max_parallel_tests_for_current_platform(),
         stop_on_failure=args.stop_on_failure,
         quiet_success=args.quiet_success, max_time=args.max_time)
     if resultset:
@@ -1575,7 +1647,7 @@ def _build_and_run(
                                            suite_name=args.report_suite_name)
 
   number_failures, _ = jobset.run(
-      post_tests_steps, maxjobs=1, stop_on_failure=True,
+      post_tests_steps, maxjobs=1, stop_on_failure=False,
       newline_on_success=newline_on_success, travis=args.travis)
 
   out = []

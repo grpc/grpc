@@ -22,6 +22,8 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_perf_rc
 
 CPUS=`python -c 'import multiprocessing; print multiprocessing.cpu_count()'`
 
+./tools/run_tests/start_port_server.py || true
+
 make CONFIG=opt memory_profile_test memory_profile_client memory_profile_server -j $CPUS
 bins/opt/memory_profile_test
 bq load microbenchmarks.memory memory_usage.csv

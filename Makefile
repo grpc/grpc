@@ -187,7 +187,7 @@ CXX_gcov = g++
 LD_gcov = gcc
 LDXX_gcov = g++
 CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
-LDFLAGS_gcov = -fprofile-arcs -ftest-coverage -rdynamic
+LDFLAGS_gcov = -fprofile-arcs -ftest-coverage -rdynamic -lstdc++
 DEFINES_gcov = _DEBUG DEBUG GPR_GCOV
 
 VALID_CONFIG_memcheck = 1
@@ -411,8 +411,8 @@ Q = @
 endif
 
 CORE_VERSION = 5.0.0-dev
-CPP_VERSION = 1.7.0-dev
-CSHARP_VERSION = 1.7.0-dev
+CPP_VERSION = 1.8.0-dev
+CSHARP_VERSION = 1.8.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -2956,6 +2956,8 @@ LIBGRPC_SRC = \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
+    src/core/lib/compression/stream_compression_gzip.c \
+    src/core/lib/compression/stream_compression_identity.c \
     src/core/lib/debug/stats.c \
     src/core/lib/debug/stats_data.c \
     src/core/lib/http/format_request.c \
@@ -3305,6 +3307,8 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
+    src/core/lib/compression/stream_compression_gzip.c \
+    src/core/lib/compression/stream_compression_identity.c \
     src/core/lib/debug/stats.c \
     src/core/lib/debug/stats_data.c \
     src/core/lib/http/format_request.c \
@@ -3621,6 +3625,8 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
+    src/core/lib/compression/stream_compression_gzip.c \
+    src/core/lib/compression/stream_compression_identity.c \
     src/core/lib/debug/stats.c \
     src/core/lib/debug/stats_data.c \
     src/core/lib/http/format_request.c \
@@ -3873,6 +3879,8 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
+    src/core/lib/compression/stream_compression_gzip.c \
+    src/core/lib/compression/stream_compression_identity.c \
     src/core/lib/debug/stats.c \
     src/core/lib/debug/stats_data.c \
     src/core/lib/http/format_request.c \
@@ -4098,6 +4106,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
+    src/core/lib/compression/stream_compression_gzip.c \
+    src/core/lib/compression/stream_compression_identity.c \
     src/core/lib/debug/stats.c \
     src/core/lib/debug/stats_data.c \
     src/core/lib/http/format_request.c \
@@ -4836,6 +4846,8 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/compression/stream_compression.c \
+    src/core/lib/compression/stream_compression_gzip.c \
+    src/core/lib/compression/stream_compression_identity.c \
     src/core/lib/debug/stats.c \
     src/core/lib/debug/stats_data.c \
     src/core/lib/http/format_request.c \

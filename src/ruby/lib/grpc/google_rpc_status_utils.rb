@@ -19,10 +19,17 @@ require 'google/rpc/status_pb'
 module GRPC
   # GoogleRpcStatusUtils provides utilities to convert between a
   # GRPC::Core::Status and a deserialized Google::Rpc::Status proto
+  # Returns nil if the grpc-status-details-bin trailer could not be
+  # converted to a GoogleRpcStatus due to the server not providing
+  # the necessary trailers.
+  # Raises an error if the server did provide the necessary trailers
+  # but they fail to deseriliaze into a GoogleRpcStatus protobuf.
   class GoogleRpcStatusUtils
     def self.extract_google_rpc_status(status)
       fail ArgumentError, 'bad type' unless status.is_a? Struct::Status
-      Google::Rpc::Status.decode(status.metadata['grpc-status-details-bin'])
+      grpc_status_details_bin_trailer = 'grpc-status-details-bin'
+      return nil if status.metadata[grpc_status_details_bin_trailer].nil?
+      Google::Rpc::Status.decode(status.metadata[grpc_status_details_bin_trailer])
     end
   end
 end

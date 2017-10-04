@@ -69,9 +69,9 @@ def main
     call_started_cv.wait(call_started_mu) until call_started.val
   end
 
-  # SIGINT the child process now that it's
+  # SIGTERM the child process now that it's
   # in the middle of an RPC (happening on a non-main thread)
-  Process.kill('SIGINT', client_pid)
+  Process.kill('SIGTERM', client_pid)
   STDERR.puts 'sent shutdown'
 
   begin
@@ -88,8 +88,8 @@ def main
   end
 
   client_exit_code = $CHILD_STATUS
-  if client_exit_code.termsig != 2 # SIGINT
-    fail 'expected client exit from SIGINT ' \
+  if client_exit_code.termsig != 15 # SIGTERM
+    fail 'expected client exit from SIGTERM ' \
       "but got child status: #{client_exit_code}"
   end
 

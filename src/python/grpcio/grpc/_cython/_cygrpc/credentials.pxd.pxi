@@ -41,7 +41,8 @@ cdef class CredentialsMetadataPlugin:
   cdef object plugin_callback
   cdef bytes plugin_name
 
-  cdef grpc_metadata_credentials_plugin make_c_plugin(self)
+
+cdef grpc_metadata_credentials_plugin _c_plugin(CredentialsMetadataPlugin plugin)
 
 
 cdef class AuthMetadataContext:
@@ -49,8 +50,11 @@ cdef class AuthMetadataContext:
   cdef grpc_auth_metadata_context context
 
 
-cdef void plugin_get_metadata(
+cdef int plugin_get_metadata(
     void *state, grpc_auth_metadata_context context,
-    grpc_credentials_plugin_metadata_cb cb, void *user_data) with gil
+    grpc_credentials_plugin_metadata_cb cb, void *user_data,
+    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+    size_t *num_creds_md, grpc_status_code *status,
+    const char **error_details) with gil
 
 cdef void plugin_destroy_c_plugin_state(void *state) with gil

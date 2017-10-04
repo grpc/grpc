@@ -14,6 +14,7 @@
 
 cimport cpython
 
+import threading
 import traceback
 
 
@@ -89,18 +90,18 @@ cdef class CredentialsMetadataPlugin:
     self.plugin_callback = plugin_callback
     self.plugin_name = name
 
-  @staticmethod
-  cdef grpc_metadata_credentials_plugin make_c_plugin(self):
-    cdef grpc_metadata_credentials_plugin result
-    result.get_metadata = plugin_get_metadata
-    result.destroy = plugin_destroy_c_plugin_state
-    result.state = <void *>self
-    result.type = self.plugin_name
-    cpython.Py_INCREF(self)
-    return result
-
   def __dealloc__(self):
     grpc_shutdown()
+
+
+cdef grpc_metadata_credentials_plugin _c_plugin(CredentialsMetadataPlugin plugin):
+  cdef grpc_metadata_credentials_plugin c_plugin
+  c_plugin.get_metadata = plugin_get_metadata
+  c_plugin.destroy = plugin_destroy_c_plugin_state
+  c_plugin.state = <void *>plugin
+  c_plugin.type = plugin.plugin_name
+  cpython.Py_INCREF(plugin)
+  return c_plugin
 
 
 cdef class AuthMetadataContext:
@@ -122,9 +123,12 @@ cdef class AuthMetadataContext:
     grpc_shutdown()
 
 
-cdef void plugin_get_metadata(
+cdef int plugin_get_metadata(
     void *state, grpc_auth_metadata_context context,
-    grpc_credentials_plugin_metadata_cb cb, void *user_data) with gil:
+    grpc_credentials_plugin_metadata_cb cb, void *user_data,
+    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+    size_t *num_creds_md, grpc_status_code *status,
+    const char **error_details) with gil:
   called_flag = [False]
   def python_callback(
       Metadata metadata, grpc_status_code status,
@@ -134,12 +138,15 @@ cdef void plugin_get_metadata(
   cdef CredentialsMetadataPlugin self = <CredentialsMetadataPlugin>state
   cdef AuthMetadataContext cy_context = AuthMetadataContext()
   cy_context.context = context
-  try:
-    self.plugin_callback(cy_context, python_callback)
-  except Exception as error:
-    if not called_flag[0]:
-      cb(user_data, NULL, 0, StatusCode.unknown,
-         traceback.format_exc().encode())
+  def async_callback():
+    try:
+      self.plugin_callback(cy_context, python_callback)
+    except Exception as error:
+      if not called_flag[0]:
+        cb(user_data, NULL, 0, StatusCode.unknown,
+           traceback.format_exc().encode())
+  threading.Thread(group=None, target=async_callback).start()
+  return 0  # Asynchronous return
 
 cdef void plugin_destroy_c_plugin_state(void *state) with gil:
   cpython.Py_DECREF(<CredentialsMetadataPlugin>state)
@@ -239,7 +246,7 @@ def call_credentials_google_iam(authorization_token, authority_selector):
 
 def call_credentials_metadata_plugin(CredentialsMetadataPlugin plugin):
   cdef CallCredentials credentials = CallCredentials()
-  cdef grpc_metadata_credentials_plugin c_plugin = plugin.make_c_plugin()
+  cdef grpc_metadata_credentials_plugin c_plugin = _c_plugin(plugin)
   with nogil:
     credentials.c_credentials = (
         grpc_metadata_credentials_create_from_plugin(c_plugin, NULL))

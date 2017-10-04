@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.7.0-dev")
+set(PACKAGE_VERSION   "1.8.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -965,6 +965,8 @@ add_library(grpc
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/compression/stream_compression_gzip.c
+  src/core/lib/compression/stream_compression_identity.c
   src/core/lib/debug/stats.c
   src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
@@ -1314,6 +1316,8 @@ add_library(grpc_cronet
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/compression/stream_compression_gzip.c
+  src/core/lib/compression/stream_compression_identity.c
   src/core/lib/debug/stats.c
   src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
@@ -1631,6 +1635,8 @@ add_library(grpc_test_util
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/compression/stream_compression_gzip.c
+  src/core/lib/compression/stream_compression_identity.c
   src/core/lib/debug/stats.c
   src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
@@ -1892,6 +1898,8 @@ add_library(grpc_test_util_unsecure
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/compression/stream_compression_gzip.c
+  src/core/lib/compression/stream_compression_identity.c
   src/core/lib/debug/stats.c
   src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
@@ -2139,6 +2147,8 @@ add_library(grpc_unsecure
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/compression/stream_compression_gzip.c
+  src/core/lib/compression/stream_compression_identity.c
   src/core/lib/debug/stats.c
   src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
@@ -2894,6 +2904,8 @@ add_library(grpc++_cronet
   src/core/lib/compression/compression.c
   src/core/lib/compression/message_compress.c
   src/core/lib/compression/stream_compression.c
+  src/core/lib/compression/stream_compression_gzip.c
+  src/core/lib/compression/stream_compression_identity.c
   src/core/lib/debug/stats.c
   src/core/lib/debug/stats_data.c
   src/core/lib/http/format_request.c
