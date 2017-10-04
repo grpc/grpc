@@ -558,7 +558,10 @@ grpc_cc_library(
     srcs = ["src/core/lib/debug/trace.cc"],
     hdrs = ["src/core/lib/debug/trace.h"],
     language = "c++",
-    deps = [":gpr"],
+    deps = [
+        "grpc_codegen",
+        ":gpr",
+    ],
 )
 
 grpc_cc_library(
