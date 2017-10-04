@@ -41,6 +41,11 @@ namespace Grpc.Core
     /// (<c>MoveNext</c> will return <c>false</c>) and the <c>CancellationToken</c>
     /// associated with the call will be cancelled to signal the failure.
     /// </para>
+    /// <para>
+    /// <c>MoveNext()</c> operations can be cancelled via a cancellation token. Cancelling
+    /// an individual read operation has the same effect as cancelling the entire call
+    /// (which will also result in the read operation returning prematurely).
+    /// </para>
     /// </summary>
     /// <typeparam name="T">The message type.</typeparam>
     public interface IAsyncStreamReader<T> : IAsyncEnumerator<T>
