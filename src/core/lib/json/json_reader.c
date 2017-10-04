@@ -85,10 +85,40 @@ void grpc_json_reader_init(grpc_json_reader *reader,
   reader->state = GRPC_JSON_STATE_VALUE_BEGIN;
 }
 
+static uint32_t json_maybe_flush(grpc_json_reader *reader) {
+  uint32_t success = 1;
+
+  if ((reader->in_object == 0) && (reader->in_array == 0)) {
+    switch (reader->state) {
+      case GRPC_JSON_STATE_VALUE_NUMBER:
+      case GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
+      case GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL:
+      case GRPC_JSON_STATE_VALUE_NUMBER_EPM_VALUE:
+        success = (uint32_t)json_reader_set_number(reader);
+        if (!success) return success;
+        json_reader_string_clear(reader);
+        reader->state = GRPC_JSON_STATE_VALUE_END;
+      default:
+        break;
+    }
+  }
+  return success;
+}
+
 int grpc_json_reader_is_complete(grpc_json_reader *reader) {
-  return ((reader->depth == 0) &&
-          ((reader->state == GRPC_JSON_STATE_END) ||
-           (reader->state == GRPC_JSON_STATE_VALUE_END)));
+  switch (reader->state) {
+    case GRPC_JSON_STATE_END:
+    case GRPC_JSON_STATE_VALUE_END:
+      return reader->depth == 0;
+    case GRPC_JSON_STATE_VALUE_NUMBER:
+    case GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
+    case GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL:
+    case GRPC_JSON_STATE_VALUE_NUMBER_EPM_VALUE:
+      return (reader->in_object == 0) && (reader->in_array == 0) &&
+             (reader->depth == 0);
+    default:
+      return 0;
+  }
 }
 
 grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
@@ -106,6 +136,9 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
         return GRPC_JSON_EAGAIN;
 
       case GRPC_JSON_READ_CHAR_EOF:
+        if (!json_maybe_flush(reader)) {
+          return GRPC_JSON_PARSE_ERROR;
+        }
         if (grpc_json_reader_is_complete(reader)) {
           return GRPC_JSON_DONE;
         } else {
@@ -137,7 +170,7 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
           case GRPC_JSON_STATE_VALUE_NUMBER:
           case GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL:
           case GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
-          case GRPC_JSON_STATE_VALUE_NUMBER_EPM:
+          case GRPC_JSON_STATE_VALUE_NUMBER_EPM_VALUE:
             success = (uint32_t)json_reader_set_number(reader);
             if (!success) return GRPC_JSON_PARSE_ERROR;
             json_reader_string_clear(reader);
@@ -165,7 +198,7 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
           case GRPC_JSON_STATE_VALUE_NUMBER:
           case GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL:
           case GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
-          case GRPC_JSON_STATE_VALUE_NUMBER_EPM:
+          case GRPC_JSON_STATE_VALUE_NUMBER_EPM_VALUE:
             if (reader->depth == 0) {
               return GRPC_JSON_PARSE_ERROR;
             } else if ((c == '}') && !reader->in_object) {
@@ -331,6 +364,11 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
                 reader->state = GRPC_JSON_STATE_VALUE_NUMBER_ZERO;
                 break;
 
+              case '-':
+                json_reader_string_add_char(reader, c);
+                reader->state = GRPC_JSON_STATE_VALUE_NUMBER_MINUS;
+                break;
+
               case '1':
               case '2':
               case '3':
@@ -340,7 +378,6 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
               case '7':
               case '8':
               case '9':
-              case '-':
                 json_reader_string_add_char(reader, c);
                 reader->state = GRPC_JSON_STATE_VALUE_NUMBER;
                 break;
@@ -493,6 +530,28 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
             }
             break;
 
+          case GRPC_JSON_STATE_VALUE_NUMBER_MINUS:
+            json_reader_string_add_char(reader, c);
+            switch (c) {
+              case '0':
+                reader->state = GRPC_JSON_STATE_VALUE_NUMBER_ZERO;
+                break;
+              case '1':
+              case '2':
+              case '3':
+              case '4':
+              case '5':
+              case '6':
+              case '7':
+              case '8':
+              case '9':
+                reader->state = GRPC_JSON_STATE_VALUE_NUMBER;
+                break;
+              default:
+                return GRPC_JSON_PARSE_ERROR;
+            }
+            break;
+
           case GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL:
             json_reader_string_add_char(reader, c);
             switch (c) {
@@ -517,9 +576,15 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
             break;
 
           case GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
-            if (c != '.') return GRPC_JSON_PARSE_ERROR;
+            if ((c != '.') && (c != 'e') && (c != 'E')) {
+              return GRPC_JSON_PARSE_ERROR;
+            }
             json_reader_string_add_char(reader, c);
-            reader->state = GRPC_JSON_STATE_VALUE_NUMBER_DOT;
+            if (c == '.') {
+              reader->state = GRPC_JSON_STATE_VALUE_NUMBER_DOT;
+            } else {
+              reader->state = GRPC_JSON_STATE_VALUE_NUMBER_E;
+            }
             break;
 
           case GRPC_JSON_STATE_VALUE_NUMBER_DOT:
@@ -555,6 +620,8 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
               case '7':
               case '8':
               case '9':
+                reader->state = GRPC_JSON_STATE_VALUE_NUMBER_EPM_VALUE;
+                break;
               case '+':
               case '-':
                 reader->state = GRPC_JSON_STATE_VALUE_NUMBER_EPM;
@@ -565,6 +632,26 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
             break;
 
           case GRPC_JSON_STATE_VALUE_NUMBER_EPM:
+            json_reader_string_add_char(reader, c);
+            switch (c) {
+              case '0':
+              case '1':
+              case '2':
+              case '3':
+              case '4':
+              case '5':
+              case '6':
+              case '7':
+              case '8':
+              case '9':
+                reader->state = GRPC_JSON_STATE_VALUE_NUMBER_EPM_VALUE;
+                break;
+              default:
+                return GRPC_JSON_PARSE_ERROR;
+            }
+            break;
+
+          case GRPC_JSON_STATE_VALUE_NUMBER_EPM_VALUE:
             json_reader_string_add_char(reader, c);
             switch (c) {
               case '0':
