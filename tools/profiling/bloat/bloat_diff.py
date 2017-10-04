@@ -83,14 +83,15 @@ for lib in LIBS:
   old_version = glob.glob('bloat_diff_old/opt/%s' % lib)
   new_version = glob.glob('bloat_diff_new/opt/%s' % lib)
   assert len(new_version) == 1
+  cmd = 'third_party/bloaty/bloaty -d compileunits,symbols'
   if old_version:
     assert len(old_version) == 1
-    text += subprocess.check_output('third_party/bloaty/bloaty %s -- %s' %
-                                    (new_version[0], old_version[0]),
+    text += subprocess.check_output('%s %s -- %s' %
+                                    (cmd, new_version[0], old_version[0]),
                                     shell=True)
   else:
-    text += subprocess.check_output('third_party/bloaty/bloaty %s' %
-                                    (new_version[0]),
+    text += subprocess.check_output('%s %s' %
+                                    (cmd, new_version[0]),
                                     shell=True)
   text += '\n\n'
 
