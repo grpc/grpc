@@ -47,7 +47,7 @@ For more details on each step, refer to sections below.
 
 ## Instructions for running test cases against GCR images
 - Run `tools/interop_matrix/run_interop_matrix_tests.py`.  Useful options:
-  - `--release` specifies a git release tag.  Defaults to `--release=master`.  Make sure the GCR images with the tag have been created using `create_matrix_images.py` above.
+  - `--release` specifies a git release tag.  Defaults to `--release=all`.  Make sure the GCR images with the tag have been created using `create_matrix_images.py` above.
   - `--language` specifies a language.  Defaults to `--language=all`.
   For example, To test all languages for all gRPC releases across all runtimes, do `tools/interop_matrix/run_interop_matrix_test.py --release=all`.
 - The output for all the test cases is recorded in a junit style xml file (default to 'report.xml').
