@@ -542,7 +542,7 @@ static void pollset_maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
 static grpc_error *pollset_kick_one(grpc_exec_ctx *exec_ctx,
                                     grpc_pollset *pollset,
                                     grpc_pollset_worker *specific_worker) {
-  pollable *p = pollset->active_pollable;
+  pollable *p = specific_worker->pollable_obj;
 GPR_ASSERT(specific_worker != NULL);
   if (specific_worker->kicked) {
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
@@ -563,6 +563,7 @@ GPR_ASSERT(specific_worker != NULL);
     specific_worker->kicked = true;
     return grpc_wakeup_fd_wakeup(&p->wakeup);
   } else {
+    GPR_ASSERT(specific_worker->initialized_cv);
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
       gpr_log(GPR_DEBUG, "PS:%p kicked_specific_via_cv", p);
     }
@@ -577,20 +578,17 @@ GPR_ASSERT(specific_worker != NULL);
 static grpc_error *pollset_kick_inner(grpc_exec_ctx *exec_ctx,
                                       grpc_pollset *pollset,
                                       grpc_pollset_worker *specific_worker) {
-  pollable *p = pollset->active_pollable;
   if (GRPC_TRACER_ON(grpc_polling_trace)) {
     gpr_log(GPR_DEBUG,
-            "PS:%p kick %p tls_pollset=%p tls_worker=%p "
-            "root_worker=(pollset:%p pollable:%p)",
-            p, specific_worker, (void *)gpr_tls_get(&g_current_thread_pollset),
-            (void *)gpr_tls_get(&g_current_thread_worker), pollset->root_worker,
-            p->root_worker);
+            "PS:%p kick %p tls_pollset=%p tls_worker=%p pollset.root_worker=%p",
+            pollset, specific_worker, (void *)gpr_tls_get(&g_current_thread_pollset),
+            (void *)gpr_tls_get(&g_current_thread_worker), pollset->root_worker);
   }
   if (specific_worker == NULL) {
     if (gpr_tls_get(&g_current_thread_pollset) != (intptr_t)pollset) {
       if (pollset->root_worker == NULL) {
         if (GRPC_TRACER_ON(grpc_polling_trace)) {
-          gpr_log(GPR_DEBUG, "PS:%p kicked_any_without_poller", p);
+          gpr_log(GPR_DEBUG, "PS:%p kicked_any_without_poller", pollset);
         }
         pollset->kicked_without_poller = true;
         return GRPC_ERROR_NONE;
@@ -599,7 +597,7 @@ static grpc_error *pollset_kick_inner(grpc_exec_ctx *exec_ctx,
       }
     } else {
       if (GRPC_TRACER_ON(grpc_polling_trace)) {
-        gpr_log(GPR_DEBUG, "PS:%p kicked_any_but_awake", p);
+        gpr_log(GPR_DEBUG, "PS:%p kicked_any_but_awake", pollset);
       }
       return GRPC_ERROR_NONE;
     }
@@ -905,9 +903,11 @@ static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   if (worker->initialized_cv) {
     gpr_cv_destroy(&worker->cv);
   }
-  gpr_mu_unlock(&worker->pollable_obj->mu);
   if (worker_remove(&pollset->root_worker, worker, PWLINK_POLLSET)) {
+  gpr_mu_unlock(&worker->pollable_obj->mu);
     pollset_maybe_finish_shutdown(exec_ctx, pollset);
+  } else {
+  gpr_mu_unlock(&worker->pollable_obj->mu);
   }
   POLLABLE_UNREF(worker->pollable_obj, "pollset_worker");
 }
