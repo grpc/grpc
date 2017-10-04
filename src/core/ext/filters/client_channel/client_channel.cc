@@ -266,11 +266,9 @@ static void on_lb_policy_state_changed_locked(grpc_exec_ctx *exec_ctx,
       gpr_log(GPR_DEBUG, "chand=%p: lb_policy=%p state changed to %s", w->chand,
               w->lb_policy, grpc_connectivity_state_name(w->state));
     }
-    if (publish_state == GRPC_CHANNEL_SHUTDOWN && w->chand->resolver != NULL) {
-      publish_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
+    if (publish_state == GRPC_CHANNEL_RERESOLVE && w->chand->resolver != NULL) {
+      publish_state = GRPC_CHANNEL_RERESOLVE;
       grpc_resolver_channel_saw_error_locked(exec_ctx, w->chand->resolver);
-      GRPC_LB_POLICY_UNREF(exec_ctx, w->chand->lb_policy, "channel");
-      w->chand->lb_policy = NULL;
     }
     set_channel_connectivity_state_locked(exec_ctx, w->chand, publish_state,
                                           GRPC_ERROR_REF(error), "lb_changed");

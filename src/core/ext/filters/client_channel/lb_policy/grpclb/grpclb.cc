@@ -582,7 +582,8 @@ static void update_lb_connectivity_status_locked(
   const grpc_connectivity_state curr_glb_state =
       grpc_connectivity_state_check(&glb_policy->state_tracker);
 
-  /* The new connectivity status is a function of the previous one and the new
+  /* TODO(juanlishen): update comment
+   * The new connectivity status is a function of the previous one and the new
    * input coming from the status of the RR policy.
    *
    *  current state (grpclb's)
@@ -611,10 +612,13 @@ static void update_lb_connectivity_status_locked(
    *
    *  (*) This function mustn't be called during shutting down. */
   GPR_ASSERT(curr_glb_state != GRPC_CHANNEL_SHUTDOWN);
+  GPR_ASSERT(rr_state != GRPC_CHANNEL_SHUTDOWN);
 
   switch (rr_state) {
-    case GRPC_CHANNEL_TRANSIENT_FAILURE:
     case GRPC_CHANNEL_SHUTDOWN:
+      GPR_UNREACHABLE_CODE(return );
+    case GRPC_CHANNEL_TRANSIENT_FAILURE:
+    case GRPC_CHANNEL_RERESOLVE:
       GPR_ASSERT(rr_state_error != GRPC_ERROR_NONE);
       break;
     case GRPC_CHANNEL_INIT:
@@ -1826,7 +1830,8 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx *exec_ctx,
   switch (glb_policy->lb_channel_connectivity) {
     case GRPC_CHANNEL_INIT:
     case GRPC_CHANNEL_CONNECTING:
-    case GRPC_CHANNEL_TRANSIENT_FAILURE: {
+    case GRPC_CHANNEL_TRANSIENT_FAILURE:
+    case GRPC_CHANNEL_RERESOLVE: {
       /* resub. */
       grpc_channel_element *client_channel_elem =
           grpc_channel_stack_last_element(
