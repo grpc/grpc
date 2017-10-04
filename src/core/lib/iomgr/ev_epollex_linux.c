@@ -1036,12 +1036,14 @@ static grpc_error *pollset_add_fd_locked(grpc_exec_ctx *exec_ctx,
       break;
     case PO_FD:
       gpr_mu_lock(&po_at_start->owner_fd->orphan_mu);
-      if ((gpr_atm_no_barrier_load(&pollset->active_pollable->owner_fd->refst) & 1) == 0) {
-        error = pollset_transition_pollable_from_empty_to_fd_locked(exec_ctx, pollset, fd);
+      if ((gpr_atm_no_barrier_load(&pollset->active_pollable->owner_fd->refst) &
+           1) == 0) {
+        error = pollset_transition_pollable_from_empty_to_fd_locked(
+            exec_ctx, pollset, fd);
       } else {
         /* fd --> multipoller */
-        error = pollset_transition_pollable_from_fd_to_multi_locked(exec_ctx,
-                                                                    pollset, fd);
+        error = pollset_transition_pollable_from_fd_to_multi_locked(
+            exec_ctx, pollset, fd);
       }
       gpr_mu_unlock(&po_at_start->owner_fd->orphan_mu);
       break;
@@ -1072,7 +1074,8 @@ static grpc_error *pollset_as_multipollable(grpc_exec_ctx *exec_ctx,
       break;
     case PO_FD:
       gpr_mu_lock(&po_at_start->owner_fd->orphan_mu);
-      if ((gpr_atm_no_barrier_load(&pollset->active_pollable->owner_fd->refst) & 1) == 0) {
+      if ((gpr_atm_no_barrier_load(&pollset->active_pollable->owner_fd->refst) &
+           1) == 0) {
         POLLABLE_UNREF(pollset->active_pollable, "pollset");
         error = pollable_create(PO_MULTI, &pollset->active_pollable);
       } else {
@@ -1237,7 +1240,8 @@ static void pollset_set_del_pollset(grpc_exec_ctx *exec_ctx,
 static grpc_error *add_fds_to_pollables(grpc_exec_ctx *exec_ctx, grpc_fd **fds,
                                         size_t fd_count, pollable **pollables,
                                         size_t pollable_count,
-                                        const char *err_desc, grpc_fd **out_fds, size_t *out_fd_count) {
+                                        const char *err_desc, grpc_fd **out_fds,
+                                        size_t *out_fd_count) {
   grpc_error *error = GRPC_ERROR_NONE;
   for (size_t i = 0; i < fd_count; i++) {
     gpr_mu_lock(&fds[i]->orphan_mu);
@@ -1303,13 +1307,13 @@ static void pollset_set_add_pollset_set(grpc_exec_ctx *exec_ctx,
   }
   size_t initial_a_fd_count = a->fd_count;
   a->fd_count = 0;
-  append_error(&error,
-               add_fds_to_pollables(exec_ctx, a->fds, initial_a_fd_count, b->pollsets,
-                                    b->pollset_count, "merge_a2b", a->fds, &a->fd_count),
+  append_error(&error, add_fds_to_pollables(
+                           exec_ctx, a->fds, initial_a_fd_count, b->pollsets,
+                           b->pollset_count, "merge_a2b", a->fds, &a->fd_count),
                err_desc);
-  append_error(&error,
-               add_fds_to_pollables(exec_ctx, b->fds, b->fd_count, a->pollsets,
-                                    a->pollset_count, "merge_b2a", a->fds, &a->fd_count),
+  append_error(&error, add_fds_to_pollables(exec_ctx, b->fds, b->fd_count,
+                                            a->pollsets, a->pollset_count,
+                                            "merge_b2a", a->fds, &a->fd_count),
                err_desc);
   if (a->pollset_capacity < a->pollset_count + b->pollset_count) {
     a->pollset_capacity =
