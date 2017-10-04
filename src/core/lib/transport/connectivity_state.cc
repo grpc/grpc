@@ -39,8 +39,6 @@ const char *grpc_connectivity_state_name(grpc_connectivity_state state) {
       return "READY";
     case GRPC_CHANNEL_TRANSIENT_FAILURE:
       return "TRANSIENT_FAILURE";
-    case GRPC_CHANNEL_RERESOLVE:
-      return "RERESOLVE";
     case GRPC_CHANNEL_SHUTDOWN:
       return "SHUTDOWN";
   }
@@ -177,14 +175,13 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
   }
   switch (state) {
     case GRPC_CHANNEL_INIT:
-    case GRPC_CHANNEL_IDLE:
     case GRPC_CHANNEL_CONNECTING:
+    case GRPC_CHANNEL_IDLE:
     case GRPC_CHANNEL_READY:
       GPR_ASSERT(error == GRPC_ERROR_NONE);
       break;
-    case GRPC_CHANNEL_TRANSIENT_FAILURE:
-    case GRPC_CHANNEL_RERESOLVE:
     case GRPC_CHANNEL_SHUTDOWN:
+    case GRPC_CHANNEL_TRANSIENT_FAILURE:
       GPR_ASSERT(error != GRPC_ERROR_NONE);
       break;
   }
