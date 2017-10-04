@@ -364,7 +364,7 @@ class Job(object):
 class Jobset(object):
   """Manages one run of jobs."""
 
-  def __init__(self, check_cancelled, maxjobs, newline_on_success, travis,
+  def __init__(self, check_cancelled, maxjobs, maxjobs_cpu_agnostic, newline_on_success, travis,
                stop_on_failure, add_env, quiet_success, max_time):
     self._running = set()
     self._check_cancelled = check_cancelled
@@ -372,6 +372,7 @@ class Jobset(object):
     self._failures = 0
     self._completed = 0
     self._maxjobs = maxjobs
+    self._maxjobs_cpu_agnostic = maxjobs_cpu_agnostic
     self._newline_on_success = newline_on_success
     self._travis = travis
     self._stop_on_failure = stop_on_failure
@@ -406,7 +407,9 @@ class Jobset(object):
       if self.cancelled(): return False
       current_cpu_cost = self.cpu_cost()
       if current_cpu_cost == 0: break
-      if current_cpu_cost + spec.cpu_cost <= self._maxjobs: break
+      if current_cpu_cost + spec.cpu_cost <= self._maxjobs:
+        if len(self._running) < self._maxjobs_cpu_agnostic:
+          break
       self.reap()
     if self.cancelled(): return False
     job = Job(spec,
@@ -491,6 +494,7 @@ def tag_remaining(xs):
 def run(cmdlines,
         check_cancelled=_never_cancelled,
         maxjobs=None,
+        maxjobs_cpu_agnostic=None,
         newline_on_success=False,
         travis=False,
         infinite_runs=False,
@@ -509,6 +513,7 @@ def run(cmdlines,
     return 0, resultset
   js = Jobset(check_cancelled,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
+              maxjobs_cpu_agnostic if maxjobs_cpu_agnostic is not None else _DEFAULT_MAX_JOBS,
               newline_on_success, travis, stop_on_failure, add_env,
               quiet_success, max_time)
   for cmdline, remaining in tag_remaining(cmdlines):
