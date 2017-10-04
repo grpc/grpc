@@ -972,8 +972,8 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Implementation", version
     ss.dependency "#{s.name}/Cronet-Interface", version
 
-    ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.c',
-                      'src/core/ext/transport/cronet/transport/cronet_transport.{c,h}',
+    ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc',
+                      'src/core/ext/transport/cronet/transport/cronet_transport.{cc,h}',
                       'third_party/objective_c/Cronet/bidirectional_stream_c.h'
   end
 
