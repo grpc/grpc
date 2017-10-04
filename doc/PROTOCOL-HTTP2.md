@@ -108,6 +108,7 @@ For requests, **EOS** (end-of-stream) is indicated by the presence of the END_ST
 * **HTTP-Status** → ":status 200"
 * **Status** → "grpc-status" 1\*DIGIT ; 0-9
 * **Status-Message** → "grpc-message" Percent-Encoded
+* **Status-Details** → "grpc-status-details-bin" Optional status details
 * **Percent-Encoded** → 1\*(Percent-Byte-Unencoded / Percent-Byte-Encoded)
 * **Percent-Byte-Unencoded** → 1\*( %x20-%x24 / %x26-%x7E ) ; space and VCHAR, except %
 * **Percent-Byte-Encoded** → "%" 2HEXDIGIT ; 0-9 A-F
@@ -135,6 +136,10 @@ user would received the raw percent-encoded form. Alternatively, the
 implementation can decode valid portions while leaving broken %-encodings as-is
 or replacing them with a replacement character (e.g., '?' or the Unicode
 replacement character).
+
+Servers can optionally send **Status-Details** and by default the value is a
+serialized protobuf message of type
+[google.rpc.Status](https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto).
 
 #### Example
 
