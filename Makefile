@@ -442,7 +442,7 @@ HOST_LDLIBS = $(LDLIBS)
 
 CACHE_MK =
 
-HAS_PKG_CONFIG ?= $(shell command -v $(PKG_CONFIG) >/dev/null 2>&1 && echo true || echo false)
+HAS_PKG_CONFIG ?= $(shell command -v $(PKG_CONFIG) --help >/dev/null 2>&1 && echo true || echo false)
 
 ifeq ($(HAS_PKG_CONFIG), true)
 CACHE_MK += HAS_PKG_CONFIG = true,
