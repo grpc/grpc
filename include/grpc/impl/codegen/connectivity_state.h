@@ -35,6 +35,8 @@ typedef enum {
   GRPC_CHANNEL_READY,
   /** channel has seen a failure but expects to recover */
   GRPC_CHANNEL_TRANSIENT_FAILURE,
+  /** channel needs a re-resolution */
+  GRPC_CHANNEL_RERESOLVE,
   /** channel has seen a failure that it cannot recover from */
   GRPC_CHANNEL_SHUTDOWN
 } grpc_connectivity_state;
