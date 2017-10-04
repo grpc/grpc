@@ -103,14 +103,18 @@ namespace testing {
 void InvokeResolverComponentTestsRunner(std::string test_runner_bin_path,
                                         std::string test_bin_path,
                                         std::string dns_server_bin_path,
-                                        std::string records_config_path) {
+                                        std::string zone_file_path,
+                                        std::string zone_file_json_path,
+                                        std::string zone_file_json_converter_bin_path) {
   int test_dns_server_port = grpc_pick_unused_port_or_die();
 
   SubProcess *test_driver = new SubProcess(
       {test_runner_bin_path, "--test_bin_path=" + test_bin_path,
        "--dns_server_bin_path=" + dns_server_bin_path,
-       "--records_config_path=" + records_config_path,
-       "--test_dns_server_port=" + std::to_string(test_dns_server_port)});
+       "--test_dns_server_port=" + std::to_string(test_dns_server_port),
+       "--zone_file_path=" + zone_file_path,
+       "--zone_file_json_path=" + zone_file_json_path,
+       "--zone_file_json_converter_bin_path=" + zone_file_json_converter_bin_path});
   gpr_mu test_driver_mu;
   gpr_mu_init(&test_driver_mu);
   gpr_cv test_driver_cv;
@@ -172,7 +176,9 @@ int main(int argc, char **argv) {
     grpc::testing::InvokeResolverComponentTestsRunner(
         bin_dir + "/resolver_component_tests_runner",
         bin_dir + "/" + FLAGS_test_bin_name, bin_dir + "/test_dns_server",
-        bin_dir + "/resolver_test_record_groups.yaml");
+        bin_dir + "/local_dns_server_records.zone",
+        bin_dir + "/local_dns_server_records.json",
+        bin_dir + "/convert_json_records_to_bind_zone_format");
   } else {
     // Get the current binary's directory relative to repo root to invoke the
     // correct build config (asan/tsan/dbg, etc.).
@@ -182,7 +188,9 @@ int main(int argc, char **argv) {
         "test/cpp/naming/resolver_component_tests_runner.sh",
         bin_dir + "/" + FLAGS_test_bin_name,
         "test/cpp/naming/test_dns_server.py",
-        "test/cpp/naming/resolver_test_record_groups.yaml");
+        "test/cpp/naming/local_dns_server_records.zone",
+        "test/cpp/naming/local_dns_server_records.json",
+        "test/cpp/naming/convert_json_records_to_bind_zone_format.py");
   }
   grpc_shutdown();
   return 0;

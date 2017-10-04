@@ -1,0 +1,1 @@
+<%def name="local_dns_server_records(records_json)">${records_json}</%def>

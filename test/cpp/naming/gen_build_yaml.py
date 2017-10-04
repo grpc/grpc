@@ -22,7 +22,8 @@ import collections
 import hashlib
 import json
 
-_LOCAL_DNS_SERVER_ADDRESS = '127.0.0.1:15353'
+_SERVER_HEALTH_CHECK_RECORD_NAME = 'dummy-health-check'
+_SERVER_HEALTH_CHECK_RECORD_DATA = '123.123.123.123'
 
 _TARGET_RECORDS_TO_SKIP_AGAINST_GCE = [
   # TODO: enable this once able to upload the very large TXT record
@@ -41,51 +42,24 @@ def _build_expected_addrs_cmd_arg(expected_addrs):
 
 def _data_for_type(r_type, r_data, common_zone_name):
   if r_type in ['A', 'AAAA']:
-    return ' '.join(map(lambda x: '\"%s\"' % x, r_data))
+    return ','.join(r_data)
   if r_type == 'SRV':
+    # This assert is valid only because there are not currently any
+    # test cases in which an SRV query returns multiple records.
     assert len(r_data) == 1
     target = r_data[0].split(' ')[3]
     uploadable_target = '%s.%s' % (target, common_zone_name)
     uploadable = r_data[0].split(' ')
     uploadable[3] = uploadable_target
-    return '\"%s\"' % ' '.join(uploadable)
+    return '%s' % ' '.join(uploadable)
   if r_type == 'TXT':
     assert len(r_data) == 1
-    chunks = []
-    all_data = r_data[0]
-    cur = 0
-    # Split TXT records that span more than 255 characters (the single
-    # string length-limit in DNS) into multiple strings. Each string
-    # needs to be wrapped with double-quotes, and all inner double-quotes
-    # are escaped. The wrapping double-quotes and inner backslashes can be
-    # counted towards the 255 character length limit (as observed with gcloud),
-    # so make sure all strings fit within that limit.
-    while len(all_data[cur:]) > 0:
-      next_chunk = '\"'
-      while len(next_chunk) < 254 and len(all_data[cur:]) > 0:
-        if all_data[cur] == '\"':
-          if len(next_chunk) < 253:
-            next_chunk += '\\\"'
-          else:
-            break
-        else:
-          next_chunk += all_data[cur]
-        cur += 1
-      next_chunk += '\"'
-      if len(next_chunk) > 255:
-        raise Exception('Bug: next chunk is too long.')
-      chunks.append(next_chunk)
-    # Wrap the whole record in single quotes to make sure all strings
-    # are associated with the same TXT record (to make it one bash token for
-    # gcloud)
-    return '\'%s\'' % ' '.join(chunks)
+    return r_data[0]
 
-# Convert DNS records from their "within a test group" format
-# of the yaml file to an easier form for the templates to use.
-def _gcloud_uploadable_form(test_cases, common_zone_name):
+def _bind_convertable_json_form(test_cases, common_zone_name, records_to_skip):
   out = []
   for group in test_cases:
-    if group['record_to_resolve'] in _TARGET_RECORDS_TO_SKIP_AGAINST_GCE:
+    if group['record_to_resolve'] in records_to_skip:
       continue
     for record_name in group['records'].keys():
       r_ttl = None
@@ -110,6 +84,22 @@ def _gcloud_uploadable_form(test_cases, common_zone_name):
         })
   return out
 
+def _auxiliary_records_for_local_dns_server():
+  return [
+      {
+          'name': 'dummy-soa-record',
+          'ttl': '0',
+          'type': 'SOA',
+          'data': 'dummy-master-server.com. dummy-admin-address.com 0 0 0 0 0',
+      },
+      {
+          'name': _SERVER_HEALTH_CHECK_RECORD_NAME,
+          'ttl': '0',
+          'type': 'A',
+          'data': _SERVER_HEALTH_CHECK_RECORD_DATA,
+      },
+  ]
+
 def _gce_dns_zone_id(resolver_component_data):
   dns_name = resolver_component_data['resolver_tests_common_zone_name']
   return dns_name.replace('.', '-') + 'zone-id'
@@ -132,14 +122,23 @@ def main():
   resolver_component_data = ''
   with open('test/cpp/naming/resolver_test_record_groups.yaml') as f:
     resolver_component_data = yaml.load(f)
-
-  json = {
+  all_integration_test_records = _bind_convertable_json_form(resolver_component_data['resolver_component_tests'],
+                                                             resolver_component_data['resolver_tests_common_zone_name'], _TARGET_RECORDS_TO_SKIP_AGAINST_GCE)
+  all_local_dns_server_test_records = _bind_convertable_json_form(resolver_component_data['resolver_component_tests'],
+                                                             resolver_component_data['resolver_tests_common_zone_name'], [])
+  all_local_dns_server_test_records += _auxiliary_records_for_local_dns_server()
+  json_out = {
       'resolver_tests_common_zone_name': resolver_component_data['resolver_tests_common_zone_name'],
       'resolver_gce_integration_tests_zone_id': _gce_dns_zone_id(resolver_component_data),
-      'all_integration_test_records': _gcloud_uploadable_form(resolver_component_data['resolver_component_tests'],
-                                                              resolver_component_data['resolver_tests_common_zone_name']),
+      'all_integration_test_records': all_integration_test_records,
+      'all_integration_test_records_json': json.dumps({'common_zone_name': resolver_component_data['resolver_tests_common_zone_name'],
+                                                      'records': all_integration_test_records}, indent=4, sort_keys=True),
+      'all_local_dns_server_test_records_json': json.dumps({'common_zone_name': resolver_component_data['resolver_tests_common_zone_name'],
+                                                           'records': all_local_dns_server_test_records}, indent=4, sort_keys=True),
       'resolver_gce_integration_test_cases': _resolver_test_cases(resolver_component_data, _TARGET_RECORDS_TO_SKIP_AGAINST_GCE),
       'resolver_component_test_cases': _resolver_test_cases(resolver_component_data, []),
+      'resolver_component_tests_health_check_record_name': '%s.%s' % (_SERVER_HEALTH_CHECK_RECORD_NAME, resolver_component_data['resolver_tests_common_zone_name']),
+      'resolver_component_tests_health_check_record_data': _SERVER_HEALTH_CHECK_RECORD_DATA,
       'targets': [
           {
               'name': 'resolver_component_test' + unsecure_build_config_suffix,
@@ -185,7 +184,7 @@ def main():
       ]
   }
 
-  print(yaml.dump(json))
+  print(yaml.dump(json_out))
 
 if __name__ == '__main__':
   main()

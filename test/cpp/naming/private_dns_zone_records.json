@@ -1,0 +1,167 @@
+{
+    "common_zone_name": "resolver-tests-version-2.grpctestingexp.", 
+    "records": [
+        {
+            "data": "0 0 1234 ipv4-single-target.resolver-tests-version-2.grpctestingexp.", 
+            "name": "_grpclb._tcp.srv-ipv4-single-target", 
+            "ttl": "2100", 
+            "type": "SRV"
+        }, 
+        {
+            "data": "1.2.3.4", 
+            "name": "ipv4-single-target", 
+            "ttl": "2100", 
+            "type": "A"
+        }, 
+        {
+            "data": "0 0 1234 ipv4-multi-target.resolver-tests-version-2.grpctestingexp.", 
+            "name": "_grpclb._tcp.srv-ipv4-multi-target", 
+            "ttl": "2100", 
+            "type": "SRV"
+        }, 
+        {
+            "data": "1.2.3.5,1.2.3.6,1.2.3.7", 
+            "name": "ipv4-multi-target", 
+            "ttl": "2100", 
+            "type": "A"
+        }, 
+        {
+            "data": "0 0 1234 ipv6-single-target.resolver-tests-version-2.grpctestingexp.", 
+            "name": "_grpclb._tcp.srv-ipv6-single-target", 
+            "ttl": "2100", 
+            "type": "SRV"
+        }, 
+        {
+            "data": "2607:f8b0:400a:801::1001", 
+            "name": "ipv6-single-target", 
+            "ttl": "2100", 
+            "type": "AAAA"
+        }, 
+        {
+            "data": "0 0 1234 ipv6-multi-target.resolver-tests-version-2.grpctestingexp.", 
+            "name": "_grpclb._tcp.srv-ipv6-multi-target", 
+            "ttl": "2100", 
+            "type": "SRV"
+        }, 
+        {
+            "data": "2607:f8b0:400a:801::1002,2607:f8b0:400a:801::1003,2607:f8b0:400a:801::1004", 
+            "name": "ipv6-multi-target", 
+            "ttl": "2100", 
+            "type": "AAAA"
+        }, 
+        {
+            "data": "grpc_config=[{\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"SimpleService\",\"waitForReady\":true}]}]}}]", 
+            "name": "srv-ipv4-simple-service-config", 
+            "ttl": "2100", 
+            "type": "TXT"
+        }, 
+        {
+            "data": "1.2.3.4", 
+            "name": "ipv4-simple-service-config", 
+            "ttl": "2100", 
+            "type": "A"
+        }, 
+        {
+            "data": "0 0 1234 ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp.", 
+            "name": "_grpclb._tcp.srv-ipv4-simple-service-config", 
+            "ttl": "2100", 
+            "type": "SRV"
+        }, 
+        {
+            "data": "1.2.3.4", 
+            "name": "ipv4-no-srv-simple-service-config", 
+            "ttl": "2100", 
+            "type": "A"
+        }, 
+        {
+            "data": "grpc_config=[{\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"NoSrvSimpleService\",\"waitForReady\":true}]}]}}]", 
+            "name": "ipv4-no-srv-simple-service-config", 
+            "ttl": "2100", 
+            "type": "TXT"
+        }, 
+        {
+            "data": "1.2.3.4", 
+            "name": "ipv4-no-config-for-cpp", 
+            "ttl": "2100", 
+            "type": "A"
+        }, 
+        {
+            "data": "grpc_config=[{\"clientLanguage\":[\"python\"],\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"PythonService\",\"waitForReady\":true}]}]}}]", 
+            "name": "ipv4-no-config-for-cpp", 
+            "ttl": "2100", 
+            "type": "TXT"
+        }, 
+        {
+            "data": "1.2.3.4", 
+            "name": "ipv4-cpp-config-has-zero-percentage", 
+            "ttl": "2100", 
+            "type": "A"
+        }, 
+        {
+            "data": "grpc_config=[{\"percentage\":0,\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"CppService\",\"waitForReady\":true}]}]}}]", 
+            "name": "ipv4-cpp-config-has-zero-percentage", 
+            "ttl": "2100", 
+            "type": "TXT"
+        }, 
+        {
+            "data": "1.2.3.4", 
+            "name": "ipv4-second-language-is-cpp", 
+            "ttl": "2100", 
+            "type": "A"
+        }, 
+        {
+            "data": "grpc_config=[{\"clientLanguage\":[\"go\"],\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"GoService\",\"waitForReady\":true}]}]}},{\"clientLanguage\":[\"c++\"],\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"CppService\",\"waitForReady\":true}]}]}}]", 
+            "name": "ipv4-second-language-is-cpp", 
+            "ttl": "2100", 
+            "type": "TXT"
+        }, 
+        {
+            "data": "1.2.3.4", 
+            "name": "ipv4-config-with-percentages", 
+            "ttl": "2100", 
+            "type": "A"
+        }, 
+        {
+            "data": "grpc_config=[{\"percentage\":0,\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"NeverPickedService\",\"waitForReady\":true}]}]}},{\"percentage\":100,\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"AlwaysPickedService\",\"waitForReady\":true}]}]}}]", 
+            "name": "ipv4-config-with-percentages", 
+            "ttl": "2100", 
+            "type": "TXT"
+        }, 
+        {
+            "data": "0 0 1234 balancer-for-ipv4-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp.", 
+            "name": "_grpclb._tcp.srv-ipv4-target-has-backend-and-balancer", 
+            "ttl": "2100", 
+            "type": "SRV"
+        }, 
+        {
+            "data": "1.2.3.4", 
+            "name": "balancer-for-ipv4-has-backend-and-balancer", 
+            "ttl": "2100", 
+            "type": "A"
+        }, 
+        {
+            "data": "1.2.3.4", 
+            "name": "srv-ipv4-target-has-backend-and-balancer", 
+            "ttl": "2100", 
+            "type": "A"
+        }, 
+        {
+            "data": "0 0 1234 balancer-for-ipv6-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp.", 
+            "name": "_grpclb._tcp.srv-ipv6-target-has-backend-and-balancer", 
+            "ttl": "2100", 
+            "type": "SRV"
+        }, 
+        {
+            "data": "2607:f8b0:400a:801::1002", 
+            "name": "balancer-for-ipv6-has-backend-and-balancer", 
+            "ttl": "2100", 
+            "type": "AAAA"
+        }, 
+        {
+            "data": "2607:f8b0:400a:801::1002", 
+            "name": "srv-ipv6-target-has-backend-and-balancer", 
+            "ttl": "2100", 
+            "type": "AAAA"
+        }
+    ]
+}

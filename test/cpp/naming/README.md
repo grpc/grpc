@@ -31,6 +31,7 @@ After making a change to `resolver_test_record_groups.yaml`:
 3. From the repo root, run:
 
 ```
+$ test/cpp/naming/sync_zone_files.sh
 $ test/cpp/naming/create_dns_private_zone.sh
 $ test/cpp/naming/private_dns_zone_init.sh
 ```
@@ -41,3 +42,15 @@ has access to the grpc-testing GCE project.
 If everything runs smoothly, then once the change is merged,
 the GCE DNS integration testing job will transition to the
 new records and continue passing.
+
+### Cleanup
+
+It might be useful to clean up old GCE DNS zones and records after creating a
+new private zone. An old GCE DNS zone can cleaned up and removed from the
+grpc-testing cloud project with the following commands:
+
+```
+$ touch empty-file
+$ gcloud dns record-sets import -z $ZONE_ID_OF_ZONE_TO_DELETE --delete-all-existing empty-file
+$ gcloud dns managed-zones delete $ZONE_ID_OF_ZONE_TO_DELETE
+```

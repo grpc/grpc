@@ -1,4 +1,4 @@
-<%def name="private_dns_zone_init(records,resolver_gce_integration_tests_zone_id,resolver_tests_common_zone_name)">#!/bin/bash
+<%def name="private_dns_zone_init(resolver_gce_integration_tests_zone_id)">#!/bin/bash
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,24 +17,7 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
+cd $(dirname $0)
 
-gcloud dns record-sets transaction start -z=${resolver_gce_integration_tests_zone_id}
-
-% for r in records:
-gcloud dns record-sets transaction add \\
-
-  -z=${resolver_gce_integration_tests_zone_id} \\
-
-  --name=${r['name']}.${resolver_tests_common_zone_name} \\
-
-  --type=${r['type']} \\
-
-  --ttl=${r['ttl']} \\
-
-  ${r['data']}
-
-% endfor
-gcloud dns record-sets transaction describe -z=${resolver_gce_integration_tests_zone_id}
-gcloud dns record-sets transaction execute -z=${resolver_gce_integration_tests_zone_id}
+gcloud dns record-sets import -z=${resolver_gce_integration_tests_zone_id} --zone-file-format private_dns_zone_records.zone
 gcloud dns record-sets list -z=${resolver_gce_integration_tests_zone_id}</%def>

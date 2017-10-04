@@ -1,0 +1,55 @@
+_grpclb._tcp.srv-ipv4-single-target.resolver-tests-version-2.grpctestingexp.                                                    2100    IN  SRV     0 0 1234 ipv4-single-target.resolver-tests-version-2.grpctestingexp.
+ipv4-single-target.resolver-tests-version-2.grpctestingexp.                                                                     2100    IN  A       1.2.3.4
+_grpclb._tcp.srv-ipv4-multi-target.resolver-tests-version-2.grpctestingexp.                                                     2100    IN  SRV     0 0 1234 ipv4-multi-target.resolver-tests-version-2.grpctestingexp.
+ipv4-multi-target.resolver-tests-version-2.grpctestingexp.                                                                      2100    IN  A       1.2.3.5
+ipv4-multi-target.resolver-tests-version-2.grpctestingexp.                                                                      2100    IN  A       1.2.3.6
+ipv4-multi-target.resolver-tests-version-2.grpctestingexp.                                                                      2100    IN  A       1.2.3.7
+_grpclb._tcp.srv-ipv6-single-target.resolver-tests-version-2.grpctestingexp.                                                    2100    IN  SRV     0 0 1234 ipv6-single-target.resolver-tests-version-2.grpctestingexp.
+ipv6-single-target.resolver-tests-version-2.grpctestingexp.                                                                     2100    IN  AAAA    2607:f8b0:400a:801::1001
+_grpclb._tcp.srv-ipv6-multi-target.resolver-tests-version-2.grpctestingexp.                                                     2100    IN  SRV     0 0 1234 ipv6-multi-target.resolver-tests-version-2.grpctestingexp.
+ipv6-multi-target.resolver-tests-version-2.grpctestingexp.                                                                      2100    IN  AAAA    2607:f8b0:400a:801::1002
+ipv6-multi-target.resolver-tests-version-2.grpctestingexp.                                                                      2100    IN  AAAA    2607:f8b0:400a:801::1003
+ipv6-multi-target.resolver-tests-version-2.grpctestingexp.                                                                      2100    IN  AAAA    2607:f8b0:400a:801::1004
+srv-ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp.                                                         2100    IN  TXT     (
+    grpc_config=[{"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]}]}}]
+)
+ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp.                                                             2100    IN  A       1.2.3.4
+_grpclb._tcp.srv-ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp.                                            2100    IN  SRV     0 0 1234 ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp.
+ipv4-no-srv-simple-service-config.resolver-tests-version-2.grpctestingexp.                                                      2100    IN  A       1.2.3.4
+ipv4-no-srv-simple-service-config.resolver-tests-version-2.grpctestingexp.                                                      2100    IN  TXT     (
+    grpc_config=[{"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"NoSrvSimpleService","waitForReady":true}]}]}}]
+)
+ipv4-no-config-for-cpp.resolver-tests-version-2.grpctestingexp.                                                                 2100    IN  A       1.2.3.4
+ipv4-no-config-for-cpp.resolver-tests-version-2.grpctestingexp.                                                                 2100    IN  TXT     (
+    grpc_config=[{"clientLanguage":["python"],"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"PythonService","waitForReady":true}]}]}}]
+)
+ipv4-cpp-config-has-zero-percentage.resolver-tests-version-2.grpctestingexp.                                                    2100    IN  A       1.2.3.4
+ipv4-cpp-config-has-zero-percentage.resolver-tests-version-2.grpctestingexp.                                                    2100    IN  TXT     (
+    grpc_config=[{"percentage":0,"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"CppService","waitForReady":true}]}]}}]
+)
+ipv4-second-language-is-cpp.resolver-tests-version-2.grpctestingexp.                                                            2100    IN  A       1.2.3.4
+ipv4-second-language-is-cpp.resolver-tests-version-2.grpctestingexp.                                                            2100    IN  TXT     (
+    grpc_config=[{"clientLanguage":["go"],"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"GoService","waitForReady":true}]}]}},{"clientLanguage":["c++"],"serviceConfig":{"loadBalancingPolicy":"round_rob
+    in","methodConfig":[{"name":[{"method":"Foo","service":"CppService","waitForReady":true}]}]}}]
+)
+ipv4-config-with-percentages.resolver-tests-version-2.grpctestingexp.                                                           2100    IN  A       1.2.3.4
+ipv4-config-with-percentages.resolver-tests-version-2.grpctestingexp.                                                           2100    IN  TXT     (
+    grpc_config=[{"percentage":0,"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"NeverPickedService","waitForReady":true}]}]}},{"percentage":100,"serviceConfig":{"loadBalancingPolicy":"round_robin","met
+    hodConfig":[{"name":[{"method":"Foo","service":"AlwaysPickedService","waitForReady":true}]}]}}]
+)
+_grpclb._tcp.srv-ipv4-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp.                                  2100    IN  SRV     0 0 1234 balancer-for-ipv4-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp.
+balancer-for-ipv4-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp.                                             2100    IN  A       1.2.3.4
+srv-ipv4-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp.                                               2100    IN  A       1.2.3.4
+_grpclb._tcp.srv-ipv6-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp.                                  2100    IN  SRV     0 0 1234 balancer-for-ipv6-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp.
+balancer-for-ipv6-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp.                                             2100    IN  AAAA    2607:f8b0:400a:801::1002
+srv-ipv6-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp.                                               2100    IN  AAAA    2607:f8b0:400a:801::1002
+ipv4-config-causing-fallback-to-tcp.resolver-tests-version-2.grpctestingexp.                                                    2100    IN  A       1.2.3.4
+ipv4-config-causing-fallback-to-tcp.resolver-tests-version-2.grpctestingexp.                                                    2100    IN  TXT     (
+    grpc_config=[{"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"F
+    ooThree","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFour","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFive","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSix","service":"Si
+    mpleService","waitForReady":true}]},{"name":[{"method":"FooSeven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEight","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooNine","service":"SimpleService","waitF
+    orReady":true}]},{"name":[{"method":"FooTen","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEleven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{
+    "name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]}]}}]
+)
+dummy-soa-record.resolver-tests-version-2.grpctestingexp.                                                                       0       IN  SOA     dummy-master-server.com. dummy-admin-address.com 0 0 0 0 0
+dummy-health-check.resolver-tests-version-2.grpctestingexp.                                                                     0       IN  A       123.123.123.123

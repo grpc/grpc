@@ -24,7 +24,18 @@ elif [[ "$GRPC_DNS_RESOLVER" != ares ]]; then
   exit 1
 fi
 
-cd $(dirname $0)/../../..
+cd $(dirname $0)
+
+echo "Sanity check that zone files are up to date:"
+current_zone_file="$(cat private_dns_zone_records.zone)"
+zone_file_after_regenerating="$(./convert_json_records_to_bind_zone_format.py --json_file private_dns_zone_records.json)"
+if [[ "$current_zone_file" != "$zone_file_after_regenerating" ]]; then
+  echo "Current zone file for test DNS server: |$current_zone_file|. After regenerating: |$zone_file_after_regenerating|."
+  echo "Perhaps test/cpp/naming/sync_zone_files.sh has not been ran recently enough."
+  exit 1
+fi
+
+cd ../../..
 
 if [[ "$CONFIG" == "" ]]; then
   export CONFIG=opt

@@ -19,5 +19,5 @@ set -ex
 
 cd $(dirname $0)
 
-gcloud dns record-sets import -z=resolver-tests-version-2-grpctestingexp-zone-id --zone-file-format private_dns_zone_records.zone
-gcloud dns record-sets list -z=resolver-tests-version-2-grpctestingexp-zone-id
+python convert_json_records_to_bind_zone_format.py --json_file local_dns_server_records.json --python_dns_server_format > local_dns_server_records.zone
+python convert_json_records_to_bind_zone_format.py --json_file private_dns_zone_records.json > private_dns_zone_records.zone

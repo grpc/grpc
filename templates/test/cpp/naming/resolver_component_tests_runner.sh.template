@@ -1,4 +1,4 @@
 %YAML 1.2
 --- |
-  <%namespace file="resolver_component_tests_defs.include" import="*"/>\
-  ${resolver_component_tests(resolver_component_test_cases)}
+  <%namespace file="resolver_component_tests_runner_defs.include" import="*"/>\
+  ${resolver_component_tests_runner(resolver_component_test_cases, resolver_component_tests_health_check_record_name, resolver_component_tests_health_check_record_data)}
