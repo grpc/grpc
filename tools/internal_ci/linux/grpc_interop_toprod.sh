@@ -28,5 +28,10 @@ tools/run_tests/run_interop_tests.py \
     --cloud_to_prod \
     --cloud_to_prod_auth \
     --prod_servers default gateway_v4 \
+<<<<<<< HEAD
     --use_docker --internal_ci --allow_flakes -t -j 12 $@
+=======
+    --bq_result_table interop_test \
+    --use_docker --internal_ci -t -j 12 $@
+>>>>>>> Add uploading interop result to BQ
 

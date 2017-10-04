@@ -23,4 +23,9 @@ cd $(dirname $0)/../../..
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 source tools/internal_ci/helper_scripts/prepare_build_interop_rc
 
-tools/run_tests/run_interop_tests.py -l all -s all --use_docker --http2_interop --internal_ci -t -j 12 $@
+tools/run_tests/run_interop_tests.py \
+    -l all \
+    -s all \
+    --use_docker \
+    --bq_result_table interop_test \
+    --http2_interop --internal_ci -t -j 12 $@
