@@ -208,6 +208,10 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
   print >>H, "#include <inttypes.h>"
   print >>H, "#include \"src/core/lib/iomgr/exec_ctx.h\""
   print >>H
+  print >>H, "#ifdef __cplusplus"
+  print >>H, "extern \"C\" {"
+  print >>H, "#endif"
+  print >>H
 
   for typename, instances in sorted(inst_map.items()):
     print >>H, "typedef enum {"
@@ -253,9 +257,13 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
   print >>H, "extern void (*const grpc_stats_inc_histogram[%d])(grpc_exec_ctx *exec_ctx, int x);" % len(inst_map['Histogram'])
 
   print >>H
+  print >>H, "#ifdef __cplusplus"
+  print >>H, "}"
+  print >>H, "#endif"
+  print >>H
   print >>H, "#endif /* GRPC_CORE_LIB_DEBUG_STATS_DATA_H */"
 
-with open('src/core/lib/debug/stats_data.c', 'w') as C:
+with open('src/core/lib/debug/stats_data.cc', 'w') as C:
   # copy-paste copyright notice from this file
   with open(sys.argv[0]) as my_source:
     copyright = []

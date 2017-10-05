@@ -28,6 +28,10 @@
 #define GRPC_BDP_SAMPLES 16
 #define GRPC_BDP_MIN_SAMPLES_FOR_ESTIMATE 3
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern grpc_tracer_flag grpc_bdp_estimator_trace;
 
 typedef enum {
@@ -73,5 +77,9 @@ void grpc_bdp_estimator_start_ping(grpc_bdp_estimator *estimator);
 // Completes a previously started ping
 void grpc_bdp_estimator_complete_ping(grpc_exec_ctx *exec_ctx,
                                       grpc_bdp_estimator *estimator);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H */

@@ -42,6 +42,10 @@
 #include "src/core/lib/transport/pid_controller.h"
 #include "src/core/lib/transport/transport_impl.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* streams are kept in various linked lists depending on what things need to
    happen to them... this enum labels each list */
 typedef enum {
@@ -901,5 +905,9 @@ void grpc_chttp2_fail_pending_writes(grpc_exec_ctx *exec_ctx,
     initialization */
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args *args,
                                                bool is_client);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */
