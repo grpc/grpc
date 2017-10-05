@@ -1642,7 +1642,12 @@ def _build_and_run(
     for antagonist in antagonists:
       antagonist.kill()
     if args.bq_result_table and resultset:
-      upload_results_to_bq(resultset, args.bq_result_table, args, platform_string())
+      # There are transient errors with uploading to BQ from Kokoro and they
+      # should not cause the build to fail.
+      try:
+        upload_results_to_bq(resultset, args.bq_result_table, args, platform_string())
+      except:
+        pass
     if xml_report and resultset:
       report_utils.render_junit_xml_report(resultset, xml_report,
                                            suite_name=args.report_suite_name)
