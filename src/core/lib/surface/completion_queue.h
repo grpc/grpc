@@ -41,8 +41,6 @@ extern "C" {
 #endif
 
 typedef struct grpc_cq_completion {
-  gpr_mpscq_node node;
-
   /** user supplied tag */
   void *tag;
   /** done callback - called when this queue element is no longer

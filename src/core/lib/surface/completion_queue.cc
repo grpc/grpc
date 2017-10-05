@@ -33,6 +33,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/support/mpmcq_bounded.h"
 #include "src/core/lib/support/spinlock.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -196,15 +197,13 @@ typedef struct cq_vtable {
                       gpr_timespec deadline, void *reserved);
 } cq_vtable;
 
-/* Queue that holds the cq_completion_events. Internally uses gpr_mpscq queue
- * (a lockfree multiproducer single consumer queue). It uses a queue_lock
- * to support multiple consumers.
+/* Queue that holds the cq_completion_events. Internally uses gpr_mpmcq_bounded
+ * queue (a lockfree multiproducer multiconsumer queue with a bounded size).
  * Only used in completion queues whose completion_type is GRPC_CQ_NEXT */
-typedef struct grpc_cq_event_queue {
-  /* Spinlock to serialize consumers i.e pop() operations */
-  gpr_spinlock queue_lock;
 
-  gpr_mpscq queue;
+#define MPMC_BOUNDED_QUEUE_SIZE 1024 * 128
+typedef struct grpc_cq_event_queue {
+  gpr_mpmcq_bounded queue;
 
   /* A lazy counter of number of items in the queue. This is NOT atomically
      incremented/decremented along with push/pop operations and hence is only
@@ -345,32 +344,33 @@ static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *cq,
                                      grpc_error *error);
 
 static void cq_event_queue_init(grpc_cq_event_queue *q) {
-  gpr_mpscq_init(&q->queue);
-  q->queue_lock = GPR_SPINLOCK_INITIALIZER;
+  gpr_mpmcq_bounded_init(&q->queue, MPMC_BOUNDED_QUEUE_SIZE);
   gpr_atm_no_barrier_store(&q->num_queue_items, 0);
 }
 
 static void cq_event_queue_destroy(grpc_cq_event_queue *q) {
-  gpr_mpscq_destroy(&q->queue);
+  gpr_mpmcq_bounded_destroy(&q->queue);
 }
 
 static bool cq_event_queue_push(grpc_cq_event_queue *q, grpc_cq_completion *c) {
-  gpr_mpscq_push(&q->queue, (gpr_mpscq_node *)c);
+  /* Queue is bounded - and if we can't push, the queue is full and we have not
+   * sized it correctly */
+  if (!gpr_mpmcq_bounded_push(&q->queue, (void *)c)) {
+    gpr_log(GPR_ERROR, "Queue full!! Num items: %ld",
+            gpr_atm_no_barrier_load(&q->num_queue_items));
+    abort();
+  }
   return gpr_atm_no_barrier_fetch_add(&q->num_queue_items, 1) == 0;
 }
 
 static grpc_cq_completion *cq_event_queue_pop(grpc_cq_event_queue *q) {
   grpc_cq_completion *c = NULL;
-  if (gpr_spinlock_trylock(&q->queue_lock)) {
-    c = (grpc_cq_completion *)gpr_mpscq_pop(&q->queue);
-    gpr_spinlock_unlock(&q->queue_lock);
-  }
-
-  if (c) {
+  if (gpr_mpmcq_bounded_pop(&q->queue, (void **)&c)) {
     gpr_atm_no_barrier_fetch_add(&q->num_queue_items, -1);
+    return c;
+  } else {
+    return NULL;
   }
-
-  return c;
 }
 
 /* Note: The counter is not incremented/decremented atomically with push/pop.
@@ -813,8 +813,9 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
       "deadline=gpr_timespec { tv_sec: %" PRId64
       ", tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
-      5, (cq, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
-          reserved));
+      5,
+      (cq, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
+       reserved));
   GPR_ASSERT(!reserved);
 
   dump_pending_tags(cq);
@@ -1054,8 +1055,9 @@ static grpc_event cq_pluck(grpc_completion_queue *cq, void *tag,
         "deadline=gpr_timespec { tv_sec: %" PRId64
         ", tv_nsec: %d, clock_type: %d }, "
         "reserved=%p)",
-        6, (cq, tag, deadline.tv_sec, deadline.tv_nsec,
-            (int)deadline.clock_type, reserved));
+        6,
+        (cq, tag, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
+         reserved));
   }
   GPR_ASSERT(!reserved);
 
