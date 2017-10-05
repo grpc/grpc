@@ -2816,6 +2816,7 @@ LIBGPR_SRC = \
     src/core/lib/support/log_linux.cc \
     src/core/lib/support/log_posix.cc \
     src/core/lib/support/log_windows.cc \
+    src/core/lib/support/mpmcq_bounded.cc \
     src/core/lib/support/mpscq.cc \
     src/core/lib/support/murmur_hash.cc \
     src/core/lib/support/stack_lockfree.cc \
