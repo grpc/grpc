@@ -99,4 +99,6 @@ void gpr_thd_join(gpr_thd_id t) {
   destroy_thread(info);
 }
 
+int gpr_thd_yield(void) { return 0; }
+
 #endif /* GPR_WINDOWS */

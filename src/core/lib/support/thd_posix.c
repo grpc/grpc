@@ -27,6 +27,7 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
 #include <pthread.h>
+#include <sched.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -76,5 +77,7 @@ int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
 gpr_thd_id gpr_thd_currentid(void) { return (gpr_thd_id)pthread_self(); }
 
 void gpr_thd_join(gpr_thd_id t) { pthread_join((pthread_t)t, NULL); }
+
+int gpr_thd_yield(void) { return sched_yield(); }
 
 #endif /* GPR_POSIX_SYNC */

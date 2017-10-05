@@ -62,6 +62,9 @@ GPRAPI int gpr_thd_options_is_detached(const gpr_thd_options *options);
 /** Returns non-zero if the option joinable is set. */
 GPRAPI int gpr_thd_options_is_joinable(const gpr_thd_options *options);
 
+/** yields thread to the cpu. */
+GPRAPI int gpr_thd_yield(void);
+
 /** Returns the identifier of the current thread. */
 GPRAPI gpr_thd_id gpr_thd_currentid(void);
 

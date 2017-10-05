@@ -59,6 +59,7 @@ void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
 static void exec_ctx_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                          grpc_error *error) {
 #ifndef NDEBUG
+  gpr_thd_yield();
   closure->scheduled = false;
   if (GRPC_TRACER_ON(grpc_trace_closure)) {
     gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: %s [%s:%d]",
