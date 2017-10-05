@@ -1901,7 +1901,9 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_exec_ctx *exec_ctx,
                                  &s->frame_storage);
           s->unprocessed_incoming_frames_decompressed = false;
         }
-        if (!s->unprocessed_incoming_frames_decompressed) {
+        if (!s->unprocessed_incoming_frames_decompressed &&
+            s->stream_decompression_method !=
+                GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS) {
           GPR_ASSERT(s->decompressed_data_buffer.length == 0);
           bool end_of_context;
           if (!s->stream_decompression_ctx) {
