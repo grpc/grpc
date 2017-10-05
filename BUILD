@@ -518,6 +518,7 @@ grpc_cc_library(
         "src/core/lib/support/block_annotate.h",
         "src/core/lib/support/env.h",
         "src/core/lib/support/memory.h",
+        "src/core/lib/support/vector.h",
         "src/core/lib/support/mpscq.h",
         "src/core/lib/support/murmur_hash.h",
         "src/core/lib/support/spinlock.h",
@@ -531,6 +532,7 @@ grpc_cc_library(
     public_hdrs = GPR_PUBLIC_HDRS,
     deps = [
         "gpr_codegen",
+        "@com_google_absl//absl/container:inlined_vector"
     ],
 )
 
