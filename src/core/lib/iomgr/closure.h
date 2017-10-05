@@ -94,7 +94,7 @@ class MemberClosure final : public Closure {
 
 // create a closure given some lambda
 template <class F>
-Closure *CreateClosure(F f) {
+UniquePtr<Closure> MakeClosure(F f) {
   class Impl final : public Closure {
    public:
     Impl(F f) : f_(std::move(f)) {}
@@ -102,6 +102,24 @@ Closure *CreateClosure(F f) {
    private:
     void Execute(grpc_exec_ctx *exec_ctx, grpc_error *error) {
       f_(exec_ctx, error);
+    }
+
+    F f_;
+  };
+  return MakeUnique<Impl>(std::move(f));
+}
+
+// create a closure given some lambda that automatically deletes itself
+template <class F>
+Closure *MakeOneShotClosure(F f) {
+  class Impl final : public Closure {
+   public:
+    Impl(F f) : f_(std::move(f)) {}
+
+   private:
+    void Execute(grpc_exec_ctx *exec_ctx, grpc_error *error) {
+      f_(exec_ctx, error);
+      delete this;
     }
 
     F f_;
