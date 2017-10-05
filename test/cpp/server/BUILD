@@ -22,9 +22,9 @@ grpc_cc_test(
     name = "server_builder_test",
     srcs = ["server_builder_test.cc"],
     deps = [
-        "//:grpc++_unsecure",
+        "//:grpc++_unsecure_minimal",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//test/core/util:grpc_test_util_unsecure_minimal",
     ],
     external_deps = [
         "gtest",

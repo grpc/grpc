@@ -92,6 +92,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "test_util_unsecure_minimal",
+    srcs = GRPCXX_TESTUTIL_SRCS,
+    hdrs = GRPCXX_TESTUTIL_HDRS,
+    deps = [
+        "//:grpc++_unsecure_minimal",
+    ],
+    external_deps = [
+        "protobuf",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_cli_libs",
     srcs = [
         "cli_call.cc",

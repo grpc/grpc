@@ -212,6 +212,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_unsecure_minimal",
+    srcs = [
+        "src/core/lib/surface/init.c",
+        "src/core/lib/surface/init_unsecure.c",
+        "src/core/plugin_registry/grpc_unsecure_minimal_plugin_registry.c",
+    ],
+    language = "c",
+    public_hdrs = GRPC_PUBLIC_HDRS,
+    standalone = True,
+    deps = [
+        "grpc_common_minimal",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc",
     srcs = [
         "src/core/lib/surface/init.c",
@@ -290,6 +305,25 @@ grpc_cc_library(
         "grpc++_codegen_base_src",
         "grpc++_codegen_proto",
         "grpc_unsecure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_unsecure_minimal",
+    srcs = [
+        "src/cpp/client/insecure_credentials.cc",
+        "src/cpp/common/insecure_create_auth_context.cc",
+        "src/cpp/server/insecure_server_credentials.cc",
+    ],
+    language = "c++",
+    standalone = True,
+    deps = [
+        "gpr",
+        "grpc++_base_unsecure_minimal",
+        "grpc++_codegen_base",
+        "grpc++_codegen_base_src",
+        "grpc++_codegen_proto",
+        "grpc_unsecure_minimal",
     ],
 )
 
@@ -841,24 +875,32 @@ grpc_cc_library(
     name = "grpc_common",
     language = "c",
     deps = [
+        "grpc_common_minimal",
+        "grpc_lb_policy_pick_first",
+        "grpc_lb_policy_round_robin",
+        "grpc_resolver_dns_ares",
+        "grpc_workaround_cronet_compression_filter",
+        "grpc_server_backward_compatibility",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_common_minimal",
+    language = "c",
+    deps = [
         "grpc_base",
         # standard plugins
         "census",
         "grpc_deadline_filter",
-        "grpc_lb_policy_pick_first",
-        "grpc_lb_policy_round_robin",
         "grpc_server_load_reporting",
         "grpc_max_age_filter",
         "grpc_message_size_filter",
-        "grpc_resolver_dns_ares",
         "grpc_resolver_fake",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
         "grpc_transport_chttp2_client_insecure",
         "grpc_transport_chttp2_server_insecure",
         "grpc_transport_inproc",
-        "grpc_workaround_cronet_compression_filter",
-        "grpc_server_backward_compatibility",
     ],
 )
 
@@ -1483,6 +1525,18 @@ grpc_cc_library(
     deps = [
         "grpc++_codegen_base",
         "grpc_unsecure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_base_unsecure_minimal",
+    srcs = GRPCXX_SRCS,
+    hdrs = GRPCXX_HDRS,
+    language = "c++",
+    public_hdrs = GRPCXX_PUBLIC_HDRS,
+    deps = [
+        "grpc++_codegen_base",
+        "grpc_unsecure_minimal",
     ],
 )
 
