@@ -1388,7 +1388,9 @@ const grpc_event_engine_vtable *grpc_init_epollex_linux(
     return NULL;
   }
 
+#ifndef NDEBUG
   grpc_register_tracer(&grpc_trace_pollable_refcount);
+#endif
 
   fd_global_init();
 
