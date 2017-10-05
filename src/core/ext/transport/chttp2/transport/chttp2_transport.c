@@ -753,7 +753,6 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx, void *sp,
     if (s->included[i]) {
       gpr_log(GPR_ERROR, "%s stream %d still included in list %d",
               t->is_client ? "client" : "server", s->id, i);
-      abort();
     }
   }
 
