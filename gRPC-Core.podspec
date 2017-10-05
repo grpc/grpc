@@ -84,6 +84,7 @@ Pod::Spec.new do |s|
     # build.
     'USE_HEADERMAP' => 'NO',
     'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+    'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1" "PB_NO_PACKED_STRUCTS=1"',
   }
 
   s.default_subspecs = 'Interface', 'Implementation'
