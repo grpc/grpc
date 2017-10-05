@@ -213,12 +213,12 @@ static void cover_self(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   }
 }
 
-static void notify_on_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
+static void notify_on_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
+                           grpc_closure_scheduler *scheduler) {
   if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "TCP:%p notify_on_read", tcp);
   }
-  GRPC_CLOSURE_INIT(&tcp->read_done_closure, tcp_handle_read, tcp,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&tcp->read_done_closure, tcp_handle_read, tcp, scheduler);
   grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_done_closure);
 }
 
@@ -415,7 +415,7 @@ static void tcp_do_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
     if (errno == EAGAIN) {
       finish_estimate(tcp);
       /* We've consumed the edge, request a new one */
-      notify_on_read(exec_ctx, tcp);
+      notify_on_read(exec_ctx, tcp, grpc_schedule_on_exec_ctx);
     } else {
       grpc_slice_buffer_reset_and_unref_internal(exec_ctx,
                                                  tcp->incoming_buffer);
@@ -514,9 +514,17 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   TCP_REF(tcp, "read");
   if (tcp->finished_edge) {
     tcp->finished_edge = false;
-    notify_on_read(exec_ctx, tcp);
+    notify_on_read(exec_ctx, tcp, grpc_schedule_on_exec_ctx);
   } else {
-    GRPC_CLOSURE_SCHED(exec_ctx, &tcp->read_done_closure, GRPC_ERROR_NONE);
+    bool ready_to_finish = grpc_exec_ctx_ready_to_finish(exec_ctx);
+    if (ready_to_finish) GRPC_STATS_INC_READS_WHEN_EXEC_CTX_DONE(exec_ctx);
+    GRPC_CLOSURE_SCHED(
+        exec_ctx,
+        GRPC_CLOSURE_INIT(&tcp->read_done_closure, tcp_handle_read, tcp,
+                          ready_to_finish
+                              ? grpc_executor_scheduler(GRPC_EXECUTOR_SHORT)
+                              : grpc_schedule_on_exec_ctx),
+        GRPC_ERROR_NONE);
   }
 }
 

@@ -40,6 +40,7 @@ const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "histogram_slow_lookups",
     "syscall_write",
     "syscall_read",
+    "reads_when_exec_ctx_done",
     "tcp_backup_pollers_created",
     "tcp_backup_poller_polls",
     "http2_op_batches",
@@ -136,6 +137,8 @@ const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of write syscalls (or equivalent - eg sendmsg) made by this "
     "process",
     "Number of read syscalls (or equivalent - eg recvmsg) made by this process",
+    "Number of reads that completed after the containing execution context was "
+    "completed",
     "Number of times a backup poller has been created (this can be expensive)",
     "Number of polls performed on the backup poller",
     "Number of batches received by HTTP2 transport",

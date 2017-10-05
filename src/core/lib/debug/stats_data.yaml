@@ -72,6 +72,9 @@
   doc: Number of write syscalls (or equivalent - eg sendmsg) made by this process
 - counter: syscall_read
   doc: Number of read syscalls (or equivalent - eg recvmsg) made by this process
+- counter: reads_when_exec_ctx_done
+  doc: Number of reads that completed after the containing execution context was
+       completed
 - histogram: tcp_write_size
   max: 16777216 # 16 meg max write tracked
   buckets: 64
