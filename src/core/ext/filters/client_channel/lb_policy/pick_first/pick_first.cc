@@ -102,12 +102,23 @@ static void pf_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   }
 }
 
+static void fail_pending_picks_for_shutdown(grpc_exec_ctx *exec_ctx,
+                                            pick_first_lb_policy *p) {
+  pending_pick *pp;
+  while ((pp = p->pending_picks) != NULL) {
+    p->pending_picks = pp->next;
+    *pp->target = NULL;
+    GRPC_CLOSURE_SCHED(
+        exec_ctx, pp->on_complete,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Shutdown"));
+    gpr_free(pp);
+  }
+}
+
 static void pf_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
-  pending_pick *pp;
   p->shutdown = true;
-  pp = p->pending_picks;
-  p->pending_picks = NULL;
+  fail_pending_picks_for_shutdown(exec_ctx, p);
   grpc_connectivity_state_set(
       exec_ctx, &p->state_tracker, GRPC_CHANNEL_SHUTDOWN,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown"), "shutdown");
@@ -119,13 +130,6 @@ static void pf_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     grpc_subchannel_notify_on_state_change(
         exec_ctx, p->subchannels[p->checking_subchannel], NULL, NULL,
         &p->connectivity_changed);
-  }
-  while (pp != NULL) {
-    pending_pick *next = pp->next;
-    *pp->target = NULL;
-    GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
-    gpr_free(pp);
-    pp = next;
   }
 }
 
@@ -637,12 +641,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
               GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                   "Pick first exhausted channels", &error, 1),
               "no_more_channels");
-          while ((pp = p->pending_picks)) {
-            p->pending_picks = pp->next;
-            *pp->target = NULL;
-            GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
-            gpr_free(pp);
-          }
+          fail_pending_picks_for_shutdown(exec_ctx, p);
           GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base,
                                     "pick_first_connectivity");
         } else {
