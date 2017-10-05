@@ -102,8 +102,13 @@ struct grpc_mdelem {
   ((grpc_mdelem_data *)((md).payload & ~(uintptr_t)3))
 #define GRPC_MDELEM_STORAGE(md) \
   ((grpc_mdelem_data_storage)((md).payload & (uintptr_t)3))
+#ifdef __cplusplus
+#define GRPC_MAKE_MDELEM(data, storage) \
+  (grpc_mdelem{((uintptr_t)(data)) | ((uintptr_t)storage)})
+#else
 #define GRPC_MAKE_MDELEM(data, storage) \
   ((grpc_mdelem){((uintptr_t)(data)) | ((uintptr_t)storage)})
+#endif
 #define GRPC_MDELEM_IS_INTERNED(md)          \
   ((grpc_mdelem_data_storage)((md).payload & \
                               (uintptr_t)GRPC_MDELEM_STORAGE_INTERNED_BIT))

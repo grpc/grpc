@@ -21,6 +21,10 @@
 
 #include "src/core/ext/census/intrusive_hash_map_internal.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* intrusive_hash_map is a fast chained hash table. This hash map is faster than
  * a dense hash map when the application calls insert and erase more often than
  * find. When the workload is dominated by find() a dense hash map may be
@@ -148,5 +152,9 @@ void intrusive_hash_map_clear(intrusive_hash_map *hash_map,
  * pointed to by hash_map->value. */
 void intrusive_hash_map_free(intrusive_hash_map *hash_map,
                              void (*free_object)(void *));
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_CENSUS_INTRUSIVE_HASH_MAP_H */
