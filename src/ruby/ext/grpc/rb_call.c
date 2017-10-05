@@ -101,6 +101,7 @@ static void grpc_rb_call_destroy(void *p) {
     return;
   }
   destroy_call((grpc_rb_call *)p);
+  xfree(p);
 }
 
 static size_t md_ary_datasize(const void *p) {

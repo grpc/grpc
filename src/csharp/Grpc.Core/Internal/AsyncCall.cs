@@ -34,6 +34,9 @@ namespace Grpc.Core.Internal
         readonly CallInvocationDetails<TRequest, TResponse> details;
         readonly INativeCall injectedNativeCall;  // for testing
 
+        // Dispose of to de-register cancellation token registration
+        IDisposable cancellationTokenRegistration;
+
         // Completion of a pending unary response if not null.
         TaskCompletionSource<TResponse> unaryResponseTcs;
 
@@ -320,6 +323,7 @@ namespace Grpc.Core.Internal
         protected override void OnAfterReleaseResources()
         {
             details.Channel.RemoveCallReference(this);
+            cancellationTokenRegistration?.Dispose();
         }
 
         protected override bool IsClient
@@ -405,7 +409,7 @@ namespace Grpc.Core.Internal
             var token = details.Options.CancellationToken;
             if (token.CanBeCanceled)
             {
-                token.Register(() => this.Cancel());
+                cancellationTokenRegistration = token.Register(() => this.Cancel());
             }
         }
 

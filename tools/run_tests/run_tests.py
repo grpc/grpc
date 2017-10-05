@@ -117,6 +117,13 @@ def run_shell_command(cmd, env=None, cwd=None):
                        e.cmd, e.returncode, e.output)
     raise
 
+def max_parallel_tests_for_current_platform():
+  # Too much test parallelization has only been seen to be a problem
+  # so far on windows.
+  if jobset.platform_string() == 'windows':
+    return 64
+  return 128
+
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class Config(object):
 
@@ -701,7 +708,7 @@ class PythonLanguage(object):
     return [config.build for config in self.pythons]
 
   def post_tests_steps(self):
-    if self.config != 'gcov':
+    if self.config.build_config != 'gcov':
       return []
     else:
       return [['tools/run_tests/helper_scripts/post_tests_python.sh']]
@@ -1621,7 +1628,7 @@ def _build_and_run(
       jobset.message('START', 'Running tests quietly, only failing tests will be reported', do_newline=True)
     num_test_failures, resultset = jobset.run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
-        travis=args.travis, maxjobs=args.jobs,
+        travis=args.travis, maxjobs=args.jobs, maxjobs_cpu_agnostic=max_parallel_tests_for_current_platform(),
         stop_on_failure=args.stop_on_failure,
         quiet_success=args.quiet_success, max_time=args.max_time)
     if resultset:
@@ -1644,7 +1651,7 @@ def _build_and_run(
                                            suite_name=args.report_suite_name)
 
   number_failures, _ = jobset.run(
-      post_tests_steps, maxjobs=1, stop_on_failure=True,
+      post_tests_steps, maxjobs=1, stop_on_failure=False,
       newline_on_success=newline_on_success, travis=args.travis)
 
   out = []

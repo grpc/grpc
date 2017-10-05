@@ -27,6 +27,14 @@ ulimit -n 10000
 # show current limits
 ulimit -a
 
+# synchronize the clock
+date
+sudo systemsetup -setusingnetworktime off
+sudo systemsetup -setnetworktimeserver "$( ipconfig getoption en0 server_identifier )"
+sudo systemsetup -settimezone America/Los_Angeles
+sudo systemsetup -setusingnetworktime on
+date
+
 # Add GCP credentials for BQ access
 pip install google-api-python-client --user python
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
@@ -51,12 +59,14 @@ export LANG=en_US.UTF-8
 pod repo update  # needed by python
 
 # python
-brew install coreutils  # we need grealpath
 pip install virtualenv --user python
 pip install -U six tox setuptools twisted pyyaml --user python
 export PYTHONPATH=/Library/Python/3.4/site-packages
 
 # set xcode version for Obj-C tests
 sudo xcode-select -switch /Applications/Xcode_8.2.1.app/Contents/Developer
+
+# TODO(jtattermusch): better debugging of clock skew, remove once not needed
+date
 
 git submodule update --init
