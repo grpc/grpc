@@ -371,6 +371,15 @@ static void parse_retry_throttle_params(const grpc_json *field, void *arg) {
   }
 }
 
+static void request_reresolution_locked(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  if (error == GRPC_ERROR_CANCELLED) {
+    return;
+  }
+  channel_data *chand = (channel_data *)arg;
+  grpc_resolver_channel_saw_error_locked(exec_ctx, chand->resolver);
+  GRPC_CLOSURE_INIT(&chand->lb_policy->request_reresolution, request_reresolution_locked, chand, grpc_combiner_scheduler(chand->combiner));
+}
+
 static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
                                               void *arg, grpc_error *error) {
   channel_data *chand = (channel_data *)arg;
@@ -517,10 +526,11 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   chand->method_params_table = method_params_table;
   // If we have a new LB policy or are shutting down (in which case
   // new_lb_policy will be NULL), swap out the LB policy, unreffing the
-  // old one and removing its fds from chand->interested_parties.
-  // Note that we do NOT do this if either (a) we updated the existing
-  // LB policy above or (b) we failed to create the new LB policy (in
-  // which case we want to continue using the most recent one we had).
+  // old one, removing its fds from chand->interested_parties and cancelling
+  // the re-resolution closure. Note that we do NOT do this if either
+  // (a) we updated the existing LB policy above or (b) we failed to
+  // create the new LB policy (in which case we want to continue using
+  // the most recent one we had).
   if (new_lb_policy != NULL || error != GRPC_ERROR_NONE ||
       chand->resolver == NULL) {
     if (chand->lb_policy != NULL) {
@@ -531,6 +541,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
       grpc_pollset_set_del_pollset_set(exec_ctx,
                                        chand->lb_policy->interested_parties,
                                        chand->interested_parties);
+      GRPC_CLOSURE_SCHED(exec_ctx, &chand->lb_policy->request_reresolution, GRPC_ERROR_CANCELLED);
       GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
     }
     chand->lb_policy = new_lb_policy;
@@ -574,6 +585,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
       grpc_pollset_set_add_pollset_set(exec_ctx,
                                        new_lb_policy->interested_parties,
                                        chand->interested_parties);
+      GRPC_CLOSURE_INIT(&new_lb_policy->request_reresolution, request_reresolution_locked, chand, grpc_combiner_scheduler(chand->combiner));
       GRPC_CLOSURE_LIST_SCHED(exec_ctx,
                               &chand->waiting_for_resolver_result_closures);
       if (chand->exit_idle_when_lb_policy_arrives) {
