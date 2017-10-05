@@ -129,7 +129,6 @@ namespace Grpc.Core.Tests
             {
                 var cts = new CancellationTokenSource();
                 var moveNextTask = requestStream.MoveNext(cts.Token);
-                await Task.Delay(100);
                 cts.Cancel();
                 await moveNextTask;
                 return "";
@@ -154,8 +153,10 @@ namespace Grpc.Core.Tests
             helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
             {
                 await responseStream.WriteAsync("abc");
-                await Task.Delay(10000);
-                await responseStream.WriteAsync("def");
+                while (!context.CancellationToken.IsCancellationRequested)
+                {
+                    await Task.Delay(10);
+                }
             });
 
             var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "");
@@ -164,7 +165,6 @@ namespace Grpc.Core.Tests
 
             var cts = new CancellationTokenSource();
             var moveNextTask = call.ResponseStream.MoveNext(cts.Token);
-            await Task.Delay(100);
             cts.Cancel();
 
             try
