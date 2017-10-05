@@ -102,7 +102,7 @@ def create_stub(opts)
   if ['client_compressed_unary',
       'client_compressed_streaming'].include?(opts.test_case)
     compression_options =
-      GRPC::Core::CompressionOptions.new(default_algorithm: :message/gzip)
+      GRPC::Core::CompressionOptions.new(default_algorithm: 'message/gzip')
     compression_channel_args = compression_options.to_channel_arg_hash
   else
     compression_channel_args = {}
