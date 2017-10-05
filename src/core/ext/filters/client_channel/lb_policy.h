@@ -44,6 +44,8 @@ struct grpc_lb_policy {
   grpc_pollset_set *interested_parties;
   /* combiner under which lb_policy actions take place */
   grpc_combiner *combiner;
+  /* callback to force a re-resolution */
+  grpc_closure request_reresolution;
 };
 
 /** Extra arguments for an LB pick */
