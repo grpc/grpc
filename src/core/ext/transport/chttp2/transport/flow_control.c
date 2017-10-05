@@ -449,52 +449,50 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_bdp_action(
     grpc_chttp2_transport_flowctl* tfc) {
   grpc_chttp2_flowctl_action action;
   memset(&action, 0, sizeof(action));
-  if (tfc->enable_bdp_probe) {
-    action.need_ping = grpc_bdp_estimator_need_ping(&tfc->bdp_estimator);
 
-    // get bdp estimate and update initial_window accordingly.
-    int64_t estimate = -1;
-    int32_t bdp = -1;
-    if (grpc_bdp_estimator_get_estimate(&tfc->bdp_estimator, &estimate)) {
-      double target = 1 + log2((double)estimate);
+  // get bdp estimate and update initial_window accordingly.
+  int64_t estimate = -1;
+  int32_t bdp = -1;
+  if (grpc_bdp_estimator_get_estimate(&tfc->bdp_estimator, &estimate)) {
+    double target = 1 + log2((double)estimate);
 
-      // target might change based on how much memory pressure we are under
-      // TODO(ncteisen): experiment with setting target to be huge under low
-      // memory pressure.
-      target = get_target_under_memory_pressure(tfc, target);
+    // target might change based on how much memory pressure we are under
+    // TODO(ncteisen): experiment with setting target to be huge under low
+    // memory pressure.
+    target = get_target_under_memory_pressure(tfc, target);
 
-      // run our target through the pid controller to stabilize change.
-      // TODO(ncteisen): experiment with other controllers here.
-      double bdp_guess = get_pid_controller_guess(tfc, target);
+    // run our target through the pid controller to stabilize change.
+    // TODO(ncteisen): experiment with other controllers here.
+    double bdp_guess = get_pid_controller_guess(tfc, target);
 
-      // Though initial window 'could' drop to 0, we keep the floor at 128
-      bdp = GPR_MAX((int32_t)bdp_guess, 128);
+    // Though initial window 'could' drop to 0, we keep the floor at 128
+    bdp = GPR_MAX((int32_t)bdp_guess, 128);
 
-      grpc_chttp2_flowctl_urgency init_window_update_urgency =
-          delta_is_significant(tfc, bdp,
-                               GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
-      if (init_window_update_urgency != GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED) {
-        action.send_setting_update = init_window_update_urgency;
-        action.initial_window_size = (uint32_t)bdp;
-      }
+    grpc_chttp2_flowctl_urgency init_window_update_urgency =
+        delta_is_significant(tfc, bdp,
+                             GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
+    if (init_window_update_urgency != GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED) {
+      action.send_setting_update = init_window_update_urgency;
+      action.initial_window_size = (uint32_t)bdp;
     }
+  }
 
-    // get bandwidth estimate and update max_frame accordingly.
-    double bw_dbl = -1;
-    if (grpc_bdp_estimator_get_bw(&tfc->bdp_estimator, &bw_dbl)) {
-      // we target the max of BDP or bandwidth in microseconds.
-      int32_t frame_size = (int32_t)GPR_CLAMP(
-          GPR_MAX((int32_t)GPR_CLAMP(bw_dbl, 0, INT_MAX) / 1000, bdp), 16384,
-          16777215);
-      grpc_chttp2_flowctl_urgency frame_size_urgency = delta_is_significant(
-          tfc, frame_size, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE);
-      if (frame_size_urgency != GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED) {
-        if (frame_size_urgency > action.send_setting_update) {
-          action.send_setting_update = frame_size_urgency;
-        }
-        action.max_frame_size = (uint32_t)frame_size;
+  // get bandwidth estimate and update max_frame accordingly.
+  double bw_dbl = -1;
+  if (grpc_bdp_estimator_get_bw(&tfc->bdp_estimator, &bw_dbl)) {
+    // we target the max of BDP or bandwidth in microseconds.
+    int32_t frame_size = (int32_t)GPR_CLAMP(
+        GPR_MAX((int32_t)GPR_CLAMP(bw_dbl, 0, INT_MAX) / 1000, bdp), 16384,
+        16777215);
+    grpc_chttp2_flowctl_urgency frame_size_urgency = delta_is_significant(
+        tfc, frame_size, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE);
+    if (frame_size_urgency != GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED) {
+      if (frame_size_urgency > action.send_setting_update) {
+        action.send_setting_update = frame_size_urgency;
       }
+      action.max_frame_size = (uint32_t)frame_size;
     }
+    action.max_frame_size = (uint32_t)frame_size;
   }
 
   TRACEACTION(tfc, action);

@@ -52,7 +52,7 @@ bool grpc_bdp_estimator_get_estimate(const grpc_bdp_estimator *estimator,
 // Tracks new bytes read.
 bool grpc_bdp_estimator_get_bw(const grpc_bdp_estimator *estimator, double *bw);
 // Returns true if the user should schedule a ping
-void grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
+bool grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
                                            int64_t num_bytes);
 // Returns true if the user should schedule a ping
 bool grpc_bdp_estimator_need_ping(const grpc_bdp_estimator *estimator);
