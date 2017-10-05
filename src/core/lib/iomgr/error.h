@@ -19,8 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_ERROR_H
 #define GRPC_CORE_LIB_IOMGR_ERROR_H
 
+#include <inttypes.h>
 #include <stdbool.h>
-#include <stdint.h>
 
 #include <grpc/slice.h>
 #include <grpc/status.h>

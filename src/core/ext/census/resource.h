@@ -23,6 +23,10 @@
 #include <grpc/grpc.h>
 #include "src/core/ext/census/gen/census.pb.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Internal representation of a resource. */
 typedef struct {
   char *name;
@@ -44,5 +48,9 @@ void shutdown_resources(void);
    resources. It should be removed when we have the ability to add resources
    from configuration files. */
 int32_t define_resource(const resource *base);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_CENSUS_RESOURCE_H */
