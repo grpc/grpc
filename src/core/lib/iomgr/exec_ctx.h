@@ -22,6 +22,10 @@
 #include <grpc/support/cpu.h>
 #include "src/core/lib/iomgr/closure.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* #define GRPC_EXECUTION_CONTEXT_SANITIZER 1 */
 
 /** A workqueue represents a list of work to be executed asynchronously.
@@ -105,5 +109,9 @@ void grpc_exec_ctx_global_init(void);
 
 void grpc_exec_ctx_global_init(void);
 void grpc_exec_ctx_global_shutdown(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXEC_CTX_H */

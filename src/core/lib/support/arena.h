@@ -27,6 +27,10 @@
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct gpr_arena gpr_arena;
 
 // Create an arena, with \a initial_size bytes in the first allocated buffer
@@ -35,5 +39,9 @@ gpr_arena *gpr_arena_create(size_t initial_size);
 void *gpr_arena_alloc(gpr_arena *arena, size_t size);
 // Destroy an arena, returning the total number of bytes allocated
 size_t gpr_arena_destroy(gpr_arena *arena);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_SUPPORT_ARENA_H */
