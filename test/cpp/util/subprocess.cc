@@ -39,6 +39,12 @@ SubProcess::~SubProcess() { gpr_subprocess_destroy(subprocess_); }
 
 int SubProcess::Join() { return gpr_subprocess_join(subprocess_); }
 
-void SubProcess::Interrupt() { gpr_subprocess_interrupt(subprocess_); }
+void SubProcess::Interrupt(bool aggressively) {
+  if (aggressively) {
+    gpr_subprocess_interrupt_aggressively(subprocess_);
+  } else {
+    gpr_subprocess_interrupt(subprocess_);
+  }
+}
 
 }  // namespace grpc
