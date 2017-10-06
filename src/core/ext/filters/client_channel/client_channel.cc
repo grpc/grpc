@@ -261,20 +261,13 @@ static void set_channel_connectivity_state_locked(grpc_exec_ctx *exec_ctx,
 static void on_lb_policy_state_changed_locked(grpc_exec_ctx *exec_ctx,
                                               void *arg, grpc_error *error) {
   lb_policy_connectivity_watcher *w = (lb_policy_connectivity_watcher *)arg;
-  grpc_connectivity_state publish_state = w->state;
   /* check if the notification is for the latest policy */
   if (w->lb_policy == w->chand->lb_policy) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p: lb_policy=%p state changed to %s", w->chand,
               w->lb_policy, grpc_connectivity_state_name(w->state));
     }
-    if (publish_state == GRPC_CHANNEL_SHUTDOWN && w->chand->resolver != NULL) {
-      publish_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
-      grpc_resolver_channel_saw_error_locked(exec_ctx, w->chand->resolver);
-      GRPC_LB_POLICY_UNREF(exec_ctx, w->chand->lb_policy, "channel");
-      w->chand->lb_policy = NULL;
-    }
-    set_channel_connectivity_state_locked(exec_ctx, w->chand, publish_state,
+    set_channel_connectivity_state_locked(exec_ctx, w->chand, w->state,
                                           GRPC_ERROR_REF(error), "lb_changed");
     if (w->state != GRPC_CHANNEL_SHUTDOWN) {
       watch_lb_policy_locked(exec_ctx, w->chand, w->lb_policy, w->state);
@@ -371,13 +364,16 @@ static void parse_retry_throttle_params(const grpc_json *field, void *arg) {
   }
 }
 
-static void request_reresolution_locked(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+static void request_reresolution_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                        grpc_error *error) {
   if (error == GRPC_ERROR_CANCELLED) {
     return;
   }
   channel_data *chand = (channel_data *)arg;
   grpc_resolver_channel_saw_error_locked(exec_ctx, chand->resolver);
-  GRPC_CLOSURE_INIT(&chand->lb_policy->request_reresolution, request_reresolution_locked, chand, grpc_combiner_scheduler(chand->combiner));
+  GRPC_CLOSURE_INIT(&chand->lb_policy->request_reresolution,
+                    request_reresolution_locked, chand,
+                    grpc_combiner_scheduler(chand->combiner));
 }
 
 static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
@@ -541,7 +537,8 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
       grpc_pollset_set_del_pollset_set(exec_ctx,
                                        chand->lb_policy->interested_parties,
                                        chand->interested_parties);
-      GRPC_CLOSURE_SCHED(exec_ctx, &chand->lb_policy->request_reresolution, GRPC_ERROR_CANCELLED);
+      GRPC_CLOSURE_SCHED(exec_ctx, &chand->lb_policy->request_reresolution,
+                         GRPC_ERROR_CANCELLED);
       GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
     }
     chand->lb_policy = new_lb_policy;
@@ -585,7 +582,9 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
       grpc_pollset_set_add_pollset_set(exec_ctx,
                                        new_lb_policy->interested_parties,
                                        chand->interested_parties);
-      GRPC_CLOSURE_INIT(&new_lb_policy->request_reresolution, request_reresolution_locked, chand, grpc_combiner_scheduler(chand->combiner));
+      GRPC_CLOSURE_INIT(&new_lb_policy->request_reresolution,
+                        request_reresolution_locked, chand,
+                        grpc_combiner_scheduler(chand->combiner));
       GRPC_CLOSURE_LIST_SCHED(exec_ctx,
                               &chand->waiting_for_resolver_result_closures);
       if (chand->exit_idle_when_lb_policy_arrives) {

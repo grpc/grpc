@@ -589,13 +589,13 @@ static void update_lb_connectivity_status_locked(
    *  |
    *  v  || I  |  C  |  R  |  TF  |  SD  |  <- new state (RR's)
    *  ===++====+=====+=====+======+======+
-   *   I || I  |  C  |  R  | [I]  | [I]  |
+   *   I || I  |  C  |  R  | [I]  |  NA  |
    *  ---++----+-----+-----+------+------+
-   *   C || I  |  C  |  R  | [C]  | [C]  |
+   *   C || I  |  C  |  R  | [C]  |  NA  |
    *  ---++----+-----+-----+------+------+
-   *   R || I  |  C  |  R  | [R]  | [R]  |
+   *   R || I  |  C  |  R  | [R]  |  NA  |
    *  ---++----+-----+-----+------+------+
-   *  TF || I  |  C  |  R  | [TF] | [TF] |
+   *  TF || I  |  C  |  R  | [TF] |  NA  |
    *  ---++----+-----+-----+------+------+
    *  SD || NA |  NA |  NA |  NA  |  NA  | (*)
    *  ---++----+-----+-----+------+------+
@@ -603,8 +603,8 @@ static void update_lb_connectivity_status_locked(
    * A [STATE] indicates that the old RR policy is kept. In those cases, STATE
    * is the current state of grpclb, which is left untouched.
    *
-   *  In summary, if the new state is TRANSIENT_FAILURE or SHUTDOWN, stick to
-   *  the previous RR instance.
+   *  In summary, if the new state is TRANSIENT_FAILURE, stick to the previous
+   *  RR instance.
    *
    *  Note that the status is never updated to SHUTDOWN as a result of calling
    *  this function. Only glb_shutdown() has the power to set that state.
@@ -613,8 +613,9 @@ static void update_lb_connectivity_status_locked(
   GPR_ASSERT(curr_glb_state != GRPC_CHANNEL_SHUTDOWN);
 
   switch (rr_state) {
-    case GRPC_CHANNEL_TRANSIENT_FAILURE:
     case GRPC_CHANNEL_SHUTDOWN:
+      GPR_UNREACHABLE_CODE(return );
+    case GRPC_CHANNEL_TRANSIENT_FAILURE:
       GPR_ASSERT(rr_state_error != GRPC_ERROR_NONE);
       break;
     case GRPC_CHANNEL_INIT:
