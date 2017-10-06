@@ -1147,12 +1147,11 @@ add_library(grpc
   src/core/tsi/transport_security_adapter.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
   src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
-  src/core/ext/filters/client_channel/channel_connectivity_internal.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connectivity_watcher.cc
   src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
@@ -1471,12 +1470,11 @@ add_library(grpc_cronet
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
-  src/core/ext/filters/client_channel/channel_connectivity_internal.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connectivity_watcher.cc
   src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
@@ -1761,12 +1759,11 @@ add_library(grpc_test_util
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/debug/trace.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
-  src/core/ext/filters/client_channel/channel_connectivity_internal.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connectivity_watcher.cc
   src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
@@ -2026,12 +2023,11 @@ add_library(grpc_test_util_unsecure
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/debug/trace.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
-  src/core/ext/filters/client_channel/channel_connectivity_internal.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connectivity_watcher.cc
   src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
@@ -2310,12 +2306,11 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
-  src/core/ext/filters/client_channel/channel_connectivity_internal.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connectivity_watcher.cc
   src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
@@ -3041,12 +3036,11 @@ add_library(grpc++_cronet
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
-  src/core/ext/filters/client_channel/channel_connectivity_internal.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connectivity_watcher.cc
   src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
