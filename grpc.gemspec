@@ -407,7 +407,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h )
   s.files += %w( src/core/ext/filters/workarounds/workaround_utils.h )
   s.files += %w( src/core/lib/surface/init.cc )
-  s.files += %w( src/core/lib/backoff/backoff.c )
+  s.files += %w( src/core/lib/backoff/backoff.cc )
   s.files += %w( src/core/lib/channel/channel_args.cc )
   s.files += %w( src/core/lib/channel/channel_stack.cc )
   s.files += %w( src/core/lib/channel/channel_stack_builder.cc )

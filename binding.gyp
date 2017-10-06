@@ -657,7 +657,7 @@
       ],
       'sources': [
         'src/core/lib/surface/init.cc',
-        'src/core/lib/backoff/backoff.c',
+        'src/core/lib/backoff/backoff.cc',
         'src/core/lib/channel/channel_args.cc',
         'src/core/lib/channel/channel_stack.cc',
         'src/core/lib/channel/channel_stack_builder.cc',

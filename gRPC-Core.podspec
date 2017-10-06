@@ -460,7 +460,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h',
                       'src/core/ext/filters/workarounds/workaround_utils.h',
                       'src/core/lib/surface/init.cc',
-                      'src/core/lib/backoff/backoff.c',
+                      'src/core/lib/backoff/backoff.cc',
                       'src/core/lib/channel/channel_args.cc',
                       'src/core/lib/channel/channel_stack.cc',
                       'src/core/lib/channel/channel_stack_builder.cc',
