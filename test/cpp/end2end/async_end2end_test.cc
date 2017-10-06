@@ -252,11 +252,8 @@ class TestScenario {
   bool disable_blocking;
   bool inproc;
   bool health_check_service;
-  // Although the below grpc::string's are logically const, we can't declare
-  // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
-  // manage vector insertion using a copy constructor
-  grpc::string credentials_type;
-  grpc::string message_content;
+  const grpc::string credentials_type;
+  const grpc::string message_content;
 };
 
 static std::ostream& operator<<(std::ostream& out,
@@ -1784,7 +1781,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_disable_blocking,
   GPR_ASSERT(!credentials_types.empty());
 
   messages.push_back("Hello");
-  for (int sz = 1; sz < test_big_limit; sz *= 2) {
+  for (int sz = 1; sz <= test_big_limit; sz *= 32) {
     grpc::string big_msg;
     for (int i = 0; i < sz * 1024; i++) {
       char c = 'a' + (i % 26);

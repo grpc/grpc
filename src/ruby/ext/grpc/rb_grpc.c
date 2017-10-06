@@ -315,8 +315,8 @@ void Init_grpc_c() {
     return;
   }
 
-  bg_thread_init_rb_mu = rb_mutex_new();
   rb_global_variable(&bg_thread_init_rb_mu);
+  bg_thread_init_rb_mu = rb_mutex_new();
 
   grpc_rb_mGRPC = rb_define_module("GRPC");
   grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");

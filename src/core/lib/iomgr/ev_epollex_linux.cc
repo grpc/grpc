@@ -58,7 +58,8 @@ typedef enum {
   PO_POLLSET,
   PO_FD,
   /* ordering is important: we always want to lock pollsets before fds:
-            this guarantees that using an fd as a pollable is safe */ PO_EMPTY_POLLABLE,
+     this guarantees that using an fd as a pollable is safe */
+  PO_EMPTY_POLLABLE,
   PO_COUNT
 } polling_obj_type;
 
