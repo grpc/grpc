@@ -223,11 +223,8 @@ class TestScenario {
   bool disable_blocking;
   bool inproc;
   bool health_check_service;
-  // Although the below grpc::string's are logically const, we can't declare
-  // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
-  // manage vector insertion using a copy constructor
-  grpc::string credentials_type;
-  grpc::string message_content;
+  const grpc::string credentials_type;
+  const grpc::string message_content;
 };
 
 static std::ostream& operator<<(std::ostream& out,
@@ -537,33 +534,18 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreamingWithCoalescingApi) {
   service_->RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
                                  tag(2));
 
-  cli_stream->Write(send_request, tag(3));
+  auto verif = Verifier(GetParam().disable_blocking);
+  verif.Expect(2, true);
 
-  // 65536(64KB) is the default flow control window size. Should change this
-  // number when default flow control window size changes. For the write of
-  // send_request larger than the flow control window size, tag:3 will not come
-  // up until server read is initiated. For write of send_request smaller than
-  // the flow control window size, the request can take the free ride with
-  // initial metadata due to coalescing, thus write tag:3 will come up here.
-  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
-    Verifier(GetParam().disable_blocking)
-        .Expect(2, true)
-        .Expect(3, true)
-        .Verify(cq_.get());
-  } else {
-    Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
+  cli_stream->Write(send_request, tag(3));
+  verif.Expect(3, true);
+
+  // Drain tag 2, optional to get tag 3 now
+  while (verif.Next(cq_.get(), false) != 2) {
   }
 
   srv_stream.Read(&recv_request, tag(4));
-
-  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
-    Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
-  } else {
-    Verifier(GetParam().disable_blocking)
-        .Expect(3, true)
-        .Expect(4, true)
-        .Verify(cq_.get());
-  }
+  verif.Expect(4, true).Verify(cq_.get());
 
   EXPECT_EQ(send_request.message(), recv_request.message());
 
@@ -832,33 +814,19 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWAF) {
   service_->RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
                               tag(2));
 
-  cli_stream->WriteLast(send_request, WriteOptions(), tag(3));
+  auto verif = Verifier(GetParam().disable_blocking);
+  verif.Expect(2, true);
 
-  // 65536(64KB) is the default flow control window size. Should change this
-  // number when default flow control window size changes. For the write of
-  // send_request larger than the flow control window size, tag:3 will not come
-  // up until server read is initiated. For write of send_request smaller than
-  // the flow control window size, the request can take the free ride with
-  // initial metadata due to coalescing, thus write tag:3 will come up here.
-  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
-    Verifier(GetParam().disable_blocking)
-        .Expect(2, true)
-        .Expect(3, true)
-        .Verify(cq_.get());
-  } else {
-    Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
+  cli_stream->WriteLast(send_request, WriteOptions(), tag(3));
+  verif.Expect(3, true);
+
+  // Drain tag 2, optional to get tag 3 now
+  while (verif.Next(cq_.get(), false) != 2) {
   }
 
   srv_stream.Read(&recv_request, tag(4));
+  verif.Expect(4, true).Verify(cq_.get());
 
-  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
-    Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
-  } else {
-    Verifier(GetParam().disable_blocking)
-        .Expect(3, true)
-        .Expect(4, true)
-        .Verify(cq_.get());
-  }
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   srv_stream.Read(&recv_request, tag(5));
@@ -900,33 +868,19 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWL) {
   service_->RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
                               tag(2));
 
-  cli_stream->WriteLast(send_request, WriteOptions(), tag(3));
+  auto verif = Verifier(GetParam().disable_blocking);
+  verif.Expect(2, true);
 
-  // 65536(64KB) is the default flow control window size. Should change this
-  // number when default flow control window size changes. For the write of
-  // send_request larger than the flow control window size, tag:3 will not come
-  // up until server read is initiated. For write of send_request smaller than
-  // the flow control window size, the request can take the free ride with
-  // initial metadata due to coalescing, thus write tag:3 will come up here.
-  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
-    Verifier(GetParam().disable_blocking)
-        .Expect(2, true)
-        .Expect(3, true)
-        .Verify(cq_.get());
-  } else {
-    Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
+  cli_stream->WriteLast(send_request, WriteOptions(), tag(3));
+  verif.Expect(3, true);
+
+  // Drain tag 2, optional to get tag 3 now
+  while (verif.Next(cq_.get(), false) != 2) {
   }
 
   srv_stream.Read(&recv_request, tag(4));
+  verif.Expect(4, true).Verify(cq_.get());
 
-  if (GetParam().message_content.length() < 65536 || GetParam().inproc) {
-    Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
-  } else {
-    Verifier(GetParam().disable_blocking)
-        .Expect(3, true)
-        .Expect(4, true)
-        .Verify(cq_.get());
-  }
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   srv_stream.Read(&recv_request, tag(5));
@@ -1788,7 +1742,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_disable_blocking,
   GPR_ASSERT(!credentials_types.empty());
 
   messages.push_back("Hello");
-  for (int sz = 1; sz < test_big_limit; sz *= 2) {
+  for (int sz = 1; sz <= test_big_limit; sz *= 32) {
     grpc::string big_msg;
     for (int i = 0; i < sz * 1024; i++) {
       char c = 'a' + (i % 26);
