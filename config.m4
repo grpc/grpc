@@ -85,7 +85,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/support/tmpfile_windows.cc \
     src/core/lib/support/wrap_memcpy.cc \
     src/core/lib/surface/init.cc \
-    src/core/lib/backoff/backoff.c \
+    src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
