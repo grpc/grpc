@@ -198,10 +198,7 @@ class TestScenario {
   void Log() const;
   bool use_proxy;
   bool inproc;
-  // Although the below grpc::string is logically const, we can't declare
-  // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
-  // manage vector insertion using a copy constructor
-  grpc::string credentials_type;
+  const grpc::string credentials_type;
 };
 
 static std::ostream& operator<<(std::ostream& out,
