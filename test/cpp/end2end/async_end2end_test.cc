@@ -1321,11 +1321,8 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     std::thread t1([this, &cli_cq] {
       Verifier(GetParam().disable_blocking).Expect(1, true).Verify(&cli_cq);
     });
-    std::thread t2([this] {
-      Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
-    });
+    Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
     t1.join();
-    t2.join();
 
     bool expected_server_cq_result = true;
     bool expected_client_cq_result = true;
@@ -1481,9 +1478,9 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     std::thread t1([this, &cli_cq] {
       Verifier(GetParam().disable_blocking).Expect(1, true).Verify(&cli_cq);
     });
-    std::thread t2([this] {
-      Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
-    });
+    Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
+    t1.join();
+
     EXPECT_EQ(send_request.message(), recv_request.message());
 
     bool expected_cq_result = true;
