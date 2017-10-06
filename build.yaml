@@ -588,10 +588,20 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
+  - grpc_lb_subchannel_list
 - name: grpc_lb_policy_round_robin
   src:
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   plugin: grpc_lb_policy_round_robin
+  uses:
+  - grpc_base
+  - grpc_client_channel
+  - grpc_lb_subchannel_list
+- name: grpc_lb_subchannel_list
+  headers:
+  - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc
   uses:
   - grpc_base
   - grpc_client_channel
