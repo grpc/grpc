@@ -60,14 +60,13 @@ static void init_g_poller_mu() {
   gpr_free(env);
 }
 
-static bool backup_poller_shutdown_unref(grpc_exec_ctx* exec_ctx,
+static void backup_poller_shutdown_unref(grpc_exec_ctx* exec_ctx,
                                          backup_poller* p) {
   if (gpr_unref(&p->shutdown_refs)) {
     grpc_pollset_destroy(exec_ctx, p->pollset);
     gpr_free(p->pollset);
     gpr_free(p);
   }
-  return true;
 }
 
 static void done_poller(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
@@ -90,6 +89,13 @@ static void g_poller_unref(grpc_exec_ctx* exec_ctx) {
   }
 }
 
+static void schedule_polling_timer(gpr_timespec now) {
+  grpc_timer_init(
+      exec_ctx, &p->polling_timer,
+      gpr_time_add(now, gpr_time_from_millis(g_poll_interval_ms, GPR_TIMESPAN)),
+      &p->run_poller_closure, now);
+}
+
 static void run_poller(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   backup_poller* p = (backup_poller*)arg;
   if (error != GRPC_ERROR_NONE) {
@@ -105,10 +111,7 @@ static void run_poller(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
                                       gpr_inf_past(GPR_CLOCK_MONOTONIC));
   gpr_mu_unlock(p->pollset_mu);
   GRPC_LOG_IF_ERROR("Run client channel backup poller", err);
-  grpc_timer_init(
-      exec_ctx, &p->polling_timer,
-      gpr_time_add(now, gpr_time_from_millis(g_poll_interval_ms, GPR_TIMESPAN)),
-      &p->run_poller_closure, now);
+  schedule_polling_timer(now);
 }
 
 void grpc_client_channel_start_backup_polling(
@@ -127,11 +130,7 @@ void grpc_client_channel_start_backup_polling(
     gpr_ref_init(&g_poller->shutdown_refs, 2);
     GRPC_CLOSURE_INIT(&g_poller->run_poller_closure, run_poller, g_poller,
                       grpc_schedule_on_exec_ctx);
-    gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-    grpc_timer_init(exec_ctx, &g_poller->polling_timer,
-                    gpr_time_add(now, gpr_time_from_millis(g_poll_interval_ms,
-                                                           GPR_TIMESPAN)),
-                    &g_poller->run_poller_closure, now);
+    schedule_polling_timer(gpr_now(GPR_CLOCK_MONOTONIC));
   }
   gpr_ref(&g_poller->refs);
   gpr_mu_unlock(&g_poller_mu);
