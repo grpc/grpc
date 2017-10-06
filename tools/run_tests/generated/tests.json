@@ -21,7 +21,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -43,7 +44,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -65,7 +67,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -87,7 +90,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -109,7 +113,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -133,7 +138,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -155,7 +161,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -177,7 +184,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -199,7 +207,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -221,7 +230,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -243,7 +253,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -265,7 +276,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -287,7 +299,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -309,7 +322,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -331,7 +345,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -353,7 +368,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -375,7 +391,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -397,7 +414,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -419,7 +437,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -441,7 +460,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -465,7 +485,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -487,7 +508,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -511,7 +533,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -533,7 +556,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -555,7 +579,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -579,7 +604,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -601,7 +627,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -619,7 +646,8 @@
     "name": "ev_epollsig_linux_test", 
     "platforms": [
       "linux"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -641,7 +669,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -661,7 +690,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -683,7 +713,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -705,7 +736,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -725,7 +757,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -745,7 +778,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -767,7 +801,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -789,7 +824,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -811,7 +847,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -833,7 +870,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -855,7 +893,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -877,7 +916,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -899,7 +939,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -921,7 +962,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -943,7 +985,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -965,7 +1008,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": false
   }, 
   {
     "args": [], 
@@ -987,7 +1031,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1009,7 +1054,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1031,7 +1077,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1053,7 +1100,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1075,7 +1123,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1097,7 +1146,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1119,7 +1169,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1141,7 +1192,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1163,7 +1215,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1185,7 +1238,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1207,7 +1261,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1229,7 +1284,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1251,7 +1307,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1273,7 +1330,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1295,7 +1353,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1319,7 +1378,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1341,7 +1401,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1363,7 +1424,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1383,7 +1445,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1405,7 +1468,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1427,7 +1491,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1445,7 +1510,8 @@
     "name": "handshake_client", 
     "platforms": [
       "linux"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1463,7 +1529,8 @@
     "name": "handshake_server", 
     "platforms": [
       "linux"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1485,7 +1552,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1507,7 +1575,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1529,7 +1598,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1551,7 +1621,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1571,7 +1642,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1587,7 +1659,8 @@
     "name": "httpscli_test", 
     "platforms": [
       "linux"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1609,7 +1682,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1631,7 +1705,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1653,7 +1728,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1675,7 +1751,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1697,7 +1774,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1719,7 +1797,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1741,7 +1820,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1761,7 +1841,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1783,7 +1864,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1805,7 +1887,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1827,7 +1910,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1849,7 +1933,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1871,7 +1956,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1893,7 +1979,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1917,7 +2004,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1939,7 +2027,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1961,7 +2050,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -1979,7 +2069,8 @@
     "name": "pollset_set_test", 
     "platforms": [
       "linux"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2001,7 +2092,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2023,7 +2115,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2045,7 +2138,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2067,7 +2161,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2091,7 +2186,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2115,7 +2211,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2137,7 +2234,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2159,7 +2257,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2181,7 +2280,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2203,7 +2303,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2225,7 +2326,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2247,7 +2349,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2269,7 +2372,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2291,7 +2395,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2313,7 +2418,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2333,7 +2439,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2355,7 +2462,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2377,7 +2485,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2399,7 +2508,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2421,7 +2531,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2445,7 +2556,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2467,7 +2579,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2489,7 +2602,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2513,7 +2627,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2535,7 +2650,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2557,7 +2673,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2581,7 +2698,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2605,7 +2723,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2627,7 +2746,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2649,7 +2769,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2671,7 +2792,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2691,7 +2813,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2713,7 +2836,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2735,7 +2859,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2757,7 +2882,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2779,7 +2905,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2801,7 +2928,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -2823,7 +2951,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [
@@ -2845,7 +2974,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [
@@ -2867,7 +2997,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [
@@ -2889,7 +3020,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [
@@ -2911,7 +3043,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [
@@ -2933,7 +3066,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [
@@ -2955,7 +3089,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [
@@ -2977,7 +3112,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [
@@ -2999,7 +3135,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [
@@ -3026,7 +3163,8 @@
       "mac", 
       "posix"
     ], 
-    "timeout_seconds": 1200
+    "timeout_seconds": 1200, 
+    "uses_polling": true
   }, 
   {
     "args": [
@@ -3053,7 +3191,8 @@
       "mac", 
       "posix"
     ], 
-    "timeout_seconds": 1200
+    "timeout_seconds": 1200, 
+    "uses_polling": true
   }, 
   {
     "args": [
@@ -3080,7 +3219,8 @@
       "mac", 
       "posix"
     ], 
-    "timeout_seconds": 1200
+    "timeout_seconds": 1200, 
+    "uses_polling": true
   }, 
   {
     "args": [
@@ -3107,7 +3247,8 @@
       "mac", 
       "posix"
     ], 
-    "timeout_seconds": 1200
+    "timeout_seconds": 1200, 
+    "uses_polling": true
   }, 
   {
     "args": [
@@ -3129,7 +3270,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [
@@ -3151,7 +3293,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3173,7 +3316,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3195,7 +3339,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3217,7 +3362,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3237,7 +3383,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3263,7 +3410,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3285,7 +3433,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3307,7 +3456,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3329,7 +3479,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3351,7 +3502,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3373,7 +3525,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3395,7 +3548,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3417,7 +3571,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3439,7 +3594,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3461,7 +3617,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3483,7 +3640,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3505,7 +3663,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [
@@ -3529,7 +3688,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3551,7 +3711,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3573,7 +3734,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3599,7 +3761,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3625,7 +3788,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3647,7 +3811,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3669,7 +3834,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3689,7 +3855,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3711,7 +3878,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3733,7 +3901,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3755,7 +3924,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3777,7 +3947,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3799,7 +3970,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3819,7 +3991,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3841,7 +4014,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3861,7 +4035,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3883,7 +4058,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3905,7 +4081,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3927,7 +4104,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3947,7 +4125,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3969,7 +4148,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -3991,7 +4171,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -4013,7 +4194,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -4035,7 +4217,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -4055,7 +4238,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -4077,7 +4261,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -4100,7 +4285,8 @@
       "posix", 
       "windows"
     ], 
-    "timeout_seconds": 1200
+    "timeout_seconds": 1200, 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -4120,7 +4306,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -4142,7 +4329,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -4166,7 +4354,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -4190,7 +4379,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -4214,7 +4404,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -4238,7 +4429,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -4262,7 +4454,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -4286,7 +4479,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -4310,7 +4504,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -4334,7 +4529,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -4358,7 +4554,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -4382,7 +4579,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 
@@ -4402,7 +4600,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [
@@ -4425,7 +4624,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [
@@ -4448,7 +4648,8 @@
       "linux", 
       "mac", 
       "posix"
-    ]
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [
