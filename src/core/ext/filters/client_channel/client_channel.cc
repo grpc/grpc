@@ -31,7 +31,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/ext/filters/client_channel/connectivity_watcher.h"
+#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
@@ -754,8 +754,7 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   }
   chand->deadline_checking_enabled =
       grpc_deadline_checking_enabled(args->channel_args);
-  grpc_client_channel_start_watching_connectivity(exec_ctx, elem,
-                                                  chand->owning_stack);
+  grpc_client_channel_start_backup_polling(exec_ctx, chand->interested_parties);
   return GRPC_ERROR_NONE;
 }
 
@@ -793,6 +792,7 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   if (chand->method_params_table != NULL) {
     grpc_slice_hash_table_unref(exec_ctx, chand->method_params_table);
   }
+  grpc_client_channel_stop_backup_polling(exec_ctx, chand->interested_parties);
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
   grpc_pollset_set_destroy(exec_ctx, chand->interested_parties);
   GRPC_COMBINER_UNREF(exec_ctx, chand->combiner, "client_channel");
