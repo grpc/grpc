@@ -27,6 +27,9 @@
     out = [hdr.split('/', 2)[2] for hdr in out]
     return out
 
+  # Generate the list of platform-specific headers as textual headers so that
+  # they are not built when the module is built but only when they are named by
+  # an #include directive.
   def grpc_public_textual_headers_no_dir(libs):
     out = []
     for lib in libs:
