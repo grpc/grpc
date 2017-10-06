@@ -1010,6 +1010,10 @@ static void glb_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     grpc_timer_cancel(exec_ctx, &glb_policy->lb_call_retry_timer);
     glb_policy->retry_timer_active = false;
   }
+  if (glb_policy->fallback_timer_active) {
+    grpc_timer_cancel(exec_ctx, &glb_policy->lb_fallback_timer);
+    glb_policy->fallback_timer_active = false;
+  }
 
   pending_pick *pp = glb_policy->pending_picks;
   glb_policy->pending_picks = NULL;
