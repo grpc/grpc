@@ -33,10 +33,10 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
-#include "src/core/lib/support/block_annotate.h"
 #include "src/core/lib/support/string.h"
 
 static grpc_error *blocking_resolve_address_impl(
@@ -81,7 +81,7 @@ static grpc_error *blocking_resolve_address_impl(
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   s = getaddrinfo(host, port, &hints, &result);
-  GRPC_SCHEDULING_END_BLOCKING_REGION;
+  GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX;
 
   if (s != 0) {
     /* Retry if well-known service name is recognized */
@@ -90,7 +90,7 @@ static grpc_error *blocking_resolve_address_impl(
       if (strcmp(port, svc[i][0]) == 0) {
         GRPC_SCHEDULING_START_BLOCKING_REGION;
         s = getaddrinfo(host, svc[i][1], &hints, &result);
-        GRPC_SCHEDULING_END_BLOCKING_REGION;
+        GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX;
         break;
       }
     }

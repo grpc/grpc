@@ -176,10 +176,11 @@ static void read_and_write_test(grpc_endpoint_test_config config,
                                 size_t num_bytes, size_t write_size,
                                 size_t slice_size, bool shutdown) {
   struct read_and_write_test_state state;
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(20);
   grpc_endpoint_test_fixture f =
       begin_test(config, "read_and_write_test", slice_size);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_millis deadline =
+      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
   gpr_log(GPR_DEBUG, "num_bytes=%" PRIuPTR " write_size=%" PRIuPTR
                      " slice_size=%" PRIuPTR " shutdown=%d",
           num_bytes, write_size, slice_size, shutdown);
@@ -235,11 +236,10 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   gpr_mu_lock(g_mu);
   while (!state.read_done || !state.write_done) {
     grpc_pollset_worker *worker = NULL;
-    GPR_ASSERT(gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) < 0);
+    GPR_ASSERT(grpc_exec_ctx_now(&exec_ctx) < deadline);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
-        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                          gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker, deadline)));
   }
   gpr_mu_unlock(g_mu);
   grpc_exec_ctx_flush(&exec_ctx);
@@ -265,14 +265,14 @@ static void wait_for_fail_count(grpc_exec_ctx *exec_ctx, int *fail_count,
                                 int want_fail_count) {
   grpc_exec_ctx_flush(exec_ctx);
   gpr_mu_lock(g_mu);
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
-  while (gpr_time_cmp(gpr_now(deadline.clock_type), deadline) < 0 &&
+  grpc_millis deadline =
+      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
+  while (grpc_exec_ctx_now(exec_ctx) < deadline &&
          *fail_count < want_fail_count) {
     grpc_pollset_worker *worker = NULL;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
-        grpc_pollset_work(exec_ctx, g_pollset, &worker,
-                          gpr_now(deadline.clock_type), deadline)));
+        grpc_pollset_work(exec_ctx, g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_flush(exec_ctx);
     gpr_mu_lock(g_mu);
