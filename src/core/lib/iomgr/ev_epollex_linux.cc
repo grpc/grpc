@@ -51,7 +51,7 @@
 
 // debug aid: create workers on the heap (allows asan to spot
 // use-after-destruction)
-#define GRPC_EPOLLEX_CREATE_WORKERS_ON_HEAP 1
+//#define GRPC_EPOLLEX_CREATE_WORKERS_ON_HEAP 1
 
 #ifndef NDEBUG
 grpc_tracer_flag grpc_trace_pollable_refcount =
@@ -433,7 +433,7 @@ static grpc_error *pollable_create(pollable_type type, pollable **p) {
   if (epfd == -1) {
     return GRPC_OS_ERROR(errno, "epoll_create1");
   }
-  *p = gpr_malloc(sizeof(**p));
+  *p = (pollable *)gpr_malloc(sizeof(**p));
   grpc_error *err = grpc_wakeup_fd_init(&(*p)->wakeup);
   if (err != GRPC_ERROR_NONE) {
     close(epfd);
@@ -934,7 +934,8 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                                 grpc_pollset_worker **worker_hdl,
                                 gpr_timespec now, gpr_timespec deadline) {
 #ifdef GRPC_EPOLLEX_CREATE_WORKERS_ON_HEAP
-  grpc_pollset_worker *worker = gpr_malloc(sizeof(*worker));
+  grpc_pollset_worker *worker =
+      (grpc_pollset_worker *)gpr_malloc(sizeof(*worker));
 #define WORKER_PTR (worker)
 #else
   grpc_pollset_worker worker;
@@ -1157,7 +1158,8 @@ static void pollset_set_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset_set *pss,
   }
   if (pss->fd_count == pss->fd_capacity) {
     pss->fd_capacity = GPR_MAX(pss->fd_capacity * 2, 8);
-    pss->fds = gpr_realloc(pss->fds, pss->fd_capacity * sizeof(*pss->fds));
+    pss->fds =
+        (grpc_fd **)gpr_realloc(pss->fds, pss->fd_capacity * sizeof(*pss->fds));
   }
   REF_BY(fd, 2, "pollset_set");
   pss->fds[pss->fd_count++] = fd;
@@ -1206,8 +1208,8 @@ static void pollset_set_add_pollset(grpc_exec_ctx *exec_ctx,
   }
   if (pss->pollset_count == pss->pollset_capacity) {
     pss->pollset_capacity = GPR_MAX(pss->pollset_capacity * 2, 8);
-    pss->pollsets = gpr_realloc(pss->pollsets,
-                                pss->pollset_capacity * sizeof(*pss->pollsets));
+    pss->pollsets = (pollable **)gpr_realloc(
+        pss->pollsets, pss->pollset_capacity * sizeof(*pss->pollsets));
   }
   pss->pollsets[pss->pollset_count++] = pollable_obj;
   gpr_mu_unlock(&pss->mu);
@@ -1303,7 +1305,7 @@ static void pollset_set_add_pollset_set(grpc_exec_ctx *exec_ctx,
   b->parent = a;
   if (a->fd_capacity < a->fd_count + b->fd_count) {
     a->fd_capacity = GPR_MAX(2 * a->fd_capacity, a->fd_count + b->fd_count);
-    a->fds = gpr_realloc(a->fds, a->fd_capacity * sizeof(*a->fds));
+    a->fds = (grpc_fd **)gpr_realloc(a->fds, a->fd_capacity * sizeof(*a->fds));
   }
   size_t initial_a_fd_count = a->fd_count;
   a->fd_count = 0;
@@ -1318,8 +1320,8 @@ static void pollset_set_add_pollset_set(grpc_exec_ctx *exec_ctx,
   if (a->pollset_capacity < a->pollset_count + b->pollset_count) {
     a->pollset_capacity =
         GPR_MAX(2 * a->pollset_capacity, a->pollset_count + b->pollset_count);
-    a->pollsets =
-        gpr_realloc(a->pollsets, a->pollset_capacity * sizeof(*a->pollsets));
+    a->pollsets = (pollable **)gpr_realloc(
+        a->pollsets, a->pollset_capacity * sizeof(*a->pollsets));
   }
   memcpy(a->pollsets + a->pollset_count, b->pollsets,
          b->pollset_count * sizeof(*b->pollsets));
