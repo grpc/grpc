@@ -399,15 +399,16 @@ static double get_pid_controller_guess(grpc_exec_ctx* exec_ctx,
   if (!tfc->pid_controller_initialized) {
     tfc->last_pid_update = now;
     tfc->pid_controller_initialized = true;
-    grpc_pid_controller_init(
-        &tfc->pid_controller,
-        (grpc_pid_controller_args){.gain_p = 4,
-                                   .gain_i = 8,
-                                   .gain_d = 0,
-                                   .initial_control_value = target,
-                                   .min_control_value = -1,
-                                   .max_control_value = 25,
-                                   .integral_range = 10});
+    grpc_pid_controller_args args;
+    memset(&args, 0, sizeof(args));
+    args.gain_p = 4;
+    args.gain_i = 8;
+    args.gain_d = 0;
+    args.initial_control_value = target;
+    args.min_control_value = -1;
+    args.max_control_value = 25;
+    args.integral_range = 10;
+    grpc_pid_controller_init(&tfc->pid_controller, args);
     return pow(2, target);
   }
   double bdp_error = target - grpc_pid_controller_last(&tfc->pid_controller);
