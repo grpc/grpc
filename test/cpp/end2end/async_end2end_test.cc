@@ -1742,7 +1742,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_disable_blocking,
   GPR_ASSERT(!credentials_types.empty());
 
   messages.push_back("Hello");
-  for (int sz = 1; sz < test_big_limit; sz *= 2) {
+  for (int sz = 1; sz <= test_big_limit; sz *= 32) {
     grpc::string big_msg;
     for (int i = 0; i < sz * 1024; i++) {
       char c = 'a' + (i % 26);
