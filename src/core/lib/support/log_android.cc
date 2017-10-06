@@ -51,7 +51,7 @@ extern "C" void gpr_log(const char *file, int line, gpr_log_severity severity,
 }
 
 extern "C" void gpr_default_log(gpr_log_func_args *args) {
-  char *final_slash;
+  const char *final_slash;
   const char *display_file;
   char *output = NULL;
 
