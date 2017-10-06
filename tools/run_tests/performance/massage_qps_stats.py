@@ -74,6 +74,7 @@ def massage_qps_stats(scenario_result):
     stats["core_http2_initiate_write_due_to_transport_flow_control_unstalled"] = massage_qps_stats_helpers.counter(core_stats, "http2_initiate_write_due_to_transport_flow_control_unstalled")
     stats["core_http2_initiate_write_due_to_ping_response"] = massage_qps_stats_helpers.counter(core_stats, "http2_initiate_write_due_to_ping_response")
     stats["core_http2_initiate_write_due_to_force_rst_stream"] = massage_qps_stats_helpers.counter(core_stats, "http2_initiate_write_due_to_force_rst_stream")
+    stats["core_http2_spurious_writes_begun"] = massage_qps_stats_helpers.counter(core_stats, "http2_spurious_writes_begun")
     stats["core_hpack_recv_indexed"] = massage_qps_stats_helpers.counter(core_stats, "hpack_recv_indexed")
     stats["core_hpack_recv_lithdr_incidx"] = massage_qps_stats_helpers.counter(core_stats, "hpack_recv_lithdr_incidx")
     stats["core_hpack_recv_lithdr_incidx_v"] = massage_qps_stats_helpers.counter(core_stats, "hpack_recv_lithdr_incidx_v")

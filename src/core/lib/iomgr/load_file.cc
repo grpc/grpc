@@ -25,7 +25,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/support/block_annotate.h"
+#include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/support/string.h"
 
 grpc_error *grpc_load_file(const char *filename, int add_null_terminator,
@@ -73,6 +73,6 @@ end:
     GRPC_ERROR_UNREF(error);
     error = error_out;
   }
-  GRPC_SCHEDULING_END_BLOCKING_REGION;
+  GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX;
   return error;
 }

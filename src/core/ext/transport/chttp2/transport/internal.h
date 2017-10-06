@@ -66,12 +66,6 @@ typedef enum {
 } grpc_chttp2_write_state;
 
 typedef enum {
-  GRPC_CHTTP2_PING_ON_NEXT_WRITE = 0,
-  GRPC_CHTTP2_PING_BEFORE_TRANSPORT_WINDOW_UPDATE,
-  GRPC_CHTTP2_PING_TYPE_COUNT /* must be last */
-} grpc_chttp2_ping_type;
-
-typedef enum {
   GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY,
   GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT,
 } grpc_chttp2_optimization_target;
@@ -97,7 +91,6 @@ typedef enum {
   GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL,
   GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL,
   GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS,
-  GRPC_CHTTP2_INITIATE_WRITE_BDP_ESTIMATOR_PING,
   GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_SETTING,
   GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_UPDATE,
   GRPC_CHTTP2_INITIATE_WRITE_APPLICATION_PING,
@@ -118,19 +111,19 @@ typedef struct {
 typedef struct {
   int max_pings_without_data;
   int max_ping_strikes;
-  gpr_timespec min_sent_ping_interval_without_data;
-  gpr_timespec min_recv_ping_interval_without_data;
+  grpc_millis min_sent_ping_interval_without_data;
+  grpc_millis min_recv_ping_interval_without_data;
 } grpc_chttp2_repeated_ping_policy;
 
 typedef struct {
-  gpr_timespec last_ping_sent_time;
+  grpc_millis last_ping_sent_time;
   int pings_before_data_required;
   grpc_timer delayed_ping_timer;
   bool is_delayed_ping_timer_set;
 } grpc_chttp2_repeated_ping_state;
 
 typedef struct {
-  gpr_timespec last_ping_recv_time;
+  grpc_millis last_ping_recv_time;
   int ping_strikes;
 } grpc_chttp2_server_ping_recv_state;
 
@@ -269,6 +262,8 @@ typedef struct {
    * to send WINDOW_UPDATE frames. */
   int64_t announced_window;
 
+  int32_t target_initial_window_size;
+
   /** should we probe bdp? */
   bool enable_bdp_probe;
 
@@ -276,8 +271,9 @@ typedef struct {
   grpc_bdp_estimator bdp_estimator;
 
   /* pid controller */
+  bool pid_controller_initialized;
   grpc_pid_controller pid_controller;
-  gpr_timespec last_pid_update;
+  grpc_millis last_pid_update;
 
   // pointer back to transport for tracing
   const grpc_chttp2_transport *t;
@@ -374,7 +370,7 @@ struct grpc_chttp2_transport {
   uint32_t last_new_stream_id;
 
   /** ping queues for various ping insertion points */
-  grpc_chttp2_ping_queue ping_queues[GRPC_CHTTP2_PING_TYPE_COUNT];
+  grpc_chttp2_ping_queue ping_queue;
   grpc_chttp2_repeated_ping_policy ping_policy;
   grpc_chttp2_repeated_ping_state ping_state;
   uint64_t ping_ctr; /* unique id for pings */
@@ -459,9 +455,9 @@ struct grpc_chttp2_transport {
   /** watchdog to kill the transport when waiting for the keepalive ping */
   grpc_timer keepalive_watchdog_timer;
   /** time duration in between pings */
-  gpr_timespec keepalive_time;
+  grpc_millis keepalive_time;
   /** grace period for a ping to complete before watchdog kicks in */
-  gpr_timespec keepalive_timeout;
+  grpc_millis keepalive_timeout;
   /** if keepalive pings are allowed when there's no outstanding streams */
   bool keepalive_permit_without_calls;
   /** keep-alive state machine state */
@@ -570,7 +566,7 @@ struct grpc_chttp2_stream {
   grpc_error *byte_stream_error; /* protected by t combiner */
   bool received_last_frame;      /* protected by t combiner */
 
-  gpr_timespec deadline;
+  grpc_millis deadline;
 
   /** saw some stream level error */
   grpc_error *forced_close_error;
@@ -711,7 +707,7 @@ grpc_error *grpc_chttp2_flowctl_recv_data(grpc_chttp2_transport_flowctl *tfc,
 // returns an announce if we should send a transport update to our peer,
 // else returns zero
 uint32_t grpc_chttp2_flowctl_maybe_send_transport_update(
-    grpc_chttp2_transport_flowctl *tfc);
+    grpc_chttp2_transport_flowctl *tfc, bool writing_anyway);
 
 // returns an announce if we should send a stream update to our peer, else
 // returns zero
@@ -758,10 +754,8 @@ typedef struct {
 // Reads the flow control data and returns and actionable struct that will tell
 // chttp2 exactly what it needs to do
 grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
-    grpc_chttp2_transport_flowctl *tfc, grpc_chttp2_stream_flowctl *sfc);
-
-grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_bdp_action(
-    grpc_chttp2_transport_flowctl *tfc);
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_flowctl *tfc,
+    grpc_chttp2_stream_flowctl *sfc);
 
 // Takes in a flow control action and performs all the needed operations.
 void grpc_chttp2_act_on_flowctl_action(grpc_exec_ctx *exec_ctx,
