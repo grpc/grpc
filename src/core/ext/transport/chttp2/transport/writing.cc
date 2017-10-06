@@ -418,27 +418,27 @@ class StreamWriteContext {
     // https://github.com/grpc/proposal/blob/master/A6-client-retries.md#when-retries-are-valid
     if (!t_->is_client && s_->fetching_send_message == nullptr &&
         s_->flow_controlled_buffer.length == 0 &&
-        s_->send_trailing_metadata == nullptr &&
+        s_->compressed_data_buffer.length == 0 &&
+        s_->send_trailing_metadata != nullptr &&
         is_default_initial_metadata(s_->send_initial_metadata)) {
       ConvertInitialMetadataToTrailingMetadata();
-      return;  // early out
+    } else {
+      grpc_encode_header_options hopt = {
+          s_->id,  // stream_id
+          false,   // is_eof
+          t_->settings[GRPC_PEER_SETTINGS]
+                      [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
+              0,  // use_true_binary_metadata
+          t_->settings[GRPC_PEER_SETTINGS]
+                      [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],  // max_frame_size
+          &s_->stats.outgoing                                 // stats
+      };
+      grpc_chttp2_encode_header(exec_ctx, &t_->hpack_compressor, NULL, 0,
+                                s_->send_initial_metadata, &hopt, &t_->outbuf);
+      write_context_->ResetPingRecvClock();
+      write_context_->IncInitialMetadataWrites();
     }
 
-    grpc_encode_header_options hopt = {
-        s_->id,  // stream_id
-        false,   // is_eof
-        t_->settings[GRPC_PEER_SETTINGS]
-                    [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
-            0,  // use_true_binary_metadata
-        t_->settings[GRPC_PEER_SETTINGS]
-                    [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],  // max_frame_size
-        &s_->stats.outgoing                                 // stats
-    };
-    grpc_chttp2_encode_header(exec_ctx, &t_->hpack_compressor, NULL, 0,
-                              s_->send_initial_metadata, &hopt, &t_->outbuf);
-    stream_became_writable_ = true;
-    write_context_->ResetPingRecvClock();
-    write_context_->IncInitialMetadataWrites();
     s_->send_initial_metadata = NULL;
     s_->sent_initial_metadata = true;
     sent_initial_metadata_ = true;
@@ -532,6 +532,7 @@ class StreamWriteContext {
                                 s_->send_trailing_metadata, &hopt, &t_->outbuf);
     }
     write_context_->IncTrailingMetadataWrites();
+    write_context_->ResetPingRecvClock();
     SentLastFrame(exec_ctx);
 
     write_context_->NoteScheduledResults();
