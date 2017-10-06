@@ -31,7 +31,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 
-#define DEFAULT_POLLING_INTERVAL_MS 500
+#define DEFAULT_POLL_INTERVAL_MS 500
 
 typedef struct backup_poller {
   grpc_timer polling_timer;
@@ -46,14 +46,18 @@ typedef struct backup_poller {
 static gpr_once g_once = GPR_ONCE_INIT;
 static gpr_mu g_poller_mu;
 static backup_poller* g_poller = NULL;
+static int g_poll_interval_ms = DEFAULT_POLL_INTERVAL_MS;
 
-static void init_g_poller_mu() { gpr_mu_init(&g_poller_mu); }
-
-static bool is_disabled() {
-  char* env = gpr_getenv("GRPC_DISABLE_CHANNEL_backup_poller");
-  bool disabled = gpr_is_true(env);
+static void init_g_poller_mu() {
+  gpr_mu_init(&g_poller_mu);
+  char* env = gpr_getenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS");
+  if (env != NULL) {
+    int poll_interval_ms = gpr_parse_nonnegative_int(env);
+    if (poll_interval_ms != -1) {
+      g_poll_interval_ms = poll_interval_ms;
+    }
+  }
   gpr_free(env);
-  return disabled;
 }
 
 static bool backup_poller_shutdown_unref(grpc_exec_ctx* exec_ctx,
@@ -103,14 +107,15 @@ static void run_poller(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   GRPC_LOG_IF_ERROR("Run client channel backup poller", err);
   grpc_timer_init(
       exec_ctx, &p->polling_timer,
-      gpr_time_add(
-          now, gpr_time_from_millis(DEFAULT_POLLING_INTERVAL_MS, GPR_TIMESPAN)),
+      gpr_time_add(now, gpr_time_from_millis(g_poll_interval_ms, GPR_TIMESPAN)),
       &p->run_poller_closure, now);
 }
 
 void grpc_client_channel_start_backup_polling(
     grpc_exec_ctx* exec_ctx, grpc_pollset_set* interested_parties) {
-  if (is_disabled()) return;
+  if (g_poll_interval_ms == 0) {
+    return;
+  }
   gpr_once_init(&g_once, init_g_poller_mu);
   gpr_mu_lock(&g_poller_mu);
   if (g_poller == NULL) {
@@ -123,11 +128,10 @@ void grpc_client_channel_start_backup_polling(
     GRPC_CLOSURE_INIT(&g_poller->run_poller_closure, run_poller, g_poller,
                       grpc_schedule_on_exec_ctx);
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-    grpc_timer_init(
-        exec_ctx, &g_poller->polling_timer,
-        gpr_time_add(now, gpr_time_from_millis(DEFAULT_POLLING_INTERVAL_MS,
-                                               GPR_TIMESPAN)),
-        &g_poller->run_poller_closure, now);
+    grpc_timer_init(exec_ctx, &g_poller->polling_timer,
+                    gpr_time_add(now, gpr_time_from_millis(g_poll_interval_ms,
+                                                           GPR_TIMESPAN)),
+                    &g_poller->run_poller_closure, now);
   }
   gpr_ref(&g_poller->refs);
   gpr_mu_unlock(&g_poller_mu);
@@ -137,7 +141,9 @@ void grpc_client_channel_start_backup_polling(
 
 void grpc_client_channel_stop_backup_polling(
     grpc_exec_ctx* exec_ctx, grpc_pollset_set* interested_parties) {
-  if (is_disabled()) return;
+  if (g_poll_interval_ms == 0) {
+    return;
+  }
   grpc_pollset_set_del_pollset(exec_ctx, interested_parties, g_poller->pollset);
   g_poller_unref(exec_ctx);
 }
