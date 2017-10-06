@@ -19,7 +19,7 @@ describe GRPC::Core::CompressionOptions do
   # according to what the core lib provides.
 
   # Names of supported compression algorithms
-  ALGORITHMS = [:identity, 'message/deflate', 'message/gzip']
+  ALGORITHMS = [:identity, :deflate, :gzip]
 
   # Names of valid supported compression levels
   COMPRESS_LEVELS = [:none, :low, :medium, :high]
@@ -54,10 +54,10 @@ describe GRPC::Core::CompressionOptions do
       options = GRPC::Core::CompressionOptions.new(
         default_algorithm: :identity,
         default_level: :none,
-        disabled_algorithms: ['message/gzip', 'message/deflate']
+        disabled_algorithms: [:gzip, :deflate]
       )
 
-      ['message/gzip', 'message/deflate'].each do |algorithm|
+      [:gzip, :deflate].each do |algorithm|
         expect(options.algorithm_enabled?(algorithm)).to be false
         expect(options.disabled_algorithms.include?(algorithm)).to be true
       end
@@ -69,16 +69,16 @@ describe GRPC::Core::CompressionOptions do
 
     it 'works when all optional args have been set' do
       options = GRPC::Core::CompressionOptions.new(
-        default_algorithm: 'message/gzip',
+        default_algorithm: :gzip,
         default_level: :low,
-        disabled_algorithms: ['message/deflate']
+        disabled_algorithms: [:deflate]
       )
 
-      expect(options.algorithm_enabled?('message/deflate')).to be false
-      expect(options.algorithm_enabled?('message/gzip')).to be true
-      expect(options.disabled_algorithms).to eq(['message/deflate'])
+      expect(options.algorithm_enabled?(:deflate)).to be false
+      expect(options.algorithm_enabled?(:gzip)).to be true
+      expect(options.disabled_algorithms).to eq([:deflate])
 
-      expect(options.default_algorithm).to be('message/gzip')
+      expect(options.default_algorithm).to be(:gzip)
       expect(options.default_level).to be(:low)
       expect(options.to_hash).to be_instance_of(Hash)
     end
@@ -102,12 +102,12 @@ describe GRPC::Core::CompressionOptions do
 
   describe '#new with bad parameters' do
     it 'should fail with more than one parameter' do
-      blk = proc { GRPC::Core::CompressionOptions.new('message/gzip', :none) }
+      blk = proc { GRPC::Core::CompressionOptions.new(:gzip, :none) }
       expect { blk.call }.to raise_error
     end
 
     it 'should fail with a non-hash parameter' do
-      blk = proc { GRPC::Core::CompressionOptions.new('message/gzip') }
+      blk = proc { GRPC::Core::CompressionOptions.new(:gzip) }
       expect { blk.call }.to raise_error
     end
   end
@@ -137,7 +137,7 @@ describe GRPC::Core::CompressionOptions do
     [:none, :any, 'gzip', Object.new, 1].each do |name|
       it "should fail for parameter ${name} of class #{name.class}" do
         options = GRPC::Core::CompressionOptions.new(
-          disabled_algorithms: ['message/gzip'])
+          disabled_algorithms: [:gzip])
 
         blk = proc do
           options.algorithm_enabled?(name)
