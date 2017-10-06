@@ -39,7 +39,7 @@ static android_LogPriority severity_to_log_priority(gpr_log_severity severity) {
   return ANDROID_LOG_DEFAULT;
 }
 
-void gpr_log(const char *file, int line, gpr_log_severity severity,
+extern "C" void gpr_log(const char *file, int line, gpr_log_severity severity,
              const char *format, ...) {
   char *message = NULL;
   va_list args;
