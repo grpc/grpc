@@ -1282,12 +1282,12 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     srv_ctx.AsyncNotifyWhenDone(tag(11));
     service_->RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
                                    tag(2));
-    std::thread t1([this, &cli_cq]{
-	Verifier(GetParam().disable_blocking).Expect(1, true).Verify(&cli_cq);
-      });
-    std::thread t2([this]{
-	Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
-      });
+    std::thread t1([this, &cli_cq] {
+      Verifier(GetParam().disable_blocking).Expect(1, true).Verify(&cli_cq);
+    });
+    std::thread t2([this] {
+      Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
+    });
     t1.join();
     t2.join();
 
@@ -1442,12 +1442,12 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
                                     cq_.get(), cq_.get(), tag(2));
 
-    std::thread t1([this, &cli_cq]{
-	Verifier(GetParam().disable_blocking).Expect(1, true).Verify(&cli_cq);
-      });
-    std::thread t2([this]{
-	Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
-      });
+    std::thread t1([this, &cli_cq] {
+      Verifier(GetParam().disable_blocking).Expect(1, true).Verify(&cli_cq);
+    });
+    std::thread t2([this] {
+      Verifier(GetParam().disable_blocking).Expect(2, true).Verify(cq_.get());
+    });
     EXPECT_EQ(send_request.message(), recv_request.message());
 
     bool expected_cq_result = true;
