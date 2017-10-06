@@ -16,18 +16,19 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CHANNEL_CONNECTIVITY_INTERNAL_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CHANNEL_CONNECTIVITY_INTERNAL_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H
 
 #include <grpc/grpc.h>
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-void grpc_channel_watch_connectivity_state_internal(
-    grpc_exec_ctx *exec_ctx, grpc_channel_element *client_channel_elem,
-    grpc_channel_stack *channel_stack,
-    grpc_connectivity_state last_observed_state, gpr_timespec deadline,
-    grpc_completion_queue *cq, void *tag);
+/* Constantly watches client channel connectivity status to reconnect a
+ * transiently disconnected channel */
+void grpc_client_channel_start_backup_polling(
+    grpc_exec_ctx* exec_ctx, grpc_pollset_set* interested_parties);
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CHANNEL_CONNECTIVITY_INTERNAL_H \
-        */
+void grpc_client_channel_stop_backup_polling(
+    grpc_exec_ctx* exec_ctx, grpc_pollset_set* interested_parties);
+
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H */

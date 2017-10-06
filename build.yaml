@@ -463,10 +463,9 @@ filegroups:
   - grpc_trace_headers
 - name: grpc_client_channel
   headers:
-  - src/core/ext/filters/client_channel/channel_connectivity_internal.h
+  - src/core/ext/filters/client_channel/backup_poller.h
   - src/core/ext/filters/client_channel/client_channel.h
   - src/core/ext/filters/client_channel/client_channel_factory.h
-  - src/core/ext/filters/client_channel/connectivity_watcher.h
   - src/core/ext/filters/client_channel/connector.h
   - src/core/ext/filters/client_channel/http_connect_handshaker.h
   - src/core/ext/filters/client_channel/http_proxy.h
@@ -484,12 +483,11 @@ filegroups:
   - src/core/ext/filters/client_channel/subchannel_index.h
   - src/core/ext/filters/client_channel/uri_parser.h
   src:
+  - src/core/ext/filters/client_channel/backup_poller.cc
   - src/core/ext/filters/client_channel/channel_connectivity.cc
-  - src/core/ext/filters/client_channel/channel_connectivity_internal.cc
   - src/core/ext/filters/client_channel/client_channel.cc
   - src/core/ext/filters/client_channel/client_channel_factory.cc
   - src/core/ext/filters/client_channel/client_channel_plugin.cc
-  - src/core/ext/filters/client_channel/connectivity_watcher.cc
   - src/core/ext/filters/client_channel/connector.cc
   - src/core/ext/filters/client_channel/http_connect_handshaker.cc
   - src/core/ext/filters/client_channel/http_proxy.cc
