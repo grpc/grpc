@@ -105,8 +105,9 @@ static void test_jitter_backoff(void) {
   const int64_t initial_timeout = 500;
   const double jitter = 0.1;
   grpc_backoff backoff;
-  grpc_backoff_init(&backoff, initial_timeout, 1.0 /* multiplier */, jitter,
-                    100 /* min timeout */, 1000 /* max timeout */);
+  grpc_backoff_init(&backoff, (grpc_millis)initial_timeout,
+                    1.0 /* multiplier */, jitter, 100 /* min timeout */,
+                    1000 /* max timeout */);
 
   backoff.rng_state = 0;  // force consistent PRNG
 
