@@ -119,7 +119,8 @@ void test_succeeds(void) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                          grpc_timeout_seconds_to_deadline(5))));
+                          grpc_timespec_to_millis_round_up(
+                              grpc_timeout_seconds_to_deadline(5)))));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_flush(&exec_ctx);
     gpr_mu_lock(g_mu);
@@ -162,7 +163,7 @@ void test_fails(void) {
     grpc_pollset_worker *worker = NULL;
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     grpc_millis polling_deadline = test_deadline();
-    switch (grpc_timer_check(&exec_ctx, now, &polling_deadline)) {
+    switch (grpc_timer_check(&exec_ctx, &polling_deadline)) {
       case GRPC_TIMERS_FIRED:
         break;
       case GRPC_TIMERS_NOT_CHECKED:

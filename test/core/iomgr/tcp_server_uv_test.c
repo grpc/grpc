@@ -189,7 +189,8 @@ static void close_cb(uv_handle_t *handle) { gpr_free(handle); }
 
 static void tcp_connect(grpc_exec_ctx *exec_ctx, const struct sockaddr *remote,
                         socklen_t remote_len, on_connect_result *result) {
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
+  grpc_millis deadline =
+      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
   uv_tcp_t *client_handle = gpr_malloc(sizeof(uv_tcp_t));
   uv_connect_t *req = gpr_malloc(sizeof(uv_connect_t));
   int nconnects_before;
