@@ -382,6 +382,11 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_http2_spurious_writes_begun", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_hpack_recv_indexed", 
         "type": "INTEGER"
       }, 
@@ -538,16 +543,6 @@
       {
         "mode": "NULLABLE", 
         "name": "core_executor_push_retries", 
-        "type": "INTEGER"
-      }, 
-      {
-        "mode": "NULLABLE", 
-        "name": "core_executor_threads_created", 
-        "type": "INTEGER"
-      }, 
-      {
-        "mode": "NULLABLE", 
-        "name": "core_executor_threads_used", 
         "type": "INTEGER"
       }, 
       {
@@ -858,31 +853,6 @@
       {
         "mode": "NULLABLE", 
         "name": "core_http2_send_flowctl_per_write_99p", 
-        "type": "FLOAT"
-      }, 
-      {
-        "mode": "NULLABLE", 
-        "name": "core_executor_closures_per_wakeup", 
-        "type": "STRING"
-      }, 
-      {
-        "mode": "NULLABLE", 
-        "name": "core_executor_closures_per_wakeup_bkts", 
-        "type": "STRING"
-      }, 
-      {
-        "mode": "NULLABLE", 
-        "name": "core_executor_closures_per_wakeup_50p", 
-        "type": "FLOAT"
-      }, 
-      {
-        "mode": "NULLABLE", 
-        "name": "core_executor_closures_per_wakeup_95p", 
-        "type": "FLOAT"
-      }, 
-      {
-        "mode": "NULLABLE", 
-        "name": "core_executor_closures_per_wakeup_99p", 
         "type": "FLOAT"
       }, 
       {
@@ -1209,6 +1179,11 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_http2_spurious_writes_begun", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_hpack_recv_indexed", 
         "type": "INTEGER"
       }, 
@@ -1365,16 +1340,6 @@
       {
         "mode": "NULLABLE", 
         "name": "core_executor_push_retries", 
-        "type": "INTEGER"
-      }, 
-      {
-        "mode": "NULLABLE", 
-        "name": "core_executor_threads_created", 
-        "type": "INTEGER"
-      }, 
-      {
-        "mode": "NULLABLE", 
-        "name": "core_executor_threads_used", 
         "type": "INTEGER"
       }, 
       {
@@ -1685,31 +1650,6 @@
       {
         "mode": "NULLABLE", 
         "name": "core_http2_send_flowctl_per_write_99p", 
-        "type": "FLOAT"
-      }, 
-      {
-        "mode": "NULLABLE", 
-        "name": "core_executor_closures_per_wakeup", 
-        "type": "STRING"
-      }, 
-      {
-        "mode": "NULLABLE", 
-        "name": "core_executor_closures_per_wakeup_bkts", 
-        "type": "STRING"
-      }, 
-      {
-        "mode": "NULLABLE", 
-        "name": "core_executor_closures_per_wakeup_50p", 
-        "type": "FLOAT"
-      }, 
-      {
-        "mode": "NULLABLE", 
-        "name": "core_executor_closures_per_wakeup_95p", 
-        "type": "FLOAT"
-      }, 
-      {
-        "mode": "NULLABLE", 
-        "name": "core_executor_closures_per_wakeup_99p", 
         "type": "FLOAT"
       }, 
       {

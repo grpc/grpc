@@ -22,6 +22,10 @@
 #include "src/core/ext/filters/client_channel/resolver_factory.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void grpc_resolver_registry_init();
 void grpc_resolver_registry_shutdown(void);
 
@@ -65,5 +69,9 @@ char *grpc_get_default_authority(grpc_exec_ctx *exec_ctx, const char *target);
     default prefix if needed. */
 char *grpc_resolver_factory_add_default_prefix_if_needed(
     grpc_exec_ctx *exec_ctx, const char *target);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_REGISTRY_H */

@@ -5,6 +5,21 @@ This directory contains scripts that facilitate building and running gRPC tests 
 The setup builds gRPC docker images for each language/runtime and upload it to Google Container Registry (GCR). These images, encapsulating gRPC stack
 from specific releases/tag, are used to test version compatiblity between gRPC release versions.
 
+## Step-by-step instructions for adding a new release to compatibility test
+We have continuous nightly test setup to test gRPC backward compatibility between old clients and latest server.  When a gRPC developer creates a new gRPC release, s/he is also responsible to add the just-released gRPC client to the nightly test.  The steps are:
+- Add (or update) an entry in ./client_matrix.py file to reference the github tag for the release.
+- Build new client docker image(s).  For example, for java release `v1.9.9`, do
+  - `tools/interop_matrix/create_matrix_images.py --git_checkout --release=v1.9.9 --language=java`
+- Verify that the new docker image was built successfully and uploaded to GCR.  For example,
+  - `gcloud beta container images list-tags gcr.io/grpc-testing/grpc_interop_java_oracle8`
+  - should show an image entry with tag `v1.9.9`.
+- Verify the just-created docker client image would pass backward compatibility test (it should).  For example,
+  - `gcloud docker -- pull gcr.io/grpc-testing/grpc_interop_java_oracle8:v1.9.9` followed by
+  - `docker_image=gcr.io/grpc-testing/grpc_interop_java_oracle8:v1.9.9 ./testcases/java__master`
+- git commit the change and merge it to upstream/master.
+- (Optional) clean up the tmp directory to where grpc source is cloned at `/export/hda3/tmp/grpc_matrix/`.
+For more details on each step, refer to sections below.
+
 ## Instructions for creating GCR images
 - Edit  `./client_matrix.py` to include desired gRPC release.
 - Run `tools/interop_matrix/create_matrix_images.py`.  Useful options:
@@ -45,3 +60,4 @@ For example:
 
 Note:
 - File path starting with `tools/` or `template/` are relative to the grpc repo root dir.  File path starting with `./` are relative to current directory (`tools/interop_matrix`).
+- Creating and referencing images in GCR require read and write permission to Google Container Registry path gcr.io/grpc-testing.

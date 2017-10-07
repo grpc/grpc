@@ -102,6 +102,15 @@ def upload_results_to_bq(resultset, bq_table, args, platform):
       test_results['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 
       row = big_query_utils.make_row(str(uuid.uuid4()), test_results)
-      if not big_query_utils.insert_rows(bq, _PROJECT_ID, _DATASET_ID, bq_table, [row]):
-        print('Error uploading result to bigquery.')
-        sys.exit(1)
+
+      # TODO(jtattermusch): rows are inserted one by one, very inefficient
+      max_retries = 3
+      for attempt in range(max_retries):
+        if big_query_utils.insert_rows(bq, _PROJECT_ID, _DATASET_ID, bq_table, [row]):
+          break
+        else:
+          if attempt < max_retries - 1:
+            print('Error uploading result to bigquery, will retry.')
+          else:
+            print('Error uploading result to bigquery, all attempts failed.')
+            sys.exit(1)

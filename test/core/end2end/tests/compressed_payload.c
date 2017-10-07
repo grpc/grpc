@@ -193,6 +193,7 @@ static void request_for_disabled_algorithm(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(101), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
 
   op = ops;
@@ -221,7 +222,6 @@ static void request_for_disabled_algorithm(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(103), true);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
 
   /* call was cancelled (closed) ... */

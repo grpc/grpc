@@ -37,6 +37,7 @@ typedef bool (*grpc_bad_client_client_stream_validator)(
     grpc_slice_buffer *incoming);
 
 #define GRPC_BAD_CLIENT_DISCONNECT 1
+#define GRPC_BAD_CLIENT_LARGE_REQUEST 2
 
 /* Test runner.
 

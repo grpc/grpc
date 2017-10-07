@@ -29,6 +29,10 @@
 // Channel arg key for grpc_lb_addresses.
 #define GRPC_ARG_LB_ADDRESSES "grpc.lb_addresses"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct grpc_lb_policy_factory grpc_lb_policy_factory;
 typedef struct grpc_lb_policy_factory_vtable grpc_lb_policy_factory_vtable;
 
@@ -73,7 +77,7 @@ grpc_lb_addresses *grpc_lb_addresses_copy(const grpc_lb_addresses *addresses);
  * \a address is a socket address of length \a address_len.
  * Takes ownership of \a balancer_name. */
 void grpc_lb_addresses_set_address(grpc_lb_addresses *addresses, size_t index,
-                                   void *address, size_t address_len,
+                                   const void *address, size_t address_len,
                                    bool is_balancer, const char *balancer_name,
                                    void *user_data);
 
@@ -129,5 +133,9 @@ void grpc_lb_policy_factory_unref(grpc_lb_policy_factory *factory);
 grpc_lb_policy *grpc_lb_policy_factory_create_lb_policy(
     grpc_exec_ctx *exec_ctx, grpc_lb_policy_factory *factory,
     grpc_lb_policy_args *args);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_FACTORY_H */

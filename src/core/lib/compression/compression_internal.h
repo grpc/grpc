@@ -21,6 +21,10 @@
 
 #include <grpc/impl/codegen/compression_types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
   GRPC_MESSAGE_COMPRESS_NONE = 0,
   GRPC_MESSAGE_COMPRESS_DEFLATE,
@@ -106,5 +110,9 @@ grpc_stream_compression_algorithm grpc_stream_compression_algorithm_for_level(
 
 int grpc_stream_compression_algorithm_parse(
     grpc_slice value, grpc_stream_compression_algorithm *algorithm);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H */

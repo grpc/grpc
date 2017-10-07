@@ -29,7 +29,7 @@ _SERIALIZED_RESPONSE = b'\x49\x50\x51'
 _REQUEST_SERIALIZER = lambda unused_request: _SERIALIZED_REQUEST
 _REQUEST_DESERIALIZER = lambda unused_serialized_request: object()
 _RESPONSE_SERIALIZER = lambda unused_response: _SERIALIZED_RESPONSE
-_RESPONSE_DESERIALIZER = lambda unused_serialized_resopnse: object()
+_RESPONSE_DESERIALIZER = lambda unused_serialized_response: object()
 
 _SERVICE = 'test.TestService'
 _UNARY_UNARY = 'UnaryUnary'

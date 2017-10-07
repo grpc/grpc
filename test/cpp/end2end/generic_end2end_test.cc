@@ -145,7 +145,7 @@ class GenericEnd2endTest : public ::testing::Test {
 
       if (check_deadline) {
         EXPECT_TRUE(gpr_time_similar(deadline, srv_ctx.raw_deadline(),
-                                     gpr_time_from_millis(100, GPR_TIMESPAN)));
+                                     gpr_time_from_millis(1000, GPR_TIMESPAN)));
       }
 
       ByteBuffer recv_buffer;

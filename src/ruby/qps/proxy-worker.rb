@@ -31,8 +31,9 @@ require 'src/proto/grpc/testing/services_services_pb'
 require 'src/proto/grpc/testing/proxy-service_services_pb'
 
 class ProxyBenchmarkClientServiceImpl < Grpc::Testing::ProxyClientService::Service
-  def initialize(port)
+  def initialize(port, c_ext)
     @mytarget = "localhost:" + port.to_s
+    @use_c_ext = c_ext
   end
   def setup(config)
     @config = config
@@ -41,7 +42,13 @@ class ProxyBenchmarkClientServiceImpl < Grpc::Testing::ProxyClientService::Servi
     @histogram = Histogram.new(@histres, @histmax)
     @start_time = Time.now
     # TODO(vjpai): Support multiple client channels by spawning off a PHP client per channel
-    command = "php -d extension=" + File.expand_path(File.dirname(__FILE__)) + "/../../php/ext/grpc/modules/grpc.so " + File.expand_path(File.dirname(__FILE__)) + "/../../php/tests/qps/client.php " + @mytarget
+    if @use_c_ext
+      puts "Use protobuf c extension"
+      command = "php -d extension=" + File.expand_path(File.dirname(__FILE__)) + "/../../php/tests/qps/vendor/google/protobuf/php/ext/google/protobuf/modules/protobuf.so " + "-d extension=" + File.expand_path(File.dirname(__FILE__)) + "/../../php/ext/grpc/modules/grpc.so " + File.expand_path(File.dirname(__FILE__)) + "/../../php/tests/qps/client.php " + @mytarget
+    else
+      puts "Use protobuf php extension"
+      command = "php -d extension=" + File.expand_path(File.dirname(__FILE__)) + "/../../php/ext/grpc/modules/grpc.so " + File.expand_path(File.dirname(__FILE__)) + "/../../php/tests/qps/client.php " + @mytarget
+    end	
     puts "Starting command: " + command
     @php_pid = spawn(command)
   end
@@ -128,6 +135,9 @@ def proxymain
     opts.on('--driver_port PORT', '<port>') do |v|
       options['driver_port'] = v
     end
+    opts.on("-c", "--[no-]c_proto_ext", "Use protobuf C-extention") do |c|
+      options[:c_ext] = c
+    end
   end.parse!
 
   # Configure any errors with client or server child threads to surface
@@ -136,7 +146,7 @@ def proxymain
   s = GRPC::RpcServer.new
   port = s.add_http2_port("0.0.0.0:" + options['driver_port'].to_s,
                           :this_port_is_insecure)
-  bmc = ProxyBenchmarkClientServiceImpl.new(port)
+  bmc = ProxyBenchmarkClientServiceImpl.new(port, options[:c_ext])
   s.handle(bmc)
   s.handle(ProxyWorkerServiceImpl.new(s, bmc))
   s.run

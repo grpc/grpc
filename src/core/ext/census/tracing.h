@@ -25,6 +25,10 @@
 #include "src/core/ext/census/trace_label.h"
 #include "src/core/ext/census/trace_status.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* This is the low level tracing API that other languages will interface with.
    This is not intended to be accessed by the end-user, therefore it has been
    designed with performance in mind rather than ease of use. */
@@ -105,5 +109,9 @@ first EndSpan call for a given Span will be recorded, and implementations are
 free to ignore all further calls using the Span. EndSpanOptions can
 optionally be NULL. */
 void trace_end_span(const trace_status *status, trace_span_context *span_ctxt);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_CENSUS_TRACING_H */

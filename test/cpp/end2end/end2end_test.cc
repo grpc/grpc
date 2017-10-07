@@ -198,10 +198,7 @@ class TestScenario {
   void Log() const;
   bool use_proxy;
   bool inproc;
-  // Although the below grpc::string is logically const, we can't declare
-  // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
-  // manage vector insertion using a copy constructor
-  grpc::string credentials_type;
+  const grpc::string credentials_type;
 };
 
 static std::ostream& operator<<(std::ostream& out,
@@ -1671,6 +1668,34 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginFailure) {
   EXPECT_EQ(s.error_message(),
             grpc::string("Getting metadata from plugin failed with error: ") +
                 kTestCredsPluginErrorMsg);
+}
+
+TEST_P(SecureEnd2endTest, CompositeCallCreds) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  const char kMetadataKey1[] = "call-creds-key1";
+  const char kMetadataKey2[] = "call-creds-key2";
+  const char kMetadataVal1[] = "call-creds-val1";
+  const char kMetadataVal2[] = "call-creds-val2";
+
+  context.set_credentials(CompositeCallCredentials(
+      MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
+          new TestMetadataCredentialsPlugin(kMetadataKey1, kMetadataVal1, true,
+                                            true))),
+      MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
+          new TestMetadataCredentialsPlugin(kMetadataKey2, kMetadataVal2, true,
+                                            true)))));
+  request.set_message("Hello");
+  request.mutable_param()->set_echo_metadata(true);
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(MetadataContains(context.GetServerTrailingMetadata(),
+                               kMetadataKey1, kMetadataVal1));
+  EXPECT_TRUE(MetadataContains(context.GetServerTrailingMetadata(),
+                               kMetadataKey2, kMetadataVal2));
 }
 
 TEST_P(SecureEnd2endTest, ClientAuthContext) {
