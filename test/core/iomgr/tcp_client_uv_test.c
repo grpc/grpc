@@ -110,7 +110,7 @@ void test_succeeds(void) {
                                 (int *)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, NULL, grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, NULL, NULL,
-                          &resolved_addr, gpr_inf_future(GPR_CLOCK_REALTIME));
+                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
 
   gpr_mu_lock(g_mu);
 
@@ -154,7 +154,7 @@ void test_fails(void) {
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, NULL, grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, NULL, NULL,
-                          &resolved_addr, gpr_inf_future(GPR_CLOCK_REALTIME));
+                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
 
   gpr_mu_lock(g_mu);
 
