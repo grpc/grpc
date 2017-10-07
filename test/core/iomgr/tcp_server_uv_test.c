@@ -206,8 +206,7 @@ static void tcp_connect(grpc_exec_ctx *exec_ctx, const struct sockaddr *remote,
     grpc_pollset_worker *worker = NULL;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
-        grpc_pollset_work(exec_ctx, g_pollset, &worker,
-                          gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
+        grpc_pollset_work(exec_ctx, g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(exec_ctx);
     gpr_mu_lock(g_mu);
