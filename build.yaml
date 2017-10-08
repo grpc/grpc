@@ -2271,6 +2271,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: gpr_spinlock_test
   cpu_cost: 3
   build: test
