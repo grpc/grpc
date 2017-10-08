@@ -13,11 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source ~/.rvm/scripts/rvm
 set -ex
 
 cd $(dirname $0)/../../..
+CONFIG=${CONFIG:-opt}
+python tools/run_tests/run_tests.py -l php7 -c $CONFIG --build_only -j 8
 
-# The proxy worker for PHP is implemented in Ruby
-ruby src/ruby/qps/proxy-worker.rb $@
+# Set up all dependences needed for PHP QPS test
+cd src/php/tests/qps
+composer install
+# Install protobuf C-extension for php
+cd vendor/google/protobuf/php/ext/google/protobuf
+phpize
+./configure
+make
 

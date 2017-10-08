@@ -2,7 +2,7 @@
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
-// Copyright 2017 gRPC authors.
+// Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+// An integration test service that covers all the method signature permutations
+// of unary/streaming requests/responses.
 namespace Grpc\Testing;
 
 /**
  */
-class ProxyClientServiceClient extends \Grpc\BaseStub {
+class ReportQpsScenarioServiceClient extends \Grpc\BaseStub {
 
     /**
      * @param string $hostname hostname
@@ -32,35 +34,16 @@ class ProxyClientServiceClient extends \Grpc\BaseStub {
     }
 
     /**
-     * @param \Grpc\Testing\Void $argument input argument
+     * Report results of a QPS test benchmark scenario.
+     * @param \Grpc\Testing\ScenarioResult $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
      */
-    public function GetConfig(\Grpc\Testing\Void $argument,
+    public function ReportScenario(\Grpc\Testing\ScenarioResult $argument,
       $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.ProxyClientService/GetConfig',
+        return $this->_simpleRequest('/grpc.testing.ReportQpsScenarioService/ReportScenario',
         $argument,
-        ['\Grpc\Testing\ClientConfig', 'decode'],
-        $metadata, $options);
-    }
-
-    /**
-     * @param array $metadata metadata
-     * @param array $options call options
-     */
-    public function ReportTime($metadata = [], $options = []) {
-        return $this->_clientStreamRequest('/grpc.testing.ProxyClientService/ReportTime',
-        ['\Grpc\Testing\Void','decode'],
-        $metadata, $options);
-    }
-
-    /**
-     * @param array $metadata metadata
-     * @param array $options call options
-     */
-    public function ReportHist($metadata = [], $options = []) {
-        return $this->_clientStreamRequest('/grpc.testing.ProxyClientService/ReportHist',
-        ['\Grpc\Testing\Void','decode'],
+        ['\Grpc\Testing\Void', 'decode'],
         $metadata, $options);
     }
 

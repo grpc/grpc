@@ -5,17 +5,29 @@
 namespace Grpc\Testing;
 
 /**
- * Protobuf enum <code>grpc.testing.RpcType</code>
+ * Protobuf enum <code>Grpc\Testing\RpcType</code>
  */
 class RpcType
 {
     /**
-     * <code>UNARY = 0;</code>
+     * Generated from protobuf enum <code>UNARY = 0;</code>
      */
     const UNARY = 0;
     /**
-     * <code>STREAMING = 1;</code>
+     * Generated from protobuf enum <code>STREAMING = 1;</code>
      */
     const STREAMING = 1;
+    /**
+     * Generated from protobuf enum <code>STREAMING_FROM_CLIENT = 2;</code>
+     */
+    const STREAMING_FROM_CLIENT = 2;
+    /**
+     * Generated from protobuf enum <code>STREAMING_FROM_SERVER = 3;</code>
+     */
+    const STREAMING_FROM_SERVER = 3;
+    /**
+     * Generated from protobuf enum <code>STREAMING_BOTH_WAYS = 4;</code>
+     */
+    const STREAMING_BOTH_WAYS = 4;
 }
 
