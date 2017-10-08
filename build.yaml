@@ -4607,6 +4607,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: status_test
   build: test
   language: c++

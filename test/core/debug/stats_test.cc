@@ -20,6 +20,7 @@ extern "C" {
 #include "src/core/lib/debug/stats.h"
 }
 
+#include <mutex>
 #include <thread>
 
 #include <grpc/grpc.h>
@@ -86,10 +87,12 @@ class HistogramTest : public ::testing::TestWithParam<int> {};
 
 TEST_P(HistogramTest, IncHistogram) {
   const int kHistogram = GetParam();
-  const int kThreads = std::max(1, (int)gpr_cpu_num_cores());
+  const int kBuckets = grpc_stats_histo_buckets[kHistogram];
+  const int kThreads = kBuckets;
   std::vector<std::thread> threads;
+  std::vector<std::mutex> mutexes(kBuckets);
   for (int thread = 0; thread < kThreads; thread++) {
-    threads.emplace_back([kHistogram, kThreads, thread]() {
+    threads.emplace_back([kHistogram, kThreads, thread, &mutexes]() {
       std::vector<int> test_values;
       for (int j = -1000 + thread;
            j < grpc_stats_histo_bucket_boundaries
@@ -100,9 +103,10 @@ TEST_P(HistogramTest, IncHistogram) {
       }
       std::random_shuffle(test_values.begin(), test_values.end());
       for (auto j : test_values) {
-        Snapshot snapshot;
-
         int expected_bucket = FindExpectedBucket(kHistogram, j);
+	std::lock_guard<std::mutex> lock(mutexes[expected_bucket]);
+
+        Snapshot snapshot;
 
         grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
         grpc_stats_inc_histogram[kHistogram](&exec_ctx, j);
@@ -110,7 +114,7 @@ TEST_P(HistogramTest, IncHistogram) {
 
         auto delta = snapshot.delta();
 
-        EXPECT_GE(delta.histograms[grpc_stats_histo_start[kHistogram] +
+        EXPECT_EQ(delta.histograms[grpc_stats_histo_start[kHistogram] +
                                    expected_bucket],
                   1)
             << "\nhistogram:" << kHistogram
