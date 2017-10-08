@@ -4607,6 +4607,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  timeout_seconds: 1200
   uses_polling: false
 - name: status_test
   build: test

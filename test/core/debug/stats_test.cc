@@ -87,42 +87,42 @@ class HistogramTest : public ::testing::TestWithParam<int> {};
 
 TEST_P(HistogramTest, IncHistogram) {
   const int kHistogram = GetParam();
-  const int kBuckets = grpc_stats_histo_buckets[kHistogram];
-  const int kThreads = kBuckets;
   std::vector<std::thread> threads;
-  std::vector<std::mutex> mutexes(kBuckets);
-  for (int thread = 0; thread < kThreads; thread++) {
-    threads.emplace_back([kHistogram, kThreads, thread, &mutexes]() {
+      int cur_bucket = 0;
+      auto run = [kHistogram](const std::vector<int>& test_values, int expected_bucket) {
+        gpr_log(GPR_DEBUG, "expected_bucket:%d nvalues=%" PRIdPTR, expected_bucket, test_values.size());
+        for (auto j : test_values) {
+                  Snapshot snapshot;
+  
+  	    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  	    grpc_stats_inc_histogram[kHistogram](&exec_ctx, j);
+  	    grpc_exec_ctx_finish(&exec_ctx);
+  
+  	    auto delta = snapshot.delta();
+  
+  	    EXPECT_EQ(delta.histograms[grpc_stats_histo_start[kHistogram] +
+  	          		     expected_bucket],
+  	              1)
+  	        << "\nhistogram:" << kHistogram
+  	        << "\nexpected_bucket:" << expected_bucket
+  	        << "\nj:" << j;
+        }
+      };
       std::vector<int> test_values;
-      for (int j = -1000 + thread;
+      for (int j = -1000;
            j < grpc_stats_histo_bucket_boundaries
                        [kHistogram][grpc_stats_histo_buckets[kHistogram] - 1] +
                    1000;
-           j += kThreads) {
+           j ++) {
+	int expected_bucket = FindExpectedBucket(kHistogram, j);
+        if (cur_bucket != expected_bucket) {
+          threads.emplace_back([test_values, run, cur_bucket]() { run(test_values, cur_bucket); });
+          cur_bucket = expected_bucket;
+          test_values.clear();
+        }
         test_values.push_back(j);
       }
-      std::random_shuffle(test_values.begin(), test_values.end());
-      for (auto j : test_values) {
-        int expected_bucket = FindExpectedBucket(kHistogram, j);
-	std::lock_guard<std::mutex> lock(mutexes[expected_bucket]);
-
-        Snapshot snapshot;
-
-        grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-        grpc_stats_inc_histogram[kHistogram](&exec_ctx, j);
-        grpc_exec_ctx_finish(&exec_ctx);
-
-        auto delta = snapshot.delta();
-
-        EXPECT_EQ(delta.histograms[grpc_stats_histo_start[kHistogram] +
-                                   expected_bucket],
-                  1)
-            << "\nhistogram:" << kHistogram
-            << "\nexpected_bucket:" << expected_bucket << "\nthread:" << thread
-            << "\nj:" << j;
-      }
-    });
-  }
+      run(test_values, cur_bucket);
   for (auto& t : threads) {
     t.join();
   }
