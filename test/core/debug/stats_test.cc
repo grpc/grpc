@@ -20,7 +20,10 @@ extern "C" {
 #include "src/core/lib/debug/stats.h"
 }
 
+#include <thread>
+
 #include <grpc/grpc.h>
+#include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <gtest/gtest.h>
 
@@ -79,37 +82,50 @@ static int FindExpectedBucket(int i, int j) {
          grpc_stats_histo_bucket_boundaries[i] - 1;
 }
 
-TEST(StatsTest, IncHistogram) {
-  for (int i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
-    std::vector<int> test_values;
-    for (int j = -1000;
-         j <
-         grpc_stats_histo_bucket_boundaries[i]
-                                           [grpc_stats_histo_buckets[i] - 1] +
-             1000;
-         j++) {
-      test_values.push_back(j);
-    }
-    std::random_shuffle(test_values.begin(), test_values.end());
-    if (test_values.size() > 10000) {
-      test_values.resize(10000);
-    }
-    for (auto j : test_values) {
-      Snapshot snapshot;
+class HistogramTest : public ::testing::TestWithParam<int> {};
 
-      int expected_bucket = FindExpectedBucket(i, j);
+TEST_P(HistogramTest, IncHistogram) {
+  const int kHistogram = GetParam();
+  const int kThreads = std::max(1, (int)gpr_cpu_num_cores());
+  std::vector<std::thread> threads;
+  for (int thread = 0; thread < kThreads; thread++) {
+    threads.emplace_back([kHistogram, kThreads, thread]() {
+      std::vector<int> test_values;
+      for (int j = -1000 + thread;
+           j < grpc_stats_histo_bucket_boundaries
+                       [kHistogram][grpc_stats_histo_buckets[kHistogram] - 1] +
+                   1000;
+           j += kThreads) {
+        test_values.push_back(j);
+      }
+      std::random_shuffle(test_values.begin(), test_values.end());
+      for (auto j : test_values) {
+        Snapshot snapshot;
 
-      grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-      grpc_stats_inc_histogram[i](&exec_ctx, j);
-      grpc_exec_ctx_finish(&exec_ctx);
+        int expected_bucket = FindExpectedBucket(kHistogram, j);
 
-      auto delta = snapshot.delta();
+        grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+        grpc_stats_inc_histogram[kHistogram](&exec_ctx, j);
+        grpc_exec_ctx_finish(&exec_ctx);
 
-      EXPECT_EQ(delta.histograms[grpc_stats_histo_start[i] + expected_bucket],
-                1);
-    }
+        auto delta = snapshot.delta();
+
+        EXPECT_GE(delta.histograms[grpc_stats_histo_start[kHistogram] +
+                                   expected_bucket],
+                  1)
+            << "\nhistogram:" << kHistogram
+            << "\nexpected_bucket:" << expected_bucket << "\nthread:" << thread
+            << "\nj:" << j;
+      }
+    });
+  }
+  for (auto& t : threads) {
+    t.join();
   }
 }
+
+INSTANTIATE_TEST_CASE_P(HistogramTestCases, HistogramTest,
+                        ::testing::Range<int>(0, GRPC_STATS_HISTOGRAM_COUNT));
 
 }  // namespace testing
 }  // namespace grpc
