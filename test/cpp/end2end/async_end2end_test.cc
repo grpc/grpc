@@ -102,14 +102,23 @@ class Verifier {
   explicit Verifier(bool spin) : spin_(spin) {}
   // Expect sets the expected ok value for a specific tag
   Verifier& Expect(int i, bool expect_ok) {
-    expectations_[tag(i)] = expect_ok;
+    return ExpectUnless(i, expect_ok, false);
+  }
+  // ExpectUnless sets the expected ok value for a specific tag
+  // unless the tag was already marked seen (as a result of ExpectMaybe)
+  Verifier& ExpectUnless(int i, bool expect_ok, bool seen) {
+    if (!seen) {
+      expectations_[tag(i)] = expect_ok;
+    }
     return *this;
   }
-  // AcceptOnce sets the expected ok value for a specific tag, but does not
+  // ExpectMaybe sets the expected ok value for a specific tag, but does not
   // require it to appear
   // If it does, sets *seen to true
-  Verifier& AcceptOnce(int i, bool expect_ok, bool* seen) {
-    maybe_expectations_[tag(i)] = MaybeExpect{expect_ok, seen};
+  Verifier& ExpectMaybe(int i, bool expect_ok, bool* seen) {
+    if (!*seen) {
+      maybe_expectations_[tag(i)] = MaybeExpect{expect_ok, seen};
+    }
     return *this;
   }
 
@@ -569,13 +578,13 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreamingWithCoalescingApi) {
 
   Verifier(GetParam().disable_blocking)
       .Expect(2, true)
-      .AcceptOnce(3, true, &seen3)
+      .ExpectMaybe(3, true, &seen3)
       .Verify(cq_.get());
 
   srv_stream.Read(&recv_request, tag(4));
 
   Verifier(GetParam().disable_blocking)
-      .AcceptOnce(3, true, &seen3)
+      .ExpectUnless(3, true, seen3)
       .Expect(4, true)
       .Verify(cq_.get());
 
@@ -602,7 +611,6 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreamingWithCoalescingApi) {
 
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
-  EXPECT_TRUE(seen3);
 }
 
 // One ping, two pongs.
@@ -853,13 +861,13 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWAF) {
 
   Verifier(GetParam().disable_blocking)
       .Expect(2, true)
-      .AcceptOnce(3, true, &seen3)
+      .ExpectMaybe(3, true, &seen3)
       .Verify(cq_.get());
 
   srv_stream.Read(&recv_request, tag(4));
 
   Verifier(GetParam().disable_blocking)
-      .AcceptOnce(3, true, &seen3)
+      .ExpectUnless(3, true, seen3)
       .Expect(4, true)
       .Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
@@ -880,7 +888,6 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWAF) {
   Verifier(GetParam().disable_blocking).Expect(8, true).Verify(cq_.get());
 
   EXPECT_TRUE(recv_status.ok());
-  EXPECT_TRUE(seen3);
 }
 
 // One ping, one pong. Using server:WriteLast api
@@ -910,13 +917,13 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWL) {
 
   Verifier(GetParam().disable_blocking)
       .Expect(2, true)
-      .AcceptOnce(3, true, &seen3)
+      .ExpectMaybe(3, true, &seen3)
       .Verify(cq_.get());
 
   srv_stream.Read(&recv_request, tag(4));
 
   Verifier(GetParam().disable_blocking)
-      .AcceptOnce(3, true, &seen3)
+      .ExpectUnless(3, true, seen3)
       .Expect(4, true)
       .Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
@@ -939,7 +946,6 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWL) {
   Verifier(GetParam().disable_blocking).Expect(9, true).Verify(cq_.get());
 
   EXPECT_TRUE(recv_status.ok());
-  EXPECT_TRUE(seen3);
 }
 
 // Metadata tests
