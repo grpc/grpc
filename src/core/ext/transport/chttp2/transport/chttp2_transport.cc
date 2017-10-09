@@ -152,10 +152,14 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
 static void end_all_the_calls(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                               grpc_error *error);
 
+static void schedule_bdp_ping_locked(grpc_exec_ctx *exec_ctx,
+                                     grpc_chttp2_transport *t);
 static void start_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                   grpc_error *error);
 static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                    grpc_error *error);
+static void next_bdp_ping_timer_expired_locked(grpc_exec_ctx *exec_ctx,
+                                               void *tp, grpc_error *error);
 
 static void cancel_pings(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                          grpc_error *error);
@@ -304,6 +308,9 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   GRPC_CLOSURE_INIT(&t->start_bdp_ping_locked, start_bdp_ping_locked, t,
                     grpc_combiner_scheduler(t->combiner));
   GRPC_CLOSURE_INIT(&t->finish_bdp_ping_locked, finish_bdp_ping_locked, t,
+                    grpc_combiner_scheduler(t->combiner));
+  GRPC_CLOSURE_INIT(&t->next_bdp_ping_timer_expired_locked,
+                    next_bdp_ping_timer_expired_locked, t,
                     grpc_combiner_scheduler(t->combiner));
   GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping_locked,
                     t, grpc_combiner_scheduler(t->combiner));
@@ -564,6 +571,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED;
   }
 
+  schedule_bdp_ping_locked(exec_ctx, t);
+
   grpc_chttp2_act_on_flowctl_action(
       exec_ctx,
       grpc_chttp2_flowctl_get_action(exec_ctx, &t->flow_control, NULL), t,
@@ -618,6 +627,9 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
     grpc_endpoint_shutdown(exec_ctx, t->ep, GRPC_ERROR_REF(error));
     if (t->ping_state.is_delayed_ping_timer_set) {
       grpc_timer_cancel(exec_ctx, &t->ping_state.delayed_ping_timer);
+    }
+    if (t->have_next_bdp_ping_timer) {
+      grpc_timer_cancel(exec_ctx, &t->next_bdp_ping_timer);
     }
     switch (t->keepalive_state) {
       case GRPC_CHTTP2_KEEPALIVE_STATE_WAITING:
@@ -2434,12 +2446,14 @@ void grpc_chttp2_act_on_flowctl_action(grpc_exec_ctx *exec_ctx,
                                  GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS);
     }
   }
+#if 0
   if (action.need_ping) {
     GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
     t->flow_control.bdp_estimator->SchedulePing();
     send_ping_locked(exec_ctx, t, &t->start_bdp_ping_locked,
                      &t->finish_bdp_ping_locked);
   }
+#endif
 }
 
 static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
@@ -2560,6 +2574,14 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
   GPR_TIMER_END("reading_action_locked", 0);
 }
 
+static void schedule_bdp_ping_locked(grpc_exec_ctx *exec_ctx,
+                                     grpc_chttp2_transport *t) {
+  GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
+  t->flow_control.bdp_estimator->SchedulePing();
+  send_ping_locked(exec_ctx, t, &t->start_bdp_ping_locked,
+                   &t->finish_bdp_ping_locked);
+}
+
 static void start_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                   grpc_error *error) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)tp;
@@ -2579,9 +2601,27 @@ static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
   if (GRPC_TRACER_ON(grpc_http_trace)) {
     gpr_log(GPR_DEBUG, "%s: Complete BDP ping", t->peer_string);
   }
-  t->flow_control.bdp_estimator->CompletePing(exec_ctx);
+  if (error == GRPC_ERROR_CANCELLED) {
+    GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "bdp_ping");
+    return;
+  }
+  grpc_millis next_ping = t->flow_control.bdp_estimator->CompletePing(exec_ctx);
+  GPR_ASSERT(!t->have_next_bdp_ping_timer);
+  t->have_next_bdp_ping_timer = true;
+  grpc_timer_init(exec_ctx, &t->next_bdp_ping_timer, next_ping,
+                  &t->next_bdp_ping_timer_expired_locked);
+}
 
-  GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "bdp_ping");
+static void next_bdp_ping_timer_expired_locked(grpc_exec_ctx *exec_ctx,
+                                               void *tp, grpc_error *error) {
+  grpc_chttp2_transport *t = (grpc_chttp2_transport *)tp;
+  GPR_ASSERT(t->have_next_bdp_ping_timer);
+  t->have_next_bdp_ping_timer = false;
+  if (error == GRPC_ERROR_CANCELLED) {
+    GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "bdp_ping");
+    return;
+  }
+  schedule_bdp_ping_locked(exec_ctx, t);
 }
 
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args *args,

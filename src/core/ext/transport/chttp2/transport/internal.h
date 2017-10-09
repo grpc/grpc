@@ -422,6 +422,7 @@ struct grpc_chttp2_transport {
   grpc_chttp2_write_cb *write_cb_pool;
 
   /* bdp estimator */
+  grpc_closure next_bdp_ping_timer_expired_locked;
   grpc_closure start_bdp_ping_locked;
   grpc_closure finish_bdp_ping_locked;
 
@@ -441,6 +442,10 @@ struct grpc_chttp2_transport {
   grpc_closure benign_reclaimer_locked;
   /** destructive cleanup closure */
   grpc_closure destructive_reclaimer_locked;
+
+  /* next bdp ping timer */
+  bool have_next_bdp_ping_timer;
+  grpc_timer next_bdp_ping_timer;
 
   /* keep-alive ping support */
   /** Closure to initialize a keepalive ping */
@@ -749,7 +754,6 @@ typedef struct {
   grpc_chttp2_flowctl_urgency send_setting_update;
   uint32_t initial_window_size;
   uint32_t max_frame_size;
-  bool need_ping;
 } grpc_chttp2_flowctl_action;
 
 // Reads the flow control data and returns and actionable struct that will tell
