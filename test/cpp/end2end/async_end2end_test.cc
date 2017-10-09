@@ -109,7 +109,9 @@ class Verifier {
   // require it to appear
   // If it does, sets *seen to true
   Verifier& AcceptOnce(int i, bool expect_ok, bool* seen) {
-    maybe_expectations_[tag(i)] = MaybeExpect{expect_ok, seen};
+    if (!*seen) {
+      maybe_expectations_[tag(i)] = MaybeExpect{expect_ok, seen};
+    }
     return *this;
   }
 
