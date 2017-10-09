@@ -226,6 +226,7 @@ class Client {
   }
 
   virtual void DestroyMultithreading() = 0;
+  virtual void InitThreadFunc(size_t thread_idx) = 0;
   virtual bool ThreadFunc(HistogramEntry* histogram, size_t thread_idx) = 0;
 
   void SetupLoadTest(const ClientConfig& config, size_t num_threads) {
@@ -308,6 +309,8 @@ class Client {
                 idx_, wait_loop);
         wait_loop++;
       }
+
+      client_->InitThreadFunc(idx_);
 
       for (;;) {
         // run the loop body
