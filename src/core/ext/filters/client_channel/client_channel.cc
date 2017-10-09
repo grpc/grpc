@@ -191,6 +191,8 @@ typedef struct client_channel_channel_data {
   grpc_closure_list waiting_for_resolver_result_closures;
   /** resolver callback */
   grpc_closure on_resolver_result_changed;
+  /** callback for LB policies to request a re-resolution */
+  grpc_closure request_reresolution;
   /** connectivity state being tracked */
   grpc_connectivity_state_tracker state_tracker;
   /** when an lb_policy arrives, should we try to exit idle */
@@ -370,10 +372,19 @@ static void request_reresolution_locked(grpc_exec_ctx *exec_ctx, void *arg,
     return;
   }
   channel_data *chand = (channel_data *)arg;
-  grpc_resolver_channel_saw_error_locked(exec_ctx, chand->resolver);
-  GRPC_CLOSURE_INIT(&chand->lb_policy->request_reresolution,
-                    request_reresolution_locked, chand,
-                    grpc_combiner_scheduler(chand->combiner));
+  if (chand->resolver != NULL) {
+    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      gpr_log(GPR_DEBUG, "chand=%p: started name re-resolving", chand);
+    }
+    grpc_resolver_channel_saw_error_locked(exec_ctx, chand->resolver);
+  } else {
+    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      gpr_log(GPR_DEBUG, "chand=%p: no resolver to do re-resolution", chand);
+    }
+  }
+  // Give back the closure to the LB policy.
+  grpc_lb_policy_set_reresolve_closure_locked(exec_ctx, chand->lb_policy,
+                                              &chand->request_reresolution);
 }
 
 static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
@@ -431,6 +442,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     lb_policy_args.args = chand->resolver_result;
     lb_policy_args.client_channel_factory = chand->client_channel_factory;
     lb_policy_args.combiner = chand->combiner;
+    lb_policy_args.request_reresolution = &chand->request_reresolution;
     // Check to see if we're already using the right LB policy.
     // Note: It's safe to use chand->info_lb_policy_name here without
     // taking a lock on chand->info_mu, because this function is the
@@ -521,12 +533,11 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   }
   chand->method_params_table = method_params_table;
   // If we have a new LB policy or are shutting down (in which case
-  // new_lb_policy will be NULL), swap out the LB policy, unreffing the
-  // old one, removing its fds from chand->interested_parties and cancelling
-  // the re-resolution closure. Note that we do NOT do this if either
-  // (a) we updated the existing LB policy above or (b) we failed to
-  // create the new LB policy (in which case we want to continue using
-  // the most recent one we had).
+  // new_lb_policy will be NULL), swap out the LB policy, unreffing the old one,
+  // removing its fds from chand->interested_parties, and cancelling the
+  // re-resolution closure. Note that we do NOT do this if either (a) we updated
+  // the existing LB policy above or (b) we failed to create the new LB policy
+  // (in which case we want to continue using the most recent one we had).
   if (new_lb_policy != NULL || error != GRPC_ERROR_NONE ||
       chand->resolver == NULL) {
     if (chand->lb_policy != NULL) {
@@ -537,7 +548,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
       grpc_pollset_set_del_pollset_set(exec_ctx,
                                        chand->lb_policy->interested_parties,
                                        chand->interested_parties);
-      GRPC_CLOSURE_SCHED(exec_ctx, &chand->lb_policy->request_reresolution,
+      GRPC_CLOSURE_SCHED(exec_ctx, &chand->request_reresolution,
                          GRPC_ERROR_CANCELLED);
       GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
     }
@@ -582,9 +593,6 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
       grpc_pollset_set_add_pollset_set(exec_ctx,
                                        new_lb_policy->interested_parties,
                                        chand->interested_parties);
-      GRPC_CLOSURE_INIT(&new_lb_policy->request_reresolution,
-                        request_reresolution_locked, chand,
-                        grpc_combiner_scheduler(chand->combiner));
       GRPC_CLOSURE_LIST_SCHED(exec_ctx,
                               &chand->waiting_for_resolver_result_closures);
       if (chand->exit_idle_when_lb_policy_arrives) {
@@ -720,6 +728,8 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   GRPC_CLOSURE_INIT(&chand->on_resolver_result_changed,
                     on_resolver_result_changed_locked, chand,
                     grpc_combiner_scheduler(chand->combiner));
+  GRPC_CLOSURE_INIT(&chand->request_reresolution, request_reresolution_locked,
+                    chand, grpc_combiner_scheduler(chand->combiner));
   chand->interested_parties = grpc_pollset_set_create();
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
                                "client_channel");

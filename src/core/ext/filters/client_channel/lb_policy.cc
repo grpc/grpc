@@ -28,11 +28,13 @@ grpc_tracer_flag grpc_trace_lb_policy_refcount =
 
 void grpc_lb_policy_init(grpc_lb_policy *policy,
                          const grpc_lb_policy_vtable *vtable,
-                         grpc_combiner *combiner) {
+                         grpc_combiner *combiner,
+                         grpc_closure *request_reresolution) {
   policy->vtable = vtable;
   gpr_atm_no_barrier_store(&policy->ref_pair, 1 << WEAK_REF_BITS);
   policy->interested_parties = grpc_pollset_set_create();
   policy->combiner = GRPC_COMBINER_REF(combiner, "lb_policy");
+  policy->request_reresolution = request_reresolution;
 }
 
 #ifndef NDEBUG
@@ -161,4 +163,28 @@ void grpc_lb_policy_update_locked(grpc_exec_ctx *exec_ctx,
                                   grpc_lb_policy *policy,
                                   const grpc_lb_policy_args *lb_policy_args) {
   policy->vtable->update_locked(exec_ctx, policy, lb_policy_args);
+}
+
+void grpc_lb_policy_set_reresolve_closure_locked(
+    grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+    grpc_closure *request_reresolution) {
+  GPR_ASSERT(policy->request_reresolution == NULL);
+  policy->request_reresolution = request_reresolution;
+}
+
+void grpc_lb_policy_try_reresolve_locked(grpc_exec_ctx *exec_ctx,
+                                         grpc_lb_policy *policy,
+                                         grpc_tracer_flag grpc_lb_trace) {
+  if (policy->request_reresolution != NULL) {
+    GRPC_CLOSURE_SCHED(exec_ctx, policy->request_reresolution, GRPC_ERROR_NONE);
+    policy->request_reresolution = NULL;
+    if (GRPC_TRACER_ON(grpc_lb_trace)) {
+      gpr_log(GPR_DEBUG, "LB policy %p: reresolution requested.", policy);
+    }
+  } else {
+    if (GRPC_TRACER_ON(grpc_lb_trace)) {
+      gpr_log(GPR_DEBUG, "LB policy %p: reresolution already in progress.",
+              policy);
+    }
+  }
 }

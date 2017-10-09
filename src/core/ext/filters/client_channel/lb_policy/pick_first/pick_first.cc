@@ -539,17 +539,27 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
     GRPC_ERROR_UNREF(error);
     return;
   } else if (p->selected != NULL) {
-    if (p->checking_connectivity == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    grpc_connectivity_state publish_state =
+        p->checking_connectivity == GRPC_CHANNEL_SHUTDOWN
+            ? GRPC_CHANNEL_TRANSIENT_FAILURE
+            : p->checking_connectivity;
+    if (publish_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       /* if the selected channel goes bad, request a re-resolution */
-      GRPC_CLOSURE_SCHED(exec_ctx, &p->base.request_reresolution,
-                         GRPC_ERROR_NONE);
+      grpc_lb_policy_try_reresolve_locked(exec_ctx, &p->base,
+                                          grpc_lb_pick_first_trace);
     }
-    grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                                p->checking_connectivity, GRPC_ERROR_REF(error),
-                                "selected_changed");
-    grpc_connected_subchannel_notify_on_state_change(
-        exec_ctx, p->selected, p->base.interested_parties,
-        &p->checking_connectivity, &p->connectivity_changed);
+    grpc_connectivity_state_set(exec_ctx, &p->state_tracker, publish_state,
+                                GRPC_ERROR_REF(error), "selected_changed");
+    if (p->checking_connectivity != GRPC_CHANNEL_SHUTDOWN) {
+      grpc_connected_subchannel_notify_on_state_change(
+          exec_ctx, p->selected, p->base.interested_parties,
+          &p->checking_connectivity, &p->connectivity_changed);
+    } else {
+      GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base, "pick_first_connectivity");
+      GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, p->selected,
+                                      "selected_shutdown");
+      p->selected = NULL;
+    }
   } else {
   loop:
     switch (p->checking_connectivity) {
@@ -598,8 +608,8 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
           grpc_connectivity_state_set(
               exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
               GRPC_ERROR_REF(error), "connecting_transient_failure");
-          GRPC_CLOSURE_SCHED(exec_ctx, &p->base.request_reresolution,
-                             GRPC_ERROR_NONE);
+          grpc_lb_policy_try_reresolve_locked(exec_ctx, &p->base,
+                                              grpc_lb_pick_first_trace);
         }
         GRPC_ERROR_UNREF(error);
         p->checking_connectivity = grpc_subchannel_check_connectivity(
@@ -629,16 +639,13 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
                  p->subchannels[p->num_subchannels]);
         GRPC_SUBCHANNEL_UNREF(exec_ctx, p->subchannels[p->num_subchannels],
                               "pick_first");
+        grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
+                                    GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                    GRPC_ERROR_REF(error), "subchannel_failed");
         if (p->num_subchannels == 0) {
-          grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                                      GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                      GRPC_ERROR_NONE, "no_more_channels");
-          GRPC_CLOSURE_SCHED(exec_ctx, &p->base.request_reresolution,
-                             GRPC_ERROR_NONE);
+          grpc_lb_policy_try_reresolve_locked(exec_ctx, &p->base,
+                                              grpc_lb_pick_first_trace);
         } else {
-          grpc_connectivity_state_set(
-              exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
-              GRPC_ERROR_REF(error), "subchannel_failed");
           p->checking_subchannel %= p->num_subchannels;
           GRPC_ERROR_UNREF(error);
           p->checking_connectivity = grpc_subchannel_check_connectivity(
@@ -676,7 +683,8 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
     gpr_log(GPR_DEBUG, "Pick First %p created.", (void *)p);
   }
   pf_update_locked(exec_ctx, &p->base, args);
-  grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable, args->combiner);
+  grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable, args->combiner,
+                      args->request_reresolution);
   grpc_subchannel_index_ref();
   GRPC_CLOSURE_INIT(&p->connectivity_changed, pf_connectivity_changed_locked, p,
                     grpc_combiner_scheduler(args->combiner));

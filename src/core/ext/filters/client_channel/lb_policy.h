@@ -45,7 +45,7 @@ struct grpc_lb_policy {
   /* combiner under which lb_policy actions take place */
   grpc_combiner *combiner;
   /* callback to force a re-resolution */
-  grpc_closure request_reresolution;
+  grpc_closure *request_reresolution;
 };
 
 /** Extra arguments for an LB pick */
@@ -143,7 +143,8 @@ void grpc_lb_policy_weak_unref(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
 /** called by concrete implementations to initialize the base struct */
 void grpc_lb_policy_init(grpc_lb_policy *policy,
                          const grpc_lb_policy_vtable *vtable,
-                         grpc_combiner *combiner);
+                         grpc_combiner *combiner,
+                         grpc_closure *request_reresolution);
 
 /** Finds an appropriate subchannel for a call, based on \a pick_args.
 
@@ -209,6 +210,16 @@ grpc_connectivity_state grpc_lb_policy_check_connectivity_locked(
 void grpc_lb_policy_update_locked(grpc_exec_ctx *exec_ctx,
                                   grpc_lb_policy *policy,
                                   const grpc_lb_policy_args *lb_policy_args);
+
+/** Set \a policy with \a request_reresolution closure. */
+void grpc_lb_policy_set_reresolve_closure_locked(
+    grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+    grpc_closure *request_reresolution);
+
+/** Try to request a re-resolution. */
+void grpc_lb_policy_try_reresolve_locked(grpc_exec_ctx *exec_ctx,
+                                         grpc_lb_policy *policy,
+                                         grpc_tracer_flag grpc_lb_trace);
 
 #ifdef __cplusplus
 }

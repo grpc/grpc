@@ -491,9 +491,10 @@ static void update_state_counters_locked(subchannel_data *sd) {
   }
 }
 
-/** Sets the policy's connectivity status based on that of the subchannel list
- * \a sd (the subchannel_data associted with the updated subchannel) belongs to.
- * \a error will only be used upon policy transition to TRANSIENT_FAILURE. */
+/** Sets the policy's connectivity status based on that of the passed-in \a sd
+ * (the subchannel_data associated with the updated subchannel) and the
+ * subchannel list \a sd belongs to (sd->subchannel_list). \a error will only be
+ * used upon policy transition to TRANSIENT_FAILURE. */
 static void update_lb_connectivity_status_locked(grpc_exec_ctx *exec_ctx,
                                                  subchannel_data *sd,
                                                  grpc_error *error) {
@@ -501,23 +502,21 @@ static void update_lb_connectivity_status_locked(grpc_exec_ctx *exec_ctx,
    * are on rule n, all previous rules were unfulfilled).
    *
    * 1) RULE: ANY subchannel is READY => policy is READY.
-   *    CHECK: subchannel_list->num_ready > 0.
+   *    CHECK: subchannel_list->num_ready > 0
+   *           (i.e., p->ready_list is NOT empty.)
    *
    * 2) RULE: ANY subchannel is CONNECTING => policy is CONNECTING.
    *    CHECK: sd->curr_connectivity_state == CONNECTING.
    *
-   * 3) RULE: ALL subchannels are IDLE => policy is IDLE.
+   * 3) RULE: ALL subchannels are SHUTDOWN or ALL subchannels are
+   *          TRANSIENT_FAILURE => policy is TRANSIENT_FAILURE.
+   *    CHECK: subchannel_list->num_shutdown ==
+                 subchannel_list->num_subchannels ||
+               subchannel_list->num_transient_failures ==
+                 subchannel_list->num_subchannels.
+
+   * 4) RULE: ALL subchannels are IDLE => policy is IDLE.
    *    CHECK: subchannel_list->num_idle == subchannel_list->num_subchannels.
-   *
-   * 4) RULE: ALL subchannels are either IDLE, SHUTDOWN or TRANSIENT_FAILURE but
-   *    at least one subchannel is not IDLE => policy is TRANSIENT_FAILURE.
-   *    (This covers all the rest situations.)
-   *    CHECK: (subchannel_list->num_shutdown +
-   *            subchannel_list->num_transient_failures +
-   *            subchannel_list->num_idle ==
-   *            subchannel_list->num_subchannels) &&
-   *           (subchannel_list->num_shutdown +
-   *            subchannel_list->num_transient_failures > 0)
    */
   rr_subchannel_list *subchannel_list = sd->subchannel_list;
   round_robin_lb_policy *p = subchannel_list->policy;
@@ -530,22 +529,18 @@ static void update_lb_connectivity_status_locked(grpc_exec_ctx *exec_ctx,
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                 GRPC_CHANNEL_CONNECTING, GRPC_ERROR_NONE,
                                 "rr_connecting");
-  } else if (subchannel_list->num_idle == subchannel_list->num_subchannels) {
-    /* 3) IDLE */
-    grpc_connectivity_state_set(exec_ctx, &p->state_tracker, GRPC_CHANNEL_IDLE,
-                                GRPC_ERROR_NONE, "rr_idle");
-  } else {
-    GPR_ASSERT(subchannel_list->num_shutdown +
-                   subchannel_list->num_transient_failures +
-                   subchannel_list->num_idle ==
-               subchannel_list->num_subchannels);
-    GPR_ASSERT(subchannel_list->num_shutdown +
-                   subchannel_list->num_transient_failures >
-               0);
-    /* 4) TRANSIENT_FAILURE */
+  } else if (subchannel_list->num_shutdown ==
+                 subchannel_list->num_subchannels ||
+             subchannel_list->num_transient_failures ==
+                 subchannel_list->num_subchannels) {
+    /* 3) TRANSIENT_FAILURE */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                 GRPC_CHANNEL_TRANSIENT_FAILURE,
                                 GRPC_ERROR_REF(error), "rr_transient_failure");
+  } else if (subchannel_list->num_idle == subchannel_list->num_subchannels) {
+    /* 4) IDLE */
+    grpc_connectivity_state_set(exec_ctx, &p->state_tracker, GRPC_CHANNEL_IDLE,
+                                GRPC_ERROR_NONE, "rr_idle");
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -609,8 +604,8 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
   if (sd->subchannel_list->num_shutdown +
           sd->subchannel_list->num_transient_failures ==
       sd->subchannel_list->num_subchannels) {
-    GRPC_CLOSURE_SCHED(exec_ctx, &p->base.request_reresolution,
-                       GRPC_ERROR_NONE);
+    grpc_lb_policy_try_reresolve_locked(exec_ctx, &p->base,
+                                        grpc_lb_round_robin_trace);
   }
   // If the sd's new state is SHUTDOWN, unref the subchannel.
   if (sd->curr_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
@@ -882,7 +877,8 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
                                           grpc_lb_policy_args *args) {
   GPR_ASSERT(args->client_channel_factory != NULL);
   round_robin_lb_policy *p = (round_robin_lb_policy *)gpr_zalloc(sizeof(*p));
-  grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable, args->combiner);
+  grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable, args->combiner,
+                      args->request_reresolution);
   grpc_subchannel_index_ref();
   grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,
                                "round_robin");

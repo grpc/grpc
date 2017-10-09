@@ -589,13 +589,13 @@ static void update_lb_connectivity_status_locked(
    *  |
    *  v  || I  |  C  |  R  |  TF  |  SD  |  <- new state (RR's)
    *  ===++====+=====+=====+======+======+
-   *   I || I  |  C  |  R  | [I]  |  NA  |
+   *   I || I  |  C  |  R  | [I]  | [I]  |
    *  ---++----+-----+-----+------+------+
-   *   C || I  |  C  |  R  | [C]  |  NA  |
+   *   C || I  |  C  |  R  | [C]  | [C]  |
    *  ---++----+-----+-----+------+------+
-   *   R || I  |  C  |  R  | [R]  |  NA  |
+   *   R || I  |  C  |  R  | [R]  | [R]  |
    *  ---++----+-----+-----+------+------+
-   *  TF || I  |  C  |  R  | [TF] |  NA  |
+   *  TF || I  |  C  |  R  | [TF] | [TF] |
    *  ---++----+-----+-----+------+------+
    *  SD || NA |  NA |  NA |  NA  |  NA  | (*)
    *  ---++----+-----+-----+------+------+
@@ -603,8 +603,8 @@ static void update_lb_connectivity_status_locked(
    * A [STATE] indicates that the old RR policy is kept. In those cases, STATE
    * is the current state of grpclb, which is left untouched.
    *
-   *  In summary, if the new state is TRANSIENT_FAILURE, stick to the previous
-   *  RR instance.
+   *  In summary, if the new state is TRANSIENT_FAILURE or SHUTDOWN, stick to
+   *  the previous RR instance.
    *
    *  Note that the status is never updated to SHUTDOWN as a result of calling
    *  this function. Only glb_shutdown() has the power to set that state.
@@ -613,9 +613,8 @@ static void update_lb_connectivity_status_locked(
   GPR_ASSERT(curr_glb_state != GRPC_CHANNEL_SHUTDOWN);
 
   switch (rr_state) {
-    case GRPC_CHANNEL_SHUTDOWN:
-      GPR_UNREACHABLE_CODE(return );
     case GRPC_CHANNEL_TRANSIENT_FAILURE:
+    case GRPC_CHANNEL_SHUTDOWN:
       GPR_ASSERT(rr_state_error != GRPC_ERROR_NONE);
       break;
     case GRPC_CHANNEL_INIT:
@@ -637,7 +636,7 @@ static void update_lb_connectivity_status_locked(
 
 /* Perform a pick over \a glb_policy->rr_policy. Given that a pick can return
  * immediately (ignoring its completion callback), we need to perform the
- * cleanups this callback would otherwise be resposible for.
+ * cleanups this callback would otherwise be responsible for.
  * If \a force_async is true, then we will manually schedule the
  * completion callback even if the pick is available immediately. */
 static bool pick_from_internal_rr_locked(
@@ -1966,7 +1965,8 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   GRPC_CLOSURE_INIT(&glb_policy->lb_channel_on_connectivity_changed,
                     glb_lb_channel_on_connectivity_changed_cb, glb_policy,
                     grpc_combiner_scheduler(args->combiner));
-  grpc_lb_policy_init(&glb_policy->base, &glb_lb_policy_vtable, args->combiner);
+  grpc_lb_policy_init(&glb_policy->base, &glb_lb_policy_vtable, args->combiner,
+                      args->request_reresolution);
   grpc_connectivity_state_init(&glb_policy->state_tracker, GRPC_CHANNEL_IDLE,
                                "grpclb");
   return &glb_policy->base;
