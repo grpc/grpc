@@ -2446,14 +2446,6 @@ void grpc_chttp2_act_on_flowctl_action(grpc_exec_ctx *exec_ctx,
                                  GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS);
     }
   }
-#if 0
-  if (action.need_ping) {
-    GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
-    t->flow_control.bdp_estimator->SchedulePing();
-    send_ping_locked(exec_ctx, t, &t->start_bdp_ping_locked,
-                     &t->finish_bdp_ping_locked);
-  }
-#endif
 }
 
 static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
