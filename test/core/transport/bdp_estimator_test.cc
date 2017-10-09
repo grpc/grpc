@@ -141,6 +141,7 @@ TEST_P(BdpEstimatorRandomTest, GetEstimateRandomValues) {
 INSTANTIATE_TEST_CASE_P(TooManyNames, BdpEstimatorRandomTest,
                         ::testing::Values(3, 4, 6, 9, 13, 19, 28, 42, 63, 94,
                                           141, 211, 316, 474, 711));
+
 }  // namespace testing
 }  // namespace grpc_core
 

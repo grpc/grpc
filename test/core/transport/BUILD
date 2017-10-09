@@ -71,13 +71,16 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "pid_controller_test",
-    srcs = ["pid_controller_test.c"],
+    srcs = ["pid_controller_test.cc"],
     language = "C",
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
+    ],
+    external_deps = [
+        "gtest",
     ],
 )
 

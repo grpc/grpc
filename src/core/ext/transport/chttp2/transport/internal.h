@@ -273,7 +273,7 @@ typedef struct {
 
   /* pid controller */
   bool pid_controller_initialized;
-  grpc_pid_controller pid_controller;
+  grpc_core::ManualConstructor<grpc_core::PidController> pid_controller;
   grpc_millis last_pid_update;
 
   // pointer back to transport for tracing

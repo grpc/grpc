@@ -1090,8 +1090,6 @@ timeout_encoding_test: $(BINDIR)/$(CONFIG)/timeout_encoding_test
 timer_heap_test: $(BINDIR)/$(CONFIG)/timer_heap_test
 timer_list_test: $(BINDIR)/$(CONFIG)/timer_list_test
 transport_connectivity_state_test: $(BINDIR)/$(CONFIG)/transport_connectivity_state_test
-transport_metadata_test: $(BINDIR)/$(CONFIG)/transport_metadata_test
-transport_pid_controller_test: $(BINDIR)/$(CONFIG)/transport_pid_controller_test
 transport_security_test: $(BINDIR)/$(CONFIG)/transport_security_test
 udp_server_test: $(BINDIR)/$(CONFIG)/udp_server_test
 uri_fuzzer_test: $(BINDIR)/$(CONFIG)/uri_fuzzer_test
@@ -1179,6 +1177,8 @@ streaming_throughput_test: $(BINDIR)/$(CONFIG)/streaming_throughput_test
 stress_test: $(BINDIR)/$(CONFIG)/stress_test
 thread_manager_test: $(BINDIR)/$(CONFIG)/thread_manager_test
 thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
+transport_metadata_test: $(BINDIR)/$(CONFIG)/transport_metadata_test
+transport_pid_controller_test: $(BINDIR)/$(CONFIG)/transport_pid_controller_test
 writes_per_rpc_test: $(BINDIR)/$(CONFIG)/writes_per_rpc_test
 public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
 boringssl_aes_test: $(BINDIR)/$(CONFIG)/boringssl_aes_test
@@ -1471,8 +1471,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/timer_heap_test \
   $(BINDIR)/$(CONFIG)/timer_list_test \
   $(BINDIR)/$(CONFIG)/transport_connectivity_state_test \
-  $(BINDIR)/$(CONFIG)/transport_metadata_test \
-  $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/transport_security_test \
   $(BINDIR)/$(CONFIG)/udp_server_test \
   $(BINDIR)/$(CONFIG)/uri_parser_test \
@@ -1617,6 +1615,8 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/stress_test \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
+  $(BINDIR)/$(CONFIG)/transport_metadata_test \
+  $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/boringssl_aes_test \
   $(BINDIR)/$(CONFIG)/boringssl_asn1_test \
@@ -1738,6 +1738,8 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/stress_test \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
+  $(BINDIR)/$(CONFIG)/transport_metadata_test \
+  $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure \
   $(BINDIR)/$(CONFIG)/resolver_component_test \
@@ -1988,10 +1990,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/timer_list_test || ( echo test timer_list_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_connectivity_state_test"
 	$(Q) $(BINDIR)/$(CONFIG)/transport_connectivity_state_test || ( echo test transport_connectivity_state_test failed ; exit 1 )
-	$(E) "[RUN]     Testing transport_metadata_test"
-	$(Q) $(BINDIR)/$(CONFIG)/transport_metadata_test || ( echo test transport_metadata_test failed ; exit 1 )
-	$(E) "[RUN]     Testing transport_pid_controller_test"
-	$(Q) $(BINDIR)/$(CONFIG)/transport_pid_controller_test || ( echo test transport_pid_controller_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_security_test"
 	$(Q) $(BINDIR)/$(CONFIG)/transport_security_test || ( echo test transport_security_test failed ; exit 1 )
 	$(E) "[RUN]     Testing udp_server_test"
@@ -2152,6 +2150,10 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/thread_manager_test || ( echo test thread_manager_test failed ; exit 1 )
 	$(E) "[RUN]     Testing thread_stress_test"
 	$(Q) $(BINDIR)/$(CONFIG)/thread_stress_test || ( echo test thread_stress_test failed ; exit 1 )
+	$(E) "[RUN]     Testing transport_metadata_test"
+	$(Q) $(BINDIR)/$(CONFIG)/transport_metadata_test || ( echo test transport_metadata_test failed ; exit 1 )
+	$(E) "[RUN]     Testing transport_pid_controller_test"
+	$(Q) $(BINDIR)/$(CONFIG)/transport_pid_controller_test || ( echo test transport_pid_controller_test failed ; exit 1 )
 	$(E) "[RUN]     Testing writes_per_rpc_test"
 	$(Q) $(BINDIR)/$(CONFIG)/writes_per_rpc_test || ( echo test writes_per_rpc_test failed ; exit 1 )
 	$(E) "[RUN]     Testing resolver_component_tests_runner_invoker_unsecure"
@@ -13384,70 +13386,6 @@ endif
 endif
 
 
-TRANSPORT_METADATA_TEST_SRC = \
-    test/core/transport/metadata_test.c \
-
-TRANSPORT_METADATA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TRANSPORT_METADATA_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/transport_metadata_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/transport_metadata_test: $(TRANSPORT_METADATA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(TRANSPORT_METADATA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/transport_metadata_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/transport/metadata_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_transport_metadata_test: $(TRANSPORT_METADATA_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(TRANSPORT_METADATA_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-TRANSPORT_PID_CONTROLLER_TEST_SRC = \
-    test/core/transport/pid_controller_test.c \
-
-TRANSPORT_PID_CONTROLLER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TRANSPORT_PID_CONTROLLER_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/transport_pid_controller_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/transport_pid_controller_test: $(TRANSPORT_PID_CONTROLLER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(TRANSPORT_PID_CONTROLLER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/transport_pid_controller_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/transport/pid_controller_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_transport_pid_controller_test: $(TRANSPORT_PID_CONTROLLER_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(TRANSPORT_PID_CONTROLLER_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 TRANSPORT_SECURITY_TEST_SRC = \
     test/core/tsi/transport_security_test.c \
 
@@ -17151,6 +17089,92 @@ deps_thread_stress_test: $(THREAD_STRESS_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(THREAD_STRESS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+TRANSPORT_METADATA_TEST_SRC = \
+    test/core/transport/metadata_test.c \
+
+TRANSPORT_METADATA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TRANSPORT_METADATA_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/transport_metadata_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/transport_metadata_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/transport_metadata_test: $(PROTOBUF_DEP) $(TRANSPORT_METADATA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(TRANSPORT_METADATA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/transport_metadata_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/metadata_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_transport_metadata_test: $(TRANSPORT_METADATA_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(TRANSPORT_METADATA_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+TRANSPORT_PID_CONTROLLER_TEST_SRC = \
+    test/core/transport/pid_controller_test.cc \
+
+TRANSPORT_PID_CONTROLLER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TRANSPORT_PID_CONTROLLER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/transport_pid_controller_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/transport_pid_controller_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/transport_pid_controller_test: $(PROTOBUF_DEP) $(TRANSPORT_PID_CONTROLLER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(TRANSPORT_PID_CONTROLLER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/transport_pid_controller_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/pid_controller_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_transport_pid_controller_test: $(TRANSPORT_PID_CONTROLLER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(TRANSPORT_PID_CONTROLLER_TEST_OBJS:.o=.dep)
 endif
 endif
 

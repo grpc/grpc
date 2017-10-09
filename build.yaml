@@ -3322,26 +3322,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: transport_metadata_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/metadata_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: transport_pid_controller_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/pid_controller_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: transport_security_test
   build: test
   language: c
@@ -4689,6 +4669,28 @@ targets:
   - gpr_test_util
   - gpr
   timeout_seconds: 1200
+- name: transport_metadata_test
+  build: test
+  language: c++
+  src:
+  - test/core/transport/metadata_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: transport_pid_controller_test
+  build: test
+  language: c++
+  src:
+  - test/core/transport/pid_controller_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc++
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: writes_per_rpc_test
   gtest: true
   cpu_cost: 0.5
