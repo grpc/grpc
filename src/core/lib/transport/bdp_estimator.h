@@ -35,7 +35,7 @@ namespace grpc_core {
 class BdpEstimator {
  public:
   explicit BdpEstimator(const char *name);
-  ~BdpEstimator();
+  ~BdpEstimator() {}
 
   // Returns true if a reasonable estimate could be obtained
   bool EstimateBdp(int64_t *estimate_out) const {
