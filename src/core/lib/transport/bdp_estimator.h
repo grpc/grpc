@@ -77,7 +77,7 @@ class BdpEstimator {
   }
 
   // Completes a previously started ping, returns when to schedule the next one
-  grpc_millis CompletePing(grpc_exec_ctx *exec_ctx) GRPC_MUST_USE_RESULT;
+  grpc_millis CompletePing(grpc_exec_ctx *exec_ctx);
 
  private:
   enum class PingState { UNSCHEDULED, SCHEDULED, STARTED };
