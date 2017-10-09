@@ -54,7 +54,6 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_impl.h"
 
-#define DEFAULT_WINDOW 65535
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
 #define MAX_WRITE_BUFFER_SIZE (64 * 1024 * 1024)
@@ -222,7 +221,7 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
     t->write_cb_pool = next;
   }
 
-  t->flow_control.bdp_estimator.Destroy();
+  t->flow_control.Destroy();
 
   gpr_free(t->ping_acks);
   gpr_free(t->peer_string);
@@ -281,10 +280,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->endpoint_reading = 1;
   t->next_stream_id = is_client ? 1 : 2;
   t->is_client = is_client;
-  t->flow_control.remote_window = DEFAULT_WINDOW;
-  t->flow_control.announced_window = DEFAULT_WINDOW;
-  t->flow_control.target_initial_window_size = DEFAULT_WINDOW;
-  t->flow_control.t = t;
+  t->flow_control.Init();
   t->deframe_state = is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->is_first_frame = true;
   grpc_connectivity_state_init(
