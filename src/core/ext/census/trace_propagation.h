@@ -21,6 +21,10 @@
 
 #include "src/core/ext/census/tracing.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Encoding and decoding functions for receiving and sending trace contexts
    over the wire.  Only RPC libraries should be calling these
    functions.  These functions return the number of bytes encoded/decoded
@@ -44,5 +48,9 @@ size_t trace_span_context_to_http_format(const trace_span_context *ctxt,
    structure. */
 size_t http_format_to_trace_span_context(const char *buf, size_t buf_size,
                                          trace_span_context *ctxt);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_CENSUS_TRACE_PROPAGATION_H */

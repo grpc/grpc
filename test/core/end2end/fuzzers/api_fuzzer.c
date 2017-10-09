@@ -60,7 +60,9 @@ extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 static gpr_timespec now_impl(gpr_clock_type clock_type) {
   GPR_ASSERT(clock_type != GPR_TIMESPAN);
-  return g_now;
+  gpr_timespec ts = g_now;
+  ts.clock_type = clock_type;
+  return ts;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -407,10 +409,8 @@ void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
   r->addrs = addresses;
   r->lb_addrs = NULL;
   grpc_timer_init(
-      exec_ctx, &r->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                        gpr_time_from_seconds(1, GPR_TIMESPAN)),
-      GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx),
-      gpr_now(GPR_CLOCK_MONOTONIC));
+      exec_ctx, &r->timer, GPR_MS_PER_SEC + grpc_exec_ctx_now(exec_ctx),
+      GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
 }
 
 grpc_ares_request *my_dns_lookup_ares(
@@ -424,10 +424,8 @@ grpc_ares_request *my_dns_lookup_ares(
   r->addrs = NULL;
   r->lb_addrs = lb_addrs;
   grpc_timer_init(
-      exec_ctx, &r->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                        gpr_time_from_seconds(1, GPR_TIMESPAN)),
-      GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx),
-      gpr_now(GPR_CLOCK_MONOTONIC));
+      exec_ctx, &r->timer, GPR_MS_PER_SEC + grpc_exec_ctx_now(exec_ctx),
+      GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
   return NULL;
 }
 
@@ -487,10 +485,8 @@ static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   fc->ep = ep;
   fc->deadline = deadline;
   grpc_timer_init(
-      exec_ctx, &fc->timer, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                         gpr_time_from_millis(1, GPR_TIMESPAN)),
-      GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx),
-      gpr_now(GPR_CLOCK_MONOTONIC));
+      exec_ctx, &fc->timer, GPR_MS_PER_SEC + grpc_exec_ctx_now(exec_ctx),
+      GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx));
 }
 
 static void my_tcp_client_connect(grpc_exec_ctx *exec_ctx,

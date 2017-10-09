@@ -382,6 +382,11 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_http2_spurious_writes_begun", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_hpack_recv_indexed", 
         "type": "INTEGER"
       }, 
@@ -1170,6 +1175,11 @@
       {
         "mode": "NULLABLE", 
         "name": "core_http2_initiate_write_due_to_force_rst_stream", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_http2_spurious_writes_begun", 
         "type": "INTEGER"
       }, 
       {

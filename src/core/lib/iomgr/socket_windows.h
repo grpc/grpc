@@ -28,6 +28,10 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* This holds the data for an outstanding read or write on a socket.
    The mutex to protect the concurrent access to that data is the one
    inside the winsocket wrapper. */
@@ -106,5 +110,9 @@ void grpc_socket_notify_on_read(grpc_exec_ctx *exec_ctx,
 void grpc_socket_become_ready(grpc_exec_ctx *exec_ctx,
                               grpc_winsocket *winsocket,
                               grpc_winsocket_callback_info *ci);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H */

@@ -24,6 +24,10 @@
 /* Maximum length of an individual census trace annotation. */
 #define CENSUS_MAX_ANNOTATION_LENGTH 200
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Structure of a census op id. Define as structure because 64bit integer is not
    available on every platform for C89. */
 typedef struct census_op_id {
@@ -57,5 +61,9 @@ census_op_id census_tracing_start_op(void);
 
 /* Ends tracing. Calling this function will invalidate the input op_id. */
 void census_tracing_end_op(census_op_id op_id);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_CENSUS_CENSUS_INTERFACE_H */

@@ -5,29 +5,25 @@
 namespace Grpc\Testing;
 
 /**
- * Protobuf enum <code>grpc.testing.ClientType</code>
+ * Protobuf enum <code>Grpc\Testing\ClientType</code>
  */
 class ClientType
 {
     /**
-     * <pre>
      * Many languages support a basic distinction between using
      * sync or async client, and this allows the specification
-     * </pre>
      *
-     * <code>SYNC_CLIENT = 0;</code>
+     * Generated from protobuf enum <code>SYNC_CLIENT = 0;</code>
      */
     const SYNC_CLIENT = 0;
     /**
-     * <code>ASYNC_CLIENT = 1;</code>
+     * Generated from protobuf enum <code>ASYNC_CLIENT = 1;</code>
      */
     const ASYNC_CLIENT = 1;
     /**
-     * <pre>
      * used for some language-specific variants
-     * </pre>
      *
-     * <code>OTHER_CLIENT = 2;</code>
+     * Generated from protobuf enum <code>OTHER_CLIENT = 2;</code>
      */
     const OTHER_CLIENT = 2;
 }

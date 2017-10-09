@@ -23,6 +23,10 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
                                   const grpc_channel_args *args,
                                   grpc_channel_stack_type channel_stack_type,
@@ -43,7 +47,7 @@ grpc_channel *grpc_channel_create_with_builder(
 grpc_call *grpc_channel_create_pollset_set_call(
     grpc_exec_ctx *exec_ctx, grpc_channel *channel, grpc_call *parent_call,
     uint32_t propagation_mask, grpc_pollset_set *pollset_set, grpc_slice method,
-    const grpc_slice *host, gpr_timespec deadline, void *reserved);
+    const grpc_slice *host, grpc_millis deadline, void *reserved);
 
 /** Get a (borrowed) pointer to this channels underlying channel stack */
 grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel);
@@ -80,5 +84,9 @@ void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx,
 /** Return the channel's compression options. */
 grpc_compression_options grpc_channel_compression_options(
     const grpc_channel *channel);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_H */
