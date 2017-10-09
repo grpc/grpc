@@ -20,13 +20,16 @@ grpc_package(name = "test/core/transport")
 
 grpc_cc_test(
     name = "bdp_estimator_test",
-    srcs = ["bdp_estimator_test.c"],
-    language = "C",
+    srcs = ["bdp_estimator_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
+    ],
+    external_deps = [
+        "gtest",
     ],
 )
 
