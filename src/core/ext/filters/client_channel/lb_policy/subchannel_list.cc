@@ -41,7 +41,7 @@ void grpc_lb_subchannel_data_unref_subchannel(grpc_exec_ctx *exec_ctx,
               "[LB %p] subchannel list %p index %" PRIdPTR " of %" PRIdPTR
               " (subchannel %p): unreffing subchannel",
               sd->subchannel_list->policy, sd->subchannel_list,
-              sd - sd->subchannel_list->subchannels,
+              (size_t)(sd - sd->subchannel_list->subchannels),
               sd->subchannel_list->num_subchannels, sd->subchannel);
     }
     GRPC_SUBCHANNEL_UNREF(exec_ctx, sd->subchannel, reason);
@@ -67,7 +67,7 @@ void grpc_lb_subchannel_data_start_connectivity_watch(
             "[LB %p] subchannel list %p index %" PRIdPTR " of %" PRIdPTR
             " (subchannel %p): requesting connectivity change notification",
             sd->subchannel_list->policy, sd->subchannel_list,
-            sd - sd->subchannel_list->subchannels,
+            (size_t)(sd - sd->subchannel_list->subchannels),
             sd->subchannel_list->num_subchannels, sd->subchannel);
   }
   sd->connectivity_notification_pending = true;
@@ -86,7 +86,7 @@ void grpc_lb_subchannel_data_stop_connectivity_watch(
             "[LB %p] subchannel list %p index %" PRIdPTR " of %" PRIdPTR
             " (subchannel %p): stopping connectivity watch",
             sd->subchannel_list->policy, sd->subchannel_list,
-            sd - sd->subchannel_list->subchannels,
+            (size_t)(sd - sd->subchannel_list->subchannels),
             sd->subchannel_list->num_subchannels, sd->subchannel);
   }
   sd->connectivity_notification_pending = false;
@@ -250,7 +250,7 @@ static void grpc_lb_subchannel_data_cancel_connectivity_watch(
             "[LB %p] subchannel list %p index %" PRIdPTR " of %" PRIdPTR
             " (subchannel %p): canceling connectivity watch (%s)",
             sd->subchannel_list->policy, sd->subchannel_list,
-            sd - sd->subchannel_list->subchannels,
+            (size_t)(sd - sd->subchannel_list->subchannels),
             sd->subchannel_list->num_subchannels, sd->subchannel, reason);
   }
   grpc_subchannel_notify_on_state_change(
