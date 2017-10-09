@@ -299,11 +299,14 @@ class Client {
     Thread& operator=(const Thread&);
 
     void ThreadFunc() {
+      int wait_loop = 0;
       while (!gpr_event_wait(
           &client_->start_requests_,
           gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                       gpr_time_from_seconds(1, GPR_TIMESPAN)))) {
-        gpr_log(GPR_INFO, "Waiting for benchmark to start");
+                       gpr_time_from_seconds(20, GPR_TIMESPAN)))) {
+        gpr_log(GPR_INFO, "%" PRIdPTR ": Waiting for benchmark to start (%d)",
+                idx_, wait_loop);
+        wait_loop++;
       }
 
       for (;;) {
@@ -380,6 +383,13 @@ class ClientImpl : public Client {
           config.server_targets(i % config.server_targets_size()), config,
           create_stub_, i);
     }
+    std::vector<std::unique_ptr<std::thread>> connecting_threads;
+    for (auto& c : channels_) {
+      connecting_threads.emplace_back(c.WaitForReady());
+    }
+    for (auto& t : connecting_threads) {
+      t->join();
+    }
 
     ClientRequestCreator<RequestType> create_req(&request_,
                                                  config.payload_config());
@@ -414,13 +424,18 @@ class ClientImpl : public Client {
           !config.security_params().use_test_ca(),
           std::shared_ptr<CallCredentials>(), args);
       gpr_log(GPR_INFO, "Connecting to %s", target.c_str());
-      GPR_ASSERT(channel_->WaitForConnected(
-          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                       gpr_time_from_seconds(300, GPR_TIMESPAN))));
       stub_ = create_stub(channel_);
     }
     Channel* get_channel() { return channel_.get(); }
     StubType* get_stub() { return stub_.get(); }
+
+    std::unique_ptr<std::thread> WaitForReady() {
+      return std::unique_ptr<std::thread>(new std::thread([this]() {
+        GPR_ASSERT(channel_->WaitForConnected(
+            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                         gpr_time_from_seconds(10, GPR_TIMESPAN))));
+      }));
+    }
 
    private:
     void set_channel_args(const ClientConfig& config, ChannelArguments* args) {
