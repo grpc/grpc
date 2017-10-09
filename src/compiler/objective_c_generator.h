@@ -24,7 +24,11 @@
 namespace grpc_objective_c_generator {
 
 using ::grpc::protobuf::ServiceDescriptor;
+using ::grpc::protobuf::FileDescriptor;
 using ::grpc::string;
+
+// Returns forward declaration of classes in the generated header file.
+string GetAllMessageClasses(const FileDescriptor *file);
 
 // Returns the content to be included in the "global_scope" insertion point of
 // the generated header file.

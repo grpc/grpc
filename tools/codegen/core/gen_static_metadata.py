@@ -304,7 +304,7 @@ else:
   C = open(
       os.path.join(
           os.path.dirname(sys.argv[0]),
-          '../../../src/core/lib/transport/static_metadata.c'), 'w')
+          '../../../src/core/lib/transport/static_metadata.cc'), 'w')
   D = open(
       os.path.join(
           os.path.dirname(sys.argv[0]),
@@ -353,6 +353,10 @@ an explanation of what's going on.
 
 print >> H, '#ifndef GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H'
 print >> H, '#define GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H'
+print >> H
+print >> H, '#ifdef __cplusplus'
+print >> H, 'extern "C" {'
+print >> H, '#endif'
 print >> H
 print >> H, '#include "src/core/lib/transport/metadata.h"'
 print >> H
@@ -588,6 +592,10 @@ print >> C, '0,%s' % ','.join('%d' % md_idx(elem) for elem in stream_compression
 print >> C, '};'
 
 print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
+
+print >> H, '#ifdef __cplusplus'
+print >> H, '}'
+print >> H, '#endif'
 
 print >> H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
 

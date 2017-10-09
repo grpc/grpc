@@ -23,6 +23,10 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/transport/transport.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern grpc_tracer_flag grpc_http_trace;
 extern grpc_tracer_flag grpc_flowctl_trace;
 extern grpc_tracer_flag grpc_trace_http2_stream_state;
@@ -40,5 +44,9 @@ grpc_transport *grpc_create_chttp2_transport(
 void grpc_chttp2_transport_start_reading(grpc_exec_ctx *exec_ctx,
                                          grpc_transport *transport,
                                          grpc_slice_buffer *read_buffer);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H */

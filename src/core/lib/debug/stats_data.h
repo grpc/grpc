@@ -24,6 +24,10 @@
 #include <inttypes.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
   GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED,
   GRPC_STATS_COUNTER_SERVER_CALLS_CREATED,
@@ -79,6 +83,7 @@ typedef enum {
   GRPC_STATS_COUNTER_HTTP2_INITIATE_WRITE_DUE_TO_TRANSPORT_FLOW_CONTROL_UNSTALLED,
   GRPC_STATS_COUNTER_HTTP2_INITIATE_WRITE_DUE_TO_PING_RESPONSE,
   GRPC_STATS_COUNTER_HTTP2_INITIATE_WRITE_DUE_TO_FORCE_RST_STREAM,
+  GRPC_STATS_COUNTER_HTTP2_SPURIOUS_WRITES_BEGUN,
   GRPC_STATS_COUNTER_HPACK_RECV_INDEXED,
   GRPC_STATS_COUNTER_HPACK_RECV_LITHDR_INCIDX,
   GRPC_STATS_COUNTER_HPACK_RECV_LITHDR_INCIDX_V,
@@ -326,6 +331,9 @@ typedef enum {
   GRPC_STATS_INC_COUNTER(                                                     \
       (exec_ctx),                                                             \
       GRPC_STATS_COUNTER_HTTP2_INITIATE_WRITE_DUE_TO_FORCE_RST_STREAM)
+#define GRPC_STATS_INC_HTTP2_SPURIOUS_WRITES_BEGUN(exec_ctx) \
+  GRPC_STATS_INC_COUNTER((exec_ctx),                         \
+                         GRPC_STATS_COUNTER_HTTP2_SPURIOUS_WRITES_BEGUN)
 #define GRPC_STATS_INC_HPACK_RECV_INDEXED(exec_ctx) \
   GRPC_STATS_INC_COUNTER((exec_ctx), GRPC_STATS_COUNTER_HPACK_RECV_INDEXED)
 #define GRPC_STATS_INC_HPACK_RECV_LITHDR_INCIDX(exec_ctx) \
@@ -466,5 +474,9 @@ extern const int grpc_stats_histo_start[13];
 extern const int *const grpc_stats_histo_bucket_boundaries[13];
 extern void (*const grpc_stats_inc_histogram[13])(grpc_exec_ctx *exec_ctx,
                                                   int x);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_DEBUG_STATS_DATA_H */

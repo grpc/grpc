@@ -21,6 +21,14 @@
 
 #include "src/core/lib/compression/stream_compression.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern const grpc_stream_compression_vtable grpc_stream_compression_gzip_vtable;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

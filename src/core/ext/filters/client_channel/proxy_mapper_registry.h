@@ -21,6 +21,10 @@
 
 #include "src/core/ext/filters/client_channel/proxy_mapper.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void grpc_proxy_mapper_registry_init();
 void grpc_proxy_mapper_registry_shutdown();
 
@@ -40,5 +44,9 @@ bool grpc_proxy_mappers_map_address(grpc_exec_ctx* exec_ctx,
                                     const grpc_channel_args* args,
                                     grpc_resolved_address** new_address,
                                     grpc_channel_args** new_args);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PROXY_MAPPER_REGISTRY_H */
