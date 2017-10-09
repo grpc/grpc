@@ -369,7 +369,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
         " of %" PRIdPTR "), subchannel_list %p: state=%s p->shutdown=%d "
         "sd->subchannel_list->shutting_down=%d error=%s",
         (void *)p, (void *)sd->subchannel,
-        p->subchannel_list->checking_subchannel,
+        sd->subchannel_list->checking_subchannel,
         sd->subchannel_list->num_subchannels, (void *)sd->subchannel_list,
         grpc_connectivity_state_name(sd->pending_connectivity_state_unsafe),
         p->shutdown, sd->subchannel_list->shutting_down,
