@@ -1616,7 +1616,7 @@ add_library(grpc_test_util
   test/core/end2end/fixtures/http_proxy_fixture.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
-  test/core/util/debugger_macros.c
+  test/core/util/debugger_macros.cc
   test/core/util/grpc_profiler.c
   test/core/util/memory_counters.c
   test/core/util/mock_endpoint.c
@@ -1880,7 +1880,7 @@ add_library(grpc_test_util_unsecure
   test/core/end2end/fixtures/http_proxy_fixture.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
-  test/core/util/debugger_macros.c
+  test/core/util/debugger_macros.cc
   test/core/util/grpc_profiler.c
   test/core/util/memory_counters.c
   test/core/util/mock_endpoint.c

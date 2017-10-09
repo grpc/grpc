@@ -37,6 +37,7 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/support/manual_constructor.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/pid_controller.h"
@@ -268,7 +269,7 @@ typedef struct {
   bool enable_bdp_probe;
 
   /* bdp estimation */
-  grpc_bdp_estimator bdp_estimator;
+  grpc_core::ManualConstructor<grpc_core::BdpEstimator> bdp_estimator;
 
   /* pid controller */
   bool pid_controller_initialized;

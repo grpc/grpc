@@ -1320,6 +1320,7 @@ src/core/lib/support/log_android.cc \
 src/core/lib/support/log_linux.cc \
 src/core/lib/support/log_posix.cc \
 src/core/lib/support/log_windows.cc \
+src/core/lib/support/manual_constructor.h \
 src/core/lib/support/memory.h \
 src/core/lib/support/mpscq.cc \
 src/core/lib/support/mpscq.h \
