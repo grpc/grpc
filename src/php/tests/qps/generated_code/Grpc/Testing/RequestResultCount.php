@@ -9,16 +9,16 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Protobuf type <code>grpc.testing.RequestResultCount</code>
+ * Generated from protobuf message <code>grpc.testing.RequestResultCount</code>
  */
 class RequestResultCount extends \Google\Protobuf\Internal\Message
 {
     /**
-     * <code>int32 status_code = 1;</code>
+     * Generated from protobuf field <code>int32 status_code = 1;</code>
      */
     private $status_code = 0;
     /**
-     * <code>int64 count = 2;</code>
+     * Generated from protobuf field <code>int64 count = 2;</code>
      */
     private $count = 0;
 
@@ -28,7 +28,8 @@ class RequestResultCount extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>int32 status_code = 1;</code>
+     * Generated from protobuf field <code>int32 status_code = 1;</code>
+     * @return int
      */
     public function getStatusCode()
     {
@@ -36,16 +37,21 @@ class RequestResultCount extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>int32 status_code = 1;</code>
+     * Generated from protobuf field <code>int32 status_code = 1;</code>
+     * @param int $var
+     * @return $this
      */
     public function setStatusCode($var)
     {
         GPBUtil::checkInt32($var);
         $this->status_code = $var;
+
+        return $this;
     }
 
     /**
-     * <code>int64 count = 2;</code>
+     * Generated from protobuf field <code>int64 count = 2;</code>
+     * @return int|string
      */
     public function getCount()
     {
@@ -53,12 +59,16 @@ class RequestResultCount extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>int64 count = 2;</code>
+     * Generated from protobuf field <code>int64 count = 2;</code>
+     * @param int|string $var
+     * @return $this
      */
     public function setCount($var)
     {
         GPBUtil::checkInt64($var);
         $this->count = $var;
+
+        return $this;
     }
 
 }

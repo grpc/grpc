@@ -56,7 +56,8 @@ typedef struct grpc_deadline_state {
 void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               grpc_call_stack* call_stack,
                               grpc_call_combiner* call_combiner,
-                              gpr_timespec deadline);
+                              grpc_millis deadline);
+
 void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
                                  grpc_call_element* elem);
 
@@ -70,7 +71,7 @@ void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
 //
 // Note: Must be called while holding the call combiner.
 void grpc_deadline_state_reset(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                               gpr_timespec new_deadline);
+                               grpc_millis new_deadline);
 
 // To be called from the client-side filter's start_transport_stream_op_batch()
 // method.  Ensures that the deadline timer is cancelled when the call

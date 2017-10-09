@@ -600,7 +600,6 @@
         'src/core/lib/support/arena.cc',
         'src/core/lib/support/atm.cc',
         'src/core/lib/support/avl.cc',
-        'src/core/lib/support/backoff.cc',
         'src/core/lib/support/cmdline.cc',
         'src/core/lib/support/cpu_iphone.cc',
         'src/core/lib/support/cpu_linux.cc',
@@ -658,6 +657,7 @@
       ],
       'sources': [
         'src/core/lib/surface/init.cc',
+        'src/core/lib/backoff/backoff.cc',
         'src/core/lib/channel/channel_args.cc',
         'src/core/lib/channel/channel_stack.cc',
         'src/core/lib/channel/channel_stack_builder.cc',

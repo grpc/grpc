@@ -24,8 +24,21 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 #include <limits.h>
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/util/test_config.h"
+
+extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
+
+static int g_clock = 0;
+
+static gpr_timespec fake_gpr_now(gpr_clock_type clock_type) {
+  return (gpr_timespec){
+      .tv_sec = g_clock, .tv_nsec = 0, .clock_type = clock_type,
+  };
+}
+
+static void inc_time(void) { g_clock += 30; }
 
 static void test_noop(void) {
   gpr_log(GPR_INFO, "test_noop");
@@ -44,16 +57,19 @@ static void test_get_estimate_no_samples(void) {
 static void add_samples(grpc_bdp_estimator *estimator, int64_t *samples,
                         size_t n) {
   grpc_bdp_estimator_add_incoming_bytes(estimator, 1234567);
-  GPR_ASSERT(grpc_bdp_estimator_need_ping(estimator) == true);
+  inc_time();
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  GPR_ASSERT(grpc_bdp_estimator_need_ping(&exec_ctx, estimator) == true);
   grpc_bdp_estimator_schedule_ping(estimator);
   grpc_bdp_estimator_start_ping(estimator);
   for (size_t i = 0; i < n; i++) {
     grpc_bdp_estimator_add_incoming_bytes(estimator, samples[i]);
-    GPR_ASSERT(grpc_bdp_estimator_need_ping(estimator) == false);
+    GPR_ASSERT(grpc_bdp_estimator_need_ping(&exec_ctx, estimator) == false);
   }
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_millis(1, GPR_TIMESPAN)));
-  grpc_bdp_estimator_complete_ping(estimator);
+  grpc_bdp_estimator_complete_ping(&exec_ctx, estimator);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void add_sample(grpc_bdp_estimator *estimator, int64_t sample) {
@@ -130,7 +146,9 @@ static void test_get_estimate_random_values(size_t n) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
+  gpr_now_impl = fake_gpr_now;
   grpc_init();
+  grpc_timer_manager_set_threading(false);
   test_noop();
   test_get_estimate_no_samples();
   test_get_estimate_1_sample();

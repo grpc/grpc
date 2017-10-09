@@ -31,7 +31,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'BoringSSL'
-  version = '9.0'
+  version = '9.1'
   s.version  = version
   s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google’s needs.'
   # Adapted from the homepage:
@@ -67,9 +67,10 @@ Pod::Spec.new do |s|
   # "The name and email addresses of the library maintainers, not the Podspec maintainer."
   s.authors  = 'Adam Langley', 'David Benjamin', 'Matt Braithwaite'
 
+  major_version = version[0] + '.0'
   s.source = {
     :git => 'https://boringssl.googlesource.com/boringssl',
-    :tag => "version_for_cocoapods_#{version}",
+    :tag => "version_for_cocoapods_#{major_version}",
   }
 
   name = 'openssl'
@@ -186,6 +187,7 @@ Pod::Spec.new do |s|
     cat > include/openssl/BoringSSL.modulemap <<EOF
       framework module openssl {
         umbrella header "umbrella.h"
+        textual header "arm_arch.h"
         export *
         module * { export * }
       }
