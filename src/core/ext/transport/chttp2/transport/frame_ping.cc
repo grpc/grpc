@@ -89,10 +89,10 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
       grpc_chttp2_ack_ping(exec_ctx, t, p->opaque_8bytes);
     } else {
       if (!t->is_client) {
-        gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-        gpr_timespec next_allowed_ping =
-            gpr_time_add(t->ping_recv_state.last_ping_recv_time,
-                         t->ping_policy.min_recv_ping_interval_without_data);
+        grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+        grpc_millis next_allowed_ping =
+            t->ping_recv_state.last_ping_recv_time +
+            t->ping_policy.min_recv_ping_interval_without_data;
 
         if (t->keepalive_permit_without_calls == 0 &&
             grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
@@ -100,11 +100,10 @@ grpc_error *grpc_chttp2_ping_parser_parse(grpc_exec_ctx *exec_ctx, void *parser,
              no less than two hours. When there is no outstanding streams, we
              restrict the number of PINGS equivalent to TCP Keep-Alive. */
           next_allowed_ping =
-              gpr_time_add(t->ping_recv_state.last_ping_recv_time,
-                           gpr_time_from_seconds(7200, GPR_TIMESPAN));
+              t->ping_recv_state.last_ping_recv_time + 7200 * GPR_MS_PER_SEC;
         }
 
-        if (gpr_time_cmp(next_allowed_ping, now) > 0) {
+        if (next_allowed_ping > now) {
           grpc_chttp2_add_ping_strike(exec_ctx, t);
         }
 
