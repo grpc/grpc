@@ -22,6 +22,7 @@
 #include <stdint.h>
 
 #include <grpc/support/useful.h>
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/support/manual_constructor.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/pid_controller.h"
@@ -53,7 +54,12 @@ class FlowControlAction {
 
   Urgency send_stream_update() const { return send_stream_update_; }
   Urgency send_transport_update() const { return send_transport_update_; }
-  Urgency send_setting_update() const { return send_setting_update_; }
+  Urgency send_initial_window_update() const {
+    return send_initial_window_update_;
+  }
+  Urgency send_max_frame_size_update() const {
+    return send_max_frame_size_update_;
+  }
   uint32_t initial_window_size() const { return initial_window_size_; }
   uint32_t max_frame_size() const { return max_frame_size_; }
 
@@ -61,12 +67,20 @@ class FlowControlAction {
     send_stream_update_ = u;
     return *this;
   }
-  FlowControlAction& send_transport_update(Urgency u) {
+  FlowControlAction& set_send_transport_update(Urgency u) {
     send_transport_update_ = u;
     return *this;
   }
-  FlowControlAction& send_setting_update(Urgency u) {
-    send_setting_update_ = u;
+  FlowControlAction& set_send_initial_window_update(Urgency u,
+                                                    uint32_t update) {
+    send_initial_window_update_ = u;
+    initial_window_size_ = update;
+    return *this;
+  }
+  FlowControlAction& set_send_max_frame_size_update(Urgency u,
+                                                    uint32_t update) {
+    send_max_frame_size_update_ = u;
+    max_frame_size_ = update;
     return *this;
   }
 
@@ -76,7 +90,8 @@ class FlowControlAction {
  private:
   Urgency send_stream_update_ = Urgency::NO_ACTION_NEEDED;
   Urgency send_transport_update_ = Urgency::NO_ACTION_NEEDED;
-  Urgency send_setting_update_ = Urgency::NO_ACTION_NEEDED;
+  Urgency send_initial_window_update_ = Urgency::NO_ACTION_NEEDED;
+  Urgency send_max_frame_size_update_ = Urgency::NO_ACTION_NEEDED;
   uint32_t initial_window_size_ = 0;
   uint32_t max_frame_size_ = 0;
 };
@@ -114,11 +129,15 @@ class FlowControlTrace {
 
 class TransportFlowControl {
  public:
+  TransportFlowControl(const grpc_chttp2_transport* t);
   ~TransportFlowControl() {
     if (pid_controller_initialized_) {
       pid_controller_.Destroy();
     }
   }
+
+  // toggle bdp probing
+  void SetBdpProbe(bool enable);
 
   // returns an announce if we should send a transport update to our peer,
   // else returns zero; writing_anyway indicates if a write would happen
@@ -177,10 +196,14 @@ class TransportFlowControl {
     }
   }
 
+  BdpEstimator* bdp_estimator() { return &bdp_estimator_; }
+
  private:
   FlowControlAction UpdateForBdp(grpc_exec_ctx* exec_ctx,
                                  FlowControlAction action);
-  double SmoothBdp(grpc_exec_ctx* exec_ctx, double value);
+  double SmoothLogBdp(grpc_exec_ctx* exec_ctx, double value);
+  FlowControlAction::Urgency DeltaUrgency(int32_t value,
+                                          grpc_chttp2_setting_id setting_id);
 
   const grpc_chttp2_transport* const t_;
 
@@ -211,26 +234,28 @@ class TransportFlowControl {
   int32_t target_initial_window_size_ = kDefaultWindow;
 
   /** should we probe bdp? */
-  bool enable_bdp_probe_;
+  bool enable_bdp_probe_ = true;
 
   /* bdp estimation */
   grpc_core::BdpEstimator bdp_estimator_;
 
   /* pid controller */
-  bool pid_controller_initialized_;
+  bool pid_controller_initialized_ = false;
   grpc_core::ManualConstructor<grpc_core::PidController> pid_controller_;
-  grpc_millis last_pid_update_;
+  grpc_millis last_pid_update_ = 0;
 };
 
 class StreamFlowControl {
  public:
-  StreamFlowControl(TransportFlowControl* tfc, grpc_chttp2_stream* s);
+  StreamFlowControl(TransportFlowControl* tfc, const grpc_chttp2_stream* s);
   ~StreamFlowControl() {
     tfc_->PreUpdateAnnouncedWindowOverIncomingWindow(announced_window_delta_);
   }
 
   FlowControlAction UpdateAction(FlowControlAction action);
-  FlowControlAction MakeAction() { return UpdateAction(FlowControlAction()); }
+  FlowControlAction MakeAction(grpc_exec_ctx* exec_ctx) {
+    return UpdateAction(tfc_->MakeAction(exec_ctx));
+  }
 
   // we have sent data on the wire, we must track this in our bookkeeping for
   // the remote peer's flow control.
@@ -276,16 +301,16 @@ class StreamFlowControl {
    * window
    * size of the transport... ie:
    * remote_window = remote_window_delta + transport.initial_window_size */
-  int64_t remote_window_delta_;
+  int64_t remote_window_delta_ = 0;
 
   /** window available for peer to send to us (as a delta on
    * transport.initial_window_size)
    * local_window = local_window_delta + transport.initial_window_size */
-  int64_t local_window_delta_;
+  int64_t local_window_delta_ = 0;
 
   /** window available for peer to send to us over this stream that we have
    * announced to the peer */
-  int64_t announced_window_delta_;
+  int64_t announced_window_delta_ = 0;
 };
 
 }  // namespace chttp2

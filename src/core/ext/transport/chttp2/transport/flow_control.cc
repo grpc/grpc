@@ -137,13 +137,17 @@ void FlowControlAction::Trace(grpc_chttp2_transport* t) const {
   char* mf_str = fmt_uint32_diff_str(
       t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
       max_frame_size_);
-  gpr_log(GPR_DEBUG, "t[%s],  s[%s], settings[%s] iw:%s mf:%s",
+  gpr_log(GPR_DEBUG, "t[%s],  s[%s], iw:%s:%s mf:%s:%s",
           UrgencyString(send_transport_update_),
           UrgencyString(send_stream_update_),
-          UrgencyString(send_setting_update_), iw_str, mf_str);
+          UrgencyString(send_initial_window_update_), iw_str,
+          UrgencyString(send_max_frame_size_update_), mf_str);
   gpr_free(iw_str);
   gpr_free(mf_str);
 }
+
+TransportFlowControl::TransportFlowControl(const grpc_chttp2_transport* t)
+    : t_(t), bdp_estimator_(t->peer_string) {}
 
 uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   FlowControlTrace trace("t updt sent", this, nullptr);
@@ -171,6 +175,10 @@ grpc_error* TransportFlowControl::ValidateRecvData(
   }
   return GRPC_ERROR_NONE;
 }
+
+StreamFlowControl::StreamFlowControl(TransportFlowControl* tfc,
+                                     const grpc_chttp2_stream* s)
+    : tfc_(tfc), s_(s) {}
 
 grpc_error* StreamFlowControl::RecvData(int64_t incoming_frame_size) {
   FlowControlTrace trace("  data recv", tfc_, this);
@@ -277,53 +285,76 @@ static double AdjustForMemoryPressure(grpc_resource_quota* quota,
   return target;
 }
 
-FlowControlAction TransportFlowControl::UpdateForBdp(FlowControlAction action) {
+double TransportFlowControl::SmoothLogBdp(grpc_exec_ctx* exec_ctx,
+                                          double value) {
+  grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+  if (!pid_controller_initialized_) {
+    last_pid_update_ = now;
+    pid_controller_initialized_ = true;
+    pid_controller_.Init(grpc_core::PidController::Args()
+                             .set_gain_p(4)
+                             .set_gain_i(8)
+                             .set_gain_d(0)
+                             .set_initial_control_value(value)
+                             .set_min_control_value(-1)
+                             .set_max_control_value(25)
+                             .set_integral_range(10));
+    return value;
+  }
+  double bdp_error = value - pid_controller_->last_control_value();
+  const double dt = (double)(now - last_pid_update_) * 1e-3;
+  last_pid_update_ = now;
+  return pid_controller_->Update(bdp_error, dt);
+}
+
+FlowControlAction::Urgency TransportFlowControl::DeltaUrgency(
+    int32_t value, grpc_chttp2_setting_id setting_id) {
+  int64_t delta =
+      (int64_t)value - (int64_t)t_->settings[GRPC_LOCAL_SETTINGS][setting_id];
+  // TODO(ncteisen): tune this
+  if (delta != 0 && (delta <= -value / 5 || delta >= value / 5)) {
+    return FlowControlAction::Urgency::QUEUE_UPDATE;
+  } else {
+    return FlowControlAction::Urgency::NO_ACTION_NEEDED;
+  }
+}
+
+FlowControlAction TransportFlowControl::UpdateForBdp(grpc_exec_ctx* exec_ctx,
+                                                     FlowControlAction action) {
   if (enable_bdp_probe_) {
     // get bdp estimate and update initial_window accordingly.
     int64_t estimate = -1;
     if (bdp_estimator_.EstimateBdp(&estimate)) {
-      double target = 1 + log2((double)estimate);
-
       // target might change based on how much memory pressure we are under
       // TODO(ncteisen): experiment with setting target to be huge under low
       // memory pressure.
-      target = AdjustForMemoryPressure(
-          grpc_resource_user_quota(grpc_endpoint_get_resource_user(t_->ep)),
-          target);
-
-      // run our target through the pid controller to stabilize change.
-      // TODO(ncteisen): experiment with other controllers here.
-      double bdp_guess = get_pid_controller_guess(exec_ctx, tfc, target);
+      const double target =
+          pow(2, SmoothLogBdp(exec_ctx,
+                              AdjustForMemoryPressure(
+                                  grpc_resource_user_quota(
+                                      grpc_endpoint_get_resource_user(t_->ep)),
+                                  1 + log2((double)estimate))));
 
       // Though initial window 'could' drop to 0, we keep the floor at 128
-      tfc->target_initial_window_size =
-          (int32_t)GPR_CLAMP(bdp_guess, 128, INT32_MAX);
+      target_initial_window_size_ = (int32_t)GPR_CLAMP(target, 128, INT32_MAX);
 
-      grpc_chttp2_flowctl_urgency init_window_update_urgency =
-          delta_is_significant(tfc, tfc->target_initial_window_size,
-                               GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
-      if (init_window_update_urgency != GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED) {
-        action.send_setting_update = init_window_update_urgency;
-        action.initial_window_size = (uint32_t)tfc->target_initial_window_size;
-      }
+      action.set_send_initial_window_update(
+          DeltaUrgency(target_initial_window_size_,
+                       GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE),
+          target_initial_window_size_);
     }
 
     // get bandwidth estimate and update max_frame accordingly.
     double bw_dbl = -1;
-    if (tfc->bdp_estimator->EstimateBandwidth(&bw_dbl)) {
+    if (bdp_estimator_.EstimateBandwidth(&bw_dbl)) {
       // we target the max of BDP or bandwidth in microseconds.
       int32_t frame_size = (int32_t)GPR_CLAMP(
           GPR_MAX((int32_t)GPR_CLAMP(bw_dbl, 0, INT_MAX) / 1000,
-                  tfc->target_initial_window_size),
+                  target_initial_window_size_),
           16384, 16777215);
-      grpc_chttp2_flowctl_urgency frame_size_urgency = delta_is_significant(
-          tfc, frame_size, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE);
-      if (frame_size_urgency != GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED) {
-        if (frame_size_urgency > action.send_setting_update) {
-          action.send_setting_update = frame_size_urgency;
-        }
-        action.max_frame_size = (uint32_t)frame_size;
-      }
+      action.set_send_max_frame_size_update(
+          DeltaUrgency(frame_size, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE),
+          frame_size);
     }
   }
 }
@@ -354,56 +385,3 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
 
 }  // namespace chttp2
 }  // namespace grpc_core
-
-// Returns an urgency with which to make an update
-static grpc_chttp2_flowctl_urgency delta_is_significant(
-    const grpc_chttp2_transport_flowctl* tfc, int32_t value,
-    grpc_chttp2_setting_id setting_id) {
-  int64_t delta = (int64_t)value -
-                  (int64_t)tfc->t->settings[GRPC_LOCAL_SETTINGS][setting_id];
-  // TODO(ncteisen): tune this
-  if (delta != 0 && (delta <= -value / 5 || delta >= value / 5)) {
-    return GRPC_CHTTP2_FLOWCTL_QUEUE_UPDATE;
-  } else {
-    return GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED;
-  }
-}
-
-// Takes in a target and uses the pid controller to return a stabilized
-// guess at the new bdp.
-static double get_pid_controller_guess(grpc_exec_ctx* exec_ctx,
-                                       grpc_chttp2_transport_flowctl* tfc,
-                                       double target) {
-  grpc_millis now = grpc_exec_ctx_now(exec_ctx);
-  if (!tfc->pid_controller_initialized) {
-    tfc->last_pid_update = now;
-    tfc->pid_controller_initialized = true;
-    tfc->pid_controller.Init(grpc_core::PidController::Args()
-                                 .set_gain_p(4)
-                                 .set_gain_i(8)
-                                 .set_gain_d(0)
-                                 .set_initial_control_value(target)
-                                 .set_min_control_value(-1)
-                                 .set_max_control_value(25)
-                                 .set_integral_range(10));
-    return pow(2, target);
-  }
-  double bdp_error = target - tfc->pid_controller->last_control_value();
-  double dt = (double)(now - tfc->last_pid_update) * 1e-3;
-  double log2_bdp_guess = tfc->pid_controller->Update(bdp_error, dt);
-  tfc->last_pid_update = now;
-  return pow(2, log2_bdp_guess);
-}
-
-grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
-    grpc_exec_ctx* exec_ctx, grpc_chttp2_transport_flowctl* tfc,
-    grpc_chttp2_stream_flowctl* sfc) {
-  grpc_chttp2_flowctl_action action;
-  memset(&action, 0, sizeof(action));
-  uint32_t target_announced_window = grpc_chttp2_target_announced_window(tfc);
-  if (tfc->announced_window < target_announced_window / 2) {
-    action.send_transport_update = GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY;
-  }
-  TRACEACTION(tfc, action);
-  return action;
-}
