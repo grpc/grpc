@@ -60,7 +60,7 @@ pod repo update  # needed by python
 
 # python
 pip install virtualenv --user python
-pip install -U six tox setuptools twisted pyyaml --user python
+pip install -U Mako six tox setuptools twisted pyyaml --user python
 export PYTHONPATH=/Library/Python/3.4/site-packages
 
 # set xcode version for Obj-C tests

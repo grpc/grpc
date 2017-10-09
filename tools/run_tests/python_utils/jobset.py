@@ -306,8 +306,8 @@ class Job(object):
         else:
           self._state = _FAILURE
           if not self._suppress_failure_message:
-            message('FAILED', '%s [ret=%d, pid=%d]' % (
-                self._spec.shortname, self._process.returncode, self._process.pid),
+            message('FAILED', '%s [ret=%d, pid=%d, time=%.1fsec]' % (
+                self._spec.shortname, self._process.returncode, self._process.pid, elapsed),
                 stdout(), do_newline=True)
           self.result.state = 'FAILED'
           self.result.num_failures += 1
@@ -326,7 +326,7 @@ class Job(object):
             self.result.cpu_estimated = float('%.01f' % self._spec.cpu_cost)
             measurement = '; cpu_cost=%.01f; estimated=%.01f' % (self.result.cpu_measured, self.result.cpu_estimated)
         if not self._quiet_success:
-          message('PASSED', '%s [time=%.1fsec; retries=%d:%d%s]' % (
+          message('PASSED', '%s [time=%.1fsec, retries=%d:%d%s]' % (
               self._spec.shortname, elapsed, self._retries, self._timeout_retries, measurement),
               stdout() if self._spec.verbose_success else None,
               do_newline=self._newline_on_success or self._travis)
@@ -334,6 +334,8 @@ class Job(object):
     elif (self._state == _RUNNING and
           self._spec.timeout_seconds is not None and
           time.time() - self._start > self._spec.timeout_seconds):
+      elapsed = time.time() - self._start
+      self.result.elapsed_time = elapsed
       if self._timeout_retries < self._spec.timeout_retries:
         message('TIMEOUT_FLAKE', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout(), do_newline=True)
         self._timeout_retries += 1
@@ -344,7 +346,7 @@ class Job(object):
         self._process.terminate()
         self.start()
       else:
-        message('TIMEOUT', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout(), do_newline=True)
+        message('TIMEOUT', '%s [pid=%d, time=%.1fsec]' % (self._spec.shortname, self._process.pid, elapsed), stdout(), do_newline=True)
         self.kill()
         self.result.state = 'TIMEOUT'
         self.result.num_failures += 1
