@@ -34,7 +34,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_debugger_macros",
     srcs = [
-        "debugger_macros.c",
+        "debugger_macros.cc",
     ],
     hdrs = [
         "debugger_macros.h",
