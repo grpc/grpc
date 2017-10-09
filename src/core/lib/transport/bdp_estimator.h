@@ -38,11 +38,11 @@ class BdpEstimator {
   ~BdpEstimator();
 
   // Returns true if a reasonable estimate could be obtained
-  bool EstimateBdp(int64_t *estimate_out) {
+  bool EstimateBdp(int64_t *estimate_out) const {
     *estimate_out = estimate_;
     return true;
   }
-  bool EstimateBandwidth(double *bw_out) {
+  bool EstimateBandwidth(double *bw_out) const {
     *bw_out = bw_est_;
     return true;
   }
@@ -50,7 +50,7 @@ class BdpEstimator {
   void AddIncomingBytes(int64_t num_bytes) { accumulator_ += num_bytes; }
 
   // Returns true if the user should schedule a ping
-  bool NeedPing(grpc_exec_ctx *exec_ctx) {
+  bool NeedPing(grpc_exec_ctx *exec_ctx) const {
     switch (ping_state_) {
       case PingState::UNSCHEDULED:
         return grpc_exec_ctx_now(exec_ctx) >= next_ping_scheduled_;
