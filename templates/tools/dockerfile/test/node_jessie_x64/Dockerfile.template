@@ -32,5 +32,8 @@
   <%include file="../../python_deps.include"/>
   <%include file="../../node_deps.include"/>
   <%include file="../../run_tests_addons.include"/>
+  # Install Mako to generate files in grpc/grpc-node
+  RUN pip install Mako
+
   # Define the default command.
   CMD ["bash"]

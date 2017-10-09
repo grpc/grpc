@@ -94,7 +94,7 @@ grpc_timer_check_result grpc_timer_check(grpc_exec_ctx *exec_ctx,
   return GRPC_TIMERS_NOT_CHECKED;
 }
 
-void grpc_timer_list_init(gpr_timespec now) {}
+void grpc_timer_list_init(grpc_exec_ctx *exec_ctx) {}
 void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx) {}
 
 void grpc_timer_consume_kick(void) {}

@@ -28,5 +28,5 @@ tools/run_tests/run_interop_tests.py \
     --cloud_to_prod \
     --cloud_to_prod_auth \
     --prod_servers default gateway_v4 \
-    --use_docker --internal_ci -t -j 12 $@
+    --use_docker --internal_ci --allow_flakes -t -j 12 $@
 
