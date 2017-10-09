@@ -31,19 +31,11 @@
     return [f for f in out if not f.startswith("third_party/nanopb/")]
 
   def grpc_public_headers(libs):
-    excluded_files = ["include/grpc/support/atm_gcc_sync.h",
-                      "include/grpc/support/atm_windows.h",
-                      "include/grpc/support/sync_windows.h",
-                      "include/grpc/support/tls_gcc.h",
-                      "include/grpc/support/tls_msvc.h",
-                      "include/grpc/impl/codegen/atm_gcc_sync.h",
-                      "include/grpc/impl/codegen/atm_windows.h",
-                      "include/grpc/impl/codegen/sync_windows.h"]
     out = []
     for lib in libs:
       if lib.name in ("grpc", "gpr"):
         out += lib.get('public_headers', [])
-    return [f for f in out if not f in excluded_files]
+    return out
 
   def grpc_private_headers(libs):
     out = []
@@ -119,6 +111,7 @@
       # build.
       'USE_HEADERMAP' => 'NO',
       'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+      'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1" "PB_NO_PACKED_STRUCTS=1"',
     }
 
     s.default_subspecs = 'Interface', 'Implementation'
@@ -164,8 +157,8 @@
       ss.dependency "#{s.name}/Implementation", version
       ss.dependency "#{s.name}/Cronet-Interface", version
 
-      ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.c',
-                        'src/core/ext/transport/cronet/transport/cronet_transport.{c,h}',
+      ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc',
+                        'src/core/ext/transport/cronet/transport/cronet_transport.{cc,h}',
                         'third_party/objective_c/Cronet/bidirectional_stream_c.h'
     end
 

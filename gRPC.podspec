@@ -63,10 +63,13 @@ Pod::Spec.new do |s|
   end
 
   s.subspec 'GID' do |ss|
+    ss.ios.deployment_target = '7.0'
+
     ss.header_mappings_dir = "#{src_dir}"
 
     ss.source_files = "#{src_dir}/GRPCCall+GID.{h,m}"
 
+    ss.dependency "#{s.name}/Main", version
     ss.dependency 'Google/SignIn'
   end
 end

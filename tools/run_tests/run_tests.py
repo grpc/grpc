@@ -117,6 +117,13 @@ def run_shell_command(cmd, env=None, cwd=None):
                        e.cmd, e.returncode, e.output)
     raise
 
+def max_parallel_tests_for_current_platform():
+  # Too much test parallelization has only been seen to be a problem
+  # so far on windows.
+  if jobset.platform_string() == 'windows':
+    return 64
+  return 128
+
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class Config(object):
 
@@ -1544,8 +1551,11 @@ class BuildAndRunError(object):
 
 
 def _has_epollexclusive():
+  binary = 'bins/%s/check_epollexclusive' % args.config
+  if not os.path.exists(binary):
+    return False
   try:
-    subprocess.check_call('bins/%s/check_epollexclusive' % args.config)
+    subprocess.check_call(binary)
     return True
   except subprocess.CalledProcessError, e:
     return False
@@ -1618,7 +1628,7 @@ def _build_and_run(
       jobset.message('START', 'Running tests quietly, only failing tests will be reported', do_newline=True)
     num_test_failures, resultset = jobset.run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
-        travis=args.travis, maxjobs=args.jobs,
+        travis=args.travis, maxjobs=args.jobs, maxjobs_cpu_agnostic=max_parallel_tests_for_current_platform(),
         stop_on_failure=args.stop_on_failure,
         quiet_success=args.quiet_success, max_time=args.max_time)
     if resultset:

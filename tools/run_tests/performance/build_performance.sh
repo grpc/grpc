@@ -31,6 +31,7 @@ then
   make CONFIG=${CONFIG} EMBED_OPENSSL=true EMBED_ZLIB=true qps_worker qps_json_driver -j8
 fi
 
+PHP_ALREADY_BUILT=""
 for language in $@
 do
   case "$language" in
@@ -42,6 +43,14 @@ do
     ;;
   "go")
     tools/run_tests/performance/build_performance_go.sh
+    ;;
+  "php7"|"php7_protobuf_c")
+    if [ -n "$PHP_ALREADY_BUILT" ]; then
+      echo "Skipping PHP build as already built by $PHP_ALREADY_BUILT"
+    else
+      PHP_ALREADY_BUILT=$language
+      tools/run_tests/performance/build_performance_php7.sh
+    fi
     ;;
   "csharp")
     python tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8 --compiler coreclr

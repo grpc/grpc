@@ -189,6 +189,8 @@
   doc: Number of HTTP2 writes initiated due to 'ping_response'
 - counter: http2_initiate_write_due_to_force_rst_stream
   doc: Number of HTTP2 writes initiated due to 'force_rst_stream'
+- counter: http2_spurious_writes_begun
+  doc: Number of HTTP2 writes initiated with nothing to write
 - counter: hpack_recv_indexed
   doc: Number of HPACK indexed fields received
 - counter: hpack_recv_lithdr_incidx
@@ -280,3 +282,4 @@
 - counter: cq_ev_queue_transient_pop_failures
   doc: Number of times NULL was popped out of completion queue's event queue
        even though the event queue was not empty
+

@@ -933,6 +933,7 @@ include/grpc/support/tls_pthread.h \
 include/grpc/support/useful.h \
 include/grpc/support/workaround_list.h \
 src/core/ext/transport/inproc/inproc_transport.h \
+src/core/lib/backoff/backoff.h \
 src/core/lib/channel/channel_args.h \
 src/core/lib/channel/channel_stack.h \
 src/core/lib/channel/channel_stack_builder.h \
@@ -952,6 +953,7 @@ src/core/lib/debug/trace.h \
 src/core/lib/http/format_request.h \
 src/core/lib/http/httpcli.h \
 src/core/lib/http/parser.h \
+src/core/lib/iomgr/block_annotate.h \
 src/core/lib/iomgr/call_combiner.h \
 src/core/lib/iomgr/closure.h \
 src/core/lib/iomgr/combiner.h \
@@ -1028,8 +1030,6 @@ src/core/lib/support/arena.h \
 src/core/lib/support/atomic.h \
 src/core/lib/support/atomic_with_atm.h \
 src/core/lib/support/atomic_with_std.h \
-src/core/lib/support/backoff.h \
-src/core/lib/support/block_annotate.h \
 src/core/lib/support/env.h \
 src/core/lib/support/memory.h \
 src/core/lib/support/mpscq.h \

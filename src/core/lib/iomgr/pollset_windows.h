@@ -23,6 +23,10 @@
 
 #include "src/core/lib/iomgr/socket_windows.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* There isn't really any such thing as a pollset under Windows, due to the
    nature of the IO completion ports. A Windows "pollset" is merely a mutex
    used to synchronize with the IOCP, and workers are condition variables
@@ -59,5 +63,9 @@ struct grpc_pollset {
 
 void grpc_pollset_global_init(void);
 void grpc_pollset_global_shutdown(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H */
