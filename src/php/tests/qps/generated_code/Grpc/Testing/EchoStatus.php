@@ -9,21 +9,19 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * <pre>
  * A protobuf representation for grpc status. This is used by test
  * clients to specify a status that the server should attempt to return.
- * </pre>
  *
- * Protobuf type <code>grpc.testing.EchoStatus</code>
+ * Generated from protobuf message <code>grpc.testing.EchoStatus</code>
  */
 class EchoStatus extends \Google\Protobuf\Internal\Message
 {
     /**
-     * <code>int32 code = 1;</code>
+     * Generated from protobuf field <code>int32 code = 1;</code>
      */
     private $code = 0;
     /**
-     * <code>string message = 2;</code>
+     * Generated from protobuf field <code>string message = 2;</code>
      */
     private $message = '';
 
@@ -33,7 +31,8 @@ class EchoStatus extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>int32 code = 1;</code>
+     * Generated from protobuf field <code>int32 code = 1;</code>
+     * @return int
      */
     public function getCode()
     {
@@ -41,16 +40,21 @@ class EchoStatus extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>int32 code = 1;</code>
+     * Generated from protobuf field <code>int32 code = 1;</code>
+     * @param int $var
+     * @return $this
      */
     public function setCode($var)
     {
         GPBUtil::checkInt32($var);
         $this->code = $var;
+
+        return $this;
     }
 
     /**
-     * <code>string message = 2;</code>
+     * Generated from protobuf field <code>string message = 2;</code>
+     * @return string
      */
     public function getMessage()
     {
@@ -58,12 +62,16 @@ class EchoStatus extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>string message = 2;</code>
+     * Generated from protobuf field <code>string message = 2;</code>
+     * @param string $var
+     * @return $this
      */
     public function setMessage($var)
     {
         GPBUtil::checkString($var, True);
         $this->message = $var;
+
+        return $this;
     }
 
 }
