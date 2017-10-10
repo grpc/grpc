@@ -4,24 +4,24 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Generated from protobuf message <code>grpc.testing.LoadParams</code>
+ * Generated from protobuf message <code>grpc.testing.LoadParams</code>.
  */
 class LoadParams extends \Google\Protobuf\Internal\Message
 {
     protected $load;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
         parent::__construct();
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.testing.ClosedLoopParams closed_loop = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.ClosedLoopParams closed_loop = 1;</code>.
+     *
      * @return \Grpc\Testing\ClosedLoopParams
      */
     public function getClosedLoop()
@@ -30,8 +30,10 @@ class LoadParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.testing.ClosedLoopParams closed_loop = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.ClosedLoopParams closed_loop = 1;</code>.
+     *
      * @param \Grpc\Testing\ClosedLoopParams $var
+     *
      * @return $this
      */
     public function setClosedLoop($var)
@@ -43,7 +45,8 @@ class LoadParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.testing.PoissonParams poisson = 2;</code>
+     * Generated from protobuf field <code>.grpc.testing.PoissonParams poisson = 2;</code>.
+     *
      * @return \Grpc\Testing\PoissonParams
      */
     public function getPoisson()
@@ -52,8 +55,10 @@ class LoadParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.testing.PoissonParams poisson = 2;</code>
+     * Generated from protobuf field <code>.grpc.testing.PoissonParams poisson = 2;</code>.
+     *
      * @param \Grpc\Testing\PoissonParams $var
+     *
      * @return $this
      */
     public function setPoisson($var)
@@ -69,8 +74,6 @@ class LoadParams extends \Google\Protobuf\Internal\Message
      */
     public function getLoad()
     {
-        return $this->whichOneof("load");
+        return $this->whichOneof('load');
     }
-
 }
-

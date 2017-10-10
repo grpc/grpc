@@ -4,28 +4,28 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Generated from protobuf message <code>grpc.testing.ChannelArg</code>
+ * Generated from protobuf message <code>grpc.testing.ChannelArg</code>.
  */
 class ChannelArg extends \Google\Protobuf\Internal\Message
 {
     /**
-     * Generated from protobuf field <code>string name = 1;</code>
+     * Generated from protobuf field <code>string name = 1;</code>.
      */
     private $name = '';
     protected $value;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
         parent::__construct();
     }
 
     /**
-     * Generated from protobuf field <code>string name = 1;</code>
+     * Generated from protobuf field <code>string name = 1;</code>.
+     *
      * @return string
      */
     public function getName()
@@ -34,20 +34,23 @@ class ChannelArg extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>string name = 1;</code>
+     * Generated from protobuf field <code>string name = 1;</code>.
+     *
      * @param string $var
+     *
      * @return $this
      */
     public function setName($var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->name = $var;
 
         return $this;
     }
 
     /**
-     * Generated from protobuf field <code>string str_value = 2;</code>
+     * Generated from protobuf field <code>string str_value = 2;</code>.
+     *
      * @return string
      */
     public function getStrValue()
@@ -56,20 +59,23 @@ class ChannelArg extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>string str_value = 2;</code>
+     * Generated from protobuf field <code>string str_value = 2;</code>.
+     *
      * @param string $var
+     *
      * @return $this
      */
     public function setStrValue($var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->writeOneof(2, $var);
 
         return $this;
     }
 
     /**
-     * Generated from protobuf field <code>int32 int_value = 3;</code>
+     * Generated from protobuf field <code>int32 int_value = 3;</code>.
+     *
      * @return int
      */
     public function getIntValue()
@@ -78,8 +84,10 @@ class ChannelArg extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>int32 int_value = 3;</code>
+     * Generated from protobuf field <code>int32 int_value = 3;</code>.
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setIntValue($var)
@@ -95,8 +103,6 @@ class ChannelArg extends \Google\Protobuf\Internal\Message
      */
     public function getValue()
     {
-        return $this->whichOneof("value");
+        return $this->whichOneof('value');
     }
-
 }
-

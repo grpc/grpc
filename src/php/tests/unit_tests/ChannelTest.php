@@ -161,14 +161,15 @@ class ChannelTest extends PHPUnit_Framework_TestCase
         $this->channel->watchConnectivityState(1, 'hi');
     }
 
-
-    public function assertConnecting($state) {
-      $this->assertTrue($state == GRPC\CHANNEL_CONNECTING ||
+    public function assertConnecting($state)
+    {
+        $this->assertTrue($state == GRPC\CHANNEL_CONNECTING ||
                         $state == GRPC\CHANNEL_TRANSIENT_FAILURE);
     }
 
-    public function waitUntilNotIdle($channel) {
-        for ($i = 0; $i < 10; $i++) {
+    public function waitUntilNotIdle($channel)
+    {
+        for ($i = 0; $i < 10; ++$i) {
             $now = Grpc\Timeval::now();
             $deadline = $now->add(new Grpc\Timeval(1000));
             if ($channel->watchConnectivityState(GRPC\CHANNEL_IDLE,
@@ -235,8 +236,8 @@ class ChannelTest extends PHPUnit_Framework_TestCase
 
     public function testPersistentChannelSameArgs()
     {
-        $this->channel1 = new Grpc\Channel('localhost:1', ["abc" => "def"]);
-        $this->channel2 = new Grpc\Channel('localhost:1', ["abc" => "def"]);
+        $this->channel1 = new Grpc\Channel('localhost:1', ['abc' => 'def']);
+        $this->channel2 = new Grpc\Channel('localhost:1', ['abc' => 'def']);
 
         // try to connect on channel1
         $state = $this->channel1->getConnectivityState(true);
@@ -254,7 +255,7 @@ class ChannelTest extends PHPUnit_Framework_TestCase
     public function testPersistentChannelDifferentArgs()
     {
         $this->channel1 = new Grpc\Channel('localhost:1', []);
-        $this->channel2 = new Grpc\Channel('localhost:1', ["abc" => "def"]);
+        $this->channel2 = new Grpc\Channel('localhost:1', ['abc' => 'def']);
 
         // try to connect on channel1
         $state = $this->channel1->getConnectivityState(true);
@@ -275,9 +276,9 @@ class ChannelTest extends PHPUnit_Framework_TestCase
         $creds2 = Grpc\ChannelCredentials::createSsl();
 
         $this->channel1 = new Grpc\Channel('localhost:1',
-                                           ["credentials" => $creds1]);
+                                           ['credentials' => $creds1]);
         $this->channel2 = new Grpc\Channel('localhost:1',
-                                           ["credentials" => $creds2]);
+                                           ['credentials' => $creds2]);
 
         // try to connect on channel1
         $state = $this->channel1->getConnectivityState(true);
@@ -299,9 +300,9 @@ class ChannelTest extends PHPUnit_Framework_TestCase
             file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
 
         $this->channel1 = new Grpc\Channel('localhost:1',
-                                           ["credentials" => $creds1]);
+                                           ['credentials' => $creds1]);
         $this->channel2 = new Grpc\Channel('localhost:1',
-                                           ["credentials" => $creds2]);
+                                           ['credentials' => $creds2]);
 
         // try to connect on channel1
         $state = $this->channel1->getConnectivityState(true);
@@ -324,9 +325,9 @@ class ChannelTest extends PHPUnit_Framework_TestCase
             file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
 
         $this->channel1 = new Grpc\Channel('localhost:1',
-                                           ["credentials" => $creds1]);
+                                           ['credentials' => $creds1]);
         $this->channel2 = new Grpc\Channel('localhost:1',
-                                           ["credentials" => $creds2]);
+                                           ['credentials' => $creds2]);
 
         // try to connect on channel1
         $state = $this->channel1->getConnectivityState(true);
@@ -347,9 +348,9 @@ class ChannelTest extends PHPUnit_Framework_TestCase
         $creds2 = Grpc\ChannelCredentials::createInsecure();
 
         $this->channel1 = new Grpc\Channel('localhost:1',
-                                           ["credentials" => $creds1]);
+                                           ['credentials' => $creds1]);
         $this->channel2 = new Grpc\Channel('localhost:1',
-                                           ["credentials" => $creds2]);
+                                           ['credentials' => $creds2]);
 
         // try to connect on channel1
         $state = $this->channel1->getConnectivityState(true);
@@ -426,7 +427,7 @@ class ChannelTest extends PHPUnit_Framework_TestCase
 
     public function callbackFunc2($context)
     {
-        return ["k1" => "v1"];
+        return ['k1' => 'v1'];
     }
 
     public function testPersistentChannelWithCallCredentials()
@@ -441,11 +442,9 @@ class ChannelTest extends PHPUnit_Framework_TestCase
         // CallCredentials object, the underlying grpc channel will
         // always be created new and NOT persisted.
         $this->channel1 = new Grpc\Channel('localhost:1',
-                                           ["credentials" =>
-                                            $credsWithCallCreds]);
+                                           ['credentials' => $credsWithCallCreds]);
         $this->channel2 = new Grpc\Channel('localhost:1',
-                                           ["credentials" =>
-                                            $credsWithCallCreds]);
+                                           ['credentials' => $credsWithCallCreds]);
 
         // try to connect on channel1
         $state = $this->channel1->getConnectivityState(true);
@@ -478,11 +477,11 @@ class ChannelTest extends PHPUnit_Framework_TestCase
         // underlying grpc channel will always be separate and not
         // persisted
         $this->channel1 = new Grpc\Channel('localhost:1',
-                                           ["credentials" => $creds1]);
+                                           ['credentials' => $creds1]);
         $this->channel2 = new Grpc\Channel('localhost:1',
-                                           ["credentials" => $creds2]);
+                                           ['credentials' => $creds2]);
         $this->channel3 = new Grpc\Channel('localhost:1',
-                                           ["credentials" => $creds3]);
+                                           ['credentials' => $creds3]);
 
         // try to connect on channel1
         $state = $this->channel1->getConnectivityState(true);
@@ -506,7 +505,7 @@ class ChannelTest extends PHPUnit_Framework_TestCase
         // even though all the channel params are the same, channel2
         // has a new and different underlying channel
         $this->channel2 = new Grpc\Channel('localhost:1',
-                                           ["force_new" => true]);
+                                           ['force_new' => true]);
 
         // try to connect on channel1
         $state = $this->channel1->getConnectivityState(true);
@@ -523,10 +522,9 @@ class ChannelTest extends PHPUnit_Framework_TestCase
 
     public function testPersistentChannelForceNewOldChannelIdle()
     {
-
         $this->channel1 = new Grpc\Channel('localhost:1', []);
         $this->channel2 = new Grpc\Channel('localhost:1',
-                                           ["force_new" => true]);
+                                           ['force_new' => true]);
         // channel3 shares with channel1
         $this->channel3 = new Grpc\Channel('localhost:1', []);
 
@@ -550,10 +548,9 @@ class ChannelTest extends PHPUnit_Framework_TestCase
      */
     public function testPersistentChannelForceNewOldChannelClose()
     {
-
         $this->channel1 = new Grpc\Channel('localhost:1', []);
         $this->channel2 = new Grpc\Channel('localhost:1',
-                                           ["force_new" => true]);
+                                           ['force_new' => true]);
         // channel3 shares with channel1
         $this->channel3 = new Grpc\Channel('localhost:1', []);
 
@@ -568,10 +565,9 @@ class ChannelTest extends PHPUnit_Framework_TestCase
 
     public function testPersistentChannelForceNewNewChannelClose()
     {
-
         $this->channel1 = new Grpc\Channel('localhost:1', []);
         $this->channel2 = new Grpc\Channel('localhost:1',
-                                           ["force_new" => true]);
+                                           ['force_new' => true]);
         $this->channel3 = new Grpc\Channel('localhost:1', []);
 
         $this->channel2->close();

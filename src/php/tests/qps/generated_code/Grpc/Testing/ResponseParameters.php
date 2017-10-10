@@ -4,8 +4,6 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
@@ -38,7 +36,8 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
      */
     private $compressed = null;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct();
     }
@@ -47,6 +46,7 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
      * Desired payload sizes in responses from the server.
      *
      * Generated from protobuf field <code>int32 size = 1;</code>
+     *
      * @return int
      */
     public function getSize()
@@ -58,7 +58,9 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
      * Desired payload sizes in responses from the server.
      *
      * Generated from protobuf field <code>int32 size = 1;</code>
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setSize($var)
@@ -74,6 +76,7 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
      * microseconds.
      *
      * Generated from protobuf field <code>int32 interval_us = 2;</code>
+     *
      * @return int
      */
     public function getIntervalUs()
@@ -86,7 +89,9 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
      * microseconds.
      *
      * Generated from protobuf field <code>int32 interval_us = 2;</code>
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setIntervalUs($var)
@@ -104,6 +109,7 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
      * the response's compression status.
      *
      * Generated from protobuf field <code>.grpc.testing.BoolValue compressed = 3;</code>
+     *
      * @return \Grpc\Testing\BoolValue
      */
     public function getCompressed()
@@ -118,7 +124,9 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
      * the response's compression status.
      *
      * Generated from protobuf field <code>.grpc.testing.BoolValue compressed = 3;</code>
+     *
      * @param \Grpc\Testing\BoolValue $var
+     *
      * @return $this
      */
     public function setCompressed($var)
@@ -128,6 +136,4 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

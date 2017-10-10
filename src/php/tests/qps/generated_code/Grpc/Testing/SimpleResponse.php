@@ -4,8 +4,6 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
@@ -35,7 +33,8 @@ class SimpleResponse extends \Google\Protobuf\Internal\Message
      */
     private $oauth_scope = '';
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct();
     }
@@ -44,6 +43,7 @@ class SimpleResponse extends \Google\Protobuf\Internal\Message
      * Payload to increase message size.
      *
      * Generated from protobuf field <code>.grpc.testing.Payload payload = 1;</code>
+     *
      * @return \Grpc\Testing\Payload
      */
     public function getPayload()
@@ -55,7 +55,9 @@ class SimpleResponse extends \Google\Protobuf\Internal\Message
      * Payload to increase message size.
      *
      * Generated from protobuf field <code>.grpc.testing.Payload payload = 1;</code>
+     *
      * @param \Grpc\Testing\Payload $var
+     *
      * @return $this
      */
     public function setPayload($var)
@@ -71,6 +73,7 @@ class SimpleResponse extends \Google\Protobuf\Internal\Message
      * successful when the client expected it.
      *
      * Generated from protobuf field <code>string username = 2;</code>
+     *
      * @return string
      */
     public function getUsername()
@@ -83,12 +86,14 @@ class SimpleResponse extends \Google\Protobuf\Internal\Message
      * successful when the client expected it.
      *
      * Generated from protobuf field <code>string username = 2;</code>
+     *
      * @param string $var
+     *
      * @return $this
      */
     public function setUsername($var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->username = $var;
 
         return $this;
@@ -98,6 +103,7 @@ class SimpleResponse extends \Google\Protobuf\Internal\Message
      * OAuth scope.
      *
      * Generated from protobuf field <code>string oauth_scope = 3;</code>
+     *
      * @return string
      */
     public function getOauthScope()
@@ -109,16 +115,16 @@ class SimpleResponse extends \Google\Protobuf\Internal\Message
      * OAuth scope.
      *
      * Generated from protobuf field <code>string oauth_scope = 3;</code>
+     *
      * @param string $var
+     *
      * @return $this
      */
     public function setOauthScope($var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->oauth_scope = $var;
 
         return $this;
     }
-
 }
-

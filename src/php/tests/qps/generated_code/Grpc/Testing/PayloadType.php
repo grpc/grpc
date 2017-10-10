@@ -19,4 +19,3 @@ class PayloadType
      */
     const COMPRESSABLE = 0;
 }
-

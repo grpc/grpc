@@ -4,12 +4,10 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Generated from protobuf message <code>grpc.testing.ClientStats</code>
+ * Generated from protobuf message <code>grpc.testing.ClientStats</code>.
  */
 class ClientStats extends \Google\Protobuf\Internal\Message
 {
@@ -26,33 +24,34 @@ class ClientStats extends \Google\Protobuf\Internal\Message
      */
     private $time_elapsed = 0.0;
     /**
-     * Generated from protobuf field <code>double time_user = 3;</code>
+     * Generated from protobuf field <code>double time_user = 3;</code>.
      */
     private $time_user = 0.0;
     /**
-     * Generated from protobuf field <code>double time_system = 4;</code>
+     * Generated from protobuf field <code>double time_system = 4;</code>.
      */
     private $time_system = 0.0;
     /**
-     * Number of failed requests (one row per status code seen)
+     * Number of failed requests (one row per status code seen).
      *
      * Generated from protobuf field <code>repeated .grpc.testing.RequestResultCount request_results = 5;</code>
      */
     private $request_results;
     /**
-     * Number of polls called inside completion queue
+     * Number of polls called inside completion queue.
      *
      * Generated from protobuf field <code>uint64 cq_poll_count = 6;</code>
      */
     private $cq_poll_count = 0;
     /**
-     * Core library stats
+     * Core library stats.
      *
      * Generated from protobuf field <code>.grpc.core.Stats core_stats = 7;</code>
      */
     private $core_stats = null;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Stats::initOnce();
         parent::__construct();
     }
@@ -61,6 +60,7 @@ class ClientStats extends \Google\Protobuf\Internal\Message
      * Latency histogram. Data points are in nanoseconds.
      *
      * Generated from protobuf field <code>.grpc.testing.HistogramData latencies = 1;</code>
+     *
      * @return \Grpc\Testing\HistogramData
      */
     public function getLatencies()
@@ -72,7 +72,9 @@ class ClientStats extends \Google\Protobuf\Internal\Message
      * Latency histogram. Data points are in nanoseconds.
      *
      * Generated from protobuf field <code>.grpc.testing.HistogramData latencies = 1;</code>
+     *
      * @param \Grpc\Testing\HistogramData $var
+     *
      * @return $this
      */
     public function setLatencies($var)
@@ -87,6 +89,7 @@ class ClientStats extends \Google\Protobuf\Internal\Message
      * See ServerStats for details.
      *
      * Generated from protobuf field <code>double time_elapsed = 2;</code>
+     *
      * @return float
      */
     public function getTimeElapsed()
@@ -98,7 +101,9 @@ class ClientStats extends \Google\Protobuf\Internal\Message
      * See ServerStats for details.
      *
      * Generated from protobuf field <code>double time_elapsed = 2;</code>
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setTimeElapsed($var)
@@ -110,7 +115,8 @@ class ClientStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double time_user = 3;</code>
+     * Generated from protobuf field <code>double time_user = 3;</code>.
+     *
      * @return float
      */
     public function getTimeUser()
@@ -119,8 +125,10 @@ class ClientStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double time_user = 3;</code>
+     * Generated from protobuf field <code>double time_user = 3;</code>.
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setTimeUser($var)
@@ -132,7 +140,8 @@ class ClientStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double time_system = 4;</code>
+     * Generated from protobuf field <code>double time_system = 4;</code>.
+     *
      * @return float
      */
     public function getTimeSystem()
@@ -141,8 +150,10 @@ class ClientStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double time_system = 4;</code>
+     * Generated from protobuf field <code>double time_system = 4;</code>.
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setTimeSystem($var)
@@ -154,9 +165,10 @@ class ClientStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of failed requests (one row per status code seen)
+     * Number of failed requests (one row per status code seen).
      *
      * Generated from protobuf field <code>repeated .grpc.testing.RequestResultCount request_results = 5;</code>
+     *
      * @return \Google\Protobuf\Internal\RepeatedField
      */
     public function getRequestResults()
@@ -165,10 +177,12 @@ class ClientStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of failed requests (one row per status code seen)
+     * Number of failed requests (one row per status code seen).
      *
      * Generated from protobuf field <code>repeated .grpc.testing.RequestResultCount request_results = 5;</code>
+     *
      * @param \Grpc\Testing\RequestResultCount[]|\Google\Protobuf\Internal\RepeatedField $var
+     *
      * @return $this
      */
     public function setRequestResults($var)
@@ -180,9 +194,10 @@ class ClientStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of polls called inside completion queue
+     * Number of polls called inside completion queue.
      *
      * Generated from protobuf field <code>uint64 cq_poll_count = 6;</code>
+     *
      * @return int|string
      */
     public function getCqPollCount()
@@ -191,10 +206,12 @@ class ClientStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of polls called inside completion queue
+     * Number of polls called inside completion queue.
      *
      * Generated from protobuf field <code>uint64 cq_poll_count = 6;</code>
+     *
      * @param int|string $var
+     *
      * @return $this
      */
     public function setCqPollCount($var)
@@ -206,9 +223,10 @@ class ClientStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Core library stats
+     * Core library stats.
      *
      * Generated from protobuf field <code>.grpc.core.Stats core_stats = 7;</code>
+     *
      * @return \Grpc\Core\Stats
      */
     public function getCoreStats()
@@ -217,10 +235,12 @@ class ClientStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Core library stats
+     * Core library stats.
      *
      * Generated from protobuf field <code>.grpc.core.Stats core_stats = 7;</code>
+     *
      * @param \Grpc\Core\Stats $var
+     *
      * @return $this
      */
     public function setCoreStats($var)
@@ -230,6 +250,4 @@ class ClientStats extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

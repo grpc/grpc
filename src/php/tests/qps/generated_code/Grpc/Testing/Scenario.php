@@ -4,75 +4,75 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * A single performance scenario: input to qps_json_driver
+ * A single performance scenario: input to qps_json_driver.
  *
  * Generated from protobuf message <code>grpc.testing.Scenario</code>
  */
 class Scenario extends \Google\Protobuf\Internal\Message
 {
     /**
-     * Human readable name for this scenario
+     * Human readable name for this scenario.
      *
      * Generated from protobuf field <code>string name = 1;</code>
      */
     private $name = '';
     /**
-     * Client configuration
+     * Client configuration.
      *
      * Generated from protobuf field <code>.grpc.testing.ClientConfig client_config = 2;</code>
      */
     private $client_config = null;
     /**
-     * Number of clients to start for the test
+     * Number of clients to start for the test.
      *
      * Generated from protobuf field <code>int32 num_clients = 3;</code>
      */
     private $num_clients = 0;
     /**
-     * Server configuration
+     * Server configuration.
      *
      * Generated from protobuf field <code>.grpc.testing.ServerConfig server_config = 4;</code>
      */
     private $server_config = null;
     /**
-     * Number of servers to start for the test
+     * Number of servers to start for the test.
      *
      * Generated from protobuf field <code>int32 num_servers = 5;</code>
      */
     private $num_servers = 0;
     /**
-     * Warmup period, in seconds
+     * Warmup period, in seconds.
      *
      * Generated from protobuf field <code>int32 warmup_seconds = 6;</code>
      */
     private $warmup_seconds = 0;
     /**
-     * Benchmark time, in seconds
+     * Benchmark time, in seconds.
      *
      * Generated from protobuf field <code>int32 benchmark_seconds = 7;</code>
      */
     private $benchmark_seconds = 0;
     /**
-     * Number of workers to spawn locally (usually zero)
+     * Number of workers to spawn locally (usually zero).
      *
      * Generated from protobuf field <code>int32 spawn_local_worker_count = 8;</code>
      */
     private $spawn_local_worker_count = 0;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
         parent::__construct();
     }
 
     /**
-     * Human readable name for this scenario
+     * Human readable name for this scenario.
      *
      * Generated from protobuf field <code>string name = 1;</code>
+     *
      * @return string
      */
     public function getName()
@@ -81,24 +81,27 @@ class Scenario extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Human readable name for this scenario
+     * Human readable name for this scenario.
      *
      * Generated from protobuf field <code>string name = 1;</code>
+     *
      * @param string $var
+     *
      * @return $this
      */
     public function setName($var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->name = $var;
 
         return $this;
     }
 
     /**
-     * Client configuration
+     * Client configuration.
      *
      * Generated from protobuf field <code>.grpc.testing.ClientConfig client_config = 2;</code>
+     *
      * @return \Grpc\Testing\ClientConfig
      */
     public function getClientConfig()
@@ -107,10 +110,12 @@ class Scenario extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Client configuration
+     * Client configuration.
      *
      * Generated from protobuf field <code>.grpc.testing.ClientConfig client_config = 2;</code>
+     *
      * @param \Grpc\Testing\ClientConfig $var
+     *
      * @return $this
      */
     public function setClientConfig($var)
@@ -122,9 +127,10 @@ class Scenario extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of clients to start for the test
+     * Number of clients to start for the test.
      *
      * Generated from protobuf field <code>int32 num_clients = 3;</code>
+     *
      * @return int
      */
     public function getNumClients()
@@ -133,10 +139,12 @@ class Scenario extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of clients to start for the test
+     * Number of clients to start for the test.
      *
      * Generated from protobuf field <code>int32 num_clients = 3;</code>
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setNumClients($var)
@@ -148,9 +156,10 @@ class Scenario extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Server configuration
+     * Server configuration.
      *
      * Generated from protobuf field <code>.grpc.testing.ServerConfig server_config = 4;</code>
+     *
      * @return \Grpc\Testing\ServerConfig
      */
     public function getServerConfig()
@@ -159,10 +168,12 @@ class Scenario extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Server configuration
+     * Server configuration.
      *
      * Generated from protobuf field <code>.grpc.testing.ServerConfig server_config = 4;</code>
+     *
      * @param \Grpc\Testing\ServerConfig $var
+     *
      * @return $this
      */
     public function setServerConfig($var)
@@ -174,9 +185,10 @@ class Scenario extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of servers to start for the test
+     * Number of servers to start for the test.
      *
      * Generated from protobuf field <code>int32 num_servers = 5;</code>
+     *
      * @return int
      */
     public function getNumServers()
@@ -185,10 +197,12 @@ class Scenario extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of servers to start for the test
+     * Number of servers to start for the test.
      *
      * Generated from protobuf field <code>int32 num_servers = 5;</code>
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setNumServers($var)
@@ -200,9 +214,10 @@ class Scenario extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Warmup period, in seconds
+     * Warmup period, in seconds.
      *
      * Generated from protobuf field <code>int32 warmup_seconds = 6;</code>
+     *
      * @return int
      */
     public function getWarmupSeconds()
@@ -211,10 +226,12 @@ class Scenario extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Warmup period, in seconds
+     * Warmup period, in seconds.
      *
      * Generated from protobuf field <code>int32 warmup_seconds = 6;</code>
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setWarmupSeconds($var)
@@ -226,9 +243,10 @@ class Scenario extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Benchmark time, in seconds
+     * Benchmark time, in seconds.
      *
      * Generated from protobuf field <code>int32 benchmark_seconds = 7;</code>
+     *
      * @return int
      */
     public function getBenchmarkSeconds()
@@ -237,10 +255,12 @@ class Scenario extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Benchmark time, in seconds
+     * Benchmark time, in seconds.
      *
      * Generated from protobuf field <code>int32 benchmark_seconds = 7;</code>
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setBenchmarkSeconds($var)
@@ -252,9 +272,10 @@ class Scenario extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of workers to spawn locally (usually zero)
+     * Number of workers to spawn locally (usually zero).
      *
      * Generated from protobuf field <code>int32 spawn_local_worker_count = 8;</code>
+     *
      * @return int
      */
     public function getSpawnLocalWorkerCount()
@@ -263,10 +284,12 @@ class Scenario extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of workers to spawn locally (usually zero)
+     * Number of workers to spawn locally (usually zero).
      *
      * Generated from protobuf field <code>int32 spawn_local_worker_count = 8;</code>
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setSpawnLocalWorkerCount($var)
@@ -276,6 +299,4 @@ class Scenario extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

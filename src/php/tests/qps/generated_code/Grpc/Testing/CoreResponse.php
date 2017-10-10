@@ -4,31 +4,31 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Generated from protobuf message <code>grpc.testing.CoreResponse</code>
+ * Generated from protobuf message <code>grpc.testing.CoreResponse</code>.
  */
 class CoreResponse extends \Google\Protobuf\Internal\Message
 {
     /**
-     * Number of cores available on the server
+     * Number of cores available on the server.
      *
      * Generated from protobuf field <code>int32 cores = 1;</code>
      */
     private $cores = 0;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
         parent::__construct();
     }
 
     /**
-     * Number of cores available on the server
+     * Number of cores available on the server.
      *
      * Generated from protobuf field <code>int32 cores = 1;</code>
+     *
      * @return int
      */
     public function getCores()
@@ -37,10 +37,12 @@ class CoreResponse extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of cores available on the server
+     * Number of cores available on the server.
      *
      * Generated from protobuf field <code>int32 cores = 1;</code>
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setCores($var)
@@ -50,6 +52,4 @@ class CoreResponse extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

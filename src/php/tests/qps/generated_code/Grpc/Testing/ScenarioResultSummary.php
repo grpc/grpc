@@ -4,8 +4,6 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
@@ -29,89 +27,90 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
      */
     private $qps_per_server_core = 0.0;
     /**
-     * server load based on system_time (0.85 => 85%)
+     * server load based on system_time (0.85 => 85%).
      *
      * Generated from protobuf field <code>double server_system_time = 3;</code>
      */
     private $server_system_time = 0.0;
     /**
-     * server load based on user_time (0.85 => 85%)
+     * server load based on user_time (0.85 => 85%).
      *
      * Generated from protobuf field <code>double server_user_time = 4;</code>
      */
     private $server_user_time = 0.0;
     /**
-     * client load based on system_time (0.85 => 85%)
+     * client load based on system_time (0.85 => 85%).
      *
      * Generated from protobuf field <code>double client_system_time = 5;</code>
      */
     private $client_system_time = 0.0;
     /**
-     * client load based on user_time (0.85 => 85%)
+     * client load based on user_time (0.85 => 85%).
      *
      * Generated from protobuf field <code>double client_user_time = 6;</code>
      */
     private $client_user_time = 0.0;
     /**
-     * X% latency percentiles (in nanoseconds)
+     * X% latency percentiles (in nanoseconds).
      *
      * Generated from protobuf field <code>double latency_50 = 7;</code>
      */
     private $latency_50 = 0.0;
     /**
-     * Generated from protobuf field <code>double latency_90 = 8;</code>
+     * Generated from protobuf field <code>double latency_90 = 8;</code>.
      */
     private $latency_90 = 0.0;
     /**
-     * Generated from protobuf field <code>double latency_95 = 9;</code>
+     * Generated from protobuf field <code>double latency_95 = 9;</code>.
      */
     private $latency_95 = 0.0;
     /**
-     * Generated from protobuf field <code>double latency_99 = 10;</code>
+     * Generated from protobuf field <code>double latency_99 = 10;</code>.
      */
     private $latency_99 = 0.0;
     /**
-     * Generated from protobuf field <code>double latency_999 = 11;</code>
+     * Generated from protobuf field <code>double latency_999 = 11;</code>.
      */
     private $latency_999 = 0.0;
     /**
-     * server cpu usage percentage
+     * server cpu usage percentage.
      *
      * Generated from protobuf field <code>double server_cpu_usage = 12;</code>
      */
     private $server_cpu_usage = 0.0;
     /**
-     * Number of requests that succeeded/failed
+     * Number of requests that succeeded/failed.
      *
      * Generated from protobuf field <code>double successful_requests_per_second = 13;</code>
      */
     private $successful_requests_per_second = 0.0;
     /**
-     * Generated from protobuf field <code>double failed_requests_per_second = 14;</code>
+     * Generated from protobuf field <code>double failed_requests_per_second = 14;</code>.
      */
     private $failed_requests_per_second = 0.0;
     /**
-     * Number of polls called inside completion queue per request
+     * Number of polls called inside completion queue per request.
      *
      * Generated from protobuf field <code>double client_polls_per_request = 15;</code>
      */
     private $client_polls_per_request = 0.0;
     /**
-     * Generated from protobuf field <code>double server_polls_per_request = 16;</code>
+     * Generated from protobuf field <code>double server_polls_per_request = 16;</code>.
      */
     private $server_polls_per_request = 0.0;
     /**
-     * Queries per CPU-sec over all servers or clients
+     * Queries per CPU-sec over all servers or clients.
      *
      * Generated from protobuf field <code>double server_queries_per_cpu_sec = 17;</code>
      */
     private $server_queries_per_cpu_sec = 0.0;
     /**
-     * Generated from protobuf field <code>double client_queries_per_cpu_sec = 18;</code>
+     * Generated from protobuf field <code>double client_queries_per_cpu_sec = 18;</code>.
      */
     private $client_queries_per_cpu_sec = 0.0;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
         parent::__construct();
     }
@@ -120,6 +119,7 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
      * Total number of operations per second over all clients.
      *
      * Generated from protobuf field <code>double qps = 1;</code>
+     *
      * @return float
      */
     public function getQps()
@@ -131,7 +131,9 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
      * Total number of operations per second over all clients.
      *
      * Generated from protobuf field <code>double qps = 1;</code>
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setQps($var)
@@ -146,6 +148,7 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
      * QPS per one server core.
      *
      * Generated from protobuf field <code>double qps_per_server_core = 2;</code>
+     *
      * @return float
      */
     public function getQpsPerServerCore()
@@ -157,7 +160,9 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
      * QPS per one server core.
      *
      * Generated from protobuf field <code>double qps_per_server_core = 2;</code>
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setQpsPerServerCore($var)
@@ -169,9 +174,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * server load based on system_time (0.85 => 85%)
+     * server load based on system_time (0.85 => 85%).
      *
      * Generated from protobuf field <code>double server_system_time = 3;</code>
+     *
      * @return float
      */
     public function getServerSystemTime()
@@ -180,10 +186,12 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * server load based on system_time (0.85 => 85%)
+     * server load based on system_time (0.85 => 85%).
      *
      * Generated from protobuf field <code>double server_system_time = 3;</code>
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setServerSystemTime($var)
@@ -195,9 +203,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * server load based on user_time (0.85 => 85%)
+     * server load based on user_time (0.85 => 85%).
      *
      * Generated from protobuf field <code>double server_user_time = 4;</code>
+     *
      * @return float
      */
     public function getServerUserTime()
@@ -206,10 +215,12 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * server load based on user_time (0.85 => 85%)
+     * server load based on user_time (0.85 => 85%).
      *
      * Generated from protobuf field <code>double server_user_time = 4;</code>
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setServerUserTime($var)
@@ -221,9 +232,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * client load based on system_time (0.85 => 85%)
+     * client load based on system_time (0.85 => 85%).
      *
      * Generated from protobuf field <code>double client_system_time = 5;</code>
+     *
      * @return float
      */
     public function getClientSystemTime()
@@ -232,10 +244,12 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * client load based on system_time (0.85 => 85%)
+     * client load based on system_time (0.85 => 85%).
      *
      * Generated from protobuf field <code>double client_system_time = 5;</code>
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setClientSystemTime($var)
@@ -247,9 +261,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * client load based on user_time (0.85 => 85%)
+     * client load based on user_time (0.85 => 85%).
      *
      * Generated from protobuf field <code>double client_user_time = 6;</code>
+     *
      * @return float
      */
     public function getClientUserTime()
@@ -258,10 +273,12 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * client load based on user_time (0.85 => 85%)
+     * client load based on user_time (0.85 => 85%).
      *
      * Generated from protobuf field <code>double client_user_time = 6;</code>
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setClientUserTime($var)
@@ -273,9 +290,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * X% latency percentiles (in nanoseconds)
+     * X% latency percentiles (in nanoseconds).
      *
      * Generated from protobuf field <code>double latency_50 = 7;</code>
+     *
      * @return float
      */
     public function getLatency50()
@@ -284,10 +302,12 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * X% latency percentiles (in nanoseconds)
+     * X% latency percentiles (in nanoseconds).
      *
      * Generated from protobuf field <code>double latency_50 = 7;</code>
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setLatency50($var)
@@ -299,7 +319,8 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double latency_90 = 8;</code>
+     * Generated from protobuf field <code>double latency_90 = 8;</code>.
+     *
      * @return float
      */
     public function getLatency90()
@@ -308,8 +329,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double latency_90 = 8;</code>
+     * Generated from protobuf field <code>double latency_90 = 8;</code>.
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setLatency90($var)
@@ -321,7 +344,8 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double latency_95 = 9;</code>
+     * Generated from protobuf field <code>double latency_95 = 9;</code>.
+     *
      * @return float
      */
     public function getLatency95()
@@ -330,8 +354,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double latency_95 = 9;</code>
+     * Generated from protobuf field <code>double latency_95 = 9;</code>.
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setLatency95($var)
@@ -343,7 +369,8 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double latency_99 = 10;</code>
+     * Generated from protobuf field <code>double latency_99 = 10;</code>.
+     *
      * @return float
      */
     public function getLatency99()
@@ -352,8 +379,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double latency_99 = 10;</code>
+     * Generated from protobuf field <code>double latency_99 = 10;</code>.
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setLatency99($var)
@@ -365,7 +394,8 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double latency_999 = 11;</code>
+     * Generated from protobuf field <code>double latency_999 = 11;</code>.
+     *
      * @return float
      */
     public function getLatency999()
@@ -374,8 +404,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double latency_999 = 11;</code>
+     * Generated from protobuf field <code>double latency_999 = 11;</code>.
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setLatency999($var)
@@ -387,9 +419,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * server cpu usage percentage
+     * server cpu usage percentage.
      *
      * Generated from protobuf field <code>double server_cpu_usage = 12;</code>
+     *
      * @return float
      */
     public function getServerCpuUsage()
@@ -398,10 +431,12 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * server cpu usage percentage
+     * server cpu usage percentage.
      *
      * Generated from protobuf field <code>double server_cpu_usage = 12;</code>
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setServerCpuUsage($var)
@@ -413,9 +448,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of requests that succeeded/failed
+     * Number of requests that succeeded/failed.
      *
      * Generated from protobuf field <code>double successful_requests_per_second = 13;</code>
+     *
      * @return float
      */
     public function getSuccessfulRequestsPerSecond()
@@ -424,10 +460,12 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of requests that succeeded/failed
+     * Number of requests that succeeded/failed.
      *
      * Generated from protobuf field <code>double successful_requests_per_second = 13;</code>
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setSuccessfulRequestsPerSecond($var)
@@ -439,7 +477,8 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double failed_requests_per_second = 14;</code>
+     * Generated from protobuf field <code>double failed_requests_per_second = 14;</code>.
+     *
      * @return float
      */
     public function getFailedRequestsPerSecond()
@@ -448,8 +487,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double failed_requests_per_second = 14;</code>
+     * Generated from protobuf field <code>double failed_requests_per_second = 14;</code>.
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setFailedRequestsPerSecond($var)
@@ -461,9 +502,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of polls called inside completion queue per request
+     * Number of polls called inside completion queue per request.
      *
      * Generated from protobuf field <code>double client_polls_per_request = 15;</code>
+     *
      * @return float
      */
     public function getClientPollsPerRequest()
@@ -472,10 +514,12 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of polls called inside completion queue per request
+     * Number of polls called inside completion queue per request.
      *
      * Generated from protobuf field <code>double client_polls_per_request = 15;</code>
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setClientPollsPerRequest($var)
@@ -487,7 +531,8 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double server_polls_per_request = 16;</code>
+     * Generated from protobuf field <code>double server_polls_per_request = 16;</code>.
+     *
      * @return float
      */
     public function getServerPollsPerRequest()
@@ -496,8 +541,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double server_polls_per_request = 16;</code>
+     * Generated from protobuf field <code>double server_polls_per_request = 16;</code>.
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setServerPollsPerRequest($var)
@@ -509,9 +556,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Queries per CPU-sec over all servers or clients
+     * Queries per CPU-sec over all servers or clients.
      *
      * Generated from protobuf field <code>double server_queries_per_cpu_sec = 17;</code>
+     *
      * @return float
      */
     public function getServerQueriesPerCpuSec()
@@ -520,10 +568,12 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Queries per CPU-sec over all servers or clients
+     * Queries per CPU-sec over all servers or clients.
      *
      * Generated from protobuf field <code>double server_queries_per_cpu_sec = 17;</code>
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setServerQueriesPerCpuSec($var)
@@ -535,7 +585,8 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double client_queries_per_cpu_sec = 18;</code>
+     * Generated from protobuf field <code>double client_queries_per_cpu_sec = 18;</code>.
+     *
      * @return float
      */
     public function getClientQueriesPerCpuSec()
@@ -544,8 +595,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double client_queries_per_cpu_sec = 18;</code>
+     * Generated from protobuf field <code>double client_queries_per_cpu_sec = 18;</code>.
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setClientQueriesPerCpuSec($var)
@@ -555,6 +608,4 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

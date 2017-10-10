@@ -4,29 +4,29 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * A set of scenarios to be run with qps_json_driver
+ * A set of scenarios to be run with qps_json_driver.
  *
  * Generated from protobuf message <code>grpc.testing.Scenarios</code>
  */
 class Scenarios extends \Google\Protobuf\Internal\Message
 {
     /**
-     * Generated from protobuf field <code>repeated .grpc.testing.Scenario scenarios = 1;</code>
+     * Generated from protobuf field <code>repeated .grpc.testing.Scenario scenarios = 1;</code>.
      */
     private $scenarios;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
         parent::__construct();
     }
 
     /**
-     * Generated from protobuf field <code>repeated .grpc.testing.Scenario scenarios = 1;</code>
+     * Generated from protobuf field <code>repeated .grpc.testing.Scenario scenarios = 1;</code>.
+     *
      * @return \Google\Protobuf\Internal\RepeatedField
      */
     public function getScenarios()
@@ -35,8 +35,10 @@ class Scenarios extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>repeated .grpc.testing.Scenario scenarios = 1;</code>
+     * Generated from protobuf field <code>repeated .grpc.testing.Scenario scenarios = 1;</code>.
+     *
      * @param \Grpc\Testing\Scenario[]|\Google\Protobuf\Internal\RepeatedField $var
+     *
      * @return $this
      */
     public function setScenarios($var)
@@ -46,6 +48,4 @@ class Scenarios extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

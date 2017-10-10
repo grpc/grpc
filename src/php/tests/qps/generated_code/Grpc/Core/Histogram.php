@@ -4,27 +4,27 @@
 
 namespace Grpc\Core;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Generated from protobuf message <code>grpc.core.Histogram</code>
+ * Generated from protobuf message <code>grpc.core.Histogram</code>.
  */
 class Histogram extends \Google\Protobuf\Internal\Message
 {
     /**
-     * Generated from protobuf field <code>repeated .grpc.core.Bucket buckets = 1;</code>
+     * Generated from protobuf field <code>repeated .grpc.core.Bucket buckets = 1;</code>.
      */
     private $buckets;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Core\Stats::initOnce();
         parent::__construct();
     }
 
     /**
-     * Generated from protobuf field <code>repeated .grpc.core.Bucket buckets = 1;</code>
+     * Generated from protobuf field <code>repeated .grpc.core.Bucket buckets = 1;</code>.
+     *
      * @return \Google\Protobuf\Internal\RepeatedField
      */
     public function getBuckets()
@@ -33,8 +33,10 @@ class Histogram extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>repeated .grpc.core.Bucket buckets = 1;</code>
+     * Generated from protobuf field <code>repeated .grpc.core.Bucket buckets = 1;</code>.
+     *
      * @param \Grpc\Core\Bucket[]|\Google\Protobuf\Internal\RepeatedField $var
+     *
      * @return $this
      */
     public function setBuckets($var)
@@ -44,6 +46,4 @@ class Histogram extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

@@ -4,24 +4,24 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Generated from protobuf message <code>grpc.testing.ServerArgs</code>
+ * Generated from protobuf message <code>grpc.testing.ServerArgs</code>.
  */
 class ServerArgs extends \Google\Protobuf\Internal\Message
 {
     protected $argtype;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
         parent::__construct();
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.testing.ServerConfig setup = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.ServerConfig setup = 1;</code>.
+     *
      * @return \Grpc\Testing\ServerConfig
      */
     public function getSetup()
@@ -30,8 +30,10 @@ class ServerArgs extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.testing.ServerConfig setup = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.ServerConfig setup = 1;</code>.
+     *
      * @param \Grpc\Testing\ServerConfig $var
+     *
      * @return $this
      */
     public function setSetup($var)
@@ -43,7 +45,8 @@ class ServerArgs extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.testing.Mark mark = 2;</code>
+     * Generated from protobuf field <code>.grpc.testing.Mark mark = 2;</code>.
+     *
      * @return \Grpc\Testing\Mark
      */
     public function getMark()
@@ -52,8 +55,10 @@ class ServerArgs extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.testing.Mark mark = 2;</code>
+     * Generated from protobuf field <code>.grpc.testing.Mark mark = 2;</code>.
+     *
      * @param \Grpc\Testing\Mark $var
+     *
      * @return $this
      */
     public function setMark($var)
@@ -69,8 +74,6 @@ class ServerArgs extends \Google\Protobuf\Internal\Message
      */
     public function getArgtype()
     {
-        return $this->whichOneof("argtype");
+        return $this->whichOneof('argtype');
     }
-
 }
-

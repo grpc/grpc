@@ -4,31 +4,31 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Generated from protobuf message <code>grpc.testing.RequestResultCount</code>
+ * Generated from protobuf message <code>grpc.testing.RequestResultCount</code>.
  */
 class RequestResultCount extends \Google\Protobuf\Internal\Message
 {
     /**
-     * Generated from protobuf field <code>int32 status_code = 1;</code>
+     * Generated from protobuf field <code>int32 status_code = 1;</code>.
      */
     private $status_code = 0;
     /**
-     * Generated from protobuf field <code>int64 count = 2;</code>
+     * Generated from protobuf field <code>int64 count = 2;</code>.
      */
     private $count = 0;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Stats::initOnce();
         parent::__construct();
     }
 
     /**
-     * Generated from protobuf field <code>int32 status_code = 1;</code>
+     * Generated from protobuf field <code>int32 status_code = 1;</code>.
+     *
      * @return int
      */
     public function getStatusCode()
@@ -37,8 +37,10 @@ class RequestResultCount extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>int32 status_code = 1;</code>
+     * Generated from protobuf field <code>int32 status_code = 1;</code>.
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setStatusCode($var)
@@ -50,7 +52,8 @@ class RequestResultCount extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>int64 count = 2;</code>
+     * Generated from protobuf field <code>int64 count = 2;</code>.
+     *
      * @return int|string
      */
     public function getCount()
@@ -59,8 +62,10 @@ class RequestResultCount extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>int64 count = 2;</code>
+     * Generated from protobuf field <code>int64 count = 2;</code>.
+     *
      * @param int|string $var
+     *
      * @return $this
      */
     public function setCount($var)
@@ -70,6 +75,4 @@ class RequestResultCount extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

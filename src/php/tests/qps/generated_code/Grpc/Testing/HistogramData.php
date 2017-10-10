@@ -4,49 +4,49 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Histogram data based on grpc/support/histogram.c
+ * Histogram data based on grpc/support/histogram.c.
  *
  * Generated from protobuf message <code>grpc.testing.HistogramData</code>
  */
 class HistogramData extends \Google\Protobuf\Internal\Message
 {
     /**
-     * Generated from protobuf field <code>repeated uint32 bucket = 1;</code>
+     * Generated from protobuf field <code>repeated uint32 bucket = 1;</code>.
      */
     private $bucket;
     /**
-     * Generated from protobuf field <code>double min_seen = 2;</code>
+     * Generated from protobuf field <code>double min_seen = 2;</code>.
      */
     private $min_seen = 0.0;
     /**
-     * Generated from protobuf field <code>double max_seen = 3;</code>
+     * Generated from protobuf field <code>double max_seen = 3;</code>.
      */
     private $max_seen = 0.0;
     /**
-     * Generated from protobuf field <code>double sum = 4;</code>
+     * Generated from protobuf field <code>double sum = 4;</code>.
      */
     private $sum = 0.0;
     /**
-     * Generated from protobuf field <code>double sum_of_squares = 5;</code>
+     * Generated from protobuf field <code>double sum_of_squares = 5;</code>.
      */
     private $sum_of_squares = 0.0;
     /**
-     * Generated from protobuf field <code>double count = 6;</code>
+     * Generated from protobuf field <code>double count = 6;</code>.
      */
     private $count = 0.0;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Stats::initOnce();
         parent::__construct();
     }
 
     /**
-     * Generated from protobuf field <code>repeated uint32 bucket = 1;</code>
+     * Generated from protobuf field <code>repeated uint32 bucket = 1;</code>.
+     *
      * @return \Google\Protobuf\Internal\RepeatedField
      */
     public function getBucket()
@@ -55,8 +55,10 @@ class HistogramData extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>repeated uint32 bucket = 1;</code>
+     * Generated from protobuf field <code>repeated uint32 bucket = 1;</code>.
+     *
      * @param int[]|\Google\Protobuf\Internal\RepeatedField $var
+     *
      * @return $this
      */
     public function setBucket($var)
@@ -68,7 +70,8 @@ class HistogramData extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double min_seen = 2;</code>
+     * Generated from protobuf field <code>double min_seen = 2;</code>.
+     *
      * @return float
      */
     public function getMinSeen()
@@ -77,8 +80,10 @@ class HistogramData extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double min_seen = 2;</code>
+     * Generated from protobuf field <code>double min_seen = 2;</code>.
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setMinSeen($var)
@@ -90,7 +95,8 @@ class HistogramData extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double max_seen = 3;</code>
+     * Generated from protobuf field <code>double max_seen = 3;</code>.
+     *
      * @return float
      */
     public function getMaxSeen()
@@ -99,8 +105,10 @@ class HistogramData extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double max_seen = 3;</code>
+     * Generated from protobuf field <code>double max_seen = 3;</code>.
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setMaxSeen($var)
@@ -112,7 +120,8 @@ class HistogramData extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double sum = 4;</code>
+     * Generated from protobuf field <code>double sum = 4;</code>.
+     *
      * @return float
      */
     public function getSum()
@@ -121,8 +130,10 @@ class HistogramData extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double sum = 4;</code>
+     * Generated from protobuf field <code>double sum = 4;</code>.
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setSum($var)
@@ -134,7 +145,8 @@ class HistogramData extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double sum_of_squares = 5;</code>
+     * Generated from protobuf field <code>double sum_of_squares = 5;</code>.
+     *
      * @return float
      */
     public function getSumOfSquares()
@@ -143,8 +155,10 @@ class HistogramData extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double sum_of_squares = 5;</code>
+     * Generated from protobuf field <code>double sum_of_squares = 5;</code>.
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setSumOfSquares($var)
@@ -156,7 +170,8 @@ class HistogramData extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double count = 6;</code>
+     * Generated from protobuf field <code>double count = 6;</code>.
+     *
      * @return float
      */
     public function getCount()
@@ -165,8 +180,10 @@ class HistogramData extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>double count = 6;</code>
+     * Generated from protobuf field <code>double count = 6;</code>.
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setCount($var)
@@ -176,6 +193,4 @@ class HistogramData extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-
