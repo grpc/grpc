@@ -73,6 +73,10 @@ void CheckServerAuthContext(
 
 Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
                              EchoResponse* response) {
+  // A bit of sleep to make sure that short deadline tests fail
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               gpr_time_from_millis(2, GPR_TIMESPAN)));
+
   if (request->has_param() && request->param().server_die()) {
     gpr_log(GPR_ERROR, "The request should not reach application handler.");
     GPR_ASSERT(0);
