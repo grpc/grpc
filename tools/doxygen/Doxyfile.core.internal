@@ -799,6 +799,7 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
+include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_posix.h \
 include/grpc/grpc_security.h \
@@ -816,6 +817,8 @@ include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
 include/grpc/impl/codegen/exec_ctx_fwd.h \
+include/grpc/impl/codegen/fork.h \
+include/grpc/impl/codegen/fork.h \
 include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
@@ -1126,6 +1129,8 @@ src/core/lib/iomgr/exec_ctx.c \
 src/core/lib/iomgr/exec_ctx.h \
 src/core/lib/iomgr/executor.c \
 src/core/lib/iomgr/executor.h \
+src/core/lib/iomgr/fork_posix.c \
+src/core/lib/iomgr/fork_windows.c \
 src/core/lib/iomgr/gethostname.h \
 src/core/lib/iomgr/gethostname_fallback.c \
 src/core/lib/iomgr/gethostname_host_name_max.c \
@@ -1313,6 +1318,8 @@ src/core/lib/support/env.h \
 src/core/lib/support/env_linux.c \
 src/core/lib/support/env_posix.c \
 src/core/lib/support/env_windows.c \
+src/core/lib/support/fork.c \
+src/core/lib/support/fork.h \
 src/core/lib/support/histogram.c \
 src/core/lib/support/host_port.c \
 src/core/lib/support/log.c \
@@ -1340,6 +1347,7 @@ src/core/lib/support/sync.c \
 src/core/lib/support/sync_posix.c \
 src/core/lib/support/sync_windows.c \
 src/core/lib/support/thd.c \
+src/core/lib/support/thd_internal.h \
 src/core/lib/support/thd_posix.c \
 src/core/lib/support/thd_windows.c \
 src/core/lib/support/time.c \
