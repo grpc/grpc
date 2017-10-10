@@ -43,7 +43,6 @@ static HANDLE g_iocp;
 
 static DWORD deadline_to_millis_timeout(grpc_exec_ctx *exec_ctx,
                                         grpc_millis deadline) {
-  gpr_timespec timeout;
   if (deadline == GRPC_MILLIS_INF_FUTURE) {
     return INFINITE;
   }
@@ -63,6 +62,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
   success =
       GetQueuedCompletionStatus(g_iocp, &bytes, &completion_key, &overlapped,
                                 deadline_to_millis_timeout(exec_ctx, deadline));
+  grpc_exec_ctx_invalidate_now(exec_ctx);
   if (success == 0 && overlapped == NULL) {
     return GRPC_IOCP_WORK_TIMEOUT;
   }
