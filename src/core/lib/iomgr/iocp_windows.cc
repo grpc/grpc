@@ -21,6 +21,7 @@
 #ifdef GRPC_WINSOCK_SOCKET
 
 #include <winsock2.h>
+#include <limits>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -43,11 +44,14 @@ static HANDLE g_iocp;
 
 static DWORD deadline_to_millis_timeout(grpc_exec_ctx *exec_ctx,
                                         grpc_millis deadline) {
-  gpr_timespec timeout;
   if (deadline == GRPC_MILLIS_INF_FUTURE) {
     return INFINITE;
   }
-  return (DWORD)GPR_MAX(0, deadline - grpc_exec_ctx_now(exec_ctx));
+  grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+  if (deadline < now) return 0;
+  grpc_millis timeout = deadline - now;
+  if (timeout > std::numeric_limits<DWORD>::max()) return INFINITE;
+  return static_cast<DWORD>(deadline - now);
 }
 
 grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
