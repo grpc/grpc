@@ -354,6 +354,10 @@ struct grpc_chttp2_transport {
 
   grpc_core::ManualConstructor<grpc_core::chttp2::TransportFlowControl>
       flow_control;
+  /** initial window change. This is tracked as we parse settings frames from
+   * the remote peer. If there is a positive delta, then we will make all
+   * streams readable since they may have become unstalled */
+  int64_t initial_window_update = 0;
 
   /* deframing */
   grpc_chttp2_deframe_transport_state deframe_state;

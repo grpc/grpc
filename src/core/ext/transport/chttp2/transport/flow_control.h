@@ -207,11 +207,6 @@ class TransportFlowControl {
 
   const grpc_chttp2_transport* const t_;
 
-  /** initial window change. This is tracked as we parse settings frames from
-   * the remote peer. If there is a positive delta, then we will make all
-   * streams readable since they may have become unstalled */
-  int64_t initial_window_update_ = 0;
-
   /** Our bookkeeping for the remote peer's available window */
   int64_t remote_window_ = kDefaultWindow;
 

@@ -222,6 +222,7 @@ grpc_error* StreamFlowControl::RecvData(int64_t incoming_frame_size) {
   UpdateAnnouncedWindowDelta(tfc_, -incoming_frame_size);
   local_window_delta_ -= incoming_frame_size;
   tfc_->CommitRecvData(incoming_frame_size);
+  return GRPC_ERROR_NONE;
 }
 
 uint32_t StreamFlowControl::MaybeSendUpdate() {

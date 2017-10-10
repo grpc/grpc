@@ -2501,8 +2501,8 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     GPR_TIMER_END("reading_action.parse", 0);
 
     GPR_TIMER_BEGIN("post_parse_locked", 0);
-    if (t->flow_control.initial_window_update != 0) {
-      if (t->flow_control.initial_window_update > 0) {
+    if (t->initial_window_update != 0) {
+      if (t->initial_window_update > 0) {
         grpc_chttp2_stream *s;
         while (grpc_chttp2_list_pop_stalled_by_stream(t, &s)) {
           grpc_chttp2_mark_stream_writable(exec_ctx, t, s);
@@ -2511,7 +2511,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
               GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_SETTING);
         }
       }
-      t->flow_control.initial_window_update = 0;
+      t->initial_window_update = 0;
     }
     GPR_TIMER_END("post_parse_locked", 0);
   }
