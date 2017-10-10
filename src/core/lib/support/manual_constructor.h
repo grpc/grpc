@@ -16,6 +16,9 @@
  *
  */
 
+#ifndef GRPC_CORE_LIB_SUPPORT_MANUAL_CONSTRUCTOR_H
+#define GRPC_CORE_LIB_SUPPORT_MANUAL_CONSTRUCTOR_H
+
 // manually construct a region of memory with some type
 
 #include <stddef.h>
@@ -69,3 +72,5 @@ class ManualConstructor {
 };
 
 }  // namespace grpc_core
+
+#endif
