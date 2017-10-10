@@ -79,7 +79,6 @@ void grpc_lb_subchannel_data_start_connectivity_watch(
 
 void grpc_lb_subchannel_data_stop_connectivity_watch(
     grpc_exec_ctx *exec_ctx, grpc_lb_subchannel_data *sd) {
-  GPR_ASSERT(sd->connectivity_notification_pending);
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace) ||
       GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_DEBUG,
@@ -89,6 +88,7 @@ void grpc_lb_subchannel_data_stop_connectivity_watch(
             (size_t)(sd - sd->subchannel_list->subchannels),
             sd->subchannel_list->num_subchannels, sd->subchannel);
   }
+  GPR_ASSERT(sd->connectivity_notification_pending);
   sd->connectivity_notification_pending = false;
 }
 
