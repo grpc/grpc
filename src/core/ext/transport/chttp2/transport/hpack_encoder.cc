@@ -180,14 +180,12 @@ static void evict_entry(grpc_chttp2_hpack_compressor *c) {
 
 /* add an element to the decoder table */
 static void add_elem(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
-                     grpc_mdelem elem) {
-  GPR_ASSERT(GRPC_MDELEM_IS_INTERNED(elem));
-
+                     grpc_mdelem elem, size_t elem_size, bool only_add_key) {
   uint32_t key_hash = grpc_slice_hash(GRPC_MDKEY(elem));
-  uint32_t value_hash = grpc_slice_hash(GRPC_MDVALUE(elem));
-  uint32_t elem_hash = GRPC_MDSTR_KV_HASH(key_hash, value_hash);
+  uint32_t value_hash = only_add_key ? 0 : grpc_slice_hash(GRPC_MDVALUE(elem));
+  uint32_t elem_hash =
+      only_add_key ? 0 : GRPC_MDSTR_KV_HASH(key_hash, value_hash);
   uint32_t new_index = c->tail_remote_index + c->table_elems + 1;
-  size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem);
 
   GPR_ASSERT(elem_size < 65536);
 
@@ -209,37 +207,7 @@ static void add_elem(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
   c->table_size = (uint16_t)(c->table_size + elem_size);
   c->table_elems++;
 
-  /* Store this element into {entries,indices}_elem */
-  if (grpc_mdelem_eq(c->entries_elems[HASH_FRAGMENT_2(elem_hash)], elem)) {
-    /* already there: update with new index */
-    c->indices_elems[HASH_FRAGMENT_2(elem_hash)] = new_index;
-  } else if (grpc_mdelem_eq(c->entries_elems[HASH_FRAGMENT_3(elem_hash)],
-                            elem)) {
-    /* already there (cuckoo): update with new index */
-    c->indices_elems[HASH_FRAGMENT_3(elem_hash)] = new_index;
-  } else if (GRPC_MDISNULL(c->entries_elems[HASH_FRAGMENT_2(elem_hash)])) {
-    /* not there, but a free element: add */
-    c->entries_elems[HASH_FRAGMENT_2(elem_hash)] = GRPC_MDELEM_REF(elem);
-    c->indices_elems[HASH_FRAGMENT_2(elem_hash)] = new_index;
-  } else if (GRPC_MDISNULL(c->entries_elems[HASH_FRAGMENT_3(elem_hash)])) {
-    /* not there (cuckoo), but a free element: add */
-    c->entries_elems[HASH_FRAGMENT_3(elem_hash)] = GRPC_MDELEM_REF(elem);
-    c->indices_elems[HASH_FRAGMENT_3(elem_hash)] = new_index;
-  } else if (c->indices_elems[HASH_FRAGMENT_2(elem_hash)] <
-             c->indices_elems[HASH_FRAGMENT_3(elem_hash)]) {
-    /* not there: replace oldest */
-    GRPC_MDELEM_UNREF(exec_ctx, c->entries_elems[HASH_FRAGMENT_2(elem_hash)]);
-    c->entries_elems[HASH_FRAGMENT_2(elem_hash)] = GRPC_MDELEM_REF(elem);
-    c->indices_elems[HASH_FRAGMENT_2(elem_hash)] = new_index;
-  } else {
-    /* not there: replace oldest */
-    GRPC_MDELEM_UNREF(exec_ctx, c->entries_elems[HASH_FRAGMENT_3(elem_hash)]);
-    c->entries_elems[HASH_FRAGMENT_3(elem_hash)] = GRPC_MDELEM_REF(elem);
-    c->indices_elems[HASH_FRAGMENT_3(elem_hash)] = new_index;
-  }
-
-  /* do exactly the same for the key (so we can find by that again too) */
-
+  /* Store the key into {entries,indices}_keys */
   if (grpc_slice_eq(c->entries_keys[HASH_FRAGMENT_2(key_hash)],
                     GRPC_MDKEY(elem))) {
     c->indices_keys[HASH_FRAGMENT_2(key_hash)] = new_index;
@@ -269,6 +237,37 @@ static void add_elem(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
     c->entries_keys[HASH_FRAGMENT_3(key_hash)] =
         grpc_slice_ref_internal(GRPC_MDKEY(elem));
     c->indices_keys[HASH_FRAGMENT_3(key_hash)] = new_index;
+  }
+
+  if (!only_add_key) {
+    /* Store this element into {entries,indices}_elem */
+    if (grpc_mdelem_eq(c->entries_elems[HASH_FRAGMENT_2(elem_hash)], elem)) {
+      /* already there: update with new index */
+      c->indices_elems[HASH_FRAGMENT_2(elem_hash)] = new_index;
+    } else if (grpc_mdelem_eq(c->entries_elems[HASH_FRAGMENT_3(elem_hash)],
+                              elem)) {
+      /* already there (cuckoo): update with new index */
+      c->indices_elems[HASH_FRAGMENT_3(elem_hash)] = new_index;
+    } else if (GRPC_MDISNULL(c->entries_elems[HASH_FRAGMENT_2(elem_hash)])) {
+      /* not there, but a free element: add */
+      c->entries_elems[HASH_FRAGMENT_2(elem_hash)] = GRPC_MDELEM_REF(elem);
+      c->indices_elems[HASH_FRAGMENT_2(elem_hash)] = new_index;
+    } else if (GRPC_MDISNULL(c->entries_elems[HASH_FRAGMENT_3(elem_hash)])) {
+      /* not there (cuckoo), but a free element: add */
+      c->entries_elems[HASH_FRAGMENT_3(elem_hash)] = GRPC_MDELEM_REF(elem);
+      c->indices_elems[HASH_FRAGMENT_3(elem_hash)] = new_index;
+    } else if (c->indices_elems[HASH_FRAGMENT_2(elem_hash)] <
+               c->indices_elems[HASH_FRAGMENT_3(elem_hash)]) {
+      /* not there: replace oldest */
+      GRPC_MDELEM_UNREF(exec_ctx, c->entries_elems[HASH_FRAGMENT_2(elem_hash)]);
+      c->entries_elems[HASH_FRAGMENT_2(elem_hash)] = GRPC_MDELEM_REF(elem);
+      c->indices_elems[HASH_FRAGMENT_2(elem_hash)] = new_index;
+    } else {
+      /* not there: replace oldest */
+      GRPC_MDELEM_UNREF(exec_ctx, c->entries_elems[HASH_FRAGMENT_3(elem_hash)]);
+      c->entries_elems[HASH_FRAGMENT_3(elem_hash)] = GRPC_MDELEM_REF(elem);
+      c->indices_elems[HASH_FRAGMENT_3(elem_hash)] = new_index;
+    }
   }
 }
 
@@ -430,9 +429,14 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
         "Reserved header (colon-prefixed) happening after regular ones.");
   }
 
-  if (GRPC_TRACER_ON(grpc_http_trace) && !GRPC_MDELEM_IS_INTERNED(elem)) {
+  if (GRPC_TRACER_ON(grpc_http_trace)) {
     char *k = grpc_slice_to_c_string(GRPC_MDKEY(elem));
-    char *v = grpc_slice_to_c_string(GRPC_MDVALUE(elem));
+    char *v = NULL;
+    if (grpc_is_binary_header(GRPC_MDKEY(elem))) {
+      v = grpc_dump_slice(GRPC_MDVALUE(elem), GPR_DUMP_HEX);
+    } else {
+      v = grpc_slice_to_c_string(GRPC_MDVALUE(elem));
+    }
     gpr_log(
         GPR_DEBUG,
         "Encode: '%s: %s', elem_interned=%d [%d], k_interned=%d, v_interned=%d",
@@ -442,7 +446,12 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
     gpr_free(k);
     gpr_free(v);
   }
-  if (!GRPC_MDELEM_IS_INTERNED(elem)) {
+
+  bool elem_interned = GRPC_MDELEM_IS_INTERNED(elem);
+  bool key_interned = elem_interned || grpc_slice_is_interned(GRPC_MDKEY(elem));
+
+  // Key is not interned, emit literals.
+  if (!key_interned) {
     emit_lithdr_noidx_v(exec_ctx, c, elem, st);
     return;
   }
@@ -452,37 +461,46 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
   uint32_t elem_hash;
   size_t decoder_space_usage;
   uint32_t indices_key;
-  int should_add_elem;
+  bool should_add_elem;
+  bool should_add_key;
 
   key_hash = grpc_slice_hash(GRPC_MDKEY(elem));
-  value_hash = grpc_slice_hash(GRPC_MDVALUE(elem));
-  elem_hash = GRPC_MDSTR_KV_HASH(key_hash, value_hash);
 
-  inc_filter(HASH_FRAGMENT_1(elem_hash), &c->filter_elems_sum, c->filter_elems);
+  if (elem_interned) {
+    value_hash = grpc_slice_hash(GRPC_MDVALUE(elem));
+    elem_hash = GRPC_MDSTR_KV_HASH(key_hash, value_hash);
 
-  /* is this elem currently in the decoders table? */
+    inc_filter(HASH_FRAGMENT_1(elem_hash), &c->filter_elems_sum,
+               c->filter_elems);
 
-  if (grpc_mdelem_eq(c->entries_elems[HASH_FRAGMENT_2(elem_hash)], elem) &&
-      c->indices_elems[HASH_FRAGMENT_2(elem_hash)] > c->tail_remote_index) {
-    /* HIT: complete element (first cuckoo hash) */
-    emit_indexed(exec_ctx, c,
-                 dynidx(c, c->indices_elems[HASH_FRAGMENT_2(elem_hash)]), st);
-    return;
-  }
+    /* is this elem currently in the decoders table? */
 
-  if (grpc_mdelem_eq(c->entries_elems[HASH_FRAGMENT_3(elem_hash)], elem) &&
-      c->indices_elems[HASH_FRAGMENT_3(elem_hash)] > c->tail_remote_index) {
-    /* HIT: complete element (second cuckoo hash) */
-    emit_indexed(exec_ctx, c,
-                 dynidx(c, c->indices_elems[HASH_FRAGMENT_3(elem_hash)]), st);
-    return;
+    if (grpc_mdelem_eq(c->entries_elems[HASH_FRAGMENT_2(elem_hash)], elem) &&
+        c->indices_elems[HASH_FRAGMENT_2(elem_hash)] > c->tail_remote_index) {
+      /* HIT: complete element (first cuckoo hash) */
+      emit_indexed(exec_ctx, c,
+                   dynidx(c, c->indices_elems[HASH_FRAGMENT_2(elem_hash)]), st);
+      return;
+    }
+
+    if (grpc_mdelem_eq(c->entries_elems[HASH_FRAGMENT_3(elem_hash)], elem) &&
+        c->indices_elems[HASH_FRAGMENT_3(elem_hash)] > c->tail_remote_index) {
+      /* HIT: complete element (second cuckoo hash) */
+      emit_indexed(exec_ctx, c,
+                   dynidx(c, c->indices_elems[HASH_FRAGMENT_3(elem_hash)]), st);
+      return;
+    }
   }
 
   /* should this elem be in the table? */
-  decoder_space_usage = grpc_mdelem_get_size_in_hpack_table(elem);
-  should_add_elem = decoder_space_usage < MAX_DECODER_SPACE_USAGE &&
+  decoder_space_usage =
+      grpc_mdelem_get_size_in_hpack_table(elem, st->use_true_binary_metadata);
+  should_add_elem = elem_interned &&
+                    decoder_space_usage < MAX_DECODER_SPACE_USAGE &&
                     c->filter_elems[HASH_FRAGMENT_1(elem_hash)] >=
                         c->filter_elems_sum / ONE_ON_ADD_PROBABILITY;
+  should_add_key =
+      !elem_interned && decoder_space_usage < MAX_DECODER_SPACE_USAGE;
 
   /* no hits for the elem... maybe there's a key? */
 
@@ -493,7 +511,7 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
     /* HIT: key (first cuckoo hash) */
     if (should_add_elem) {
       emit_lithdr_incidx(exec_ctx, c, dynidx(c, indices_key), elem, st);
-      add_elem(exec_ctx, c, elem);
+      add_elem(exec_ctx, c, elem, decoder_space_usage, false);
       return;
     } else {
       emit_lithdr_noidx(exec_ctx, c, dynidx(c, indices_key), elem, st);
@@ -509,7 +527,7 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
     /* HIT: key (first cuckoo hash) */
     if (should_add_elem) {
       emit_lithdr_incidx(exec_ctx, c, dynidx(c, indices_key), elem, st);
-      add_elem(exec_ctx, c, elem);
+      add_elem(exec_ctx, c, elem, decoder_space_usage, false);
       return;
     } else {
       emit_lithdr_noidx(exec_ctx, c, dynidx(c, indices_key), elem, st);
@@ -520,9 +538,9 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
 
   /* no elem, key in the table... fall back to literal emission */
 
-  if (should_add_elem) {
+  if (should_add_elem || should_add_key) {
     emit_lithdr_incidx_v(exec_ctx, c, elem, st);
-    add_elem(exec_ctx, c, elem);
+    add_elem(exec_ctx, c, elem, decoder_space_usage, should_add_key);
     return;
   } else {
     emit_lithdr_noidx_v(exec_ctx, c, elem, st);
