@@ -207,7 +207,7 @@ static void tcp_connect(grpc_exec_ctx *exec_ctx, const struct sockaddr *remote,
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(exec_ctx, g_pollset, &worker,
-                          gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
+                          grpc_timespec_to_millis_round_up(deadline))));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(exec_ctx);
     gpr_mu_lock(g_mu);
@@ -246,7 +246,7 @@ static void test_connect(unsigned n) {
   GPR_ASSERT(GRPC_ERROR_NONE ==
              grpc_tcp_server_add_port(s, &resolved_addr, &svr_port));
   GPR_ASSERT(svr_port > 0);
-  GPR_ASSERT(uv_ip6_addr("::", svr_port, (struct sockaddr_in6 *)addr) == 0);
+  GPR_ASSERT((uv_ip6_addr("::", svr_port, (struct sockaddr_in6 *)addr)) == 0);
   /* Cannot use wildcard (port==0), because add_port() will try to reuse the
      same port as a previous add_port(). */
   svr1_port = grpc_pick_unused_port_or_die();

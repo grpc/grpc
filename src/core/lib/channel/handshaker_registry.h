@@ -24,6 +24,10 @@
 #include "src/core/lib/channel/handshaker_factory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
   HANDSHAKER_CLIENT = 0,
   HANDSHAKER_SERVER,
@@ -44,5 +48,9 @@ void grpc_handshakers_add(grpc_exec_ctx* exec_ctx,
                           grpc_handshaker_type handshaker_type,
                           const grpc_channel_args* args,
                           grpc_handshake_manager* handshake_mgr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_REGISTRY_H */

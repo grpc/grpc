@@ -42,8 +42,8 @@ static grpc_pollset *g_pollset;
 static int g_connections_complete = 0;
 static grpc_endpoint *g_connecting = NULL;
 
-static gpr_timespec test_deadline(void) {
-  return grpc_timeout_seconds_to_deadline(10);
+static grpc_millis test_deadline(void) {
+  return grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
 }
 
 static void finish_connection(grpc_exec_ctx *exec_ctx) {
@@ -110,7 +110,7 @@ void test_succeeds(void) {
                                 (int *)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, NULL, grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, NULL, NULL,
-                          &resolved_addr, gpr_inf_future(GPR_CLOCK_REALTIME));
+                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
 
   gpr_mu_lock(g_mu);
 
@@ -119,8 +119,8 @@ void test_succeeds(void) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                          gpr_now(GPR_CLOCK_MONOTONIC),
-                          grpc_timeout_seconds_to_deadline(5))));
+                          grpc_timespec_to_millis_round_up(
+                              grpc_timeout_seconds_to_deadline(5)))));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_flush(&exec_ctx);
     gpr_mu_lock(g_mu);
@@ -154,7 +154,7 @@ void test_fails(void) {
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, NULL, grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, NULL, NULL,
-                          &resolved_addr, gpr_inf_future(GPR_CLOCK_REALTIME));
+                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
 
   gpr_mu_lock(g_mu);
 
@@ -162,17 +162,17 @@ void test_fails(void) {
   while (g_connections_complete == connections_complete_before) {
     grpc_pollset_worker *worker = NULL;
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-    gpr_timespec polling_deadline = test_deadline();
-    switch (grpc_timer_check(&exec_ctx, now, &polling_deadline)) {
+    grpc_millis polling_deadline = test_deadline();
+    switch (grpc_timer_check(&exec_ctx, &polling_deadline)) {
       case GRPC_TIMERS_FIRED:
         break;
       case GRPC_TIMERS_NOT_CHECKED:
-        polling_deadline = now;
+        polling_deadline = grpc_timespec_to_millis_round_up(now);
       /* fall through */
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         GPR_ASSERT(GRPC_LOG_IF_ERROR(
             "pollset_work", grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                                              now, polling_deadline)));
+                                              polling_deadline)));
         break;
     }
     gpr_mu_unlock(g_mu);

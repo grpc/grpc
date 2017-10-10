@@ -25,6 +25,10 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef NDEBUG
 extern grpc_tracer_flag grpc_trace_fd_refcount;
 #endif
@@ -71,13 +75,17 @@ void grpc_pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset);
    pollset
    lock */
 grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                              grpc_pollset_worker **worker, gpr_timespec now,
-                              gpr_timespec deadline) GRPC_MUST_USE_RESULT;
+                              grpc_pollset_worker **worker,
+                              grpc_millis deadline) GRPC_MUST_USE_RESULT;
 
 /* Break one polling thread out of polling work for this pollset.
    If specific_worker is non-NULL, then kick that worker. */
 grpc_error *grpc_pollset_kick(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                               grpc_pollset_worker *specific_worker)
     GRPC_MUST_USE_RESULT;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_POLLSET_H */
