@@ -174,6 +174,9 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
               EchoResponse* response) override {
     std::unique_ptr<ClientContext> client_context =
         ClientContext::FromServerContext(*server_context);
+    // A bit of sleep to make sure that short deadline tests fail
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                 gpr_time_from_millis(10, GPR_TIMESPAN)));
     return stub_->Echo(client_context.get(), *request, response);
   }
 
