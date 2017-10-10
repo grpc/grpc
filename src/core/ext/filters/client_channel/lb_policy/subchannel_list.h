@@ -68,8 +68,9 @@ typedef struct {
 } grpc_lb_subchannel_data;
 
 // Unrefs the subchannel contained in sd.
-void grpc_lb_subchannel_data_unref_subchannel(
-    grpc_exec_ctx *exec_ctx, grpc_lb_subchannel_data *sd, const char *reason);
+void grpc_lb_subchannel_data_unref_subchannel(grpc_exec_ctx *exec_ctx,
+                                              grpc_lb_subchannel_data *sd,
+                                              const char *reason);
 
 // Starts watching the connectivity state of the subchannel.
 // The connectivity_changed_cb callback must invoke either

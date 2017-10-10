@@ -153,13 +153,11 @@ grpc_lb_subchannel_list *grpc_lb_subchannel_list_create(
         GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
       char *address_uri =
           grpc_sockaddr_to_uri(&addresses->addresses[i].address);
-      gpr_log(
-          GPR_DEBUG,
-          "[LB %p] subchannel list %p index %" PRIdPTR
-          ": Created subchannel %p for address uri %s; "
-          "initial connectivity state: %s",
-          p, subchannel_list, subchannel_index, subchannel, address_uri,
-          grpc_connectivity_state_name(subchannel_connectivity_state));
+      gpr_log(GPR_DEBUG, "[LB %p] subchannel list %p index %" PRIdPTR
+                         ": Created subchannel %p for address uri %s; "
+                         "initial connectivity state: %s",
+              p, subchannel_list, subchannel_index, subchannel, address_uri,
+              grpc_connectivity_state_name(subchannel_connectivity_state));
       gpr_free(address_uri);
     }
     grpc_lb_subchannel_data *sd =
@@ -253,8 +251,8 @@ static void grpc_lb_subchannel_data_cancel_connectivity_watch(
             (size_t)(sd - sd->subchannel_list->subchannels),
             sd->subchannel_list->num_subchannels, sd->subchannel, reason);
   }
-  grpc_subchannel_notify_on_state_change(
-      exec_ctx, sd->subchannel, NULL, NULL, &sd->connectivity_changed_closure);
+  grpc_subchannel_notify_on_state_change(exec_ctx, sd->subchannel, NULL, NULL,
+                                         &sd->connectivity_changed_closure);
 }
 
 void grpc_lb_subchannel_list_shutdown_and_unref(

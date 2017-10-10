@@ -285,8 +285,8 @@ static int rr_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       /* readily available, report right away */
       grpc_lb_subchannel_data *sd =
           &p->subchannel_list->subchannels[next_ready_index];
-      *target = GRPC_CONNECTED_SUBCHANNEL_REF(sd->connected_subchannel,
-                                              "rr_picked");
+      *target =
+          GRPC_CONNECTED_SUBCHANNEL_REF(sd->connected_subchannel, "rr_picked");
       if (user_data != NULL) {
         *user_data = sd->user_data;
       }

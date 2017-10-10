@@ -84,9 +84,9 @@ static void shutdown_locked(grpc_exec_ctx *exec_ctx, pick_first_lb_policy *p,
     GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete, GRPC_ERROR_REF(error));
     gpr_free(pp);
   }
-  grpc_connectivity_state_set(
-      exec_ctx, &p->state_tracker, GRPC_CHANNEL_SHUTDOWN,
-      GRPC_ERROR_REF(error), "shutdown");
+  grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
+                              GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
+                              "shutdown");
   if (p->subchannel_list != NULL) {
     grpc_lb_subchannel_list_shutdown_and_unref(exec_ctx, p->subchannel_list,
                                                "pf_shutdown");
@@ -285,8 +285,8 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     // We don't yet have a selected subchannel, so replace the current
     // subchannel list immediately.
     if (p->subchannel_list != NULL) {
-      grpc_lb_subchannel_list_shutdown_and_unref(
-          exec_ctx, p->subchannel_list, "pf_update_before_selected");
+      grpc_lb_subchannel_list_shutdown_and_unref(exec_ctx, p->subchannel_list,
+                                                 "pf_update_before_selected");
     }
     p->subchannel_list = subchannel_list;
   } else {
@@ -363,17 +363,17 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_lb_subchannel_data *sd = (grpc_lb_subchannel_data *)arg;
   pick_first_lb_policy *p = (pick_first_lb_policy *)sd->subchannel_list->policy;
   if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
-    gpr_log(
-        GPR_DEBUG,
-        "Pick First %p connectivity changed for subchannel %p (%" PRIdPTR
-        " of %" PRIdPTR "), subchannel_list %p: state=%s p->shutdown=%d "
-        "sd->subchannel_list->shutting_down=%d error=%s",
-        (void *)p, (void *)sd->subchannel,
-        sd->subchannel_list->checking_subchannel,
-        sd->subchannel_list->num_subchannels, (void *)sd->subchannel_list,
-        grpc_connectivity_state_name(sd->pending_connectivity_state_unsafe),
-        p->shutdown, sd->subchannel_list->shutting_down,
-        grpc_error_string(error));
+    gpr_log(GPR_DEBUG,
+            "Pick First %p connectivity changed for subchannel %p (%" PRIdPTR
+            " of %" PRIdPTR
+            "), subchannel_list %p: state=%s p->shutdown=%d "
+            "sd->subchannel_list->shutting_down=%d error=%s",
+            (void *)p, (void *)sd->subchannel,
+            sd->subchannel_list->checking_subchannel,
+            sd->subchannel_list->num_subchannels, (void *)sd->subchannel_list,
+            grpc_connectivity_state_name(sd->pending_connectivity_state_unsafe),
+            p->shutdown, sd->subchannel_list->shutting_down,
+            grpc_error_string(error));
   }
   // If the policy is shutting down, unref and return.
   if (p->shutdown) {
@@ -412,15 +412,14 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
           exec_ctx, p->subchannel_list, "selected_not_ready+switch_to_update");
       p->subchannel_list = p->latest_pending_subchannel_list;
       p->latest_pending_subchannel_list = NULL;
-      grpc_lb_subchannel_data *new_sd = &p->subchannel_list->subchannels[
-          p->subchannel_list->checking_subchannel];
-      grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                                  new_sd->curr_connectivity_state,
-                                  GRPC_ERROR_REF(error),
-                                  "selected_not_ready+switch_to_update");
+      grpc_lb_subchannel_data *new_sd =
+          &p->subchannel_list
+               ->subchannels[p->subchannel_list->checking_subchannel];
+      grpc_connectivity_state_set(
+          exec_ctx, &p->state_tracker, new_sd->curr_connectivity_state,
+          GRPC_ERROR_REF(error), "selected_not_ready+switch_to_update");
     } else {
-      if (sd->curr_connectivity_state ==
-          GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      if (sd->curr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         /* if the selected channel goes bad, we're done */
         sd->curr_connectivity_state = GRPC_CHANNEL_SHUTDOWN;
       }
@@ -471,8 +470,8 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
             "connected");
         p->selected = sd;
         if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
-          gpr_log(GPR_INFO, "Pick First %p selected subchannel %p",
-                  (void *)p, (void *)sd->subchannel);
+          gpr_log(GPR_INFO, "Pick First %p selected subchannel %p", (void *)p,
+                  (void *)sd->subchannel);
         }
         // Drop all other subchannels, since we are now connected.
         destroy_unselected_subchannels_locked(exec_ctx, p);
@@ -497,8 +496,8 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
       case GRPC_CHANNEL_TRANSIENT_FAILURE: {
         grpc_lb_subchannel_data_stop_connectivity_watch(exec_ctx, sd);
         sd->subchannel_list->checking_subchannel =
-            (sd->subchannel_list->checking_subchannel + 1)
-            % sd->subchannel_list->num_subchannels;
+            (sd->subchannel_list->checking_subchannel + 1) %
+            sd->subchannel_list->num_subchannels;
         // Case 1: Only set state to TRANSIENT_FAILURE if we've tried
         // all subchannels.
         if (sd->subchannel_list->checking_subchannel == 0 &&
@@ -507,8 +506,8 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
               exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
               GRPC_ERROR_REF(error), "connecting_transient_failure");
         }
-        sd = &sd->subchannel_list->subchannels[
-            sd->subchannel_list->checking_subchannel];
+        sd = &sd->subchannel_list
+                  ->subchannels[sd->subchannel_list->checking_subchannel];
         sd->curr_connectivity_state =
             grpc_subchannel_check_connectivity(sd->subchannel, &error);
         if (sd->curr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
@@ -550,10 +549,10 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
         }
         // Advance to next subchannel and check its state.
         sd->subchannel_list->checking_subchannel =
-            (sd->subchannel_list->checking_subchannel + 1)
-            % sd->subchannel_list->num_subchannels;
-        sd = &sd->subchannel_list->subchannels[
-            sd->subchannel_list->checking_subchannel];
+            (sd->subchannel_list->checking_subchannel + 1) %
+            sd->subchannel_list->num_subchannels;
+        sd = &sd->subchannel_list
+                  ->subchannels[sd->subchannel_list->checking_subchannel];
         sd->curr_connectivity_state =
             grpc_subchannel_check_connectivity(sd->subchannel, &error);
         if (sd->curr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
