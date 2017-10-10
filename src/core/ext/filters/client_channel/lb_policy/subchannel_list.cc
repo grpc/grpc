@@ -129,6 +129,20 @@ grpc_lb_subchannel_list *grpc_lb_subchannel_list_create(
     grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
         exec_ctx, args->client_channel_factory, &sc_args);
     grpc_channel_args_destroy(exec_ctx, new_args);
+    if (subchannel == NULL) {
+      // Subchannel could not be created.
+      if (GRPC_TRACER_ON(grpc_lb_round_robin_trace) ||
+          GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
+        char *address_uri =
+            grpc_sockaddr_to_uri(&addresses->addresses[i].address);
+        gpr_log(GPR_DEBUG,
+                "[LB %p] could not create subchannel for address uri %s, "
+                "ignoring",
+                subchannel_list->policy, address_uri);
+        gpr_free(address_uri);
+      }
+      continue;
+    }
     grpc_error *error;
     // Get the connectivity state of the subchannel. Already existing ones may
     // be in a state other than INIT.
