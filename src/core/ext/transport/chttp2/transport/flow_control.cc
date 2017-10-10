@@ -358,10 +358,15 @@ FlowControlAction TransportFlowControl::UpdateForBdp(grpc_exec_ctx* exec_ctx,
           frame_size);
     }
   }
+  return action;
 }
 
 FlowControlAction TransportFlowControl::MakeAction(grpc_exec_ctx* exec_ctx) {
   FlowControlAction action;
+  if (announced_window_ < target_window() / 2) {
+    action.set_send_transport_update(
+        FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
+  }
   action = UpdateForBdp(exec_ctx, action);
   return action;
 }

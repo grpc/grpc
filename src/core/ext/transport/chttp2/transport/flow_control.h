@@ -123,8 +123,6 @@ class FlowControlTrace {
   int64_t remote_window_delta_;
   int64_t local_window_delta_;
   int64_t announced_window_delta_;
-  uint32_t local_init_window_;
-  uint32_t local_max_frame_;
 };
 
 class TransportFlowControl {
@@ -137,7 +135,8 @@ class TransportFlowControl {
   }
 
   // toggle bdp probing
-  void SetBdpProbe(bool enable);
+  // TODO(ctiller): make this safe to dynamically toggle
+  void SetBdpProbe(bool enable) { enable_bdp_probe_ = enable; }
 
   // returns an announce if we should send a transport update to our peer,
   // else returns zero; writing_anyway indicates if a write would happen
