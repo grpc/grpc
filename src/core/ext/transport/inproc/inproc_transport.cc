@@ -362,10 +362,14 @@ static void close_other_side_locked(grpc_exec_ctx *exec_ctx, inproc_stream *s,
   }
 }
 
-static void complete_if_unique_locked(grpc_exec_ctx *exec_ctx, inproc_stream *s,
-                                      grpc_error *error,
-                                      grpc_transport_stream_op_batch *op,
-                                      const char *msg) {
+// Call the on_complete closure associated with this stream_op_batch if
+// this stream_op_batch is only one of the pending operations for this
+// stream. This is called when one of the pending operations for the stream
+// is done and about to be NULLed out
+static void complete_if_batch_end_locked(grpc_exec_ctx *exec_ctx,
+					 inproc_stream *s, grpc_error *error,
+					 grpc_transport_stream_op_batch *op,
+					 const char *msg) {
   int is_sm = (int)(op == s->send_message_op);
   int is_stm = (int)(op == s->send_trailing_md_op);
   int is_rim = (int)(op == s->recv_initial_md_op);
@@ -457,7 +461,7 @@ static void fail_helper_locked(grpc_exec_ctx *exec_ctx, inproc_stream *s,
                        err);
     // Last use of err so no need to REF and then UNREF it
 
-    complete_if_unique_locked(
+    complete_if_batch_end_locked(
         exec_ctx, s, error, s->recv_initial_md_op,
         "fail_helper scheduling recv-initial-metadata-on-complete");
     s->recv_initial_md_op = NULL;
@@ -468,19 +472,19 @@ static void fail_helper_locked(grpc_exec_ctx *exec_ctx, inproc_stream *s,
     GRPC_CLOSURE_SCHED(
         exec_ctx, s->recv_message_op->payload->recv_message.recv_message_ready,
         GRPC_ERROR_REF(error));
-    complete_if_unique_locked(
+    complete_if_batch_end_locked(
         exec_ctx, s, error, s->recv_message_op,
         "fail_helper scheduling recv-message-on-complete");
     s->recv_message_op = NULL;
   }
   if (s->send_message_op) {
-    complete_if_unique_locked(
+    complete_if_batch_end_locked(
         exec_ctx, s, error, s->send_message_op,
         "fail_helper scheduling send-message-on-complete");
     s->send_message_op = NULL;
   }
   if (s->send_trailing_md_op) {
-    complete_if_unique_locked(
+    complete_if_batch_end_locked(
         exec_ctx, s, error, s->send_trailing_md_op,
         "fail_helper scheduling send-trailng-md-on-complete");
     s->send_trailing_md_op = NULL;
@@ -489,7 +493,7 @@ static void fail_helper_locked(grpc_exec_ctx *exec_ctx, inproc_stream *s,
     INPROC_LOG(GPR_DEBUG,
                "fail_helper %p scheduling trailing-md-on-complete %p", s,
                error);
-    complete_if_unique_locked(
+    complete_if_batch_end_locked(
         exec_ctx, s, error, s->recv_trailing_md_op,
         "fail_helper scheduling recv-trailing-metadata-on-complete");
     s->recv_trailing_md_op = NULL;
@@ -534,10 +538,10 @@ static void message_transfer_locked(grpc_exec_ctx *exec_ctx,
       exec_ctx,
       receiver->recv_message_op->payload->recv_message.recv_message_ready,
       GRPC_ERROR_NONE);
-  complete_if_unique_locked(exec_ctx, sender, GRPC_ERROR_NONE,
+  complete_if_batch_end_locked(exec_ctx, sender, GRPC_ERROR_NONE,
                             sender->send_message_op,
                             "message_transfer scheduling sender on_complete");
-  complete_if_unique_locked(exec_ctx, receiver, GRPC_ERROR_NONE,
+  complete_if_batch_end_locked(exec_ctx, receiver, GRPC_ERROR_NONE,
                             receiver->recv_message_op,
                             "message_transfer scheduling receiver on_complete");
 
@@ -585,7 +589,7 @@ static void op_state_machine(grpc_exec_ctx *exec_ctx, void *arg,
                (s->trailing_md_sent || other->recv_trailing_md_op)) {
       // A server send will never be matched if the client is waiting
       // for trailing metadata already
-      complete_if_unique_locked(
+      complete_if_batch_end_locked(
           exec_ctx, s, GRPC_ERROR_NONE, s->send_message_op,
           "op_state_machine scheduling send-message-on-complete");
       s->send_message_op = NULL;
@@ -627,7 +631,7 @@ static void op_state_machine(grpc_exec_ctx *exec_ctx, void *arg,
       }
     }
     maybe_schedule_op_closure_locked(exec_ctx, other, GRPC_ERROR_NONE);
-    complete_if_unique_locked(
+    complete_if_batch_end_locked(
         exec_ctx, s, GRPC_ERROR_NONE, s->send_trailing_md_op,
         "op_state_machine scheduling send-trailing-metadata-on-complete");
     s->send_trailing_md_op = NULL;
@@ -664,7 +668,7 @@ static void op_state_machine(grpc_exec_ctx *exec_ctx, void *arg,
                          s->recv_initial_md_op->payload->recv_initial_metadata
                              .recv_initial_metadata_ready,
                          GRPC_ERROR_REF(new_err));
-      complete_if_unique_locked(
+      complete_if_batch_end_locked(
           exec_ctx, s, new_err, s->recv_initial_md_op,
           "op_state_machine scheduling recv-initial-metadata-on-complete");
       s->recv_initial_md_op = NULL;
@@ -708,7 +712,7 @@ static void op_state_machine(grpc_exec_ctx *exec_ctx, void *arg,
           exec_ctx,
           s->recv_message_op->payload->recv_message.recv_message_ready,
           GRPC_ERROR_NONE);
-      complete_if_unique_locked(
+      complete_if_batch_end_locked(
           exec_ctx, s, new_err, s->recv_message_op,
           "op_state_machine scheduling recv-message-on-complete");
       s->recv_message_op = NULL;
@@ -716,7 +720,7 @@ static void op_state_machine(grpc_exec_ctx *exec_ctx, void *arg,
     if ((s->trailing_md_sent || s->t->is_client) && s->send_message_op) {
       // Nothing further will try to receive from this stream, so finish off
       // any outstanding send_message op
-      complete_if_unique_locked(
+      complete_if_batch_end_locked(
           exec_ctx, s, new_err, s->send_message_op,
           "op_state_machine scheduling send-message-on-complete");
       s->send_message_op = NULL;
@@ -764,7 +768,7 @@ static void op_state_machine(grpc_exec_ctx *exec_ctx, void *arg,
     GRPC_CLOSURE_SCHED(
         exec_ctx, s->recv_message_op->payload->recv_message.recv_message_ready,
         GRPC_ERROR_NONE);
-    complete_if_unique_locked(
+    complete_if_batch_end_locked(
         exec_ctx, s, new_err, s->recv_message_op,
         "op_state_machine scheduling recv-message-on-complete");
     s->recv_message_op = NULL;
@@ -773,7 +777,7 @@ static void op_state_machine(grpc_exec_ctx *exec_ctx, void *arg,
       s->send_message_op) {
     // Nothing further will try to receive from this stream, so finish off
     // any outstanding send_message op
-    complete_if_unique_locked(
+    complete_if_batch_end_locked(
         exec_ctx, s, new_err, s->send_message_op,
         "op_state_machine scheduling send-message-on-complete");
     s->send_message_op = NULL;
@@ -835,7 +839,7 @@ static bool cancel_stream_locked(grpc_exec_ctx *exec_ctx, inproc_stream *s,
     // couldn't complete that because we hadn't yet sent out trailing
     // md, now's the chance
     if (!s->t->is_client && s->trailing_md_recvd && s->recv_trailing_md_op) {
-      complete_if_unique_locked(
+      complete_if_batch_end_locked(
           exec_ctx, s, s->cancel_self_error, s->recv_trailing_md_op,
           "cancel_stream scheduling trailing-md-on-complete");
       s->recv_trailing_md_op = NULL;
@@ -955,8 +959,8 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
     // We want to initiate the closure if:
     // 1. We want to send a message and the other side wants to receive or end
     // 2. We want to send trailing metadata and there isn't an unmatched send
-    // 3. We want initial metadata and there is some ready
-    // 4. We want to receive a message and there is something ready
+    // 3. We want initial metadata and the other side has sent it
+    // 4. We want to receive a message and there is a message ready
     // 5. There is trailing metadata, even if nothing specifically wants
     //    that because that can shut down the receive message as well
     if ((op->send_message && other && ((other->recv_message_op != NULL) ||
