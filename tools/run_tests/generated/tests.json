@@ -1609,7 +1609,8 @@
       "mac", 
       "posix", 
       "windows"
-    ]
+    ], 
+    "timeout_seconds": 1200
   }, 
   {
     "args": [], 
