@@ -9,16 +9,14 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Protobuf type <code>grpc.testing.CoreResponse</code>
+ * Generated from protobuf message <code>grpc.testing.CoreResponse</code>
  */
 class CoreResponse extends \Google\Protobuf\Internal\Message
 {
     /**
-     * <pre>
      * Number of cores available on the server
-     * </pre>
      *
-     * <code>int32 cores = 1;</code>
+     * Generated from protobuf field <code>int32 cores = 1;</code>
      */
     private $cores = 0;
 
@@ -28,11 +26,10 @@ class CoreResponse extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Number of cores available on the server
-     * </pre>
      *
-     * <code>int32 cores = 1;</code>
+     * Generated from protobuf field <code>int32 cores = 1;</code>
+     * @return int
      */
     public function getCores()
     {
@@ -40,16 +37,18 @@ class CoreResponse extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Number of cores available on the server
-     * </pre>
      *
-     * <code>int32 cores = 1;</code>
+     * Generated from protobuf field <code>int32 cores = 1;</code>
+     * @param int $var
+     * @return $this
      */
     public function setCores($var)
     {
         GPBUtil::checkInt32($var);
         $this->cores = $var;
+
+        return $this;
     }
 
 }
