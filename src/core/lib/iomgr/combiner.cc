@@ -17,6 +17,7 @@
  */
 
 #include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/ev_posix.h"
 
 #include <assert.h>
 #include <inttypes.h>
@@ -83,7 +84,7 @@ grpc_combiner *grpc_combiner_create(void) {
   gpr_mpscq_init(&lock->queue);
   grpc_closure_list_init(&lock->final_list);
   GRPC_CLOSURE_INIT(&lock->offload, offload, lock,
-                    grpc_executor_scheduler(GRPC_EXECUTOR_SHORT));
+                    grpc_workqueue_scheduler());
   GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG, "C:%p create", lock));
   return lock;
 }

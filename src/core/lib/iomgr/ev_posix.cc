@@ -263,4 +263,8 @@ void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
   g_event_engine->pollset_set_del_fd(exec_ctx, pollset_set, fd);
 }
 
+grpc_closure_scheduler *grpc_workqueue_scheduler() {
+  return  g_event_engine->workqueue_scheduler();
+}
+
 #endif  // GRPC_POSIX_SOCKET

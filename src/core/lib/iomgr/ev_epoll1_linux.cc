@@ -40,6 +40,7 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/lockfree_event.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
@@ -1160,30 +1161,58 @@ done:
 }
 
 static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                           grpc_fd *fd) {
-  gpr_mu_lock(&pollset->mu);
-  pollset->fd
-  fd->workqueue_pollset = pollset;
+                           grpc_fd *fd) {}
+
+static void wq_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                     grpc_error *error) {
+  // find a neighborhood to wakeup
+  bool scheduled = false;
+  size_t initial_neighborhood = choose_neighborhood();
+  for (size_t i = 0; !scheduled && i < g_num_neighborhoods; i++) {
+    pollset_neighborhood *neighborhood =
+        &g_neighborhoods[(initial_neighborhood + i) % g_num_neighborhoods];
+    if (gpr_mu_trylock(&neighborhood->mu)) {
+      if (neighborhood->active_root != NULL) {
+         grpc_pollset *inspect = neighborhood->active_root;
+        do {
+          if (gpr_mu_trylock(&inspect->mu)) {
+            if (inspect->root_worker != NULL) {
+              grpc_pollset_worker *inspect_worker = inspect->root_worker;
+              do {
+                if (inspect_worker->state == UNKICKED) {
+                  SET_KICK_STATE(inspect_worker, KICKED);
+                  grpc_closure_list_append(
+                      &inspect_worker->schedule_on_end_work, closure, error);
+                  if (inspect_worker->initialized_cv) {
+                    gpr_cv_signal(&inspect_worker->cv);
+                  }
+                  scheduled = true;
+                }
+                inspect_worker = inspect_worker->next;
+              } while (!scheduled && inspect_worker != inspect->root_worker);
+            }
+            gpr_mu_unlock(&inspect->mu);
+          }
+          inspect = inspect->next;
+        } while (!scheduled && inspect != neighborhood->active_root);
+      }
+      gpr_mu_unlock(&neighborhood->mu);
+    }
+  }
+  if (!scheduled) {
+    grpc_executor_scheduler(GRPC_EXECUTOR_SHORT)->vtable->sched(exec_ctx, closure, error);
+  }
 }
 
-static void workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                              grpc_error *error) {
-  GPR_TIMER_BEGIN("workqueue.enqueue", 0);
-  grpc_workqueue *workqueue = (grpc_workqueue *)closure->scheduler;
-  /* take a ref to the workqueue: otherwise it can happen that whatever events
-   * this kicks off ends up destroying the workqueue before this function
-   * completes */
-  GRPC_WORKQUEUE_REF(workqueue, "enqueue");
-  polling_island *pi = (polling_island *)workqueue;
-  gpr_atm last = gpr_atm_no_barrier_fetch_add(&pi->workqueue_item_count, 1);
-  closure->error_data.error = error;
-  gpr_mpscq_push(&pi->workqueue_items, &closure->next_data.atm_next);
-  if (last == 0) {
-    workqueue_maybe_wakeup(pi);
-  }
-  workqueue_move_items_to_parent(pi);
-  GRPC_WORKQUEUE_UNREF(exec_ctx, workqueue, "enqueue");
-  GPR_TIMER_END("workqueue.enqueue", 0);
+static const grpc_closure_scheduler_vtable
+    singleton_workqueue_scheduler_vtable = {wq_sched, wq_sched,
+                                            "epoll1_workqueue"};
+
+static grpc_closure_scheduler singleton_workqueue_scheduler = {
+    &singleton_workqueue_scheduler_vtable};
+
+static grpc_closure_scheduler *workqueue_scheduler() {
+  return &singleton_workqueue_scheduler;
 }
 
 /*******************************************************************************
@@ -1255,6 +1284,7 @@ static const grpc_event_engine_vtable vtable = {
     pollset_set_add_fd,
     pollset_set_del_fd,
 
+    workqueue_scheduler,
     shutdown_engine,
 };
 

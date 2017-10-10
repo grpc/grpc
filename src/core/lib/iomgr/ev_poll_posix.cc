@@ -37,6 +37,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/wakeup_fd_cv.h"
@@ -1684,6 +1685,10 @@ static void global_cv_fd_table_shutdown() {
  * event engine binding
  */
 
+static grpc_closure_scheduler *workqueue_scheduler() {
+  return grpc_executor_scheduler(GRPC_EXECUTOR_SHORT);
+}
+
 static void shutdown_engine(void) {
   pollset_global_shutdown();
   if (grpc_cv_wakeup_fds_enabled()) {
@@ -1719,6 +1724,7 @@ static const grpc_event_engine_vtable vtable = {
     pollset_set_add_fd,
     pollset_set_del_fd,
 
+    workqueue_scheduler,
     shutdown_engine,
 };
 

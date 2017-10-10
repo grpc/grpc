@@ -37,6 +37,7 @@
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -1390,6 +1391,10 @@ static void pg_merge(grpc_exec_ctx *exec_ctx, polling_group *a,
  * Event engine binding
  */
 
+static grpc_closure_scheduler *workqueue_scheduler() {
+  return grpc_executor_scheduler(GRPC_EXECUTOR_SHORT);
+}
+
 static void shutdown_engine(void) {
   fd_global_shutdown();
   pollset_global_shutdown();
@@ -1423,6 +1428,7 @@ static const grpc_event_engine_vtable vtable = {
     pollset_set_add_fd,
     pollset_set_del_fd,
 
+    workqueue_scheduler,
     shutdown_engine,
 };
 

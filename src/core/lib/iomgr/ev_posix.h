@@ -83,6 +83,8 @@ typedef struct grpc_event_engine_vtable {
   void (*pollset_set_del_fd)(grpc_exec_ctx *exec_ctx,
                              grpc_pollset_set *pollset_set, grpc_fd *fd);
 
+  grpc_closure_scheduler *(*workqueue_scheduler)(void);
+
   void (*shutdown_engine)(void);
 } grpc_event_engine_vtable;
 
@@ -152,6 +154,8 @@ void grpc_pollset_set_add_fd(grpc_exec_ctx *exec_ctx,
                              grpc_pollset_set *pollset_set, grpc_fd *fd);
 void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
                              grpc_pollset_set *pollset_set, grpc_fd *fd);
+
+grpc_closure_scheduler *grpc_workqueue_scheduler();
 
 /* override to allow tests to hook poll() usage */
 typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int);
