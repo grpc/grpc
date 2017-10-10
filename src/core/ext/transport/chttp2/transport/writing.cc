@@ -372,7 +372,7 @@ class DataSendContext {
     }
   }
 
-  bool WasLastFrame() const { return is_last_frame_; }
+  bool is_last_frame() const { return is_last_frame_; }
 
   void CallCallbacks(grpc_exec_ctx *exec_ctx) {
     if (update_list(exec_ctx, t_, s_,
@@ -394,21 +394,18 @@ class DataSendContext {
 class StreamWriteContext {
  public:
   StreamWriteContext(WriteContext *write_context, grpc_chttp2_stream *s)
-      : write_context_(write_context),
-        t_(write_context->transport()),
-        s_(s),
-        sent_initial_metadata_(s->sent_initial_metadata) {
+      : write_context_(write_context), t_(write_context->transport()), s_(s) {
     GRPC_CHTTP2_IF_TRACING(
         gpr_log(GPR_DEBUG, "W:%p %s[%d] im-(sent,send)=(%d,%d) announce=%d", t_,
                 t_->is_client ? "CLIENT" : "SERVER", s->id,
-                sent_initial_metadata_, s->send_initial_metadata != NULL,
+                s->sent_initial_metadata, s->send_initial_metadata != NULL,
                 (int)(s->flow_control.local_window_delta -
                       s->flow_control.announced_window_delta)));
   }
 
   void FlushInitialMetadata(grpc_exec_ctx *exec_ctx) {
     /* send initial metadata if it's available */
-    if (sent_initial_metadata_) return;
+    if (s_->sent_initial_metadata) return;
     if (s_->send_initial_metadata == nullptr) return;
 
     // We skip this on the server side if there is no custom initial
@@ -441,7 +438,6 @@ class StreamWriteContext {
 
     s_->send_initial_metadata = NULL;
     s_->sent_initial_metadata = true;
-    sent_initial_metadata_ = true;
     write_context_->NoteScheduledResults();
     grpc_chttp2_complete_closure_step(
         exec_ctx, t_, s_, &s_->send_initial_metadata_finished, GRPC_ERROR_NONE,
@@ -462,7 +458,7 @@ class StreamWriteContext {
   }
 
   void FlushData(grpc_exec_ctx *exec_ctx) {
-    if (!sent_initial_metadata_) return;
+    if (!s_->sent_initial_metadata) return;
 
     if (s_->flow_controlled_buffer.length == 0 &&
         s_->compressed_data_buffer.length == 0) {
@@ -492,7 +488,7 @@ class StreamWriteContext {
       }
     }
     write_context_->ResetPingRecvClock();
-    if (data_send_context.WasLastFrame()) {
+    if (data_send_context.is_last_frame()) {
       SentLastFrame(exec_ctx);
     }
     data_send_context.CallCallbacks(exec_ctx);
@@ -506,7 +502,7 @@ class StreamWriteContext {
   }
 
   void FlushTrailingMetadata(grpc_exec_ctx *exec_ctx) {
-    if (!sent_initial_metadata_) return;
+    if (!s_->sent_initial_metadata) return;
 
     if (s_->send_trailing_metadata == NULL) return;
     if (s_->fetching_send_message != NULL) return;
@@ -577,7 +573,6 @@ class StreamWriteContext {
   WriteContext *const write_context_;
   grpc_chttp2_transport *const t_;
   grpc_chttp2_stream *const s_;
-  bool sent_initial_metadata_;
   bool stream_became_writable_ = false;
   grpc_mdelem *extra_headers_for_trailing_metadata_[2];
   size_t num_extra_headers_for_trailing_metadata_ = 0;
