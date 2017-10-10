@@ -60,6 +60,8 @@ const char *tsi_result_to_string(tsi_result result) {
       return "TSI_OUT_OF_RESOURCES";
     case TSI_ASYNC:
       return "TSI_ASYNC";
+    case TSI_SEND_ALERT_AND_CLOSE:
+      return "TSI_SEND_ALERT_AND_CLOSE";
     default:
       return "UNKNOWN";
   }
