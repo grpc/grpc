@@ -161,7 +161,7 @@ def proxymain
   Thread.abort_on_exception = true
 
   # Make sure proxy_server can handle the large number of calls in benchmarks
-  s = GRPC::RpcServer.new(pool_size: 1024)
+  s = GRPC::RpcServer.new(pool_size: 4096)
   port = s.add_http2_port("0.0.0.0:" + options['driver_port'].to_s,
                           :this_port_is_insecure)
   bmc = ProxyBenchmarkClientServiceImpl.new(port, options[:c_ext])

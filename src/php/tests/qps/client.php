@@ -103,9 +103,14 @@ function qps_client_main($proxy_address, $server_ind) {
     $req->setResponseType(Grpc\Testing\PayloadType::COMPRESSABLE);
     $req->setResponseSize($config->getPayloadConfig()->getSimpleParams()->getRespSize());
     $payload = new Grpc\Testing\Payload();
+    $payload_size = $config->getPayloadConfig()->getSimpleParams()->getReqSize();
     $payload->setType(Grpc\Testing\PayloadType::COMPRESSABLE);
-    $payload->setBody(str_repeat("\0", $config->getPayloadConfig()->getSimpleParams()->getReqSize()));
+    $payload->setBody(str_repeat("\0", $payload_size));
     $req->setPayload($payload);
+    $batch_max_count = 2000;
+    if ($payload_size >= 1024*1024) {
+        $batch_max_count = 1;
+    }
 
     /* TODO(stanley-cheung): Enable the following by removing the 0&& once protobuf
      * properly supports oneof in PHP */
@@ -132,7 +137,7 @@ function qps_client_main($proxy_address, $server_ind) {
             hardAssertIfStatusOk($status);
             $histogram->add((microtime(true)-$startreq)*1e9);
             $count += 1;
-            if ($count == 2000) {
+            if ($count == $batch_max_count) {
               $contents = $histogram->contents();
               $histogram_result->setBucket($contents);
               $histogram_result->setMinSeen($histogram->minimum());
@@ -157,7 +162,7 @@ function qps_client_main($proxy_address, $server_ind) {
             $resp = $stream->read();
             $histogram->add((microtime(true)-$startreq)*1e9);
             $count += 1;
-            if ($count == 2000) {
+            if ($count == $batch_max_count) {
               $contents = $histogram->contents();
               $histogram_result->setBucket($contents);
               $histogram_result->setMinSeen($histogram->minimum());

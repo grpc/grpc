@@ -34,7 +34,7 @@ git clean -fdxq --exclude='report*.xml'
 
 # scalability with 32cores (and upload to a different BQ table)
 tools/run_tests/run_performance_tests.py \
-    -l c++ java csharp go \
+    -l c++ java csharp go php7 php7_protobuf_c \
     --netperf \
     --category scalable \
     --bq_result_table performance_test.performance_experiment_32core \
