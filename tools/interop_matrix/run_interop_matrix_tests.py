@@ -68,6 +68,13 @@ argp.add_argument('--report_file',
                   default='report.xml',
                   help='The result file to create.')
 
+argp.add_argument('--allow_flakes',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help=('Allow flaky tests to show as passing (re-runs failed '
+                        'tests up to five times)'))
+
 args = argp.parse_args()
 
 
@@ -130,7 +137,8 @@ def find_test_cases(lang, release):
           spec = jobset.JobSpec(cmdline=line,
                                 shortname=shortname,
                                 timeout_seconds=_TEST_TIMEOUT,
-                                shell=True)
+                                shell=True,
+                                flake_retries=5 if args.allow_flakes else 0)
           job_spec_list.append(spec)
       jobset.message('START',
                      'Loaded %s tests from %s' % (len(job_spec_list), testcases),
