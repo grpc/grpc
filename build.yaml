@@ -2659,6 +2659,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  timeout_seconds: 1200
 - name: invalid_call_argument_test
   cpu_cost: 0.1
   build: test
