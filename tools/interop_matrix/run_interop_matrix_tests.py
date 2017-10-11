@@ -36,6 +36,7 @@ sys.path.append(python_util_dir)
 import dockerjob
 import jobset
 import report_utils
+import upload_test_results
 
 _LANGUAGES = client_matrix.LANG_RUNTIME_MATRIX.keys()
 # All gRPC release tags, flattened, deduped and sorted.
@@ -74,6 +75,11 @@ argp.add_argument('--allow_flakes',
                   const=True,
                   help=('Allow flaky tests to show as passing (re-runs failed '
                         'tests up to five times)'))
+argp.add_argument('--bq_result_table',
+                  default='',
+                  type=str,
+                  nargs='?',
+                  help='Upload test results to a specified BQ table.')
 
 args = argp.parse_args()
 
@@ -168,6 +174,9 @@ def run_tests_for_lang(lang, runtime, images):
                                          newline_on_success=True,
                                          add_env={'docker_image':image},
                                          maxjobs=args.jobs)
+    if args.bq_result_table and resultset:
+      upload_test_results.upload_interop_results_to_bq(
+          resultset, args.bq_result_table, args)
     if num_failures:
       jobset.message('FAILED', 'Some tests failed', do_newline=True)
       total_num_failures += num_failures
