@@ -53,8 +53,10 @@ CONFIG = [
     'grpc.max_response_message_bytes',
     # well known method names
     '/grpc.lb.v1.LoadBalancer/BalanceLoad',
-    # stream compression algorithm names
-    'stream-gzip',
+    # compression algorithm names
+    'message/deflate',
+    'message/gzip',
+    'stream/gzip',
     # metadata elements
     ('grpc-status', '0'),
     ('grpc-status', '1'),
