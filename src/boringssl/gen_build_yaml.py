@@ -66,7 +66,7 @@ class Grpc(object):
             ),
             'headers': sorted(
               map_dir(f)
-              for f in files['ssl_headers'] + files['ssl_internal_headers'] + files['crypto_headers'] + files['crypto_internal_headers']
+              for f in files['ssl_headers'] + files['ssl_internal_headers'] + files['crypto_headers'] + files['crypto_internal_headers'] + files['fips_fragments']
             ),
             'boringssl': True,
             'defaults': 'boringssl',
@@ -83,56 +83,6 @@ class Grpc(object):
               for f in sorted(files['test_support'])
             ],
           }
-      ] + [
-          {
-            'name': 'boringssl_%s_lib' % os.path.splitext(os.path.basename(test))[0],
-            'build': 'private',
-            'secure': 'no',
-            'language': 'c' if os.path.splitext(test)[1] == '.c' else 'c++',
-            'src': [map_dir(test)],
-            'vs_proj_dir': 'test/boringssl',
-            'boringssl': True,
-            'defaults': 'boringssl',
-            'deps': [
-                'boringssl_test_util',
-                'boringssl',
-            ]
-          }
-          for test in sorted(files['test'])
-      ],
-      'targets': [
-          {
-            'name': 'boringssl_%s' % os.path.splitext(os.path.basename(test))[0],
-            'build': 'test',
-            'run': False,
-            'secure': 'no',
-            'language': 'c++',
-            'src': [],
-            'vs_proj_dir': 'test/boringssl',
-            'boringssl': True,
-            'defaults': 'boringssl',
-            'deps': [
-                'boringssl_%s_lib' % os.path.splitext(os.path.basename(test))[0],
-                'boringssl_test_util',
-                'boringssl',
-            ]
-          }
-          for test in sorted(files['test'])
-      ],
-      'tests': [
-          {
-            'name': 'boringssl_%s' % os.path.basename(test[0]),
-            'args': [map_testarg(arg) for arg in test[1:]],
-            'exclude_configs': ['asan', 'ubsan'],
-            'ci_platforms': ['linux', 'mac', 'posix', 'windows'],
-            'platforms': ['linux', 'mac', 'posix', 'windows'],
-            'flaky': False,
-            'language': 'c++',
-            'boringssl': True,
-            'defaults': 'boringssl',
-            'cpu_cost': 1.0
-          }
-          for test in files['tests']
       ]
     }
 
