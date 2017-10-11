@@ -35,6 +35,11 @@ import traceback
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
+# It's ok to not import because this is only necessary to upload results to BQ.
+try:
+  from python_utils.upload_test_results import upload_interop_results_to_bq
+except ImportError as e:
+  print(e)
 
 # Docker doesn't clean up after itself, so we do it on exit.
 atexit.register(lambda: subprocess.call(['stty', 'echo']))
@@ -956,6 +961,11 @@ argp.add_argument('--internal_ci',
                   const=True,
                   help=('Put reports into subdirectories to improve '
                         'presentation of results by Internal CI.'))
+argp.add_argument('--bq_result_table',
+                  default='',
+                  type=str,
+                  nargs='?',
+                  help='Upload test results to a specified BQ table.')
 args = argp.parse_args()
 
 servers = set(s for s in itertools.chain.from_iterable(_SERVERS
@@ -1205,6 +1215,8 @@ try:
   num_failures, resultset = jobset.run(jobs, newline_on_success=True,
                                        maxjobs=args.jobs,
                                        skip_jobs=args.manual_run)
+  if args.bq_result_table and resultset:
+    upload_interop_results_to_bq(resultset, args.bq_result_table, args)
   if num_failures:
     jobset.message('FAILED', 'Some tests failed', do_newline=True)
   else:
