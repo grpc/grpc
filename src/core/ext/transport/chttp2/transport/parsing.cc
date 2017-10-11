@@ -359,8 +359,9 @@ static grpc_error *init_data_frame_parser(grpc_exec_ctx *exec_ctx,
                                       s == NULL ? NULL : &s->flow_control,
                                       t->incoming_frame_size);
   grpc_chttp2_act_on_flowctl_action(
-      exec_ctx, grpc_chttp2_flowctl_get_action(
-                    &t->flow_control, s == NULL ? NULL : &s->flow_control),
+      exec_ctx,
+      grpc_chttp2_flowctl_get_action(exec_ctx, &t->flow_control,
+                                     s == NULL ? NULL : &s->flow_control),
       t, s);
   if (err != GRPC_ERROR_NONE) {
     goto error_handler;
@@ -385,7 +386,7 @@ error_handler:
     t->parser_data = &s->data_parser;
     t->ping_state.pings_before_data_required =
         t->ping_policy.max_pings_without_data;
-    t->ping_state.last_ping_sent_time = gpr_inf_past(GPR_CLOCK_MONOTONIC);
+    t->ping_state.last_ping_sent_time = GRPC_MILLIS_INF_PAST;
     return GRPC_ERROR_NONE;
   } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, NULL)) {
     /* handle stream errors by closing the stream */
@@ -430,26 +431,27 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
   }
 
   if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
-    gpr_timespec *cached_timeout =
-        (gpr_timespec *)grpc_mdelem_get_user_data(md, free_timeout);
-    gpr_timespec timeout;
+    grpc_millis *cached_timeout =
+        static_cast<grpc_millis *>(grpc_mdelem_get_user_data(md, free_timeout));
+    grpc_millis timeout;
     if (cached_timeout == NULL) {
       /* not already parsed: parse it now, and store the result away */
-      cached_timeout = (gpr_timespec *)gpr_malloc(sizeof(gpr_timespec));
+      cached_timeout = (grpc_millis *)gpr_malloc(sizeof(grpc_millis));
       if (!grpc_http2_decode_timeout(GRPC_MDVALUE(md), cached_timeout)) {
         char *val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
         gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
         gpr_free(val);
-        *cached_timeout = gpr_inf_future(GPR_TIMESPAN);
+        *cached_timeout = GRPC_MILLIS_INF_FUTURE;
       }
       timeout = *cached_timeout;
       grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
     } else {
       timeout = *cached_timeout;
     }
-    grpc_chttp2_incoming_metadata_buffer_set_deadline(
-        &s->metadata_buffer[0],
-        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), timeout));
+    if (timeout != GRPC_MILLIS_INF_FUTURE) {
+      grpc_chttp2_incoming_metadata_buffer_set_deadline(
+          &s->metadata_buffer[0], grpc_exec_ctx_now(exec_ctx) + timeout);
+    }
     GRPC_MDELEM_UNREF(exec_ctx, md);
   } else {
     const size_t new_size = s->metadata_buffer[0].size + GRPC_MDELEM_LENGTH(md);
@@ -564,7 +566,7 @@ static grpc_error *init_header_frame_parser(grpc_exec_ctx *exec_ctx,
 
   t->ping_state.pings_before_data_required =
       t->ping_policy.max_pings_without_data;
-  t->ping_state.last_ping_sent_time = gpr_inf_past(GPR_CLOCK_MONOTONIC);
+  t->ping_state.last_ping_sent_time = GRPC_MILLIS_INF_PAST;
 
   /* could be a new grpc_chttp2_stream or an existing grpc_chttp2_stream */
   s = grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);

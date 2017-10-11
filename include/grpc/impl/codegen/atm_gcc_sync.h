@@ -25,6 +25,7 @@
 
 typedef intptr_t gpr_atm;
 #define GPR_ATM_MAX INTPTR_MAX
+#define GPR_ATM_MIN INTPTR_MIN
 
 #define GPR_ATM_COMPILE_BARRIER_() __asm__ __volatile__("" : : : "memory")
 
