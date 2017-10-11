@@ -564,6 +564,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED;
   }
 
+  GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
   schedule_bdp_ping_locked(exec_ctx, t);
 
   grpc_chttp2_act_on_flowctl_action(
@@ -2549,7 +2550,6 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
 
 static void schedule_bdp_ping_locked(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t) {
-  GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
   t->flow_control->bdp_estimator()->SchedulePing();
   send_ping_locked(exec_ctx, t, &t->start_bdp_ping_locked,
                    &t->finish_bdp_ping_locked);
@@ -2559,7 +2559,8 @@ static void start_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                   grpc_error *error) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)tp;
   if (GRPC_TRACER_ON(grpc_http_trace)) {
-    gpr_log(GPR_DEBUG, "%s: Start BDP ping", t->peer_string);
+    gpr_log(GPR_DEBUG, "%s: Start BDP ping err=%s", t->peer_string,
+            grpc_error_string(error));
   }
   /* Reset the keepalive ping timer */
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING) {
@@ -2572,9 +2573,10 @@ static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                    grpc_error *error) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)tp;
   if (GRPC_TRACER_ON(grpc_http_trace)) {
-    gpr_log(GPR_DEBUG, "%s: Complete BDP ping", t->peer_string);
+    gpr_log(GPR_DEBUG, "%s: Complete BDP ping err=%s", t->peer_string,
+            grpc_error_string(error));
   }
-  if (error == GRPC_ERROR_CANCELLED) {
+  if (error != GRPC_ERROR_NONE) {
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "bdp_ping");
     return;
   }
@@ -2591,7 +2593,7 @@ static void next_bdp_ping_timer_expired_locked(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)tp;
   GPR_ASSERT(t->have_next_bdp_ping_timer);
   t->have_next_bdp_ping_timer = false;
-  if (error == GRPC_ERROR_CANCELLED) {
+  if (error != GRPC_ERROR_NONE) {
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "bdp_ping");
     return;
   }

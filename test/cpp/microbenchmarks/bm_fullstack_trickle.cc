@@ -26,12 +26,10 @@
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
 #include "test/cpp/util/test_config.h"
-extern "C" {
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/util/trickle_endpoint.h"
-}
 
 DEFINE_bool(log, false, "Log state to CSV files");
 DEFINE_int32(
