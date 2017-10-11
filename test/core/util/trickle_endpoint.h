@@ -21,6 +21,10 @@
 
 #include "src/core/lib/iomgr/endpoint.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
+
 grpc_endpoint *grpc_trickle_endpoint_create(grpc_endpoint *wrap,
                                             double bytes_per_second);
 
@@ -29,5 +33,9 @@ size_t grpc_trickle_endpoint_trickle(grpc_exec_ctx *exec_ctx,
                                      grpc_endpoint *endpoint);
 
 size_t grpc_trickle_get_backlog(grpc_endpoint *endpoint);
+
+#ifdef __cplusplus
+}
+#endif  // __cplusplus
 
 #endif
