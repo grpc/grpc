@@ -100,12 +100,11 @@ namespace grpc {
 
 namespace testing {
 
-void InvokeResolverComponentTestsRunner(std::string test_runner_bin_path,
-                                        std::string test_bin_path,
-                                        std::string dns_server_bin_path,
-                                        std::string zone_file_path,
-                                        std::string zone_file_json_path,
-                                        std::string zone_file_json_converter_bin_path) {
+void InvokeResolverComponentTestsRunner(
+    std::string test_runner_bin_path, std::string test_bin_path,
+    std::string dns_server_bin_path, std::string zone_file_path,
+    std::string zone_file_json_path,
+    std::string zone_file_json_converter_bin_path) {
   int test_dns_server_port = grpc_pick_unused_port_or_die();
 
   SubProcess *test_driver = new SubProcess(
@@ -114,7 +113,8 @@ void InvokeResolverComponentTestsRunner(std::string test_runner_bin_path,
        "--test_dns_server_port=" + std::to_string(test_dns_server_port),
        "--zone_file_path=" + zone_file_path,
        "--zone_file_json_path=" + zone_file_json_path,
-       "--zone_file_json_converter_bin_path=" + zone_file_json_converter_bin_path});
+       "--zone_file_json_converter_bin_path=" +
+           zone_file_json_converter_bin_path});
   gpr_mu test_driver_mu;
   gpr_mu_init(&test_driver_mu);
   gpr_cv test_driver_cv;
