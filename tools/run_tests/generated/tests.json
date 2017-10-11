@@ -3811,8 +3811,7 @@
       "mac", 
       "posix", 
       "windows"
-    ], 
-    "uses_polling": true
+    ]
   }, 
   {
     "args": [], 
