@@ -1280,6 +1280,8 @@ TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
   EchoResponse response;
   request.set_message("Hello");
   request.mutable_param()->set_skip_cancelled_check(true);
+  // Let server sleep for 2 ms first to guarantee expiry
+  request.mutable_param()->set_server_sleep_us(2 * 1000);
 
   ClientContext context;
   std::chrono::system_clock::time_point deadline =
