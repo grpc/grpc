@@ -586,7 +586,8 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
   }
   grpc_lb_addresses *addresses = (grpc_lb_addresses *)arg->value.pointer.p;
   grpc_lb_subchannel_list *subchannel_list = grpc_lb_subchannel_list_create(
-      exec_ctx, &p->base, addresses, args, rr_connectivity_changed_locked);
+      exec_ctx, &p->base, &grpc_lb_round_robin_trace, addresses, args,
+      rr_connectivity_changed_locked);
   if (subchannel_list->num_subchannels == 0) {
     grpc_connectivity_state_set(
         exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,

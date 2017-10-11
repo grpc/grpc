@@ -21,6 +21,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 // TODO(roth): This code is intended to be shared between pick_first and
@@ -87,6 +88,8 @@ struct grpc_lb_subchannel_list {
   /** backpointer to owning policy */
   grpc_lb_policy *policy;
 
+  grpc_tracer_flag *tracer;
+
   /** all our subchannels */
   size_t num_subchannels;
   grpc_lb_subchannel_data *subchannels;
@@ -118,7 +121,7 @@ struct grpc_lb_subchannel_list {
 };
 
 grpc_lb_subchannel_list *grpc_lb_subchannel_list_create(
-    grpc_exec_ctx *exec_ctx, grpc_lb_policy *p,
+    grpc_exec_ctx *exec_ctx, grpc_lb_policy *p, grpc_tracer_flag *tracer,
     const grpc_lb_addresses *addresses, const grpc_lb_policy_args *args,
     grpc_iomgr_cb_func connectivity_changed_cb);
 

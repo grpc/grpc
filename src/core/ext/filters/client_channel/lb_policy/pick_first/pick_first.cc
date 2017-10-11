@@ -265,7 +265,8 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
             (void *)p, (unsigned long)addresses->num_addresses);
   }
   grpc_lb_subchannel_list *subchannel_list = grpc_lb_subchannel_list_create(
-      exec_ctx, &p->base, addresses, args, pf_connectivity_changed_locked);
+      exec_ctx, &p->base, &grpc_lb_pick_first_trace, addresses, args,
+      pf_connectivity_changed_locked);
   if (subchannel_list->num_subchannels == 0) {
     // Empty update or no valid subchannels. Unsubscribe from all current
     // subchannels and put the channel in TRANSIENT_FAILURE.
