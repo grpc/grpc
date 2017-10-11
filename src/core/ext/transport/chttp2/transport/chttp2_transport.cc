@@ -2611,7 +2611,7 @@ static void next_bdp_ping_timer_expired_locked(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)tp;
   GPR_ASSERT(t->have_next_bdp_ping_timer);
   t->have_next_bdp_ping_timer = false;
-  if (error == GRPC_ERROR_CANCELLED) {
+  if (error != GRPC_ERROR_NONE) {
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "bdp_ping");
     return;
   }
