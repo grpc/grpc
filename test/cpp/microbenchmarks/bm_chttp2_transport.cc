@@ -26,14 +26,12 @@
 #include <memory>
 #include <queue>
 #include <sstream>
-extern "C" {
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"
-}
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"
 
