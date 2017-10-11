@@ -663,8 +663,8 @@ bool grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport *t,
     returns non-zero if there was a stream available */
 bool grpc_chttp2_list_pop_writable_stream(grpc_chttp2_transport *t,
                                           grpc_chttp2_stream **s);
-bool grpc_chttp2_list_remove_writable_stream(
-    grpc_chttp2_transport *t, grpc_chttp2_stream *s) GRPC_MUST_USE_RESULT;
+bool grpc_chttp2_list_remove_writable_stream(grpc_chttp2_transport *t,
+                                             grpc_chttp2_stream *s);
 
 bool grpc_chttp2_list_add_writing_stream(grpc_chttp2_transport *t,
                                          grpc_chttp2_stream *s);

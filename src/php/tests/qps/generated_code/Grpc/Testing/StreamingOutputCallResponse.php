@@ -9,20 +9,16 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * <pre>
  * Server-streaming response, as configured by the request and parameters.
- * </pre>
  *
- * Protobuf type <code>grpc.testing.StreamingOutputCallResponse</code>
+ * Generated from protobuf message <code>grpc.testing.StreamingOutputCallResponse</code>
  */
 class StreamingOutputCallResponse extends \Google\Protobuf\Internal\Message
 {
     /**
-     * <pre>
      * Payload to increase response size.
-     * </pre>
      *
-     * <code>.grpc.testing.Payload payload = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.Payload payload = 1;</code>
      */
     private $payload = null;
 
@@ -32,11 +28,10 @@ class StreamingOutputCallResponse extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Payload to increase response size.
-     * </pre>
      *
-     * <code>.grpc.testing.Payload payload = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.Payload payload = 1;</code>
+     * @return \Grpc\Testing\Payload
      */
     public function getPayload()
     {
@@ -44,16 +39,18 @@ class StreamingOutputCallResponse extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Payload to increase response size.
-     * </pre>
      *
-     * <code>.grpc.testing.Payload payload = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.Payload payload = 1;</code>
+     * @param \Grpc\Testing\Payload $var
+     * @return $this
      */
-    public function setPayload(&$var)
+    public function setPayload($var)
     {
         GPBUtil::checkMessage($var, \Grpc\Testing\Payload::class);
         $this->payload = $var;
+
+        return $this;
     }
 
 }
