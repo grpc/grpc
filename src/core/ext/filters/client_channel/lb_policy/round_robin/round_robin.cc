@@ -346,6 +346,11 @@ static void rr_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
                                           "sl_shutdown_pending_rr_shutdown");
     p->latest_pending_subchannel_list = NULL;
   }
+  if (p->base.request_reresolution != NULL) {
+    GRPC_CLOSURE_SCHED(exec_ctx, pol->request_reresolution,
+                       GRPC_ERROR_CANCELLED);
+    p->base.request_reresolution = NULL;
+  }
 }
 
 static void rr_cancel_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
@@ -493,8 +498,9 @@ static void update_state_counters_locked(subchannel_data *sd) {
 
 /** Sets the policy's connectivity status based on that of the passed-in \a sd
  * (the subchannel_data associated with the updated subchannel) and the
- * subchannel list \a sd belongs to (sd->subchannel_list). \a error will only be
- * used upon policy transition to TRANSIENT_FAILURE. */
+ * subchannel list \a sd belongs to (sd->subchannel_list). If the policy
+ * transitions to TRANSIENT_FAILURE, \a error will only be used, and a
+ * re-resolution will be requested. */
 static void update_lb_connectivity_status_locked(grpc_exec_ctx *exec_ctx,
                                                  subchannel_data *sd,
                                                  grpc_error *error) {
@@ -502,19 +508,17 @@ static void update_lb_connectivity_status_locked(grpc_exec_ctx *exec_ctx,
    * are on rule n, all previous rules were unfulfilled).
    *
    * 1) RULE: ANY subchannel is READY => policy is READY.
-   *    CHECK: subchannel_list->num_ready > 0
-   *           (i.e., p->ready_list is NOT empty.)
+   *    CHECK: subchannel_list->num_ready > 0.
    *
    * 2) RULE: ANY subchannel is CONNECTING => policy is CONNECTING.
    *    CHECK: sd->curr_connectivity_state == CONNECTING.
    *
-   * 3) RULE: ALL subchannels are SHUTDOWN or ALL subchannels are
-   *          TRANSIENT_FAILURE => policy is TRANSIENT_FAILURE.
-   *    CHECK: subchannel_list->num_shutdown ==
-                 subchannel_list->num_subchannels ||
-               subchannel_list->num_transient_failures ==
-                 subchannel_list->num_subchannels.
-
+   * 3) RULE: ALL subchannels are SHUTDOWN or TRANSIENT_FAILURE => policy is
+   *          TRANSIENT_FAILURE.
+   *    CHECK: subchannel_list->num_shutdown +
+   *              subchannel_list->num_transient_failures ==
+   *           subchannel_list->num_subchannels.
+   *
    * 4) RULE: ALL subchannels are IDLE => policy is IDLE.
    *    CHECK: subchannel_list->num_idle == subchannel_list->num_subchannels.
    */
@@ -529,14 +533,25 @@ static void update_lb_connectivity_status_locked(grpc_exec_ctx *exec_ctx,
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                 GRPC_CHANNEL_CONNECTING, GRPC_ERROR_NONE,
                                 "rr_connecting");
-  } else if (subchannel_list->num_shutdown ==
-                 subchannel_list->num_subchannels ||
-             subchannel_list->num_transient_failures ==
-                 subchannel_list->num_subchannels) {
+  } else if (subchannel_list->num_shutdown +
+                 subchannel_list->num_transient_failures ==
+             subchannel_list->num_subchannels) {
     /* 3) TRANSIENT_FAILURE */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                 GRPC_CHANNEL_TRANSIENT_FAILURE,
                                 GRPC_ERROR_REF(error), "rr_transient_failure");
+    if (p->base.request_reresolution != NULL) {
+      GRPC_CLOSURE_SCHED(exec_ctx, p->base.request_reresolution,
+                         GRPC_ERROR_NONE);
+      p->base.request_reresolution = NULL;
+      if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
+        gpr_log(GPR_DEBUG, "[RR %p] reresolution requested", p);
+      }
+    } else {
+      if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
+        gpr_log(GPR_DEBUG, "[RR %p] reresolution already in progress", p);
+      }
+    }
   } else if (subchannel_list->num_idle == subchannel_list->num_subchannels) {
     /* 4) IDLE */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker, GRPC_CHANNEL_IDLE,
@@ -600,13 +615,6 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
   update_state_counters_locked(sd);
   sd->prev_connectivity_state = sd->curr_connectivity_state;
   update_lb_connectivity_status_locked(exec_ctx, sd, GRPC_ERROR_REF(error));
-  // If all the subchannels go bad, request a re-resolution.
-  if (sd->subchannel_list->num_shutdown +
-          sd->subchannel_list->num_transient_failures ==
-      sd->subchannel_list->num_subchannels) {
-    grpc_lb_policy_try_reresolve_locked(exec_ctx, &p->base,
-                                        grpc_lb_round_robin_trace);
-  }
   // If the sd's new state is SHUTDOWN, unref the subchannel.
   if (sd->curr_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
     GRPC_SUBCHANNEL_UNREF(exec_ctx, sd->subchannel, "rr_subchannel_shutdown");
@@ -856,6 +864,13 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
   }
 }
 
+static void rr_set_reresolve_closure_locked(
+    grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+    grpc_closure *request_reresolution) {
+  GPR_ASSERT(policy->request_reresolution == NULL);
+  policy->request_reresolution = request_reresolution;
+}
+
 static const grpc_lb_policy_vtable round_robin_lb_policy_vtable = {
     rr_destroy,
     rr_shutdown_locked,
@@ -866,7 +881,8 @@ static const grpc_lb_policy_vtable round_robin_lb_policy_vtable = {
     rr_exit_idle_locked,
     rr_check_connectivity_locked,
     rr_notify_on_state_change_locked,
-    rr_update_locked};
+    rr_update_locked,
+    rr_set_reresolve_closure_locked};
 
 static void round_robin_factory_ref(grpc_lb_policy_factory *factory) {}
 
@@ -877,8 +893,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
                                           grpc_lb_policy_args *args) {
   GPR_ASSERT(args->client_channel_factory != NULL);
   round_robin_lb_policy *p = (round_robin_lb_policy *)gpr_zalloc(sizeof(*p));
-  grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable, args->combiner,
-                      args->request_reresolution);
+  grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable, args->combiner);
   grpc_subchannel_index_ref();
   grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,
                                "round_robin");

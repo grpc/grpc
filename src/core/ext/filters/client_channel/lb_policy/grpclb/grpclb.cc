@@ -763,6 +763,9 @@ static void create_rr_locked(grpc_exec_ctx *exec_ctx, glb_lb_policy *glb_policy,
             (void *)glb_policy->rr_policy);
     return;
   }
+  grpc_lb_policy_set_reresolve_closure_locked(
+      exec_ctx, new_rr_policy, glb_policy->base.request_reresolution);
+  glb_policy->base.request_reresolution = NULL;
   glb_policy->rr_policy = new_rr_policy;
   grpc_error *rr_state_error = NULL;
   const grpc_connectivity_state rr_state =
@@ -1021,6 +1024,11 @@ static void glb_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   glb_policy->pending_pings = NULL;
   if (glb_policy->rr_policy != NULL) {
     GRPC_LB_POLICY_UNREF(exec_ctx, glb_policy->rr_policy, "glb_shutdown");
+  } else {
+    GPR_ASSERT(pol->request_reresolution != NULL);
+    GRPC_CLOSURE_SCHED(exec_ctx, pol->request_reresolution,
+                       GRPC_ERROR_CANCELLED);
+    pol->request_reresolution = NULL;
   }
   // We destroy the LB channel here because
   // glb_lb_channel_on_connectivity_changed_cb needs a valid glb_policy
@@ -1871,6 +1879,19 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx *exec_ctx,
   }
 }
 
+static void glb_set_reresolve_closure_locked(
+    grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+    grpc_closure *request_reresolution) {
+  glb_lb_policy *glb_policy = (glb_lb_policy *)policy;
+  GPR_ASSERT(glb_policy->base.request_reresolution == NULL);
+  if (glb_policy->rr_policy != NULL) {
+    grpc_lb_policy_set_reresolve_closure_locked(exec_ctx, glb_policy->rr_policy,
+                                                request_reresolution);
+  } else {
+    glb_policy->base.request_reresolution = request_reresolution;
+  }
+}
+
 /* Code wiring the policy with the rest of the core */
 static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
     glb_destroy,
@@ -1882,7 +1903,8 @@ static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
     glb_exit_idle_locked,
     glb_check_connectivity_locked,
     glb_notify_on_state_change_locked,
-    glb_update_locked};
+    glb_update_locked,
+    glb_set_reresolve_closure_locked};
 
 static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
                                   grpc_lb_policy_factory *factory,
@@ -1965,8 +1987,7 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   GRPC_CLOSURE_INIT(&glb_policy->lb_channel_on_connectivity_changed,
                     glb_lb_channel_on_connectivity_changed_cb, glb_policy,
                     grpc_combiner_scheduler(args->combiner));
-  grpc_lb_policy_init(&glb_policy->base, &glb_lb_policy_vtable, args->combiner,
-                      args->request_reresolution);
+  grpc_lb_policy_init(&glb_policy->base, &glb_lb_policy_vtable, args->combiner);
   grpc_connectivity_state_init(&glb_policy->state_tracker, GRPC_CHANNEL_IDLE,
                                "grpclb");
   return &glb_policy->base;
