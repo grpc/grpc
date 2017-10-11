@@ -67,6 +67,7 @@ void FlowControlTrace::Init(const char* reason, TransportFlowControl* tfc,
                             StreamFlowControl* sfc) {
   tfc_ = tfc;
   sfc_ = sfc;
+  reason_ = reason;
   remote_window_ = tfc->remote_window();
   target_window_ = tfc->target_window();
   announced_window_ = tfc->announced_window();
