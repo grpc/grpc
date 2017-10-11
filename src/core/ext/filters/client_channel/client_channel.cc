@@ -713,6 +713,7 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   chand->interested_parties = grpc_pollset_set_create();
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
                                "client_channel");
+  grpc_client_channel_start_backup_polling(exec_ctx, chand->interested_parties);
   // Record client channel factory.
   const grpc_arg *arg = grpc_channel_args_find(args->channel_args,
                                                GRPC_ARG_CLIENT_CHANNEL_FACTORY);
@@ -754,7 +755,6 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   }
   chand->deadline_checking_enabled =
       grpc_deadline_checking_enabled(args->channel_args);
-  grpc_client_channel_start_backup_polling(exec_ctx, chand->interested_parties);
   return GRPC_ERROR_NONE;
 }
 

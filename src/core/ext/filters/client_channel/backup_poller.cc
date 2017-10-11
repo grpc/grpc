@@ -48,8 +48,8 @@ static gpr_once g_once = GPR_ONCE_INIT;
 static gpr_mu g_poller_mu;
 static backup_poller* g_poller = NULL;  // guarded by g_poller_mu
 // g_poll_interval_ms is set only once at the first time
-// grpc_client_channel_start_backup_polling() is call, after that it is treated
-// as const.
+// grpc_client_channel_start_backup_polling() is called, after that it is
+// treated as const.
 static int g_poll_interval_ms = DEFAULT_POLL_INTERVAL_MS;
 
 static void init_globals() {
