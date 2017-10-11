@@ -117,7 +117,7 @@ def find_all_images_for_lang(lang):
 
 # caches test cases (list of JobSpec) loaded from file.  Keyed by lang and runtime.
 _loaded_testcases = {}
-def find_test_cases(lang, release):
+def find_test_cases(lang, release, suite_name):
   """Returns the list of test cases from testcase files per lang/release."""
   file_tmpl = os.path.join(os.path.dirname(__file__), 'testcases/%s__%s')
   if not os.path.exists(file_tmpl % (lang, release)):
@@ -135,7 +135,7 @@ def find_test_cases(lang, release):
           m = re.search('--test_case=(.*)"', line)
           shortname = m.group(1) if m else 'unknown_test'
           spec = jobset.JobSpec(cmdline=line,
-                                shortname=shortname,
+                                shortname='%s:%s' % (suite_name, shortname),
                                 timeout_seconds=_TEST_TIMEOUT,
                                 shell=True,
                                 flake_retries=5 if args.allow_flakes else 0)
@@ -163,7 +163,8 @@ def run_tests_for_lang(lang, runtime, images):
     # Download the docker image before running each test case.
     subprocess.check_call(['gcloud', 'docker', '--', 'pull', image])
     _docker_images_cleanup.append(image)
-    job_spec_list = find_test_cases(lang,release)
+    suite_name = '%s__%s_%s' % (lang, runtime, release)
+    job_spec_list = find_test_cases(lang, release, suite_name)
     num_failures, resultset = jobset.run(job_spec_list,
                                          newline_on_success=True,
                                          add_env={'docker_image':image},
@@ -178,7 +179,7 @@ def run_tests_for_lang(lang, runtime, images):
         _xml_report_tree,
         resultset,
         'grpc_interop_matrix',
-        '%s__%s %s'%(lang,runtime,release),
+        suite_name,
         str(uuid.uuid4()))
   
   return total_num_failures
