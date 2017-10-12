@@ -9,21 +9,17 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * <pre>
  * Parameters of poisson process distribution, which is a good representation
  * of activity coming in from independent identical stationary sources.
- * </pre>
  *
- * Protobuf type <code>grpc.testing.PoissonParams</code>
+ * Generated from protobuf message <code>grpc.testing.PoissonParams</code>
  */
 class PoissonParams extends \Google\Protobuf\Internal\Message
 {
     /**
-     * <pre>
      * The rate of arrivals (a.k.a. lambda parameter of the exp distribution).
-     * </pre>
      *
-     * <code>double offered_load = 1;</code>
+     * Generated from protobuf field <code>double offered_load = 1;</code>
      */
     private $offered_load = 0.0;
 
@@ -33,11 +29,10 @@ class PoissonParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * The rate of arrivals (a.k.a. lambda parameter of the exp distribution).
-     * </pre>
      *
-     * <code>double offered_load = 1;</code>
+     * Generated from protobuf field <code>double offered_load = 1;</code>
+     * @return float
      */
     public function getOfferedLoad()
     {
@@ -45,16 +40,18 @@ class PoissonParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * The rate of arrivals (a.k.a. lambda parameter of the exp distribution).
-     * </pre>
      *
-     * <code>double offered_load = 1;</code>
+     * Generated from protobuf field <code>double offered_load = 1;</code>
+     * @param float $var
+     * @return $this
      */
     public function setOfferedLoad($var)
     {
         GPBUtil::checkDouble($var);
         $this->offered_load = $var;
+
+        return $this;
     }
 
 }

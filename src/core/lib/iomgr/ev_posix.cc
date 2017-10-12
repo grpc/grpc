@@ -61,10 +61,28 @@ typedef struct {
   event_engine_factory_fn factory;
 } event_engine_factory;
 
+namespace {
+extern "C" {
+int dummypoll(struct pollfd fds[], nfds_t nfds, int timeout) {
+  gpr_log(GPR_ERROR, "Attempted to poll despite declaring non-polling.");
+  GPR_ASSERT(false);
+  return -1;
+}
+}  // extern "C"
+
+const grpc_event_engine_vtable *init_non_polling(bool explicit_request) {
+  // return the simplest engine as a dummy but also override the poller
+  auto ret = grpc_init_poll_posix(explicit_request);
+  grpc_poll_function = dummypoll;
+  return ret;
+}
+}  // namespace
+
 static const event_engine_factory g_factories[] = {
     {"epollex", grpc_init_epollex_linux},   {"epoll1", grpc_init_epoll1_linux},
     {"epollsig", grpc_init_epollsig_linux}, {"poll", grpc_init_poll_posix},
     {"poll-cv", grpc_init_poll_cv_posix},
+    {"none", init_non_polling},
 };
 
 static void add(const char *beg, const char *end, char ***ss, size_t *ns) {
@@ -203,9 +221,9 @@ void grpc_pollset_destroy(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
 }
 
 grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                              grpc_pollset_worker **worker, gpr_timespec now,
-                              gpr_timespec deadline) {
-  return g_event_engine->pollset_work(exec_ctx, pollset, worker, now, deadline);
+                              grpc_pollset_worker **worker,
+                              grpc_millis deadline) {
+  return g_event_engine->pollset_work(exec_ctx, pollset, worker, deadline);
 }
 
 grpc_error *grpc_pollset_kick(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,

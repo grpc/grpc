@@ -77,6 +77,7 @@ const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "http2_initiate_write_due_to_transport_flow_control_unstalled",
     "http2_initiate_write_due_to_ping_response",
     "http2_initiate_write_due_to_force_rst_stream",
+    "http2_spurious_writes_begun",
     "hpack_recv_indexed",
     "hpack_recv_lithdr_incidx",
     "hpack_recv_lithdr_incidx_v",
@@ -177,6 +178,7 @@ const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "'transport_flow_control_unstalled'",
     "Number of HTTP2 writes initiated due to 'ping_response'",
     "Number of HTTP2 writes initiated due to 'force_rst_stream'",
+    "Number of HTTP2 writes initiated with nothing to write",
     "Number of HPACK indexed fields received",
     "Number of HPACK literal headers received with incremental indexing",
     "Number of HPACK literal headers received with incremental indexing and "

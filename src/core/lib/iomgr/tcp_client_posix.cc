@@ -48,7 +48,6 @@ extern grpc_tracer_flag grpc_tcp_trace;
 typedef struct {
   gpr_mu mu;
   grpc_fd *fd;
-  gpr_timespec deadline;
   grpc_timer alarm;
   grpc_closure on_alarm;
   int refs;
@@ -244,7 +243,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
                                     grpc_pollset_set *interested_parties,
                                     const grpc_channel_args *channel_args,
                                     const grpc_resolved_address *addr,
-                                    gpr_timespec deadline) {
+                                    grpc_millis deadline) {
   int fd;
   grpc_dualstack_mode dsmode;
   int err;
@@ -325,9 +324,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
 
   gpr_mu_lock(&ac->mu);
   GRPC_CLOSURE_INIT(&ac->on_alarm, tc_on_alarm, ac, grpc_schedule_on_exec_ctx);
-  grpc_timer_init(exec_ctx, &ac->alarm,
-                  gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
-                  &ac->on_alarm, gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_timer_init(exec_ctx, &ac->alarm, deadline, &ac->on_alarm);
   grpc_fd_notify_on_write(exec_ctx, ac->fd, &ac->write_closure);
   gpr_mu_unlock(&ac->mu);
 
@@ -342,7 +339,7 @@ void (*grpc_tcp_client_connect_impl)(
     grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep,
     grpc_pollset_set *interested_parties, const grpc_channel_args *channel_args,
     const grpc_resolved_address *addr,
-    gpr_timespec deadline) = tcp_client_connect_impl;
+    grpc_millis deadline) = tcp_client_connect_impl;
 }
 
 void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
@@ -350,7 +347,7 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                              grpc_pollset_set *interested_parties,
                              const grpc_channel_args *channel_args,
                              const grpc_resolved_address *addr,
-                             gpr_timespec deadline) {
+                             grpc_millis deadline) {
   grpc_tcp_client_connect_impl(exec_ctx, closure, ep, interested_parties,
                                channel_args, addr, deadline);
 }

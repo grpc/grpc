@@ -135,13 +135,11 @@ static void run_poller(grpc_exec_ctx *exec_ctx, void *bp,
     gpr_log(GPR_DEBUG, "BACKUP_POLLER:%p run", p);
   }
   gpr_mu_lock(p->pollset_mu);
-  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-  gpr_timespec deadline =
-      gpr_time_add(now, gpr_time_from_seconds(10, GPR_TIMESPAN));
+  grpc_millis deadline = grpc_exec_ctx_now(exec_ctx) + 13 * GPR_MS_PER_SEC;
   GRPC_STATS_INC_TCP_BACKUP_POLLER_POLLS(exec_ctx);
-  GRPC_LOG_IF_ERROR("backup_poller:pollset_work",
-                    grpc_pollset_work(exec_ctx, BACKUP_POLLER_POLLSET(p), NULL,
-                                      now, deadline));
+  GRPC_LOG_IF_ERROR(
+      "backup_poller:pollset_work",
+      grpc_pollset_work(exec_ctx, BACKUP_POLLER_POLLSET(p), NULL, deadline));
   gpr_mu_unlock(p->pollset_mu);
   /* last "uncovered" notification is the ref that keeps us polling, if we get
    * there try a cas to release it */

@@ -102,7 +102,23 @@ class Verifier {
   explicit Verifier(bool spin) : spin_(spin) {}
   // Expect sets the expected ok value for a specific tag
   Verifier& Expect(int i, bool expect_ok) {
-    expectations_[tag(i)] = expect_ok;
+    return ExpectUnless(i, expect_ok, false);
+  }
+  // ExpectUnless sets the expected ok value for a specific tag
+  // unless the tag was already marked seen (as a result of ExpectMaybe)
+  Verifier& ExpectUnless(int i, bool expect_ok, bool seen) {
+    if (!seen) {
+      expectations_[tag(i)] = expect_ok;
+    }
+    return *this;
+  }
+  // ExpectMaybe sets the expected ok value for a specific tag, but does not
+  // require it to appear
+  // If it does, sets *seen to true
+  Verifier& ExpectMaybe(int i, bool expect_ok, bool* seen) {
+    if (!*seen) {
+      maybe_expectations_[tag(i)] = MaybeExpect{expect_ok, seen};
+    }
     return *this;
   }
 
@@ -122,12 +138,7 @@ class Verifier {
     } else {
       EXPECT_TRUE(cq->Next(&got_tag, &ok));
     }
-    auto it = expectations_.find(got_tag);
-    EXPECT_TRUE(it != expectations_.end());
-    if (!ignore_ok) {
-      EXPECT_EQ(it->second, ok);
-    }
-    expectations_.erase(it);
+    GotTag(got_tag, ok, ignore_ok);
     return detag(got_tag);
   }
 
@@ -138,7 +149,7 @@ class Verifier {
   // This version of Verify allows optionally ignoring the
   // outcome of the expectation
   void Verify(CompletionQueue* cq, bool ignore_ok) {
-    GPR_ASSERT(!expectations_.empty());
+    GPR_ASSERT(!expectations_.empty() || !maybe_expectations_.empty());
     while (!expectations_.empty()) {
       Next(cq, ignore_ok);
     }
@@ -177,16 +188,43 @@ class Verifier {
           EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, deadline),
                     CompletionQueue::GOT_EVENT);
         }
-        auto it = expectations_.find(got_tag);
-        EXPECT_TRUE(it != expectations_.end());
-        EXPECT_EQ(it->second, ok);
-        expectations_.erase(it);
+        GotTag(got_tag, ok, false);
       }
     }
   }
 
  private:
+  void GotTag(void* got_tag, bool ok, bool ignore_ok) {
+    auto it = expectations_.find(got_tag);
+    if (it != expectations_.end()) {
+      if (!ignore_ok) {
+        EXPECT_EQ(it->second, ok);
+      }
+      expectations_.erase(it);
+    } else {
+      auto it2 = maybe_expectations_.find(got_tag);
+      if (it2 != maybe_expectations_.end()) {
+        if (it2->second.seen != nullptr) {
+          EXPECT_FALSE(*it2->second.seen);
+          *it2->second.seen = true;
+        }
+        if (!ignore_ok) {
+          EXPECT_EQ(it2->second.ok, ok);
+        }
+      } else {
+        gpr_log(GPR_ERROR, "Unexpected tag: %p", tag);
+        abort();
+      }
+    }
+  }
+
+  struct MaybeExpect {
+    bool ok;
+    bool* seen;
+  };
+
   std::map<void*, bool> expectations_;
+  std::map<void*, MaybeExpect> maybe_expectations_;
   bool spin_;
 };
 
@@ -534,18 +572,21 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreamingWithCoalescingApi) {
   service_->RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
                                  tag(2));
 
-  auto verif = Verifier(GetParam().disable_blocking);
-  verif.Expect(2, true);
-
   cli_stream->Write(send_request, tag(3));
-  verif.Expect(3, true);
 
-  // Drain tag 2, optional to get tag 3 now
-  while (verif.Next(cq_.get(), false) != 2) {
-  }
+  bool seen3 = false;
+
+  Verifier(GetParam().disable_blocking)
+      .Expect(2, true)
+      .ExpectMaybe(3, true, &seen3)
+      .Verify(cq_.get());
 
   srv_stream.Read(&recv_request, tag(4));
-  verif.Expect(4, true).Verify(cq_.get());
+
+  Verifier(GetParam().disable_blocking)
+      .ExpectUnless(3, true, seen3)
+      .Expect(4, true)
+      .Verify(cq_.get());
 
   EXPECT_EQ(send_request.message(), recv_request.message());
 
@@ -814,19 +855,21 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWAF) {
   service_->RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
                               tag(2));
 
-  auto verif = Verifier(GetParam().disable_blocking);
-  verif.Expect(2, true);
-
   cli_stream->WriteLast(send_request, WriteOptions(), tag(3));
-  verif.Expect(3, true);
 
-  // Drain tag 2, optional to get tag 3 now
-  while (verif.Next(cq_.get(), false) != 2) {
-  }
+  bool seen3 = false;
+
+  Verifier(GetParam().disable_blocking)
+      .Expect(2, true)
+      .ExpectMaybe(3, true, &seen3)
+      .Verify(cq_.get());
 
   srv_stream.Read(&recv_request, tag(4));
-  verif.Expect(4, true).Verify(cq_.get());
 
+  Verifier(GetParam().disable_blocking)
+      .ExpectUnless(3, true, seen3)
+      .Expect(4, true)
+      .Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   srv_stream.Read(&recv_request, tag(5));
@@ -868,19 +911,21 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWL) {
   service_->RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
                               tag(2));
 
-  auto verif = Verifier(GetParam().disable_blocking);
-  verif.Expect(2, true);
-
   cli_stream->WriteLast(send_request, WriteOptions(), tag(3));
-  verif.Expect(3, true);
 
-  // Drain tag 2, optional to get tag 3 now
-  while (verif.Next(cq_.get(), false) != 2) {
-  }
+  bool seen3 = false;
+
+  Verifier(GetParam().disable_blocking)
+      .Expect(2, true)
+      .ExpectMaybe(3, true, &seen3)
+      .Verify(cq_.get());
 
   srv_stream.Read(&recv_request, tag(4));
-  verif.Expect(4, true).Verify(cq_.get());
 
+  Verifier(GetParam().disable_blocking)
+      .ExpectUnless(3, true, seen3)
+      .Expect(4, true)
+      .Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   srv_stream.Read(&recv_request, tag(5));

@@ -21,10 +21,22 @@ licenses(["notice"])  # Apache v2
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
+    name = "percent_encode_fuzzer",
+    srcs = ["percent_encode_fuzzer.c"],
+    language = "C",
+    corpus = "percent_encode_corpus",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_fuzzer(
     name = "percent_decode_fuzzer",
     srcs = ["percent_decode_fuzzer.c"],
     language = "C",
-    corpus = "response_corpus",
+    corpus = "percent_decode_corpus",
     deps = [
         "//:gpr",
         "//:grpc",
