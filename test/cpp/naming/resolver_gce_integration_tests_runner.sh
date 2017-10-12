@@ -24,18 +24,7 @@ elif [[ "$GRPC_DNS_RESOLVER" != ares ]]; then
   exit 1
 fi
 
-cd $(dirname $0)
-
-echo "Sanity check that zone files are up to date:"
-current_zone_file="$(cat private_dns_zone_records.zone)"
-zone_file_after_regenerating="$(./convert_json_records_to_bind_zone_format.py --json_file private_dns_zone_records.json)"
-if [[ "$current_zone_file" != "$zone_file_after_regenerating" ]]; then
-  echo "Current zone file for test DNS server: |$current_zone_file|. After regenerating: |$zone_file_after_regenerating|."
-  echo "Perhaps test/cpp/naming/sync_zone_files.sh has not been ran recently enough."
-  exit 1
-fi
-
-cd ../../..
+cd $(dirname $0)/../../..
 
 if [[ "$CONFIG" == "" ]]; then
   export CONFIG=opt
@@ -45,191 +34,219 @@ echo "Sanity check DNS records are resolveable with dig:"
 EXIT_CODE=0
 
 ONE_FAILED=0
-dig SRV _grpclb._tcp.srv-ipv4-single-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  _grpclb._tcp.srv-ipv4-single-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig SRV _grpclb._tcp.srv-ipv4-single-target.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  _grpclb._tcp.srv-ipv4-single-target.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig A ipv4-single-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv4-single-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig A ipv4-single-target.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv4-single-target.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig SRV _grpclb._tcp.srv-ipv4-multi-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  _grpclb._tcp.srv-ipv4-multi-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig SRV _grpclb._tcp.srv-ipv4-multi-target.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  _grpclb._tcp.srv-ipv4-multi-target.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig A ipv4-multi-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv4-multi-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig A ipv4-multi-target.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv4-multi-target.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig SRV _grpclb._tcp.srv-ipv6-single-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv4-multi-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig SRV _grpclb._tcp.srv-ipv6-single-target.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv4-multi-target.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig AAAA ipv6-single-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv4-multi-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig AAAA ipv6-single-target.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv4-multi-target.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig SRV _grpclb._tcp.srv-ipv6-multi-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  _grpclb._tcp.srv-ipv6-single-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig SRV _grpclb._tcp.srv-ipv6-multi-target.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  _grpclb._tcp.srv-ipv6-single-target.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig AAAA ipv6-multi-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv6-single-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig AAAA ipv6-multi-target.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv6-single-target.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig TXT srv-ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  _grpclb._tcp.srv-ipv6-multi-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig TXT srv-ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  _grpclb._tcp.srv-ipv6-multi-target.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig A ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv6-multi-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig A ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv6-multi-target.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig SRV _grpclb._tcp.srv-ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv6-multi-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig SRV _grpclb._tcp.srv-ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv6-multi-target.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig A ipv4-no-srv-simple-service-config.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv6-multi-target.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig A ipv4-no-srv-simple-service-config.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv6-multi-target.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig TXT ipv4-no-srv-simple-service-config.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  srv-ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig TXT ipv4-no-srv-simple-service-config.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  srv-ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig A ipv4-no-config-for-cpp.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig A ipv4-no-config-for-cpp.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig TXT ipv4-no-config-for-cpp.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  _grpclb._tcp.srv-ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig TXT ipv4-no-config-for-cpp.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  _grpclb._tcp.srv-ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig A ipv4-cpp-config-has-zero-percentage.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv4-no-srv-simple-service-config.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig A ipv4-cpp-config-has-zero-percentage.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv4-no-srv-simple-service-config.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig TXT ipv4-cpp-config-has-zero-percentage.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv4-no-srv-simple-service-config.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig TXT ipv4-cpp-config-has-zero-percentage.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv4-no-srv-simple-service-config.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig A ipv4-second-language-is-cpp.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv4-no-config-for-cpp.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig A ipv4-second-language-is-cpp.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv4-no-config-for-cpp.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig TXT ipv4-second-language-is-cpp.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv4-no-config-for-cpp.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig TXT ipv4-second-language-is-cpp.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv4-no-config-for-cpp.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig A ipv4-config-with-percentages.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv4-cpp-config-has-zero-percentage.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig A ipv4-config-with-percentages.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv4-cpp-config-has-zero-percentage.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig TXT ipv4-config-with-percentages.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv4-cpp-config-has-zero-percentage.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig TXT ipv4-config-with-percentages.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv4-cpp-config-has-zero-percentage.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig SRV _grpclb._tcp.srv-ipv4-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv4-second-language-is-cpp.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig SRV _grpclb._tcp.srv-ipv4-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv4-second-language-is-cpp.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig A balancer-for-ipv4-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv4-second-language-is-cpp.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig A balancer-for-ipv4-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv4-second-language-is-cpp.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig A srv-ipv4-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv4-config-with-percentages.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig A srv-ipv4-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv4-config-with-percentages.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig SRV _grpclb._tcp.srv-ipv6-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  ipv4-config-with-percentages.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig SRV _grpclb._tcp.srv-ipv6-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  ipv4-config-with-percentages.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig AAAA balancer-for-ipv6-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  _grpclb._tcp.srv-ipv4-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig AAAA balancer-for-ipv6-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  _grpclb._tcp.srv-ipv4-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
 ONE_FAILED=0
-dig AAAA srv-ipv6-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+dig  balancer-for-ipv4-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Sanity check: dig AAAA srv-ipv6-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. FAILED"
+  echo "Sanity check: dig  balancer-for-ipv4-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. FAILED"
+  exit 1
+fi
+
+ONE_FAILED=0
+dig  srv-ipv4-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Sanity check: dig  srv-ipv4-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. FAILED"
+  exit 1
+fi
+
+ONE_FAILED=0
+dig  _grpclb._tcp.srv-ipv6-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Sanity check: dig  _grpclb._tcp.srv-ipv6-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. FAILED"
+  exit 1
+fi
+
+ONE_FAILED=0
+dig  balancer-for-ipv6-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Sanity check: dig  balancer-for-ipv6-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. FAILED"
+  exit 1
+fi
+
+ONE_FAILED=0
+dig  srv-ipv6-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Sanity check: dig  srv-ipv6-target-has-backend-and-balancer.resolver-tests-version-2.grpctestingexp. FAILED"
   exit 1
 fi
 
@@ -283,7 +300,7 @@ ONE_FAILED=0
 bins/$CONFIG/resolver_component_test \
   --target_name='srv-ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp.' \
   --expected_addrs='1.2.3.4:1234,True' \
-  --expected_chosen_service_config='{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]}]}' \
+  --expected_chosen_service_config='{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService"}],"waitForReady":true}]}' \
   --expected_lb_policy='round_robin' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
   echo "Test based on target record: srv-ipv4-simple-service-config.resolver-tests-version-2.grpctestingexp. FAILED"
@@ -294,7 +311,7 @@ ONE_FAILED=0
 bins/$CONFIG/resolver_component_test \
   --target_name='ipv4-no-srv-simple-service-config.resolver-tests-version-2.grpctestingexp.' \
   --expected_addrs='1.2.3.4:443,False' \
-  --expected_chosen_service_config='{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"NoSrvSimpleService","waitForReady":true}]}]}' \
+  --expected_chosen_service_config='{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"NoSrvSimpleService"}],"waitForReady":true}]}' \
   --expected_lb_policy='round_robin' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
   echo "Test based on target record: ipv4-no-srv-simple-service-config.resolver-tests-version-2.grpctestingexp. FAILED"
@@ -338,7 +355,7 @@ ONE_FAILED=0
 bins/$CONFIG/resolver_component_test \
   --target_name='ipv4-config-with-percentages.resolver-tests-version-2.grpctestingexp.' \
   --expected_addrs='1.2.3.4:443,False' \
-  --expected_chosen_service_config='{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"AlwaysPickedService","waitForReady":true}]}]}' \
+  --expected_chosen_service_config='{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"AlwaysPickedService"}],"waitForReady":true}]}' \
   --expected_lb_policy='round_robin' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
   echo "Test based on target record: ipv4-config-with-percentages.resolver-tests-version-2.grpctestingexp. FAILED"

@@ -45,13 +45,4 @@ grpc_py_binary(
   ],
 )
 
-grpc_py_binary(
-  name = "convert_json_records_to_bind_zone_format",
-  srcs = ["convert_json_records_to_bind_zone_format.py"],
-  data = [
-      "local_dns_server_records.json",
-      "local_dns_server_records.zone",
-  ],
-)
-
 generate_resolver_component_tests()

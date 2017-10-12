@@ -1,0 +1,40 @@
+[
+    {
+        "clientLanguage": [
+            "go"
+        ], 
+        "serviceConfig": {
+            "loadBalancingPolicy": "round_robin", 
+            "methodConfig": [
+                {
+                    "name": [
+                        {
+                            "method": "Foo", 
+                            "service": "GoService", 
+                            "waitForReady": true
+                        }
+                    ]
+                }
+            ]
+        }
+    }, 
+    {
+        "clientLanguage": [
+            "c++"
+        ], 
+        "serviceConfig": {
+            "loadBalancingPolicy": "round_robin", 
+            "methodConfig": [
+                {
+                    "name": [
+                        {
+                            "method": "Foo", 
+                            "service": "CppService", 
+                            "waitForReady": true
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+]

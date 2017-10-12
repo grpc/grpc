@@ -50,7 +50,7 @@ resolver_component_tests:
     - {TTL: '2100', data: '2607:f8b0:400a:801::1004', type: AAAA}
 - expected_addrs:
   - {address: '1.2.3.4:1234', is_balancer: true}
-  expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]}]}'
+  expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService"}],"waitForReady":true}]}'
   expected_lb_policy: round_robin
   record_to_resolve: srv-ipv4-simple-service-config
   records:
@@ -59,17 +59,17 @@ resolver_component_tests:
     ipv4-simple-service-config:
     - {TTL: '2100', data: 1.2.3.4, type: A}
     srv-ipv4-simple-service-config:
-    - {TTL: '2100', data: 'grpc_config=[{"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]}]}}]',
+    - {TTL: '2100',
       type: TXT}
 - expected_addrs:
   - {address: '1.2.3.4:443', is_balancer: false}
-  expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"NoSrvSimpleService","waitForReady":true}]}]}'
+  expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"NoSrvSimpleService"}],"waitForReady":true}]}'
   expected_lb_policy: round_robin
   record_to_resolve: ipv4-no-srv-simple-service-config
   records:
     ipv4-no-srv-simple-service-config:
     - {TTL: '2100', data: 1.2.3.4, type: A}
-    - {TTL: '2100', data: 'grpc_config=[{"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"NoSrvSimpleService","waitForReady":true}]}]}}]',
+    - {TTL: '2100',
       type: TXT}
 - expected_addrs:
   - {address: '1.2.3.4:443', is_balancer: false}
@@ -79,7 +79,7 @@ resolver_component_tests:
   records:
     ipv4-no-config-for-cpp:
     - {TTL: '2100', data: 1.2.3.4, type: A}
-    - {TTL: '2100', data: 'grpc_config=[{"clientLanguage":["python"],"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"PythonService","waitForReady":true}]}]}}]',
+    - {TTL: '2100',
       type: TXT}
 - expected_addrs:
   - {address: '1.2.3.4:443', is_balancer: false}
@@ -89,7 +89,7 @@ resolver_component_tests:
   records:
     ipv4-cpp-config-has-zero-percentage:
     - {TTL: '2100', data: 1.2.3.4, type: A}
-    - {TTL: '2100', data: 'grpc_config=[{"percentage":0,"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"CppService","waitForReady":true}]}]}}]',
+    - {TTL: '2100',
       type: TXT}
 - expected_addrs:
   - {address: '1.2.3.4:443', is_balancer: false}
@@ -99,17 +99,17 @@ resolver_component_tests:
   records:
     ipv4-second-language-is-cpp:
     - {TTL: '2100', data: 1.2.3.4, type: A}
-    - {TTL: '2100', data: 'grpc_config=[{"clientLanguage":["go"],"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"GoService","waitForReady":true}]}]}},{"clientLanguage":["c++"],"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"CppService","waitForReady":true}]}]}}]',
+    - {TTL: '2100',
       type: TXT}
 - expected_addrs:
   - {address: '1.2.3.4:443', is_balancer: false}
-  expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"AlwaysPickedService","waitForReady":true}]}]}'
+  expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"AlwaysPickedService"}],"waitForReady":true}]}'
   expected_lb_policy: round_robin
   record_to_resolve: ipv4-config-with-percentages
   records:
     ipv4-config-with-percentages:
     - {TTL: '2100', data: 1.2.3.4, type: A}
-    - {TTL: '2100', data: 'grpc_config=[{"percentage":0,"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"NeverPickedService","waitForReady":true}]}]}},{"percentage":100,"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"AlwaysPickedService","waitForReady":true}]}]}}]',
+    - {TTL: '2100',
       type: TXT}
 - expected_addrs:
   - {address: '1.2.3.4:1234', is_balancer: true}
@@ -139,11 +139,11 @@ resolver_component_tests:
     - {TTL: '2100', data: '2607:f8b0:400a:801::1002', type: AAAA}
 - expected_addrs:
   - {address: '1.2.3.4:443', is_balancer: false}
-  expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooThree","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFour","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFive","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSix","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSeven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEight","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooNine","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTen","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEleven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]}]}'
+  expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwo","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooThree","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooFour","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooFive","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooSix","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooSeven","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooEight","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooNine","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTen","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooEleven","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true}]}'
   expected_lb_policy: null
   record_to_resolve: ipv4-config-causing-fallback-to-tcp
   records:
     ipv4-config-causing-fallback-to-tcp:
     - {TTL: '2100', data: 1.2.3.4, type: A}
-    - {TTL: '2100', data: 'grpc_config=[{"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooThree","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFour","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFive","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSix","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSeven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEight","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooNine","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTen","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEleven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]}]}}]',
+    - {TTL: '2100',
       type: TXT}

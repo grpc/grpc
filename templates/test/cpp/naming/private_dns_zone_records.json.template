@@ -1,4 +1,0 @@
-%YAML 1.2
---- |
-  <%namespace file="private_dns_zone_records_defs.include" import="*"/>\
-  ${private_dns_zone_records(all_integration_test_records_json)}

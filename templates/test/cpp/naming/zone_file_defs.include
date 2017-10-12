@@ -1,0 +1,5 @@
+<%def name="zone_file(records)"><%
+bind_file = ''
+for r in records:
+  bind_file += '%s\n' % r
+%>${bind_file}</%def>

@@ -55,10 +55,7 @@ def generate_resolver_component_tests():
             ":resolver_component_tests_runner",
             ":resolver_component_test%s" % unsecure_build_config_suffix,
             ":test_dns_server",
-            "resolver_test_record_groups.yaml", # include the transitive dependency so that the dns sever py binary can locate this
-            "local_dns_server_records.zone",
-            "local_dns_server_records.json",
-            ":convert_json_records_to_bind_zone_format",
+            "local_dns_server_records.zone", # include the transitive dependency so that the dns sever py binary can locate this
         ],
         args = [
             "--test_bin_name=resolver_component_test%s" % unsecure_build_config_suffix,

@@ -1,4 +1,0 @@
-%YAML 1.2
---- |
-  <%namespace file="local_dns_server_records_defs.include" import="*"/>\
-  ${local_dns_server_records(all_local_dns_server_test_records_json)}

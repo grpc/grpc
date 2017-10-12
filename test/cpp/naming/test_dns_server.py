@@ -56,12 +56,16 @@ def _quit_on_signal(signum, _frame):
   sys.exit(0)
 
 def main():
-  argp = argparse.ArgumentParser(description='Local DNS Server for resolver tests')
-  argp.add_argument('-p', '--port', default=None, type=int,
-                    help='Port for DNS server to listen on for TCP and UDP.')
+  argp = argparse.ArgumentParser(
+      description='Local DNS Server for resolver tests')
+  argp.add_argument('-p', '--port',default=None, type=int,
+                    help=('Port for DNS server to listen '
+                          'on for TCP and UDP.'))
   argp.add_argument('-z', '--zone_file_path', default=None, type=str,
-                    help=('Path to bind formatted zone file containing records for this DNS server. '
-                          'Defauls to path needed when the test is invoked as part of run_tests.py.'))
+                    help=('Path to bind formatted zone file '
+                          'containing records for this DNS server. '
+                          'Defauls to path needed when the test is '
+                          'invoked as part of run_tests.py.'))
   args = argp.parse_args()
   signal.signal(signal.SIGALRM, _quit_on_signal)
   signal.signal(signal.SIGTERM, _quit_on_signal)

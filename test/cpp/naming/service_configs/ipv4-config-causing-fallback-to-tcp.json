@@ -1,0 +1,144 @@
+[
+    {
+        "serviceConfig": {
+            "loadBalancingPolicy": "round_robin", 
+            "methodConfig": [
+                {
+                    "name": [
+                        {
+                            "method": "Foo", 
+                            "service": "SimpleService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }, 
+                {
+                    "name": [
+                        {
+                            "method": "FooTwo", 
+                            "service": "SimpleService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }, 
+                {
+                    "name": [
+                        {
+                            "method": "FooThree", 
+                            "service": "SimpleService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }, 
+                {
+                    "name": [
+                        {
+                            "method": "FooFour", 
+                            "service": "SimpleService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }, 
+                {
+                    "name": [
+                        {
+                            "method": "FooFive", 
+                            "service": "SimpleService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }, 
+                {
+                    "name": [
+                        {
+                            "method": "FooSix", 
+                            "service": "SimpleService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }, 
+                {
+                    "name": [
+                        {
+                            "method": "FooSeven", 
+                            "service": "SimpleService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }, 
+                {
+                    "name": [
+                        {
+                            "method": "FooEight", 
+                            "service": "SimpleService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }, 
+                {
+                    "name": [
+                        {
+                            "method": "FooNine", 
+                            "service": "SimpleService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }, 
+                {
+                    "name": [
+                        {
+                            "method": "FooTen", 
+                            "service": "SimpleService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }, 
+                {
+                    "name": [
+                        {
+                            "method": "FooEleven", 
+                            "service": "SimpleService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }, 
+                {
+                    "name": [
+                        {
+                            "method": "FooTwelve", 
+                            "service": "SimpleService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }, 
+                {
+                    "name": [
+                        {
+                            "method": "FooTwelve", 
+                            "service": "SimpleService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }, 
+                {
+                    "name": [
+                        {
+                            "method": "FooTwelve", 
+                            "service": "SimpleService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }, 
+                {
+                    "name": [
+                        {
+                            "method": "FooTwelve", 
+                            "service": "SimpleService"
+                        }
+                    ], 
+                    "waitForReady": true
+                }
+            ]
+        }
+    }
+]

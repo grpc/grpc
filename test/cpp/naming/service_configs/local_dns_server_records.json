@@ -50,7 +50,7 @@
             "type": "AAAA"
         }, 
         {
-            "data": "grpc_config=[{\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"SimpleService\",\"waitForReady\":true}]}]}}]", 
+            "data": "grpc_config=[{\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"SimpleService\"}],\"waitForReady\":true}]}}]", 
             "name": "srv-ipv4-simple-service-config", 
             "ttl": "2100", 
             "type": "TXT"
@@ -74,7 +74,7 @@
             "type": "A"
         }, 
         {
-            "data": "grpc_config=[{\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"NoSrvSimpleService\",\"waitForReady\":true}]}]}}]", 
+            "data": "grpc_config=[{\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"NoSrvSimpleService\"}],\"waitForReady\":true}]}}]", 
             "name": "ipv4-no-srv-simple-service-config", 
             "ttl": "2100", 
             "type": "TXT"
@@ -86,7 +86,7 @@
             "type": "A"
         }, 
         {
-            "data": "grpc_config=[{\"clientLanguage\":[\"python\"],\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"PythonService\",\"waitForReady\":true}]}]}}]", 
+            "data": "grpc_config=[{\"clientLanguage\":[\"python\"],\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"PythonService\"}],\"waitForReady\":true}]}}]", 
             "name": "ipv4-no-config-for-cpp", 
             "ttl": "2100", 
             "type": "TXT"
@@ -98,7 +98,7 @@
             "type": "A"
         }, 
         {
-            "data": "grpc_config=[{\"percentage\":0,\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"CppService\",\"waitForReady\":true}]}]}}]", 
+            "data": "grpc_config=[{\"percentage\":0,\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"CppService\"}],\"waitForReady\":true}]}}]", 
             "name": "ipv4-cpp-config-has-zero-percentage", 
             "ttl": "2100", 
             "type": "TXT"
@@ -122,7 +122,7 @@
             "type": "A"
         }, 
         {
-            "data": "grpc_config=[{\"percentage\":0,\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"NeverPickedService\",\"waitForReady\":true}]}]}},{\"percentage\":100,\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"AlwaysPickedService\",\"waitForReady\":true}]}]}}]", 
+            "data": "grpc_config=[{\"percentage\":0,\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"NeverPickedService\"}],\"waitForReady\":true}]}},{\"percentage\":100,\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"AlwaysPickedService\"}],\"waitForReady\":true}]}}]", 
             "name": "ipv4-config-with-percentages", 
             "ttl": "2100", 
             "type": "TXT"
@@ -170,7 +170,7 @@
             "type": "A"
         }, 
         {
-            "data": "grpc_config=[{\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"SimpleService\",\"waitForReady\":true}]},{\"name\":[{\"method\":\"FooTwo\",\"service\":\"SimpleService\",\"waitForReady\":true}]},{\"name\":[{\"method\":\"FooThree\",\"service\":\"SimpleService\",\"waitForReady\":true}]},{\"name\":[{\"method\":\"FooFour\",\"service\":\"SimpleService\",\"waitForReady\":true}]},{\"name\":[{\"method\":\"FooFive\",\"service\":\"SimpleService\",\"waitForReady\":true}]},{\"name\":[{\"method\":\"FooSix\",\"service\":\"SimpleService\",\"waitForReady\":true}]},{\"name\":[{\"method\":\"FooSeven\",\"service\":\"SimpleService\",\"waitForReady\":true}]},{\"name\":[{\"method\":\"FooEight\",\"service\":\"SimpleService\",\"waitForReady\":true}]},{\"name\":[{\"method\":\"FooNine\",\"service\":\"SimpleService\",\"waitForReady\":true}]},{\"name\":[{\"method\":\"FooTen\",\"service\":\"SimpleService\",\"waitForReady\":true}]},{\"name\":[{\"method\":\"FooEleven\",\"service\":\"SimpleService\",\"waitForReady\":true}]},{\"name\":[{\"method\":\"FooTwelve\",\"service\":\"SimpleService\",\"waitForReady\":true}]},{\"name\":[{\"method\":\"FooTwelve\",\"service\":\"SimpleService\",\"waitForReady\":true}]},{\"name\":[{\"method\":\"FooTwelve\",\"service\":\"SimpleService\",\"waitForReady\":true}]},{\"name\":[{\"method\":\"FooTwelve\",\"service\":\"SimpleService\",\"waitForReady\":true}]}]}}]", 
+            "data": "grpc_config=[{\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"method\":\"Foo\",\"service\":\"SimpleService\"}],\"waitForReady\":true},{\"name\":[{\"method\":\"FooTwo\",\"service\":\"SimpleService\"}],\"waitForReady\":true},{\"name\":[{\"method\":\"FooThree\",\"service\":\"SimpleService\"}],\"waitForReady\":true},{\"name\":[{\"method\":\"FooFour\",\"service\":\"SimpleService\"}],\"waitForReady\":true},{\"name\":[{\"method\":\"FooFive\",\"service\":\"SimpleService\"}],\"waitForReady\":true},{\"name\":[{\"method\":\"FooSix\",\"service\":\"SimpleService\"}],\"waitForReady\":true},{\"name\":[{\"method\":\"FooSeven\",\"service\":\"SimpleService\"}],\"waitForReady\":true},{\"name\":[{\"method\":\"FooEight\",\"service\":\"SimpleService\"}],\"waitForReady\":true},{\"name\":[{\"method\":\"FooNine\",\"service\":\"SimpleService\"}],\"waitForReady\":true},{\"name\":[{\"method\":\"FooTen\",\"service\":\"SimpleService\"}],\"waitForReady\":true},{\"name\":[{\"method\":\"FooEleven\",\"service\":\"SimpleService\"}],\"waitForReady\":true},{\"name\":[{\"method\":\"FooTwelve\",\"service\":\"SimpleService\"}],\"waitForReady\":true},{\"name\":[{\"method\":\"FooTwelve\",\"service\":\"SimpleService\"}],\"waitForReady\":true},{\"name\":[{\"method\":\"FooTwelve\",\"service\":\"SimpleService\"}],\"waitForReady\":true},{\"name\":[{\"method\":\"FooTwelve\",\"service\":\"SimpleService\"}],\"waitForReady\":true}]}}]", 
             "name": "ipv4-config-causing-fallback-to-tcp", 
             "ttl": "2100", 
             "type": "TXT"

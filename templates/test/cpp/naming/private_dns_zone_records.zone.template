@@ -1,0 +1,4 @@
+%YAML 1.2
+--- |
+  <%namespace file="zone_file_defs.include" import="*"/>\
+  ${zone_file(all_integration_test_records)}
