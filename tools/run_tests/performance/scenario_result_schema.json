@@ -517,6 +517,16 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_call_combiner_locks_initiated", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_combiner_locks_scheduled_items", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_executor_scheduled_short_items", 
         "type": "INTEGER"
       }, 
@@ -1325,6 +1335,16 @@
       {
         "mode": "NULLABLE", 
         "name": "core_combiner_locks_offloaded", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_combiner_locks_initiated", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_combiner_locks_scheduled_items", 
         "type": "INTEGER"
       }, 
       {

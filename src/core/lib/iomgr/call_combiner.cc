@@ -21,6 +21,7 @@
 #include <inttypes.h>
 
 #include <grpc/support/log.h>
+#include "src/core/lib/debug/stats.h"
 
 grpc_tracer_flag grpc_call_combiner_trace =
     GRPC_TRACER_INITIALIZER(false, "call_combiner");
@@ -73,7 +74,9 @@ void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
     gpr_log(GPR_DEBUG, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
             prev_size + 1);
   }
+  GRPC_STATS_INC_CALL_COMBINER_LOCKS_SCHEDULED_ITEMS(exec_ctx);
   if (prev_size == 0) {
+    GRPC_STATS_INC_CALL_COMBINER_LOCKS_INITIATED(exec_ctx);
     if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
       gpr_log(GPR_DEBUG, "  EXECUTING IMMEDIATELY");
     }
