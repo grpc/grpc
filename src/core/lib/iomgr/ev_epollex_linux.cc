@@ -927,10 +927,10 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 #define WORKER_PTR (&worker)
 #endif
   if (GRPC_TRACER_ON(grpc_polling_trace)) {
-    gpr_log(GPR_DEBUG, "PS:%p work hdl=%p worker=%p now=%" PRIdPTR " deadline=%" PRIdPTR " kwp=%d pollable=%p",
-            pollset, worker_hdl, WORKER_PTR,grpc_exec_ctx_now(exec_ctx),
-            deadline, pollset->kicked_without_poller,
-            pollset->active_pollable);
+    gpr_log(GPR_DEBUG, "PS:%p work hdl=%p worker=%p now=%" PRIdPTR
+                       " deadline=%" PRIdPTR " kwp=%d pollable=%p",
+            pollset, worker_hdl, WORKER_PTR, grpc_exec_ctx_now(exec_ctx),
+            deadline, pollset->kicked_without_poller, pollset->active_pollable);
   }
   static const char *err_desc = "pollset_work";
   grpc_error *error = GRPC_ERROR_NONE;
@@ -943,9 +943,8 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       GPR_ASSERT(!pollset->shutdown_closure);
       gpr_mu_unlock(&pollset->mu);
       if (pollset->event_cursor == pollset->event_count) {
-        append_error(&error,
-                     pollset_epoll(exec_ctx, pollset, WORKER_PTR->pollable_obj,
-                                   deadline),
+        append_error(&error, pollset_epoll(exec_ctx, pollset,
+                                           WORKER_PTR->pollable_obj, deadline),
                      err_desc);
       }
       append_error(&error, pollset_process_events(exec_ctx, pollset, false),
