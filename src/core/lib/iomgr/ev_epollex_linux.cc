@@ -1172,34 +1172,6 @@ static void pollset_set_del_fd(grpc_exec_ctx *exec_ctx, grpc_pollset_set *pss,
   gpr_mu_unlock(&pss->mu);
 }
 
-static void pollset_set_add_pollset(grpc_exec_ctx *exec_ctx,
-                                    grpc_pollset_set *pss, grpc_pollset *ps) {
-  if (GRPC_TRACER_ON(grpc_polling_trace)) {
-    gpr_log(GPR_DEBUG, "PSS:%p: add pollset %p", pss, ps);
-  }
-  grpc_error *error = GRPC_ERROR_NONE;
-  static const char *err_desc = "pollset_set_add_pollset";
-  pollable *pollable_obj = NULL;
-  if (!GRPC_LOG_IF_ERROR(
-          err_desc, pollset_as_multipollable(exec_ctx, ps, &pollable_obj))) {
-    GPR_ASSERT(pollable_obj == NULL);
-    return;
-  }
-  pss = pss_lock_adam(pss);
-  for (size_t i = 0; i < pss->fd_count; i++) {
-    append_error(&error, pollable_add_fd(pollable_obj, pss->fds[i]), err_desc);
-  }
-  if (pss->pollset_count == pss->pollset_capacity) {
-    pss->pollset_capacity = GPR_MAX(pss->pollset_capacity * 2, 8);
-    pss->pollsets = (pollable **)gpr_realloc(
-        pss->pollsets, pss->pollset_capacity * sizeof(*pss->pollsets));
-  }
-  pss->pollsets[pss->pollset_count++] = pollable_obj;
-  gpr_mu_unlock(&pss->mu);
-
-  GRPC_LOG_IF_ERROR(err_desc, error);
-}
-
 static void pollset_set_del_pollset(grpc_exec_ctx *exec_ctx,
                                     grpc_pollset_set *pss, grpc_pollset *ps) {
   if (GRPC_TRACER_ON(grpc_polling_trace)) {
@@ -1242,6 +1214,37 @@ static grpc_error *add_fds_to_pollables(grpc_exec_ctx *exec_ctx, grpc_fd **fds,
     }
   }
   return error;
+}
+
+static void pollset_set_add_pollset(grpc_exec_ctx *exec_ctx,
+                                    grpc_pollset_set *pss, grpc_pollset *ps) {
+  if (GRPC_TRACER_ON(grpc_polling_trace)) {
+    gpr_log(GPR_DEBUG, "PSS:%p: add pollset %p", pss, ps);
+  }
+  grpc_error *error = GRPC_ERROR_NONE;
+  static const char *err_desc = "pollset_set_add_pollset";
+  pollable *pollable_obj = NULL;
+  if (!GRPC_LOG_IF_ERROR(
+          err_desc, pollset_as_multipollable(exec_ctx, ps, &pollable_obj))) {
+    GPR_ASSERT(pollable_obj == NULL);
+    return;
+  }
+  pss = pss_lock_adam(pss);
+  size_t initial_fd_count = pss->fd_count;
+  pss->fd_count = 0;
+  append_error(&error, add_fds_to_pollables(
+                           exec_ctx, pss->fds, initial_fd_count, &pollable_obj,
+                           1, err_desc, pss->fds, &pss->fd_count),
+               err_desc);
+  if (pss->pollset_count == pss->pollset_capacity) {
+    pss->pollset_capacity = GPR_MAX(pss->pollset_capacity * 2, 8);
+    pss->pollsets = (pollable **)gpr_realloc(
+        pss->pollsets, pss->pollset_capacity * sizeof(*pss->pollsets));
+  }
+  pss->pollsets[pss->pollset_count++] = pollable_obj;
+  gpr_mu_unlock(&pss->mu);
+
+  GRPC_LOG_IF_ERROR(err_desc, error);
 }
 
 static void pollset_set_add_pollset_set(grpc_exec_ctx *exec_ctx,
