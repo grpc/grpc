@@ -1,0 +1,108 @@
+@import @"version.inc";
+
+configurations
+{
+    // See https://github.com/coapp/coapp.powershell/issues/112
+    Toolset
+    {
+        key : "PlatformToolset"; // this is CoApp pre-defined key
+        choices: { v140, v120, v110, v100 };
+    };
+}
+
+#define { 
+      package-id = "grpc.dependencies.zlib";
+}
+
+nuget {
+	// the nuspec file metadata. Gets created/updated on build
+	nuspec {
+		id = ${package-id};
+		version : ${package-version};
+		title: gRPC Native Dependency: ZLib compression library;
+		authors: {Jean-loup Gailly, Mark Adler, Garrett Serack, Tim Rogers};
+		owners: {Jan Tattermusch};
+		licenseUrl: "http://zlib.net/zlib-license.html";
+		projectUrl: "http://github.com/grpc/grpc";
+		iconUrl: "http://zlib.net/images/zlib3d-b1.png";
+		requireLicenseAcceptance:false;
+		summary:A zlib library;
+		description: @"A native zlib library.
+	zlib homepage:  http://zlib.net";
+		releaseNotes: "Release of zlib 1.2.8 libraries.";
+		copyright: Copyright 2013;
+		tags: { zlib, native, CoApp };
+
+	};
+
+	// the files that go into the content folders
+	// (inserted into the nuspec file)
+	files {
+	    // .targets file that are applied when redist package is installed from a managed project.
+		managed_build: {
+		  #output {
+              package = redist;
+          };
+		  #destination = "\build\portable-net45+netcore45+wpa81+wp8";
+		  "managed_targets\${package-id}.redist.targets";
+		};
+	
+		include: { ..\..\..\third_party\zlib\zlib.h, ..\..\..\third_party\zlib\zconf.h };
+
+		docs: {  ..\..\..\third_party\zlib\doc\**\* };
+        
+        source += {
+            "..\..\..\third_party\zlib\adler32.c",
+            "..\..\..\third_party\zlib\compress.c",
+            "..\..\..\third_party\zlib\crc32.c",
+            "..\..\..\third_party\zlib\deflate.c",
+            "..\..\..\third_party\zlib\gzclose.c",
+            "..\..\..\third_party\zlib\gzlib.c",
+            "..\..\..\third_party\zlib\gzread.c",
+            "..\..\..\third_party\zlib\gzwrite.c",
+            "..\..\..\third_party\zlib\infback.c",
+            "..\..\..\third_party\zlib\inffast.c",
+            "..\..\..\third_party\zlib\inflate.c",
+            "..\..\..\third_party\zlib\inftrees.c",
+            "..\..\..\third_party\zlib\trees.c",
+            "..\..\..\third_party\zlib\uncompr.c",
+            "..\..\..\third_party\zlib\zutil.c",
+            "..\..\..\third_party\zlib\crc32.h",
+            "..\..\..\third_party\zlib\deflate.h",
+            "..\..\..\third_party\zlib\gzguts.h",
+            "..\..\..\third_party\zlib\inffast.h",
+            "..\..\..\third_party\zlib\inffixed.h",
+            "..\..\..\third_party\zlib\inflate.h",
+            "..\..\..\third_party\zlib\inftrees.h",
+            "..\..\..\third_party\zlib\trees.h",
+            "..\..\..\third_party\zlib\zconf.h",
+            "..\..\..\third_party\zlib\zlib.h",
+            "..\..\..\third_party\zlib\zutil.h",
+            "..\..\..\third_party\zlib\contrib\masmx64\inffas8664.c",
+        };
+		("v100,v120,v140", "Win32,x64", "Release,Debug", "Dynamic", "cdecl,stdcall", "MultiByte") => {
+			[${0},${1},${2},${3},${4}] {
+				lib:     { .\output\${0}\${1}\${2}\${3}\${4}\${5}\*.lib };
+				bin:     { .\output\${0}\${1}\${2}\${3}\${4}\${5}\*.dll };
+				symbols: { .\output\${0}\${1}\${2}\${3}\${4}\${5}\*.pdb };
+			};
+		};
+		("v100,v120,v140", "Win32,x64", "Release,Debug", "Static,ltcg", "cdecl,stdcall", "MultiByte") => {
+			[${0},${1},${2},${3},${4}] {
+				lib:     { .\output\${0}\${1}\${2}\${3}\${4}\${5}\*.lib };
+			};
+		};
+
+	};
+
+	// the VC++ .targets file that gets generated and inserted into the ${d_content} folder
+	targets {
+		Defines += HAS_ZLIB;
+		[dynamic]
+			Defines += ZLIB_DLL;
+		[stdcall]
+			Defines += ZLIB_WINAPI;
+			
+	};
+}
+

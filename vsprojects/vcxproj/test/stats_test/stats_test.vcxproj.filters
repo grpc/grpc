@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\debug\stats_test.cc">
+      <Filter>test\core\debug</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{4c155dcc-7926-a6eb-bee0-e54cd1c893a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{c417038a-277a-0465-870c-6b27ab1d0d4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\debug">
+      <UniqueIdentifier>{7ee41bf2-b457-39a3-f236-16a7eb776cc3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

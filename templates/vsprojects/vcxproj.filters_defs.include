@@ -1,0 +1,70 @@
+<%!
+  import re
+  import hashlib
+
+  def calc_to_filter(path):
+    return '\\'.join(path.split('/')[:-1])
+%>\
+<%def name="get_repo_root(proj)">${'$(SolutionDir)\..'}</%def>\
+<%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
+<%def name="to_filter(path)">${calc_to_filter(path)}</%def>\
+<%def name="filter_to_guid(proj, filter)">${re.sub('(........)(....)(....)(....)', r'\1-\2-\3-\4-', hashlib.md5(''.join([filter, proj])).hexdigest())}</%def>\
+<%def name="gen_filters(name, collection)">\
+% for project in vsprojects:
+  % if project.name == name:
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  % if project.get('src',[]):
+  <ItemGroup>
+    % for src_name in project.src:
+    <ClCompile Include="${get_repo_root(project)}\${to_windows_path(src_name)}">
+      <Filter>${to_filter(src_name)}</Filter>
+    </ClCompile>
+    % endfor
+  </ItemGroup>
+  % endif
+  % if project.get('dll_def', None):
+  <ItemGroup>
+    <None Include="${get_repo_root(project)}\${to_windows_path(project.dll_def)}" />
+  </ItemGroup>
+  % endif
+  % if project.get('public_headers',[]):
+  <ItemGroup>
+    % for public_header in project.public_headers:
+    <ClInclude Include="${get_repo_root(project)}\${to_windows_path(public_header)}">
+      <Filter>${to_filter(public_header)}</Filter>
+    </ClInclude>
+    % endfor
+  </ItemGroup>
+  % endif
+  % if project.get('headers',[]):
+  <ItemGroup>
+    % for header in project.headers:
+    <ClInclude Include="${get_repo_root(project)}\${to_windows_path(header)}">
+      <Filter>${to_filter(header)}</Filter>
+    </ClInclude>
+    % endfor
+  </ItemGroup>
+  % endif
+<%
+  filters = set()
+  files = project.get('src', []) + project.get('public_headers', []) + project.get('headers', [])
+  for file in files:
+    filter = calc_to_filter(file)
+    paths = filter.split('\\')
+    for i in range(len(paths)):
+      filters.add('\\'.join(paths[:i + 1]))
+
+  filters = sorted(filters)
+%>
+  <ItemGroup>
+  % for filter in filters:
+    <Filter Include="${filter}">
+      <UniqueIdentifier>{${filter_to_guid(project.name, filter)}}</UniqueIdentifier>
+    </Filter>
+  % endfor
+  </ItemGroup>
+</Project>
+  % endif
+% endfor
+</%def>\

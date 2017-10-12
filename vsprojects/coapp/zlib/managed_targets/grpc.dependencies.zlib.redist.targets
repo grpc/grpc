@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!-- 
+    Whether or not to copy native dependencies to output directory as part of build. 
+    If not explicitly specified in the project file, this defaults to true on Windows
+    and false on Unix systems.
+    -->
+    <CopyNativeDependencies Condition=" '$(CopyNativeDependencies)' == '' And '$(OS)' != 'Unix' ">true</CopyNativeDependencies>
+    <CopyNativeDependencies Condition=" '$(CopyNativeDependencies)' == '' And '$(OS)' == 'Unix' ">false</CopyNativeDependencies>
+    
+	<!-- 
+	Select which platform toolset of native dependencies to use based on VS version (v120 is the default).
+	Value can be explicitly specified in the project file.
+	-->
+	<NativeDependenciesToolset Condition=" '$(NativeDependenciesToolset)' == '' And '$(VisualStudioVersion)' == '14.0' ">v140</NativeDependenciesToolset>
+	<NativeDependenciesToolset Condition=" '$(NativeDependenciesToolset)' == '' And '$(VisualStudioVersion)' == '10.0' ">v100</NativeDependenciesToolset>
+	<NativeDependenciesToolset Condition=" '$(NativeDependenciesToolset)' == '' ">v120</NativeDependenciesToolset>
+	
+	<!-- Select which platform of native dependencies to use. Value can be explicitly specified in the project file. -->
+    <NativeDependenciesPlatform Condition=" '$(NativeDependenciesPlatform)' == '' ">Win32</NativeDependenciesPlatform>
+    
+    <!--
+    Select which configuration of native dependencies to use. Uses release build if project configuration is Release,
+    otherwise defaults to Debug. Value can be explicitly specified in the project file.
+    -->
+    <NativeDependenciesConfiguration Condition=" '$(NativeDependenciesConfiguration)' == '' And '$(Configuration)' == 'Release' ">Release</NativeDependenciesConfiguration>
+    <NativeDependenciesConfiguration Condition=" '$(NativeDependenciesConfiguration)' == '' ">Debug</NativeDependenciesConfiguration>
+	
+	<ZlibCallingConvention Condition=" '$(ZlibCallingConvention)' == '' ">cdecl</ZlibCallingConvention>
+  </PropertyGroup>
+  <Choose>
+    <!-- Under older versions of Monodevelop, Choose is not supported and is just ignored, which gives us the desired effect. -->
+    <When Condition=" '$(CopyNativeDependencies)' == 'true' ">
+      <ItemGroup>
+        <Content Include="$(MSBuildThisFileDirectory)..\..\build\native\bin\$(NativeDependenciesToolset)\$(NativeDependenciesPlatform)\$(NativeDependenciesConfiguration)\dynamic\$(ZlibCallingConvention)\zlib.dll">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+      </ItemGroup>
+	</When>
+  <Otherwise />
+  </Choose>
+</Project>

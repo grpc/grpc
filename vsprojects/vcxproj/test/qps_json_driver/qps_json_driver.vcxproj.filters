@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\qps_json_driver.cc">
+      <Filter>test\cpp\qps</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{51cad99a-2bf1-0e37-a1be-0c9ad02355d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{f8692949-7450-0a31-11fc-a17ea63b6357}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\qps">
+      <UniqueIdentifier>{73b4c157-7352-ba56-4790-66e27fa90451}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\tools\codegen\core\gen_percent_encoding_tables.c">
+      <Filter>tools\codegen\core</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="tools">
+      <UniqueIdentifier>{e587d5b5-125f-1c73-e004-3c5659aa666b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tools\codegen">
+      <UniqueIdentifier>{0e90891e-2dd7-433f-2e97-b8495275cc10}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tools\codegen\core">
+      <UniqueIdentifier>{194d6b8d-bf65-b581-90a4-13447dbfa951}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

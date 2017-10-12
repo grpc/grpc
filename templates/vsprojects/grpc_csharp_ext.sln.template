@@ -1,0 +1,7 @@
+%YAML 1.2
+--- |
+  <%namespace file="sln_defs.include" import="gen_solution"/>\
+  <%
+  solution_projects = [p for p in vsprojects if p.build == 'all' and p.language == 'csharp']
+  %>\
+  ${gen_solution(solution_projects, use_dlls='only')}

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\compiler\node_plugin.cc">
+      <Filter>src\compiler</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{089d5d6b-d438-dc98-b30f-bd608e3bbb78}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\compiler">
+      <UniqueIdentifier>{1cc34440-c001-7578-c4d3-78f5d98fb602}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

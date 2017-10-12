@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\metrics.proto">
+      <Filter>src\proto\grpc\testing</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\interop\metrics_client.cc">
+      <Filter>test\cpp\interop</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\metrics_server.h">
+      <Filter>test\cpp\util</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{2f2185a6-32fc-013a-9860-d623721af645}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto">
+      <UniqueIdentifier>{bf59f117-18fd-cc4b-b073-1a6c11dcbbbd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc">
+      <UniqueIdentifier>{a2d30ba0-0eec-29c7-9257-d55e8456eca3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\testing">
+      <UniqueIdentifier>{47a85da2-170b-d623-a6c9-d3b4eaab5302}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test">
+      <UniqueIdentifier>{2c00b6b1-865c-55b2-0d9d-8d7b42ad7d03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{a62a5921-b3d4-6069-e9cc-73f34609c99b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\interop">
+      <UniqueIdentifier>{fbd5c6ac-f3a9-1b16-6310-c205aadc9075}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\util">
+      <UniqueIdentifier>{16f4e45d-a509-3e4d-4a19-9383576bec54}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

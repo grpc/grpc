@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\transport\chttp2\varint_test.c">
+      <Filter>test\core\transport\chttp2</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{61f754dd-899e-a7aa-b676-6fcd106556b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{c5822510-1cab-5c9c-7ead-4f391e6dc2bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\transport">
+      <UniqueIdentifier>{8eb39844-fcb6-6a53-4bf8-9f62d908d217}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\transport\chttp2">
+      <UniqueIdentifier>{5366b6c8-e031-c856-4f70-df98ac4caaf1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

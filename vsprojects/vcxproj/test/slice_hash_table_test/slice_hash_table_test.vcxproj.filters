@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\slice\slice_hash_table_test.c">
+      <Filter>test\core\slice</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{e11f5007-84da-0229-9118-2a2bb17f956c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{a11f4770-5e13-eb1a-a848-8667dde98812}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\slice">
+      <UniqueIdentifier>{fb1262a8-0a70-bc85-579a-6ebfffbf25b5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

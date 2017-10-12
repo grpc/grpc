@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\core\stats.proto">
+      <Filter>src\proto\grpc\core</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\util\core_stats.cc">
+      <Filter>src\cpp\util</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\util\core_stats.h">
+      <Filter>src\cpp\util</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{cde3471d-8aa7-d9f1-d00f-ff95b1864425}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\cpp">
+      <UniqueIdentifier>{a27ab44b-34fd-4960-3fa9-955ed77fcf5f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\cpp\util">
+      <UniqueIdentifier>{8e11f67d-a576-9dc8-13bf-a0b3e52a5db3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto">
+      <UniqueIdentifier>{f323922c-3606-bae6-12ef-053621f6b1e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc">
+      <UniqueIdentifier>{57b150f6-3cb8-27d4-a91f-0aa2a490e0a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\core">
+      <UniqueIdentifier>{eb216fd7-98c7-c555-c9b6-d3b21ae314e1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

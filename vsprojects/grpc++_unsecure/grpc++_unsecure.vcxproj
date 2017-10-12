@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug-DLL|Win32">
+      <Configuration>Debug-DLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-DLL|x64">
+      <Configuration>Debug-DLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-DLL|Win32">
+      <Configuration>Release-DLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-DLL|x64">
+      <Configuration>Release-DLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}</ProjectGuid>
+    <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '10.0'" Label="Configuration">
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '11.0'" Label="Configuration">
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '12.0'" Label="Configuration">
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '14.0'" Label="Configuration">
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug-DLL'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release-DLL'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\vsprojects\global.props" />
+    <Import Project="..\..\..\vsprojects\winsock.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <TargetName>grpc++_unsecure</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <TargetName>grpc++_unsecure</TargetName>
+  </PropertyGroup>
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-DLL|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-DLL|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemGroup>
+    <ClInclude Include="..\..\..\include\grpc++\channel.h" />
+    <ClInclude Include="..\..\..\include\grpc++\client_context.h" />
+    <ClInclude Include="..\..\..\include\grpc++\completion_queue.h" />
+    <ClInclude Include="..\..\..\include\grpc++\create_channel.h" />
+    <ClInclude Include="..\..\..\include\grpc++\generic\async_generic_service.h" />
+    <ClInclude Include="..\..\..\include\grpc++\generic\generic_stub.h" />
+    <ClInclude Include="..\..\..\include\grpc++\grpc++.h" />
+    <ClInclude Include="..\..\..\include\grpc++\impl\call.h" />
+    <ClInclude Include="..\..\..\include\grpc++\impl\client_unary_call.h" />
+    <ClInclude Include="..\..\..\include\grpc++\impl\grpc_library.h" />
+    <ClInclude Include="..\..\..\include\grpc++\impl\proto_utils.h" />
+    <ClInclude Include="..\..\..\include\grpc++\impl\rpc_method.h" />
+    <ClInclude Include="..\..\..\include\grpc++\impl\rpc_service_method.h" />
+    <ClInclude Include="..\..\..\include\grpc++\impl\serialization_traits.h" />
+    <ClInclude Include="..\..\..\include\grpc++\impl\server_builder_option.h" />
+    <ClInclude Include="..\..\..\include\grpc++\impl\service_type.h" />
+    <ClInclude Include="..\..\..\include\grpc++\impl\sync.h" />
+    <ClInclude Include="..\..\..\include\grpc++\impl\sync_cxx11.h" />
+    <ClInclude Include="..\..\..\include\grpc++\impl\sync_no_cxx11.h" />
+    <ClInclude Include="..\..\..\include\grpc++\impl\thd.h" />
+    <ClInclude Include="..\..\..\include\grpc++\impl\thd_cxx11.h" />
+    <ClInclude Include="..\..\..\include\grpc++\impl\thd_no_cxx11.h" />
+    <ClInclude Include="..\..\..\include\grpc++\security\auth_context.h" />
+    <ClInclude Include="..\..\..\include\grpc++\security\auth_metadata_processor.h" />
+    <ClInclude Include="..\..\..\include\grpc++\security\credentials.h" />
+    <ClInclude Include="..\..\..\include\grpc++\security\server_credentials.h" />
+    <ClInclude Include="..\..\..\include\grpc++\server.h" />
+    <ClInclude Include="..\..\..\include\grpc++\server_builder.h" />
+    <ClInclude Include="..\..\..\include\grpc++\server_context.h" />
+    <ClInclude Include="..\..\..\include\grpc++\support\async_stream.h" />
+    <ClInclude Include="..\..\..\include\grpc++\support\async_unary_call.h" />
+    <ClInclude Include="..\..\..\include\grpc++\support\byte_buffer.h" />
+    <ClInclude Include="..\..\..\include\grpc++\support\channel_arguments.h" />
+    <ClInclude Include="..\..\..\include\grpc++\support\config.h" />
+    <ClInclude Include="..\..\..\include\grpc++\support\config_protobuf.h" />
+    <ClInclude Include="..\..\..\include\grpc++\support\slice.h" />
+    <ClInclude Include="..\..\..\include\grpc++\support\status.h" />
+    <ClInclude Include="..\..\..\include\grpc++\support\status_code_enum.h" />
+    <ClInclude Include="..\..\..\include\grpc++\support\string_ref.h" />
+    <ClInclude Include="..\..\..\include\grpc++\support\stub_options.h" />
+    <ClInclude Include="..\..\..\include\grpc++\support\sync_stream.h" />
+    <ClInclude Include="..\..\..\include\grpc++\support\time.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\cpp\client\create_channel_internal.h" />
+    <ClInclude Include="..\..\..\src\cpp\common\create_auth_context.h" />
+    <ClInclude Include="..\..\..\src\cpp\server\dynamic_thread_pool.h" />
+    <ClInclude Include="..\..\..\src\cpp\server\fixed_size_thread_pool.h" />
+    <ClInclude Include="..\..\..\src\cpp\server\thread_pool_interface.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\cpp\common\insecure_create_auth_context.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\client\channel.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\client\client_context.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\client\create_channel.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\client\create_channel_internal.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\client\credentials.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\client\generic_stub.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\client\insecure_credentials.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\common\call.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\common\channel_arguments.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\common\completion_queue.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\common\rpc_method.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\proto\proto_utils.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\server\async_generic_service.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\server\create_default_thread_pool.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\server\dynamic_thread_pool.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\server\fixed_size_thread_pool.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\server\insecure_server_credentials.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\server\server.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\server\server_builder.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\server\server_context.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\server\server_credentials.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\util\byte_buffer.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\util\slice.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\util\status.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\util\string_ref.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\util\time.cc">
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\vsprojects\vcxproj\.\gpr\gpr.vcxproj">
+      <Project>{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\vsprojects\vcxproj\.\grpc_unsecure\grpc_unsecure.vcxproj">
+      <Project>{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+  </Target>
+</Project>
+

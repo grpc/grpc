@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\string_ref_test.cc">
+      <Filter>test\cpp\util</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{d1b5f39c-07e7-2119-2d00-c9998e758711}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{c69e4f8d-4ef8-4f57-8143-2fcc66d17a41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\util">
+      <UniqueIdentifier>{490c9ad7-34e7-2705-3d4a-4bf84612a4a6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

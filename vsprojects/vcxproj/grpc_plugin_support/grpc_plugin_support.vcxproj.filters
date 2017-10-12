@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\compiler\cpp_generator.cc">
+      <Filter>src\compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\compiler\csharp_generator.cc">
+      <Filter>src\compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\compiler\node_generator.cc">
+      <Filter>src\compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\compiler\objective_c_generator.cc">
+      <Filter>src\compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\compiler\php_generator.cc">
+      <Filter>src\compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\compiler\python_generator.cc">
+      <Filter>src\compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\compiler\ruby_generator.cc">
+      <Filter>src\compiler</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\config.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\cpp_generator.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\cpp_generator_helpers.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\csharp_generator.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\csharp_generator_helpers.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\generator_helpers.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\node_generator.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\node_generator_helpers.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\objective_c_generator.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\objective_c_generator_helpers.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\php_generator.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\php_generator_helpers.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\protobuf_plugin.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\python_generator.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\python_generator_helpers.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\python_private_generator.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\ruby_generator.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\ruby_generator_helpers-inl.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\ruby_generator_map-inl.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\ruby_generator_string-inl.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\schema_interface.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{93ed419d-4540-7fa4-814d-3392745b77ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++">
+      <UniqueIdentifier>{893c09ee-e315-e763-9d9d-37522ba2f51c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++\impl">
+      <UniqueIdentifier>{3e8c71a4-8a06-a577-2799-2224a1ad1f1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++\impl\codegen">
+      <UniqueIdentifier>{ec2a6e26-915b-ba1b-4f59-f361dc01105c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{94c9769a-a6cd-49fd-2b30-e52d2d02ed91}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\compiler">
+      <UniqueIdentifier>{0e6b1e6c-7299-59ce-d757-619bcddd5441}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

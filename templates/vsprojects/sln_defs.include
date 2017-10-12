@@ -1,0 +1,119 @@
+﻿<%def name="gen_solution(solution_top_level_projects, use_dlls = 'no')">\
+## Template for Visual Studio solution
+## based on http://msdn.microsoft.com/en-us/library/bb165951(v=vs.90).aspx
+## NOTE: tabs in this file are needed by Visual Studio to correctly interpret
+## the file.
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
+<%
+## Visual Studio uses GUIDs for project types
+## http://msdn.microsoft.com/en-us/library/hb23x61k%28v=vs.80%29.aspx
+cpp_proj_type = "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"
+
+all_projects = set()
+for project in solution_top_level_projects:
+  for dep in project.deps:
+    all_projects.add(dep)
+  all_projects.add(project.name)
+
+solution_projects = [vsproject_dict[project] for project in sorted(list(all_projects))]
+%>\
+% for project in solution_projects:
+Project("${cpp_proj_type}") = "${project.name}", "vcxproj\${project.vs_proj_dir}\${project.name}\${project.name}.vcxproj", "${project.vs_project_guid}"
+	ProjectSection(myProperties) = preProject
+  % if project.is_library:
+        	lib = "True"
+  % else:
+        	lib = "False"
+  % endif
+	EndProjectSection
+  % if project.get('deps', None):
+	ProjectSection(ProjectDependencies) = postProject
+    % for dep in project.get('deps', []):
+		${vsproject_dict[dep].vs_project_guid} = ${vsproject_dict[dep].vs_project_guid}
+    % endfor
+	EndProjectSection
+  % endif
+EndProject
+% endfor
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+% if use_dlls == 'yes':
+		Debug-DLL|Win32 = Debug-DLL|Win32
+		Debug-DLL|x64 = Debug-DLL|x64
+% endif
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+% if use_dlls == 'yes':
+		Release-DLL|Win32 = Release-DLL|Win32
+		Release-DLL|x64 = Release-DLL|x64
+% endif
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+% for project in solution_projects:
+  % if use_dlls != 'only':
+		${project.vs_project_guid}.Debug|Win32.ActiveCfg = Debug|Win32
+		${project.vs_project_guid}.Debug|x64.ActiveCfg = Debug|x64
+		${project.vs_project_guid}.Release|Win32.ActiveCfg = Release|Win32
+		${project.vs_project_guid}.Release|x64.ActiveCfg = Release|x64
+    % if project.get('dll', False) != 'only':
+		${project.vs_project_guid}.Debug|Win32.Build.0 = Debug|Win32
+		${project.vs_project_guid}.Debug|x64.Build.0 = Debug|x64
+		${project.vs_project_guid}.Release|Win32.Build.0 = Release|Win32
+		${project.vs_project_guid}.Release|x64.Build.0 = Release|x64
+    % endif
+  % endif
+  % if use_dlls == 'yes':
+    % if project.get('dll', False) == False:
+		${project.vs_project_guid}.Debug-DLL|Win32.ActiveCfg = Debug|Win32
+		${project.vs_project_guid}.Debug-DLL|Win32.Build.0 = Debug|Win32
+		${project.vs_project_guid}.Debug-DLL|x64.ActiveCfg = Debug|x64
+		${project.vs_project_guid}.Debug-DLL|x64.Build.0 = Debug|x64
+		${project.vs_project_guid}.Release-DLL|Win32.ActiveCfg = Release|Win32
+		${project.vs_project_guid}.Release-DLL|Win32.Build.0 = Release|Win32
+		${project.vs_project_guid}.Release-DLL|x64.ActiveCfg = Release|x64
+		${project.vs_project_guid}.Release-DLL|x64.Build.0 = Release|x64
+    % else:
+		${project.vs_project_guid}.Debug-DLL|Win32.ActiveCfg = Debug-DLL|Win32
+		${project.vs_project_guid}.Debug-DLL|Win32.Build.0 = Debug-DLL|Win32
+		${project.vs_project_guid}.Debug-DLL|x64.ActiveCfg = Debug-DLL|x64
+		${project.vs_project_guid}.Debug-DLL|x64.Build.0 = Debug-DLL|x64
+		${project.vs_project_guid}.Release-DLL|Win32.ActiveCfg = Release-DLL|Win32
+		${project.vs_project_guid}.Release-DLL|Win32.Build.0 = Release-DLL|Win32
+		${project.vs_project_guid}.Release-DLL|x64.ActiveCfg = Release-DLL|x64
+		${project.vs_project_guid}.Release-DLL|x64.Build.0 = Release-DLL|x64
+    % endif
+  % endif
+  % if use_dlls == 'only':
+    % if project.get('dll', False) == True:
+		${project.vs_project_guid}.Debug|Win32.ActiveCfg = Debug-DLL|Win32
+		${project.vs_project_guid}.Debug|Win32.Build.0 = Debug-DLL|Win32
+		${project.vs_project_guid}.Debug|x64.ActiveCfg = Debug-DLL|x64
+		${project.vs_project_guid}.Debug|x64.Build.0 = Debug-DLL|x64
+		${project.vs_project_guid}.Release|Win32.ActiveCfg = Release-DLL|Win32
+		${project.vs_project_guid}.Release|Win32.Build.0 = Release-DLL|Win32
+		${project.vs_project_guid}.Release|x64.ActiveCfg = Release-DLL|x64
+		${project.vs_project_guid}.Release|x64.Build.0 = Release-DLL|x64
+    % else:
+		${project.vs_project_guid}.Debug|Win32.ActiveCfg = Debug|Win32
+		${project.vs_project_guid}.Debug|Win32.Build.0 = Debug|Win32
+		${project.vs_project_guid}.Debug|x64.ActiveCfg = Debug|x64
+		${project.vs_project_guid}.Debug|x64.Build.0 = Debug|x64
+		${project.vs_project_guid}.Release|Win32.ActiveCfg = Release|Win32
+		${project.vs_project_guid}.Release|Win32.Build.0 = Release|Win32
+		${project.vs_project_guid}.Release|x64.ActiveCfg = Release|x64
+		${project.vs_project_guid}.Release|x64.Build.0 = Release|x64
+    % endif
+  % endif
+% endfor
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
+</%def>\

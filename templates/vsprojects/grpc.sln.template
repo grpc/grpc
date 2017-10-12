@@ -1,0 +1,7 @@
+%YAML 1.2
+--- |
+  <%namespace file="sln_defs.include" import="gen_solution"/>\
+  <%
+  solution_projects = [p for p in vsprojects if p.build not in ['protoc', 'test', 'fuzzer'] and p.language in ['c', 'c++'] and p.vs_proj_dir == '.' and not (p.build == 'private' and p.language == 'c++') and not p.name in ['z', 'boringssl', 'grpc++_reflection']]
+  %>\
+  ${gen_solution(solution_projects, use_dlls='yes')}

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\client_channel\resolvers\dns_resolver_connectivity_test.c">
+      <Filter>test\core\client_channel\resolvers</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{7743e287-3311-1206-2766-32381628ff07}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{cc06b800-cd26-f7a8-7ecf-ec789e78881b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\client_channel">
+      <UniqueIdentifier>{0998596f-2aa1-8205-173b-0bd27b7617d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\client_channel\resolvers">
+      <UniqueIdentifier>{8925594d-dbe2-fee6-1553-d3258d9361da}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

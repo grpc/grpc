@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\transport\pid_controller_test.c">
+      <Filter>test\core\transport</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{dd5fb527-8567-108a-e6d2-51380df8a82f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{18437a81-c8a9-fd37-ad74-63e9ebf0eb7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\transport">
+      <UniqueIdentifier>{6325372c-19b9-37ab-e8ff-16554de3bb3b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

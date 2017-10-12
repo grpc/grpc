@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="PreBuildCmds;PreBuildTargets;Build;PostBuildCmds;PostBuildTargets" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="CoApp" >
+    <CoAppEtcDirectory>$(registry:HKEY_LOCAL_MACHINE\Software\Outercurve\CoApp.Powershell\etc)</CoAppEtcDirectory>
+    
+    <!-- Set to true to make visual studio use PTK when building.-->
+    <UsePTKFromVisualStudio>false</UsePTKFromVisualStudio>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Configuration" >
+    <!-- This lets Visual Studio see this as a VC12 project by default -->
+    <PlatformToolset Condition="'$(PlatformToolset)' == ''">v120</PlatformToolset>
+  </PropertyGroup>
+
+  <Import Condition="Exists('$(CoAppEtcDirectory)\common-variables.vcxproj')" Project="$(CoAppEtcDirectory)\common-variables.vcxproj" />
+  
+  <PropertyGroup Label="CustomSettings" />
+  
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{63BED288-E8C3-4345-B84D-2E64598DCF3A}</ProjectGuid>
+    <RootNamespace>$(MSBuildProjectName)</RootNamespace>
+    
+    <OutNameSuffix Condition="$(IS_CDECL) AND $(IS_DYNAMIC)">1</OutNameSuffix>
+
+    <!-- set to Application or DynamicLibrary (DynamicLibrary can get altered to StaticLibrary by PTK -->
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+
+    <!-- Common Compiler Defines (semicolon delimited) -->
+    <Defines>_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_WARNINGS;</Defines>
+    <Defines Condition="$(IS_STDCALL)">$(Defines);ZLIB_WINAPI;</Defines>
+    <Defines Condition="$(IS_DYNAMIC)">$(Defines);ZLIB_DLL;</Defines>
+    <Defines Condition="'$(AppContainer)' == 'App'">$(Defines);IOWIN32_USING_WINRT_API=1;</Defines>
+    <Defines Condition="'$(AppContainer)' != 'App'">$(Defines);IOWIN32_USING_WINRT_API=0;</Defines>
+    <Defines Condition="'$(UseASM)' == 'ASM'">$(Defines);ASMV;ASMINF;</Defines>
+    <Defines Condition="$(IS_X64)">$(Defines);WIN64;</Defines>
+
+    <!-- Additional Include folders (semicolon delimited) -->
+    <IncludeDirectories>..\..\..\third_party\zlib;</IncludeDirectories>
+
+    <!-- Additional Library folders (semicolon delimited) -->
+    <LibraryDirectories></LibraryDirectories>
+
+    <!-- Libraries to Link with -->
+    <Libraries></Libraries>
+    
+    <!-- Batch script to run before Build-->
+    <PreBuild></PreBuild>
+
+    <!-- Batch script to run after Build-->
+    <PostBuild></PostBuild>
+
+    <!-- Batch script to run before Link step-->
+    <PreLink></PreLink>
+
+    <!-- Batch script to run after Link-->
+    <PostLink></PostLink>
+
+    <!-- Batch script to run before Lib step-->
+    <PreLib></PreLib>
+
+    <!-- Batch script to run after Lib-->
+    <PostLib></PostLib>
+
+    <!-- Targets to run before Build (semcolon delimited)-->
+    <PreBuildTargets></PreBuildTargets>
+
+    <!-- Targets to run before Build (semcolon delimited)-->
+    <PostBuildTargets></PostBuildTargets>
+  
+    <!-- for Dynamic libs, you can specify the Module .DEF file path -->
+    <ModuleDefinitionFile></ModuleDefinitionFile>
+  </PropertyGroup>
+
+  <Import Condition="Exists('$(CoAppEtcDirectory)\common-header.vcxproj')" Project="$(CoAppEtcDirectory)\common-header.vcxproj" />
+  <Import Condition="'$(UseASM)' == 'ASM'" Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
+
+  <PropertyGroup>
+    <OutDir>$(ProjectRootDir)Output/$(PlatformToolset)/$(Platform)/$(Configuration)/$(UsesConfigurationType)/$(CallingConvention)/$(CharacterSet)/$(AppContainer)/$(UseASM)/</OutDir>
+    <IntDir>$(ProjectRootDir)Intermediate/$(TargetName)/$(PlatformToolset)/$(Platform)/$(Configuration)/$(UsesConfigurationType)/$(CallingConvention)/$(CharacterSet)/$(AppContainer)/$(UseASM)/</IntDir>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+	  <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <BaseAddress>0x5A4C0000</BaseAddress>
+    </Link>
+  </ItemDefinitionGroup>
+  
+  <ItemGroup Condition="'$(UseASM)' == 'ASM'">
+    <MASM Include="..\..\..\third_party\zlib\contrib\masmx64\gvmat64.asm" Condition="$(IS_X64)">
+      <AssembledCodeListingFile>$(IntDir)gvmat64.lst</AssembledCodeListingFile>
+      <MASMBeforeTargets>Build</MASMBeforeTargets>
+      <ObjectFileName>$(IntDir)gvmat64.obj</ObjectFileName>
+    </MASM>
+    <MASM Include="..\..\..\third_party\zlib\contrib\masmx64\inffasx64.asm" Condition="$(IS_X64)">
+      <AssembledCodeListingFile>$(IntDir)inffasx64.lst</AssembledCodeListingFile>
+      <MASMBeforeTargets>Build</MASMBeforeTargets>
+      <ObjectFileName>$(IntDir)inffasx64.obj</ObjectFileName>
+    </MASM>
+    <MASM Include="..\..\..\third_party\zlib\contrib\masmx86\inffas32.asm" Condition="$(IS_X86) AND $(IS_STDCALL)">
+      <AssembledCodeListingFile>$(IntDir)inffas32.lst</AssembledCodeListingFile>
+      <MASMBeforeTargets>Build</MASMBeforeTargets>
+	  <UseSafeExceptionHandlers>true</UseSafeExceptionHandlers>
+      <AdditionalOptions>/coff %(AdditionalOptions)</AdditionalOptions>
+      <ObjectFileName>$(IntDir)inffas32.obj</ObjectFileName>
+    </MASM>
+    <MASM Include="..\..\..\third_party\zlib\contrib\masmx86\match686.asm" Condition="$(IS_X86) AND $(IS_STDCALL)">
+      <AssembledCodeListingFile>$(IntDir)match686.lst</AssembledCodeListingFile>
+      <MASMBeforeTargets>Build</MASMBeforeTargets>
+	  <UseSafeExceptionHandlers>true</UseSafeExceptionHandlers>
+      <AdditionalOptions>/coff %(AdditionalOptions)</AdditionalOptions>
+      <ObjectFileName>$(IntDir)match686.obj</ObjectFileName>
+    </MASM>
+  </ItemGroup>
+
+  <ItemGroup Label="C Source Files">
+    <!-- Include the source files to compile here -->
+    <!-- <ClCompile Include="..\src\foo.c" /> -->
+    <ClCompile Include="..\..\..\third_party\zlib\adler32.c" />
+    <ClCompile Include="..\..\..\third_party\zlib\compress.c" />
+    <ClCompile Include="..\..\..\third_party\zlib\crc32.c" />
+    <ClCompile Include="..\..\..\third_party\zlib\deflate.c" />
+    <ClCompile Include="..\..\..\third_party\zlib\gzclose.c" />
+    <ClCompile Include="..\..\..\third_party\zlib\gzlib.c" />
+    <ClCompile Include="..\..\..\third_party\zlib\gzread.c" />
+    <ClCompile Include="..\..\..\third_party\zlib\gzwrite.c" />
+    <ClCompile Include="..\..\..\third_party\zlib\infback.c" />
+    <ClCompile Include="..\..\..\third_party\zlib\contrib\masmx64\inffas8664.c" Condition="$(IS_X64)" />
+    <ClCompile Include="..\..\..\third_party\zlib\inffast.c" />
+    <ClCompile Include="..\..\..\third_party\zlib\inflate.c" />
+    <ClCompile Include="..\..\..\third_party\zlib\inftrees.c" />
+    <ClCompile Include="..\..\..\third_party\zlib\trees.c" />
+    <ClCompile Include="..\..\..\third_party\zlib\uncompr.c" />
+    <ClCompile Include="..\..\..\third_party\zlib\zutil.c" />
+  </ItemGroup>
+
+  <ItemGroup Label="Resource Files">
+    <!-- Include the source files to compile here -->
+    <!-- <ResourceCompile Include="..\src\foo.rc" /> -->
+    <ResourceCompile Include="..\..\..\third_party\zlib\win32\zlib1.rc" />
+  </ItemGroup>
+
+  <Import Condition="'$(UseASM)' == 'ASM'" Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
+  <Import Condition="Exists('$(CoAppEtcDirectory)\common-footer.vcxproj')" Project="$(CoAppEtcDirectory)\common-footer.vcxproj" />
+</Project>

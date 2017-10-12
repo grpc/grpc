@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\bad_client\tests\window_overflow.c">
+      <Filter>test\core\bad_client\tests</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{c270dcf6-4757-dece-6b4b-d6dbec5ba9bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{398af61c-4b69-7c31-c998-87171592d8d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\bad_client">
+      <UniqueIdentifier>{d33ad218-2037-5421-b068-3223bb97034d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\bad_client\tests">
+      <UniqueIdentifier>{4464f56e-aa09-7c83-5889-35a0644fab2f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

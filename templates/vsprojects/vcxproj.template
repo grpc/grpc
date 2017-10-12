@@ -1,0 +1,20 @@
+%YAML 1.2
+---
+foreach: vsprojects
+output_name: ${selected.vs_proj_dir}/${selected.name}/${selected.name}.vcxproj
+cond: selected.build not in ['fuzzer']
+template: |
+  <%namespace file="vcxproj_defs.include" import="gen_project"/>\
+  ${gen_project(selected.name, vsprojects)}
+---
+foreach: vsprojects
+output_name: ${selected.vs_proj_dir}/${selected.name}/${selected.name}.vcxproj.filters
+cond: selected.build not in ['fuzzer']
+template: |
+  <%namespace file="vcxproj.filters_defs.include" import="gen_filters"/>\
+  ${gen_filters(selected.name, vsprojects)}
+---
+output_name: grpc/packages.config
+template: |
+  <%namespace file="packages.include" import="gen_packages_config"/>\
+  ${gen_packages_config('all')}

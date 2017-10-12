@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\echo_messages.proto">
+      <Filter>src\proto\grpc\testing</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\echo.proto">
+      <Filter>src\proto\grpc\testing</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\server\server_request_call_test.cc">
+      <Filter>test\cpp\server</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{48583c1d-014b-ecf7-ece7-98145537c913}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto">
+      <UniqueIdentifier>{f931e5e2-7d0e-a8d9-b072-1ed8095387a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc">
+      <UniqueIdentifier>{55f7d797-a139-d9c5-8cc3-7fde09c1d28b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\testing">
+      <UniqueIdentifier>{1b39e313-5219-fbc1-9d88-9154b406e4ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test">
+      <UniqueIdentifier>{613e68e0-6bd4-3936-f8c2-34e255688225}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{871d6909-5ab9-336d-41ea-380563fcd3b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\server">
+      <UniqueIdentifier>{4939f87e-df84-7c23-cd10-c23c06c72683}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

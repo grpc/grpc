@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\ext\proto_server_reflection.cc">
+      <Filter>src\cpp\ext</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\ext\proto_server_reflection_plugin.cc">
+      <Filter>src\cpp\ext</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\reflection\v1alpha\reflection.proto">
+      <Filter>src\proto\grpc\reflection\v1alpha</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\ext\proto_server_reflection_plugin.h">
+      <Filter>include\grpc++\ext</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\ext\proto_server_reflection.h">
+      <Filter>src\cpp\ext</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{e9441021-f78a-ec84-7efd-1883975feddb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++">
+      <UniqueIdentifier>{c66e66b4-a64e-79bf-40e8-1a1bac124a3d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++\ext">
+      <UniqueIdentifier>{8d96203b-d3ce-2164-74a6-06e0ff2b09af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{5ec5476e-3d72-e3f9-4f05-3f7c31c13651}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\cpp">
+      <UniqueIdentifier>{a642ac8e-cec2-35d3-9a8a-78313d03b440}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\cpp\ext">
+      <UniqueIdentifier>{d0204618-0f6a-dbc6-cf41-ffc04e76075a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto">
+      <UniqueIdentifier>{728e13e3-db36-9633-3cb9-a74c0f11470d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc">
+      <UniqueIdentifier>{b49296ac-bc15-94ec-012b-5f8fe2ce2c1f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\reflection">
+      <UniqueIdentifier>{d980f473-6242-4a95-556a-7d4c6d6a2a00}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\reflection\v1alpha">
+      <UniqueIdentifier>{8c7d8658-ade7-6086-0e04-7e00380ddccf}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

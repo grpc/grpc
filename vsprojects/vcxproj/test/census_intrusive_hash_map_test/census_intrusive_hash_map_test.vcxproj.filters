@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\census\intrusive_hash_map_test.c">
+      <Filter>test\core\census</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{24bfacc6-bd89-4cdf-4183-3ff53180fa48}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{71b1debf-71c7-c1e9-9e01-21330ede0d7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\census">
+      <UniqueIdentifier>{0228063a-a601-967e-27ed-9f6197cb3629}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

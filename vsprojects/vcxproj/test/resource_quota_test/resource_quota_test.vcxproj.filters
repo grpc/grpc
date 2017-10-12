@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\iomgr\resource_quota_test.c">
+      <Filter>test\core\iomgr</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{06783e32-dbf0-7e7c-7b50-12b278f9cc12}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{c4f432b6-577b-e3ed-fec9-a915af5ebbd5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\iomgr">
+      <UniqueIdentifier>{fcc82d68-ffb2-0843-83aa-175006c43aeb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

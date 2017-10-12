@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\iomgr\tcp_server_uv_test.c">
+      <Filter>test\core\iomgr</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{848adafa-e931-cd69-49b3-483f9e8dbf77}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{3f3b9db4-63ef-fe87-8ef8-7048b510b224}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\iomgr">
+      <UniqueIdentifier>{cab05942-2e34-7335-58d0-f40c4db9d3ca}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

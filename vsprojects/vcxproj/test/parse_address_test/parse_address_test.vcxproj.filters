@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\client_channel\parse_address_test.c">
+      <Filter>test\core\client_channel</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{1613c595-3fdf-b7ab-6d5f-667bbd7eefc7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{cdfde21c-75c2-08ee-3d98-8ca67b5c31e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\client_channel">
+      <UniqueIdentifier>{60d8328d-ca06-b3cf-cf1d-889b6677def1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

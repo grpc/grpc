@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\transport\stream_owned_slice_test.c">
+      <Filter>test\core\transport</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{5606d0c3-ce6d-0d92-aaa6-4cba3360af30}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{c89700dc-cc90-bd03-00e7-36ee75d20c07}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\transport">
+      <UniqueIdentifier>{faebe48f-9338-a5a4-439d-9f307d0b843b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
