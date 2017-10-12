@@ -50,6 +50,8 @@ static void destroy_thread(struct thd_info *t) {
   gpr_free(t);
 }
 
+void gpr_thd_init(void) {}
+
 /* Body of every thread started via gpr_thd_new. */
 static DWORD WINAPI thread_body(void *v) {
   g_thd_info = (struct thd_info *)v;
