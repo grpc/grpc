@@ -43,7 +43,7 @@ int grpc_compression_algorithm_parse_ruby(
 }
 
 int grpc_compression_algorithm_name_ruby(grpc_compression_algorithm algorithm,
-                                    const char **name) {
+                                         const char **name) {
   GRPC_API_TRACE("grpc_compression_algorithm_parse(algorithm=%d, name=%p)", 2,
                  ((int)algorithm, name));
   switch (algorithm) {
