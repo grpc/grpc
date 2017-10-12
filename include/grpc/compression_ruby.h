@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_COMPRESSION_H
-#define GRPC_COMPRESSION_H
+#ifndef GRPC_COMPRESSION_RUBY_H
+#define GRPC_COMPRESSION_RUBY_H
 
 #include <grpc/impl/codegen/port_platform.h>
 
@@ -45,4 +45,4 @@ GRPCAPI int grpc_compression_algorithm_name_ruby(
 }
 #endif
 
-#endif /* GRPC_COMPRESSION_H */
+#endif /* GRPC_COMPRESSION_RUBY_H */
