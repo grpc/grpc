@@ -1,4 +1,4 @@
 %YAML 1.2
 --- |
   <%namespace file="resolver_gce_integration_tests_runner_defs.include" import="*"/>\
-  ${resolver_gce_integration_tests_runner(resolver_gce_integration_test_cases, all_integration_test_record_names, resolver_tests_common_zone_name)}
+  ${resolver_gce_integration_tests_runner(resolver_gce_integration_test_cases, integration_test_record_names, resolver_tests_common_zone_name)}

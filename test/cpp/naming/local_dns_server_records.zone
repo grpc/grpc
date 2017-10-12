@@ -51,6 +51,9 @@ ipv4-config-causing-fallback-to-tcp.resolver-tests-version-2.grpctestingexp.    
     tForReady":true},{"name":[{"method":"FooTen","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooEleven","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true},{
     "name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true}]}}]
 )
-dummy-soa-record.resolver-tests-version-2.grpctestingexp.                                                                       0       IN  SOA     dummy-master-server.com. dummy-admin-address.com 0 0 0 0 0
+resolver-tests-version-2.grpctestingexp.                                                                                        0       IN  SOA     ns1.resolver-tests-version-2.grpctestingexp. dummy-admin-address.com 0 0 0 0 0
+resolver-tests-version-2.grpctestingexp.                                                                                        0       IN  NS      ns1.resolver-tests-version-2.grpctestingexp.
+ns1.resolver-tests-version-2.grpctestingexp.                                                                                    0       IN  A       127.0.0.1
+ns1.resolver-tests-version-2.grpctestingexp.                                                                                    0       IN  AAAA    ::1
 dummy-health-check.resolver-tests-version-2.grpctestingexp.                                                                     0       IN  A       123.123.123.123
 

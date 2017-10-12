@@ -21,7 +21,7 @@ import json
 import argparse
 
 def convert_service_config_to_txt_data(service_config_json_path,
-                                       use_gcloud_format):
+                                       format_style):
   with open(service_config_json_path) as service_config_json_in:
     r_data = json.dumps(json.load(service_config_json_in))
     r_data = r_data.replace(' ', '').replace('\n', '')
@@ -31,13 +31,13 @@ def convert_service_config_to_txt_data(service_config_json_path,
     while len(r_data[cur:]) > 0:
       next_chunk = ''
       while len(next_chunk) < 255 and len(r_data[cur:]) > 0:
-        if r_data[cur] == '"' and use_gcloud_format:
+        if r_data[cur] == '"': and format_style in ['gcloud', 'bind9']:
           # Observably, gcloud requires quotation marks within TXT
           # strings to be escaped, and the backslashes used for
           # escaping are added towards the single-string 255 character
           # limit. However, twisted BindAuthority requires that inner
           # quotation marks are not escaped.
-          to_add = '\\\"'
+          to_add = '\\"'
           while len(to_add) > 0:
             if len(next_chunk) == 255:
               chunks.append(next_chunk)
@@ -53,14 +53,16 @@ def convert_service_config_to_txt_data(service_config_json_path,
       if len(c) > 255:
         raise Exception(('Bug: TXT string is > 255 character length limit. '
                          'Length: %s' % len(c)))
-      if use_gcloud_format:
+      if format_style == 'gcloud':
         # Observably, gcloud dns zone file parser also requires that
         # "inner" backslashes and "inner" quotation marks themselves
         # be escaped, and it also requires that each "TXT string" be
         # wrapped in quotation marks. But the "outer quotation marks"
         # and "outer backslashes" are not counted towards the
         # single-string 255 character limit.
-        c = '\"%s\"' % c.replace('\\\"', '\\\\\\\"')
+        c = c.replace('\\"', '\\\\\\"')
+      if format_style in ['gcloud', 'bind9']:
+        c = '\"%s\"' % c
       out += '    %s\n' % c
     out += ')'
     return out
@@ -73,12 +75,13 @@ def main():
                     type=str,
                     help=('Path to a JSON file containing a grpc '
                           'service config.'))
-  argp.add_argument('-g', '--use_gcloud_format',
-                    default=False,
-                    action='store_const',
-                    const=True,
-                    help=('Create the TXT record data in a format that '
-                          'is suitable for upload to GCE DNS'))
+  argp.add_argument('-f', '--format',
+                  choices=['gcloud', 'bind9', 'twisted'],
+                  nargs='+',
+                  default=['twisted'])
+                  help=('Create the TXT record data in a format that '
+                        'is suitable for a particular server '
+                        'or zone-file-parser'))
   args = argp.parse_args()
   out = convert_service_config_to_txt_data(args.service_config_json_path,
                                            args.use_gcloud_format)

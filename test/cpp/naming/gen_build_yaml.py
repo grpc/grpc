@@ -137,10 +137,25 @@ def get_record_names_and_types_from_zone_file_lines(zone_file_lines):
 def _auxiliary_records_for_local_dns_server(common_zone_name):
   return [
       _create_bind_format_line(
-          'dummy-soa-record.%s' % common_zone_name,
+          common_zone_name,
           '0',
           'SOA',
-          'dummy-master-server.com. dummy-admin-address.com 0 0 0 0 0'),
+          'ns1.%s dummy-admin-address.com 0 0 0 0 0' % common_zone_name),
+      _create_bind_format_line(
+          common_zone_name,
+          '0',
+          'NS',
+          'ns1.%s' % common_zone_name),
+      _create_bind_format_line(
+          'ns1.%s' % common_zone_name,
+          '0',
+          'A',
+          '127.0.0.1'),
+      _create_bind_format_line(
+          'ns1.%s' % common_zone_name,
+          '0',
+          'AAAA',
+          '::1'),
       _create_bind_format_line(
           '%s.%s' % (_SERVER_HEALTH_CHECK_RECORD_NAME, common_zone_name),
           '0',
@@ -173,14 +188,14 @@ def main():
   resolver_component_data = ''
   with open('test/cpp/naming/resolver_test_record_groups.yaml') as f:
     resolver_component_data = yaml.load(f)
-  all_integration_test_records = _bind_zone_file_lines(
+  integration_test_zone_file_entries = _bind_zone_file_lines(
       resolver_component_data['resolver_component_tests'],
       resolver_component_data['resolver_tests_common_zone_name'],
       True)
-  all_integration_test_record_names = \
+  integration_test_record_names = \
       get_record_names_and_types_from_zone_file_lines(
-      all_integration_test_records)
-  all_local_dns_server_test_records = _bind_zone_file_lines(
+      integration_test_zone_file_entries)
+  local_dns_server_test_zone_file_entries = _bind_zone_file_lines(
       resolver_component_data['resolver_component_tests'],
       resolver_component_data['resolver_tests_common_zone_name'],
       False) + _auxiliary_records_for_local_dns_server(
@@ -191,10 +206,10 @@ def main():
       'resolver_tests_common_zone_name': common_zone_name,
       'resolver_gce_integration_tests_zone_id': \
           _gce_dns_zone_id(resolver_component_data),
-      'all_integration_test_records': all_integration_test_records,
-      'all_local_dns_server_test_records': \
-          all_local_dns_server_test_records,
-      'all_integration_test_record_names': all_integration_test_record_names,
+      'integration_test_zone_file_entries': integration_test_zone_file_entries,
+      'local_dns_server_test_zone_file_entries': \
+          local_dns_server_test_zone_file_entries,
+      'integration_test_record_names': integration_test_record_names,
       'resolver_gce_integration_test_cases': _resolver_test_cases(
           resolver_component_data, _TARGET_RECORDS_TO_SKIP_AGAINST_GCE),
       'resolver_component_test_cases': _resolver_test_cases(
