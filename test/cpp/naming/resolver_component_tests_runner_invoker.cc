@@ -107,8 +107,8 @@ void InvokeResolverComponentTestsRunner(
   SubProcess *test_driver = new SubProcess(
       {test_runner_bin_path, "--test_bin_path=" + test_bin_path,
        "--dns_server_bin_path=" + dns_server_bin_path,
-       "--test_dns_server_port=" + std::to_string(test_dns_server_port),
-       "--zone_file_path=" + zone_file_path});
+       "--zone_file_path=" + zone_file_path,
+       "--test_dns_server_port=" + std::to_string(test_dns_server_port)});
   gpr_mu test_driver_mu;
   gpr_mu_init(&test_driver_mu);
   gpr_cv test_driver_cv;

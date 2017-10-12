@@ -20,13 +20,13 @@ set -ex
 # all command args required in this set order
 FLAGS_test_bin_path=`echo "$1" | grep '\--test_bin_path=' | cut -d "=" -f 2`
 FLAGS_dns_server_bin_path=`echo "$2" | grep '\--dns_server_bin_path=' | cut -d "=" -f 2`
-FLAGS_test_dns_server_port=`echo "$3" | grep '\--test_dns_server_port=' | cut -d "=" -f 2`
-FLAGS_zone_file_path=`echo "$4" | grep '\--zone_file_path=' | cut -d "=" -f 2`
+FLAGS_zone_file_path=`echo "$3" | grep '\--zone_file_path=' | cut -d "=" -f 2`
+FLAGS_test_dns_server_port=`echo "$4" | grep '\--test_dns_server_port=' | cut -d "=" -f 2`
 
 for cmd_arg in "$FLAGS_test_bin_path"\
                "$FLAGS_dns_server_bin_path"\
-               "$FLAGS_test_dns_server_port"\
-               "$FLAGS_zone_file_path" ; do
+               "$FLAGS_zone_file_path"\
+               "$FLAGS_test_dns_server_port" ; do
   if [[ "$cmd_arg" == "" ]]; then
     echo "Missing a CMD arg" && exit 1
   fi

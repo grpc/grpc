@@ -200,10 +200,9 @@ def main():
       resolver_component_data['resolver_tests_common_zone_name'],
       False) + _auxiliary_records_for_local_dns_server(
           resolver_component_data['resolver_tests_common_zone_name'])
-  common_zone_name = \
-      resolver_component_data['resolver_tests_common_zone_name']
   json_out = {
-      'resolver_tests_common_zone_name': common_zone_name,
+      'resolver_tests_common_zone_name': \
+          resolver_component_data['resolver_tests_common_zone_name'],
       'resolver_gce_integration_tests_zone_id': \
           _gce_dns_zone_id(resolver_component_data),
       'integration_test_zone_file_entries': integration_test_zone_file_entries,
