@@ -4403,6 +4403,26 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+- name: qps_openloop_600_channel_300B_req_50B_resp_test
+  cpu_cost: 0.5
+  build: test
+  language: c++
+  src:
+  - test/cpp/qps/qps_openloop_600_channel_300B_req_50B_resp_test.cc
+  deps:
+  - qps
+  - grpc++_core_stats
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: qps_openloop_test
   cpu_cost: 0.5
   build: test

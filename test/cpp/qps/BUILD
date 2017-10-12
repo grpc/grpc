@@ -165,6 +165,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "qps_openloop_600_channel_300B_req_50B_resp_test",
+    srcs = ["qps_openloop_600_channel_300B_req_50B_resp_test.cc"],
+    deps = [
+        ":benchmark_config",
+        ":driver_impl",
+        ":qps_worker_impl",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "secure_sync_unary_ping_pong_test",
     srcs = ["secure_sync_unary_ping_pong_test.cc"],
     deps = [

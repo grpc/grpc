@@ -1161,6 +1161,7 @@ proto_server_reflection_test: $(BINDIR)/$(CONFIG)/proto_server_reflection_test
 proto_utils_test: $(BINDIR)/$(CONFIG)/proto_utils_test
 qps_interarrival_test: $(BINDIR)/$(CONFIG)/qps_interarrival_test
 qps_json_driver: $(BINDIR)/$(CONFIG)/qps_json_driver
+qps_openloop_600_channel_300B_req_50B_resp_test: $(BINDIR)/$(CONFIG)/qps_openloop_600_channel_300B_req_50B_resp_test
 qps_openloop_test: $(BINDIR)/$(CONFIG)/qps_openloop_test
 qps_worker: $(BINDIR)/$(CONFIG)/qps_worker
 reconnect_interop_client: $(BINDIR)/$(CONFIG)/reconnect_interop_client
@@ -1598,6 +1599,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/proto_utils_test \
   $(BINDIR)/$(CONFIG)/qps_interarrival_test \
   $(BINDIR)/$(CONFIG)/qps_json_driver \
+  $(BINDIR)/$(CONFIG)/qps_openloop_600_channel_300B_req_50B_resp_test \
   $(BINDIR)/$(CONFIG)/qps_openloop_test \
   $(BINDIR)/$(CONFIG)/qps_worker \
   $(BINDIR)/$(CONFIG)/reconnect_interop_client \
@@ -1719,6 +1721,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/proto_utils_test \
   $(BINDIR)/$(CONFIG)/qps_interarrival_test \
   $(BINDIR)/$(CONFIG)/qps_json_driver \
+  $(BINDIR)/$(CONFIG)/qps_openloop_600_channel_300B_req_50B_resp_test \
   $(BINDIR)/$(CONFIG)/qps_openloop_test \
   $(BINDIR)/$(CONFIG)/qps_worker \
   $(BINDIR)/$(CONFIG)/reconnect_interop_client \
@@ -2126,6 +2129,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/proto_server_reflection_test || ( echo test proto_server_reflection_test failed ; exit 1 )
 	$(E) "[RUN]     Testing proto_utils_test"
 	$(Q) $(BINDIR)/$(CONFIG)/proto_utils_test || ( echo test proto_utils_test failed ; exit 1 )
+	$(E) "[RUN]     Testing qps_openloop_600_channel_300B_req_50B_resp_test"
+	$(Q) $(BINDIR)/$(CONFIG)/qps_openloop_600_channel_300B_req_50B_resp_test || ( echo test qps_openloop_600_channel_300B_req_50B_resp_test failed ; exit 1 )
 	$(E) "[RUN]     Testing qps_openloop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/qps_openloop_test || ( echo test qps_openloop_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_auth_context_test"
@@ -16309,6 +16314,49 @@ deps_qps_json_driver: $(QPS_JSON_DRIVER_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(QPS_JSON_DRIVER_OBJS:.o=.dep)
+endif
+endif
+
+
+QPS_OPENLOOP_600_CHANNEL_300B_REQ_50B_RESP_TEST_SRC = \
+    test/cpp/qps/qps_openloop_600_channel_300B_req_50B_resp_test.cc \
+
+QPS_OPENLOOP_600_CHANNEL_300B_REQ_50B_RESP_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(QPS_OPENLOOP_600_CHANNEL_300B_REQ_50B_RESP_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/qps_openloop_600_channel_300B_req_50B_resp_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/qps_openloop_600_channel_300B_req_50B_resp_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/qps_openloop_600_channel_300B_req_50B_resp_test: $(PROTOBUF_DEP) $(QPS_OPENLOOP_600_CHANNEL_300B_REQ_50B_RESP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(QPS_OPENLOOP_600_CHANNEL_300B_REQ_50B_RESP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/qps_openloop_600_channel_300B_req_50B_resp_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_openloop_600_channel_300B_req_50B_resp_test.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_qps_openloop_600_channel_300B_req_50B_resp_test: $(QPS_OPENLOOP_600_CHANNEL_300B_REQ_50B_RESP_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(QPS_OPENLOOP_600_CHANNEL_300B_REQ_50B_RESP_TEST_OBJS:.o=.dep)
 endif
 endif
 
