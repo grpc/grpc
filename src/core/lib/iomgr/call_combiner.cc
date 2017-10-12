@@ -21,6 +21,7 @@
 #include <inttypes.h>
 
 #include <grpc/support/log.h>
+#include "src/core/lib/debug/stats.h"
 
 grpc_tracer_flag grpc_call_combiner_trace =
     GRPC_TRACER_INITIALIZER(false, "call_combiner");
@@ -73,7 +74,9 @@ void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
     gpr_log(GPR_DEBUG, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
             prev_size + 1);
   }
+  GRPC_STATS_INC_CALL_COMBINER_LOCKS_SCHEDULED_ITEMS(exec_ctx);
   if (prev_size == 0) {
+    GRPC_STATS_INC_CALL_COMBINER_LOCKS_INITIATED(exec_ctx);
     if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
       gpr_log(GPR_DEBUG, "  EXECUTING IMMEDIATELY");
     }
@@ -135,6 +138,7 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
 void grpc_call_combiner_set_notify_on_cancel(grpc_exec_ctx* exec_ctx,
                                              grpc_call_combiner* call_combiner,
                                              grpc_closure* closure) {
+  GRPC_STATS_INC_CALL_COMBINER_SET_NOTIFY_ON_CANCEL(exec_ctx);
   while (true) {
     // Decode original state.
     gpr_atm original_state = gpr_atm_acq_load(&call_combiner->cancel_state);
@@ -179,6 +183,7 @@ void grpc_call_combiner_set_notify_on_cancel(grpc_exec_ctx* exec_ctx,
 void grpc_call_combiner_cancel(grpc_exec_ctx* exec_ctx,
                                grpc_call_combiner* call_combiner,
                                grpc_error* error) {
+  GRPC_STATS_INC_CALL_COMBINER_CANCELLED(exec_ctx);
   while (true) {
     gpr_atm original_state = gpr_atm_acq_load(&call_combiner->cancel_state);
     grpc_error* original_error = decode_cancel_state_error(original_state);
