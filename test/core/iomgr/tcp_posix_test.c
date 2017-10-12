@@ -89,7 +89,7 @@ static ssize_t fill_socket(int fd) {
 static size_t fill_socket_partial(int fd, size_t bytes) {
   ssize_t write_bytes;
   size_t total_bytes = 0;
-  unsigned char *buf = gpr_malloc(bytes);
+  unsigned char *buf = (unsigned char *)gpr_malloc(bytes);
   unsigned i;
   for (i = 0; i < bytes; ++i) {
     buf[i] = (uint8_t)(i % 256);
@@ -147,7 +147,8 @@ static void read_cb(grpc_exec_ctx *exec_ctx, void *user_data,
   gpr_log(GPR_INFO, "Read %" PRIuPTR " bytes of %" PRIuPTR, read_bytes,
           state->target_read_bytes);
   if (state->read_bytes >= state->target_read_bytes) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, NULL)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("kick",
+                                 grpc_pollset_kick(exec_ctx, g_pollset, NULL)));
     gpr_mu_unlock(g_mu);
   } else {
     grpc_endpoint_read(exec_ctx, state->ep, &state->incoming, &state->read_cb);
@@ -161,7 +162,8 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   grpc_endpoint *ep;
   struct read_socket_state state;
   size_t written_bytes;
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(20);
+  grpc_millis deadline =
+      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log(GPR_INFO, "Read test of size %" PRIuPTR ", slice size %" PRIuPTR,
@@ -193,8 +195,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
     grpc_pollset_worker *worker = NULL;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
-        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                          gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(g_mu);
@@ -214,7 +215,8 @@ static void large_read_test(size_t slice_size) {
   grpc_endpoint *ep;
   struct read_socket_state state;
   ssize_t written_bytes;
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(20);
+  grpc_millis deadline =
+      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log(GPR_INFO, "Start large read test, slice size %" PRIuPTR, slice_size);
@@ -245,8 +247,7 @@ static void large_read_test(size_t slice_size) {
     grpc_pollset_worker *worker = NULL;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
-        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                          gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(g_mu);
@@ -267,7 +268,7 @@ struct write_socket_state {
 static grpc_slice *allocate_blocks(size_t num_bytes, size_t slice_size,
                                    size_t *num_blocks, uint8_t *current_data) {
   size_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1u : 0u);
-  grpc_slice *slices = gpr_malloc(sizeof(grpc_slice) * nslices);
+  grpc_slice *slices = (grpc_slice *)gpr_malloc(sizeof(grpc_slice) * nslices);
   size_t num_bytes_left = num_bytes;
   unsigned i, j;
   unsigned char *buf;
@@ -295,13 +296,13 @@ static void write_done(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(g_mu);
   gpr_log(GPR_INFO, "Signalling write done");
   state->write_done = 1;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(exec_ctx, g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 
 void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
-  unsigned char *buf = gpr_malloc(read_size);
+  unsigned char *buf = (unsigned char *)gpr_malloc(read_size);
   ssize_t bytes_read;
   size_t bytes_left = num_bytes;
   int flags;
@@ -318,8 +319,8 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                          gpr_now(GPR_CLOCK_MONOTONIC),
-                          grpc_timeout_milliseconds_to_deadline(10))));
+                          grpc_timespec_to_millis_round_up(
+                              grpc_timeout_milliseconds_to_deadline(10)))));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     do {
@@ -352,7 +353,8 @@ static void write_test(size_t num_bytes, size_t slice_size) {
   uint8_t current_data = 0;
   grpc_slice_buffer outgoing;
   grpc_closure write_done_closure;
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(20);
+  grpc_millis deadline =
+      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log(GPR_INFO,
@@ -389,8 +391,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
     }
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
-        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                          gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(g_mu);
@@ -404,10 +405,10 @@ static void write_test(size_t num_bytes, size_t slice_size) {
 }
 
 void on_fd_released(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *errors) {
-  int *done = arg;
+  int *done = (int *)arg;
   *done = 1;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(exec_ctx, g_pollset, NULL)));
 }
 
 /* Do a read_test, then release fd and try to read/write again. Verify that
@@ -418,7 +419,8 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   struct read_socket_state state;
   size_t written_bytes;
   int fd;
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(20);
+  grpc_millis deadline =
+      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure fd_released_cb;
   int fd_released_done = 0;
@@ -456,8 +458,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
     grpc_pollset_worker *worker = NULL;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
-        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                          gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker, deadline)));
     gpr_log(GPR_DEBUG, "wakeup: read=%" PRIdPTR " target=%" PRIdPTR,
             state.read_bytes, state.target_read_bytes);
     gpr_mu_unlock(g_mu);
@@ -475,8 +476,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
     grpc_pollset_worker *worker = NULL;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
-        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                          gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker, deadline)));
     gpr_log(GPR_DEBUG, "wakeup: fd_released_done=%d", fd_released_done);
   }
   gpr_mu_unlock(g_mu);
@@ -548,7 +548,7 @@ static grpc_endpoint_test_config configs[] = {
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
                             grpc_error *error) {
-  grpc_pollset_destroy(exec_ctx, p);
+  grpc_pollset_destroy(exec_ctx, (grpc_pollset *)p);
 }
 
 int main(int argc, char **argv) {
@@ -556,7 +556,7 @@ int main(int argc, char **argv) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
   grpc_init();
-  g_pollset = gpr_zalloc(grpc_pollset_size());
+  g_pollset = (grpc_pollset *)gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(g_pollset, &g_mu);
   grpc_endpoint_tests(configs[0], g_pollset, g_mu);
   run_tests();

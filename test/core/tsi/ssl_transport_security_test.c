@@ -23,7 +23,9 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/transport/security_connector.h"
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_adapter.h"
+#include "src/core/tsi/transport_security_interface.h"
 #include "test/core/tsi/transport_security_test_lib.h"
 #include "test/core/util/test_config.h"
 
@@ -312,10 +314,10 @@ static void ssl_test_destruct(tsi_test_fixture *fixture) {
       key_cert_lib->bad_client_pem_key_cert_pair);
   gpr_free(key_cert_lib->root_cert);
   gpr_free(key_cert_lib);
-  /* Destroy others. */
-  tsi_ssl_server_handshaker_factory_destroy(
+  /* Unreference others. */
+  tsi_ssl_server_handshaker_factory_unref(
       ssl_fixture->server_handshaker_factory);
-  tsi_ssl_client_handshaker_factory_destroy(
+  tsi_ssl_client_handshaker_factory_unref(
       ssl_fixture->client_handshaker_factory);
 }
 
@@ -536,6 +538,118 @@ void ssl_tsi_test_do_round_trip_odd_buffer_size() {
   }
 }
 
+static const tsi_ssl_handshaker_factory_vtable *original_vtable;
+static bool handshaker_factory_destructor_called;
+
+static void ssl_tsi_test_handshaker_factory_destructor(
+    tsi_ssl_handshaker_factory *factory) {
+  GPR_ASSERT(factory != NULL);
+  handshaker_factory_destructor_called = true;
+  if (original_vtable != NULL && original_vtable->destroy != NULL) {
+    original_vtable->destroy(factory);
+  }
+}
+
+static tsi_ssl_handshaker_factory_vtable test_handshaker_factory_vtable = {
+    ssl_tsi_test_handshaker_factory_destructor};
+
+void test_tsi_ssl_client_handshaker_factory_refcounting() {
+  int i;
+  const char *cert_chain =
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "client.pem");
+
+  tsi_ssl_client_handshaker_factory *client_handshaker_factory;
+  GPR_ASSERT(tsi_create_ssl_client_handshaker_factory(
+                 NULL, cert_chain, NULL, NULL, 0, &client_handshaker_factory) ==
+             TSI_OK);
+
+  handshaker_factory_destructor_called = false;
+  original_vtable = tsi_ssl_handshaker_factory_swap_vtable(
+      (tsi_ssl_handshaker_factory *)client_handshaker_factory,
+      &test_handshaker_factory_vtable);
+
+  tsi_handshaker *handshaker[3];
+
+  for (i = 0; i < 3; ++i) {
+    GPR_ASSERT(tsi_ssl_client_handshaker_factory_create_handshaker(
+                   client_handshaker_factory, "google.com", &handshaker[i]) ==
+               TSI_OK);
+  }
+
+  tsi_handshaker_destroy(handshaker[1]);
+  GPR_ASSERT(!handshaker_factory_destructor_called);
+
+  tsi_handshaker_destroy(handshaker[0]);
+  GPR_ASSERT(!handshaker_factory_destructor_called);
+
+  tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
+  GPR_ASSERT(!handshaker_factory_destructor_called);
+
+  tsi_handshaker_destroy(handshaker[2]);
+  GPR_ASSERT(handshaker_factory_destructor_called);
+
+  gpr_free((void *)cert_chain);
+}
+
+void test_tsi_ssl_server_handshaker_factory_refcounting() {
+  int i;
+  tsi_ssl_server_handshaker_factory *server_handshaker_factory;
+  tsi_handshaker *handshaker[3];
+  const char *cert_chain =
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "server0.pem");
+  tsi_ssl_pem_key_cert_pair cert_pair;
+
+  cert_pair.cert_chain = cert_chain;
+  cert_pair.private_key =
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "server0.key");
+
+  GPR_ASSERT(tsi_create_ssl_server_handshaker_factory(
+                 &cert_pair, 1, cert_chain, 0, NULL, NULL, 0,
+                 &server_handshaker_factory) == TSI_OK);
+
+  handshaker_factory_destructor_called = false;
+  original_vtable = tsi_ssl_handshaker_factory_swap_vtable(
+      (tsi_ssl_handshaker_factory *)server_handshaker_factory,
+      &test_handshaker_factory_vtable);
+
+  for (i = 0; i < 3; ++i) {
+    GPR_ASSERT(tsi_ssl_server_handshaker_factory_create_handshaker(
+                   server_handshaker_factory, &handshaker[i]) == TSI_OK);
+  }
+
+  tsi_handshaker_destroy(handshaker[1]);
+  GPR_ASSERT(!handshaker_factory_destructor_called);
+
+  tsi_handshaker_destroy(handshaker[0]);
+  GPR_ASSERT(!handshaker_factory_destructor_called);
+
+  tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory);
+  GPR_ASSERT(!handshaker_factory_destructor_called);
+
+  tsi_handshaker_destroy(handshaker[2]);
+  GPR_ASSERT(handshaker_factory_destructor_called);
+
+  ssl_test_pem_key_cert_pair_destroy(cert_pair);
+}
+
+/* Attempting to create a handshaker factory with invalid parameters should fail
+ * but not crash. */
+void test_tsi_ssl_client_handshaker_factory_bad_params() {
+  const char *cert_chain = "This is not a valid PEM file.";
+
+  tsi_ssl_client_handshaker_factory *client_handshaker_factory;
+  GPR_ASSERT(tsi_create_ssl_client_handshaker_factory(
+                 NULL, cert_chain, NULL, NULL, 0, &client_handshaker_factory) ==
+             TSI_INVALID_ARGUMENT);
+  tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
+}
+
+void ssl_tsi_test_handshaker_factory_internals() {
+  test_tsi_ssl_client_handshaker_factory_refcounting();
+  test_tsi_ssl_server_handshaker_factory_refcounting();
+  test_tsi_ssl_client_handshaker_factory_bad_params();
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
@@ -553,6 +667,7 @@ int main(int argc, char **argv) {
   ssl_tsi_test_do_handshake_alpn_client_server_ok();
   ssl_tsi_test_do_round_trip_for_all_configs();
   ssl_tsi_test_do_round_trip_odd_buffer_size();
+  ssl_tsi_test_handshaker_factory_internals();
   grpc_shutdown();
   return 0;
 }

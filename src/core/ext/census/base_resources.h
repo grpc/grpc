@@ -18,7 +18,15 @@
 #ifndef GRPC_CORE_EXT_CENSUS_BASE_RESOURCES_H
 #define GRPC_CORE_EXT_CENSUS_BASE_RESOURCES_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Define all base resources. This should be called by census initialization. */
 void define_base_resources();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_CENSUS_BASE_RESOURCES_H */

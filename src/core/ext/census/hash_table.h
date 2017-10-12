@@ -23,6 +23,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* A chain based hash table with fixed number of buckets.
    Your probably shouldn't use this code directly. It is implemented for the
    use case in census trace store and stats store, where number of entries in
@@ -112,5 +116,9 @@ typedef void (*census_ht_itr_cb)(census_ht_key key, const void *val_ptr,
 /* Iterates through all key-value pairs in the hash_table. The callback function
    should not invalidate data entries. */
 uint64_t census_ht_for_all(const census_ht *ht, census_ht_itr_cb);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_CENSUS_HASH_TABLE_H */

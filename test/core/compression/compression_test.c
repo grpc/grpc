@@ -57,7 +57,7 @@ static void test_compression_algorithm_parse(void) {
 
 static void test_compression_algorithm_name(void) {
   int success;
-  char *name;
+  const char *name;
   size_t i;
   const char *valid_names[] = {"identity", "gzip", "deflate"};
   const grpc_compression_algorithm valid_algorithms[] = {

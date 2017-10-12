@@ -34,7 +34,7 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3.5',
     'Programming Language :: Python :: 3.6',
     'License :: OSI Approved :: Apache Software License',
-],
+]
 
 PACKAGE_DIRECTORIES = {
     '': '.',

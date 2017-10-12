@@ -21,9 +21,17 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Census filters: provides tracing and stats collection functionalities. It
    needs to reside right below the surface filter in the channel stack. */
 extern const grpc_channel_filter grpc_client_census_filter;
 extern const grpc_channel_filter grpc_server_census_filter;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_CENSUS_GRPC_FILTER_H */

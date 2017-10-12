@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
 #define MAX_FRAME_SIZE 16384
 #define MESSAGES_PER_FRAME (MAX_FRAME_SIZE / 5)
 #define FRAME_SIZE (MESSAGES_PER_FRAME * 5)
-#define SEND_SIZE (100 * 1024)
+#define SEND_SIZE (6 * 1024 * 1024)
 #define NUM_FRAMES (SEND_SIZE / FRAME_SIZE + 1)
   grpc_test_init(argc, argv);
 
@@ -90,7 +90,8 @@ int main(int argc, char **argv) {
       addbuf(message, sizeof(message));
     }
   }
-  grpc_run_bad_client_test(verifier, NULL, g_buffer, g_count, 0);
+  grpc_run_bad_client_test(verifier, NULL, g_buffer, g_count,
+                           GRPC_BAD_CLIENT_LARGE_REQUEST);
   gpr_free(g_buffer);
 
   return 0;

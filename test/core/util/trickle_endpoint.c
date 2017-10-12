@@ -128,7 +128,7 @@ static int te_get_fd(grpc_endpoint *ep) {
 
 static void te_finish_write(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_error *error) {
-  trickle_endpoint *te = arg;
+  trickle_endpoint *te = (trickle_endpoint *)arg;
   gpr_mu_lock(&te->mu);
   te->writing = false;
   grpc_slice_buffer_reset_and_unref(&te->writing_buffer);
@@ -142,7 +142,7 @@ static const grpc_endpoint_vtable vtable = {
 
 grpc_endpoint *grpc_trickle_endpoint_create(grpc_endpoint *wrap,
                                             double bytes_per_second) {
-  trickle_endpoint *te = gpr_malloc(sizeof(*te));
+  trickle_endpoint *te = (trickle_endpoint *)gpr_malloc(sizeof(*te));
   te->base.vtable = &vtable;
   te->wrapped = wrap;
   te->bytes_per_second = bytes_per_second;

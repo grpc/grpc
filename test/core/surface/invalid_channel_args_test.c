@@ -25,7 +25,7 @@
 #include "test/core/util/test_config.h"
 
 static char *g_last_log_error_message = NULL;
-static const char *g_file_name = "channel.c";
+static const char *g_file_name = "channel.cc";
 
 static int ends_with(const char *src, const char *suffix) {
   size_t src_len = strlen(src);

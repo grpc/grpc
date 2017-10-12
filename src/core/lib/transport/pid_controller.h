@@ -19,6 +19,10 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
 #define GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* \file Simple PID controller.
    Implements a proportional-integral-derivative controller.
    Used when we want to iteratively control a variable to converge some other
@@ -58,5 +62,9 @@ double grpc_pid_controller_update(grpc_pid_controller *pid_controller,
 
 /** Returns the last control value calculated */
 double grpc_pid_controller_last(grpc_pid_controller *pid_controller);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H */

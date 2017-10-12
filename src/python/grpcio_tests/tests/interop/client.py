@@ -19,7 +19,7 @@ import os
 from google import auth as google_auth
 from google.auth import jwt as google_auth_jwt
 import grpc
-from src.proto.grpc.testing import test_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 
 from tests.interop import methods
 from tests.interop import resources
@@ -106,9 +106,9 @@ def _stub(args):
     else:
         channel = grpc.insecure_channel(target)
     if args.test_case == "unimplemented_service":
-        return test_pb2.UnimplementedServiceStub(channel)
+        return test_pb2_grpc.UnimplementedServiceStub(channel)
     else:
-        return test_pb2.TestServiceStub(channel)
+        return test_pb2_grpc.TestServiceStub(channel)
 
 
 def _test_case_from_arg(test_case_arg):

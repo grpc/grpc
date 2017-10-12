@@ -90,6 +90,54 @@ namespace Grpc.IntegrationTesting
         }
 
         [Test]
+        public async Task MetadataCredentials_Composed()
+        {
+            var first = CallCredentials.FromInterceptor(new AsyncAuthInterceptor((context, metadata) => {
+                // Attempt to exercise the case where async callback is inlineable/synchronously-runnable.
+                metadata.Add("first_authorization", "FIRST_SECRET_TOKEN");
+                return TaskUtils.CompletedTask;
+            }));
+            var second = CallCredentials.FromInterceptor(new AsyncAuthInterceptor((context, metadata) => {
+                metadata.Add("second_authorization", "SECOND_SECRET_TOKEN");
+                return TaskUtils.CompletedTask;
+            }));
+            var third = CallCredentials.FromInterceptor(new AsyncAuthInterceptor((context, metadata) => {
+                metadata.Add("third_authorization", "THIRD_SECRET_TOKEN");
+                return TaskUtils.CompletedTask;
+            }));
+            var channelCredentials = ChannelCredentials.Create(TestCredentials.CreateSslCredentials(),
+                CallCredentials.Compose(first, second, third));
+            channel = new Channel(Host, server.Ports.Single().BoundPort, channelCredentials, options);
+            var client = new TestService.TestServiceClient(channel);
+            var call = client.StreamingOutputCall(new StreamingOutputCallRequest { });
+            Assert.IsTrue(await call.ResponseStream.MoveNext());
+            Assert.IsFalse(await call.ResponseStream.MoveNext());
+        }
+
+        [Test]
+        public async Task MetadataCredentials_ComposedPerCall()
+        {
+            channel = new Channel(Host, server.Ports.Single().BoundPort, TestCredentials.CreateSslCredentials(), options);
+            var client = new TestService.TestServiceClient(channel);
+            var first = CallCredentials.FromInterceptor(new AsyncAuthInterceptor((context, metadata) => {
+                metadata.Add("first_authorization", "FIRST_SECRET_TOKEN");
+                return TaskUtils.CompletedTask;
+            }));
+            var second = CallCredentials.FromInterceptor(new AsyncAuthInterceptor((context, metadata) => {
+                metadata.Add("second_authorization", "SECOND_SECRET_TOKEN");
+                return TaskUtils.CompletedTask;
+            }));
+            var third = CallCredentials.FromInterceptor(new AsyncAuthInterceptor((context, metadata) => {
+                metadata.Add("third_authorization", "THIRD_SECRET_TOKEN");
+                return TaskUtils.CompletedTask;
+            }));
+            var call = client.StreamingOutputCall(new StreamingOutputCallRequest{ },
+                new CallOptions(credentials: CallCredentials.Compose(first, second, third)));
+            Assert.IsTrue(await call.ResponseStream.MoveNext());
+            Assert.IsFalse(await call.ResponseStream.MoveNext());
+        }
+
+        [Test]
         public void MetadataCredentials_InterceptorLeavesMetadataEmpty()
         {
             var channelCredentials = ChannelCredentials.Create(TestCredentials.CreateSslCredentials(),
@@ -124,6 +172,17 @@ namespace Grpc.IntegrationTesting
                 var authToken = context.RequestHeaders.First((entry) => entry.Key == "authorization").Value;
                 Assert.AreEqual("SECRET_TOKEN", authToken);
                 return Task.FromResult(new SimpleResponse());
+            }
+
+            public override async Task StreamingOutputCall(StreamingOutputCallRequest request, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
+            {
+                var first = context.RequestHeaders.First((entry) => entry.Key == "first_authorization").Value;
+                Assert.AreEqual("FIRST_SECRET_TOKEN", first);
+                var second = context.RequestHeaders.First((entry) => entry.Key == "second_authorization").Value;
+                Assert.AreEqual("SECOND_SECRET_TOKEN", second);
+                var third = context.RequestHeaders.First((entry) => entry.Key == "third_authorization").Value;
+                Assert.AreEqual("THIRD_SECRET_TOKEN", third);
+                await responseStream.WriteAsync(new StreamingOutputCallResponse());
             }
         }
     }

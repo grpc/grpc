@@ -22,7 +22,7 @@ from six.moves import queue
 
 import grpc
 from src.proto.grpc.testing import messages_pb2
-from src.proto.grpc.testing import services_pb2
+from src.proto.grpc.testing import services_pb2_grpc
 from tests.unit import resources
 from tests.unit import test_common
 
@@ -58,7 +58,7 @@ class BenchmarkClient:
 
         if config.payload_config.WhichOneof('payload') == 'simple_params':
             self._generic = False
-            self._stub = services_pb2.BenchmarkServiceStub(channel)
+            self._stub = services_pb2_grpc.BenchmarkServiceStub(channel)
             payload = messages_pb2.Payload(
                 body='\0' * config.payload_config.simple_params.req_size)
             self._request = messages_pb2.SimpleRequest(

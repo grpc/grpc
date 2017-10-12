@@ -25,6 +25,10 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
   GRPC_CHTTP2_SPS_ID0,
   GRPC_CHTTP2_SPS_ID1,
@@ -57,5 +61,9 @@ grpc_error *grpc_chttp2_settings_parser_parse(grpc_exec_ctx *exec_ctx,
                                               grpc_chttp2_transport *t,
                                               grpc_chttp2_stream *s,
                                               grpc_slice slice, int is_last);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_SETTINGS_H */

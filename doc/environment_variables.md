@@ -48,7 +48,9 @@ some configuration as environment variables that can be set.
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
   - channel_stack_builder - traces information about channel stacks being built
+  - executor - traces grpc's internal thread pool ('the executor')
   - http - traces state in the http2 transport engine
+  - http2_stream_state - traces all http2 stream state mutations.
   - http1 - traces HTTP/1.x operations performed by gRPC
   - inproc - traces the in-process transport
   - flowctl - traces http2 flow control
@@ -56,6 +58,7 @@ some configuration as environment variables that can be set.
     completion queue
   - round_robin - traces the round_robin load balancing policy
   - pick_first - traces the pick first load balancing policy
+  - plugin_credentials - traces plugin credentials
   - resource_quota - trace resource quota objects internals
   - glb - traces the grpclb load balancer
   - queue_pluck

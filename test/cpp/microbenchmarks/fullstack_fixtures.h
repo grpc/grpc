@@ -41,6 +41,7 @@ extern "C" {
 #include "test/core/util/port.h"
 }
 
+#include "src/cpp/client/create_channel_internal.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
 namespace grpc {
@@ -84,7 +85,7 @@ class FullstackFixture : public BaseFixture {
   }
 
   virtual ~FullstackFixture() {
-    server_->Shutdown();
+    server_->Shutdown(gpr_inf_past(GPR_CLOCK_MONOTONIC));
     cq_->Shutdown();
     void* tag;
     bool ok;
@@ -211,7 +212,7 @@ class EndpointPairFixture : public BaseFixture {
   }
 
   virtual ~EndpointPairFixture() {
-    server_->Shutdown();
+    server_->Shutdown(gpr_inf_past(GPR_CLOCK_MONOTONIC));
     cq_->Shutdown();
     void* tag;
     bool ok;

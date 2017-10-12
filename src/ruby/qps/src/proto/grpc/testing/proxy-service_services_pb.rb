@@ -32,6 +32,7 @@ module Grpc
 
         rpc :GetConfig, Void, ClientConfig
         rpc :ReportTime, stream(ProxyStat), Void
+        rpc :ReportHist, stream(HistogramData), Void
       end
 
       Stub = Service.rpc_stub_class

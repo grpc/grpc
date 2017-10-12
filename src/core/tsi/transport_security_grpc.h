@@ -30,7 +30,8 @@ extern "C" {
    assuming there is no fatal error.
    The caller is responsible for destroying the protector.  */
 tsi_result tsi_handshaker_result_create_zero_copy_grpc_protector(
-    const tsi_handshaker_result *self, size_t *max_output_protected_frame_size,
+    grpc_exec_ctx *exec_ctx, const tsi_handshaker_result *self,
+    size_t *max_output_protected_frame_size,
     tsi_zero_copy_grpc_protector **protector);
 
 /* -- tsi_zero_copy_grpc_protector object --  */

@@ -213,7 +213,7 @@ class StreamStreamChannelRpc(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class Channel(six.with_metaclass(abc.ABCMeta), grpc.Channel):
+class Channel(six.with_metaclass(abc.ABCMeta, grpc.Channel)):
     """A grpc.Channel double with which to test a system that invokes RPCs."""
 
     @abc.abstractmethod

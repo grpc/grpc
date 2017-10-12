@@ -183,7 +183,7 @@ void grpc_passthru_endpoint_create(grpc_endpoint **client,
                                    grpc_endpoint **server,
                                    grpc_resource_quota *resource_quota,
                                    grpc_passthru_endpoint_stats *stats) {
-  passthru_endpoint *m = gpr_malloc(sizeof(*m));
+  passthru_endpoint *m = (passthru_endpoint *)gpr_malloc(sizeof(*m));
   m->halves = 2;
   m->shutdown = 0;
   m->stats = stats == NULL ? &m->dummy_stats : stats;

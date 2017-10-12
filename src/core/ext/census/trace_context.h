@@ -39,6 +39,10 @@
 1 byte for is_sampled (bool) */
 #define TRACE_MAX_CONTEXT_SIZE 31
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Encode a trace context (ctxt) into proto format to the buffer provided.  The
 size of buffer must be at least TRACE_MAX_CONTEXT_SIZE.  On success, returns the
 number of bytes successfully encoded into buffer.  On failure, returns 0. */
@@ -52,5 +56,9 @@ the TraceContext has a span_id and a trace_id, and will return false if either
 of these do not exist. On success, returns true and false otherwise. */
 bool decode_trace_context(google_trace_TraceContext *ctxt, uint8_t *buffer,
                           const size_t nbytes);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_CENSUS_TRACE_CONTEXT_H */
