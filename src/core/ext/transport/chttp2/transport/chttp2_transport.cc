@@ -1783,7 +1783,7 @@ void grpc_chttp2_add_ping_strike(grpc_exec_ctx *exec_ctx,
         exec_ctx, t,
         grpc_error_set_int(
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Too many pings"),
-            GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM));
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
   }
 }
 
