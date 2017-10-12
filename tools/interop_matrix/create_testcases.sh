@@ -31,9 +31,12 @@ TESTCASES_DIR=${GRPC_ROOT}/tools/interop_matrix/testcases
 
 echo "Create '$LANG' test cases for gRPC release '${RELEASE:=master}'"
 
+echo $client_lang
 # Invoke run_interop_test in manual mode.
+# TODO(adelez): Add cloud_gateways when we figure out how to skip them if not 
+# running in GCE.
 ${GRPC_ROOT}/tools/run_tests/run_interop_tests.py -l $LANG --use_docker \
-  --cloud_to_prod --manual_run
+  --cloud_to_prod --prod_servers default gateway_v4 --manual_run
 
 # Clean up
 function cleanup {
@@ -52,11 +55,18 @@ function cleanup {
   [ -e "$CMDS_SH" ] && rm $CMDS_SH
 }
 trap cleanup EXIT
+# TODO(adelez): add test auth tests but do not run if not testing on GCE.
 # Running the testcases as sanity unless we are asked to skip.
 [ -z "$SKIP_TEST" ] && (echo "Running test cases: $CMDS_SH"; sh $CMDS_SH)
 
+# Convert c++ to cxx. 
+if [$LANG == "c++" ]; then
+client_lang="cxx"
+else
+client_lang=$LANG
+fi
 mkdir -p $TESTCASES_DIR
-testcase=$TESTCASES_DIR/${LANG}__$RELEASE
+testcase=$TESTCASES_DIR/${client_lang}__$RELEASE
 if [ -e $testcase ]; then
   echo "Updating: $testcase"
   diff $testcase $CMDS_SH || true

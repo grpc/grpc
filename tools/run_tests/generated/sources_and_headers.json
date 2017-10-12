@@ -104,6 +104,23 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "backoff_test", 
+    "src": [
+      "test/core/backoff/backoff_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
       "grpc_test_util", 
       "test_tcp_server"
     ], 
@@ -722,21 +739,6 @@
     "name": "gpr_avl_test", 
     "src": [
       "test/core/support/avl_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "gpr_backoff_test", 
-    "src": [
-      "test/core/support/backoff_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3493,6 +3495,28 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/end2end_tests.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "h2_ssl_cert_test", 
+    "src": [
+      "test/core/end2end/end2end_tests.h", 
+      "test/core/end2end/h2_ssl_cert_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
@@ -5300,24 +5324,6 @@
     "name": "h2_ssl_test", 
     "src": [
       "test/core/end2end/fixtures/h2_ssl.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "h2_ssl_cert_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_ssl_cert.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7792,7 +7798,6 @@
       "src/core/lib/support/arena.cc", 
       "src/core/lib/support/atm.cc", 
       "src/core/lib/support/avl.cc", 
-      "src/core/lib/support/backoff.cc", 
       "src/core/lib/support/cmdline.cc", 
       "src/core/lib/support/cpu_iphone.cc", 
       "src/core/lib/support/cpu_linux.cc", 
@@ -7873,8 +7878,6 @@
       "src/core/lib/support/atomic.h", 
       "src/core/lib/support/atomic_with_atm.h", 
       "src/core/lib/support/atomic_with_std.h", 
-      "src/core/lib/support/backoff.h", 
-      "src/core/lib/support/block_annotate.h", 
       "src/core/lib/support/env.h", 
       "src/core/lib/support/memory.h", 
       "src/core/lib/support/mpscq.h", 
@@ -7922,8 +7925,6 @@
       "src/core/lib/support/atomic.h", 
       "src/core/lib/support/atomic_with_atm.h", 
       "src/core/lib/support/atomic_with_std.h", 
-      "src/core/lib/support/backoff.h", 
-      "src/core/lib/support/block_annotate.h", 
       "src/core/lib/support/env.h", 
       "src/core/lib/support/memory.h", 
       "src/core/lib/support/mpscq.h", 
@@ -8016,6 +8017,7 @@
     "language": "c", 
     "name": "grpc_base", 
     "src": [
+      "src/core/lib/backoff/backoff.cc", 
       "src/core/lib/channel/channel_args.cc", 
       "src/core/lib/channel/channel_stack.cc", 
       "src/core/lib/channel/channel_stack_builder.cc", 
@@ -8169,6 +8171,7 @@
       "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
       "include/grpc/support/workaround_list.h", 
+      "src/core/lib/backoff/backoff.h", 
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
@@ -8187,6 +8190,7 @@
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
+      "src/core/lib/iomgr/block_annotate.h", 
       "src/core/lib/iomgr/call_combiner.h", 
       "src/core/lib/iomgr/closure.h", 
       "src/core/lib/iomgr/combiner.h", 
@@ -8303,6 +8307,7 @@
       "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
       "include/grpc/support/workaround_list.h", 
+      "src/core/lib/backoff/backoff.h", 
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
@@ -8321,6 +8326,7 @@
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
+      "src/core/lib/iomgr/block_annotate.h", 
       "src/core/lib/iomgr/call_combiner.h", 
       "src/core/lib/iomgr/closure.h", 
       "src/core/lib/iomgr/combiner.h", 

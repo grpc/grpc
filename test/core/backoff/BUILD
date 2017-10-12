@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-# Copyright 2017 gRPC authors.
+# Copyright 2016 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,15 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
 
-export LANG=en_US.UTF-8
+licenses(["notice"])  # Apache v2
 
-# Enter the gRPC repo root
-cd $(dirname $0)/../../..
+package(
+    features = [
+        "-layering_check",
+        "-parse_headers",
+    ],
+)
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
-source tools/internal_ci/helper_scripts/prepare_build_interop_rc
-
-tools/run_tests/run_interop_tests.py -l java --use_docker --http2_server_interop
-
+grpc_cc_test(
+    name = "backoff_test",
+    srcs = ["backoff_test.c"],
+    language = "C",
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+        "//:gpr",
+        "//test/core/util:gpr_test_util",
+    ],
+)

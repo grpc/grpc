@@ -189,6 +189,8 @@
   doc: Number of HTTP2 writes initiated due to 'ping_response'
 - counter: http2_initiate_write_due_to_force_rst_stream
   doc: Number of HTTP2 writes initiated due to 'force_rst_stream'
+- counter: http2_spurious_writes_begun
+  doc: Number of HTTP2 writes initiated with nothing to write
 - counter: hpack_recv_indexed
   doc: Number of HPACK indexed fields received
 - counter: hpack_recv_lithdr_incidx
@@ -270,3 +272,4 @@
 - counter: server_slowpath_requests_queued
   doc: How many times was the server slow path taken (indicates too few
        outstanding requests)
+

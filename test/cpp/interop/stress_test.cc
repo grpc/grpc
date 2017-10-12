@@ -257,6 +257,7 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "Starting test(s)..");
 
   std::vector<std::thread> test_threads;
+  std::vector<std::unique_ptr<StressTestInteropClient>> clients;
 
   // Create and start the test threads.
   // Note that:
@@ -282,9 +283,9 @@ int main(int argc, char** argv) {
       // Create stub(s) for each channel
       for (int stub_idx = 0; stub_idx < FLAGS_num_stubs_per_channel;
            stub_idx++) {
-        StressTestInteropClient* client = new StressTestInteropClient(
+        clients.emplace_back(new StressTestInteropClient(
             ++thread_idx, *it, channel, test_selector, FLAGS_test_duration_secs,
-            FLAGS_sleep_duration_ms, FLAGS_do_not_abort_on_transient_failures);
+            FLAGS_sleep_duration_ms, FLAGS_do_not_abort_on_transient_failures));
 
         bool is_already_created = false;
         // QpsGauge name
@@ -293,7 +294,7 @@ int main(int argc, char** argv) {
                       server_idx, channel_idx, stub_idx);
 
         test_threads.emplace_back(std::thread(
-            &StressTestInteropClient::MainLoop, client,
+            &StressTestInteropClient::MainLoop, clients.back().get(),
             metrics_service.CreateQpsGauge(buffer, &is_already_created)));
 
         // The QpsGauge should not have been already created

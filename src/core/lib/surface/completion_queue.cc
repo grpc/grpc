@@ -61,8 +61,7 @@ typedef struct {
   grpc_error *(*kick)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                       grpc_pollset_worker *specific_worker);
   grpc_error *(*work)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                      grpc_pollset_worker **worker, gpr_timespec now,
-                      gpr_timespec deadline);
+                      grpc_pollset_worker **worker, grpc_millis deadline);
   void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                    grpc_closure *closure);
   void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset);
@@ -100,8 +99,7 @@ static void non_polling_poller_destroy(grpc_exec_ctx *exec_ctx,
 static grpc_error *non_polling_poller_work(grpc_exec_ctx *exec_ctx,
                                            grpc_pollset *pollset,
                                            grpc_pollset_worker **worker,
-                                           gpr_timespec now,
-                                           gpr_timespec deadline) {
+                                           grpc_millis deadline) {
   non_polling_poller *npp = (non_polling_poller *)pollset;
   if (npp->shutdown) return GRPC_ERROR_NONE;
   non_polling_worker w;
@@ -115,7 +113,10 @@ static grpc_error *non_polling_poller_work(grpc_exec_ctx *exec_ctx,
     w.next->prev = w.prev->next = &w;
   }
   w.kicked = false;
-  while (!npp->shutdown && !w.kicked && !gpr_cv_wait(&w.cv, &npp->mu, deadline))
+  gpr_timespec deadline_ts =
+      grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME);
+  while (!npp->shutdown && !w.kicked &&
+         !gpr_cv_wait(&w.cv, &npp->mu, deadline_ts))
     ;
   if (&w == npp->root) {
     npp->root = w.next;
@@ -743,7 +744,7 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cq,
 typedef struct {
   gpr_atm last_seen_things_queued_ever;
   grpc_completion_queue *cq;
-  gpr_timespec deadline;
+  grpc_millis deadline;
   grpc_cq_completion *stolen_completion;
   void *tag; /* for pluck */
   bool first_loop;
@@ -772,8 +773,7 @@ static bool cq_is_next_finished(grpc_exec_ctx *exec_ctx, void *arg) {
       return true;
     }
   }
-  return !a->first_loop &&
-         gpr_time_cmp(a->deadline, gpr_now(a->deadline.clock_type)) < 0;
+  return !a->first_loop && a->deadline < grpc_exec_ctx_now(exec_ctx);
 }
 
 #ifndef NDEBUG
@@ -802,7 +802,6 @@ static void dump_pending_tags(grpc_completion_queue *cq) {}
 static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
                           void *reserved) {
   grpc_event ret;
-  gpr_timespec now;
   cq_next_data *cqd = (cq_next_data *)DATA_FROM_CQ(cq);
 
   GPR_TIMER_BEGIN("grpc_completion_queue_next", 0);
@@ -819,23 +818,20 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
 
   dump_pending_tags(cq);
 
-  deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
-
   GRPC_CQ_INTERNAL_REF(cq, "next");
 
+  grpc_millis deadline_millis = grpc_timespec_to_millis_round_up(deadline);
   cq_is_finished_arg is_finished_arg = {
-
       gpr_atm_no_barrier_load(&cqd->things_queued_ever),
       cq,
-      deadline,
+      deadline_millis,
       NULL,
       NULL,
       true};
   grpc_exec_ctx exec_ctx =
       GRPC_EXEC_CTX_INITIALIZER(0, cq_is_next_finished, &is_finished_arg);
-
   for (;;) {
-    gpr_timespec iteration_deadline = deadline;
+    grpc_millis iteration_deadline = deadline_millis;
 
     if (is_finished_arg.stolen_completion != NULL) {
       grpc_cq_completion *c = is_finished_arg.stolen_completion;
@@ -862,7 +858,7 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
          attempt at popping. Not doing this can potentially deadlock this
          thread forever (if the deadline is infinity) */
       if (cq_event_queue_num_items(&cqd->queue) > 0) {
-        iteration_deadline = gpr_time_0(GPR_CLOCK_MONOTONIC);
+        iteration_deadline = 0;
       }
     }
 
@@ -883,8 +879,8 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
       break;
     }
 
-    now = gpr_now(GPR_CLOCK_MONOTONIC);
-    if (!is_finished_arg.first_loop && gpr_time_cmp(now, deadline) >= 0) {
+    if (!is_finished_arg.first_loop &&
+        grpc_exec_ctx_now(&exec_ctx) >= deadline_millis) {
       memset(&ret, 0, sizeof(ret));
       ret.type = GRPC_QUEUE_TIMEOUT;
       dump_pending_tags(cq);
@@ -895,7 +891,7 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
     gpr_mu_lock(cq->mu);
     cq->num_polls++;
     grpc_error *err = cq->poller_vtable->work(&exec_ctx, POLLSET_FROM_CQ(cq),
-                                              NULL, now, iteration_deadline);
+                                              NULL, iteration_deadline);
     gpr_mu_unlock(cq->mu);
 
     if (err != GRPC_ERROR_NONE) {
@@ -1032,8 +1028,7 @@ static bool cq_is_pluck_finished(grpc_exec_ctx *exec_ctx, void *arg) {
     }
     gpr_mu_unlock(cq->mu);
   }
-  return !a->first_loop &&
-         gpr_time_cmp(a->deadline, gpr_now(a->deadline.clock_type)) < 0;
+  return !a->first_loop && a->deadline < grpc_exec_ctx_now(exec_ctx);
 }
 
 static grpc_event cq_pluck(grpc_completion_queue *cq, void *tag,
@@ -1042,7 +1037,6 @@ static grpc_event cq_pluck(grpc_completion_queue *cq, void *tag,
   grpc_cq_completion *c;
   grpc_cq_completion *prev;
   grpc_pollset_worker *worker = NULL;
-  gpr_timespec now;
   cq_pluck_data *cqd = (cq_pluck_data *)DATA_FROM_CQ(cq);
 
   GPR_TIMER_BEGIN("grpc_completion_queue_pluck", 0);
@@ -1061,14 +1055,13 @@ static grpc_event cq_pluck(grpc_completion_queue *cq, void *tag,
 
   dump_pending_tags(cq);
 
-  deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
-
   GRPC_CQ_INTERNAL_REF(cq, "pluck");
   gpr_mu_lock(cq->mu);
+  grpc_millis deadline_millis = grpc_timespec_to_millis_round_up(deadline);
   cq_is_finished_arg is_finished_arg = {
       gpr_atm_no_barrier_load(&cqd->things_queued_ever),
       cq,
-      deadline,
+      deadline_millis,
       NULL,
       tag,
       true};
@@ -1120,8 +1113,8 @@ static grpc_event cq_pluck(grpc_completion_queue *cq, void *tag,
       dump_pending_tags(cq);
       break;
     }
-    now = gpr_now(GPR_CLOCK_MONOTONIC);
-    if (!is_finished_arg.first_loop && gpr_time_cmp(now, deadline) >= 0) {
+    if (!is_finished_arg.first_loop &&
+        grpc_exec_ctx_now(&exec_ctx) >= deadline_millis) {
       del_plucker(cq, tag, &worker);
       gpr_mu_unlock(cq->mu);
       memset(&ret, 0, sizeof(ret));
@@ -1129,10 +1122,9 @@ static grpc_event cq_pluck(grpc_completion_queue *cq, void *tag,
       dump_pending_tags(cq);
       break;
     }
-
     cq->num_polls++;
     grpc_error *err = cq->poller_vtable->work(&exec_ctx, POLLSET_FROM_CQ(cq),
-                                              &worker, now, deadline);
+                                              &worker, deadline_millis);
     if (err != GRPC_ERROR_NONE) {
       del_plucker(cq, tag, &worker);
       gpr_mu_unlock(cq->mu);

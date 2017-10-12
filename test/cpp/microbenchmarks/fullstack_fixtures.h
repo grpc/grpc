@@ -85,7 +85,7 @@ class FullstackFixture : public BaseFixture {
   }
 
   virtual ~FullstackFixture() {
-    server_->Shutdown();
+    server_->Shutdown(gpr_inf_past(GPR_CLOCK_MONOTONIC));
     cq_->Shutdown();
     void* tag;
     bool ok;
@@ -212,7 +212,7 @@ class EndpointPairFixture : public BaseFixture {
   }
 
   virtual ~EndpointPairFixture() {
-    server_->Shutdown();
+    server_->Shutdown(gpr_inf_past(GPR_CLOCK_MONOTONIC));
     cq_->Shutdown();
     void* tag;
     bool ok;

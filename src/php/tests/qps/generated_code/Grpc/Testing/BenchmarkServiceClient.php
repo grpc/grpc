@@ -18,17 +18,19 @@
 //
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
-namespace Grpc\Testing {
+namespace Grpc\Testing;
 
-  class BenchmarkServiceClient extends \Grpc\BaseStub {
+/**
+ */
+class BenchmarkServiceClient extends \Grpc\BaseStub {
 
     /**
      * @param string $hostname hostname
      * @param array $opts channel options
-     * @param Grpc\Channel $channel (optional) re-use channel object
+     * @param \Grpc\Channel $channel (optional) re-use channel object
      */
     public function __construct($hostname, $opts, $channel = null) {
-      parent::__construct($hostname, $opts, $channel);
+        parent::__construct($hostname, $opts, $channel);
     }
 
     /**
@@ -40,24 +42,62 @@ namespace Grpc\Testing {
      */
     public function UnaryCall(\Grpc\Testing\SimpleRequest $argument,
       $metadata = [], $options = []) {
-      return $this->_simpleRequest('/grpc.testing.BenchmarkService/UnaryCall',
-      $argument,
-      ['\Grpc\Testing\SimpleResponse', 'decode'],
-      $metadata, $options);
+        return $this->_simpleRequest('/grpc.testing.BenchmarkService/UnaryCall',
+        $argument,
+        ['\Grpc\Testing\SimpleResponse', 'decode'],
+        $metadata, $options);
     }
 
     /**
-     * One request followed by one response.
-     * The server returns the client payload as-is.
+     * Repeated sequence of one request followed by one response.
+     * Should be called streaming ping-pong
+     * The server returns the client payload as-is on each response
      * @param array $metadata metadata
      * @param array $options call options
      */
     public function StreamingCall($metadata = [], $options = []) {
-      return $this->_bidiRequest('/grpc.testing.BenchmarkService/StreamingCall',
-      ['\Grpc\Testing\SimpleResponse','decode'],
-      $metadata, $options);
+        return $this->_bidiRequest('/grpc.testing.BenchmarkService/StreamingCall',
+        ['\Grpc\Testing\SimpleResponse','decode'],
+        $metadata, $options);
     }
 
-  }
+    /**
+     * Single-sided unbounded streaming from client to server
+     * The server returns the client payload as-is once the client does WritesDone
+     * @param array $metadata metadata
+     * @param array $options call options
+     */
+    public function StreamingFromClient($metadata = [], $options = []) {
+        return $this->_clientStreamRequest('/grpc.testing.BenchmarkService/StreamingFromClient',
+        ['\Grpc\Testing\SimpleResponse','decode'],
+        $metadata, $options);
+    }
+
+    /**
+     * Single-sided unbounded streaming from server to client
+     * The server repeatedly returns the client payload as-is
+     * @param \Grpc\Testing\SimpleRequest $argument input argument
+     * @param array $metadata metadata
+     * @param array $options call options
+     */
+    public function StreamingFromServer(\Grpc\Testing\SimpleRequest $argument,
+      $metadata = [], $options = []) {
+        return $this->_serverStreamRequest('/grpc.testing.BenchmarkService/StreamingFromServer',
+        $argument,
+        ['\Grpc\Testing\SimpleResponse', 'decode'],
+        $metadata, $options);
+    }
+
+    /**
+     * Two-sided unbounded streaming between server to client
+     * Both sides send the content of their own choice to the other
+     * @param array $metadata metadata
+     * @param array $options call options
+     */
+    public function StreamingBothWays($metadata = [], $options = []) {
+        return $this->_bidiRequest('/grpc.testing.BenchmarkService/StreamingBothWays',
+        ['\Grpc\Testing\SimpleResponse','decode'],
+        $metadata, $options);
+    }
 
 }
