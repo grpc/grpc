@@ -62,18 +62,31 @@ typedef struct {
 } event_engine_factory;
 
 namespace {
+
 extern "C" {
-int dummypoll(struct pollfd fds[], nfds_t nfds, int timeout) {
-  gpr_log(GPR_ERROR, "Attempted to poll despite declaring non-polling.");
-  GPR_ASSERT(false);
-  return -1;
+
+grpc_poll_function_type real_poll_function;
+
+int dummy_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
+  if (timeout == 0) {
+    return real_poll_function(fds, nfds, 0);
+  } else {
+    gpr_log(GPR_ERROR, "Attempted a blocking poll when declared non-polling.");
+    GPR_ASSERT(false);
+    return -1;
+  }
 }
 }  // extern "C"
 
 const grpc_event_engine_vtable *init_non_polling(bool explicit_request) {
+  if (!explicit_request) {
+    return nullptr;
+  }
   // return the simplest engine as a dummy but also override the poller
   auto ret = grpc_init_poll_posix(explicit_request);
-  grpc_poll_function = dummypoll;
+  real_poll_function = grpc_poll_function;
+  grpc_poll_function = dummy_poll;
+
   return ret;
 }
 }  // namespace
