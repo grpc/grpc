@@ -24,13 +24,13 @@
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 
 #include <assert.h>
-#include <sys/syscall.h>
 #include <errno.h>
 #include <limits.h>
 #include <poll.h>
 #include <pthread.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/syscall.h>
 #include <unistd.h>
 
 #include <grpc/support/alloc.h>
@@ -545,13 +545,16 @@ static void pollset_global_shutdown(void) {
 
 static void pollset_maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
                                           grpc_pollset *pollset) {
-  if (pollset->shutdown_closure != NULL && pollset->root_worker == NULL && pollset->containing_pollset_set_count == 0) {
+  if (pollset->shutdown_closure != NULL && pollset->root_worker == NULL &&
+      pollset->containing_pollset_set_count == 0) {
     GRPC_CLOSURE_SCHED(exec_ctx, pollset->shutdown_closure, GRPC_ERROR_NONE);
     pollset->shutdown_closure = NULL;
   }
 }
 
-/* pollset->mu must be held before calling this function, pollset->active_pollable->mu & specific_worker->pollable_obj->mu must not be held */
+/* pollset->mu must be held before calling this function,
+ * pollset->active_pollable->mu & specific_worker->pollable_obj->mu must not be
+ * held */
 static grpc_error *pollset_kick_one(grpc_exec_ctx *exec_ctx,
                                     grpc_pollset *pollset,
                                     grpc_pollset_worker *specific_worker) {
@@ -564,15 +567,14 @@ static grpc_error *pollset_kick_one(grpc_exec_ctx *exec_ctx,
     }
     return GRPC_ERROR_NONE;
   }
-  if (gpr_tls_get(&g_current_thread_worker) ==
-             (intptr_t)specific_worker) {
+  if (gpr_tls_get(&g_current_thread_worker) == (intptr_t)specific_worker) {
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
       gpr_log(GPR_DEBUG, "PS:%p kicked_specific_but_awake", p);
     }
     specific_worker->kicked = true;
     return GRPC_ERROR_NONE;
-  } 
-if (specific_worker == p->root_worker) {
+  }
+  if (specific_worker == p->root_worker) {
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
       gpr_log(GPR_DEBUG, "PS:%p kicked_specific_via_wakeup_fd", p);
     }
@@ -580,7 +582,7 @@ if (specific_worker == p->root_worker) {
     grpc_error *error = grpc_wakeup_fd_wakeup(&p->wakeup);
     return error;
   }
-if (specific_worker->initialized_cv) {
+  if (specific_worker->initialized_cv) {
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
       gpr_log(GPR_DEBUG, "PS:%p kicked_specific_via_cv", p);
     }
@@ -588,7 +590,8 @@ if (specific_worker->initialized_cv) {
     gpr_cv_signal(&specific_worker->cv);
     return GRPC_ERROR_NONE;
   }
-  // we can get here during end_worker after removing specific_worker from the pollable list but before removing it from the pollset list
+  // we can get here during end_worker after removing specific_worker from the
+  // pollable list but before removing it from the pollset list
   return GRPC_ERROR_NONE;
 }
 
@@ -882,7 +885,8 @@ static bool begin_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   gpr_mu_unlock(&worker->pollable_obj->mu);
 
   return do_poll;
-// && pollset->shutdown_closure == NULL &&       pollset->active_pollable == worker->pollable_obj;
+  // && pollset->shutdown_closure == NULL &&       pollset->active_pollable ==
+  // worker->pollable_obj;
 }
 
 static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
@@ -898,7 +902,8 @@ static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   gpr_mu_unlock(&worker->pollable_obj->mu);
   POLLABLE_UNREF(worker->pollable_obj, "pollset_worker");
   gpr_mu_lock(&pollset->mu);
-  if (worker_remove(&pollset->root_worker, worker, PWLINK_POLLSET) == WRR_EMPTIED) {
+  if (worker_remove(&pollset->root_worker, worker, PWLINK_POLLSET) ==
+      WRR_EMPTIED) {
     pollset_maybe_finish_shutdown(exec_ctx, pollset);
   }
   if (worker->initialized_cv) {
@@ -1040,8 +1045,8 @@ static grpc_error *pollset_add_fd_locked(grpc_exec_ctx *exec_ctx,
 }
 
 static grpc_error *pollset_as_multipollable_locked(grpc_exec_ctx *exec_ctx,
-                                            grpc_pollset *pollset,
-                                            pollable **pollable_obj) {
+                                                   grpc_pollset *pollset,
+                                                   pollable **pollable_obj) {
   grpc_error *error = GRPC_ERROR_NONE;
   pollable *po_at_start =
       POLLABLE_REF(pollset->active_pollable, "pollset_as_multipollable");
@@ -1222,15 +1227,15 @@ static void pollset_set_add_pollset(grpc_exec_ctx *exec_ctx,
   grpc_error *error = GRPC_ERROR_NONE;
   static const char *err_desc = "pollset_set_add_pollset";
   pollable *pollable_obj = NULL;
-gpr_mu_lock(&ps->mu);
-  if (!GRPC_LOG_IF_ERROR(
-          err_desc, pollset_as_multipollable_locked(exec_ctx, ps, &pollable_obj))) {
+  gpr_mu_lock(&ps->mu);
+  if (!GRPC_LOG_IF_ERROR(err_desc, pollset_as_multipollable_locked(
+                                       exec_ctx, ps, &pollable_obj))) {
     GPR_ASSERT(pollable_obj == NULL);
-gpr_mu_unlock(&ps->mu);
+    gpr_mu_unlock(&ps->mu);
     return;
   }
-ps->containing_pollset_set_count++;
-gpr_mu_unlock(&ps->mu);
+  ps->containing_pollset_set_count++;
+  gpr_mu_unlock(&ps->mu);
   pss = pss_lock_adam(pss);
   size_t initial_fd_count = pss->fd_count;
   pss->fd_count = 0;
