@@ -28,12 +28,12 @@ grpc_tracer_flag grpc_trace_lb_policy_refcount =
 
 void grpc_lb_policy_init(grpc_lb_policy *policy,
                          const grpc_lb_policy_vtable *vtable,
-                         grpc_combiner *combiner) {
+                         grpc_combiner *combiner, channel_data *chand) {
   policy->vtable = vtable;
   gpr_atm_no_barrier_store(&policy->ref_pair, 1 << WEAK_REF_BITS);
   policy->interested_parties = grpc_pollset_set_create();
   policy->combiner = GRPC_COMBINER_REF(combiner, "lb_policy");
-  policy->request_reresolution = NULL;
+  policy->chand = chand;
 }
 
 #ifndef NDEBUG

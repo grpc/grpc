@@ -167,11 +167,6 @@ struct external_connectivity_watcher;
  * CHANNEL-WIDE FUNCTIONS
  */
 
-typedef struct {
-  channel_data *chand;
-  grpc_lb_policy *policy;
-} reresolution_request_args;
-
 struct channel_data {
   /** resolver for this channel */
   grpc_resolver *resolver;
@@ -198,8 +193,6 @@ struct channel_data {
   grpc_closure on_resolver_result_changed;
   /** callback for LB policies to request a re-resolution */
   grpc_closure request_reresolution;
-  /** args for request_reresolution_locked() */
-  reresolution_request_args reresolution_args;
   /** connectivity state being tracked */
   grpc_connectivity_state_tracker state_tracker;
   /** when an lb_policy arrives, should we try to exit idle */
@@ -375,13 +368,13 @@ static void parse_retry_throttle_params(const grpc_json *field, void *arg) {
 
 static void request_reresolution_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                         grpc_error *error) {
-  reresolution_request_args *args = (reresolution_request_args *)arg;
-  grpc_lb_policy *policy = args->policy;
-  channel_data *chand = args->chand;
+  grpc_lb_policy *policy = (grpc_lb_policy *)arg;
+  channel_data *chand = policy->chand;
   // If this invocation is for a stale LB policy, treat it as an LB shutdown
   // signal.
-  if (policy != chand->lb_policy || error == GRPC_ERROR_CANCELLED ||
+  if (policy != chand->lb_policy || error != GRPC_ERROR_NONE ||
       chand->resolver == NULL) {
+    GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, policy, "re-resolution");
     GRPC_CHANNEL_STACK_UNREF(exec_ctx, chand->owning_stack, "re-resolution");
     return;
   }
@@ -449,6 +442,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     lb_policy_args.args = chand->resolver_result;
     lb_policy_args.client_channel_factory = chand->client_channel_factory;
     lb_policy_args.combiner = chand->combiner;
+    lb_policy_args.chand = chand;
     // Check to see if we're already using the right LB policy.
     // Note: It's safe to use chand->info_lb_policy_name here without
     // taking a lock on chand->info_mu, because this function is the
@@ -468,11 +462,10 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
       if (new_lb_policy == NULL) {
         gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", lb_policy_name);
       } else {
-        chand->reresolution_args.policy = new_lb_policy;
         GRPC_CLOSURE_INIT(&chand->request_reresolution,
-                          request_reresolution_locked,
-                          &chand->reresolution_args,
+                          request_reresolution_locked, new_lb_policy,
                           grpc_combiner_scheduler(chand->combiner));
+        GRPC_LB_POLICY_WEAK_REF(new_lb_policy, "re-resolution");
         GRPC_CHANNEL_STACK_REF(chand->owning_stack, "re-resolution");
         grpc_lb_policy_set_reresolve_closure_locked(
             exec_ctx, new_lb_policy, &chand->request_reresolution);
@@ -548,7 +541,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   }
   chand->method_params_table = method_params_table;
   // If we have a new LB policy or are shutting down (in which case
-  // new_lb_policy will be NULL), swap out the LB policy, unreffing the old one,
+  // new_lb_policy will be NULL), swap out the LB policy, unreffing the old one
   // and removing its fds from chand->interested_parties. Note that we do NOT do
   // this if either (a) we updated the existing LB policy above or (b) we failed
   // to create the new LB policy (in which case we want to continue using the
@@ -744,8 +737,6 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   chand->interested_parties = grpc_pollset_set_create();
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
                                "client_channel");
-  chand->reresolution_args.chand = chand;
-  chand->reresolution_args.policy = NULL;
   // Record client channel factory.
   const grpc_arg *arg = grpc_channel_args_find(args->channel_args,
                                                GRPC_ARG_CLIENT_CHANNEL_FACTORY);
