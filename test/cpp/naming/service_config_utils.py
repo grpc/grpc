@@ -39,7 +39,7 @@ def convert_service_config_to_txt_data(service_config_json_path,
           # quotation marks are not escaped.
           to_add = '\\\"'
           while len(to_add) > 0:
-            if len(next_chunk) > 255:
+            if len(next_chunk) == 255:
               chunks.append(next_chunk)
               next_chunk = ''
             next_chunk += to_add[0]
