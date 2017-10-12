@@ -2171,6 +2171,10 @@ static void start_retriable_subchannel_batches(grpc_exec_ctx *exec_ctx,
     // Note that we only add this op if we have no more send_message ops
     // to start, since we can't send down any more send_message ops after
     // send_trailing_metadata.
+// FIXME: if we sent the last send_message op in the replay batch above,
+// can't send this yet, because we aren't guaranteed that the
+// send_message will hit the transport before this will
+// (maybe need to merge this into the replay batch?)
     if (calld->seen_send_trailing_metadata &&
         retry_state->started_send_message_count ==
             calld->num_send_message_ops &&
