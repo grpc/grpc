@@ -1232,9 +1232,9 @@ static void pollset_set_add_pollset(grpc_exec_ctx *exec_ctx,
   pss = pss_lock_adam(pss);
   size_t initial_fd_count = pss->fd_count;
   pss->fd_count = 0;
-  append_error(&error, add_fds_to_pollables(
-                           exec_ctx, pss->fds, initial_fd_count, &pollable_obj,
-                           1, err_desc, pss->fds, &pss->fd_count),
+  append_error(&error, add_fds_to_pollables(exec_ctx, pss->fds,
+                                            initial_fd_count, &pollable_obj, 1,
+                                            err_desc, pss->fds, &pss->fd_count),
                err_desc);
   if (pss->pollset_count == pss->pollset_capacity) {
     pss->pollset_capacity = GPR_MAX(pss->pollset_capacity * 2, 8);
