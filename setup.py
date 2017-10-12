@@ -40,10 +40,12 @@ ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
 CARES_INCLUDE = (
     os.path.join('third_party', 'cares'),
     os.path.join('third_party', 'cares', 'cares'),)
-if 'linux' in sys.platform:
-  CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_linux'),)
 if 'darwin' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_darwin'),)
+if 'freebsd' in sys.platform:
+  CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_freebsd'),)
+if 'linux' in sys.platform:
+  CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_linux'),)
 if 'openbsd' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_openbsd'),)
 README = os.path.join(PYTHON_STEM, 'README.rst')
