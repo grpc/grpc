@@ -112,6 +112,9 @@ const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "executor_push_retries",
     "server_requested_calls",
     "server_slowpath_requests_queued",
+    "cq_ev_queue_trylock_failures",
+    "cq_ev_queue_trylock_successes",
+    "cq_ev_queue_transient_pop_failures",
 };
 const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of client side calls created by this process",
@@ -222,6 +225,12 @@ const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "How many calls were requested (not necessarily received) by the server",
     "How many times was the server slow path taken (indicates too few "
     "outstanding requests)",
+    "Number of lock (trylock) acquisition failures on completion queue event "
+    "queue. High value here indicates high contention on completion queues",
+    "Number of lock (trylock) acquisition successes on completion queue event "
+    "queue.",
+    "Number of times NULL was popped out of completion queue's event queue "
+    "even though the event queue was not empty",
 };
 const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
     "call_initial_size",
