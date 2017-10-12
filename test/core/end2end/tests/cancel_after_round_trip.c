@@ -39,10 +39,13 @@ static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
+                                            cancellation_mode mode,
+                                            bool use_service_config,
                                             grpc_channel_args *client_args,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s/%s/%s", test_name, config.name,
+          mode.name, use_service_config ? "service_config" : "client_api");
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -114,7 +117,9 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
       grpc_slice_from_copied_string("hello you");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer *response_payload =
+  grpc_byte_buffer *response_payload1 =
+      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
+  grpc_byte_buffer *response_payload2 =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   int was_cancelled = 2;
 
@@ -135,8 +140,8 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
     args = grpc_channel_args_copy_and_add(args, &arg, 1);
   }
 
-  grpc_end2end_test_fixture f =
-      begin_test(config, "cancel_after_round_trip", args, NULL);
+  grpc_end2end_test_fixture f = begin_test(
+      config, "cancel_after_round_trip", mode, use_service_config, args, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = use_service_config
@@ -199,7 +204,7 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = response_payload;
+  op->data.send_message.send_message = response_payload1;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -242,7 +247,7 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = response_payload;
+  op->data.send_message.send_message = response_payload2;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -262,7 +267,8 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
   grpc_call_details_destroy(&call_details);
 
   grpc_byte_buffer_destroy(request_payload);
-  grpc_byte_buffer_destroy(response_payload);
+  grpc_byte_buffer_destroy(response_payload1);
+  grpc_byte_buffer_destroy(response_payload2);
   grpc_byte_buffer_destroy(request_payload_recv);
   grpc_byte_buffer_destroy(response_payload_recv);
   grpc_slice_unref(details);

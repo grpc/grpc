@@ -95,11 +95,12 @@ def _collect_bm_data(bm, cfg, name, regex, idx, loops):
         shortname='%s %s %s %s %d/%d' % (bm, line, cfg, name, idx + 1,
                          loops),
         verbose_success=True,
+        cpu_cost=2,
         timeout_seconds=60 * 60)) # one hour
   return jobs_list
 
 
-def run(name, benchmarks, jobs, loops, regex, counters):
+def create_jobs(name, benchmarks, loops, regex, counters):
   jobs_list = []
   for loop in range(0, loops):
     for bm in benchmarks:
@@ -108,9 +109,11 @@ def run(name, benchmarks, jobs, loops, regex, counters):
         jobs_list += _collect_bm_data(bm, 'counters', name, regex, loop,
                         loops)
   random.shuffle(jobs_list, random.SystemRandom().random)
-  jobset.run(jobs_list, maxjobs=jobs)
+  return jobs_list
 
 
 if __name__ == '__main__':
   args = _args()
-  run(args.name, args.benchmarks, args.jobs, args.loops, args.regex, args.counters)
+  jobs_list = create_jobs(args.name, args.benchmarks, args.loops, 
+                          args.regex, args.counters)
+  jobset.run(jobs_list, maxjobs=args.jobs)

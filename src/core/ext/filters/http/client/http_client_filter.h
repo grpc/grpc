@@ -20,10 +20,18 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Processes metadata on the client side for HTTP2 transports */
 extern const grpc_channel_filter grpc_http_client_filter;
 
 /* Channel arg to determine maximum size of payload eligable for GET request */
 #define GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET "grpc.max_payload_size_for_get"
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_HTTP_CLIENT_HTTP_CLIENT_FILTER_H */

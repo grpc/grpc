@@ -111,6 +111,7 @@
       # build.
       'USE_HEADERMAP' => 'NO',
       'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+      'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1" "PB_NO_PACKED_STRUCTS=1"',
     }
 
     s.default_subspecs = 'Interface', 'Implementation'
@@ -156,8 +157,8 @@
       ss.dependency "#{s.name}/Implementation", version
       ss.dependency "#{s.name}/Cronet-Interface", version
 
-      ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.c',
-                        'src/core/ext/transport/cronet/transport/cronet_transport.{c,h}',
+      ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc',
+                        'src/core/ext/transport/cronet/transport/cronet_transport.{cc,h}',
                         'third_party/objective_c/Cronet/bidirectional_stream_c.h'
     end
 
@@ -171,6 +172,7 @@
                         'test/core/end2end/end2end_tests.{c,h}',
                         'test/core/end2end/end2end_test_utils.c',
                         'test/core/end2end/tests/*.{c,h}',
+                        'test/core/end2end/fixtures/*.h',
                         'test/core/end2end/data/*.{c,h}',
                         'test/core/util/debugger_macros.{c,h}',
                         'test/core/util/test_config.{c,h}',

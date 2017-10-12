@@ -29,6 +29,9 @@ struct grpc_timer {
   struct grpc_timer *next;
   struct grpc_timer *prev;
   grpc_closure *closure;
+#ifndef NDEBUG
+  struct grpc_timer *hash_table_next;
+#endif
 };
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_GENERIC_H */

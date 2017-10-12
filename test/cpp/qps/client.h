@@ -34,6 +34,7 @@
 #include "src/proto/grpc/testing/payloads.pb.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 
+#include "src/cpp/util/core_stats.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/usage_timer.h"
@@ -172,6 +173,9 @@ class Client {
       timer_result = timer_->Mark();
     }
 
+    grpc_stats_data core_stats;
+    grpc_stats_collect(&core_stats);
+
     ClientStats stats;
     latencies.FillProto(stats.mutable_latencies());
     for (StatusHistogram::const_iterator it = statuses.begin();
@@ -184,6 +188,7 @@ class Client {
     stats.set_time_system(timer_result.system);
     stats.set_time_user(timer_result.user);
     stats.set_cq_poll_count(poll_count);
+    CoreStatsToProto(core_stats, stats.mutable_core_stats());
     return stats;
   }
 
@@ -221,6 +226,7 @@ class Client {
   }
 
   virtual void DestroyMultithreading() = 0;
+  virtual void InitThreadFunc(size_t thread_idx) = 0;
   virtual bool ThreadFunc(HistogramEntry* histogram, size_t thread_idx) = 0;
 
   void SetupLoadTest(const ClientConfig& config, size_t num_threads) {
@@ -294,12 +300,17 @@ class Client {
     Thread& operator=(const Thread&);
 
     void ThreadFunc() {
+      int wait_loop = 0;
       while (!gpr_event_wait(
           &client_->start_requests_,
           gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                       gpr_time_from_seconds(1, GPR_TIMESPAN)))) {
-        gpr_log(GPR_INFO, "Waiting for benchmark to start");
+                       gpr_time_from_seconds(20, GPR_TIMESPAN)))) {
+        gpr_log(GPR_INFO, "%" PRIdPTR ": Waiting for benchmark to start (%d)",
+                idx_, wait_loop);
+        wait_loop++;
       }
+
+      client_->InitThreadFunc(idx_);
 
       for (;;) {
         // run the loop body
@@ -375,6 +386,13 @@ class ClientImpl : public Client {
           config.server_targets(i % config.server_targets_size()), config,
           create_stub_, i);
     }
+    std::vector<std::unique_ptr<std::thread>> connecting_threads;
+    for (auto& c : channels_) {
+      connecting_threads.emplace_back(c.WaitForReady());
+    }
+    for (auto& t : connecting_threads) {
+      t->join();
+    }
 
     ClientRequestCreator<RequestType> create_req(&request_,
                                                  config.payload_config());
@@ -409,13 +427,18 @@ class ClientImpl : public Client {
           !config.security_params().use_test_ca(),
           std::shared_ptr<CallCredentials>(), args);
       gpr_log(GPR_INFO, "Connecting to %s", target.c_str());
-      GPR_ASSERT(channel_->WaitForConnected(
-          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                       gpr_time_from_seconds(300, GPR_TIMESPAN))));
       stub_ = create_stub(channel_);
     }
     Channel* get_channel() { return channel_.get(); }
     StubType* get_stub() { return stub_.get(); }
+
+    std::unique_ptr<std::thread> WaitForReady() {
+      return std::unique_ptr<std::thread>(new std::thread([this]() {
+        GPR_ASSERT(channel_->WaitForConnected(
+            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                         gpr_time_from_seconds(10, GPR_TIMESPAN))));
+      }));
+    }
 
    private:
     void set_channel_args(const ClientConfig& config, ChannelArguments* args) {

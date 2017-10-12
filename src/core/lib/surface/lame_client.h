@@ -21,6 +21,14 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern const grpc_channel_filter grpc_lame_filter;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_SURFACE_LAME_CLIENT_H */

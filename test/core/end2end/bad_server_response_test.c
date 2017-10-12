@@ -136,7 +136,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
                        grpc_pollset *accepting_pollset,
                        grpc_tcp_server_acceptor *acceptor) {
   gpr_free(acceptor);
-  test_tcp_server *server = arg;
+  test_tcp_server *server = (test_tcp_server *)arg;
   GRPC_CLOSURE_INIT(&on_read, handle_read, NULL, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&on_write, done_write, NULL, grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&state.temp_incoming_buffer);
@@ -237,7 +237,7 @@ typedef struct {
 } poll_args;
 
 static void actually_poll_server(void *arg) {
-  poll_args *pa = arg;
+  poll_args *pa = (poll_args *)arg;
   gpr_timespec deadline = n_sec_deadline(10);
   while (true) {
     bool done = gpr_atm_acq_load(&state.done_atm) != 0;
@@ -259,7 +259,7 @@ static void poll_server_until_read_done(test_tcp_server *server,
   gpr_atm_rel_store(&state.done_atm, 0);
   state.write_done = 0;
   gpr_thd_id id;
-  poll_args *pa = gpr_malloc(sizeof(*pa));
+  poll_args *pa = (poll_args *)gpr_malloc(sizeof(*pa));
   pa->server = server;
   pa->signal_when_done = signal_when_done;
   gpr_thd_new(&id, actually_poll_server, pa, NULL);

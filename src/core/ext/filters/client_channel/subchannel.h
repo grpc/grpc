@@ -26,6 +26,10 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Channel arg containing a grpc_resolved_address to connect to.
 #define GRPC_ARG_SUBCHANNEL_ADDRESS "grpc.subchannel_address"
 
@@ -187,5 +191,9 @@ const char *grpc_get_subchannel_address_uri_arg(const grpc_channel_args *args);
 /// Returns a new channel arg encoding the subchannel address as a string.
 /// Caller is responsible for freeing the string.
 grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address *addr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_H */

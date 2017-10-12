@@ -22,7 +22,6 @@
 #include <gflags/gflags.h>
 #include <fstream>
 #include "src/core/lib/profiling/timers.h"
-#include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
@@ -30,6 +29,7 @@
 extern "C" {
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/util/trickle_endpoint.h"
 }
 
@@ -45,6 +45,22 @@ DEFINE_int32(warmup_max_time_seconds, 10,
 
 namespace grpc {
 namespace testing {
+
+gpr_atm g_now_us = 0;
+
+static gpr_timespec fake_now(gpr_clock_type clock_type) {
+  gpr_timespec t;
+  gpr_atm now = gpr_atm_no_barrier_load(&g_now_us);
+  t.tv_sec = now / GPR_US_PER_SEC;
+  t.tv_nsec = (now % GPR_US_PER_SEC) * GPR_NS_PER_US;
+  t.clock_type = clock_type;
+  return t;
+}
+
+static void inc_time() {
+  gpr_atm_no_barrier_fetch_add(&g_now_us, 100);
+  grpc_timer_manager_tick();
+}
 
 static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 
@@ -105,7 +121,7 @@ class TrickledCHTTP2 : public EndpointPairFixture {
             (double)state.iterations());
   }
 
-  void Log(int64_t iteration) {
+  void Log(int64_t iteration) GPR_ATTRIBUTE_NO_TSAN {
     auto now = gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), start_);
     grpc_chttp2_transport* client =
         reinterpret_cast<grpc_chttp2_transport*>(client_transport_);
@@ -159,6 +175,7 @@ class TrickledCHTTP2 : public EndpointPairFixture {
 
   void Step(bool update_stats) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    inc_time();
     size_t client_backlog =
         grpc_trickle_endpoint_trickle(&exec_ctx, endpoint_pair_.client);
     size_t server_backlog =
@@ -193,7 +210,8 @@ class TrickledCHTTP2 : public EndpointPairFixture {
     return p;
   }
 
-  void UpdateStats(grpc_chttp2_transport* t, Stats* s, size_t backlog) {
+  void UpdateStats(grpc_chttp2_transport* t, Stats* s,
+                   size_t backlog) GPR_ATTRIBUTE_NO_TSAN {
     if (backlog == 0) {
       if (t->lists[GRPC_CHTTP2_LIST_STALLED_BY_STREAM].head != NULL) {
         s->streams_stalled_due_to_stream_flow_control++;
@@ -212,9 +230,8 @@ static void TrickleCQNext(TrickledCHTTP2* fixture, void** t, bool* ok,
                           int64_t iteration) {
   while (true) {
     fixture->Log(iteration);
-    switch (fixture->cq()->AsyncNext(
-        t, ok, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                            gpr_time_from_micros(100, GPR_TIMESPAN)))) {
+    switch (
+        fixture->cq()->AsyncNext(t, ok, gpr_inf_past(GPR_CLOCK_MONOTONIC))) {
       case CompletionQueue::TIMEOUT:
         fixture->Step(iteration != -1);
         break;
@@ -289,9 +306,15 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
       inner_loop(false);
     }
     response_rw.Finish(Status::OK, tag(1));
-    need_tags = (1 << 0) | (1 << 1);
+    grpc::Status status;
+    request_rw->Finish(&status, tag(2));
+    need_tags = (1 << 0) | (1 << 1) | (1 << 2);
     while (need_tags) {
       TrickleCQNext(fixture.get(), &t, &ok, -1);
+      if (t == tag(0) && ok) {
+        request_rw->Read(&recv_response, tag(0));
+        continue;
+      }
       int i = (int)(intptr_t)t;
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
@@ -419,8 +442,12 @@ BENCHMARK(BM_PumpUnbalancedUnary_Trickle)->Apply(UnaryTrickleArgs);
 }
 }
 
+extern "C" gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
+
 int main(int argc, char** argv) {
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
+  grpc_timer_manager_set_threading(false);
+  gpr_now_impl = ::grpc::testing::fake_now;
   ::benchmark::RunSpecifiedBenchmarks();
 }

@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package grpc.testing;
 
+import "src/proto/grpc/core/stats.proto";
+
 message ServerStats {
   // wall clock time change in seconds since last reset
   double time_elapsed = 1;
@@ -35,6 +37,9 @@ message ServerStats {
 
   // Number of polls called inside completion queue
   uint64 cq_poll_count = 6;
+
+  // Core library stats
+  grpc.core.Stats core_stats = 7;
 }
 
 // Histogram params based on grpc/support/histogram.c
@@ -72,4 +77,7 @@ message ClientStats {
 
   // Number of polls called inside completion queue
   uint64 cq_poll_count = 6;
+
+  // Core library stats
+  grpc.core.Stats core_stats = 7;
 }

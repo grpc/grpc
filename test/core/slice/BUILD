@@ -12,24 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+
+grpc_package(name = "test/core/slice")
 
 licenses(["notice"])  # Apache v2
 
-package(
-    features = [
-        "-layering_check",
-        "-parse_headers",
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
+
+grpc_fuzzer(
+    name = "percent_encode_fuzzer",
+    srcs = ["percent_encode_fuzzer.c"],
+    language = "C",
+    corpus = "percent_encode_corpus",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
     ],
 )
-
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
     name = "percent_decode_fuzzer",
     srcs = ["percent_decode_fuzzer.c"],
     language = "C",
-    corpus = "response_corpus",
+    corpus = "percent_decode_corpus",
     deps = [
         "//:gpr",
         "//:grpc",

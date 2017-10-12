@@ -49,9 +49,7 @@ const zend_function_entry grpc_functions[] = {
 /* {{{ grpc_module_entry
  */
 zend_module_entry grpc_module_entry = {
-#if ZEND_MODULE_API_NO >= 20010901
   STANDARD_MODULE_HEADER,
-#endif
   "grpc",
   grpc_functions,
   PHP_MINIT(grpc),
@@ -59,9 +57,7 @@ zend_module_entry grpc_module_entry = {
   PHP_RINIT(grpc),
   NULL,
   PHP_MINFO(grpc),
-#if ZEND_MODULE_API_NO >= 20010901
   PHP_GRPC_VERSION,
-#endif
   PHP_MODULE_GLOBALS(grpc),
   PHP_GINIT(grpc),
   NULL,

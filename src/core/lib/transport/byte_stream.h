@@ -28,6 +28,10 @@
 /** Mask of all valid internal flags. */
 #define GRPC_WRITE_INTERNAL_USED_MASK (GRPC_WRITE_INTERNAL_COMPRESS)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct grpc_byte_stream grpc_byte_stream;
 
 typedef struct {
@@ -81,7 +85,9 @@ void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
 
 // grpc_slice_buffer_stream
 //
-// A grpc_byte_stream that wraps a slice buffer.
+// A grpc_byte_stream that wraps a slice buffer.  The stream takes
+// ownership of the slices in the buffer, and on destruction will
+// reset the contents of the buffer.
 
 typedef struct grpc_slice_buffer_stream {
   grpc_byte_stream base;
@@ -132,5 +138,9 @@ void grpc_caching_byte_stream_init(grpc_caching_byte_stream *stream,
 
 // Resets the byte stream to the start of the underlying stream.
 void grpc_caching_byte_stream_reset(grpc_caching_byte_stream *stream);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H */

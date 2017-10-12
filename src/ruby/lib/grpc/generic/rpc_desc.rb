@@ -47,43 +47,85 @@ module GRPC
       proc { |o| unmarshal_class.method(unmarshal_method).call(o) }
     end
 
-    def handle_request_response(active_call, mth)
+    def handle_request_response(active_call, mth, inter_ctx)
       req = active_call.read_unary_request
-      resp = mth.call(req, active_call.single_req_view)
-      active_call.server_unary_response(
-        resp, trailing_metadata: active_call.output_metadata)
+      call = active_call.single_req_view
+
+      inter_ctx.intercept!(
+        :request_response,
+        method: mth,
+        call: call,
+        request: req
+      ) do
+        resp = mth.call(req, call)
+        active_call.server_unary_response(
+          resp,
+          trailing_metadata: active_call.output_metadata
+        )
+      end
     end
 
-    def handle_client_streamer(active_call,  mth)
-      resp = mth.call(active_call.multi_req_view)
-      active_call.server_unary_response(
-        resp, trailing_metadata: active_call.output_metadata)
+    def handle_client_streamer(active_call, mth, inter_ctx)
+      call = active_call.multi_req_view
+
+      inter_ctx.intercept!(
+        :client_streamer,
+        method: mth,
+        call: call
+      ) do
+        resp = mth.call(call)
+        active_call.server_unary_response(
+          resp,
+          trailing_metadata: active_call.output_metadata
+        )
+      end
     end
 
-    def handle_server_streamer(active_call, mth)
+    def handle_server_streamer(active_call, mth, inter_ctx)
       req = active_call.read_unary_request
-      replys = mth.call(req, active_call.single_req_view)
-      replys.each { |r| active_call.remote_send(r) }
+      call = active_call.single_req_view
+
+      inter_ctx.intercept!(
+        :server_streamer,
+        method: mth,
+        call: call,
+        request: req
+      ) do
+        replies = mth.call(req, call)
+        replies.each { |r| active_call.remote_send(r) }
+        send_status(active_call, OK, 'OK', active_call.output_metadata)
+      end
+    end
+
+    ##
+    # @param [GRPC::ActiveCall] active_call
+    # @param [Method] mth
+    # @param [Array<GRPC::InterceptionContext>] inter_ctx
+    #
+    def handle_bidi_streamer(active_call, mth, inter_ctx)
+      active_call.run_server_bidi(mth, inter_ctx)
       send_status(active_call, OK, 'OK', active_call.output_metadata)
     end
 
-    def handle_bidi_streamer(active_call, mth)
-      active_call.run_server_bidi(mth)
-      send_status(active_call, OK, 'OK', active_call.output_metadata)
-    end
-
-    def run_server_method(active_call, mth)
+    ##
+    # @param [GRPC::ActiveCall] active_call The current active call object
+    #   for the request
+    # @param [Method] mth The current RPC method being called
+    # @param [GRPC::InterceptionContext] inter_ctx The interception context
+    #   being executed
+    #
+    def run_server_method(active_call, mth, inter_ctx = InterceptionContext.new)
       # While a server method is running, it might be cancelled, its deadline
       # might be reached, the handler could throw an unknown error, or a
       # well-behaved handler could throw a StatusError.
       if request_response?
-        handle_request_response(active_call, mth)
+        handle_request_response(active_call, mth, inter_ctx)
       elsif client_streamer?
-        handle_client_streamer(active_call, mth)
+        handle_client_streamer(active_call, mth, inter_ctx)
       elsif server_streamer?
-        handle_server_streamer(active_call, mth)
+        handle_server_streamer(active_call, mth, inter_ctx)
       else  # is a bidi_stream
-        handle_bidi_streamer(active_call, mth)
+        handle_bidi_streamer(active_call, mth, inter_ctx)
       end
     rescue BadStatus => e
       # this is raised by handlers that want GRPC to send an application error

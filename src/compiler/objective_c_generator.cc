@@ -17,6 +17,7 @@
  */
 
 #include <map>
+#include <set>
 #include <sstream>
 
 #include "src/compiler/config.h"
@@ -29,7 +30,9 @@ using ::google::protobuf::compiler::objectivec::ClassName;
 using ::grpc::protobuf::io::Printer;
 using ::grpc::protobuf::MethodDescriptor;
 using ::grpc::protobuf::ServiceDescriptor;
+using ::grpc::protobuf::FileDescriptor;
 using ::std::map;
+using ::std::set;
 
 namespace grpc_objective_c_generator {
 namespace {
@@ -189,6 +192,24 @@ void PrintMethodImplementations(Printer *printer,
 }
 
 }  // namespace
+
+::grpc::string GetAllMessageClasses(const FileDescriptor *file) {
+  ::grpc::string output;
+  set< ::grpc::string> classes;
+  for (int i = 0; i < file->service_count(); i++) {
+    const auto service = file->service(i);
+    for (int i = 0; i < service->method_count(); i++) {
+      const auto method = service->method(i);
+      classes.insert(ClassName(method->input_type()));
+      classes.insert(ClassName(method->output_type()));
+    }
+  }
+  for (auto one_class : classes) {
+    output += "  @class " + one_class + ";\n";
+  }
+
+  return output;
+}
 
 ::grpc::string GetHeader(const ServiceDescriptor *service) {
   ::grpc::string output;

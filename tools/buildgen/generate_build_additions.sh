@@ -24,6 +24,7 @@ gen_build_yaml_dirs="  \
   test/core/bad_client \
   test/core/bad_ssl    \
   test/core/end2end    \
+  test/cpp/naming \
   test/cpp/qps"
 gen_build_files=""
 for gen_build_yaml in $gen_build_yaml_dirs

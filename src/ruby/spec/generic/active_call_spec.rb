@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'grpc'
+require 'spec_helper'
 
 include GRPC::Core::StatusCodes
 
@@ -21,6 +21,21 @@ describe GRPC::ActiveCall do
   Call = GRPC::Core::Call
   CallOps = GRPC::Core::CallOps
   WriteFlags = GRPC::Core::WriteFlags
+
+  def ok_status
+    Struct::Status.new(OK, 'OK')
+  end
+
+  def send_and_receive_close_and_status(client_call, server_call)
+    client_call.run_batch(CallOps::SEND_CLOSE_FROM_CLIENT => nil)
+    server_call.run_batch(CallOps::RECV_CLOSE_ON_SERVER => nil,
+                          CallOps::SEND_STATUS_FROM_SERVER => ok_status)
+    client_call.run_batch(CallOps::RECV_STATUS_ON_CLIENT => nil)
+  end
+
+  def inner_call_of_active_call(active_call)
+    active_call.instance_variable_get(:@call)
+  end
 
   before(:each) do
     @pass_through = proc { |x| x }
@@ -67,16 +82,26 @@ describe GRPC::ActiveCall do
         end
       end
     end
+
+    describe '#interceptable' do
+      it 'exposes a fixed subset of the ActiveCall.methods' do
+        want = %w(deadline)
+        v = @client_call.interceptable
+        want.each do |w|
+          expect(v.methods.include?(w))
+        end
+      end
+    end
   end
 
   describe '#remote_send' do
-    it 'allows a client to send a payload to the server' do
+    it 'allows a client to send a payload to the server', test: true do
       call = make_test_call
       ActiveCall.client_invoke(call)
-      @client_call = ActiveCall.new(call, @pass_through,
-                                    @pass_through, deadline)
+      client_call = ActiveCall.new(call, @pass_through,
+                                   @pass_through, deadline)
       msg = 'message is a string'
-      @client_call.remote_send(msg)
+      client_call.remote_send(msg)
 
       # check that server rpc new was received
       recvd_rpc = @server.request_call
@@ -86,8 +111,13 @@ describe GRPC::ActiveCall do
       # Accept the call, and verify that the server reads the response ok.
       server_call = ActiveCall.new(recvd_call, @pass_through,
                                    @pass_through, deadline,
-                                   metadata_received: true)
+                                   metadata_received: true,
+                                   started: false)
       expect(server_call.remote_read).to eq(msg)
+      # finish the call
+      server_call.send_initial_metadata
+      call.run_batch(CallOps::RECV_INITIAL_METADATA => nil)
+      send_and_receive_close_and_status(call, recvd_call)
     end
 
     it 'marshals the payload using the marshal func' do
@@ -109,6 +139,9 @@ describe GRPC::ActiveCall do
                                    @pass_through, deadline,
                                    metadata_received: true)
       expect(server_call.remote_read).to eq('marshalled:' + msg)
+      # finish the call
+      call.run_batch(CallOps::RECV_INITIAL_METADATA => nil)
+      send_and_receive_close_and_status(call, recvd_call)
     end
 
     TEST_WRITE_FLAGS = [WriteFlags::BUFFER_HINT, WriteFlags::NO_COMPRESS]
@@ -136,6 +169,9 @@ describe GRPC::ActiveCall do
                                      @pass_through, deadline,
                                      metadata_received: true)
         expect(server_call.remote_read).to eq('marshalled:' + msg)
+        # finish the call
+        server_call.send_status(OK, '', true)
+        client_call.receive_and_check_status
       end
     end
   end
@@ -177,7 +213,6 @@ describe GRPC::ActiveCall do
                                     @pass_through,
                                     @pass_through,
                                     deadline)
-
       expect(@client_call.metadata_sent).to eql(true)
       expect(call).to(
         receive(:run_batch).with(hash_including(
@@ -291,6 +326,10 @@ describe GRPC::ActiveCall do
       expect(recvd_rpc.metadata).to_not be_nil
       expect(recvd_rpc.metadata['k1']).to eq('v1')
       expect(recvd_rpc.metadata['k2']).to eq('v2')
+      # finish the call
+      recvd_call.run_batch(CallOps::SEND_INITIAL_METADATA => {})
+      call.run_batch(CallOps::RECV_INITIAL_METADATA => nil)
+      send_and_receive_close_and_status(call, recvd_call)
     end
   end
 
@@ -324,6 +363,8 @@ describe GRPC::ActiveCall do
       server_call = expect_server_to_receive(msg)
       server_call.remote_send('server_response')
       expect(client_call.remote_read).to eq('server_response')
+      send_and_receive_close_and_status(
+        call, inner_call_of_active_call(server_call))
     end
 
     it 'saves no metadata when the server adds no metadata' do
@@ -338,6 +379,8 @@ describe GRPC::ActiveCall do
       expect(client_call.metadata).to be_nil
       client_call.remote_read
       expect(client_call.metadata).to eq({})
+      send_and_receive_close_and_status(
+        call, inner_call_of_active_call(server_call))
     end
 
     it 'saves metadata add by the server' do
@@ -353,6 +396,8 @@ describe GRPC::ActiveCall do
       client_call.remote_read
       expected = { 'k1' => 'v1', 'k2' => 'v2' }
       expect(client_call.metadata).to eq(expected)
+      send_and_receive_close_and_status(
+        call, inner_call_of_active_call(server_call))
     end
 
     it 'get a status from server when nothing else sent from server' do
@@ -409,6 +454,8 @@ describe GRPC::ActiveCall do
       server_call = expect_server_to_receive(msg)
       server_call.remote_send('server_response')
       expect(client_call.remote_read).to eq('unmarshalled:server_response')
+      send_and_receive_close_and_status(
+        call, inner_call_of_active_call(server_call))
     end
   end
 
@@ -418,9 +465,11 @@ describe GRPC::ActiveCall do
       client_call = ActiveCall.new(call, @pass_through,
                                    @pass_through, deadline)
       expect(client_call.each_remote_read).to be_a(Enumerator)
+      # finish the call
+      client_call.cancel
     end
 
-    it 'the returns an enumerator that can read n responses' do
+    it 'the returned enumerator can read n responses' do
       call = make_test_call
       ActiveCall.client_invoke(call)
       client_call = ActiveCall.new(call, @pass_through,
@@ -435,6 +484,8 @@ describe GRPC::ActiveCall do
         server_call.remote_send(reply)
         expect(e.next).to eq(reply)
       end
+      send_and_receive_close_and_status(
+        call, inner_call_of_active_call(server_call))
     end
 
     it 'the returns an enumerator that stops after an OK Status' do
@@ -453,7 +504,7 @@ describe GRPC::ActiveCall do
         server_call.remote_send(reply)
         expect(e.next).to eq(reply)
       end
-      server_call.send_status(OK, 'OK')
+      server_call.send_status(OK, 'OK', true)
       expect { e.next }.to raise_error(StopIteration)
     end
   end
@@ -568,9 +619,11 @@ describe GRPC::ActiveCall do
         msgs
       end
 
+      int_ctx = GRPC::InterceptionContext.new
+
       @server_thread = Thread.new do
         @server_call.run_server_bidi(
-          fake_gen_each_reply_with_no_call_param)
+          fake_gen_each_reply_with_no_call_param, int_ctx)
         @server_call.send_status(@server_status)
       end
     end
@@ -583,10 +636,11 @@ describe GRPC::ActiveCall do
         call_param.send_initial_metadata
         msgs
       end
+      int_ctx = GRPC::InterceptionContext.new
 
       @server_thread = Thread.new do
         @server_call.run_server_bidi(
-          fake_gen_each_reply_with_call_param)
+          fake_gen_each_reply_with_call_param, int_ctx)
         @server_call.send_status(@server_status)
       end
     end

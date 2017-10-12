@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 #include <vector>
 
+#include "src/cpp/util/core_stats.h"
 #include "src/proto/grpc/testing/control.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -63,6 +64,9 @@ class Server {
       timer_result = timer_->Mark();
     }
 
+    grpc_stats_data core_stats;
+    grpc_stats_collect(&core_stats);
+
     ServerStats stats;
     stats.set_time_elapsed(timer_result.wall);
     stats.set_time_system(timer_result.system);
@@ -70,6 +74,7 @@ class Server {
     stats.set_total_cpu_time(timer_result.total_cpu_time);
     stats.set_idle_cpu_time(timer_result.idle_cpu_time);
     stats.set_cq_poll_count(poll_count);
+    CoreStatsToProto(core_stats, stats.mutable_core_stats());
     return stats;
   }
 

@@ -1,14 +1,4 @@
 EXPORTS
-    grpc_raw_byte_buffer_create
-    grpc_raw_compressed_byte_buffer_create
-    grpc_byte_buffer_copy
-    grpc_byte_buffer_length
-    grpc_byte_buffer_destroy
-    grpc_byte_buffer_reader_init
-    grpc_byte_buffer_reader_destroy
-    grpc_byte_buffer_reader_next
-    grpc_byte_buffer_reader_readall
-    grpc_raw_byte_buffer_from_reader
     census_initialize
     census_shutdown
     census_supported
@@ -65,11 +55,13 @@ EXPORTS
     grpc_completion_queue_shutdown
     grpc_completion_queue_destroy
     grpc_alarm_create
+    grpc_alarm_set
     grpc_alarm_cancel
     grpc_alarm_destroy
     grpc_channel_check_connectivity_state
     grpc_channel_num_external_connectivity_watchers
     grpc_channel_watch_connectivity_state
+    grpc_channel_support_connectivity_watcher
     grpc_channel_create_call
     grpc_channel_ping
     grpc_channel_register_call
@@ -143,6 +135,16 @@ EXPORTS
     grpc_server_add_secure_http2_port
     grpc_call_set_credentials
     grpc_server_credentials_set_auth_metadata_processor
+    grpc_raw_byte_buffer_create
+    grpc_raw_compressed_byte_buffer_create
+    grpc_byte_buffer_copy
+    grpc_byte_buffer_length
+    grpc_byte_buffer_destroy
+    grpc_byte_buffer_reader_init
+    grpc_byte_buffer_reader_destroy
+    grpc_byte_buffer_reader_next
+    grpc_byte_buffer_reader_readall
+    grpc_raw_byte_buffer_from_reader
     grpc_slice_ref
     grpc_slice_unref
     grpc_slice_copy

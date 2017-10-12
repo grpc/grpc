@@ -45,18 +45,18 @@ typedef struct {
 } thd_args;
 
 static void thd_func(void *arg) {
-  thd_args *a = arg;
+  thd_args *a = (thd_args *)arg;
   a->validator(a->server, a->cq, a->registered_method);
   gpr_event_set(&a->done_thd, (void *)1);
 }
 
 static void done_write(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  thd_args *a = arg;
+  thd_args *a = (thd_args *)arg;
   gpr_event_set(&a->done_write, (void *)1);
 }
 
 static void server_setup_transport(void *ts, grpc_transport *transport) {
-  thd_args *a = ts;
+  thd_args *a = (thd_args *)ts;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_server_setup_transport(&exec_ctx, a->server, transport, NULL,
                               grpc_server_get_channel_args(a->server));
@@ -64,7 +64,7 @@ static void server_setup_transport(void *ts, grpc_transport *transport) {
 }
 
 static void read_done(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
-  gpr_event *read_done = arg;
+  gpr_event *read_done = (gpr_event *)arg;
   gpr_event_set(read_done, (void *)1);
 }
 
@@ -84,13 +84,18 @@ void grpc_run_bad_client_test(
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_completion_queue *shutdown_cq;
 
-  hex = gpr_dump(client_payload, client_payload_length,
-                 GPR_DUMP_HEX | GPR_DUMP_ASCII);
+  if (client_payload_length < 4 * 1024) {
+    hex = gpr_dump(client_payload, client_payload_length,
+                   GPR_DUMP_HEX | GPR_DUMP_ASCII);
 
-  /* Add a debug log */
-  gpr_log(GPR_INFO, "TEST: %s", hex);
+    /* Add a debug log */
+    gpr_log(GPR_INFO, "TEST: %s", hex);
 
-  gpr_free(hex);
+    gpr_free(hex);
+  } else {
+    gpr_log(GPR_INFO, "TEST: (%" PRIdPTR " byte long string)",
+            client_payload_length);
+  }
 
   /* Init grpc */
   grpc_init();
@@ -134,9 +139,12 @@ void grpc_run_bad_client_test(
   grpc_endpoint_write(&exec_ctx, sfd.client, &outgoing, &done_write_closure);
   grpc_exec_ctx_finish(&exec_ctx);
 
-  /* Await completion */
-  GPR_ASSERT(
-      gpr_event_wait(&a.done_write, grpc_timeout_seconds_to_deadline(5)));
+  /* Await completion, unless the request is large and write may not finish
+   * before the peer shuts down. */
+  if (!(flags & GRPC_BAD_CLIENT_LARGE_REQUEST)) {
+    GPR_ASSERT(
+        gpr_event_wait(&a.done_write, grpc_timeout_seconds_to_deadline(5)));
+  }
 
   if (flags & GRPC_BAD_CLIENT_DISCONNECT) {
     grpc_endpoint_shutdown(
@@ -186,6 +194,8 @@ void grpc_run_bad_client_test(
     grpc_exec_ctx_finish(&exec_ctx);
   }
 
+  GPR_ASSERT(
+      gpr_event_wait(&a.done_write, grpc_timeout_seconds_to_deadline(1)));
   shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
   grpc_server_shutdown_and_notify(a.server, shutdown_cq, NULL);
   GPR_ASSERT(grpc_completion_queue_pluck(

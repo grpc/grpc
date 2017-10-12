@@ -96,10 +96,10 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     tsi_ssl_client_handshaker_factory *self, const char *server_name_indication,
     tsi_handshaker **handshaker);
 
-/* Destroys the handshaker factory. WARNING: it is unsafe to destroy a factory
-   while handshakers created with this factory are still in use.  */
-void tsi_ssl_client_handshaker_factory_destroy(
-    tsi_ssl_client_handshaker_factory *self);
+/* Decrements reference count of the handshaker factory. Handshaker factory will
+ * be destroyed once no references exist. */
+void tsi_ssl_client_handshaker_factory_unref(
+    tsi_ssl_client_handshaker_factory *factory);
 
 /* --- tsi_ssl_server_handshaker_factory object ---
 
@@ -158,9 +158,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
     tsi_ssl_server_handshaker_factory *self, tsi_handshaker **handshaker);
 
-/* Destroys the handshaker factory. WARNING: it is unsafe to destroy a factory
-   while handshakers created with this factory are still in use.  */
-void tsi_ssl_server_handshaker_factory_destroy(
+/* Decrements reference count of the handshaker factory. Handshaker factory will
+ * be destroyed once no references exist. */
+void tsi_ssl_server_handshaker_factory_unref(
     tsi_ssl_server_handshaker_factory *self);
 
 /* Util that checks that an ssl peer matches a specific name.
@@ -169,6 +169,29 @@ void tsi_ssl_server_handshaker_factory_destroy(
    - handle %encoded chars.
    - handle public suffix wildchar more strictly (e.g. *.co.uk) */
 int tsi_ssl_peer_matches_name(const tsi_peer *peer, const char *name);
+
+/* --- Testing support. ---
+
+   These functions and typedefs are not intended to be used outside of testing.
+   */
+
+/* Base type of client and server handshaker factories. */
+typedef struct tsi_ssl_handshaker_factory tsi_ssl_handshaker_factory;
+
+/* Function pointer to handshaker_factory destructor. */
+typedef void (*tsi_ssl_handshaker_factory_destructor)(
+    tsi_ssl_handshaker_factory *factory);
+
+/* Virtual table for tsi_ssl_handshaker_factory. */
+typedef struct {
+  tsi_ssl_handshaker_factory_destructor destroy;
+} tsi_ssl_handshaker_factory_vtable;
+
+/* Set destructor of handshaker_factory to new_destructor, returns previous
+   destructor. */
+const tsi_ssl_handshaker_factory_vtable *tsi_ssl_handshaker_factory_swap_vtable(
+    tsi_ssl_handshaker_factory *factory,
+    tsi_ssl_handshaker_factory_vtable *new_vtable);
 
 #ifdef __cplusplus
 }

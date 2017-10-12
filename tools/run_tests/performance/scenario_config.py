@@ -154,7 +154,9 @@ def _ping_pong_scenario(name, rpc_type,
 
   scenario['client_config']['payload_config'] = _payload_type(use_generic_payload, req_size, resp_size)
 
-  optimization_target = 'blend'
+  # Optimization target of 'throughput' does not work well with epoll1 polling
+  # engine. Use the default value of 'blend'
+  optimization_target = 'throughput'
 
   if unconstrained_client:
     outstanding_calls = outstanding if outstanding is not None else OUTSTANDING_REQUESTS[unconstrained_client]
@@ -169,7 +171,6 @@ def _ping_pong_scenario(name, rpc_type,
     scenario['client_config']['outstanding_rpcs_per_channel'] = deep
     scenario['client_config']['client_channels'] = wide
     scenario['client_config']['async_client_threads'] = 0
-    optimization_target = 'throughput'
   else:
     scenario['client_config']['outstanding_rpcs_per_channel'] = 1
     scenario['client_config']['client_channels'] = 1
@@ -452,6 +453,8 @@ class CXXLanguage:
               unconstrained_client=synchronicity,
               secure=secure,
               minimal_stack=not secure,
+              server_threads_per_cq=3,
+              client_threads_per_cq=3,
               categories=smoketest_categories+[SCALABLE])
 
           # TODO(vjpai): Re-enable this test. It has a lot of timeouts
@@ -797,6 +800,55 @@ class RubyLanguage:
     return 'ruby'
 
 
+class Php7Language:
+
+  def __init__(self, php7_protobuf_c=False):
+    pass
+    self.php7_protobuf_c=php7_protobuf_c
+    self.safename = str(self)
+
+  def worker_cmdline(self):
+    if self.php7_protobuf_c:
+        return ['tools/run_tests/performance/run_worker_php.sh --use_protobuf_c_extension']
+    return ['tools/run_tests/performance/run_worker_php.sh']
+
+  def worker_port_offset(self):
+    if self.php7_protobuf_c:
+        return 900
+    return 800
+
+  def scenarios(self):
+    php7_extension_mode='php7_protobuf_php_extension'
+    if self.php7_protobuf_c:
+        php7_extension_mode='php7_protobuf_c_extension'
+    
+    yield _ping_pong_scenario(
+        '%s_to_cpp_protobuf_sync_unary_ping_pong' % php7_extension_mode,
+        rpc_type='UNARY', client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        server_language='c++', async_server_threads=1)
+
+    yield _ping_pong_scenario(
+        '%s_to_cpp_protobuf_sync_streaming_ping_pong' % php7_extension_mode,
+        rpc_type='STREAMING', client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        server_language='c++', async_server_threads=1)
+
+    # TODO(ddyihai): Investigate why when async_server_threads=1/CPU usage 340%, the QPS performs
+    # better than async_server_threads=0/CPU usage 490%.
+    yield _ping_pong_scenario(
+        '%s_to_cpp_protobuf_sync_unary_qps_unconstrained' % php7_extension_mode,
+        rpc_type='UNARY', client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
+        server_language='c++', outstanding=1, async_server_threads=1, unconstrained_client='sync')
+
+    yield _ping_pong_scenario(
+        '%s_to_cpp_protobuf_sync_streaming_qps_unconstrained' % php7_extension_mode,
+        rpc_type='STREAMING', client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
+        server_language='c++', outstanding=1, async_server_threads=1, unconstrained_client='sync')
+
+  def __str__(self):
+    if self.php7_protobuf_c:
+        return 'php7_protobuf_c'
+    return 'php7'
+
 class JavaLanguage:
 
   def __init__(self):
@@ -994,6 +1046,8 @@ LANGUAGES = {
     'node' : NodeLanguage(),
     'node_express': NodeExpressLanguage(),
     'ruby' : RubyLanguage(),
+    'php7' : Php7Language(),
+    'php7_protobuf_c' : Php7Language(php7_protobuf_c=True),
     'java' : JavaLanguage(),
     'python' : PythonLanguage(),
     'go' : GoLanguage(),

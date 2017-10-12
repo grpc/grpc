@@ -1,0 +1,58 @@
+%YAML 1.2
+--- |
+  <%!
+  # TODO (mxyan): Make this list from build.yaml
+  textual_headers = ["include/grpc/support/atm_gcc_atomic.h",
+                     "include/grpc/support/atm_gcc_sync.h",
+                     "include/grpc/support/atm_windows.h",
+                     "include/grpc/support/sync_custom.h",
+                     "include/grpc/support/sync_posix.h",
+                     "include/grpc/support/sync_windows.h",
+                     "include/grpc/support/tls_gcc.h",
+                     "include/grpc/support/tls_msvc.h",
+                     "include/grpc/support/tls_pthread.h",
+                     "include/grpc/impl/codegen/atm_gcc_atomic.h",
+                     "include/grpc/impl/codegen/atm_gcc_sync.h",
+                     "include/grpc/impl/codegen/atm_windows.h",
+                     "include/grpc/impl/codegen/sync_custom.h",
+                     "include/grpc/impl/codegen/sync_posix.h",
+                     "include/grpc/impl/codegen/sync_windows.h"]
+
+  def grpc_public_headers_no_dir(libs):
+    out = []
+    for lib in libs:
+      if lib.name in ("grpc", "gpr"):
+        out += lib.get('public_headers', [])
+    out = [f for f in out if f not in textual_headers]
+    out = [hdr.split('/', 2)[2] for hdr in out]
+    return out
+
+  # Generate the list of platform-specific headers as textual headers so that
+  # they are not built when the module is built but only when they are named by
+  # an #include directive.
+  def grpc_public_textual_headers_no_dir(libs):
+    out = []
+    for lib in libs:
+      if lib.name in ("grpc", "gpr"):
+        out += lib.get('public_headers', [])
+    out = [f for f in out if f in textual_headers]
+    out = [hdr.split('/', 2)[2] for hdr in out]
+    return out
+
+  def header_lines(files):
+    return ('\n  ').join('header "%s"' % f for f in files)
+
+  def textual_header_lines(files):
+    return ('\n  ').join('textual header "%s"' % f for f in files)
+  %>
+  framework module grpc {
+    umbrella header "grpc.h"
+
+    ${header_lines(grpc_public_headers_no_dir(libs))}
+
+    ${textual_header_lines(grpc_public_textual_headers_no_dir(libs))}
+
+    export *
+    module * { export * }
+  }
+

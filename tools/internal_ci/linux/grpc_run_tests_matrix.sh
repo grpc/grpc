@@ -20,4 +20,21 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-tools/run_tests/run_tests_matrix.py $RUN_TESTS_FLAGS
+# If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
+if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ] && [ -n "$RUN_TESTS_FLAGS" ]; then
+  sudo apt-get install -y jq
+  ghprbTargetBranch=$(curl -s https://api.github.com/repos/grpc/grpc/pulls/$KOKORO_GITHUB_PULL_REQUEST_NUMBER | jq -r .base.ref)
+  export RUN_TESTS_FLAGS="$RUN_TESTS_FLAGS --filter_pr_tests --base_branch origin/$ghprbTargetBranch"
+fi
+
+tools/run_tests/run_tests_matrix.py $RUN_TESTS_FLAGS || FAILED="true"
+
+# Reveal leftover processes that might be left behind by the build
+ps aux | grep -i kbuilder
+
+echo 'Exiting gRPC main test script.'
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi

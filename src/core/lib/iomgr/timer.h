@@ -32,6 +32,10 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct grpc_timer grpc_timer;
 
 /* Initialize *timer. When expired or canceled, closure will be called with
@@ -42,6 +46,10 @@ typedef struct grpc_timer grpc_timer;
    when to free up any user-level state. */
 void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
                      grpc_millis deadline, grpc_closure *closure);
+
+/* Initialize *timer without setting it. This can later be passed through
+   the regular init or cancel */
+void grpc_timer_init_unset(grpc_timer *timer);
 
 /* Note that there is no timer destroy function. This is because the
    timer is a one-time occurrence with a guarantee that the callback will
@@ -97,5 +105,9 @@ void grpc_timer_consume_kick(void);
 /* the following must be implemented by each iomgr implementation */
 
 void grpc_kick_poller(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_H */

@@ -41,6 +41,7 @@ typedef struct grpc_linked_mdelem {
 
 typedef struct grpc_mdelem_list {
   size_t count;
+  size_t default_count;  // Number of default keys.
   grpc_linked_mdelem *head;
   grpc_linked_mdelem *tail;
 } grpc_mdelem_list;
@@ -124,10 +125,11 @@ typedef struct {
 } grpc_filtered_mdelem;
 
 #define GRPC_FILTERED_ERROR(error) \
-  ((grpc_filtered_mdelem){(error), GRPC_MDNULL})
-#define GRPC_FILTERED_MDELEM(md) ((grpc_filtered_mdelem){GRPC_ERROR_NONE, (md)})
+  { (error), GRPC_MDNULL }
+#define GRPC_FILTERED_MDELEM(md) \
+  { GRPC_ERROR_NONE, (md) }
 #define GRPC_FILTERED_REMOVE() \
-  ((grpc_filtered_mdelem){GRPC_ERROR_NONE, GRPC_MDNULL})
+  { GRPC_ERROR_NONE, GRPC_MDNULL }
 
 typedef grpc_filtered_mdelem (*grpc_metadata_batch_filter_func)(
     grpc_exec_ctx *exec_ctx, void *user_data, grpc_mdelem elem);

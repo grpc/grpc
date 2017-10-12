@@ -1,0 +1,4 @@
+%YAML 1.2
+--- |
+  <%namespace file="create_private_dns_zone_defs.include" import="*"/>\
+  ${create_private_dns_zone(resolver_gce_integration_tests_zone_id, resolver_tests_common_zone_name)}

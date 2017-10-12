@@ -28,6 +28,8 @@ grpc_cc_test(
     srcs = ["backoff_test.c"],
     language = "C",
     deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
         "//:gpr",
         "//test/core/util:gpr_test_util",
     ],

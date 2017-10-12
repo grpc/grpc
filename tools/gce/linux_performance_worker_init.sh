@@ -72,6 +72,7 @@ sudo apt-get install -y netperf
 sudo apt-get install -y libgflags-dev libgtest-dev libc++-dev clang
 
 # Python dependencies
+sudo pip install --upgrade pip==9.0.1
 sudo pip install tabulate
 sudo pip install google-api-python-client
 sudo pip install virtualenv
@@ -127,6 +128,11 @@ ruby -v
 
 # Install bundler (prerequisite for gRPC Ruby)
 gem install bundler
+
+# PHP dependencies
+sudo apt-get install -y php php-dev phpunit php-pear unzip zlib1g-dev
+curl -sS https://getcomposer.org/installer | php
+sudo mv composer.phar /usr/local/bin/composer
 
 # Java dependencies - nothing as we already have Java JDK 8
 

@@ -32,14 +32,14 @@ Header Files
   # endif
   ```
 - Header files should be self-contained and end in .h.
-- All header files should have a #define guard to prevent multiple inclusion.
+- All header files should have a `#define` guard to prevent multiple inclusion.
   To guarantee uniqueness they should be based on the file's path.
 
   For public headers: `include/grpc/grpc.h` → `GRPC_GRPC_H`
 
   For private headers:
-  `src/core/channel/channel_stack.h` →
-  `GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_STACK_H`
+  `src/core/lib/channel/channel_stack.h` →
+  `GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_H`
 
 Variable Initialization
 -----------------------
@@ -72,8 +72,16 @@ Symbol Names
 
 - Non-static functions must be prefixed by `grpc_`
 - Static functions must *not* be prefixed by `grpc_`
+- Typenames of `struct`s , `union`s, and `enum`s must be prefixed by `grpc_` if
+  they are declared in a header file. They must not be prefixed by `grpc_` if
+  they are declared in a source file.
 - Enumeration values and `#define` names must be uppercase. All other values
   must be lowercase.
+- Enumeration values or `#define` names defined in a header file must be
+  prefixed with `GRPC_` (except for `#define` macros that are being used to
+  substitute functions; those should follow the general rules for
+  functions). Enumeration values or `#define`s defined in source files must not
+  be prefixed with `GRPC_`.
 - Multiple word identifiers use underscore as a delimiter, *never* camel
   case. E.g. `variable_name`.
 

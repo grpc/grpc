@@ -16,7 +16,7 @@ htmlcov/
 dist/
 *.egg
 py27/
-py34/
+py3[0-9]*/
 
 # Node installation output
 node_modules

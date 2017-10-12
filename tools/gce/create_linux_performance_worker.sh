@@ -34,9 +34,10 @@ gcloud compute instances create $INSTANCE_NAME \
     --zone "$ZONE" \
     --machine-type $MACHINE_TYPE \
     --image-project ubuntu-os-cloud \
-    --image-family ubuntu-1610 \
+    --image-family ubuntu-1704 \
     --boot-disk-size 300 \
-    --scopes https://www.googleapis.com/auth/bigquery
+    --scopes https://www.googleapis.com/auth/bigquery \
+    --tags=allow-ssh
 
 echo 'Created GCE instance, waiting 60 seconds for it to come online.'
 sleep 60

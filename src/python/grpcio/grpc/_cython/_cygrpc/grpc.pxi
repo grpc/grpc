@@ -59,6 +59,7 @@ cdef extern from "grpc/grpc.h":
   grpc_slice grpc_slice_malloc(size_t length) nogil
   grpc_slice grpc_slice_from_copied_string(const char *source) nogil
   grpc_slice grpc_slice_from_copied_buffer(const char *source, size_t len) nogil
+  grpc_slice grpc_slice_copy(grpc_slice s) nogil
 
   # Declare functions for function-like macros (because Cython)...
   void *grpc_slice_start_ptr "GRPC_SLICE_START_PTR" (grpc_slice s) nogil
@@ -374,6 +375,10 @@ cdef extern from "grpc/grpc.h":
 
 cdef extern from "grpc/grpc_security.h":
 
+  # Declare this as an enum, this is the only way to make it a const in
+  # cython
+  enum: GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX
+
   ctypedef enum grpc_ssl_roots_override_result:
     GRPC_SSL_ROOTS_OVERRIDE_OK
     GRPC_SSL_ROOTS_OVERRIDE_FAILED_PERMANENTLY
@@ -461,9 +466,12 @@ cdef extern from "grpc/grpc_security.h":
       grpc_status_code status, const char *error_details)
 
   ctypedef struct grpc_metadata_credentials_plugin:
-    void (*get_metadata)(
+    int (*get_metadata)(
         void *state, grpc_auth_metadata_context context,
-        grpc_credentials_plugin_metadata_cb cb, void *user_data)
+        grpc_credentials_plugin_metadata_cb cb, void *user_data,
+        grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+        size_t *num_creds_md, grpc_status_code *status,
+        const char **error_details)
     void (*destroy)(void *state)
     void *state
     const char *type
@@ -522,7 +530,7 @@ cdef extern from "grpc/compression.h":
   int grpc_compression_algorithm_parse(
       grpc_slice value, grpc_compression_algorithm *algorithm) nogil
   int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
-                                      char **name) nogil
+                                      const char **name) nogil
   grpc_compression_algorithm grpc_compression_algorithm_for_level(
       grpc_compression_level level, uint32_t accepted_encodings) nogil
   void grpc_compression_options_init(grpc_compression_options *opts) nogil

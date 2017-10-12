@@ -9,17 +9,15 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * <pre>
  * For reconnect interop test only.
  * Client tells server what reconnection parameters it used.
- * </pre>
  *
- * Protobuf type <code>grpc.testing.ReconnectParams</code>
+ * Generated from protobuf message <code>grpc.testing.ReconnectParams</code>
  */
 class ReconnectParams extends \Google\Protobuf\Internal\Message
 {
     /**
-     * <code>int32 max_reconnect_backoff_ms = 1;</code>
+     * Generated from protobuf field <code>int32 max_reconnect_backoff_ms = 1;</code>
      */
     private $max_reconnect_backoff_ms = 0;
 
@@ -29,7 +27,8 @@ class ReconnectParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>int32 max_reconnect_backoff_ms = 1;</code>
+     * Generated from protobuf field <code>int32 max_reconnect_backoff_ms = 1;</code>
+     * @return int
      */
     public function getMaxReconnectBackoffMs()
     {
@@ -37,12 +36,16 @@ class ReconnectParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>int32 max_reconnect_backoff_ms = 1;</code>
+     * Generated from protobuf field <code>int32 max_reconnect_backoff_ms = 1;</code>
+     * @param int $var
+     * @return $this
      */
     public function setMaxReconnectBackoffMs($var)
     {
         GPBUtil::checkInt32($var);
         $this->max_reconnect_backoff_ms = $var;
+
+        return $this;
     }
 
 }

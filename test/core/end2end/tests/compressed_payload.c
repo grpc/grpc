@@ -151,6 +151,11 @@ static void request_for_disabled_algorithm(
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
+  error =
+      grpc_server_request_call(f.server, &s, &call_details,
+                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -187,11 +192,8 @@ static void request_for_disabled_algorithm(
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
 
   op = ops;
@@ -220,7 +222,6 @@ static void request_for_disabled_algorithm(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(103), true);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
 
   /* call was cancelled (closed) ... */
@@ -228,7 +229,7 @@ static void request_for_disabled_algorithm(
   /* with a certain error */
   GPR_ASSERT(status == expected_error);
 
-  char *algo_name = NULL;
+  const char *algo_name = NULL;
   GPR_ASSERT(grpc_compression_algorithm_name(algorithm_to_disable, &algo_name));
   char *expected_details = NULL;
   gpr_asprintf(&expected_details, "Compression algorithm '%s' is disabled.",

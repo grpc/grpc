@@ -19,6 +19,7 @@
 #ifndef GRPC_CORE_LIB_SUPPORT_STRING_H
 #define GRPC_CORE_LIB_SUPPORT_STRING_H
 
+#include <stdbool.h>
 #include <stddef.h>
 
 #include <grpc/support/port_platform.h>
@@ -106,6 +107,8 @@ int gpr_stricmp(const char *a, const char *b);
 
 void *gpr_memrchr(const void *s, int c, size_t n);
 
+/** Return true if lower(s) equals "true", "yes" or "1", otherwise false. */
+bool gpr_is_true(const char *s);
 #ifdef __cplusplus
 }
 #endif

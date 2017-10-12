@@ -18,7 +18,9 @@
 
 #include <string.h>
 
+extern "C" {
 #include "src/core/lib/channel/channel_stack.h"
+}
 #include "src/cpp/common/channel_filter.h"
 
 #include <grpc++/impl/codegen/slice.h>

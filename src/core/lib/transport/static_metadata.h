@@ -27,6 +27,10 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H
 #define GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "src/core/lib/transport/metadata.h"
 
 #define GRPC_STATIC_MDSTR_COUNT 100
@@ -571,6 +575,8 @@ typedef union {
              GRPC_BATCH_CALLOUTS_COUNT)                 \
        : GRPC_BATCH_CALLOUTS_COUNT)
 
+extern bool grpc_static_callout_is_default[GRPC_BATCH_CALLOUTS_COUNT];
+
 extern const uint8_t grpc_static_accept_encoding_metadata[8];
 #define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs)                       \
   (GRPC_MAKE_MDELEM(                                                           \
@@ -582,4 +588,7 @@ extern const uint8_t grpc_static_accept_stream_encoding_metadata[4];
   (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table                                  \
                         [grpc_static_accept_stream_encoding_metadata[(algs)]], \
                     GRPC_MDELEM_STORAGE_STATIC))
+#ifdef __cplusplus
+}
+#endif
 #endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */

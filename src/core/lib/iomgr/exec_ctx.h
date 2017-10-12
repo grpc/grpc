@@ -20,12 +20,18 @@
 #define GRPC_CORE_LIB_IOMGR_EXEC_CTX_H
 
 #include <grpc/support/atm.h>
+#include <grpc/support/cpu.h>
 
 #include "src/core/lib/iomgr/closure.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef gpr_atm grpc_millis;
 
 #define GRPC_MILLIS_INF_FUTURE GPR_ATM_MAX
+#define GRPC_MILLIS_INF_PAST GPR_ATM_MIN
 
 /** A workqueue represents a list of work to be executed asynchronously.
     Forward declared here to avoid a circular dependency with workqueue.h. */
@@ -66,6 +72,7 @@ struct grpc_exec_ctx {
   /** last active combiner in the active combiner list */
   grpc_combiner *last_combiner;
   uintptr_t flags;
+  unsigned starting_cpu;
   void *check_ready_to_finish_arg;
   bool (*check_ready_to_finish)(grpc_exec_ctx *exec_ctx, void *arg);
 
@@ -75,10 +82,10 @@ struct grpc_exec_ctx {
 
 /* initializer for grpc_exec_ctx:
    prefer to use GRPC_EXEC_CTX_INIT whenever possible */
-#define GRPC_EXEC_CTX_INITIALIZER(flags, finish_check, finish_check_arg)       \
-  {                                                                            \
-    GRPC_CLOSURE_LIST_INIT, NULL, NULL, flags, finish_check_arg, finish_check, \
-        false, 0                                                               \
+#define GRPC_EXEC_CTX_INITIALIZER(flags, finish_check, finish_check_arg) \
+  {                                                                      \
+    GRPC_CLOSURE_LIST_INIT, NULL, NULL, flags, gpr_cpu_current_cpu(),    \
+        finish_check_arg, finish_check, false, 0                         \
   }
 
 /* initialize an execution context at the top level of an API call into grpc
@@ -116,5 +123,9 @@ void grpc_exec_ctx_invalidate_now(grpc_exec_ctx *exec_ctx);
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock);
 grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec timespec);
 grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec timespec);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXEC_CTX_H */

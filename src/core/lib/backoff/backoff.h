@@ -21,6 +21,10 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
   /// const:  how long to wait after the first failure before retrying
   grpc_millis initial_connect_timeout;
@@ -37,7 +41,7 @@ typedef struct {
   uint32_t rng_state;
 
   /// current retry timeout in milliseconds
-  int64_t current_timeout_millis;
+  grpc_millis current_timeout_millis;
 } grpc_backoff;
 
 /// Initialize backoff machinery - does not need to be destroyed
@@ -54,5 +58,9 @@ grpc_millis grpc_backoff_step(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff);
 /// grpc_backoff_begin
 /// instead
 void grpc_backoff_reset(grpc_backoff *backoff);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_BACKOFF_BACKOFF_H */

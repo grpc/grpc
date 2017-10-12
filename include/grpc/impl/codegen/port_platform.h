@@ -183,7 +183,6 @@
 #define _BSD_SOURCE
 #endif
 #if TARGET_OS_IPHONE
-#define GPR_FORBID_UNREACHABLE_CODE 1
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
 #define GPR_PTHREAD_TLS 1
@@ -292,10 +291,6 @@
 #endif
 
 #ifdef _MSC_VER
-#ifdef _PYTHON_MSVC
-// The Python 3.5 Windows runtime is missing InetNtop
-#define GPR_WIN_INET_NTOP
-#endif  // _PYTHON_MSVC
 #if _MSC_VER < 1700
 typedef __int8 int8_t;
 typedef __int16 int16_t;
@@ -407,6 +402,21 @@ typedef unsigned __int64 uint64_t;
 
 #ifndef CENSUSAPI
 #define CENSUSAPI GRPCAPI
+#endif
+
+#ifndef GPR_ATTRIBUTE_NO_TSAN /* (1) */
+#if defined(__has_feature)
+#if __has_feature(thread_sanitizer)
+#define GPR_ATTRIBUTE_NO_TSAN __attribute__((no_sanitize("thread")))
+#endif                        /* __has_feature(thread_sanitizer) */
+#endif                        /* defined(__has_feature) */
+#ifndef GPR_ATTRIBUTE_NO_TSAN /* (2) */
+#define GPR_ATTRIBUTE_NO_TSAN
+#endif /* GPR_ATTRIBUTE_NO_TSAN (2) */
+#endif /* GPR_ATTRIBUTE_NO_TSAN (1) */
+
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
 #endif
 
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */
