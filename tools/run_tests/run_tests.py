@@ -286,7 +286,7 @@ class CLanguage(object):
         continue
       polling_strategies = (_POLLING_STRATEGIES.get(self.platform, ['all'])
                             if target.get('uses_polling', True)
-                            else ['all'])
+                            else ['none'])
       if self.args.iomgr_platform == 'uv':
         polling_strategies = ['all']
       for polling_strategy in polling_strategies:
