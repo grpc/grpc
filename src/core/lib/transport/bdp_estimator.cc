@@ -30,8 +30,12 @@ grpc_tracer_flag grpc_bdp_estimator_trace =
 void grpc_bdp_estimator_init(grpc_bdp_estimator *estimator, const char *name) {
   estimator->estimate = 65536;
   estimator->ping_state = GRPC_BDP_PING_UNSCHEDULED;
+  estimator->ping_start_time = gpr_time_0(GPR_CLOCK_MONOTONIC);
+  estimator->next_ping_scheduled = 0;
   estimator->name = name;
   estimator->bw_est = 0;
+  estimator->inter_ping_delay = 100.0;  // start at 100ms
+  estimator->stable_estimate_count = 0;
 }
 
 bool grpc_bdp_estimator_get_estimate(const grpc_bdp_estimator *estimator,
@@ -51,10 +55,11 @@ void grpc_bdp_estimator_add_incoming_bytes(grpc_bdp_estimator *estimator,
   estimator->accumulator += num_bytes;
 }
 
-bool grpc_bdp_estimator_need_ping(const grpc_bdp_estimator *estimator) {
+bool grpc_bdp_estimator_need_ping(grpc_exec_ctx *exec_ctx,
+                                  const grpc_bdp_estimator *estimator) {
   switch (estimator->ping_state) {
     case GRPC_BDP_PING_UNSCHEDULED:
-      return true;
+      return grpc_exec_ctx_now(exec_ctx) >= estimator->next_ping_scheduled;
     case GRPC_BDP_PING_SCHEDULED:
       return false;
     case GRPC_BDP_PING_STARTED:
@@ -84,11 +89,13 @@ void grpc_bdp_estimator_start_ping(grpc_bdp_estimator *estimator) {
   estimator->ping_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
 }
 
-void grpc_bdp_estimator_complete_ping(grpc_bdp_estimator *estimator) {
-  gpr_timespec dt_ts =
-      gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), estimator->ping_start_time);
+void grpc_bdp_estimator_complete_ping(grpc_exec_ctx *exec_ctx,
+                                      grpc_bdp_estimator *estimator) {
+  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+  gpr_timespec dt_ts = gpr_time_sub(now, estimator->ping_start_time);
   double dt = (double)dt_ts.tv_sec + 1e-9 * (double)dt_ts.tv_nsec;
   double bw = dt > 0 ? ((double)estimator->accumulator / dt) : 0;
+  int start_inter_ping_delay = estimator->inter_ping_delay;
   if (GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
     gpr_log(GPR_DEBUG, "bdp[%s]:complete acc=%" PRId64 " est=%" PRId64
                        " dt=%lf bw=%lfMbs bw_est=%lfMbs",
@@ -105,7 +112,26 @@ void grpc_bdp_estimator_complete_ping(grpc_bdp_estimator *estimator) {
       gpr_log(GPR_DEBUG, "bdp[%s]: estimate increased to %" PRId64,
               estimator->name, estimator->estimate);
     }
+    estimator->inter_ping_delay /= 2;  // if the ping estimate changes,
+                                       // exponentially get faster at probing
+  } else if (estimator->inter_ping_delay < 10000) {
+    estimator->stable_estimate_count++;
+    if (estimator->stable_estimate_count >= 2) {
+      estimator->inter_ping_delay +=
+          100 +
+          (int)(rand() * 100.0 / RAND_MAX);  // if the ping estimate is steady,
+                                             // slowly ramp down the probe time
+    }
+  }
+  if (start_inter_ping_delay != estimator->inter_ping_delay) {
+    estimator->stable_estimate_count = 0;
+    if (GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
+      gpr_log(GPR_DEBUG, "bdp[%s]:update_inter_time to %dms", estimator->name,
+              estimator->inter_ping_delay);
+    }
   }
   estimator->ping_state = GRPC_BDP_PING_UNSCHEDULED;
   estimator->accumulator = 0;
+  estimator->next_ping_scheduled =
+      grpc_exec_ctx_now(exec_ctx) + estimator->inter_ping_delay;
 }

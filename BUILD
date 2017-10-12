@@ -467,7 +467,6 @@ grpc_cc_library(
         "src/core/lib/support/arena.cc",
         "src/core/lib/support/atm.cc",
         "src/core/lib/support/avl.cc",
-        "src/core/lib/support/backoff.cc",
         "src/core/lib/support/cmdline.cc",
         "src/core/lib/support/cpu_iphone.cc",
         "src/core/lib/support/cpu_linux.cc",
@@ -514,8 +513,6 @@ grpc_cc_library(
         "src/core/lib/support/atomic.h",
         "src/core/lib/support/atomic_with_atm.h",
         "src/core/lib/support/atomic_with_std.h",
-        "src/core/lib/support/backoff.h",
-        "src/core/lib/support/block_annotate.h",
         "src/core/lib/support/env.h",
         "src/core/lib/support/memory.h",
         "src/core/lib/support/mpscq.h",
@@ -568,6 +565,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_base_c",
     srcs = [
+        "src/core/lib/backoff/backoff.cc",
         "src/core/lib/channel/channel_args.cc",
         "src/core/lib/channel/channel_stack.cc",
         "src/core/lib/channel/channel_stack_builder.cc",
@@ -762,6 +760,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_utils_posix.h",
         "src/core/lib/iomgr/socket_windows.h",
         "src/core/lib/iomgr/sys_epoll_wrapper.h",
+        "src/core/lib/iomgr/block_annotate.h",
         "src/core/lib/iomgr/tcp_client.h",
         "src/core/lib/iomgr/tcp_client_posix.h",
         "src/core/lib/iomgr/tcp_posix.h",
@@ -817,6 +816,7 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
+        "src/core/lib/backoff/backoff.h",
     ],
     external_deps = [
         "zlib",

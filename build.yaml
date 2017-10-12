@@ -66,7 +66,6 @@ filegroups:
   - src/core/lib/support/arena.cc
   - src/core/lib/support/atm.cc
   - src/core/lib/support/avl.cc
-  - src/core/lib/support/backoff.cc
   - src/core/lib/support/cmdline.cc
   - src/core/lib/support/cpu_iphone.cc
   - src/core/lib/support/cpu_linux.cc
@@ -143,8 +142,6 @@ filegroups:
   - src/core/lib/support/atomic.h
   - src/core/lib/support/atomic_with_atm.h
   - src/core/lib/support/atomic_with_std.h
-  - src/core/lib/support/backoff.h
-  - src/core/lib/support/block_annotate.h
   - src/core/lib/support/env.h
   - src/core/lib/support/memory.h
   - src/core/lib/support/mpscq.h
@@ -185,6 +182,7 @@ filegroups:
   - grpc++_codegen_base
 - name: grpc_base
   src:
+  - src/core/lib/backoff/backoff.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
@@ -337,6 +335,7 @@ filegroups:
   - include/grpc/status.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/lib/backoff/backoff.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
@@ -355,6 +354,7 @@ filegroups:
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h
+  - src/core/lib/iomgr/block_annotate.h
   - src/core/lib/iomgr/call_combiner.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
@@ -1785,6 +1785,16 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+- name: backoff_test
+  build: test
+  language: c
+  src:
+  - test/core/backoff/backoff_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: bad_server_response_test
   build: test
   language: c
@@ -2213,14 +2223,6 @@ targets:
   deps:
   - gpr_test_util
   - gpr
-- name: gpr_backoff_test
-  build: test
-  language: c
-  src:
-  - test/core/support/backoff_test.c
-  deps:
-  - gpr_test_util
-  - gpr
 - name: gpr_cmdline_test
   build: test
   language: c
@@ -2279,6 +2281,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: gpr_spinlock_test
   cpu_cost: 3
   build: test
@@ -4166,6 +4169,22 @@ targets:
   excluded_poll_engines:
   - poll
   - poll-cv
+- name: h2_ssl_cert_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/end2end_tests.h
+  src:
+  - test/core/end2end/h2_ssl_cert_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
 - name: health_service_end2end_test
   gtest: true
   build: test

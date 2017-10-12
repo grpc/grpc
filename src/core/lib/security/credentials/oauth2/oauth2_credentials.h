@@ -61,7 +61,7 @@ typedef void (*grpc_fetch_oauth2_func)(grpc_exec_ctx *exec_ctx,
                                        grpc_httpcli_context *http_context,
                                        grpc_polling_entity *pollent,
                                        grpc_iomgr_cb_func cb,
-                                       gpr_timespec deadline);
+                                       grpc_millis deadline);
 
 typedef struct grpc_oauth2_pending_get_request_metadata {
   grpc_credentials_mdelem_array *md_array;
@@ -74,7 +74,7 @@ typedef struct {
   grpc_call_credentials base;
   gpr_mu mu;
   grpc_mdelem access_token_md;
-  gpr_timespec token_expiration;
+  grpc_millis token_expiration;
   bool token_fetch_pending;
   grpc_oauth2_pending_get_request_metadata *pending_requests;
   grpc_httpcli_context httpcli_context;
@@ -104,7 +104,7 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
     grpc_exec_ctx *exec_ctx, const struct grpc_http_response *response,
-    grpc_mdelem *token_md, gpr_timespec *token_lifetime);
+    grpc_mdelem *token_md, grpc_millis *token_lifetime);
 
 #ifdef __cplusplus
 }
