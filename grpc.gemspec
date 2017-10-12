@@ -1125,6 +1125,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/cares/ares_build.h )
   s.files += %w( third_party/cares/config_linux/ares_config.h )
   s.files += %w( third_party/cares/config_darwin/ares_config.h )
+  s.files += %w( third_party/cares/config_openbsd/ares_config.h )
   s.files += %w( third_party/cares/cares/ares__close_sockets.c )
   s.files += %w( third_party/cares/cares/ares__get_hostent.c )
   s.files += %w( third_party/cares/cares/ares__read_line.c )
