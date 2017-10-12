@@ -36,6 +36,7 @@ sys.path.append(python_util_dir)
 import dockerjob
 import jobset
 import report_utils
+import upload_test_results
 
 _LANGUAGES = client_matrix.LANG_RUNTIME_MATRIX.keys()
 # All gRPC release tags, flattened, deduped and sorted.
@@ -74,6 +75,11 @@ argp.add_argument('--allow_flakes',
                   const=True,
                   help=('Allow flaky tests to show as passing (re-runs failed '
                         'tests up to five times)'))
+argp.add_argument('--bq_result_table',
+                  default='',
+                  type=str,
+                  nargs='?',
+                  help='Upload test results to a specified BQ table.')
 
 args = argp.parse_args()
 
@@ -117,7 +123,7 @@ def find_all_images_for_lang(lang):
 
 # caches test cases (list of JobSpec) loaded from file.  Keyed by lang and runtime.
 _loaded_testcases = {}
-def find_test_cases(lang, release):
+def find_test_cases(lang, release, suite_name):
   """Returns the list of test cases from testcase files per lang/release."""
   file_tmpl = os.path.join(os.path.dirname(__file__), 'testcases/%s__%s')
   if not os.path.exists(file_tmpl % (lang, release)):
@@ -134,8 +140,12 @@ def find_test_cases(lang, release):
         if line.startswith('docker run'):
           m = re.search('--test_case=(.*)"', line)
           shortname = m.group(1) if m else 'unknown_test'
+          m = re.search('--server_host_override=(.*).sandbox.googleapis.com', 
+                        line)
+          server = m.group(1) if m else 'unknown_server'
           spec = jobset.JobSpec(cmdline=line,
-                                shortname=shortname,
+                                shortname='%s:%s:%s:%s' % (suite_name, lang, 
+                                                           server, shortname),
                                 timeout_seconds=_TEST_TIMEOUT,
                                 shell=True,
                                 flake_retries=5 if args.allow_flakes else 0)
@@ -163,11 +173,15 @@ def run_tests_for_lang(lang, runtime, images):
     # Download the docker image before running each test case.
     subprocess.check_call(['gcloud', 'docker', '--', 'pull', image])
     _docker_images_cleanup.append(image)
-    job_spec_list = find_test_cases(lang,release)
+    suite_name = '%s__%s_%s' % (lang, runtime, release)
+    job_spec_list = find_test_cases(lang, release, suite_name)
     num_failures, resultset = jobset.run(job_spec_list,
                                          newline_on_success=True,
                                          add_env={'docker_image':image},
                                          maxjobs=args.jobs)
+    if args.bq_result_table and resultset:
+      upload_test_results.upload_interop_results_to_bq(
+          resultset, args.bq_result_table, args)
     if num_failures:
       jobset.message('FAILED', 'Some tests failed', do_newline=True)
       total_num_failures += num_failures
@@ -178,7 +192,7 @@ def run_tests_for_lang(lang, runtime, images):
         _xml_report_tree,
         resultset,
         'grpc_interop_matrix',
-        '%s__%s %s'%(lang,runtime,release),
+        suite_name,
         str(uuid.uuid4()))
   
   return total_num_failures
