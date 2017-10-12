@@ -117,7 +117,7 @@ static void test_retry_basic(grpc_end2end_test_config config) {
   int was_cancelled = 2;
   char *peer;
 
-  const grpc_arg arg = {
+  grpc_arg arg = {
       .key = GRPC_ARG_SERVICE_CONFIG,
       .type = GRPC_ARG_STRING,
       .value.string =
@@ -132,15 +132,9 @@ static void test_retry_basic(grpc_end2end_test_config config) {
           "    }\n"
           "  } ]\n"
           "}"};
-  grpc_channel_args *client_args =
-      grpc_channel_args_copy_and_add(NULL, &arg, 1);
+  grpc_channel_args client_args = {1, &arg};
   grpc_end2end_test_fixture f =
-      begin_test(config, "retry_basic", client_args, NULL);
-  {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, client_args);
-    grpc_exec_ctx_finish(&exec_ctx);
-  }
+      begin_test(config, "retry_basic", &client_args, NULL);
 
   cq_verifier *cqv = cq_verifier_create(f.cq);
 
@@ -355,7 +349,7 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
   int was_cancelled = 2;
   char *peer;
 
-  const grpc_arg arg = {
+  grpc_arg arg = {
       .key = GRPC_ARG_SERVICE_CONFIG,
       .type = GRPC_ARG_STRING,
       .value.string =
@@ -370,15 +364,9 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
           "    }\n"
           "  } ]\n"
           "}"};
-  grpc_channel_args *client_args =
-      grpc_channel_args_copy_and_add(NULL, &arg, 1);
+  grpc_channel_args client_args = {1, &arg};
   grpc_end2end_test_fixture f =
-      begin_test(config, "retry_streaming", client_args, NULL);
-  {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, client_args);
-    grpc_exec_ctx_finish(&exec_ctx);
-  }
+      begin_test(config, "retry_streaming", &client_args, NULL);
 
   cq_verifier *cqv = cq_verifier_create(f.cq);
 
@@ -671,7 +659,7 @@ static void test_retry_too_many_attempts(grpc_end2end_test_config config) {
   int was_cancelled = 2;
   char *peer;
 
-  const grpc_arg arg = {
+  grpc_arg arg = {
       .key = GRPC_ARG_SERVICE_CONFIG,
       .type = GRPC_ARG_STRING,
       .value.string =
@@ -686,15 +674,9 @@ static void test_retry_too_many_attempts(grpc_end2end_test_config config) {
           "    }\n"
           "  } ]\n"
           "}"};
-  grpc_channel_args *client_args =
-      grpc_channel_args_copy_and_add(NULL, &arg, 1);
+  grpc_channel_args client_args = {1, &arg};
   grpc_end2end_test_fixture f =
-      begin_test(config, "retry_too_many_attempts", client_args, NULL);
-  {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, client_args);
-    grpc_exec_ctx_finish(&exec_ctx);
-  }
+      begin_test(config, "retry_too_many_attempts", &client_args, NULL);
 
   cq_verifier *cqv = cq_verifier_create(f.cq);
 
@@ -895,7 +877,7 @@ static void test_retry_non_retriable_status(grpc_end2end_test_config config) {
   int was_cancelled = 2;
   char *peer;
 
-  const grpc_arg arg = {
+  grpc_arg arg = {
       .key = GRPC_ARG_SERVICE_CONFIG,
       .type = GRPC_ARG_STRING,
       .value.string =
@@ -910,15 +892,9 @@ static void test_retry_non_retriable_status(grpc_end2end_test_config config) {
           "    }\n"
           "  } ]\n"
           "}"};
-  grpc_channel_args *client_args =
-      grpc_channel_args_copy_and_add(NULL, &arg, 1);
+  grpc_channel_args client_args = {1, &arg};
   grpc_end2end_test_fixture f =
-      begin_test(config, "retry_non_retriable_status", client_args, NULL);
-  {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, client_args);
-    grpc_exec_ctx_finish(&exec_ctx);
-  }
+      begin_test(config, "retry_non_retriable_status", &client_args, NULL);
 
   cq_verifier *cqv = cq_verifier_create(f.cq);
 
@@ -1075,7 +1051,7 @@ static void test_retry_exceeds_buffer_size(grpc_end2end_test_config config) {
   int was_cancelled = 2;
   char *peer;
 
-  const grpc_arg args[] = {
+  grpc_arg args[] = {
       {
           .key = GRPC_ARG_SERVICE_CONFIG,
           .type = GRPC_ARG_STRING,
@@ -1097,15 +1073,9 @@ static void test_retry_exceeds_buffer_size(grpc_end2end_test_config config) {
          .type = GRPC_ARG_INTEGER,
          .value.integer = 2
      }};
-  grpc_channel_args *client_args =
-      grpc_channel_args_copy_and_add(NULL, args, GPR_ARRAY_SIZE(args));
+  grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   grpc_end2end_test_fixture f =
-      begin_test(config, "retry_exceeds_buffer_size", client_args, NULL);
-  {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, client_args);
-    grpc_exec_ctx_finish(&exec_ctx);
-  }
+      begin_test(config, "retry_exceeds_buffer_size", &client_args, NULL);
 
   cq_verifier *cqv = cq_verifier_create(f.cq);
 
@@ -1260,7 +1230,7 @@ static void test_retry_recv_initial_metadata(grpc_end2end_test_config config) {
   int was_cancelled = 2;
   char *peer;
 
-  const grpc_arg arg = {
+  grpc_arg arg = {
       .key = GRPC_ARG_SERVICE_CONFIG,
       .type = GRPC_ARG_STRING,
       .value.string =
@@ -1275,15 +1245,9 @@ static void test_retry_recv_initial_metadata(grpc_end2end_test_config config) {
           "    }\n"
           "  } ]\n"
           "}"};
-  grpc_channel_args *client_args =
-      grpc_channel_args_copy_and_add(NULL, &arg, 1);
+  grpc_channel_args client_args = {1, &arg};
   grpc_end2end_test_fixture f =
-      begin_test(config, "retry_recv_initial_metadata", client_args, NULL);
-  {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, client_args);
-    grpc_exec_ctx_finish(&exec_ctx);
-  }
+      begin_test(config, "retry_recv_initial_metadata", &client_args, NULL);
 
   cq_verifier *cqv = cq_verifier_create(f.cq);
 
@@ -1448,7 +1412,7 @@ static void test_retry_recv_message(grpc_end2end_test_config config) {
   int was_cancelled = 2;
   char *peer;
 
-  const grpc_arg arg = {
+  grpc_arg arg = {
       .key = GRPC_ARG_SERVICE_CONFIG,
       .type = GRPC_ARG_STRING,
       .value.string =
@@ -1463,15 +1427,9 @@ static void test_retry_recv_message(grpc_end2end_test_config config) {
           "    }\n"
           "  } ]\n"
           "}"};
-  grpc_channel_args *client_args =
-      grpc_channel_args_copy_and_add(NULL, &arg, 1);
+  grpc_channel_args client_args = {1, &arg};
   grpc_end2end_test_fixture f =
-      begin_test(config, "retry_recv_message", client_args, NULL);
-  {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, client_args);
-    grpc_exec_ctx_finish(&exec_ctx);
-  }
+      begin_test(config, "retry_recv_message", &client_args, NULL);
 
   cq_verifier *cqv = cq_verifier_create(f.cq);
 
@@ -1630,7 +1588,7 @@ static void test_retry_disabled(grpc_end2end_test_config config) {
   int was_cancelled = 2;
   char *peer;
 
-  const grpc_arg args[] = {
+  grpc_arg args[] = {
     {
       .key = GRPC_ARG_SERVICE_CONFIG,
       .type = GRPC_ARG_STRING,
@@ -1652,15 +1610,9 @@ static void test_retry_disabled(grpc_end2end_test_config config) {
       .type = GRPC_ARG_INTEGER,
       .value.integer = 0
     }};
-  grpc_channel_args *client_args =
-      grpc_channel_args_copy_and_add(NULL, args, GPR_ARRAY_SIZE(args));
+  grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   grpc_end2end_test_fixture f =
-      begin_test(config, "retry_disabled", client_args, NULL);
-  {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, client_args);
-    grpc_exec_ctx_finish(&exec_ctx);
-  }
+      begin_test(config, "retry_disabled", &client_args, NULL);
 
   cq_verifier *cqv = cq_verifier_create(f.cq);
 
