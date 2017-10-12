@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,5 +23,4 @@ cd $(dirname $0)/../../..
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 source tools/internal_ci/helper_scripts/prepare_build_interop_rc
 
-tools/run_tests/run_interop_tests.py -l python --use_docker --http2_server_interop
-
+tools/run_tests/run_interop_tests.py $RUN_TESTS_FLAGS

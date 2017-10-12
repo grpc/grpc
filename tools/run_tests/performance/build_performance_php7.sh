@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,18 +15,16 @@
 
 set -ex
 
-export LANG=en_US.UTF-8
-
-# Enter the gRPC repo root
 cd $(dirname $0)/../../..
+CONFIG=${CONFIG:-opt}
+python tools/run_tests/run_tests.py -l php7 -c $CONFIG --build_only -j 8
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
-source tools/internal_ci/helper_scripts/prepare_build_interop_rc
-
-tools/run_tests/run_interop_tests.py \
-    -l all \
-    --cloud_to_prod \
-    --cloud_to_prod_auth \
-    --prod_servers default gateway_v4 \
-    --use_docker --internal_ci --allow_flakes -t -j 12 $@
+# Set up all dependences needed for PHP QPS test
+cd src/php/tests/qps
+composer install
+# Install protobuf C-extension for php
+cd vendor/google/protobuf/php/ext/google/protobuf
+phpize
+./configure
+make
 
