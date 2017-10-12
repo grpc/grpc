@@ -255,7 +255,7 @@ struct grpc_chttp2_transport {
   /** is the transport destroying itself? */
   uint8_t destroying;
   /** has the upper layer closed the transport? */
-  uint8_t closed;
+  grpc_error *closed_with_error;
 
   /** is there a read request to the endpoint outstanding? */
   uint8_t endpoint_reading;
@@ -297,7 +297,7 @@ struct grpc_chttp2_transport {
   /** hpack encoding */
   grpc_chttp2_hpack_compressor hpack_compressor;
   /** is this a client? */
-  uint8_t is_client;
+  bool is_client;
 
   /** data to write next write */
   grpc_slice_buffer qbuf;
@@ -307,14 +307,14 @@ struct grpc_chttp2_transport {
   uint32_t write_buffer_size;
 
   /** have we seen a goaway */
-  uint8_t seen_goaway;
+  bool seen_goaway;
   /** have we sent a goaway */
   grpc_chttp2_sent_goaway_state sent_goaway_state;
 
   /** are the local settings dirty and need to be sent? */
-  uint8_t dirtied_local_settings;
+  bool dirtied_local_settings;
   /** have local settings been sent? */
-  uint8_t sent_local_settings;
+  bool sent_local_settings;
   /** bitmask of setting indexes to send out */
   uint32_t force_send_settings;
   /** settings values */

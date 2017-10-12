@@ -7487,7 +7487,9 @@
       "third_party/cares/cares/config-win32.h", 
       "third_party/cares/cares/setup_once.h", 
       "third_party/cares/config_darwin/ares_config.h", 
-      "third_party/cares/config_linux/ares_config.h"
+      "third_party/cares/config_freebsd/ares_config.h", 
+      "third_party/cares/config_linux/ares_config.h", 
+      "third_party/cares/config_openbsd/ares_config.h"
     ], 
     "is_filegroup": false, 
     "language": "c", 
