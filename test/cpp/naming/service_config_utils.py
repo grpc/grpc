@@ -31,7 +31,7 @@ def convert_service_config_to_txt_data(service_config_json_path,
     while len(r_data[cur:]) > 0:
       next_chunk = ''
       while len(next_chunk) < 255 and len(r_data[cur:]) > 0:
-        if r_data[cur] == '"': and format_style in ['gcloud', 'bind9']:
+        if r_data[cur] == '"' and format_style in ['gcloud', 'bind9']:
           # Observably, gcloud requires quotation marks within TXT
           # strings to be escaped, and the backslashes used for
           # escaping are added towards the single-string 255 character
@@ -78,13 +78,13 @@ def main():
   argp.add_argument('-f', '--format',
                   choices=['gcloud', 'bind9', 'twisted'],
                   nargs='+',
-                  default=['twisted'])
+                  default=['twisted'],
                   help=('Create the TXT record data in a format that '
                         'is suitable for a particular server '
                         'or zone-file-parser'))
   args = argp.parse_args()
   out = convert_service_config_to_txt_data(args.service_config_json_path,
-                                           args.use_gcloud_format)
+                                           args.format[0])
   print(out)
 
 if __name__ == '__main__':

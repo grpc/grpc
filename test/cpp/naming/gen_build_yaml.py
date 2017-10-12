@@ -59,7 +59,7 @@ def _data_for_type(r_type,
                             'It is meant to be read from json file')
     path = 'test/cpp/naming/service_configs/%s.json' % record_name
     return service_config_utils.convert_service_config_to_txt_data(
-        path, use_gcloud_format)
+        path, use_gcloud_format and 'gcloud' or 'twisted')
 
 def _fill_column(data, col_width):
   return data + ' ' * (col_width - len(data))
