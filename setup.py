@@ -236,14 +236,16 @@ INSTALL_REQUIRES = (
     'protobuf>=3.3.0',
 )
 
-if not PY3:
-  INSTALL_REQUIRES += ('futures>=2.2.0', 'enum34>=1.0.4')
-
 SETUP_REQUIRES = INSTALL_REQUIRES + (
     'sphinx>=1.3',
     'sphinx_rtd_theme>=0.1.8',
     'six>=1.10',
   ) if ENABLE_DOCUMENTATION_BUILD else ()
+
+EXTRAS_REQUIRE = {
+  ':python_version<"3.0"': ('futures>=2.2.0',),
+  ':python_version<"3.4"': ('enum34>=1.0.4',),
+}
 
 try:
   import Cython
@@ -301,6 +303,7 @@ setuptools.setup(
   package_dir=PACKAGE_DIRECTORIES,
   package_data=PACKAGE_DATA,
   install_requires=INSTALL_REQUIRES,
+  extras_require=EXTRAS_REQUIRE,
   setup_requires=SETUP_REQUIRES,
   cmdclass=COMMAND_CLASS,
 )
