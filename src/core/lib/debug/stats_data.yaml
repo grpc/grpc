@@ -251,6 +251,10 @@
        (first items queued to a call combiner)
 - counter: call_combiner_locks_scheduled_items
   doc: Number of items scheduled against call combiner locks
+- counter: call_combiner_set_notify_on_cancel
+  doc: Number of times a cancellation callback was set on a call combiner
+- counter: call_combiner_cancelled
+  doc: Number of times a call combiner was cancelled
 # executor
 - counter: executor_scheduled_short_items
   doc: Number of finite runtime closures scheduled against the executor

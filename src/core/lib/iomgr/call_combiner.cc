@@ -138,6 +138,7 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
 void grpc_call_combiner_set_notify_on_cancel(grpc_exec_ctx* exec_ctx,
                                              grpc_call_combiner* call_combiner,
                                              grpc_closure* closure) {
+  GRPC_STATS_INC_CALL_COMBINER_SET_NOTIFY_ON_CANCEL(exec_ctx);
   while (true) {
     // Decode original state.
     gpr_atm original_state = gpr_atm_acq_load(&call_combiner->cancel_state);
@@ -182,6 +183,7 @@ void grpc_call_combiner_set_notify_on_cancel(grpc_exec_ctx* exec_ctx,
 void grpc_call_combiner_cancel(grpc_exec_ctx* exec_ctx,
                                grpc_call_combiner* call_combiner,
                                grpc_error* error) {
+  GRPC_STATS_INC_CALL_COMBINER_CANCELLED(exec_ctx);
   while (true) {
     gpr_atm original_state = gpr_atm_acq_load(&call_combiner->cancel_state);
     grpc_error* original_error = decode_cancel_state_error(original_state);

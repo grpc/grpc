@@ -103,6 +103,8 @@ def massage_qps_stats(scenario_result):
     stats["core_combiner_locks_offloaded"] = massage_qps_stats_helpers.counter(core_stats, "combiner_locks_offloaded")
     stats["core_call_combiner_locks_initiated"] = massage_qps_stats_helpers.counter(core_stats, "call_combiner_locks_initiated")
     stats["core_call_combiner_locks_scheduled_items"] = massage_qps_stats_helpers.counter(core_stats, "call_combiner_locks_scheduled_items")
+    stats["core_call_combiner_set_notify_on_cancel"] = massage_qps_stats_helpers.counter(core_stats, "call_combiner_set_notify_on_cancel")
+    stats["core_call_combiner_cancelled"] = massage_qps_stats_helpers.counter(core_stats, "call_combiner_cancelled")
     stats["core_executor_scheduled_short_items"] = massage_qps_stats_helpers.counter(core_stats, "executor_scheduled_short_items")
     stats["core_executor_scheduled_long_items"] = massage_qps_stats_helpers.counter(core_stats, "executor_scheduled_long_items")
     stats["core_executor_scheduled_to_self"] = massage_qps_stats_helpers.counter(core_stats, "executor_scheduled_to_self")

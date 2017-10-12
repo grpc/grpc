@@ -106,6 +106,8 @@ const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "combiner_locks_offloaded",
     "call_combiner_locks_initiated",
     "call_combiner_locks_scheduled_items",
+    "call_combiner_set_notify_on_cancel",
+    "call_combiner_cancelled",
     "executor_scheduled_short_items",
     "executor_scheduled_long_items",
     "executor_scheduled_to_self",
@@ -218,6 +220,8 @@ const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of call combiner lock entries by process (first items queued to a "
     "call combiner)",
     "Number of items scheduled against call combiner locks",
+    "Number of times a cancellation callback was set on a call combiner",
+    "Number of times a call combiner was cancelled",
     "Number of finite runtime closures scheduled against the executor (gRPC "
     "thread pool)",
     "Number of potentially infinite runtime closures scheduled against the "
