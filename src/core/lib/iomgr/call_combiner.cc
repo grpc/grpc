@@ -22,6 +22,7 @@
 
 #include <grpc/support/log.h>
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/profiling/timers.h"
 
 grpc_tracer_flag grpc_call_combiner_trace =
     GRPC_TRACER_INITIALIZER(false, "call_combiner");
@@ -61,6 +62,7 @@ void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
                               grpc_closure* closure,
                               grpc_error* error DEBUG_ARGS,
                               const char* reason) {
+  GPR_TIMER_BEGIN("call_combiner_start", 0);
   if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
     gpr_log(GPR_DEBUG,
             "==> grpc_call_combiner_start() [%p] closure=%p [" DEBUG_FMT_STR
@@ -77,6 +79,7 @@ void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
   GRPC_STATS_INC_CALL_COMBINER_LOCKS_SCHEDULED_ITEMS(exec_ctx);
   if (prev_size == 0) {
     GRPC_STATS_INC_CALL_COMBINER_LOCKS_INITIATED(exec_ctx);
+    GPR_TIMER_MARK("call_combiner_initiate", 0);
     if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
       gpr_log(GPR_DEBUG, "  EXECUTING IMMEDIATELY");
     }
@@ -90,11 +93,13 @@ void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
     closure->error_data.error = error;
     gpr_mpscq_push(&call_combiner->queue, (gpr_mpscq_node*)closure);
   }
+  GPR_TIMER_END("call_combiner_start", 0);
 }
 
 void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
                              grpc_call_combiner* call_combiner DEBUG_ARGS,
                              const char* reason) {
+  GPR_TIMER_BEGIN("call_combiner_stop", 0);
   if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
     gpr_log(GPR_DEBUG,
             "==> grpc_call_combiner_stop() [%p] [" DEBUG_FMT_STR "%s]",
@@ -133,6 +138,7 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
   } else if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
     gpr_log(GPR_DEBUG, "  queue empty");
   }
+  GPR_TIMER_END("call_combiner_stop", 0);
 }
 
 void grpc_call_combiner_set_notify_on_cancel(grpc_exec_ctx* exec_ctx,
