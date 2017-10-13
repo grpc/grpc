@@ -809,7 +809,7 @@ class Php7Language:
 
   def worker_cmdline(self):
     if self.php7_protobuf_c:
-        return ['tools/run_tests/performance/run_worker_php.sh --use_protobuf_c_extension']
+        return ['tools/run_tests/performance/run_worker_php.sh', '--use_protobuf_c_extension']
     return ['tools/run_tests/performance/run_worker_php.sh']
 
   def worker_port_offset(self):
@@ -821,7 +821,7 @@ class Php7Language:
     php7_extension_mode='php7_protobuf_php_extension'
     if self.php7_protobuf_c:
         php7_extension_mode='php7_protobuf_c_extension'
-    
+
     yield _ping_pong_scenario(
         '%s_to_cpp_protobuf_sync_unary_ping_pong' % php7_extension_mode,
         rpc_type='UNARY', client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
