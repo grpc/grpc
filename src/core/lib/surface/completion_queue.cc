@@ -613,7 +613,18 @@ static void cq_end_op_for_next(grpc_exec_ctx *exec_ctx,
   storage->next = (uintptr_t)(is_success);
 
   cq_check_tag(cq, tag, true); /* Used in debug builds only */
-
+  start_batch_tag* t = grpc_call_get_curr_start_batch_tag();
+  if (t != 0 && t->tag == tag) {
+    t->completed = 1;
+    done(exec_ctx, done_arg, storage);
+    if (gpr_atm_full_fetch_add(&cqd->pending_events, -1) == 1) {
+      GRPC_CQ_INTERNAL_REF(cq, "shutting_down");
+      gpr_mu_lock(cq->mu);
+      cq_finish_shutdown_next(exec_ctx, cq);
+      gpr_mu_unlock(cq->mu);
+      GRPC_CQ_INTERNAL_UNREF(exec_ctx, cq, "shutting_down");
+    }
+  } else {
   /* Add the completion to the queue */
   bool is_first = cq_event_queue_push(&cqd->queue, storage);
   gpr_atm_no_barrier_fetch_add(&cqd->things_queued_ever, 1);
@@ -652,6 +663,7 @@ static void cq_end_op_for_next(grpc_exec_ctx *exec_ctx,
     cq_finish_shutdown_next(exec_ctx, cq);
     gpr_mu_unlock(cq->mu);
     GRPC_CQ_INTERNAL_UNREF(exec_ctx, cq, "shutting_down");
+  }
   }
 
   GPR_TIMER_END("cq_end_op_for_next", 0);
@@ -844,6 +856,7 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
       ret.success = c->next & 1u;
       ret.tag = c->tag;
       c->done(&exec_ctx, c->done_arg, c);
+      gpr_log(GPR_ERROR, "Stolen Completion");
       break;
     }
 

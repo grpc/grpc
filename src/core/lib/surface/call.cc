@@ -28,6 +28,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/channel/channel_stack.h"
@@ -99,6 +100,16 @@ static received_status unpack_received_status(gpr_atm atm) {
   } else {
     return {true, (grpc_error *)(atm & ~(gpr_atm)1)};
   }
+}
+
+GPR_TLS_DECL(g_curr_start_batch_tag);
+
+void grpc_call_global_init() {
+  gpr_tls_init(&g_curr_start_batch_tag);
+}
+
+start_batch_tag* grpc_call_get_curr_start_batch_tag() {
+  return (start_batch_tag *)gpr_tls_get(&g_curr_start_batch_tag);
 }
 
 #define MAX_ERRORS_PER_BATCH 4
@@ -1695,6 +1706,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
 
   bctl = allocate_batch_control(call, ops, nops);
   if (bctl == NULL) {
+    gpr_log(GPR_ERROR, "bctl==null");
     return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
   }
   bctl->completion_data.notify_tag.tag = notify_tag;
@@ -1719,6 +1731,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         if (call->sent_initial_metadata) {
+          gpr_log(GPR_ERROR, "TOO MANY OPS");
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
@@ -1817,6 +1830,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         if (call->sending_message) {
+          gpr_log(GPR_ERROR, "TOO MANY OPS");
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
@@ -1848,6 +1862,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         if (call->sent_final_op) {
+          gpr_log(GPR_ERROR, "TOO MANY OPS");
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
@@ -1868,6 +1883,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         if (call->sent_final_op) {
+          gpr_log(GPR_ERROR, "TOO MANY OPS");
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
@@ -1927,6 +1943,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         if (call->received_initial_metadata) {
+          gpr_log(GPR_ERROR, "TOO MANY OPS");
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
@@ -1955,6 +1972,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         if (call->receiving_message) {
+          gpr_log(GPR_ERROR, "TOO MANY OPS");
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
@@ -1981,6 +1999,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         if (call->requested_final_op) {
+          gpr_log(GPR_ERROR, "TOO MANY OPS");
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
@@ -2009,6 +2028,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           goto done_with_error;
         }
         if (call->requested_final_op) {
+          gpr_log(GPR_ERROR, "TOO MANY OPS");
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
@@ -2083,9 +2103,30 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
     err = GRPC_CALL_ERROR;
   } else {
     err = call_start_batch(&exec_ctx, call, ops, nops, tag, 0);
-  }
+ }
+  grpc_exec_ctx_finish(&exec_ctx);
+  return err;
+}
+
+grpc_call_error grpc_call_start_batch_maybe_finish(grpc_call *call, const grpc_op *ops,
+                                                   size_t nops, void *tag, int* finished) {
+   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_call_error err;
+
+  GRPC_API_TRACE(
+      "grpc_call_start_batch_maybe_finish(call=%p, ops=%p, nops=%lu, tag=%p, "
+      "finished=%p)",
+      5, (call, ops, (unsigned long)nops, tag, finished));
+
+  start_batch_tag t;
+  t.tag = tag;
+  t.completed = 0;
+  gpr_tls_set(&g_curr_start_batch_tag, (intptr_t)&t);
+  err = call_start_batch(&exec_ctx, call, ops, nops, tag, 0);
 
   grpc_exec_ctx_finish(&exec_ctx);
+  gpr_tls_set(&g_curr_start_batch_tag, (intptr_t)0);
+  *finished = t.completed;
   return err;
 }
 

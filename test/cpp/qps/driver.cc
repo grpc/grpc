@@ -444,9 +444,11 @@ std::unique_ptr<ScenarioResult> RunScenario(
       gpr_log(GPR_ERROR, "Couldn't get final status from client %zu", i);
     }
   }
+  gpr_log(GPR_ERROR, "DONE");
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     Status s = client->stream->Finish();
+    gpr_log(GPR_ERROR, "DONE2");
     result->add_client_success(s.ok());
     if (!s.ok()) {
       gpr_log(GPR_ERROR, "Client %zu had an error %s", i,

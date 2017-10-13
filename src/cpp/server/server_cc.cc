@@ -617,6 +617,24 @@ void Server::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
   }
 }
 
+bool Server::PerformOpsOnCallImmediate(CallOpSetInterface* ops, Call* call) {
+  static const size_t MAX_OPS = 8;
+  size_t nops = 0;
+  grpc_op cops[MAX_OPS];
+  ops->FillOps(call->call(), cops, &nops);
+  int finished = 0;
+  auto result = grpc_call_start_batch_maybe_finish(call->call(), cops, nops, ops, &finished);
+  if (result != GRPC_CALL_OK) {
+    gpr_log(GPR_ERROR, "Fatal: grpc_call_start_batch returned %d", result);
+    grpc_call_log_batch(__FILE__, __LINE__, GPR_LOG_SEVERITY_ERROR,
+                        call->call(), cops, nops, ops);
+    abort();
+  }
+
+  return finished == 1;
+}
+
+
 ServerInterface::BaseAsyncRequest::BaseAsyncRequest(
     ServerInterface* server, ServerContext* context,
     ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag,

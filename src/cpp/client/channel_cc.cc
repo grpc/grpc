@@ -304,6 +304,20 @@ void Channel::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
              grpc_call_start_batch(call->call(), cops, nops, ops, nullptr));
 }
 
+bool Channel::PerformOpsOnCallImmediate(CallOpSetInterface* ops, Call* call) {
+  static const size_t MAX_OPS = 8;
+  size_t nops = 0;
+  grpc_op cops[MAX_OPS];
+  ops->FillOps(call->call(), cops, &nops);
+  int finished = 0;
+
+  grpc_call_error e = grpc_call_start_batch_maybe_finish(call->call(), cops, nops, ops, &finished);
+  GPR_ASSERT(GRPC_CALL_OK == e);
+             //grpc_call_start_batch_maybe_finish(call->call(), cops, nops, ops, &finished));
+  return finished == 1;
+}
+
+
 void* Channel::RegisterMethod(const char* method) {
   return grpc_channel_register_call(
       c_channel_, method, host_.empty() ? NULL : host_.c_str(), nullptr);

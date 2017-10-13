@@ -335,7 +335,9 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
         grpc::Status status = invoke_method_(&req_, &response_);
         // initiate the write
         next_state_ = &ServerRpcContextStreamingImpl::write_done;
-        stream_.Write(response_, AsyncQpsServerTest::tag(this));
+        if(stream_.WriteImmediate(response_, AsyncQpsServerTest::tag(this))) {
+          write_done(true);
+        }
       } else {  // client has sent writes done
         // finish the stream
         next_state_ = &ServerRpcContextStreamingImpl::finish_done;
