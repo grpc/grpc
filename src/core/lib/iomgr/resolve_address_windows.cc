@@ -34,10 +34,10 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
-#include "src/core/lib/support/block_annotate.h"
 #include "src/core/lib/support/string.h"
 
 typedef struct {
@@ -87,7 +87,7 @@ static grpc_error *blocking_resolve_address_impl(
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   s = getaddrinfo(host, port, &hints, &result);
-  GRPC_SCHEDULING_END_BLOCKING_REGION;
+  GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX;
   if (s != 0) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "getaddrinfo");
     goto done;

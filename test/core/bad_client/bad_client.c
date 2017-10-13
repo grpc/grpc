@@ -84,13 +84,18 @@ void grpc_run_bad_client_test(
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_completion_queue *shutdown_cq;
 
-  hex = gpr_dump(client_payload, client_payload_length,
-                 GPR_DUMP_HEX | GPR_DUMP_ASCII);
+  if (client_payload_length < 4 * 1024) {
+    hex = gpr_dump(client_payload, client_payload_length,
+                   GPR_DUMP_HEX | GPR_DUMP_ASCII);
 
-  /* Add a debug log */
-  gpr_log(GPR_INFO, "TEST: %s", hex);
+    /* Add a debug log */
+    gpr_log(GPR_INFO, "TEST: %s", hex);
 
-  gpr_free(hex);
+    gpr_free(hex);
+  } else {
+    gpr_log(GPR_INFO, "TEST: (%" PRIdPTR " byte long string)",
+            client_payload_length);
+  }
 
   /* Init grpc */
   grpc_init();

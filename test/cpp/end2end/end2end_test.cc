@@ -198,10 +198,7 @@ class TestScenario {
   void Log() const;
   bool use_proxy;
   bool inproc;
-  // Although the below grpc::string is logically const, we can't declare
-  // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
-  // manage vector insertion using a copy constructor
-  grpc::string credentials_type;
+  const grpc::string credentials_type;
 };
 
 static std::ostream& operator<<(std::ostream& out,
@@ -1283,6 +1280,8 @@ TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
   EchoResponse response;
   request.set_message("Hello");
   request.mutable_param()->set_skip_cancelled_check(true);
+  // Let server sleep for 2 ms first to guarantee expiry
+  request.mutable_param()->set_server_sleep_us(2 * 1000);
 
   ClientContext context;
   std::chrono::system_clock::time_point deadline =
@@ -1410,6 +1409,10 @@ TEST_P(ProxyEnd2endTest, HugeResponse) {
 }
 
 TEST_P(ProxyEnd2endTest, Peer) {
+  // Peer is not meaningful for inproc
+  if (GetParam().inproc) {
+    return;
+  }
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1778,11 +1781,10 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
     credentials_types.push_back(kInsecureCredentialsType);
   }
   GPR_ASSERT(!credentials_types.empty());
-  for (auto it = credentials_types.begin(); it != credentials_types.end();
-       ++it) {
-    scenarios.emplace_back(false, false, *it);
+  for (const auto& cred : credentials_types) {
+    scenarios.emplace_back(false, false, cred);
     if (use_proxy) {
-      scenarios.emplace_back(true, false, *it);
+      scenarios.emplace_back(true, false, cred);
     }
   }
   if (test_inproc && insec_ok()) {
@@ -1801,7 +1803,7 @@ INSTANTIATE_TEST_CASE_P(End2endServerTryCancel, End2endServerTryCancelTest,
 
 INSTANTIATE_TEST_CASE_P(ProxyEnd2end, ProxyEnd2endTest,
                         ::testing::ValuesIn(CreateTestScenarios(true, true,
-                                                                true, false)));
+                                                                true, true)));
 
 INSTANTIATE_TEST_CASE_P(SecureEnd2end, SecureEnd2endTest,
                         ::testing::ValuesIn(CreateTestScenarios(false, false,
