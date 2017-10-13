@@ -207,8 +207,8 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
 
   GPR_ASSERT(status == expected_status);
   if (expected_detail != NULL) {
-  GPR_ASSERT(-1 != grpc_slice_slice(details, grpc_slice_from_static_string(
-                                                 expected_detail)));
+    GPR_ASSERT(-1 != grpc_slice_slice(details, grpc_slice_from_static_string(
+                                                   expected_detail)));
   }
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -330,8 +330,8 @@ int main(int argc, char **argv) {
            HTTP2_DETAIL_MSG(502));
 
   /* unparseable response */
-  run_test(UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1,
-           GRPC_STATUS_UNKNOWN, NULL);
+  run_test(UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1, GRPC_STATUS_UNKNOWN,
+           NULL);
 
   /* http1 response */
   run_test(HTTP1_RESP, sizeof(HTTP1_RESP) - 1, GRPC_STATUS_UNAVAILABLE,
