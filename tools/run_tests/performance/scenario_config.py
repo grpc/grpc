@@ -82,6 +82,16 @@ def _payload_type(use_generic_payload, req_size, resp_size):
         r['simple_params'] = sizes
     return r
 
+def _load_params(offered_load):
+    r = {}
+    if offered_load is None:
+        r['closed_loop'] = {}
+    else:
+        load = {}
+        load['offered_load'] = offered_load
+        r['poisson'] = load
+    return r
+
 def _add_channel_arg(config, key, value):
   if 'channel_args' in config:
     channel_args = config['channel_args']
@@ -115,12 +125,14 @@ def _ping_pong_scenario(name, rpc_type,
                         resource_quota_size=None,
                         messages_per_stream=None,
                         excluded_poll_engines=[],
-                        minimal_stack=False):
+                        minimal_stack=False,
+                        offered_load=None):
   """Creates a basic ping pong scenario."""
   scenario = {
     'name': name,
     'num_servers': 1,
     'num_clients': 1,
+    'spawn_local_worker_count': -2,
     'client_config': {
       'client_type': client_type,
       'security_params': _get_secargs(secure),
@@ -129,9 +141,6 @@ def _ping_pong_scenario(name, rpc_type,
       'async_client_threads': 1,
       'threads_per_cq': client_threads_per_cq,
       'rpc_type': rpc_type,
-      'load_params': {
-        'closed_loop': {}
-      },
       'histogram_params': HISTOGRAM_PARAMS,
       'channel_args': [],
     },
@@ -168,14 +177,19 @@ def _ping_pong_scenario(name, rpc_type,
     deep = int(math.ceil(1.0 * outstanding_calls / wide))
 
     scenario['num_clients'] = num_clients if num_clients is not None else 0  # use as many clients as available.
+    scenario['spawn_local_worker_count'] = -1 - scenario['num_clients']
     scenario['client_config']['outstanding_rpcs_per_channel'] = deep
     scenario['client_config']['client_channels'] = wide
     scenario['client_config']['async_client_threads'] = 0
+    if offered_load is not None:
+        optimization_target = 'latency'
   else:
     scenario['client_config']['outstanding_rpcs_per_channel'] = 1
     scenario['client_config']['client_channels'] = 1
     scenario['client_config']['async_client_threads'] = 1
     optimization_target = 'latency'
+
+  scenario['client_config']['load_params'] = _load_params(offered_load)
 
   optimization_channel_arg = {
     'name': 'grpc.optimization_target',
@@ -234,6 +248,15 @@ class CXXLanguage:
       num_clients=1,
       secure=False,
       categories=[SMOKETEST] + [SCALABLE])
+
+    yield _ping_pong_scenario(
+       'cpp_protobuf_async_unary_75Kqps_600channel_60Krpcs_300Breq_50Bresp',
+       rpc_type='UNARY', client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+       req_size=300, resp_size=50,
+       unconstrained_client='async', outstanding=30000, channels=300,
+       offered_load=37500, num_clients=2, secure=False,
+       async_server_threads=16, server_threads_per_cq=16,
+       categories=[SMOKETEST] + [SCALABLE])
 
     for secure in [True, False]:
       secstr = 'secure' if secure else 'insecure'
