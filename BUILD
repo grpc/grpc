@@ -33,6 +33,11 @@ load(
     "grpc_generate_one_off_targets",
 )
 
+config_setting(
+    name = "windows",
+    values = {"cpu": "x64_windows_msvc"},
+)
+
 # This should be updated along with build.yaml
 g_stands_for = "generous"
 

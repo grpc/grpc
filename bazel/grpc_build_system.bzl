@@ -29,7 +29,10 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
                     alwayslink = 0):
   copts = []
   if language.upper() == "C":
-    copts = ["-std=c99"]
+    copts = select({
+        "//conditions:default": ["-std=c99"],
+        "//:windows": [],
+    })
   native.cc_library(
     name = name,
     srcs = srcs,
@@ -38,7 +41,10 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
     copts = copts,
     visibility = visibility,
     testonly = testonly,
-    linkopts = ["-pthread"],
+    linkopts = select({
+        "//conditions:default": ["-pthread"],
+        "//:windows": [],
+    }),
     includes = [
         "include"
     ],
@@ -69,7 +75,10 @@ def grpc_proto_library(name, srcs = [], deps = [], well_known_protos = False,
 def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++"):
   copts = []
   if language.upper() == "C":
-    copts = ["-std=c99"]
+    copts = select({
+        "//conditions:default": ["-std=c99"],
+        "//:windows": [],
+    })
   native.cc_test(
     name = name,
     srcs = srcs,
@@ -77,13 +86,19 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     data = data,
     deps = deps + ["//external:" + dep for dep in external_deps],
     copts = copts,
-    linkopts = ["-pthread"],
+    linkopts = select({
+        "//conditions:default": ["-pthread"],
+        "//:windows": [],
+    }),
   )
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = []):
   copts = []
   if language.upper() == "C":
-    copts = ["-std=c99"]
+    copts = select({
+        "//conditions:default": ["-std=c99"],
+        "//:windows": [],
+    })
   native.cc_binary(
     name = name,
     srcs = srcs,
@@ -93,7 +108,10 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     linkshared = linkshared,
     deps = deps + ["//external:" + dep for dep in external_deps],
     copts = copts,
-    linkopts = ["-pthread"] + linkopts,
+    linkopts = select({
+        "//conditions:default": ["-pthread"],
+        "//:windows": [],
+    }) + linkopts,
   )
 
 def grpc_generate_one_off_targets():
