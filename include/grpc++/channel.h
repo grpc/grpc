@@ -63,6 +63,7 @@ class Channel final : public ChannelInterface,
   Call CreateCall(const RpcMethod& method, ClientContext* context,
                   CompletionQueue* cq) override;
   void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) override;
+  bool PerformOpsOnCallImmediate(CallOpSetInterface* ops, Call* call) override;
   void* RegisterMethod(const char* method) override;
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,

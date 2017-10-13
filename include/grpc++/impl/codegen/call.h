@@ -699,6 +699,10 @@ class Call final {
     call_hook_->PerformOpsOnCall(ops, this);
   }
 
+ bool PerformOpsImmediate(CallOpSetInterface* ops) {
+    return call_hook_->PerformOpsOnCallImmediate(ops, this);
+  }
+
   grpc_call* call() const { return call_; }
   CompletionQueue* cq() const { return cq_; }
 

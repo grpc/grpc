@@ -155,7 +155,12 @@ class ClientAsyncResponseReader final
   void StartCallInternal() {
     init_buf.SendInitialMetadata(context_->send_initial_metadata_,
                                  context_->initial_metadata_flags());
-    call_.PerformOps(&init_buf);
+    if (call_.PerformOpsImmediate(&init_buf)) {
+      void* dummy;
+      bool dummy_bool;
+      // This tag gets ignored on cqs anyways.
+      init_buf.FinalizeResult(&dummy, &dummy_bool);
+    }
   }
 
   // disable operator new
