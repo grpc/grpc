@@ -103,11 +103,11 @@ grpc_lb_subchannel_list *grpc_lb_subchannel_list_create(
   gpr_ref_init(&subchannel_list->refcount, 1);
   subchannel_list->subchannels = (grpc_lb_subchannel_data *)gpr_zalloc(
       sizeof(grpc_lb_subchannel_data) * addresses->num_addresses);
-  /* We need to remove the LB addresses in order to be able to compare the
-   * subchannel keys of subchannels from a different batch of addresses. */
+  // We need to remove the LB addresses in order to be able to compare the
+  // subchannel keys of subchannels from a different batch of addresses.
   static const char *keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS,
                                          GRPC_ARG_LB_ADDRESSES};
-  /* Create subchannels for addresses in the update. */
+  // Create a subchannels for each address.
   grpc_subchannel_args sc_args;
   size_t subchannel_index = 0;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
@@ -174,10 +174,8 @@ grpc_lb_subchannel_list *grpc_lb_subchannel_list_create(
     GRPC_CLOSURE_INIT(&sd->connectivity_changed_closure,
                       connectivity_changed_cb, sd,
                       grpc_combiner_scheduler(args->combiner));
-    /* use some sentinel value outside of the range of
-     * grpc_connectivity_state to signal an undefined previous state. We
-     * won't be referring to this value again and it'll be overwritten after
-     * the first call to rr_connectivity_changed_locked */
+    // Use some sentinel value outside of the range of
+    // grpc_connectivity_state to signal an undefined previous state.
     sd->prev_connectivity_state = GRPC_CHANNEL_INIT;
     sd->curr_connectivity_state = subchannel_connectivity_state;
     sd->user_data_vtable = addresses->user_data_vtable;

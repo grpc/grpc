@@ -44,9 +44,9 @@ typedef struct {
   grpc_lb_policy base;
   /** all our subchannels */
   grpc_lb_subchannel_list *subchannel_list;
-  /** Latest pending subchannel list. */
+  /** latest pending subchannel list */
   grpc_lb_subchannel_list *latest_pending_subchannel_list;
-  /** Selected subchannel in \a subchannel_list. */
+  /** selected subchannel in \a subchannel_list */
   grpc_lb_subchannel_data *selected;
   /** have we started picking? */
   bool started_picking;
@@ -351,7 +351,7 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
   }
   // If we've started picking, start trying to connect to the first
   // subchannel in the new list.
-  if (p->started_picking && subchannel_list->num_subchannels > 0) {
+  if (p->started_picking) {
     grpc_lb_subchannel_list_ref_for_connectivity_watch(
         subchannel_list, "connectivity_watch+update");
     grpc_lb_subchannel_data_start_connectivity_watch(
@@ -396,7 +396,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
   // either the current or latest pending subchannel lists.
   GPR_ASSERT(sd->subchannel_list == p->subchannel_list ||
              sd->subchannel_list == p->latest_pending_subchannel_list);
-  // Update state counters.
+  // Update state.
   sd->curr_connectivity_state = sd->pending_connectivity_state_unsafe;
   // Handle updates for the currently selected subchannel.
   if (p->selected == sd) {

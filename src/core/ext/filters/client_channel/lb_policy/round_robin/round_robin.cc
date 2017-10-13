@@ -436,7 +436,7 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_lb_subchannel_data_stop_connectivity_watch(exec_ctx, sd);
     grpc_lb_subchannel_data_unref_subchannel(exec_ctx, sd, "rr_sl_shutdown");
     grpc_lb_subchannel_list_unref_for_connectivity_watch(
-        exec_ctx, sd->subchannel_list, "rr_shutdown");
+        exec_ctx, sd->subchannel_list, "rr_sl_shutdown");
     return;
   }
   // If we're still here, the notification must be for a subchannel in
@@ -601,7 +601,7 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     return;
   }
   if (p->started_picking) {
-    if (p->latest_pending_subchannel_list != NULL && p->started_picking) {
+    if (p->latest_pending_subchannel_list != NULL) {
       if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
         gpr_log(GPR_DEBUG,
                 "[RR %p] Shutting down latest pending subchannel list %p, "
@@ -610,8 +610,7 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                 (void *)subchannel_list);
       }
       grpc_lb_subchannel_list_shutdown_and_unref(
-          exec_ctx, p->latest_pending_subchannel_list,
-          "sl_outdated_dont_smash");
+          exec_ctx, p->latest_pending_subchannel_list, "sl_outdated");
     }
     p->latest_pending_subchannel_list = subchannel_list;
     for (size_t i = 0; i < subchannel_list->num_subchannels; ++i) {
