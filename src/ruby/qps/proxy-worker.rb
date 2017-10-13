@@ -157,8 +157,8 @@ def proxymain
     opts.on("-c", "--[no-]use_protobuf_c_extension", "Use protobuf C-extention") do |c|
       options[:c_ext] = c
     end
-    opts.on("-b" "--php_client_bin [FILE]",
-        "PHP client to execute; path relative to this script") do |c|
+    opts.on("-b", "--php_client_bin [FILE]",
+      "PHP client to execute; path relative to this script") do |c|
       options['php_client_bin'] = c
     end
   end.parse!
