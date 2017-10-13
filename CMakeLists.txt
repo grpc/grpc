@@ -1610,22 +1610,22 @@ add_library(grpc_test_util
   test/core/end2end/data/server1_cert.c
   test/core/end2end/data/server1_key.c
   test/core/end2end/data/test_root_cert.c
-  test/core/security/oauth2_utils.c
+  test/core/security/oauth2_utils.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   test/core/end2end/cq_verifier.c
-  test/core/end2end/fixtures/http_proxy_fixture.c
+  test/core/end2end/fixtures/http_proxy_fixture.cc
   test/core/end2end/fixtures/proxy.c
-  test/core/iomgr/endpoint_tests.c
+  test/core/iomgr/endpoint_tests.cc
   test/core/util/debugger_macros.cc
   test/core/util/grpc_profiler.c
   test/core/util/memory_counters.c
-  test/core/util/mock_endpoint.c
+  test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.c
-  test/core/util/passthru_endpoint.c
-  test/core/util/port.c
-  test/core/util/port_server_client.c
+  test/core/util/passthru_endpoint.cc
+  test/core/util/port.cc
+  test/core/util/port_server_client.cc
   test/core/util/slice_splitter.c
-  test/core/util/trickle_endpoint.c
+  test/core/util/trickle_endpoint.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
@@ -1877,19 +1877,19 @@ if (gRPC_BUILD_TESTS)
 add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   test/core/end2end/cq_verifier.c
-  test/core/end2end/fixtures/http_proxy_fixture.c
+  test/core/end2end/fixtures/http_proxy_fixture.cc
   test/core/end2end/fixtures/proxy.c
-  test/core/iomgr/endpoint_tests.c
+  test/core/iomgr/endpoint_tests.cc
   test/core/util/debugger_macros.cc
   test/core/util/grpc_profiler.c
   test/core/util/memory_counters.c
-  test/core/util/mock_endpoint.c
+  test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.c
-  test/core/util/passthru_endpoint.c
-  test/core/util/port.c
-  test/core/util/port_server_client.c
+  test/core/util/passthru_endpoint.cc
+  test/core/util/port.cc
+  test/core/util/port_server_client.cc
   test/core/util/slice_splitter.c
-  test/core/util/trickle_endpoint.c
+  test/core/util/trickle_endpoint.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
@@ -2500,7 +2500,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(test_tcp_server
-  test/core/util/test_tcp_server.c
+  test/core/util/test_tcp_server.cc
 )
 
 if(WIN32 AND MSVC)
@@ -4775,7 +4775,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(bad_client_test
-  test/core/bad_client/bad_client.c
+  test/core/bad_client/bad_client.cc
 )
 
 if(WIN32 AND MSVC)

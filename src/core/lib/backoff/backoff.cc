@@ -32,11 +32,11 @@ void grpc_backoff_init(grpc_backoff *backoff,
   backoff->rng_state = (uint32_t)gpr_now(GPR_CLOCK_REALTIME).tv_nsec;
 }
 
-grpc_millis grpc_backoff_begin(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff) {
+grpc_millis grpc_backoff_begin(grpc_backoff *backoff) {
   backoff->current_timeout_millis = backoff->initial_connect_timeout;
   const grpc_millis first_timeout =
       GPR_MAX(backoff->current_timeout_millis, backoff->min_timeout_millis);
-  return grpc_exec_ctx_now(exec_ctx) + first_timeout;
+  return grpc_exec_ctx_now() + first_timeout;
 }
 
 /* Generate a random number between 0 and 1. */
@@ -45,7 +45,7 @@ static double generate_uniform_random_number(uint32_t *rng_state) {
   return *rng_state / (double)((uint32_t)1 << 31);
 }
 
-grpc_millis grpc_backoff_step(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff) {
+grpc_millis grpc_backoff_step(grpc_backoff *backoff) {
   const double new_timeout_millis =
       backoff->multiplier * (double)backoff->current_timeout_millis;
   backoff->current_timeout_millis =
@@ -60,10 +60,10 @@ grpc_millis grpc_backoff_step(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff) {
       (grpc_millis)((double)(backoff->current_timeout_millis) + jitter);
 
   const grpc_millis current_deadline =
-      grpc_exec_ctx_now(exec_ctx) + backoff->current_timeout_millis;
+      grpc_exec_ctx_now() + backoff->current_timeout_millis;
 
   const grpc_millis min_deadline =
-      grpc_exec_ctx_now(exec_ctx) + backoff->min_timeout_millis;
+      grpc_exec_ctx_now() + backoff->min_timeout_millis;
 
   return GPR_MAX(current_deadline, min_deadline);
 }

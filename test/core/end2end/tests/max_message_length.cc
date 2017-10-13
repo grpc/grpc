@@ -132,31 +132,32 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
     GPR_ASSERT(send_limit);
     grpc_arg arg;
     arg.type = GRPC_ARG_STRING;
-    arg.key = GRPC_ARG_SERVICE_CONFIG;
-    arg.value.string =
-        use_string_json_value
-            ? "{\n"
-              "  \"methodConfig\": [ {\n"
-              "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
-              "    ],\n"
-              "    \"maxRequestMessageBytes\": \"5\"\n"
-              "  } ]\n"
-              "}"
-            : "{\n"
-              "  \"methodConfig\": [ {\n"
-              "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
-              "    ],\n"
-              "    \"maxRequestMessageBytes\": 5\n"
-              "  } ]\n"
-              "}";
+    arg.key = (char *)GRPC_ARG_SERVICE_CONFIG;
+    arg.value.string = (char *)(use_string_json_value
+                                    ? "{\n"
+                                      "  \"methodConfig\": [ {\n"
+                                      "    \"name\": [\n"
+                                      "      { \"service\": \"service\", "
+                                      "\"method\": \"method\" }\n"
+                                      "    ],\n"
+                                      "    \"maxRequestMessageBytes\": \"5\"\n"
+                                      "  } ]\n"
+                                      "}"
+                                    : "{\n"
+                                      "  \"methodConfig\": [ {\n"
+                                      "    \"name\": [\n"
+                                      "      { \"service\": \"service\", "
+                                      "\"method\": \"method\" }\n"
+                                      "    ],\n"
+                                      "    \"maxRequestMessageBytes\": 5\n"
+                                      "  } ]\n"
+                                      "}");
     client_args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
   } else {
     // Set limit via channel args.
     grpc_arg arg;
-    arg.key = send_limit ? GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
-                         : GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH;
+    arg.key = (char *)(send_limit ? GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
+                                  : GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
     arg.type = GRPC_ARG_INTEGER;
     arg.value.integer = 5;
     grpc_channel_args *args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
@@ -170,10 +171,10 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   f = begin_test(config, "test_max_request_message_length", client_args,
                  server_args);
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    if (client_args != NULL) grpc_channel_args_destroy(&exec_ctx, client_args);
-    if (server_args != NULL) grpc_channel_args_destroy(&exec_ctx, server_args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    ExecCtx _local_exec_ctx;
+    if (client_args != NULL) grpc_channel_args_destroy(client_args);
+    if (server_args != NULL) grpc_channel_args_destroy(server_args);
+    grpc_exec_ctx_finish();
   }
 
   cqv = cq_verifier_create(f.cq);
@@ -322,31 +323,32 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
     GPR_ASSERT(!send_limit);
     grpc_arg arg;
     arg.type = GRPC_ARG_STRING;
-    arg.key = GRPC_ARG_SERVICE_CONFIG;
-    arg.value.string =
-        use_string_json_value
-            ? "{\n"
-              "  \"methodConfig\": [ {\n"
-              "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
-              "    ],\n"
-              "    \"maxResponseMessageBytes\": \"5\"\n"
-              "  } ]\n"
-              "}"
-            : "{\n"
-              "  \"methodConfig\": [ {\n"
-              "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
-              "    ],\n"
-              "    \"maxResponseMessageBytes\": 5\n"
-              "  } ]\n"
-              "}";
+    arg.key = (char *)GRPC_ARG_SERVICE_CONFIG;
+    arg.value.string = (char *)(use_string_json_value
+                                    ? "{\n"
+                                      "  \"methodConfig\": [ {\n"
+                                      "    \"name\": [\n"
+                                      "      { \"service\": \"service\", "
+                                      "\"method\": \"method\" }\n"
+                                      "    ],\n"
+                                      "    \"maxResponseMessageBytes\": \"5\"\n"
+                                      "  } ]\n"
+                                      "}"
+                                    : "{\n"
+                                      "  \"methodConfig\": [ {\n"
+                                      "    \"name\": [\n"
+                                      "      { \"service\": \"service\", "
+                                      "\"method\": \"method\" }\n"
+                                      "    ],\n"
+                                      "    \"maxResponseMessageBytes\": 5\n"
+                                      "  } ]\n"
+                                      "}");
     client_args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
   } else {
     // Set limit via channel args.
     grpc_arg arg;
-    arg.key = send_limit ? GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
-                         : GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH;
+    arg.key = (char *)(send_limit ? GRPC_ARG_MAX_SEND_MESSAGE_LENGTH
+                                  : GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
     arg.type = GRPC_ARG_INTEGER;
     arg.value.integer = 5;
     grpc_channel_args *args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
@@ -360,10 +362,10 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   f = begin_test(config, "test_max_response_message_length", client_args,
                  server_args);
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    if (client_args != NULL) grpc_channel_args_destroy(&exec_ctx, client_args);
-    if (server_args != NULL) grpc_channel_args_destroy(&exec_ctx, server_args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    ExecCtx _local_exec_ctx;
+    if (client_args != NULL) grpc_channel_args_destroy(client_args);
+    if (server_args != NULL) grpc_channel_args_destroy(server_args);
+    grpc_exec_ctx_finish();
   }
   cqv = cq_verifier_create(f.cq);
 

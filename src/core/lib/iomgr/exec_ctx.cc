@@ -25,10 +25,46 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/profiling/timers.h"
 
-bool grpc_exec_ctx_ready_to_finish(grpc_exec_ctx *exec_ctx) {
+thread_local ExecCtx *exec_ctx = nullptr;
+
+ExecCtx::ExecCtx()
+    : closure_list(GRPC_CLOSURE_LIST_INIT),
+      active_combiner(nullptr),
+      last_combiner(nullptr),
+      flags(GRPC_EXEC_CTX_FLAG_IS_FINISHED),
+      starting_cpu(gpr_cpu_current_cpu()),
+      check_ready_to_finish_arg(nullptr),
+      check_ready_to_finish(nullptr),
+      now_is_valid(false),
+      now(0),
+      last_exec_ctx(exec_ctx) {
+  exec_ctx = this;
+}
+
+ExecCtx::ExecCtx(uintptr_t fl, bool (*finish_check)(void *arg),
+                 void *finish_check_arg)
+    : closure_list(GRPC_CLOSURE_LIST_INIT),
+      active_combiner(nullptr),
+      last_combiner(nullptr),
+      flags(fl),
+      starting_cpu(gpr_cpu_current_cpu()),
+      check_ready_to_finish_arg(finish_check_arg),
+      check_ready_to_finish(finish_check),
+      now_is_valid(false),
+      now(0),
+      last_exec_ctx(exec_ctx) {
+  exec_ctx = this;
+}
+
+ExecCtx::~ExecCtx() {
+  GPR_ASSERT(exec_ctx == this);
+  grpc_exec_ctx_finish();
+  exec_ctx = last_exec_ctx;
+}
+
+bool grpc_exec_ctx_ready_to_finish() {
   if ((exec_ctx->flags & GRPC_EXEC_CTX_FLAG_IS_FINISHED) == 0) {
-    if (exec_ctx->check_ready_to_finish(exec_ctx,
-                                        exec_ctx->check_ready_to_finish_arg)) {
+    if (exec_ctx->check_ready_to_finish(exec_ctx->check_ready_to_finish_arg)) {
       exec_ctx->flags |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
       return true;
     }
@@ -38,26 +74,21 @@ bool grpc_exec_ctx_ready_to_finish(grpc_exec_ctx *exec_ctx) {
   }
 }
 
-bool grpc_never_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored) {
-  return false;
-}
+bool grpc_never_ready_to_finish(void *arg_ignored) { return false; }
 
-bool grpc_always_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored) {
-  return true;
-}
+bool grpc_always_ready_to_finish(void *arg_ignored) { return true; }
 
-bool grpc_exec_ctx_has_work(grpc_exec_ctx *exec_ctx) {
+bool grpc_exec_ctx_has_work() {
   return exec_ctx->active_combiner != NULL ||
          !grpc_closure_list_empty(exec_ctx->closure_list);
 }
 
-void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
+void grpc_exec_ctx_finish() {
   exec_ctx->flags |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
-  grpc_exec_ctx_flush(exec_ctx);
+  grpc_exec_ctx_flush();
 }
 
-static void exec_ctx_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                         grpc_error *error) {
+static void exec_ctx_run(grpc_closure *closure, grpc_error *error) {
 #ifndef NDEBUG
   closure->scheduled = false;
   if (GRPC_TRACER_ON(grpc_trace_closure)) {
@@ -67,7 +98,7 @@ static void exec_ctx_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
             closure->line_initiated);
   }
 #endif
-  closure->cb(exec_ctx, closure->cb_arg, error);
+  closure->cb(closure->cb_arg, error);
 #ifndef NDEBUG
   if (GRPC_TRACER_ON(grpc_trace_closure)) {
     gpr_log(GPR_DEBUG, "closure %p finished", closure);
@@ -76,7 +107,7 @@ static void exec_ctx_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   GRPC_ERROR_UNREF(error);
 }
 
-bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
+bool grpc_exec_ctx_flush() {
   bool did_something = 0;
   GPR_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
   for (;;) {
@@ -87,10 +118,10 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
         grpc_closure *next = c->next_data.next;
         grpc_error *error = c->error_data.error;
         did_something = true;
-        exec_ctx_run(exec_ctx, c, error);
+        exec_ctx_run(c, error);
         c = next;
       }
-    } else if (!grpc_combiner_continue_exec_ctx(exec_ctx)) {
+    } else if (!grpc_combiner_continue_exec_ctx()) {
       break;
     }
   }
@@ -99,8 +130,7 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
   return did_something;
 }
 
-static void exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                           grpc_error *error) {
+static void exec_ctx_sched(grpc_closure *closure, grpc_error *error) {
   grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
 }
 
@@ -138,7 +168,7 @@ static gpr_atm timespec_to_atm_round_up(gpr_timespec ts) {
   return (gpr_atm)x;
 }
 
-grpc_millis grpc_exec_ctx_now(grpc_exec_ctx *exec_ctx) {
+grpc_millis grpc_exec_ctx_now() {
   if (!exec_ctx->now_is_valid) {
     exec_ctx->now = timespec_to_atm_round_down(gpr_now(GPR_CLOCK_MONOTONIC));
     exec_ctx->now_is_valid = true;
@@ -146,9 +176,7 @@ grpc_millis grpc_exec_ctx_now(grpc_exec_ctx *exec_ctx) {
   return exec_ctx->now;
 }
 
-void grpc_exec_ctx_invalidate_now(grpc_exec_ctx *exec_ctx) {
-  exec_ctx->now_is_valid = false;
-}
+void grpc_exec_ctx_invalidate_now() { exec_ctx->now_is_valid = false; }
 
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis,
                                      gpr_clock_type clock_type) {

@@ -67,14 +67,12 @@ static void do_basic_init(void) {
   g_initializations = 0;
 }
 
-static bool append_filter(grpc_exec_ctx *exec_ctx,
-                          grpc_channel_stack_builder *builder, void *arg) {
+static bool append_filter(grpc_channel_stack_builder *builder, void *arg) {
   return grpc_channel_stack_builder_append_filter(
       builder, (const grpc_channel_filter *)arg, NULL, NULL);
 }
 
-static bool prepend_filter(grpc_exec_ctx *exec_ctx,
-                           grpc_channel_stack_builder *builder, void *arg) {
+static bool prepend_filter(grpc_channel_stack_builder *builder, void *arg) {
   return grpc_channel_stack_builder_prepend_filter(
       builder, (const grpc_channel_filter *)arg, NULL, NULL);
 }
@@ -117,7 +115,7 @@ void grpc_init(void) {
   int i;
   gpr_once_init(&g_basic_init, do_basic_init);
 
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  ExecCtx _local_exec_ctx;
   gpr_mu_lock(&g_init_mu);
   if (++g_initializations == 1) {
     gpr_time_init();
@@ -150,7 +148,7 @@ void grpc_init(void) {
     grpc_register_tracer(&grpc_trace_metadata);
 #endif
     grpc_security_pre_init();
-    grpc_iomgr_init(&exec_ctx);
+    grpc_iomgr_init();
     gpr_timers_global_init();
     grpc_handshaker_factory_registry_init();
     grpc_security_init();
@@ -166,37 +164,36 @@ void grpc_init(void) {
     grpc_tracer_init("GRPC_TRACE");
     /* no more changes to channel init pipelines */
     grpc_channel_init_finalize();
-    grpc_iomgr_start(&exec_ctx);
+    grpc_iomgr_start();
   }
   gpr_mu_unlock(&g_init_mu);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_finish();
   GRPC_API_TRACE("grpc_init(void)", 0, ());
 }
 
 void grpc_shutdown(void) {
   int i;
   GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
-  grpc_exec_ctx exec_ctx =
-      GRPC_EXEC_CTX_INITIALIZER(0, grpc_never_ready_to_finish, NULL);
+  ExecCtx _local_exec_ctx(0, grpc_never_ready_to_finish, NULL);
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
-    grpc_executor_shutdown(&exec_ctx);
+    grpc_executor_shutdown();
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
     for (i = g_number_of_plugins; i >= 0; i--) {
       if (g_all_of_the_plugins[i].destroy != NULL) {
         g_all_of_the_plugins[i].destroy();
       }
     }
-    grpc_iomgr_shutdown(&exec_ctx);
+    grpc_iomgr_shutdown();
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
-    grpc_mdctx_global_shutdown(&exec_ctx);
-    grpc_handshaker_factory_registry_shutdown(&exec_ctx);
+    grpc_mdctx_global_shutdown();
+    grpc_handshaker_factory_registry_shutdown();
     grpc_slice_intern_shutdown();
     grpc_stats_shutdown();
   }
   gpr_mu_unlock(&g_init_mu);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_finish();
 }
 
 int grpc_is_initialized(void) {

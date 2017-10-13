@@ -40,15 +40,14 @@
  * 'http_proxy' env var, otherwise leaves it unchanged. It is caller's
  * responsibility to gpr_free user_cred.
  */
-static char* get_http_proxy_server(grpc_exec_ctx* exec_ctx, char** user_cred) {
+static char* get_http_proxy_server(char** user_cred) {
   GPR_ASSERT(user_cred != NULL);
   char* proxy_name = NULL;
   char* uri_str = gpr_getenv("http_proxy");
   char** authority_strs = NULL;
   size_t authority_nstrs;
   if (uri_str == NULL) return NULL;
-  grpc_uri* uri =
-      grpc_uri_parse(exec_ctx, uri_str, false /* suppress_errors */);
+  grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
   if (uri == NULL || uri->authority == NULL) {
     gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var");
     goto done;
@@ -82,18 +81,16 @@ done:
   return proxy_name;
 }
 
-static bool proxy_mapper_map_name(grpc_exec_ctx* exec_ctx,
-                                  grpc_proxy_mapper* mapper,
+static bool proxy_mapper_map_name(grpc_proxy_mapper* mapper,
                                   const char* server_uri,
                                   const grpc_channel_args* args,
                                   char** name_to_resolve,
                                   grpc_channel_args** new_args) {
   char* user_cred = NULL;
-  *name_to_resolve = get_http_proxy_server(exec_ctx, &user_cred);
+  *name_to_resolve = get_http_proxy_server(&user_cred);
   if (*name_to_resolve == NULL) return false;
   char* no_proxy_str = NULL;
-  grpc_uri* uri =
-      grpc_uri_parse(exec_ctx, server_uri, false /* suppress_errors */);
+  grpc_uri* uri = grpc_uri_parse(server_uri, false /* suppress_errors */);
   if (uri == NULL || uri->path[0] == '\0') {
     gpr_log(GPR_ERROR,
             "'http_proxy' environment variable set, but cannot "
@@ -174,8 +171,7 @@ no_use_proxy:
   return false;
 }
 
-static bool proxy_mapper_map_address(grpc_exec_ctx* exec_ctx,
-                                     grpc_proxy_mapper* mapper,
+static bool proxy_mapper_map_address(grpc_proxy_mapper* mapper,
                                      const grpc_resolved_address* address,
                                      const grpc_channel_args* args,
                                      grpc_resolved_address** new_address,

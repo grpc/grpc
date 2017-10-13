@@ -78,8 +78,8 @@ bool grpc_lfev_is_shutdown(gpr_atm *state) {
   return (curr & FD_SHUTDOWN_BIT) != 0;
 }
 
-void grpc_lfev_notify_on(grpc_exec_ctx *exec_ctx, gpr_atm *state,
-                         grpc_closure *closure, const char *variable) {
+void grpc_lfev_notify_on(gpr_atm *state, grpc_closure *closure,
+                         const char *variable) {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(state);
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
@@ -112,7 +112,7 @@ void grpc_lfev_notify_on(grpc_exec_ctx *exec_ctx, gpr_atm *state,
            closure when transitioning out of CLOSURE_NO_READY state (i.e there
            is no other code that needs to 'happen-after' this) */
         if (gpr_atm_no_barrier_cas(state, CLOSURE_READY, CLOSURE_NOT_READY)) {
-          GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
+          GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
           return; /* Successful. Return */
         }
 
@@ -125,7 +125,7 @@ void grpc_lfev_notify_on(grpc_exec_ctx *exec_ctx, gpr_atm *state,
            schedule the closure with the shutdown error */
         if ((curr & FD_SHUTDOWN_BIT) > 0) {
           grpc_error *shutdown_err = (grpc_error *)(curr & ~FD_SHUTDOWN_BIT);
-          GRPC_CLOSURE_SCHED(exec_ctx, closure,
+          GRPC_CLOSURE_SCHED(closure,
                              GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                  "FD Shutdown", &shutdown_err, 1));
           return;
@@ -142,8 +142,7 @@ void grpc_lfev_notify_on(grpc_exec_ctx *exec_ctx, gpr_atm *state,
   GPR_UNREACHABLE_CODE(return );
 }
 
-bool grpc_lfev_set_shutdown(grpc_exec_ctx *exec_ctx, gpr_atm *state,
-                            grpc_error *shutdown_err) {
+bool grpc_lfev_set_shutdown(gpr_atm *state, grpc_error *shutdown_err) {
   gpr_atm new_state = (gpr_atm)shutdown_err | FD_SHUTDOWN_BIT;
 
   while (true) {
@@ -177,7 +176,7 @@ bool grpc_lfev_set_shutdown(grpc_exec_ctx *exec_ctx, gpr_atm *state,
            happens-after on that edge), and a release to pair with anything
            loading the shutdown state. */
         if (gpr_atm_full_cas(state, curr, new_state)) {
-          GRPC_CLOSURE_SCHED(exec_ctx, (grpc_closure *)curr,
+          GRPC_CLOSURE_SCHED((grpc_closure *)curr,
                              GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                  "FD Shutdown", &shutdown_err, 1));
           return true;
@@ -193,8 +192,7 @@ bool grpc_lfev_set_shutdown(grpc_exec_ctx *exec_ctx, gpr_atm *state,
   GPR_UNREACHABLE_CODE(return false);
 }
 
-void grpc_lfev_set_ready(grpc_exec_ctx *exec_ctx, gpr_atm *state,
-                         const char *variable) {
+void grpc_lfev_set_ready(gpr_atm *state, const char *variable) {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(state);
 
@@ -228,7 +226,7 @@ void grpc_lfev_set_ready(grpc_exec_ctx *exec_ctx, gpr_atm *state,
            spurious set_ready; release pairs with this or the acquire in
            notify_on (or set_shutdown) */
         else if (gpr_atm_full_cas(state, curr, CLOSURE_NOT_READY)) {
-          GRPC_CLOSURE_SCHED(exec_ctx, (grpc_closure *)curr, GRPC_ERROR_NONE);
+          GRPC_CLOSURE_SCHED((grpc_closure *)curr, GRPC_ERROR_NONE);
           return;
         }
         /* else the state changed again (only possible by either a racing

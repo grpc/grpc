@@ -33,8 +33,8 @@
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
 static void test_grpc_parse_unix(const char *uri_text, const char *pathname) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_uri *uri = grpc_uri_parse(&exec_ctx, uri_text, 0);
+  exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_uri *uri = grpc_uri_parse(uri_text, 0);
   grpc_resolved_address addr;
 
   GPR_ASSERT(1 == grpc_parse_unix(uri, &addr));
@@ -43,7 +43,7 @@ static void test_grpc_parse_unix(const char *uri_text, const char *pathname) {
   GPR_ASSERT(0 == strcmp(addr_un->sun_path, pathname));
 
   grpc_uri_destroy(uri);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_finish();
 }
 
 #else /* GRPC_HAVE_UNIX_SOCKET */
@@ -54,8 +54,8 @@ static void test_grpc_parse_unix(const char *uri_text, const char *pathname) {}
 
 static void test_grpc_parse_ipv4(const char *uri_text, const char *host,
                                  unsigned short port) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_uri *uri = grpc_uri_parse(&exec_ctx, uri_text, 0);
+  exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_uri *uri = grpc_uri_parse(uri_text, 0);
   grpc_resolved_address addr;
   char ntop_buf[INET_ADDRSTRLEN];
 
@@ -68,13 +68,13 @@ static void test_grpc_parse_ipv4(const char *uri_text, const char *host,
   GPR_ASSERT(ntohs(addr_in->sin_port) == port);
 
   grpc_uri_destroy(uri);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_finish();
 }
 
 static void test_grpc_parse_ipv6(const char *uri_text, const char *host,
                                  unsigned short port, uint32_t scope_id) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_uri *uri = grpc_uri_parse(&exec_ctx, uri_text, 0);
+  exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_uri *uri = grpc_uri_parse(uri_text, 0);
   grpc_resolved_address addr;
   char ntop_buf[INET6_ADDRSTRLEN];
 
@@ -88,7 +88,7 @@ static void test_grpc_parse_ipv6(const char *uri_text, const char *host,
   GPR_ASSERT(addr_in6->sin6_scope_id == scope_id);
 
   grpc_uri_destroy(uri);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char **argv) {

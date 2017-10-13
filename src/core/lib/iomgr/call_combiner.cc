@@ -57,8 +57,7 @@ void grpc_call_combiner_destroy(grpc_call_combiner* call_combiner) {
 #define DEBUG_FMT_ARGS
 #endif
 
-void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
-                              grpc_call_combiner* call_combiner,
+void grpc_call_combiner_start(grpc_call_combiner* call_combiner,
                               grpc_closure* closure,
                               grpc_error* error DEBUG_ARGS,
                               const char* reason) {
@@ -76,15 +75,16 @@ void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
     gpr_log(GPR_DEBUG, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
             prev_size + 1);
   }
-  GRPC_STATS_INC_CALL_COMBINER_LOCKS_SCHEDULED_ITEMS(exec_ctx);
+  GRPC_STATS_INC_CALL_COMBINER_LOCKS_SCHEDULED_ITEMS();
   if (prev_size == 0) {
-    GRPC_STATS_INC_CALL_COMBINER_LOCKS_INITIATED(exec_ctx);
+    GRPC_STATS_INC_CALL_COMBINER_LOCKS_INITIATED();
+
     GPR_TIMER_MARK("call_combiner_initiate", 0);
     if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
       gpr_log(GPR_DEBUG, "  EXECUTING IMMEDIATELY");
     }
     // Queue was empty, so execute this closure immediately.
-    GRPC_CLOSURE_SCHED(exec_ctx, closure, error);
+    GRPC_CLOSURE_SCHED(closure, error);
   } else {
     if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
       gpr_log(GPR_INFO, "  QUEUING");
@@ -96,8 +96,7 @@ void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
   GPR_TIMER_END("call_combiner_start", 0);
 }
 
-void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
-                             grpc_call_combiner* call_combiner DEBUG_ARGS,
+void grpc_call_combiner_stop(grpc_call_combiner* call_combiner DEBUG_ARGS,
                              const char* reason) {
   GPR_TIMER_BEGIN("call_combiner_stop", 0);
   if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
@@ -132,7 +131,7 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
         gpr_log(GPR_DEBUG, "  EXECUTING FROM QUEUE: closure=%p error=%s",
                 closure, grpc_error_string(closure->error_data.error));
       }
-      GRPC_CLOSURE_SCHED(exec_ctx, closure, closure->error_data.error);
+      GRPC_CLOSURE_SCHED(closure, closure->error_data.error);
       break;
     }
   } else if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
@@ -141,10 +140,9 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
   GPR_TIMER_END("call_combiner_stop", 0);
 }
 
-void grpc_call_combiner_set_notify_on_cancel(grpc_exec_ctx* exec_ctx,
-                                             grpc_call_combiner* call_combiner,
+void grpc_call_combiner_set_notify_on_cancel(grpc_call_combiner* call_combiner,
                                              grpc_closure* closure) {
-  GRPC_STATS_INC_CALL_COMBINER_SET_NOTIFY_ON_CANCEL(exec_ctx);
+  GRPC_STATS_INC_CALL_COMBINER_SET_NOTIFY_ON_CANCEL();
   while (true) {
     // Decode original state.
     gpr_atm original_state = gpr_atm_acq_load(&call_combiner->cancel_state);
@@ -158,7 +156,7 @@ void grpc_call_combiner_set_notify_on_cancel(grpc_exec_ctx* exec_ctx,
                 "for pre-existing cancellation",
                 call_combiner, closure);
       }
-      GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_REF(original_error));
+      GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_REF(original_error));
       break;
     } else {
       if (gpr_atm_full_cas(&call_combiner->cancel_state, original_state,
@@ -177,7 +175,7 @@ void grpc_call_combiner_set_notify_on_cancel(grpc_exec_ctx* exec_ctx,
                     "call_combiner=%p: scheduling old cancel callback=%p",
                     call_combiner, closure);
           }
-          GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
+          GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
         }
         break;
       }
@@ -186,10 +184,9 @@ void grpc_call_combiner_set_notify_on_cancel(grpc_exec_ctx* exec_ctx,
   }
 }
 
-void grpc_call_combiner_cancel(grpc_exec_ctx* exec_ctx,
-                               grpc_call_combiner* call_combiner,
+void grpc_call_combiner_cancel(grpc_call_combiner* call_combiner,
                                grpc_error* error) {
-  GRPC_STATS_INC_CALL_COMBINER_CANCELLED(exec_ctx);
+  GRPC_STATS_INC_CALL_COMBINER_CANCELLED();
   while (true) {
     gpr_atm original_state = gpr_atm_acq_load(&call_combiner->cancel_state);
     grpc_error* original_error = decode_cancel_state_error(original_state);
@@ -206,7 +203,7 @@ void grpc_call_combiner_cancel(grpc_exec_ctx* exec_ctx,
                   "call_combiner=%p: scheduling notify_on_cancel callback=%p",
                   call_combiner, notify_on_cancel);
         }
-        GRPC_CLOSURE_SCHED(exec_ctx, notify_on_cancel, GRPC_ERROR_REF(error));
+        GRPC_CLOSURE_SCHED(notify_on_cancel, GRPC_ERROR_REF(error));
       }
       break;
     }

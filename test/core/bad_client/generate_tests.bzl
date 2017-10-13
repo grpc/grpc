@@ -38,7 +38,7 @@ BAD_CLIENT_TESTS = {
 def grpc_bad_client_tests():
   native.cc_library(
       name = 'bad_client_test',
-      srcs = ['bad_client.c'],
+      srcs = ['bad_client.cc'],
       hdrs = ['bad_client.h'],
       copts = ['-std=c99'],
       deps = ['//test/core/util:grpc_test_util', '//:grpc', '//:gpr', '//test/core/end2end:cq_verifier']

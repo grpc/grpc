@@ -45,20 +45,20 @@ static gpr_cv g_rcv;
 static int g_shutdown;
 static grpc_iomgr_object g_root_object;
 
-void grpc_iomgr_init(grpc_exec_ctx *exec_ctx) {
+void grpc_iomgr_init() {
   g_shutdown = 0;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
   grpc_exec_ctx_global_init();
-  grpc_executor_init(exec_ctx);
-  grpc_timer_list_init(exec_ctx);
+  grpc_executor_init();
+  grpc_timer_list_init();
   g_root_object.next = g_root_object.prev = &g_root_object;
   g_root_object.name = (char *)"root";
   grpc_network_status_init();
   grpc_iomgr_platform_init();
 }
 
-void grpc_iomgr_start(grpc_exec_ctx *exec_ctx) { grpc_timer_manager_init(); }
+void grpc_iomgr_start() { grpc_timer_manager_init(); }
 
 static size_t count_objects(void) {
   grpc_iomgr_object *obj;
@@ -76,14 +76,14 @@ static void dump_objects(const char *kind) {
   }
 }
 
-void grpc_iomgr_shutdown(grpc_exec_ctx *exec_ctx) {
+void grpc_iomgr_shutdown() {
   gpr_timespec shutdown_deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10, GPR_TIMESPAN));
   gpr_timespec last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
 
   grpc_timer_manager_shutdown();
   grpc_iomgr_platform_flush();
-  grpc_executor_shutdown(exec_ctx);
+  grpc_executor_shutdown();
 
   gpr_mu_lock(&g_mu);
   g_shutdown = 1;
@@ -100,9 +100,9 @@ void grpc_iomgr_shutdown(grpc_exec_ctx *exec_ctx) {
     }
     exec_ctx->now_is_valid = true;
     exec_ctx->now = GRPC_MILLIS_INF_FUTURE;
-    if (grpc_timer_check(exec_ctx, NULL) == GRPC_TIMERS_FIRED) {
+    if (grpc_timer_check(NULL) == GRPC_TIMERS_FIRED) {
       gpr_mu_unlock(&g_mu);
-      grpc_exec_ctx_flush(exec_ctx);
+      grpc_exec_ctx_flush();
       grpc_iomgr_platform_flush();
       gpr_mu_lock(&g_mu);
       continue;
@@ -134,8 +134,8 @@ void grpc_iomgr_shutdown(grpc_exec_ctx *exec_ctx) {
   }
   gpr_mu_unlock(&g_mu);
 
-  grpc_timer_list_shutdown(exec_ctx);
-  grpc_exec_ctx_flush(exec_ctx);
+  grpc_timer_list_shutdown();
+  grpc_exec_ctx_flush();
 
   /* ensure all threads have left g_mu */
   gpr_mu_lock(&g_mu);

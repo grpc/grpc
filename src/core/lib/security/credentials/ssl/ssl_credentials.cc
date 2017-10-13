@@ -38,18 +38,16 @@ static void ssl_config_pem_key_cert_pair_destroy(
   gpr_free((void *)kp->cert_chain);
 }
 
-static void ssl_destruct(grpc_exec_ctx *exec_ctx,
-                         grpc_channel_credentials *creds) {
+static void ssl_destruct(grpc_channel_credentials *creds) {
   grpc_ssl_credentials *c = (grpc_ssl_credentials *)creds;
   gpr_free(c->config.pem_root_certs);
   ssl_config_pem_key_cert_pair_destroy(&c->config.pem_key_cert_pair);
 }
 
 static grpc_security_status ssl_create_security_connector(
-    grpc_exec_ctx *exec_ctx, grpc_channel_credentials *creds,
-    grpc_call_credentials *call_creds, const char *target,
-    const grpc_channel_args *args, grpc_channel_security_connector **sc,
-    grpc_channel_args **new_args) {
+    grpc_channel_credentials *creds, grpc_call_credentials *call_creds,
+    const char *target, const grpc_channel_args *args,
+    grpc_channel_security_connector **sc, grpc_channel_args **new_args) {
   grpc_ssl_credentials *c = (grpc_ssl_credentials *)creds;
   grpc_security_status status = GRPC_SECURITY_OK;
   const char *overridden_target_name = NULL;
@@ -62,7 +60,8 @@ static grpc_security_status ssl_create_security_connector(
     }
   }
   status = grpc_ssl_channel_security_connector_create(
-      exec_ctx, creds, call_creds, &c->config, target, overridden_target_name,
+      creds, call_creds, &c->config, target, overridden_target_name,
+
       sc);
   if (status != GRPC_SECURITY_OK) {
     return status;
@@ -114,8 +113,7 @@ grpc_channel_credentials *grpc_ssl_credentials_create(
 // SSL Server Credentials.
 //
 
-static void ssl_server_destruct(grpc_exec_ctx *exec_ctx,
-                                grpc_server_credentials *creds) {
+static void ssl_server_destruct(grpc_server_credentials *creds) {
   grpc_ssl_server_credentials *c = (grpc_ssl_server_credentials *)creds;
   size_t i;
   for (i = 0; i < c->config.num_key_cert_pairs; i++) {
@@ -126,11 +124,9 @@ static void ssl_server_destruct(grpc_exec_ctx *exec_ctx,
 }
 
 static grpc_security_status ssl_server_create_security_connector(
-    grpc_exec_ctx *exec_ctx, grpc_server_credentials *creds,
-    grpc_server_security_connector **sc) {
+    grpc_server_credentials *creds, grpc_server_security_connector **sc) {
   grpc_ssl_server_credentials *c = (grpc_ssl_server_credentials *)creds;
-  return grpc_ssl_server_security_connector_create(exec_ctx, creds, &c->config,
-                                                   sc);
+  return grpc_ssl_server_security_connector_create(creds, &c->config, sc);
 }
 
 static grpc_server_credentials_vtable ssl_server_vtable = {

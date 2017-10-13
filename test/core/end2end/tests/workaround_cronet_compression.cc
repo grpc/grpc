@@ -142,15 +142,15 @@ static void request_with_payload_template(
       NULL, default_server_channel_compression_algorithm);
 
   if (user_agent_override) {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    ExecCtx _local_exec_ctx;
     grpc_channel_args *client_args_old = client_args;
     grpc_arg arg;
-    arg.key = GRPC_ARG_PRIMARY_USER_AGENT_STRING;
+    arg.key = (char *)GRPC_ARG_PRIMARY_USER_AGENT_STRING;
     arg.type = GRPC_ARG_STRING;
     arg.value.string = user_agent_override;
     client_args = grpc_channel_args_copy_and_add(client_args_old, &arg, 1);
-    grpc_channel_args_destroy(&exec_ctx, client_args_old);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_channel_args_destroy(client_args_old);
+    grpc_exec_ctx_finish();
   }
 
   f = begin_test(config, test_name, client_args, server_args);
@@ -349,10 +349,10 @@ static void request_with_payload_template(
   cq_verifier_destroy(cqv);
 
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, client_args);
-    grpc_channel_args_destroy(&exec_ctx, server_args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    ExecCtx _local_exec_ctx;
+    grpc_channel_args_destroy(client_args);
+    grpc_channel_args_destroy(server_args);
+    grpc_exec_ctx_finish();
   }
 
   end_test(&f);
@@ -366,11 +366,11 @@ typedef struct workaround_cronet_compression_config {
 
 static workaround_cronet_compression_config workaround_configs[] = {
     {NULL, GRPC_COMPRESS_GZIP},
-    {"grpc-objc/1.3.0-dev grpc-c/3.0.0-dev (ios; cronet_http; gentle)",
+    {(char *)"grpc-objc/1.3.0-dev grpc-c/3.0.0-dev (ios; cronet_http; gentle)",
      GRPC_COMPRESS_NONE},
-    {"grpc-objc/1.3.0-dev grpc-c/3.0.0-dev (ios; chttp2; gentle)",
+    {(char *)"grpc-objc/1.3.0-dev grpc-c/3.0.0-dev (ios; chttp2; gentle)",
      GRPC_COMPRESS_GZIP},
-    {"grpc-objc/1.4.0 grpc-c/3.0.0-dev (ios; cronet_http; gentle)",
+    {(char *)"grpc-objc/1.4.0 grpc-c/3.0.0-dev (ios; cronet_http; gentle)",
      GRPC_COMPRESS_GZIP}};
 static const size_t workaround_configs_num =
     sizeof(workaround_configs) / sizeof(*workaround_configs);

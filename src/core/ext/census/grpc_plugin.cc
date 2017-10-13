@@ -38,8 +38,7 @@ static bool is_census_enabled(const grpc_channel_args *a) {
   return census_enabled() && !grpc_channel_args_want_minimal_stack(a);
 }
 
-static bool maybe_add_census_filter(grpc_exec_ctx *exec_ctx,
-                                    grpc_channel_stack_builder *builder,
+static bool maybe_add_census_filter(grpc_channel_stack_builder *builder,
                                     void *arg) {
   const grpc_channel_args *args =
       grpc_channel_stack_builder_get_channel_arguments(builder);

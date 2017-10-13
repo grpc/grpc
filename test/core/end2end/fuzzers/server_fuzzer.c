@@ -41,17 +41,16 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   if (squelch) gpr_set_log_function(dont_log);
   if (leak_check) grpc_memory_counters_init();
   grpc_init();
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_executor_set_threading(&exec_ctx, false);
+  exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_executor_set_threading(false);
 
   grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("server_fuzzer");
   grpc_endpoint *mock_endpoint =
       grpc_mock_endpoint_create(discard_write, resource_quota);
-  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(resource_quota);
   grpc_mock_endpoint_put_read(
-      &exec_ctx, mock_endpoint,
-      grpc_slice_from_copied_buffer((const char *)data, size));
+      mock_endpoint, grpc_slice_from_copied_buffer((const char *)data, size));
 
   grpc_server *server = grpc_server_create(NULL, NULL);
   grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
@@ -61,9 +60,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   //    grpc_server_register_method(server, "/reg", NULL, 0);
   grpc_server_start(server);
   grpc_transport *transport =
-      grpc_create_chttp2_transport(&exec_ctx, NULL, mock_endpoint, 0);
-  grpc_server_setup_transport(&exec_ctx, server, transport, NULL, NULL);
-  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL);
+      grpc_create_chttp2_transport(NULL, mock_endpoint, 0);
+  grpc_server_setup_transport(server, transport, NULL, NULL);
+  grpc_chttp2_transport_start_reading(transport, NULL);
 
   grpc_call *call1 = NULL;
   grpc_call_details call_details1;
@@ -79,7 +78,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
   grpc_event ev;
   while (1) {
-    grpc_exec_ctx_flush(&exec_ctx);
+    grpc_exec_ctx_flush();
     ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
     switch (ev.type) {
       case GRPC_QUEUE_TIMEOUT:

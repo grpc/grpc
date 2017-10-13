@@ -109,12 +109,12 @@ class ClientLbEnd2endTest : public ::testing::Test {
   }
 
   void SetNextResolution(const std::vector<int>& ports) {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    ExecCtx _local_exec_ctx;
     grpc_lb_addresses* addresses = grpc_lb_addresses_create(ports.size(), NULL);
     for (size_t i = 0; i < ports.size(); ++i) {
       char* lb_uri_str;
       gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", ports[i]);
-      grpc_uri* lb_uri = grpc_uri_parse(&exec_ctx, lb_uri_str, true);
+      grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str, true);
       GPR_ASSERT(lb_uri != NULL);
       grpc_lb_addresses_set_address_from_uri(addresses, i, lb_uri,
                                              false /* is balancer */,
@@ -126,11 +126,11 @@ class ClientLbEnd2endTest : public ::testing::Test {
         grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args* fake_result =
         grpc_channel_args_copy_and_add(NULL, &fake_addresses, 1);
-    grpc_fake_resolver_response_generator_set_response(
-        &exec_ctx, response_generator_, fake_result);
-    grpc_channel_args_destroy(&exec_ctx, fake_result);
-    grpc_lb_addresses_destroy(&exec_ctx, addresses);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_fake_resolver_response_generator_set_response(response_generator_,
+                                                       fake_result);
+    grpc_channel_args_destroy(fake_result);
+    grpc_lb_addresses_destroy(addresses);
+    grpc_exec_ctx_finish();
   }
 
   void ResetStub(const grpc::string& lb_policy_name = "") {

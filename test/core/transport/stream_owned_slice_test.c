@@ -22,7 +22,7 @@
 
 #include <grpc/support/log.h>
 
-static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
+static void do_nothing(void *arg, grpc_error *error) {}
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);

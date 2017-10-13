@@ -28,15 +28,15 @@ static void test_constant_backoff(void) {
                     0.0 /* jitter */, 100 /* min timeout */,
                     1000 /* max timeout */);
 
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_millis next = grpc_backoff_begin(&exec_ctx, &backoff);
-  GPR_ASSERT(next - grpc_exec_ctx_now(&exec_ctx) == 200);
+  exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_millis next = grpc_backoff_begin(&backoff);
+  GPR_ASSERT(next - grpc_exec_ctx_now() == 200);
   for (int i = 0; i < 10000; i++) {
-    next = grpc_backoff_step(&exec_ctx, &backoff);
-    GPR_ASSERT(next - grpc_exec_ctx_now(&exec_ctx) == 200);
+    next = grpc_backoff_step(&backoff);
+    GPR_ASSERT(next - grpc_exec_ctx_now() == 200);
     exec_ctx.now = next;
   }
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_finish();
 }
 
 static void test_min_connect(void) {
@@ -45,10 +45,10 @@ static void test_min_connect(void) {
                     0.0 /* jitter */, 200 /* min timeout */,
                     1000 /* max timeout */);
 
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_millis next = grpc_backoff_begin(&exec_ctx, &backoff);
-  GPR_ASSERT(next - grpc_exec_ctx_now(&exec_ctx) == 200);
-  grpc_exec_ctx_finish(&exec_ctx);
+  exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_millis next = grpc_backoff_begin(&backoff);
+  GPR_ASSERT(next - grpc_exec_ctx_now() == 200);
+  grpc_exec_ctx_finish();
 }
 
 static void test_no_jitter_backoff(void) {
@@ -58,47 +58,47 @@ static void test_no_jitter_backoff(void) {
                     513 /* max timeout */);
   // x_1 = 2
   // x_n = 2**i + x_{i-1} ( = 2**(n+1) - 2 )
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  exec_ctx = GRPC_EXEC_CTX_INIT;
   exec_ctx.now = 0;
   exec_ctx.now_is_valid = true;
-  grpc_millis next = grpc_backoff_begin(&exec_ctx, &backoff);
+  grpc_millis next = grpc_backoff_begin(&backoff);
   GPR_ASSERT(next == 2);
   exec_ctx.now = next;
-  next = grpc_backoff_step(&exec_ctx, &backoff);
+  next = grpc_backoff_step(&backoff);
   GPR_ASSERT(next == 6);
   exec_ctx.now = next;
-  next = grpc_backoff_step(&exec_ctx, &backoff);
+  next = grpc_backoff_step(&backoff);
   GPR_ASSERT(next == 14);
   exec_ctx.now = next;
-  next = grpc_backoff_step(&exec_ctx, &backoff);
+  next = grpc_backoff_step(&backoff);
   GPR_ASSERT(next == 30);
   exec_ctx.now = next;
-  next = grpc_backoff_step(&exec_ctx, &backoff);
+  next = grpc_backoff_step(&backoff);
   GPR_ASSERT(next == 62);
   exec_ctx.now = next;
-  next = grpc_backoff_step(&exec_ctx, &backoff);
+  next = grpc_backoff_step(&backoff);
   GPR_ASSERT(next == 126);
   exec_ctx.now = next;
-  next = grpc_backoff_step(&exec_ctx, &backoff);
+  next = grpc_backoff_step(&backoff);
   GPR_ASSERT(next == 254);
   exec_ctx.now = next;
-  next = grpc_backoff_step(&exec_ctx, &backoff);
+  next = grpc_backoff_step(&backoff);
   GPR_ASSERT(next == 510);
   exec_ctx.now = next;
-  next = grpc_backoff_step(&exec_ctx, &backoff);
+  next = grpc_backoff_step(&backoff);
   GPR_ASSERT(next == 1022);
   exec_ctx.now = next;
-  next = grpc_backoff_step(&exec_ctx, &backoff);
+  next = grpc_backoff_step(&backoff);
   // Hit the maximum timeout. From this point onwards, retries will increase
   // only by max timeout.
   GPR_ASSERT(next == 1535);
   exec_ctx.now = next;
-  next = grpc_backoff_step(&exec_ctx, &backoff);
+  next = grpc_backoff_step(&backoff);
   GPR_ASSERT(next == 2048);
   exec_ctx.now = next;
-  next = grpc_backoff_step(&exec_ctx, &backoff);
+  next = grpc_backoff_step(&backoff);
   GPR_ASSERT(next == 2561);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_finish();
 }
 
 static void test_jitter_backoff(void) {
@@ -111,9 +111,9 @@ static void test_jitter_backoff(void) {
 
   backoff.rng_state = 0;  // force consistent PRNG
 
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_millis next = grpc_backoff_begin(&exec_ctx, &backoff);
-  GPR_ASSERT(next - grpc_exec_ctx_now(&exec_ctx) == 500);
+  exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_millis next = grpc_backoff_begin(&backoff);
+  GPR_ASSERT(next - grpc_exec_ctx_now() == 500);
 
   int64_t expected_next_lower_bound =
       (int64_t)((double)initial_timeout * (1 - jitter));
@@ -121,10 +121,10 @@ static void test_jitter_backoff(void) {
       (int64_t)((double)initial_timeout * (1 + jitter));
 
   for (int i = 0; i < 10000; i++) {
-    next = grpc_backoff_step(&exec_ctx, &backoff);
+    next = grpc_backoff_step(&backoff);
 
     // next-now must be within (jitter*100)% of the previous timeout.
-    const int64_t timeout_millis = next - grpc_exec_ctx_now(&exec_ctx);
+    const int64_t timeout_millis = next - grpc_exec_ctx_now();
     GPR_ASSERT(timeout_millis >= expected_next_lower_bound);
     GPR_ASSERT(timeout_millis <= expected_next_upper_bound);
 
@@ -134,7 +134,7 @@ static void test_jitter_backoff(void) {
         (int64_t)((double)timeout_millis * (1 + jitter));
     exec_ctx.now = next;
   }
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char **argv) {

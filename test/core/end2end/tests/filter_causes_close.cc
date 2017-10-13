@@ -18,19 +18,20 @@
 
 #include "test/core/end2end/end2end_tests.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
-#include <grpc/compression.h>
-#include <grpc/compression.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/surface/call.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/surface/channel_init.h"
 #include "test/core/end2end/cq_verifier.h"
+
+static bool g_enable_filter = false;
 
 static void *tag(intptr_t t) { return (void *)t; }
 
@@ -88,37 +89,16 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-/* Creates and returns a grpc_slice containing random alphanumeric characters.
- */
-static grpc_slice generate_random_slice() {
-  size_t i;
-  static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
-  char *output;
-  const size_t output_size = 1024 * 1024;
-  output = (char *)gpr_malloc(output_size);
-  for (i = 0; i < output_size - 1; ++i) {
-    output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
-  }
-  output[output_size - 1] = '\0';
-  grpc_slice out = grpc_slice_from_copied_string(output);
-  gpr_free(output);
-  return out;
-}
-
-static void request_response_with_payload(grpc_end2end_test_config config,
-                                          grpc_end2end_test_fixture f) {
-  /* Create large request and response bodies. These are big enough to require
-   * multiple round trips to deliver to the peer, and their exact contents of
-   * will be verified on completion. */
-  grpc_slice request_payload_slice = generate_random_slice();
-  grpc_slice response_payload_slice = generate_random_slice();
-
+/* Simple request via a server filter that always closes the stream.*/
+static void test_request(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
+  grpc_slice request_payload_slice =
+      grpc_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer *response_payload =
-      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
+  grpc_end2end_test_fixture f =
+      begin_test(config, "filter_causes_close", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
@@ -126,14 +106,12 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
   grpc_byte_buffer *request_payload_recv = NULL;
-  grpc_byte_buffer *response_payload_recv = NULL;
   grpc_call_details call_details;
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  int was_cancelled = 2;
 
-  gpr_timespec deadline = n_seconds_from_now(60);
+  gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(
       f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
       grpc_slice_from_static_string("/foo"),
@@ -150,6 +128,7 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
+  op->data.send_initial_metadata.metadata = NULL;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -167,11 +146,6 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &response_payload_recv;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
@@ -186,63 +160,13 @@ static void request_response_with_payload(grpc_end2end_test_config config,
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
 
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &request_payload_recv;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  cq_verify(cqv);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = response_payload;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
-                                config);
-  GPR_ASSERT(was_cancelled == 0);
-  GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
-  GPR_ASSERT(
-      byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
+  GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
+  GPR_ASSERT(0 ==
+             grpc_slice_str_cmp(details, "Failure that's not preventable."));
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -251,55 +175,102 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   grpc_call_details_destroy(&call_details);
 
   grpc_call_unref(c);
-  grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
 
   grpc_byte_buffer_destroy(request_payload);
-  grpc_byte_buffer_destroy(response_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
-  grpc_byte_buffer_destroy(response_payload_recv);
-}
 
-/* Client sends a request with payload, server reads then returns a response
-   payload and status. */
-static void test_invoke_request_response_with_payload(
-    grpc_end2end_test_config config) {
-  grpc_channel_args *client_args =
-      grpc_channel_args_set_stream_compression_algorithm(
-          NULL, GRPC_STREAM_COMPRESS_GZIP);
-  grpc_channel_args *server_args =
-      grpc_channel_args_set_stream_compression_algorithm(
-          NULL, GRPC_STREAM_COMPRESS_GZIP);
-  grpc_end2end_test_fixture f =
-      begin_test(config, "test_invoke_request_response_with_payload",
-                 client_args, server_args);
-  request_response_with_payload(config, f);
-  end_test(&f);
-  config.tear_down_data(&f);
-  {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, client_args);
-    grpc_channel_args_destroy(&exec_ctx, server_args);
-    grpc_exec_ctx_finish(&exec_ctx);
-  }
-}
-
-static void test_invoke_10_request_response_with_payload(
-    grpc_end2end_test_config config) {
-  int i;
-  grpc_end2end_test_fixture f = begin_test(
-      config, "test_invoke_10_request_response_with_payload", NULL, NULL);
-  for (i = 0; i < 10; i++) {
-    request_response_with_payload(config, f);
-  }
   end_test(&f);
   config.tear_down_data(&f);
 }
 
-void stream_compression_payload(grpc_end2end_test_config config) {
-  test_invoke_request_response_with_payload(config);
-  test_invoke_10_request_response_with_payload(config);
+/*******************************************************************************
+ * Test filter - always closes incoming requests
+ */
+
+typedef struct { grpc_closure *recv_im_ready; } call_data;
+
+typedef struct { uint8_t unused; } channel_data;
+
+static void recv_im_ready(void *arg, grpc_error *error) {
+  grpc_call_element *elem = (grpc_call_element *)arg;
+  call_data *calld = (call_data *)elem->call_data;
+  GRPC_CLOSURE_RUN(
+      calld->recv_im_ready,
+      grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                             "Failure that's not preventable.", &error, 1),
+                         GRPC_ERROR_INT_GRPC_STATUS,
+                         GRPC_STATUS_PERMISSION_DENIED));
 }
 
-void stream_compression_payload_pre_init(void) {}
+static void start_transport_stream_op_batch(
+    grpc_call_element *elem, grpc_transport_stream_op_batch *op) {
+  call_data *calld = (call_data *)elem->call_data;
+  if (op->recv_initial_metadata) {
+    calld->recv_im_ready =
+        op->payload->recv_initial_metadata.recv_initial_metadata_ready;
+    op->payload->recv_initial_metadata.recv_initial_metadata_ready =
+        GRPC_CLOSURE_CREATE(recv_im_ready, elem, grpc_schedule_on_exec_ctx);
+  }
+  grpc_call_next_op(elem, op);
+}
+
+static grpc_error *init_call_elem(grpc_call_element *elem,
+                                  const grpc_call_element_args *args) {
+  return GRPC_ERROR_NONE;
+}
+
+static void destroy_call_elem(grpc_call_element *elem,
+                              const grpc_call_final_info *final_info,
+                              grpc_closure *ignored) {}
+
+static grpc_error *init_channel_elem(grpc_channel_element *elem,
+                                     grpc_channel_element_args *args) {
+  return GRPC_ERROR_NONE;
+}
+
+static void destroy_channel_elem(grpc_channel_element *elem) {}
+
+static const grpc_channel_filter test_filter = {
+    start_transport_stream_op_batch,
+    grpc_channel_next_op,
+    sizeof(call_data),
+    init_call_elem,
+    grpc_call_stack_ignore_set_pollset_or_pollset_set,
+    destroy_call_elem,
+    sizeof(channel_data),
+    init_channel_elem,
+    destroy_channel_elem,
+    grpc_channel_next_get_info,
+    "filter_causes_close"};
+
+/*******************************************************************************
+ * Registration
+ */
+
+static bool maybe_add_filter(grpc_channel_stack_builder *builder, void *arg) {
+  if (g_enable_filter) {
+    return grpc_channel_stack_builder_prepend_filter(builder, &test_filter,
+                                                     NULL, NULL);
+  } else {
+    return true;
+  }
+}
+
+static void init_plugin(void) {
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, 0, maybe_add_filter,
+                                   NULL);
+}
+
+static void destroy_plugin(void) {}
+
+void filter_causes_close(grpc_end2end_test_config config) {
+  g_enable_filter = true;
+  test_request(config);
+  g_enable_filter = false;
+}
+
+void filter_causes_close_pre_init(void) {
+  grpc_register_plugin(init_plugin, destroy_plugin);
+}

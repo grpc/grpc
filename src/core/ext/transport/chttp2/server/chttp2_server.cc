@@ -59,8 +59,7 @@ typedef struct {
   grpc_handshake_manager *handshake_mgr;
 } server_connection_state;
 
-static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
-                              grpc_error *error) {
+static void on_handshake_done(void *arg, grpc_error *error) {
   grpc_handshaker_args *args = (grpc_handshaker_args *)arg;
   server_connection_state *connection_state =
       (server_connection_state *)args->user_data;
@@ -76,10 +75,10 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
       // before destroying them, even if we know that there are no
       // pending read/write callbacks.  This should be fixed, at which
       // point this can be removed.
-      grpc_endpoint_shutdown(exec_ctx, args->endpoint, GRPC_ERROR_NONE);
-      grpc_endpoint_destroy(exec_ctx, args->endpoint);
-      grpc_channel_args_destroy(exec_ctx, args->args);
-      grpc_slice_buffer_destroy_internal(exec_ctx, args->read_buffer);
+      grpc_endpoint_shutdown(args->endpoint, GRPC_ERROR_NONE);
+      grpc_endpoint_destroy(args->endpoint);
+      grpc_channel_args_destroy(args->args);
+      grpc_slice_buffer_destroy_internal(args->read_buffer);
       gpr_free(args->read_buffer);
     }
   } else {
@@ -88,34 +87,33 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     // code, so we can just clean up here without creating a transport.
     if (args->endpoint != NULL) {
       grpc_transport *transport =
-          grpc_create_chttp2_transport(exec_ctx, args->args, args->endpoint, 0);
+          grpc_create_chttp2_transport(args->args, args->endpoint, 0);
       grpc_server_setup_transport(
-          exec_ctx, connection_state->svr_state->server, transport,
+          connection_state->svr_state->server, transport,
           connection_state->accepting_pollset, args->args);
-      grpc_chttp2_transport_start_reading(exec_ctx, transport,
-                                          args->read_buffer);
-      grpc_channel_args_destroy(exec_ctx, args->args);
+      grpc_chttp2_transport_start_reading(transport, args->read_buffer);
+      grpc_channel_args_destroy(args->args);
     }
   }
   grpc_handshake_manager_pending_list_remove(
       &connection_state->svr_state->pending_handshake_mgrs,
       connection_state->handshake_mgr);
   gpr_mu_unlock(&connection_state->svr_state->mu);
-  grpc_handshake_manager_destroy(exec_ctx, connection_state->handshake_mgr);
-  grpc_tcp_server_unref(exec_ctx, connection_state->svr_state->tcp_server);
+  grpc_handshake_manager_destroy(connection_state->handshake_mgr);
+  grpc_tcp_server_unref(connection_state->svr_state->tcp_server);
   gpr_free(connection_state->acceptor);
   gpr_free(connection_state);
 }
 
-static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
+static void on_accept(void *arg, grpc_endpoint *tcp,
                       grpc_pollset *accepting_pollset,
                       grpc_tcp_server_acceptor *acceptor) {
   server_state *state = (server_state *)arg;
   gpr_mu_lock(&state->mu);
   if (state->shutdown) {
     gpr_mu_unlock(&state->mu);
-    grpc_endpoint_shutdown(exec_ctx, tcp, GRPC_ERROR_NONE);
-    grpc_endpoint_destroy(exec_ctx, tcp);
+    grpc_endpoint_shutdown(tcp, GRPC_ERROR_NONE);
+    grpc_endpoint_destroy(tcp);
     gpr_free(acceptor);
     return;
   }
@@ -130,55 +128,52 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   connection_state->accepting_pollset = accepting_pollset;
   connection_state->acceptor = acceptor;
   connection_state->handshake_mgr = handshake_mgr;
-  grpc_handshakers_add(exec_ctx, HANDSHAKER_SERVER, state->args,
+  grpc_handshakers_add(HANDSHAKER_SERVER, state->args,
                        connection_state->handshake_mgr);
   // TODO(roth): We should really get this timeout value from channel
   // args instead of hard-coding it.
-  const grpc_millis deadline =
-      grpc_exec_ctx_now(exec_ctx) + 120 * GPR_MS_PER_SEC;
-  grpc_handshake_manager_do_handshake(exec_ctx, connection_state->handshake_mgr,
-                                      tcp, state->args, deadline, acceptor,
+  const grpc_millis deadline = grpc_exec_ctx_now() + 120 * GPR_MS_PER_SEC;
+  grpc_handshake_manager_do_handshake(connection_state->handshake_mgr, tcp,
+                                      state->args, deadline, acceptor,
                                       on_handshake_done, connection_state);
 }
 
 /* Server callback: start listening on our ports */
-static void server_start_listener(grpc_exec_ctx *exec_ctx, grpc_server *server,
-                                  void *arg, grpc_pollset **pollsets,
+static void server_start_listener(grpc_server *server, void *arg,
+                                  grpc_pollset **pollsets,
                                   size_t pollset_count) {
   server_state *state = (server_state *)arg;
   gpr_mu_lock(&state->mu);
   state->shutdown = false;
   gpr_mu_unlock(&state->mu);
-  grpc_tcp_server_start(exec_ctx, state->tcp_server, pollsets, pollset_count,
-                        on_accept, state);
+  grpc_tcp_server_start(state->tcp_server, pollsets, pollset_count, on_accept,
+                        state);
 }
 
-static void tcp_server_shutdown_complete(grpc_exec_ctx *exec_ctx, void *arg,
-                                         grpc_error *error) {
+static void tcp_server_shutdown_complete(void *arg, grpc_error *error) {
   server_state *state = (server_state *)arg;
   /* ensure all threads have unlocked */
   gpr_mu_lock(&state->mu);
   grpc_closure *destroy_done = state->server_destroy_listener_done;
   GPR_ASSERT(state->shutdown);
   grpc_handshake_manager_pending_list_shutdown_all(
-      exec_ctx, state->pending_handshake_mgrs, GRPC_ERROR_REF(error));
+      state->pending_handshake_mgrs, GRPC_ERROR_REF(error));
   gpr_mu_unlock(&state->mu);
   // Flush queued work before destroying handshaker factory, since that
   // may do a synchronous unref.
-  grpc_exec_ctx_flush(exec_ctx);
+  grpc_exec_ctx_flush();
   if (destroy_done != NULL) {
-    destroy_done->cb(exec_ctx, destroy_done->cb_arg, GRPC_ERROR_REF(error));
-    grpc_exec_ctx_flush(exec_ctx);
+    destroy_done->cb(destroy_done->cb_arg, GRPC_ERROR_REF(error));
+    grpc_exec_ctx_flush();
   }
-  grpc_channel_args_destroy(exec_ctx, state->args);
+  grpc_channel_args_destroy(state->args);
   gpr_mu_destroy(&state->mu);
   gpr_free(state);
 }
 
 /* Server callback: destroy the tcp listener (so we don't generate further
    callbacks) */
-static void server_destroy_listener(grpc_exec_ctx *exec_ctx,
-                                    grpc_server *server, void *arg,
+static void server_destroy_listener(grpc_server *server, void *arg,
                                     grpc_closure *destroy_done) {
   server_state *state = (server_state *)arg;
   gpr_mu_lock(&state->mu);
@@ -186,12 +181,11 @@ static void server_destroy_listener(grpc_exec_ctx *exec_ctx,
   state->server_destroy_listener_done = destroy_done;
   grpc_tcp_server *tcp_server = state->tcp_server;
   gpr_mu_unlock(&state->mu);
-  grpc_tcp_server_shutdown_listeners(exec_ctx, tcp_server);
-  grpc_tcp_server_unref(exec_ctx, tcp_server);
+  grpc_tcp_server_shutdown_listeners(tcp_server);
+  grpc_tcp_server_unref(tcp_server);
 }
 
-grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
-                                        grpc_server *server, const char *addr,
+grpc_error *grpc_chttp2_server_add_port(grpc_server *server, const char *addr,
                                         grpc_channel_args *args,
                                         int *port_num) {
   grpc_resolved_addresses *resolved = NULL;
@@ -215,8 +209,8 @@ grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
   GRPC_CLOSURE_INIT(&state->tcp_server_shutdown_complete,
                     tcp_server_shutdown_complete, state,
                     grpc_schedule_on_exec_ctx);
-  err = grpc_tcp_server_create(exec_ctx, &state->tcp_server_shutdown_complete,
-                               args, &tcp_server);
+  err = grpc_tcp_server_create(&state->tcp_server_shutdown_complete, args,
+                               &tcp_server);
   if (err != GRPC_ERROR_NONE) {
     goto error;
   }
@@ -264,7 +258,7 @@ grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
   grpc_resolved_addresses_destroy(resolved);
 
   /* Register with the server only upon success */
-  grpc_server_add_listener(exec_ctx, server, state, server_start_listener,
+  grpc_server_add_listener(server, state, server_start_listener,
                            server_destroy_listener);
   goto done;
 
@@ -275,9 +269,9 @@ error:
     grpc_resolved_addresses_destroy(resolved);
   }
   if (tcp_server) {
-    grpc_tcp_server_unref(exec_ctx, tcp_server);
+    grpc_tcp_server_unref(tcp_server);
   } else {
-    grpc_channel_args_destroy(exec_ctx, args);
+    grpc_channel_args_destroy(args);
     gpr_free(state);
   }
   *port_num = 0;

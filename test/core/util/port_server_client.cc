@@ -40,22 +40,19 @@ typedef struct freereq {
   int done;
 } freereq;
 
-static void destroy_pops_and_shutdown(grpc_exec_ctx *exec_ctx, void *p,
-                                      grpc_error *error) {
+static void destroy_pops_and_shutdown(void *p, grpc_error *error) {
   grpc_pollset *pollset = grpc_polling_entity_pollset((grpc_polling_entity *)p);
-  grpc_pollset_destroy(exec_ctx, pollset);
+  grpc_pollset_destroy(pollset);
   gpr_free(pollset);
 }
 
-static void freed_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
-                                   grpc_error *error) {
+static void freed_port_from_server(void *arg, grpc_error *error) {
   freereq *pr = (freereq *)arg;
   gpr_mu_lock(pr->mu);
   pr->done = 1;
   GRPC_LOG_IF_ERROR(
       "pollset_kick",
-      grpc_pollset_kick(exec_ctx, grpc_polling_entity_pollset(&pr->pops),
-                        NULL));
+      grpc_pollset_kick(grpc_polling_entity_pollset(&pr->pops), NULL));
   gpr_mu_unlock(pr->mu);
 }
 
@@ -65,7 +62,7 @@ void grpc_free_port_using_server(int port) {
   grpc_httpcli_response rsp;
   freereq pr;
   char *path;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  ExecCtx _local_exec_ctx;
   grpc_closure *shutdown_closure;
 
   grpc_init();
@@ -80,37 +77,36 @@ void grpc_free_port_using_server(int port) {
   shutdown_closure = GRPC_CLOSURE_CREATE(destroy_pops_and_shutdown, &pr.pops,
                                          grpc_schedule_on_exec_ctx);
 
-  req.host = GRPC_PORT_SERVER_ADDRESS;
+  req.host = (char *)GRPC_PORT_SERVER_ADDRESS;
   gpr_asprintf(&path, "/drop/%d", port);
   req.http.path = path;
 
   grpc_httpcli_context_init(&context);
   grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("port_server_client/free");
-  grpc_httpcli_get(&exec_ctx, &context, &pr.pops, resource_quota, &req,
-                   grpc_exec_ctx_now(&exec_ctx) + 30 * GPR_MS_PER_SEC,
+  grpc_httpcli_get(&context, &pr.pops, resource_quota, &req,
+                   grpc_exec_ctx_now() + 30 * GPR_MS_PER_SEC,
                    GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
                                        grpc_schedule_on_exec_ctx),
                    &rsp);
-  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
-  grpc_exec_ctx_flush(&exec_ctx);
+  grpc_resource_quota_unref_internal(resource_quota);
+  grpc_exec_ctx_flush();
   gpr_mu_lock(pr.mu);
   while (!pr.done) {
     grpc_pollset_worker *worker = NULL;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
-            grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&pr.pops),
-                              &worker,
-                              grpc_exec_ctx_now(&exec_ctx) + GPR_MS_PER_SEC))) {
+            grpc_pollset_work(grpc_polling_entity_pollset(&pr.pops), &worker,
+                              grpc_exec_ctx_now() + GPR_MS_PER_SEC))) {
       pr.done = 1;
     }
   }
   gpr_mu_unlock(pr.mu);
 
-  grpc_httpcli_context_destroy(&exec_ctx, &context);
-  grpc_pollset_shutdown(&exec_ctx, grpc_polling_entity_pollset(&pr.pops),
+  grpc_httpcli_context_destroy(&context);
+  grpc_pollset_shutdown(grpc_polling_entity_pollset(&pr.pops),
                         shutdown_closure);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_finish();
   gpr_free(path);
   grpc_http_response_destroy(&rsp);
 
@@ -127,8 +123,7 @@ typedef struct portreq {
   grpc_httpcli_response response;
 } portreq;
 
-static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
-                                 grpc_error *error) {
+static void got_port_from_server(void *arg, grpc_error *error) {
   size_t i;
   int port = 0;
   portreq *pr = (portreq *)arg;
@@ -154,8 +149,7 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
       pr->port = 0;
       GRPC_LOG_IF_ERROR(
           "pollset_kick",
-          grpc_pollset_kick(exec_ctx, grpc_polling_entity_pollset(&pr->pops),
-                            NULL));
+          grpc_pollset_kick(grpc_polling_entity_pollset(&pr->pops), NULL));
       gpr_mu_unlock(pr->mu);
       return;
     }
@@ -167,17 +161,17 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
             GPR_TIMESPAN)));
     pr->retries++;
     req.host = pr->server;
-    req.http.path = "/get";
+    req.http.path = (char *)"/get";
     grpc_http_response_destroy(&pr->response);
     memset(&pr->response, 0, sizeof(pr->response));
     grpc_resource_quota *resource_quota =
         grpc_resource_quota_create("port_server_client/pick_retry");
-    grpc_httpcli_get(exec_ctx, pr->ctx, &pr->pops, resource_quota, &req,
-                     grpc_exec_ctx_now(exec_ctx) + 30 * GPR_MS_PER_SEC,
+    grpc_httpcli_get(pr->ctx, &pr->pops, resource_quota, &req,
+                     grpc_exec_ctx_now() + 30 * GPR_MS_PER_SEC,
                      GRPC_CLOSURE_CREATE(got_port_from_server, pr,
                                          grpc_schedule_on_exec_ctx),
                      &pr->response);
-    grpc_resource_quota_unref_internal(exec_ctx, resource_quota);
+    grpc_resource_quota_unref_internal(resource_quota);
     return;
   }
   GPR_ASSERT(response);
@@ -191,8 +185,7 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
   pr->port = port;
   GRPC_LOG_IF_ERROR(
       "pollset_kick",
-      grpc_pollset_kick(exec_ctx, grpc_polling_entity_pollset(&pr->pops),
-                        NULL));
+      grpc_pollset_kick(grpc_polling_entity_pollset(&pr->pops), NULL));
   gpr_mu_unlock(pr->mu);
 }
 
@@ -200,7 +193,7 @@ int grpc_pick_port_using_server(void) {
   grpc_httpcli_context context;
   grpc_httpcli_request req;
   portreq pr;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  ExecCtx _local_exec_ctx;
   grpc_closure *shutdown_closure;
 
   grpc_init();
@@ -213,40 +206,39 @@ int grpc_pick_port_using_server(void) {
   shutdown_closure = GRPC_CLOSURE_CREATE(destroy_pops_and_shutdown, &pr.pops,
                                          grpc_schedule_on_exec_ctx);
   pr.port = -1;
-  pr.server = GRPC_PORT_SERVER_ADDRESS;
+  pr.server = (char *)GRPC_PORT_SERVER_ADDRESS;
   pr.ctx = &context;
 
-  req.host = GRPC_PORT_SERVER_ADDRESS;
-  req.http.path = "/get";
+  req.host = (char *)GRPC_PORT_SERVER_ADDRESS;
+  req.http.path = (char *)"/get";
 
   grpc_httpcli_context_init(&context);
   grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("port_server_client/pick");
   grpc_httpcli_get(
-      &exec_ctx, &context, &pr.pops, resource_quota, &req,
-      grpc_exec_ctx_now(&exec_ctx) + 30 * GPR_MS_PER_SEC,
+      &context, &pr.pops, resource_quota, &req,
+      grpc_exec_ctx_now() + 30 * GPR_MS_PER_SEC,
       GRPC_CLOSURE_CREATE(got_port_from_server, &pr, grpc_schedule_on_exec_ctx),
       &pr.response);
-  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
-  grpc_exec_ctx_flush(&exec_ctx);
+  grpc_resource_quota_unref_internal(resource_quota);
+  grpc_exec_ctx_flush();
   gpr_mu_lock(pr.mu);
   while (pr.port == -1) {
     grpc_pollset_worker *worker = NULL;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
-            grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&pr.pops),
-                              &worker,
-                              grpc_exec_ctx_now(&exec_ctx) + GPR_MS_PER_SEC))) {
+            grpc_pollset_work(grpc_polling_entity_pollset(&pr.pops), &worker,
+                              grpc_exec_ctx_now() + GPR_MS_PER_SEC))) {
       pr.port = 0;
     }
   }
   gpr_mu_unlock(pr.mu);
 
   grpc_http_response_destroy(&pr.response);
-  grpc_httpcli_context_destroy(&exec_ctx, &context);
-  grpc_pollset_shutdown(&exec_ctx, grpc_polling_entity_pollset(&pr.pops),
+  grpc_httpcli_context_destroy(&context);
+  grpc_pollset_shutdown(grpc_polling_entity_pollset(&pr.pops),
                         shutdown_closure);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_finish();
   grpc_shutdown();
 
   return pr.port;

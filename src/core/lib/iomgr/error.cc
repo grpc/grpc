@@ -158,9 +158,9 @@ static void unref_errs(grpc_error *err) {
 }
 
 static void unref_slice(grpc_slice slice) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_slice_unref_internal(&exec_ctx, slice);
-  grpc_exec_ctx_finish(&exec_ctx);
+  ExecCtx _local_exec_ctx;
+  grpc_slice_unref_internal(slice);
+  grpc_exec_ctx_finish();
 }
 
 static void unref_strs(grpc_error *err) {

@@ -65,9 +65,9 @@ static grpc_channel *create_proxy_client(const char *target,
       grpc_secure_channel_create(ssl_creds, target, new_client_args, NULL);
   grpc_channel_credentials_release(ssl_creds);
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, new_client_args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(new_client_args);
+    grpc_exec_ctx_finish();
   }
   return channel;
 }
@@ -142,9 +142,9 @@ static void chttp2_init_client_simple_ssl_secure_fullstack(
       grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);
   chttp2_init_client_secure_fullstack(f, new_client_args, ssl_creds);
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, new_client_args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_channel_args_destroy(new_client_args);
+    grpc_exec_ctx_finish();
   }
 }
 

@@ -44,11 +44,10 @@ void init_test_pollset_sets(test_pollset_set *pollset_sets, const int num_pss) {
   }
 }
 
-void cleanup_test_pollset_sets(grpc_exec_ctx *exec_ctx,
-                               test_pollset_set *pollset_sets,
+void cleanup_test_pollset_sets(test_pollset_set *pollset_sets,
                                const int num_pss) {
   for (int i = 0; i < num_pss; i++) {
-    grpc_pollset_set_destroy(exec_ctx, pollset_sets[i].pss);
+    grpc_pollset_set_destroy(pollset_sets[i].pss);
     pollset_sets[i].pss = NULL;
   }
 }
@@ -69,21 +68,19 @@ static void init_test_pollsets(test_pollset *pollsets, const int num_pollsets) {
   }
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
-                            grpc_error *error) {
-  grpc_pollset_destroy(exec_ctx, p);
+static void destroy_pollset(void *p, grpc_error *error) {
+  grpc_pollset_destroy(p);
 }
 
-static void cleanup_test_pollsets(grpc_exec_ctx *exec_ctx,
-                                  test_pollset *pollsets,
+static void cleanup_test_pollsets(test_pollset *pollsets,
                                   const int num_pollsets) {
   grpc_closure destroyed;
   for (int i = 0; i < num_pollsets; i++) {
     GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, pollsets[i].ps,
                       grpc_schedule_on_exec_ctx);
-    grpc_pollset_shutdown(exec_ctx, pollsets[i].ps, &destroyed);
+    grpc_pollset_shutdown(pollsets[i].ps, &destroyed);
 
-    grpc_exec_ctx_flush(exec_ctx);
+    grpc_exec_ctx_flush();
     gpr_free(pollsets[i].ps);
     pollsets[i].ps = NULL;
   }
@@ -101,45 +98,43 @@ typedef struct test_fd {
   grpc_closure on_readable;   /* Closure to call when this fd is readable */
 } test_fd;
 
-void on_readable(grpc_exec_ctx *exec_ctx, void *tfd, grpc_error *error) {
+void on_readable(void *tfd, grpc_error *error) {
   ((test_fd *)tfd)->is_on_readable_called = true;
 }
 
-static void reset_test_fd(grpc_exec_ctx *exec_ctx, test_fd *tfd) {
+static void reset_test_fd(test_fd *tfd) {
   tfd->is_on_readable_called = false;
 
   GRPC_CLOSURE_INIT(&tfd->on_readable, on_readable, tfd,
                     grpc_schedule_on_exec_ctx);
-  grpc_fd_notify_on_read(exec_ctx, tfd->fd, &tfd->on_readable);
+  grpc_fd_notify_on_read(tfd->fd, &tfd->on_readable);
 }
 
-static void init_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds,
-                          const int num_fds) {
+static void init_test_fds(test_fd *tfds, const int num_fds) {
   for (int i = 0; i < num_fds; i++) {
     GPR_ASSERT(GRPC_ERROR_NONE == grpc_wakeup_fd_init(&tfds[i].wakeup_fd));
     tfds[i].fd = grpc_fd_create(GRPC_WAKEUP_FD_GET_READ_FD(&tfds[i].wakeup_fd),
                                 "test_fd");
-    reset_test_fd(exec_ctx, &tfds[i]);
+    reset_test_fd(&tfds[i]);
   }
 }
 
-static void cleanup_test_fds(grpc_exec_ctx *exec_ctx, test_fd *tfds,
-                             const int num_fds) {
+static void cleanup_test_fds(test_fd *tfds, const int num_fds) {
   int release_fd;
 
   for (int i = 0; i < num_fds; i++) {
-    grpc_fd_shutdown(exec_ctx, tfds[i].fd,
+    grpc_fd_shutdown(tfds[i].fd,
                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("fd cleanup"));
-    grpc_exec_ctx_flush(exec_ctx);
+    grpc_exec_ctx_flush();
 
     /* grpc_fd_orphan frees the memory allocated for grpc_fd. Normally it also
      * calls close() on the underlying fd. In our case, we are using
      * grpc_wakeup_fd and we would like to destroy it ourselves (by calling
      * grpc_wakeup_fd_destroy). To prevent grpc_fd from calling close() on the
      * underlying fd, call it with a non-NULL 'release_fd' parameter */
-    grpc_fd_orphan(exec_ctx, tfds[i].fd, NULL, &release_fd,
-                   false /* already_closed */, "test_fd_cleanup");
-    grpc_exec_ctx_flush(exec_ctx);
+    grpc_fd_orphan(tfds[i].fd, NULL, &release_fd, false /* already_closed */,
+                   "test_fd_cleanup");
+    grpc_exec_ctx_flush();
 
     grpc_wakeup_fd_destroy(&tfds[i].wakeup_fd);
   }
@@ -151,8 +146,7 @@ static void make_test_fds_readable(test_fd *tfds, const int num_fds) {
   }
 }
 
-static void verify_readable_and_reset(grpc_exec_ctx *exec_ctx, test_fd *tfds,
-                                      const int num_fds) {
+static void verify_readable_and_reset(test_fd *tfds, const int num_fds) {
   for (int i = 0; i < num_fds; i++) {
     /* Verify that the on_readable callback was called */
     GPR_ASSERT(tfds[i].is_on_readable_called);
@@ -160,7 +154,7 @@ static void verify_readable_and_reset(grpc_exec_ctx *exec_ctx, test_fd *tfds,
     /* Reset the tfd[i] structure */
     GPR_ASSERT(GRPC_ERROR_NONE ==
                grpc_wakeup_fd_consume_wakeup(&tfds[i].wakeup_fd));
-    reset_test_fd(exec_ctx, &tfds[i]);
+    reset_test_fd(&tfds[i]);
   }
 }
 
@@ -201,7 +195,7 @@ static void pollset_set_test_basic() {
    *                    |
    *                    +---> FD9 (Added after PS2 is added to PSS0)
    */
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_pollset_worker *worker;
   grpc_millis deadline;
 
@@ -212,34 +206,33 @@ static void pollset_set_test_basic() {
   const int num_ps = GPR_ARRAY_SIZE(pollsets);
   const int num_pss = GPR_ARRAY_SIZE(pollset_sets);
 
-  init_test_fds(&exec_ctx, tfds, num_fds);
+  init_test_fds(tfds, num_fds);
   init_test_pollsets(pollsets, num_ps);
   init_test_pollset_sets(pollset_sets, num_pss);
 
   /* Construct the pollset_set/pollset/fd tree (see diagram above) */
 
-  grpc_pollset_set_add_fd(&exec_ctx, pollset_sets[0].pss, tfds[0].fd);
-  grpc_pollset_set_add_fd(&exec_ctx, pollset_sets[1].pss, tfds[1].fd);
+  grpc_pollset_set_add_fd(pollset_sets[0].pss, tfds[0].fd);
+  grpc_pollset_set_add_fd(pollset_sets[1].pss, tfds[1].fd);
 
-  grpc_pollset_add_fd(&exec_ctx, pollsets[0].ps, tfds[2].fd);
-  grpc_pollset_add_fd(&exec_ctx, pollsets[1].ps, tfds[3].fd);
-  grpc_pollset_add_fd(&exec_ctx, pollsets[2].ps, tfds[4].fd);
+  grpc_pollset_add_fd(pollsets[0].ps, tfds[2].fd);
+  grpc_pollset_add_fd(pollsets[1].ps, tfds[3].fd);
+  grpc_pollset_add_fd(pollsets[2].ps, tfds[4].fd);
 
-  grpc_pollset_set_add_pollset_set(&exec_ctx, pollset_sets[0].pss,
-                                   pollset_sets[1].pss);
+  grpc_pollset_set_add_pollset_set(pollset_sets[0].pss, pollset_sets[1].pss);
 
-  grpc_pollset_set_add_pollset(&exec_ctx, pollset_sets[1].pss, pollsets[0].ps);
-  grpc_pollset_set_add_pollset(&exec_ctx, pollset_sets[0].pss, pollsets[1].ps);
-  grpc_pollset_set_add_pollset(&exec_ctx, pollset_sets[0].pss, pollsets[2].ps);
+  grpc_pollset_set_add_pollset(pollset_sets[1].pss, pollsets[0].ps);
+  grpc_pollset_set_add_pollset(pollset_sets[0].pss, pollsets[1].ps);
+  grpc_pollset_set_add_pollset(pollset_sets[0].pss, pollsets[2].ps);
 
-  grpc_pollset_set_add_fd(&exec_ctx, pollset_sets[0].pss, tfds[5].fd);
-  grpc_pollset_set_add_fd(&exec_ctx, pollset_sets[1].pss, tfds[6].fd);
+  grpc_pollset_set_add_fd(pollset_sets[0].pss, tfds[5].fd);
+  grpc_pollset_set_add_fd(pollset_sets[1].pss, tfds[6].fd);
 
-  grpc_pollset_add_fd(&exec_ctx, pollsets[0].ps, tfds[7].fd);
-  grpc_pollset_add_fd(&exec_ctx, pollsets[1].ps, tfds[8].fd);
-  grpc_pollset_add_fd(&exec_ctx, pollsets[2].ps, tfds[9].fd);
+  grpc_pollset_add_fd(pollsets[0].ps, tfds[7].fd);
+  grpc_pollset_add_fd(pollsets[1].ps, tfds[8].fd);
+  grpc_pollset_add_fd(pollsets[2].ps, tfds[9].fd);
 
-  grpc_exec_ctx_flush(&exec_ctx);
+  grpc_exec_ctx_flush();
 
   /* Test that if any FD in the above structure is readable, it is observable by
    * doing grpc_pollset_work on any pollset
@@ -259,34 +252,33 @@ static void pollset_set_test_basic() {
     deadline = grpc_timespec_to_millis_round_up(
         grpc_timeout_milliseconds_to_deadline(2));
     GPR_ASSERT(GRPC_ERROR_NONE ==
-               grpc_pollset_work(&exec_ctx, pollsets[i].ps, &worker, deadline));
+               grpc_pollset_work(pollsets[i].ps, &worker, deadline));
     gpr_mu_unlock(pollsets[i].mu);
 
-    grpc_exec_ctx_flush(&exec_ctx);
+    grpc_exec_ctx_flush();
 
-    verify_readable_and_reset(&exec_ctx, tfds, num_fds);
-    grpc_exec_ctx_flush(&exec_ctx);
+    verify_readable_and_reset(tfds, num_fds);
+    grpc_exec_ctx_flush();
   }
 
   /* Test tear down */
-  grpc_pollset_set_del_fd(&exec_ctx, pollset_sets[0].pss, tfds[0].fd);
-  grpc_pollset_set_del_fd(&exec_ctx, pollset_sets[0].pss, tfds[5].fd);
-  grpc_pollset_set_del_fd(&exec_ctx, pollset_sets[1].pss, tfds[1].fd);
-  grpc_pollset_set_del_fd(&exec_ctx, pollset_sets[1].pss, tfds[6].fd);
-  grpc_exec_ctx_flush(&exec_ctx);
+  grpc_pollset_set_del_fd(pollset_sets[0].pss, tfds[0].fd);
+  grpc_pollset_set_del_fd(pollset_sets[0].pss, tfds[5].fd);
+  grpc_pollset_set_del_fd(pollset_sets[1].pss, tfds[1].fd);
+  grpc_pollset_set_del_fd(pollset_sets[1].pss, tfds[6].fd);
+  grpc_exec_ctx_flush();
 
-  grpc_pollset_set_del_pollset(&exec_ctx, pollset_sets[1].pss, pollsets[0].ps);
-  grpc_pollset_set_del_pollset(&exec_ctx, pollset_sets[0].pss, pollsets[1].ps);
-  grpc_pollset_set_del_pollset(&exec_ctx, pollset_sets[0].pss, pollsets[2].ps);
+  grpc_pollset_set_del_pollset(pollset_sets[1].pss, pollsets[0].ps);
+  grpc_pollset_set_del_pollset(pollset_sets[0].pss, pollsets[1].ps);
+  grpc_pollset_set_del_pollset(pollset_sets[0].pss, pollsets[2].ps);
 
-  grpc_pollset_set_del_pollset_set(&exec_ctx, pollset_sets[0].pss,
-                                   pollset_sets[1].pss);
-  grpc_exec_ctx_flush(&exec_ctx);
+  grpc_pollset_set_del_pollset_set(pollset_sets[0].pss, pollset_sets[1].pss);
+  grpc_exec_ctx_flush();
 
-  cleanup_test_fds(&exec_ctx, tfds, num_fds);
-  cleanup_test_pollsets(&exec_ctx, pollsets, num_ps);
-  cleanup_test_pollset_sets(&exec_ctx, pollset_sets, num_pss);
-  grpc_exec_ctx_finish(&exec_ctx);
+  cleanup_test_fds(tfds, num_fds);
+  cleanup_test_pollsets(pollsets, num_ps);
+  cleanup_test_pollset_sets(pollset_sets, num_pss);
+  grpc_exec_ctx_finish();
 }
 
 /* Same FD added multiple times to the pollset_set tree */
@@ -306,7 +298,7 @@ void pollset_set_test_dup_fds() {
    *                    |           +--> FD2
    *                    +---> FD1
    */
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_pollset_worker *worker;
   grpc_millis deadline;
 
@@ -317,21 +309,20 @@ void pollset_set_test_dup_fds() {
   const int num_ps = 1;
   const int num_pss = GPR_ARRAY_SIZE(pollset_sets);
 
-  init_test_fds(&exec_ctx, tfds, num_fds);
+  init_test_fds(tfds, num_fds);
   init_test_pollsets(&pollset, num_ps);
   init_test_pollset_sets(pollset_sets, num_pss);
 
   /* Construct the structure */
-  grpc_pollset_set_add_fd(&exec_ctx, pollset_sets[0].pss, tfds[0].fd);
-  grpc_pollset_set_add_fd(&exec_ctx, pollset_sets[1].pss, tfds[0].fd);
-  grpc_pollset_set_add_fd(&exec_ctx, pollset_sets[1].pss, tfds[1].fd);
+  grpc_pollset_set_add_fd(pollset_sets[0].pss, tfds[0].fd);
+  grpc_pollset_set_add_fd(pollset_sets[1].pss, tfds[0].fd);
+  grpc_pollset_set_add_fd(pollset_sets[1].pss, tfds[1].fd);
 
-  grpc_pollset_add_fd(&exec_ctx, pollset.ps, tfds[1].fd);
-  grpc_pollset_add_fd(&exec_ctx, pollset.ps, tfds[2].fd);
+  grpc_pollset_add_fd(pollset.ps, tfds[1].fd);
+  grpc_pollset_add_fd(pollset.ps, tfds[2].fd);
 
-  grpc_pollset_set_add_pollset(&exec_ctx, pollset_sets[1].pss, pollset.ps);
-  grpc_pollset_set_add_pollset_set(&exec_ctx, pollset_sets[0].pss,
-                                   pollset_sets[1].pss);
+  grpc_pollset_set_add_pollset(pollset_sets[1].pss, pollset.ps);
+  grpc_pollset_set_add_pollset_set(pollset_sets[0].pss, pollset_sets[1].pss);
 
   /* Test. Make all FDs readable and make sure that can be observed by doing a
    * grpc_pollset_work on the pollset 'PS' */
@@ -341,27 +332,26 @@ void pollset_set_test_dup_fds() {
   deadline = grpc_timespec_to_millis_round_up(
       grpc_timeout_milliseconds_to_deadline(2));
   GPR_ASSERT(GRPC_ERROR_NONE ==
-             grpc_pollset_work(&exec_ctx, pollset.ps, &worker, deadline));
+             grpc_pollset_work(pollset.ps, &worker, deadline));
   gpr_mu_unlock(pollset.mu);
-  grpc_exec_ctx_flush(&exec_ctx);
+  grpc_exec_ctx_flush();
 
-  verify_readable_and_reset(&exec_ctx, tfds, num_fds);
-  grpc_exec_ctx_flush(&exec_ctx);
+  verify_readable_and_reset(tfds, num_fds);
+  grpc_exec_ctx_flush();
 
   /* Tear down */
-  grpc_pollset_set_del_fd(&exec_ctx, pollset_sets[0].pss, tfds[0].fd);
-  grpc_pollset_set_del_fd(&exec_ctx, pollset_sets[1].pss, tfds[0].fd);
-  grpc_pollset_set_del_fd(&exec_ctx, pollset_sets[1].pss, tfds[1].fd);
+  grpc_pollset_set_del_fd(pollset_sets[0].pss, tfds[0].fd);
+  grpc_pollset_set_del_fd(pollset_sets[1].pss, tfds[0].fd);
+  grpc_pollset_set_del_fd(pollset_sets[1].pss, tfds[1].fd);
 
-  grpc_pollset_set_del_pollset(&exec_ctx, pollset_sets[1].pss, pollset.ps);
-  grpc_pollset_set_del_pollset_set(&exec_ctx, pollset_sets[0].pss,
-                                   pollset_sets[1].pss);
-  grpc_exec_ctx_flush(&exec_ctx);
+  grpc_pollset_set_del_pollset(pollset_sets[1].pss, pollset.ps);
+  grpc_pollset_set_del_pollset_set(pollset_sets[0].pss, pollset_sets[1].pss);
+  grpc_exec_ctx_flush();
 
-  cleanup_test_fds(&exec_ctx, tfds, num_fds);
-  cleanup_test_pollsets(&exec_ctx, &pollset, num_ps);
-  cleanup_test_pollset_sets(&exec_ctx, pollset_sets, num_pss);
-  grpc_exec_ctx_finish(&exec_ctx);
+  cleanup_test_fds(tfds, num_fds);
+  cleanup_test_pollsets(&pollset, num_ps);
+  cleanup_test_pollset_sets(pollset_sets, num_pss);
+  grpc_exec_ctx_finish();
 }
 
 /* Pollset_set with an empty pollset */
@@ -379,7 +369,7 @@ void pollset_set_test_empty_pollset() {
    *                   |
    *                   +---> FD2
    */
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_pollset_worker *worker;
   grpc_millis deadline;
 
@@ -390,17 +380,17 @@ void pollset_set_test_empty_pollset() {
   const int num_ps = GPR_ARRAY_SIZE(pollsets);
   const int num_pss = 1;
 
-  init_test_fds(&exec_ctx, tfds, num_fds);
+  init_test_fds(tfds, num_fds);
   init_test_pollsets(pollsets, num_ps);
   init_test_pollset_sets(&pollset_set, num_pss);
 
   /* Construct the structure */
-  grpc_pollset_set_add_fd(&exec_ctx, pollset_set.pss, tfds[0].fd);
-  grpc_pollset_add_fd(&exec_ctx, pollsets[1].ps, tfds[1].fd);
-  grpc_pollset_add_fd(&exec_ctx, pollsets[1].ps, tfds[2].fd);
+  grpc_pollset_set_add_fd(pollset_set.pss, tfds[0].fd);
+  grpc_pollset_add_fd(pollsets[1].ps, tfds[1].fd);
+  grpc_pollset_add_fd(pollsets[1].ps, tfds[2].fd);
 
-  grpc_pollset_set_add_pollset(&exec_ctx, pollset_set.pss, pollsets[0].ps);
-  grpc_pollset_set_add_pollset(&exec_ctx, pollset_set.pss, pollsets[1].ps);
+  grpc_pollset_set_add_pollset(pollset_set.pss, pollsets[0].ps);
+  grpc_pollset_set_add_pollset(pollset_set.pss, pollsets[1].ps);
 
   /* Test. Make all FDs readable and make sure that can be observed by doing
    * grpc_pollset_work on the empty pollset 'PS0' */
@@ -410,31 +400,31 @@ void pollset_set_test_empty_pollset() {
   deadline = grpc_timespec_to_millis_round_up(
       grpc_timeout_milliseconds_to_deadline(2));
   GPR_ASSERT(GRPC_ERROR_NONE ==
-             grpc_pollset_work(&exec_ctx, pollsets[0].ps, &worker, deadline));
+             grpc_pollset_work(pollsets[0].ps, &worker, deadline));
   gpr_mu_unlock(pollsets[0].mu);
-  grpc_exec_ctx_flush(&exec_ctx);
+  grpc_exec_ctx_flush();
 
-  verify_readable_and_reset(&exec_ctx, tfds, num_fds);
-  grpc_exec_ctx_flush(&exec_ctx);
+  verify_readable_and_reset(tfds, num_fds);
+  grpc_exec_ctx_flush();
 
   /* Tear down */
-  grpc_pollset_set_del_fd(&exec_ctx, pollset_set.pss, tfds[0].fd);
-  grpc_pollset_set_del_pollset(&exec_ctx, pollset_set.pss, pollsets[0].ps);
-  grpc_pollset_set_del_pollset(&exec_ctx, pollset_set.pss, pollsets[1].ps);
-  grpc_exec_ctx_flush(&exec_ctx);
+  grpc_pollset_set_del_fd(pollset_set.pss, tfds[0].fd);
+  grpc_pollset_set_del_pollset(pollset_set.pss, pollsets[0].ps);
+  grpc_pollset_set_del_pollset(pollset_set.pss, pollsets[1].ps);
+  grpc_exec_ctx_flush();
 
-  cleanup_test_fds(&exec_ctx, tfds, num_fds);
-  cleanup_test_pollsets(&exec_ctx, pollsets, num_ps);
-  cleanup_test_pollset_sets(&exec_ctx, &pollset_set, num_pss);
-  grpc_exec_ctx_finish(&exec_ctx);
+  cleanup_test_fds(tfds, num_fds);
+  cleanup_test_pollsets(pollsets, num_ps);
+  cleanup_test_pollset_sets(&pollset_set, num_pss);
+  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char **argv) {
   const char *poll_strategy = grpc_get_poll_strategy_name();
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
-  grpc_iomgr_init(&exec_ctx);
-  grpc_iomgr_start(&exec_ctx);
+  grpc_iomgr_init();
+  grpc_iomgr_start();
 
   if (poll_strategy != NULL &&
       (strcmp(poll_strategy, "epoll") == 0 ||
@@ -449,8 +439,8 @@ int main(int argc, char **argv) {
             poll_strategy);
   }
 
-  grpc_iomgr_shutdown(&exec_ctx);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_iomgr_shutdown();
+  grpc_exec_ctx_finish();
   return 0;
 }
 #else /* defined(GRPC_LINUX_EPOLL) */

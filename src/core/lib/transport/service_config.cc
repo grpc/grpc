@@ -146,8 +146,7 @@ static char* parse_json_method_name(grpc_json* json) {
 // each name found, incrementing \a idx for each entry added.
 // Returns false on error.
 static bool parse_json_method_config(
-    grpc_exec_ctx* exec_ctx, grpc_json* json,
-    void* (*create_value)(const grpc_json* method_config_json),
+    grpc_json* json, void* (*create_value)(const grpc_json* method_config_json),
     grpc_slice_hash_table_entry* entries, size_t* idx) {
   // Construct value.
   void* method_config = create_value(json);
@@ -180,9 +179,9 @@ done:
 }
 
 grpc_slice_hash_table* grpc_service_config_create_method_config_table(
-    grpc_exec_ctx* exec_ctx, const grpc_service_config* service_config,
+    const grpc_service_config* service_config,
     void* (*create_value)(const grpc_json* method_config_json),
-    void (*destroy_value)(grpc_exec_ctx* exec_ctx, void* value)) {
+    void (*destroy_value)(void* value)) {
   const grpc_json* json = service_config->json_tree;
   // Traverse parsed JSON tree.
   if (json->type != GRPC_JSON_OBJECT || json->key != NULL) return NULL;
@@ -204,8 +203,7 @@ grpc_slice_hash_table* grpc_service_config_create_method_config_table(
       size_t idx = 0;
       for (grpc_json* method = field->child; method != NULL;
            method = method->next) {
-        if (!parse_json_method_config(exec_ctx, method, create_value, entries,
-                                      &idx)) {
+        if (!parse_json_method_config(method, create_value, entries, &idx)) {
           return NULL;
         }
       }
@@ -222,8 +220,7 @@ grpc_slice_hash_table* grpc_service_config_create_method_config_table(
   return method_config_table;
 }
 
-void* grpc_method_config_table_get(grpc_exec_ctx* exec_ctx,
-                                   const grpc_slice_hash_table* table,
+void* grpc_method_config_table_get(const grpc_slice_hash_table* table,
                                    grpc_slice path) {
   void* value = grpc_slice_hash_table_get(table, path);
   // If we didn't find a match for the path, try looking for a wildcard
@@ -239,7 +236,7 @@ void* grpc_method_config_table_get(grpc_exec_ctx* exec_ctx,
     grpc_slice wildcard_path = grpc_slice_from_copied_string(buf);
     gpr_free(buf);
     value = grpc_slice_hash_table_get(table, wildcard_path);
-    grpc_slice_unref_internal(exec_ctx, wildcard_path);
+    grpc_slice_unref_internal(wildcard_path);
     gpr_free(path_str);
   }
   return value;

@@ -38,7 +38,7 @@ void grpc_register_lb_policy(grpc_lb_policy_factory *factory);
  *
  * If \a name is NULL, the default factory from \a grpc_lb_policy_registry_init
  * will be returned. */
-grpc_lb_policy *grpc_lb_policy_create(grpc_exec_ctx *exec_ctx, const char *name,
+grpc_lb_policy *grpc_lb_policy_create(const char *name,
                                       grpc_lb_policy_args *args);
 
 #ifdef __cplusplus

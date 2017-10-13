@@ -35,9 +35,7 @@ typedef struct message_size_limits {
   int max_recv_size;
 } message_size_limits;
 
-static void message_size_limits_free(grpc_exec_ctx* exec_ctx, void* value) {
-  gpr_free(value);
-}
+static void message_size_limits_free(void* value) { gpr_free(value); }
 
 static void* message_size_limits_create_from_json(const grpc_json* json) {
   int max_request_message_bytes = -1;
@@ -88,8 +86,7 @@ typedef struct channel_data {
 
 // Callback invoked when we receive a message.  Here we check the max
 // receive message size.
-static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
-                               grpc_error* error) {
+static void recv_message_ready(void* user_data, grpc_error* error) {
   grpc_call_element* elem = (grpc_call_element*)user_data;
   call_data* calld = (call_data*)elem->call_data;
   if (*calld->recv_message != NULL && calld->limits.max_recv_size >= 0 &&
@@ -112,13 +109,12 @@ static void recv_message_ready(grpc_exec_ctx* exec_ctx, void* user_data,
     GRPC_ERROR_REF(error);
   }
   // Invoke the next callback.
-  GRPC_CLOSURE_RUN(exec_ctx, calld->next_recv_message_ready, error);
+  GRPC_CLOSURE_RUN(calld->next_recv_message_ready, error);
 }
 
 // Start transport stream op.
 static void start_transport_stream_op_batch(
-    grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-    grpc_transport_stream_op_batch* op) {
+    grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
   call_data* calld = (call_data*)elem->call_data;
   // Check max send message size.
   if (op->send_message && calld->limits.max_send_size >= 0 &&
@@ -129,10 +125,9 @@ static void start_transport_stream_op_batch(
                  op->payload->send_message.send_message->length,
                  calld->limits.max_send_size);
     grpc_transport_stream_op_batch_finish_with_failure(
-        exec_ctx, op,
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
-                           GRPC_ERROR_INT_GRPC_STATUS,
-                           GRPC_STATUS_RESOURCE_EXHAUSTED),
+        op, grpc_error_set_int(
+                GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
+                GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED),
         calld->call_combiner);
     gpr_free(message_string);
     return;
@@ -145,12 +140,11 @@ static void start_transport_stream_op_batch(
     op->payload->recv_message.recv_message_ready = &calld->recv_message_ready;
   }
   // Chain to the next filter.
-  grpc_call_next_op(exec_ctx, elem, op);
+  grpc_call_next_op(elem, op);
 }
 
 // Constructor for call_data.
-static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
-                                  grpc_call_element* elem,
+static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
   channel_data* chand = (channel_data*)elem->channel_data;
   call_data* calld = (call_data*)elem->call_data;
@@ -166,7 +160,7 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
   if (chand->method_limit_table != NULL) {
     message_size_limits* limits =
         (message_size_limits*)grpc_method_config_table_get(
-            exec_ctx, chand->method_limit_table, args->path);
+            chand->method_limit_table, args->path);
     if (limits != NULL) {
       if (limits->max_send_size >= 0 &&
           (limits->max_send_size < calld->limits.max_send_size ||
@@ -184,7 +178,7 @@ static grpc_error* init_call_elem(grpc_exec_ctx* exec_ctx,
 }
 
 // Destructor for call_data.
-static void destroy_call_elem(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+static void destroy_call_elem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {}
 
@@ -221,8 +215,7 @@ message_size_limits get_message_size_limits(
 }
 
 // Constructor for channel_data.
-static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
-                                     grpc_channel_element* elem,
+static grpc_error* init_channel_elem(grpc_channel_element* elem,
                                      grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
   channel_data* chand = (channel_data*)elem->channel_data;
@@ -237,7 +230,7 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
     if (service_config != NULL) {
       chand->method_limit_table =
           grpc_service_config_create_method_config_table(
-              exec_ctx, service_config, message_size_limits_create_from_json,
+              service_config, message_size_limits_create_from_json,
               message_size_limits_free);
       grpc_service_config_destroy(service_config);
     }
@@ -246,10 +239,9 @@ static grpc_error* init_channel_elem(grpc_exec_ctx* exec_ctx,
 }
 
 // Destructor for channel_data.
-static void destroy_channel_elem(grpc_exec_ctx* exec_ctx,
-                                 grpc_channel_element* elem) {
+static void destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = (channel_data*)elem->channel_data;
-  grpc_slice_hash_table_unref(exec_ctx, chand->method_limit_table);
+  grpc_slice_hash_table_unref(chand->method_limit_table);
 }
 
 const grpc_channel_filter grpc_message_size_filter = {
@@ -265,8 +257,7 @@ const grpc_channel_filter grpc_message_size_filter = {
     grpc_channel_next_get_info,
     "message_size"};
 
-static bool maybe_add_message_size_filter(grpc_exec_ctx* exec_ctx,
-                                          grpc_channel_stack_builder* builder,
+static bool maybe_add_message_size_filter(grpc_channel_stack_builder* builder,
                                           void* arg) {
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);

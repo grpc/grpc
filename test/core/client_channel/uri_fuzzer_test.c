@@ -33,12 +33,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   memcpy(s, data, size);
   s[size] = 0;
 
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_uri *x;
-  if ((x = grpc_uri_parse(&exec_ctx, s, 1))) {
+  if ((x = grpc_uri_parse(s, 1))) {
     grpc_uri_destroy(x);
   }
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_finish();
   gpr_free(s);
   return 0;
 }

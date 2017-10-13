@@ -24,7 +24,15 @@
 // must be synchronized with tools/run_tests/python_utils/start_port_server.py
 #define GRPC_PORT_SERVER_ADDRESS "localhost:32766"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int grpc_pick_port_using_server(void);
 void grpc_free_port_using_server(int port);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // GRPC_TEST_CORE_UTIL_PORT_SERVER_CLIENT_H

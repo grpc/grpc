@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017 gRPC authors.
+ * Copyright 2015 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,9 +95,9 @@ static void end_test(grpc_end2end_test_fixture *f) {
 }
 
 /* Cancel after accept, no payload */
-static void test_cancel_after_round_trip(grpc_end2end_test_config config,
-                                         cancellation_mode mode,
-                                         bool use_service_config) {
+static void test_cancel_after_accept(grpc_end2end_test_config config,
+                                     cancellation_mode mode,
+                                     bool use_service_config) {
   grpc_op ops[6];
   grpc_op *op;
   grpc_call *c;
@@ -117,9 +117,7 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
       grpc_slice_from_copied_string("hello you");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer *response_payload1 =
-      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  grpc_byte_buffer *response_payload2 =
+  grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   int was_cancelled = 2;
 
@@ -127,8 +125,8 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
   if (use_service_config) {
     grpc_arg arg;
     arg.type = GRPC_ARG_STRING;
-    arg.key = GRPC_ARG_SERVICE_CONFIG;
-    arg.value.string =
+    arg.key = (char *)GRPC_ARG_SERVICE_CONFIG;
+    arg.value.string = (char *)
         "{\n"
         "  \"methodConfig\": [ {\n"
         "    \"name\": [\n"
@@ -140,8 +138,8 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
     args = grpc_channel_args_copy_and_add(args, &arg, 1);
   }
 
-  grpc_end2end_test_fixture f = begin_test(
-      config, "cancel_after_round_trip", mode, use_service_config, args, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, "cancel_after_accept", mode,
+                                           use_service_config, args, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = use_service_config
@@ -161,6 +159,13 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
 
   memset(ops, 0, sizeof(ops));
   op = ops;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
@@ -184,11 +189,10 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq, tag(2));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
   cq_verify(cqv);
 
   memset(ops, 0, sizeof(ops));
@@ -204,58 +208,22 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = response_payload1;
+  op->data.send_message.send_message = response_payload;
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
-
-  grpc_byte_buffer_destroy(request_payload_recv);
-  grpc_byte_buffer_destroy(response_payload_recv);
-  request_payload_recv = NULL;
-  response_payload_recv = NULL;
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  op->data.recv_status_on_client.status = &status;
-  op->data.recv_status_on_client.status_details = &details;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &response_payload_recv;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, NULL));
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = response_payload2;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(3), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
+  GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, NULL));
+
+  CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(status == mode.expect_status || status == GRPC_STATUS_INTERNAL);
@@ -267,8 +235,7 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
   grpc_call_details_destroy(&call_details);
 
   grpc_byte_buffer_destroy(request_payload);
-  grpc_byte_buffer_destroy(response_payload1);
-  grpc_byte_buffer_destroy(response_payload2);
+  grpc_byte_buffer_destroy(response_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
   grpc_byte_buffer_destroy(response_payload_recv);
   grpc_slice_unref(details);
@@ -277,9 +244,9 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
   grpc_call_unref(s);
 
   if (args != NULL) {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    ExecCtx _local_exec_ctx;
+    grpc_channel_args_destroy(args);
+    grpc_exec_ctx_finish();
   }
 
   cq_verifier_destroy(cqv);
@@ -287,18 +254,18 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
   config.tear_down_data(&f);
 }
 
-void cancel_after_round_trip(grpc_end2end_test_config config) {
+void cancel_after_accept(grpc_end2end_test_config config) {
   unsigned i;
 
   for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
-    test_cancel_after_round_trip(config, cancellation_modes[i],
-                                 false /* use_service_config */);
+    test_cancel_after_accept(config, cancellation_modes[i],
+                             false /* use_service_config */);
     if (config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL &&
         cancellation_modes[i].expect_status == GRPC_STATUS_DEADLINE_EXCEEDED) {
-      test_cancel_after_round_trip(config, cancellation_modes[i],
-                                   true /* use_service_config */);
+      test_cancel_after_accept(config, cancellation_modes[i],
+                               true /* use_service_config */);
     }
   }
 }
 
-void cancel_after_round_trip_pre_init(void) {}
+void cancel_after_accept_pre_init(void) {}

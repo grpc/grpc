@@ -31,8 +31,7 @@ typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
 /* Start \a ev_driver. It will keep working until all IO on its ares_channel is
    done, or grpc_ares_ev_driver_destroy() is called. It may notify the callbacks
    bound to its ares_channel when necessary. */
-void grpc_ares_ev_driver_start(grpc_exec_ctx *exec_ctx,
-                               grpc_ares_ev_driver *ev_driver);
+void grpc_ares_ev_driver_start(grpc_ares_ev_driver *ev_driver);
 
 /* Returns the ares_channel owned by \a ev_driver. To bind a c-ares query to
    \a ev_driver, use the ares_channel owned by \a ev_driver as the arg of the
@@ -50,8 +49,7 @@ grpc_error *grpc_ares_ev_driver_create(grpc_ares_ev_driver **ev_driver,
 void grpc_ares_ev_driver_destroy(grpc_ares_ev_driver *ev_driver);
 
 /* Shutdown all the grpc_fds used by \a ev_driver */
-void grpc_ares_ev_driver_shutdown(grpc_exec_ctx *exec_ctx,
-                                  grpc_ares_ev_driver *ev_driver);
+void grpc_ares_ev_driver_shutdown(grpc_ares_ev_driver *ev_driver);
 
 #ifdef __cplusplus
 }

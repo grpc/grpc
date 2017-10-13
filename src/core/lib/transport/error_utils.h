@@ -33,9 +33,8 @@ extern "C" {
 /// All attributes are pulled from the same child error. If any of the
 /// attributes (code, msg, http_status) are unneeded, they can be passed as
 /// NULL.
-void grpc_error_get_status(grpc_exec_ctx *exec_ctx, grpc_error *error,
-                           grpc_millis deadline, grpc_status_code *code,
-                           grpc_slice *slice,
+void grpc_error_get_status(grpc_error *error, grpc_millis deadline,
+                           grpc_status_code *code, grpc_slice *slice,
                            grpc_http2_error_code *http_status);
 
 /// A utility function to check whether there is a clear status code that

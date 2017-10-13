@@ -39,9 +39,8 @@ static grpc_error *recursively_find_error_with_field(grpc_error *error,
   return NULL;
 }
 
-void grpc_error_get_status(grpc_exec_ctx *exec_ctx, grpc_error *error,
-                           grpc_millis deadline, grpc_status_code *code,
-                           grpc_slice *slice,
+void grpc_error_get_status(grpc_error *error, grpc_millis deadline,
+                           grpc_status_code *code, grpc_slice *slice,
                            grpc_http2_error_code *http_error) {
   // Start with the parent error and recurse through the tree of children
   // until we find the first one that has a status code.
@@ -64,8 +63,8 @@ void grpc_error_get_status(grpc_exec_ctx *exec_ctx, grpc_error *error,
     status = (grpc_status_code)integer;
   } else if (grpc_error_get_int(found_error, GRPC_ERROR_INT_HTTP2_ERROR,
                                 &integer)) {
-    status = grpc_http2_error_to_grpc_status(
-        exec_ctx, (grpc_http2_error_code)integer, deadline);
+    status = grpc_http2_error_to_grpc_status((grpc_http2_error_code)integer,
+                                             deadline);
   }
   if (code != NULL) *code = status;
 

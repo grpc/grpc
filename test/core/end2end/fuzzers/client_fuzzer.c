@@ -43,22 +43,22 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   if (squelch) gpr_set_log_function(dont_log);
   if (leak_check) grpc_memory_counters_init();
   grpc_init();
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_executor_set_threading(&exec_ctx, false);
+  exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_executor_set_threading(false);
 
   grpc_resource_quota *resource_quota =
       grpc_resource_quota_create("client_fuzzer");
   grpc_endpoint *mock_endpoint =
       grpc_mock_endpoint_create(discard_write, resource_quota);
-  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(resource_quota);
 
   grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
   grpc_transport *transport =
-      grpc_create_chttp2_transport(&exec_ctx, NULL, mock_endpoint, 1);
-  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL);
+      grpc_create_chttp2_transport(NULL, mock_endpoint, 1);
+  grpc_chttp2_transport_start_reading(transport, NULL);
 
   grpc_channel *channel = grpc_channel_create(
-      &exec_ctx, "test-target", NULL, GRPC_CLIENT_DIRECT_CHANNEL, transport);
+      "test-target", NULL, GRPC_CLIENT_DIRECT_CHANNEL, transport);
   grpc_slice host = grpc_slice_from_static_string("localhost");
   grpc_call *call = grpc_channel_create_call(
       channel, NULL, 0, cq, grpc_slice_from_static_string("/foo"), &host,
@@ -107,12 +107,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   grpc_mock_endpoint_put_read(
-      &exec_ctx, mock_endpoint,
-      grpc_slice_from_copied_buffer((const char *)data, size));
+      mock_endpoint, grpc_slice_from_copied_buffer((const char *)data, size));
 
   grpc_event ev;
   while (1) {
-    grpc_exec_ctx_flush(&exec_ctx);
+    grpc_exec_ctx_flush();
     ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
     switch (ev.type) {
       case GRPC_QUEUE_TIMEOUT:

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016 gRPC authors.
+ * Copyright 2015 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,44 +16,23 @@
  *
  */
 
+#include "test/core/end2end/end2end_tests.h"
+
+#include <stdio.h>
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
-#include <grpc/load_reporting.h>
+#include <grpc/compression.h>
+#include <grpc/compression.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
-
-#include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
-#include "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/transport/static_metadata.h"
-
+#include "src/core/lib/surface/call.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/end2end/end2end_tests.h"
-
-enum { TIMEOUT = 200000 };
 
 static void *tag(intptr_t t) { return (void *)t; }
-
-typedef struct {
-  gpr_mu mu;
-  intptr_t channel_id;
-  intptr_t call_id;
-
-  char *initial_md_str;
-  char *trailing_md_str;
-  char *method_name;
-
-  uint64_t incoming_bytes;
-  uint64_t outgoing_bytes;
-
-  grpc_status_code call_final_status;
-
-  bool fully_processed;
-} load_reporting_data;
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
@@ -61,11 +40,9 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
-
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
-
   return f;
 }
 
@@ -111,13 +88,31 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void request_response_with_payload(
-    grpc_end2end_test_config config, grpc_end2end_test_fixture f,
-    const char *method_name, const char *request_msg, const char *response_msg,
-    grpc_metadata *initial_lr_metadata, grpc_metadata *trailing_lr_metadata) {
-  grpc_slice request_payload_slice = grpc_slice_from_static_string(request_msg);
-  grpc_slice response_payload_slice =
-      grpc_slice_from_static_string(response_msg);
+/* Creates and returns a grpc_slice containing random alphanumeric characters.
+ */
+static grpc_slice generate_random_slice() {
+  size_t i;
+  static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
+  char *output;
+  const size_t output_size = 1024 * 1024;
+  output = (char *)gpr_malloc(output_size);
+  for (i = 0; i < output_size - 1; ++i) {
+    output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
+  }
+  output[output_size - 1] = '\0';
+  grpc_slice out = grpc_slice_from_copied_string(output);
+  gpr_free(output);
+  return out;
+}
+
+static void request_response_with_payload(grpc_end2end_test_config config,
+                                          grpc_end2end_test_fixture f) {
+  /* Create large request and response bodies. These are big enough to require
+   * multiple round trips to deliver to the peer, and their exact contents of
+   * will be verified on completion. */
+  grpc_slice request_payload_slice = generate_random_slice();
+  grpc_slice response_payload_slice = generate_random_slice();
+
   grpc_call *c;
   grpc_call *s;
   grpc_byte_buffer *request_payload =
@@ -138,10 +133,10 @@ static void request_response_with_payload(
   grpc_slice details;
   int was_cancelled = 2;
 
-  gpr_timespec deadline = five_seconds_from_now();
+  gpr_timespec deadline = n_seconds_from_now(60);
   c = grpc_channel_create_call(
       f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string(method_name),
+      grpc_slice_from_static_string("/foo"),
       get_host_override_slice("foo.test.google.fr:1234", config), deadline,
       NULL);
   GPR_ASSERT(c);
@@ -154,9 +149,7 @@ static void request_response_with_payload(
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  GPR_ASSERT(initial_lr_metadata != NULL);
-  op->data.send_initial_metadata.count = 1;
-  op->data.send_initial_metadata.metadata = initial_lr_metadata;
+  op->data.send_initial_metadata.count = 0;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -227,9 +220,7 @@ static void request_response_with_payload(
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  GPR_ASSERT(trailing_lr_metadata != NULL);
-  op->data.send_status_from_server.trailing_metadata_count = 1;
-  op->data.send_status_from_server.trailing_metadata = trailing_lr_metadata;
+  op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   grpc_slice status_details = grpc_slice_from_static_string("xyz");
   op->data.send_status_from_server.status_details = &status_details;
@@ -244,6 +235,14 @@ static void request_response_with_payload(
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
+  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
+  GPR_ASSERT(was_cancelled == 0);
+  GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
+  GPR_ASSERT(
+      byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -262,53 +261,45 @@ static void request_response_with_payload(
   grpc_byte_buffer_destroy(response_payload_recv);
 }
 
-/* override the default for testing purposes */
-extern void (*g_load_reporting_fn)(
-    const grpc_load_reporting_call_data *call_data);
-
-static void test_load_reporting_hook(grpc_end2end_test_config config) {
-  /* TODO(dgq): this test is currently a noop until LR is fully defined.
-   * Leaving the rest here, as it'll likely be reusable. */
-
-  /* Introduce load reporting for the server through its arguments */
-  grpc_arg arg = grpc_load_reporting_enable_arg();
-  grpc_channel_args *lr_server_args =
-      grpc_channel_args_copy_and_add(NULL, &arg, 1);
-
+/* Client sends a request with payload, server reads then returns a response
+   payload and status. */
+static void test_invoke_request_response_with_payload(
+    grpc_end2end_test_config config) {
+  grpc_channel_args *client_args =
+      grpc_channel_args_set_stream_compression_algorithm(
+          NULL, GRPC_STREAM_COMPRESS_GZIP);
+  grpc_channel_args *server_args =
+      grpc_channel_args_set_stream_compression_algorithm(
+          NULL, GRPC_STREAM_COMPRESS_GZIP);
   grpc_end2end_test_fixture f =
-      begin_test(config, "test_load_reporting_hook", NULL, lr_server_args);
-
-  const char *method_name = "/gRPCFTW";
-  const char *request_msg = "the msg from the client";
-  const char *response_msg = "... and the response from the server";
-
-  grpc_metadata initial_lr_metadata;
-  grpc_metadata trailing_lr_metadata;
-
-  initial_lr_metadata.key = GRPC_MDSTR_LB_TOKEN;
-  initial_lr_metadata.value = grpc_slice_from_static_string("client-token");
-  memset(&initial_lr_metadata.internal_data, 0,
-         sizeof(initial_lr_metadata.internal_data));
-
-  trailing_lr_metadata.key = GRPC_MDSTR_LB_COST_BIN;
-  trailing_lr_metadata.value = grpc_slice_from_static_string("server-token");
-  memset(&trailing_lr_metadata.internal_data, 0,
-         sizeof(trailing_lr_metadata.internal_data));
-
-  request_response_with_payload(config, f, method_name, request_msg,
-                                response_msg, &initial_lr_metadata,
-                                &trailing_lr_metadata);
+      begin_test(config, "test_invoke_request_response_with_payload",
+                 client_args, server_args);
+  request_response_with_payload(config, f);
   end_test(&f);
+  config.tear_down_data(&f);
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, lr_server_args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    ExecCtx _local_exec_ctx;
+    grpc_channel_args_destroy(client_args);
+    grpc_channel_args_destroy(server_args);
+    grpc_exec_ctx_finish();
   }
+}
+
+static void test_invoke_10_request_response_with_payload(
+    grpc_end2end_test_config config) {
+  int i;
+  grpc_end2end_test_fixture f = begin_test(
+      config, "test_invoke_10_request_response_with_payload", NULL, NULL);
+  for (i = 0; i < 10; i++) {
+    request_response_with_payload(config, f);
+  }
+  end_test(&f);
   config.tear_down_data(&f);
 }
 
-void load_reporting_hook(grpc_end2end_test_config config) {
-  test_load_reporting_hook(config);
+void stream_compression_payload(grpc_end2end_test_config config) {
+  test_invoke_request_response_with_payload(config);
+  test_invoke_10_request_response_with_payload(config);
 }
 
-void load_reporting_hook_pre_init(void) {}
+void stream_compression_payload_pre_init(void) {}

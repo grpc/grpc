@@ -3604,22 +3604,22 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/end2end/data/server1_cert.c \
     test/core/end2end/data/server1_key.c \
     test/core/end2end/data/test_root_cert.c \
-    test/core/security/oauth2_utils.c \
+    test/core/security/oauth2_utils.cc \
     src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
     test/core/end2end/cq_verifier.c \
-    test/core/end2end/fixtures/http_proxy_fixture.c \
+    test/core/end2end/fixtures/http_proxy_fixture.cc \
     test/core/end2end/fixtures/proxy.c \
-    test/core/iomgr/endpoint_tests.c \
+    test/core/iomgr/endpoint_tests.cc \
     test/core/util/debugger_macros.cc \
     test/core/util/grpc_profiler.c \
     test/core/util/memory_counters.c \
-    test/core/util/mock_endpoint.c \
+    test/core/util/mock_endpoint.cc \
     test/core/util/parse_hexstring.c \
-    test/core/util/passthru_endpoint.c \
-    test/core/util/port.c \
-    test/core/util/port_server_client.c \
+    test/core/util/passthru_endpoint.cc \
+    test/core/util/port.cc \
+    test/core/util/port_server_client.cc \
     test/core/util/slice_splitter.c \
-    test/core/util/trickle_endpoint.c \
+    test/core/util/trickle_endpoint.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -3862,19 +3862,19 @@ endif
 LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
     test/core/end2end/cq_verifier.c \
-    test/core/end2end/fixtures/http_proxy_fixture.c \
+    test/core/end2end/fixtures/http_proxy_fixture.cc \
     test/core/end2end/fixtures/proxy.c \
-    test/core/iomgr/endpoint_tests.c \
+    test/core/iomgr/endpoint_tests.cc \
     test/core/util/debugger_macros.cc \
     test/core/util/grpc_profiler.c \
     test/core/util/memory_counters.c \
-    test/core/util/mock_endpoint.c \
+    test/core/util/mock_endpoint.cc \
     test/core/util/parse_hexstring.c \
-    test/core/util/passthru_endpoint.c \
-    test/core/util/port.c \
-    test/core/util/port_server_client.c \
+    test/core/util/passthru_endpoint.cc \
+    test/core/util/port.cc \
+    test/core/util/port_server_client.cc \
     test/core/util/slice_splitter.c \
-    test/core/util/trickle_endpoint.c \
+    test/core/util/trickle_endpoint.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -4445,7 +4445,7 @@ endif
 
 
 LIBTEST_TCP_SERVER_SRC = \
-    test/core/util/test_tcp_server.c \
+    test/core/util/test_tcp_server.cc \
 
 PUBLIC_HEADERS_C += \
 
@@ -8445,7 +8445,7 @@ endif
 
 
 LIBBAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/bad_client.c \
+    test/core/bad_client/bad_client.cc \
 
 PUBLIC_HEADERS_C += \
 
@@ -20239,7 +20239,7 @@ src/cpp/server/secure_server_credentials.cc: $(OPENSSL_DEP)
 src/cpp/util/core_stats.cc: $(OPENSSL_DEP)
 src/cpp/util/error_details.cc: $(OPENSSL_DEP)
 src/csharp/ext/grpc_csharp_ext.c: $(OPENSSL_DEP)
-test/core/bad_client/bad_client.c: $(OPENSSL_DEP)
+test/core/bad_client/bad_client.cc: $(OPENSSL_DEP)
 test/core/bad_ssl/server_common.c: $(OPENSSL_DEP)
 test/core/end2end/data/client_certs.c: $(OPENSSL_DEP)
 test/core/end2end/data/server1_cert.c: $(OPENSSL_DEP)
@@ -20247,9 +20247,9 @@ test/core/end2end/data/server1_key.c: $(OPENSSL_DEP)
 test/core/end2end/data/test_root_cert.c: $(OPENSSL_DEP)
 test/core/end2end/end2end_tests.c: $(OPENSSL_DEP)
 test/core/end2end/tests/call_creds.c: $(OPENSSL_DEP)
-test/core/security/oauth2_utils.c: $(OPENSSL_DEP)
+test/core/security/oauth2_utils.cc: $(OPENSSL_DEP)
 test/core/util/reconnect_server.c: $(OPENSSL_DEP)
-test/core/util/test_tcp_server.c: $(OPENSSL_DEP)
+test/core/util/test_tcp_server.cc: $(OPENSSL_DEP)
 test/cpp/end2end/test_service_impl.cc: $(OPENSSL_DEP)
 test/cpp/interop/client.cc: $(OPENSSL_DEP)
 test/cpp/interop/client_helper.cc: $(OPENSSL_DEP)

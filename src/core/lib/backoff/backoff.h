@@ -51,9 +51,9 @@ void grpc_backoff_init(grpc_backoff *backoff,
                        grpc_millis max_timeout_millis);
 
 /// Begin retry loop: returns a timespec for the NEXT retry
-grpc_millis grpc_backoff_begin(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff);
+grpc_millis grpc_backoff_begin(grpc_backoff *backoff);
 /// Step a retry loop: returns a timespec for the NEXT retry
-grpc_millis grpc_backoff_step(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff);
+grpc_millis grpc_backoff_step(grpc_backoff *backoff);
 /// Reset the backoff, so the next grpc_backoff_step will be a
 /// grpc_backoff_begin
 /// instead

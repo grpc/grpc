@@ -38,7 +38,7 @@ grpc_tracer_flag grpc_trace_auth_context_refcount =
 
 grpc_call_error grpc_call_set_credentials(grpc_call *call,
                                           grpc_call_credentials *creds) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  ExecCtx _local_exec_ctx;
   grpc_client_security_context *ctx = NULL;
   GRPC_API_TRACE("grpc_call_set_credentials(call=%p, creds=%p)", 2,
                  (call, creds));
@@ -54,10 +54,10 @@ grpc_call_error grpc_call_set_credentials(grpc_call *call,
     grpc_call_context_set(call, GRPC_CONTEXT_SECURITY, ctx,
                           grpc_client_security_context_destroy);
   } else {
-    grpc_call_credentials_unref(&exec_ctx, ctx->creds);
+    grpc_call_credentials_unref(ctx->creds);
     ctx->creds = grpc_call_credentials_ref(creds);
   }
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_finish();
   return GRPC_CALL_OK;
 }
 
@@ -87,15 +87,15 @@ grpc_client_security_context *grpc_client_security_context_create(void) {
 }
 
 void grpc_client_security_context_destroy(void *ctx) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  ExecCtx _local_exec_ctx;
   grpc_client_security_context *c = (grpc_client_security_context *)ctx;
-  grpc_call_credentials_unref(&exec_ctx, c->creds);
+  grpc_call_credentials_unref(c->creds);
   GRPC_AUTH_CONTEXT_UNREF(c->auth_context, "client_security_context");
   if (c->extension.instance != NULL && c->extension.destroy != NULL) {
     c->extension.destroy(c->extension.instance);
   }
   gpr_free(ctx);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_finish();
 }
 
 /* --- grpc_server_security_context --- */
@@ -304,7 +304,7 @@ void grpc_auth_property_reset(grpc_auth_property *property) {
   memset(property, 0, sizeof(grpc_auth_property));
 }
 
-static void auth_context_pointer_arg_destroy(grpc_exec_ctx *exec_ctx, void *p) {
+static void auth_context_pointer_arg_destroy(void *p) {
   GRPC_AUTH_CONTEXT_UNREF((grpc_auth_context *)p, "auth_context_pointer_arg");
 }
 

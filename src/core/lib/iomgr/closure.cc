@@ -107,13 +107,12 @@ typedef struct {
   grpc_closure wrapper;
 } wrapped_closure;
 
-static void closure_wrapper(grpc_exec_ctx *exec_ctx, void *arg,
-                            grpc_error *error) {
+static void closure_wrapper(void *arg, grpc_error *error) {
   wrapped_closure *wc = (wrapped_closure *)arg;
   grpc_iomgr_cb_func cb = wc->cb;
   void *cb_arg = wc->cb_arg;
   gpr_free(wc);
-  cb(exec_ctx, cb_arg, error);
+  cb(cb_arg, error);
 }
 
 #ifndef NDEBUG
@@ -139,8 +138,7 @@ grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg,
 void grpc_closure_run(const char *file, int line, grpc_exec_ctx *exec_ctx,
                       grpc_closure *c, grpc_error *error) {
 #else
-void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *c,
-                      grpc_error *error) {
+void grpc_closure_run(grpc_closure *c, grpc_error *error) {
 #endif
   GPR_TIMER_BEGIN("grpc_closure_run", 0);
   if (c != NULL) {
@@ -150,7 +148,7 @@ void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *c,
     c->run = true;
 #endif
     assert(c->cb);
-    c->scheduler->vtable->run(exec_ctx, c, error);
+    c->scheduler->vtable->run(c, error);
   } else {
     GRPC_ERROR_UNREF(error);
   }
@@ -161,8 +159,7 @@ void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *c,
 void grpc_closure_sched(const char *file, int line, grpc_exec_ctx *exec_ctx,
                         grpc_closure *c, grpc_error *error) {
 #else
-void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *c,
-                        grpc_error *error) {
+void grpc_closure_sched(grpc_closure *c, grpc_error *error) {
 #endif
   GPR_TIMER_BEGIN("grpc_closure_sched", 0);
   if (c != NULL) {
@@ -181,7 +178,7 @@ void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *c,
     c->run = false;
 #endif
     assert(c->cb);
-    c->scheduler->vtable->sched(exec_ctx, c, error);
+    c->scheduler->vtable->sched(c, error);
   } else {
     GRPC_ERROR_UNREF(error);
   }
@@ -192,7 +189,7 @@ void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *c,
 void grpc_closure_list_sched(const char *file, int line,
                              grpc_exec_ctx *exec_ctx, grpc_closure_list *list) {
 #else
-void grpc_closure_list_sched(grpc_exec_ctx *exec_ctx, grpc_closure_list *list) {
+void grpc_closure_list_sched(grpc_closure_list *list) {
 #endif
   grpc_closure *c = list->head;
   while (c != NULL) {
@@ -212,7 +209,7 @@ void grpc_closure_list_sched(grpc_exec_ctx *exec_ctx, grpc_closure_list *list) {
     c->run = false;
 #endif
     assert(c->cb);
-    c->scheduler->vtable->sched(exec_ctx, c, c->error_data.error);
+    c->scheduler->vtable->sched(c, c->error_data.error);
     c = next;
   }
   list->head = list->tail = NULL;

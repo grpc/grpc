@@ -30,14 +30,13 @@
 // grpc_slice_buffer_stream tests
 //
 
-static void not_called_closure(grpc_exec_ctx *exec_ctx, void *arg,
-                               grpc_error *error) {
+static void not_called_closure(void *arg, grpc_error *error) {
   GPR_ASSERT(false);
 }
 
 static void test_slice_buffer_stream_basic(void) {
   gpr_log(GPR_DEBUG, "test_slice_buffer_stream_basic");
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  exec_ctx = GRPC_EXEC_CTX_INIT;
   // Create and populate slice buffer.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -57,23 +56,22 @@ static void test_slice_buffer_stream_basic(void) {
                     grpc_schedule_on_exec_ctx);
   // Read each slice.  Note that next() always returns synchronously.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(input); ++i) {
-    GPR_ASSERT(
-        grpc_byte_stream_next(&exec_ctx, &stream.base, ~(size_t)0, &closure));
+    GPR_ASSERT(grpc_byte_stream_next(&stream.base, ~(size_t)0, &closure));
     grpc_slice output;
-    grpc_error *error = grpc_byte_stream_pull(&exec_ctx, &stream.base, &output);
+    grpc_error *error = grpc_byte_stream_pull(&stream.base, &output);
     GPR_ASSERT(error == GRPC_ERROR_NONE);
     GPR_ASSERT(grpc_slice_eq(input[i], output));
-    grpc_slice_unref_internal(&exec_ctx, output);
+    grpc_slice_unref_internal(output);
   }
   // Clean up.
-  grpc_byte_stream_destroy(&exec_ctx, &stream.base);
-  grpc_slice_buffer_destroy_internal(&exec_ctx, &buffer);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_byte_stream_destroy(&stream.base);
+  grpc_slice_buffer_destroy_internal(&buffer);
+  grpc_exec_ctx_finish();
 }
 
 static void test_slice_buffer_stream_shutdown(void) {
   gpr_log(GPR_DEBUG, "test_slice_buffer_stream_shutdown");
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  exec_ctx = GRPC_EXEC_CTX_INIT;
   // Create and populate slice buffer.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -92,29 +90,26 @@ static void test_slice_buffer_stream_shutdown(void) {
   GRPC_CLOSURE_INIT(&closure, not_called_closure, NULL,
                     grpc_schedule_on_exec_ctx);
   // Read the first slice.
-  GPR_ASSERT(
-      grpc_byte_stream_next(&exec_ctx, &stream.base, ~(size_t)0, &closure));
+  GPR_ASSERT(grpc_byte_stream_next(&stream.base, ~(size_t)0, &closure));
   grpc_slice output;
-  grpc_error *error = grpc_byte_stream_pull(&exec_ctx, &stream.base, &output);
+  grpc_error *error = grpc_byte_stream_pull(&stream.base, &output);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(grpc_slice_eq(input[0], output));
-  grpc_slice_unref_internal(&exec_ctx, output);
+  grpc_slice_unref_internal(output);
   // Now shutdown.
   grpc_error *shutdown_error =
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("shutdown error");
-  grpc_byte_stream_shutdown(&exec_ctx, &stream.base,
-                            GRPC_ERROR_REF(shutdown_error));
+  grpc_byte_stream_shutdown(&stream.base, GRPC_ERROR_REF(shutdown_error));
   // After shutdown, the next pull() should return the error.
-  GPR_ASSERT(
-      grpc_byte_stream_next(&exec_ctx, &stream.base, ~(size_t)0, &closure));
-  error = grpc_byte_stream_pull(&exec_ctx, &stream.base, &output);
+  GPR_ASSERT(grpc_byte_stream_next(&stream.base, ~(size_t)0, &closure));
+  error = grpc_byte_stream_pull(&stream.base, &output);
   GPR_ASSERT(error == shutdown_error);
   GRPC_ERROR_UNREF(error);
   GRPC_ERROR_UNREF(shutdown_error);
   // Clean up.
-  grpc_byte_stream_destroy(&exec_ctx, &stream.base);
-  grpc_slice_buffer_destroy_internal(&exec_ctx, &buffer);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_byte_stream_destroy(&stream.base);
+  grpc_slice_buffer_destroy_internal(&buffer);
+  grpc_exec_ctx_finish();
 }
 
 //
@@ -123,7 +118,7 @@ static void test_slice_buffer_stream_shutdown(void) {
 
 static void test_caching_byte_stream_basic(void) {
   gpr_log(GPR_DEBUG, "test_caching_byte_stream_basic");
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  exec_ctx = GRPC_EXEC_CTX_INIT;
   // Create and populate slice buffer byte stream.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -147,24 +142,23 @@ static void test_caching_byte_stream_basic(void) {
   // Read each slice.  Note that next() always returns synchronously,
   // because the underlying byte stream always does.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(input); ++i) {
-    GPR_ASSERT(
-        grpc_byte_stream_next(&exec_ctx, &stream.base, ~(size_t)0, &closure));
+    GPR_ASSERT(grpc_byte_stream_next(&stream.base, ~(size_t)0, &closure));
     grpc_slice output;
-    grpc_error *error = grpc_byte_stream_pull(&exec_ctx, &stream.base, &output);
+    grpc_error *error = grpc_byte_stream_pull(&stream.base, &output);
     GPR_ASSERT(error == GRPC_ERROR_NONE);
     GPR_ASSERT(grpc_slice_eq(input[i], output));
-    grpc_slice_unref_internal(&exec_ctx, output);
+    grpc_slice_unref_internal(output);
   }
   // Clean up.
-  grpc_byte_stream_destroy(&exec_ctx, &stream.base);
-  grpc_byte_stream_cache_destroy(&exec_ctx, &cache);
-  grpc_slice_buffer_destroy_internal(&exec_ctx, &buffer);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_byte_stream_destroy(&stream.base);
+  grpc_byte_stream_cache_destroy(&cache);
+  grpc_slice_buffer_destroy_internal(&buffer);
+  grpc_exec_ctx_finish();
 }
 
 static void test_caching_byte_stream_reset(void) {
   gpr_log(GPR_DEBUG, "test_caching_byte_stream_reset");
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  exec_ctx = GRPC_EXEC_CTX_INIT;
   // Create and populate slice buffer byte stream.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -186,34 +180,32 @@ static void test_caching_byte_stream_reset(void) {
   GRPC_CLOSURE_INIT(&closure, not_called_closure, NULL,
                     grpc_schedule_on_exec_ctx);
   // Read one slice.
-  GPR_ASSERT(
-      grpc_byte_stream_next(&exec_ctx, &stream.base, ~(size_t)0, &closure));
+  GPR_ASSERT(grpc_byte_stream_next(&stream.base, ~(size_t)0, &closure));
   grpc_slice output;
-  grpc_error *error = grpc_byte_stream_pull(&exec_ctx, &stream.base, &output);
+  grpc_error *error = grpc_byte_stream_pull(&stream.base, &output);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(grpc_slice_eq(input[0], output));
-  grpc_slice_unref_internal(&exec_ctx, output);
+  grpc_slice_unref_internal(output);
   // Reset the caching stream.  The reads should start over from the
   // first slice.
   grpc_caching_byte_stream_reset(&stream);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(input); ++i) {
-    GPR_ASSERT(
-        grpc_byte_stream_next(&exec_ctx, &stream.base, ~(size_t)0, &closure));
-    error = grpc_byte_stream_pull(&exec_ctx, &stream.base, &output);
+    GPR_ASSERT(grpc_byte_stream_next(&stream.base, ~(size_t)0, &closure));
+    error = grpc_byte_stream_pull(&stream.base, &output);
     GPR_ASSERT(error == GRPC_ERROR_NONE);
     GPR_ASSERT(grpc_slice_eq(input[i], output));
-    grpc_slice_unref_internal(&exec_ctx, output);
+    grpc_slice_unref_internal(output);
   }
   // Clean up.
-  grpc_byte_stream_destroy(&exec_ctx, &stream.base);
-  grpc_byte_stream_cache_destroy(&exec_ctx, &cache);
-  grpc_slice_buffer_destroy_internal(&exec_ctx, &buffer);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_byte_stream_destroy(&stream.base);
+  grpc_byte_stream_cache_destroy(&cache);
+  grpc_slice_buffer_destroy_internal(&buffer);
+  grpc_exec_ctx_finish();
 }
 
 static void test_caching_byte_stream_shared_cache(void) {
   gpr_log(GPR_DEBUG, "test_caching_byte_stream_shared_cache");
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  exec_ctx = GRPC_EXEC_CTX_INIT;
   // Create and populate slice buffer byte stream.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -237,35 +229,32 @@ static void test_caching_byte_stream_shared_cache(void) {
   GRPC_CLOSURE_INIT(&closure, not_called_closure, NULL,
                     grpc_schedule_on_exec_ctx);
   // Read one slice from stream1.
-  GPR_ASSERT(
-      grpc_byte_stream_next(&exec_ctx, &stream1.base, ~(size_t)0, &closure));
+  GPR_ASSERT(grpc_byte_stream_next(&stream1.base, ~(size_t)0, &closure));
   grpc_slice output;
-  grpc_error *error = grpc_byte_stream_pull(&exec_ctx, &stream1.base, &output);
+  grpc_error *error = grpc_byte_stream_pull(&stream1.base, &output);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(grpc_slice_eq(input[0], output));
-  grpc_slice_unref_internal(&exec_ctx, output);
+  grpc_slice_unref_internal(output);
   // Read all slices from stream2.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(input); ++i) {
-    GPR_ASSERT(
-        grpc_byte_stream_next(&exec_ctx, &stream2.base, ~(size_t)0, &closure));
-    error = grpc_byte_stream_pull(&exec_ctx, &stream2.base, &output);
+    GPR_ASSERT(grpc_byte_stream_next(&stream2.base, ~(size_t)0, &closure));
+    error = grpc_byte_stream_pull(&stream2.base, &output);
     GPR_ASSERT(error == GRPC_ERROR_NONE);
     GPR_ASSERT(grpc_slice_eq(input[i], output));
-    grpc_slice_unref_internal(&exec_ctx, output);
+    grpc_slice_unref_internal(output);
   }
   // Now read the second slice from stream1.
-  GPR_ASSERT(
-      grpc_byte_stream_next(&exec_ctx, &stream1.base, ~(size_t)0, &closure));
-  error = grpc_byte_stream_pull(&exec_ctx, &stream1.base, &output);
+  GPR_ASSERT(grpc_byte_stream_next(&stream1.base, ~(size_t)0, &closure));
+  error = grpc_byte_stream_pull(&stream1.base, &output);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(grpc_slice_eq(input[1], output));
-  grpc_slice_unref_internal(&exec_ctx, output);
+  grpc_slice_unref_internal(output);
   // Clean up.
-  grpc_byte_stream_destroy(&exec_ctx, &stream1.base);
-  grpc_byte_stream_destroy(&exec_ctx, &stream2.base);
-  grpc_byte_stream_cache_destroy(&exec_ctx, &cache);
-  grpc_slice_buffer_destroy_internal(&exec_ctx, &buffer);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_byte_stream_destroy(&stream1.base);
+  grpc_byte_stream_destroy(&stream2.base);
+  grpc_byte_stream_cache_destroy(&cache);
+  grpc_slice_buffer_destroy_internal(&buffer);
+  grpc_exec_ctx_finish();
 }
 
 int main(int argc, char **argv) {

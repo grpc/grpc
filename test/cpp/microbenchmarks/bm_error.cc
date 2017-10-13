@@ -248,14 +248,14 @@ template <class Fixture>
 static void BM_ErrorGetStatus(benchmark::State& state) {
   TrackCounters track_counters;
   Fixture fixture;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  ExecCtx _local_exec_ctx;
   while (state.KeepRunning()) {
     grpc_status_code status;
     grpc_slice slice;
-    grpc_error_get_status(&exec_ctx, fixture.error(), fixture.deadline(),
-                          &status, &slice, NULL);
+    grpc_error_get_status(fixture.error(), fixture.deadline(), &status, &slice,
+                          NULL);
   }
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_finish();
   track_counters.Finish(state);
 }
 
@@ -263,13 +263,13 @@ template <class Fixture>
 static void BM_ErrorGetStatusCode(benchmark::State& state) {
   TrackCounters track_counters;
   Fixture fixture;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  ExecCtx _local_exec_ctx;
   while (state.KeepRunning()) {
     grpc_status_code status;
-    grpc_error_get_status(&exec_ctx, fixture.error(), fixture.deadline(),
-                          &status, NULL, NULL);
+    grpc_error_get_status(fixture.error(), fixture.deadline(), &status, NULL,
+                          NULL);
   }
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_finish();
   track_counters.Finish(state);
 }
 
@@ -277,13 +277,13 @@ template <class Fixture>
 static void BM_ErrorHttpError(benchmark::State& state) {
   TrackCounters track_counters;
   Fixture fixture;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  ExecCtx _local_exec_ctx;
   while (state.KeepRunning()) {
     grpc_http2_error_code error;
-    grpc_error_get_status(&exec_ctx, fixture.error(), fixture.deadline(), NULL,
-                          NULL, &error);
+    grpc_error_get_status(fixture.error(), fixture.deadline(), NULL, NULL,
+                          &error);
   }
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_finish();
   track_counters.Finish(state);
 }
 

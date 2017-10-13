@@ -392,10 +392,9 @@ static grpc_chttp2_flowctl_urgency delta_is_significant(
 
 // Takes in a target and uses the pid controller to return a stabilized
 // guess at the new bdp.
-static double get_pid_controller_guess(grpc_exec_ctx* exec_ctx,
-                                       grpc_chttp2_transport_flowctl* tfc,
+static double get_pid_controller_guess(grpc_chttp2_transport_flowctl* tfc,
                                        double target) {
-  grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+  grpc_millis now = grpc_exec_ctx_now();
   if (!tfc->pid_controller_initialized) {
     tfc->last_pid_update = now;
     tfc->pid_controller_initialized = true;
@@ -440,8 +439,7 @@ static double get_target_under_memory_pressure(
 }
 
 grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
-    grpc_exec_ctx* exec_ctx, grpc_chttp2_transport_flowctl* tfc,
-    grpc_chttp2_stream_flowctl* sfc) {
+    grpc_chttp2_transport_flowctl* tfc, grpc_chttp2_stream_flowctl* sfc) {
   grpc_chttp2_flowctl_action action;
   memset(&action, 0, sizeof(action));
   // TODO(ncteisen): tune this
@@ -471,7 +469,7 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
 
       // run our target through the pid controller to stabilize change.
       // TODO(ncteisen): experiment with other controllers here.
-      double bdp_guess = get_pid_controller_guess(exec_ctx, tfc, target);
+      double bdp_guess = get_pid_controller_guess(tfc, target);
 
       // Though initial window 'could' drop to 0, we keep the floor at 128
       tfc->target_initial_window_size =

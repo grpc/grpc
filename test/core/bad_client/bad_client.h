@@ -28,6 +28,10 @@
 #define GRPC_BAD_CLIENT_REGISTERED_METHOD "/registered/bar"
 #define GRPC_BAD_CLIENT_REGISTERED_HOST "localhost"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*grpc_bad_client_server_side_validator)(grpc_server *server,
                                                       grpc_completion_queue *cq,
                                                       void *registered_method);
@@ -53,5 +57,9 @@ void grpc_run_bad_client_test(
                                  flags)                                       \
   grpc_run_bad_client_test(server_validator, client_validator, payload,       \
                            sizeof(payload) - 1, flags)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H */
