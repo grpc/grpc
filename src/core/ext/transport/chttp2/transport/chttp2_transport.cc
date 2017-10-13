@@ -565,13 +565,13 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED;
   }
 
-  if (t->flow_control.enable_bdp_probe) {
+  if (t->flow_control->bdp_probe()) {
     GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
     schedule_bdp_ping_locked(exec_ctx, t);
   }
 
   grpc_chttp2_act_on_flowctl_action(
-      exec_ctx, t->flow_control->MakeAction(exec_ctx), t, NULL);
+      exec_ctx, t->flow_control->PeriodicUpdate(exec_ctx), t, NULL);
 
   grpc_chttp2_initiate_write(exec_ctx, t,
                              GRPC_CHTTP2_INITIATE_WRITE_INITIAL_WRITE);
@@ -1636,8 +1636,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
         already_received = s->frame_storage.length;
         s->flow_control->IncomingByteStreamUpdate(GRPC_HEADER_SIZE_IN_BYTES,
                                                   already_received);
-        grpc_chttp2_act_on_flowctl_action(
-            exec_ctx, s->flow_control->MakeAction(exec_ctx), t, s);
+        grpc_chttp2_act_on_flowctl_action(exec_ctx,
+                                          s->flow_control->MakeAction(), t, s);
       }
     }
     grpc_chttp2_maybe_complete_recv_message(exec_ctx, t, s);
@@ -1768,10 +1768,9 @@ void grpc_chttp2_add_ping_strike(grpc_exec_ctx *exec_ctx,
                     GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM));
     /*The transport will be closed after the write is done */
     close_transport_locked(
-        exec_ctx, t,
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Too many pings"),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+        exec_ctx, t, grpc_error_set_int(
+                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Too many pings"),
+                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
   }
 }
 
@@ -2550,8 +2549,8 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
   if (keep_reading) {
     grpc_endpoint_read(exec_ctx, t->ep, &t->read_buffer,
                        &t->read_action_locked);
-    grpc_chttp2_act_on_flowctl_action(
-        exec_ctx, t->flow_control->MakeAction(exec_ctx), t, NULL);
+    grpc_chttp2_act_on_flowctl_action(exec_ctx, t->flow_control->MakeAction(),
+                                      t, NULL);
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "keep_reading");
   } else {
     GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "reading_action");
@@ -2598,6 +2597,8 @@ static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
   }
   grpc_millis next_ping =
       t->flow_control->bdp_estimator()->CompletePing(exec_ctx);
+  grpc_chttp2_act_on_flowctl_action(
+      exec_ctx, t->flow_control->PeriodicUpdate(exec_ctx), t, nullptr);
   GPR_ASSERT(!t->have_next_bdp_ping_timer);
   t->have_next_bdp_ping_timer = true;
   grpc_timer_init(exec_ctx, &t->next_bdp_ping_timer, next_ping,
@@ -2736,8 +2737,11 @@ static void keepalive_watchdog_fired_locked(grpc_exec_ctx *exec_ctx, void *arg,
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_PINGING) {
     if (error == GRPC_ERROR_NONE) {
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
-      close_transport_locked(exec_ctx, t, grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                              "keepalive watchdog timeout"), GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL));
+      close_transport_locked(
+          exec_ctx, t,
+          grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                 "keepalive watchdog timeout"),
+                             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL));
     }
   } else {
     /* The watchdog timer should have been cancelled by
@@ -2822,8 +2826,8 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
   if (!s->read_closed) {
     s->flow_control->IncomingByteStreamUpdate(bs->next_action.max_size_hint,
                                               cur_length);
-    grpc_chttp2_act_on_flowctl_action(
-        exec_ctx, s->flow_control->MakeAction(exec_ctx), t, s);
+    grpc_chttp2_act_on_flowctl_action(exec_ctx, s->flow_control->MakeAction(),
+                                      t, s);
   }
   GPR_ASSERT(s->unprocessed_incoming_frames_buffer.length == 0);
   if (s->frame_storage.length > 0) {

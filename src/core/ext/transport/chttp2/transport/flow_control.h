@@ -138,6 +138,8 @@ class TransportFlowControl {
   // TODO(ctiller): make this safe to dynamically toggle
   void SetBdpProbe(bool enable) { enable_bdp_probe_ = enable; }
 
+  bool bdp_probe() const { return enable_bdp_probe_; }
+
   // returns an announce if we should send a transport update to our peer,
   // else returns zero; writing_anyway indicates if a write would happen
   // regardless of the send - if it is false and this function returns non-zero,
@@ -146,7 +148,7 @@ class TransportFlowControl {
 
   // Reads the flow control data and returns and actionable struct that will
   // tell chttp2 exactly what it needs to do
-  FlowControlAction MakeAction(grpc_exec_ctx* exec_ctx);
+  FlowControlAction MakeAction() { return UpdateAction(FlowControlAction()); }
 
   void StreamSentData(int64_t size) { remote_window_ -= size; }
 
@@ -197,12 +199,20 @@ class TransportFlowControl {
 
   BdpEstimator* bdp_estimator() { return &bdp_estimator_; }
 
+  FlowControlAction PeriodicUpdate(grpc_exec_ctx* exec_ctx);
+
  private:
-  FlowControlAction UpdateForBdp(grpc_exec_ctx* exec_ctx,
-                                 FlowControlAction action);
   double SmoothLogBdp(grpc_exec_ctx* exec_ctx, double value);
   FlowControlAction::Urgency DeltaUrgency(int32_t value,
                                           grpc_chttp2_setting_id setting_id);
+
+  FlowControlAction UpdateAction(FlowControlAction action) {
+    if (announced_window_ < target_window() / 2) {
+      action.set_send_transport_update(
+          FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
+    }
+    return action;
+  }
 
   const grpc_chttp2_transport* const t_;
 
@@ -247,9 +257,7 @@ class StreamFlowControl {
   }
 
   FlowControlAction UpdateAction(FlowControlAction action);
-  FlowControlAction MakeAction(grpc_exec_ctx* exec_ctx) {
-    return UpdateAction(tfc_->MakeAction(exec_ctx));
-  }
+  FlowControlAction MakeAction() { return UpdateAction(tfc_->MakeAction()); }
 
   // we have sent data on the wire, we must track this in our bookkeeping for
   // the remote peer's flow control.

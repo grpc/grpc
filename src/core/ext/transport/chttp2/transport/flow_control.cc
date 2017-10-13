@@ -321,8 +321,9 @@ FlowControlAction::Urgency TransportFlowControl::DeltaUrgency(
   }
 }
 
-FlowControlAction TransportFlowControl::UpdateForBdp(grpc_exec_ctx* exec_ctx,
-                                                     FlowControlAction action) {
+FlowControlAction TransportFlowControl::PeriodicUpdate(
+    grpc_exec_ctx* exec_ctx) {
+  FlowControlAction action;
   if (enable_bdp_probe_) {
     // get bdp estimate and update initial_window accordingly.
     int64_t estimate = -1;
@@ -359,17 +360,7 @@ FlowControlAction TransportFlowControl::UpdateForBdp(grpc_exec_ctx* exec_ctx,
           frame_size);
     }
   }
-  return action;
-}
-
-FlowControlAction TransportFlowControl::MakeAction(grpc_exec_ctx* exec_ctx) {
-  FlowControlAction action;
-  if (announced_window_ < target_window() / 2) {
-    action.set_send_transport_update(
-        FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
-  }
-  action = UpdateForBdp(exec_ctx, action);
-  return action;
+  return UpdateAction(action);
 }
 
 FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {

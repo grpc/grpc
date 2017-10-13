@@ -358,10 +358,10 @@ static grpc_error *init_data_frame_parser(grpc_exec_ctx *exec_ctx,
   grpc_core::chttp2::FlowControlAction action;
   if (s == nullptr) {
     err = t->flow_control->RecvData(t->incoming_frame_size);
-    action = t->flow_control->MakeAction(exec_ctx);
+    action = t->flow_control->MakeAction();
   } else {
     err = s->flow_control->RecvData(t->incoming_frame_size);
-    action = s->flow_control->MakeAction(exec_ctx);
+    action = s->flow_control->MakeAction();
   }
   grpc_chttp2_act_on_flowctl_action(exec_ctx, action, t, s);
   if (err != GRPC_ERROR_NONE) {
