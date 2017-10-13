@@ -4009,6 +4009,27 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c++", 
+    "name": "qps_openloop_600_channel_300B_req_50B_resp_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "uses_polling": true
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.5, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
     "name": "qps_openloop_test", 
     "platforms": [
       "linux", 
