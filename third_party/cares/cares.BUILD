@@ -3,6 +3,11 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
+config_setting(
+    name = "windows",
+    values = {"cpu": "x64_windows_msvc"},
+)
+
 cc_library(
     name = "ares",
     srcs = [
@@ -89,6 +94,7 @@ cc_library(
         "cares"
     ] + select({
         ":darwin": ["config_darwin"],
+        ":windows": [],
         "//conditions:default": ["config_linux"],
     }),
     linkstatic = 1,
@@ -99,6 +105,8 @@ cc_library(
         "-D_GNU_SOURCE",
         "-D_HAS_EXCEPTIONS=0",
         "-DNOMINMAX",
-        "-DHAVE_CONFIG_H",
-    ],
+    ] + select({
+        ":windows": [],
+        "//conditions:default": ["-DHAVE_CONFIG_H"],
+    }),
 )
