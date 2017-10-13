@@ -201,6 +201,11 @@ class TransportFlowControl {
 
   FlowControlAction PeriodicUpdate(grpc_exec_ctx* exec_ctx);
 
+  void TestOnlyForceHugeWindow() {
+    announced_window_ = 1024 * 1024 * 1024;
+    remote_window_ = 1024 * 1024 * 1024;
+  }
+
  private:
   double SmoothLogBdp(grpc_exec_ctx* exec_ctx, double value);
   FlowControlAction::Urgency DeltaUrgency(int32_t value,
@@ -288,6 +293,12 @@ class StreamFlowControl {
   int64_t announced_window_delta() const { return announced_window_delta_; }
 
   const grpc_chttp2_stream* stream() const { return s_; }
+
+  void TestOnlyForceHugeWindow() {
+    announced_window_delta_ = 1024 * 1024 * 1024;
+    local_window_delta_ = 1024 * 1024 * 1024;
+    remote_window_delta_ = 1024 * 1024 * 1024;
+  }
 
  private:
   TransportFlowControl* const tfc_;
