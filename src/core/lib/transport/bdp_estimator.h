@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H
 #define GRPC_CORE_LIB_TRANSPORT_BDP_ESTIMATOR_H
 
+#include <grpc/support/port_platform.h>
+
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdint.h>
