@@ -218,6 +218,8 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
     t->write_cb_pool = next;
   }
 
+  t->flow_control.bdp_estimator.Destroy();
+
   gpr_free(t->ping_acks);
   gpr_free(t->peer_string);
   gpr_free(t);
@@ -315,7 +317,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                     keepalive_watchdog_fired_locked, t,
                     grpc_combiner_scheduler(t->combiner));
 
-  grpc_bdp_estimator_init(&t->flow_control.bdp_estimator, t->peer_string);
+  t->flow_control.bdp_estimator.Init(t->peer_string);
 
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
   grpc_chttp2_hpack_parser_init(exec_ctx, &t->hpack_parser);
@@ -2434,7 +2436,7 @@ void grpc_chttp2_act_on_flowctl_action(grpc_exec_ctx *exec_ctx,
   }
   if (action.need_ping) {
     GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
-    grpc_bdp_estimator_schedule_ping(&t->flow_control.bdp_estimator);
+    t->flow_control.bdp_estimator->SchedulePing();
     send_ping_locked(exec_ctx, t, &t->start_bdp_ping_locked,
                      &t->finish_bdp_ping_locked);
   }
@@ -2493,8 +2495,7 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     grpc_error *errors[3] = {GRPC_ERROR_REF(error), GRPC_ERROR_NONE,
                              GRPC_ERROR_NONE};
     for (; i < t->read_buffer.count && errors[1] == GRPC_ERROR_NONE; i++) {
-      grpc_bdp_estimator_add_incoming_bytes(
-          &t->flow_control.bdp_estimator,
+      t->flow_control.bdp_estimator->AddIncomingBytes(
           (int64_t)GRPC_SLICE_LENGTH(t->read_buffer.slices[i]));
       errors[1] =
           grpc_chttp2_perform_read(exec_ctx, t, t->read_buffer.slices[i]);
@@ -2569,7 +2570,7 @@ static void start_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING) {
     grpc_timer_cancel(exec_ctx, &t->keepalive_ping_timer);
   }
-  grpc_bdp_estimator_start_ping(&t->flow_control.bdp_estimator);
+  t->flow_control.bdp_estimator->StartPing();
 }
 
 static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
@@ -2578,7 +2579,7 @@ static void finish_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
   if (GRPC_TRACER_ON(grpc_http_trace)) {
     gpr_log(GPR_DEBUG, "%s: Complete BDP ping", t->peer_string);
   }
-  grpc_bdp_estimator_complete_ping(exec_ctx, &t->flow_control.bdp_estimator);
+  t->flow_control.bdp_estimator->CompletePing(exec_ctx);
 
   GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "bdp_ping");
 }
