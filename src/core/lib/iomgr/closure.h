@@ -27,89 +27,193 @@
 #include <atomic>
 #include <utility>
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/support/atomic.h"
 #include "src/core/lib/support/memory.h"
 #include "src/core/lib/support/mpscq.h"
 
 namespace grpc_core {
 
 class Closure;
+class ClosureScheduler;
 
+/// Closure base type
+/// TODO(ctiller): ... write stuff here ...
+class Closure {
+ public:
+  Closure(ClosureScheduler *scheduler) : scheduler_(scheduler) {}
+  /// Schedule this closure to run in the future
+  /// This can be called from anywhere we have an exec_ctx (regardless of lock
+  /// state)
+  void Schedule(grpc_exec_ctx *exec_ctx, grpc_error *error);
+  /// Run this closure from a closure-safe run point
+  /// It's the callers responsibility to ensure that no locks are held by any
+  /// possible path to this code.
+  /// Note that within a closure callback is always (by definition) a safe place
+  /// to call Run (assuming no locks are held)
+  void Run(grpc_exec_ctx *exec_ctx, grpc_error *error);
+
+ protected:
+  ~Closure() {}
+
+ private:
+  /// Allow access to post-scheduling fields here
+  friend class ClosureScheduler;
+
+  /// Actual invoked callback for the closure
+  virtual void Execute(grpc_exec_ctx *exec_ctx, grpc_error *error) = 0;
+
+  union {
+    Closure *next_;
+    std::atomic<Closure *> atm_next_;
+  };
+  grpc_error *error_;
+
+  ClosureScheduler *const scheduler_;
+};
+
+// Base class for closure schedulers
+// TODO(ctiller): ... write stuff here ...
 class ClosureScheduler {
  public:
   virtual void Schedule(grpc_exec_ctx *exec_ctx, Closure *closure,
                         grpc_error *error) = 0;
   virtual void Run(grpc_exec_ctx *exec_ctx, Closure *closure,
                    grpc_error *error) = 0;
+
+ protected:
+  // Helper to enqueue some closure onto a linked list of closures, storing the
+  // error
+  void EnqueueClosure(Closure *closure, Closure *next, grpc_error *error) {
+    closure->next_ = next;
+    closure->error_ = error;
+  }
+
+  // Helper to actually execute a closure
+  void ExecuteClosure(grpc_exec_ctx *exec_ctx, Closure *closure) {
+    grpc_error *err = closure->error_;
+    closure->Execute(exec_ctx, err);
+    GRPC_ERROR_UNREF(err);
+  }
 };
 
-class Closure {
+inline void Closure::Schedule(grpc_exec_ctx *exec_ctx, grpc_error *error) {
+  scheduler_->Schedule(exec_ctx, this, error);
+}
+
+inline void Closure::Run(grpc_exec_ctx *exec_ctx, grpc_error *error) {
+  scheduler_->Run(exec_ctx, this, error);
+}
+
+namespace closure_impl {
+// Per-closure scheduler to override how Schedule/Run are implemented for a
+// barrier
+class BarrierScheduler final : public ClosureScheduler {
  public:
-  virtual ~Closure() {}
-  void Schedule(grpc_exec_ctx *exec_ctx, grpc_error *error) {
-    scheduler_->Schedule(exec_ctx, this, error);
+  BarrierScheduler(ClosureScheduler *next) : barrier_(0), next_(next) {}
+
+  virtual void Schedule(grpc_exec_ctx *exec_ctx, Closure *closure,
+                        grpc_error *error) override {
+    if (MaybePassBarrier(&error)) {
+      next_->Schedule(exec_ctx, closure, error);
+    }
   }
-  void Run(grpc_exec_ctx *exec_ctx, grpc_error *error) {
-    scheduler_->Schedule(exec_ctx, this, error);
+  virtual void Run(grpc_exec_ctx *exec_ctx, Closure *closure,
+                   grpc_error *error) override {
+    if (MaybePassBarrier(&error)) {
+      next_->Run(exec_ctx, closure, error);
+    }
+  }
+
+  void InitiateOne() { gpr_atm_no_barrier_fetch_add(&barrier_, 1); }
+
+ private:
+  bool MaybePassBarrier(grpc_error **error);
+
+  gpr_atm barrier_;
+  ClosureScheduler *const next_;
+};
+}  // namespace closure_impl
+
+/// Adaptor that produces closures which must be called multiple times, and only
+/// on the Nth call (where N == the number of prior Initiate() calls) does the
+/// closure get executed
+template <class ContainedClosure>
+class BarrierClosure final {
+ public:
+  template <typename... Args>
+  BarrierClosure(ClosureScheduler *scheduler, Args &&... args)
+      : scheduler_(scheduler),
+        closure_(&scheduler_, std::forward<Args>(args)...) {}
+
+  /// Produce a new closure
+  Closure *Initiate() {
+    scheduler_.InitiateOne();
+    return &closure_;
   }
 
  private:
-  friend class ClosureScheduler;
-  virtual void Execute(grpc_exec_ctx *exec_ctx, grpc_error *error) = 0;
-
-  union {
-    struct {
-      union {
-        Closure *next;
-        std::atomic<Closure *> atm_next;
-      };
-      grpc_error *error;
-    } queued_;
-    struct {
-      uintptr_t scratch[2];
-    } unqueued_;
-  };
-
-  ClosureScheduler *scheduler_;
-
- public:
-  enum { kScratchSpaceSize = sizeof(unqueued_.scratch) };
-
-  void *unqueued_closure_scratch_space() { return unqueued_.scratch; }
+  closure_impl::BarrierScheduler scheduler_;
+  ContainedClosure closure_;
 };
 
-// a closure over a member function
+/// A closure over a member function
+/// Templatized to avoid excessive virtual calls
+///
+/// Example:
+/// class Foo {
+///  public:
+///   Foo() : foo_closure_(this) {}
+///  private:
+///   void DoStuff(grpc_exec_ctx *exec_ctx, grpc_error *error) { /* ... */ }
+///   MemberClosure<Foo, &Foo::DoStuff> foo_closure_;
+/// };
 template <class T,
           void (T::*Callback)(grpc_exec_ctx *exec_ctx, grpc_error *error)>
 class MemberClosure final : public Closure {
  public:
-  MemberClosure(T *p) : p_(p) {}
+  MemberClosure(ClosureScheduler *scheduler, T *p)
+      : Closure(scheduler), p_(p) {}
 
  private:
-  void Execute(grpc_exec_ctx *exec_ctx, grpc_error *error) {
+  void Execute(grpc_exec_ctx *exec_ctx, grpc_error *error) override {
     (p_->*Callback)(exec_ctx, error);
   }
 
   T *p_;
 };
 
-// create a closure given some lambda
+// Create a closure that can be called repeatedly (on the heap) given some
+// lambda
+//
+// Example:
+// auto c = MakeRepeatableClosure(OnExecCtx(),
+//                                [](grpc_exec_ctx *exec_ctx,
+//                                   grpc_error *error) {});
+// c->Schedule(exec_ctx, GRPC_ERROR_NONE);
 template <class F>
-UniquePtr<Closure> MakeClosure(F f) {
+UniquePtr<Closure> MakeRepeatableClosure(ClosureScheduler *scheduler, F f) {
   class Impl final : public Closure {
    public:
-    Impl(F f) : f_(std::move(f)) {}
+    Impl(ClosureScheduler *scheduler, F f)
+        : Closure(scheduler), f_(std::move(f)) {}
 
    private:
-    void Execute(grpc_exec_ctx *exec_ctx, grpc_error *error) {
+    void Execute(grpc_exec_ctx *exec_ctx, grpc_error *error) override {
       f_(exec_ctx, error);
     }
 
     F f_;
   };
-  return MakeUnique<Impl>(std::move(f));
+  return MakeUnique<Impl>(scheduler, std::move(f));
 }
 
-// create a closure given some lambda that automatically deletes itself
+// Create a closure given some lambda that automatically deletes itself after
+// execution
+//
+// Example:
+// MakeOneShotClosure(OnExecCtx(),
+//                    [](grpc_exec_ctx *exec_ctx, grpc_error *error) {})
+//   ->Schedule(exec_ctx, GRPC_ERROR_NONE);
 template <class F>
 Closure *MakeOneShotClosure(F f) {
   class Impl final : public Closure {
@@ -117,9 +221,9 @@ Closure *MakeOneShotClosure(F f) {
     Impl(F f) : f_(std::move(f)) {}
 
    private:
-    void Execute(grpc_exec_ctx *exec_ctx, grpc_error *error) {
+    void Execute(grpc_exec_ctx *exec_ctx, grpc_error *error) override {
       f_(exec_ctx, error);
-      delete this;
+      Delete(this);
     }
 
     F f_;
