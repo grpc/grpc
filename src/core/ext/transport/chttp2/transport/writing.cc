@@ -426,6 +426,7 @@ class StreamWriteContext {
           t_->settings[GRPC_PEER_SETTINGS]
                       [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
               0,  // use_true_binary_metadata
+          false,
           t_->settings[GRPC_PEER_SETTINGS]
                       [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],  // max_frame_size
           &s_->stats.outgoing                                 // stats
@@ -519,6 +520,7 @@ class StreamWriteContext {
           t_->settings[GRPC_PEER_SETTINGS]
                       [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
               0,
+          false,
 
           t_->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
           &s_->stats.outgoing};

@@ -33,7 +33,7 @@ extern "C" {
 
 #include "src/core/lib/transport/metadata.h"
 
-#define GRPC_STATIC_MDSTR_COUNT 100
+#define GRPC_STATIC_MDSTR_COUNT 101
 extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];
 /* ":path" */
 #define GRPC_MDSTR_PATH (grpc_static_slice_table[0])
@@ -240,6 +240,7 @@ extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];
 /* "identity,deflate,gzip" */
 #define GRPC_MDSTR_IDENTITY_COMMA_DEFLATE_COMMA_GZIP \
   (grpc_static_slice_table[99])
+#define GRPC_MDSTR_GRPC_TIMEOUT_BIN (grpc_static_slice_table[100])
 
 extern const grpc_slice_refcount_vtable grpc_static_metadata_vtable;
 extern grpc_slice_refcount

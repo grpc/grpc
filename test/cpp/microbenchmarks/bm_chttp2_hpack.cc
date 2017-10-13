@@ -28,6 +28,7 @@ extern "C" {
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 }
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"
@@ -81,6 +82,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State &state) {
         static_cast<uint32_t>(state.iterations()),
         true,
         false,
+        false,
         (size_t)1024,
         &stats,
     };
@@ -102,6 +104,49 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State &state) {
   track_counters.Finish(state);
 }
 BENCHMARK(BM_HpackEncoderEncodeDeadline);
+
+static void BM_HpackEncoderEncodeDeadlineBin(benchmark::State &state) {
+  TrackCounters track_counters;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_millis saved_now = grpc_exec_ctx_now(&exec_ctx);
+
+  grpc_metadata_batch b;
+  grpc_metadata_batch_init(&b);
+  b.deadline = saved_now + 30 * 1000;
+
+  grpc_chttp2_hpack_compressor c;
+  grpc_chttp2_hpack_compressor_init(&c);
+  grpc_transport_one_way_stats stats;
+  memset(&stats, 0, sizeof(stats));
+  grpc_slice_buffer outbuf;
+  grpc_slice_buffer_init(&outbuf);
+  while (state.KeepRunning()) {
+    grpc_encode_header_options hopt = {
+        static_cast<uint32_t>(state.iterations()),
+        true,
+        true,
+        true,
+        (size_t)1024,
+        &stats,
+    };
+    grpc_chttp2_encode_header(&exec_ctx, &c, NULL, 0, &b, &hopt, &outbuf);
+    grpc_slice_buffer_reset_and_unref_internal(&exec_ctx, &outbuf);
+    grpc_exec_ctx_flush(&exec_ctx);
+  }
+  grpc_metadata_batch_destroy(&exec_ctx, &b);
+  grpc_chttp2_hpack_compressor_destroy(&exec_ctx, &c);
+  grpc_slice_buffer_destroy_internal(&exec_ctx, &outbuf);
+  grpc_exec_ctx_finish(&exec_ctx);
+
+  std::ostringstream label;
+  label << "framing_bytes/iter:" << (static_cast<double>(stats.framing_bytes) /
+                                     static_cast<double>(state.iterations()))
+        << " header_bytes/iter:" << (static_cast<double>(stats.header_bytes) /
+                                     static_cast<double>(state.iterations()));
+  track_counters.AddLabel(label.str());
+  track_counters.Finish(state);
+}
+BENCHMARK(BM_HpackEncoderEncodeDeadlineBin);
 
 template <class Fixture>
 static void BM_HpackEncoderEncodeHeader(benchmark::State &state) {
@@ -130,6 +175,7 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State &state) {
         static_cast<uint32_t>(state.iterations()),
         state.range(0) != 0,
         Fixture::kEnableTrueBinary,
+        false,
         (size_t)state.range(1),
         &stats,
     };
@@ -441,7 +487,43 @@ static void UnrefHeader(grpc_exec_ctx *exec_ctx, void *user_data,
   GRPC_MDELEM_UNREF(exec_ctx, md);
 }
 
-template <class Fixture>
+static void free_timeout(void *p) { gpr_free(p); }
+
+static void DecodeTimeout(grpc_exec_ctx *exec_ctx, void *user_data,
+                          grpc_mdelem md) {
+  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
+    grpc_millis *cached_timeout =
+        static_cast<grpc_millis *>(grpc_mdelem_get_user_data(md, free_timeout));
+    grpc_millis timeout;
+    if (cached_timeout == NULL) {
+      // not already parsed: parse it now, and store the result away
+      cached_timeout = (grpc_millis *)gpr_malloc(sizeof(grpc_millis));
+      if (!grpc_http2_decode_timeout(GRPC_MDVALUE(md), cached_timeout)) {
+        char *val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+        gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
+        gpr_free(val);
+        *cached_timeout = GRPC_MILLIS_INF_FUTURE;
+      }
+      timeout = *cached_timeout;
+      grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
+    } else {
+      timeout = *cached_timeout;
+    }
+    benchmark::DoNotOptimize(timeout);
+    GRPC_MDELEM_UNREF(exec_ctx, md);
+  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT_BIN)) {
+    grpc_millis timeout;
+    grpc_http2_decode_timeout_bin(GRPC_MDVALUE(md), &timeout);
+    benchmark::DoNotOptimize(timeout);
+    GRPC_MDELEM_UNREF(exec_ctx, md);
+  } else {
+    // Should not get here.
+    GPR_ASSERT(0);
+  }
+}
+
+template <class Fixture,
+          void (*OnHeader)(grpc_exec_ctx *, void *, grpc_mdelem) = UnrefHeader>
 static void BM_HpackParserParseHeader(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -449,7 +531,7 @@ static void BM_HpackParserParseHeader(benchmark::State &state) {
   std::vector<grpc_slice> benchmark_slices = Fixture::GetBenchmarkSlices();
   grpc_chttp2_hpack_parser p;
   grpc_chttp2_hpack_parser_init(&exec_ctx, &p);
-  p.on_header = UnrefHeader;
+  p.on_header = OnHeader;
   p.on_header_user_data = nullptr;
   for (auto slice : init_slices) {
     GPR_ASSERT(GRPC_ERROR_NONE ==
@@ -759,6 +841,32 @@ class RepresentativeServerTrailingMetadata {
   }
 };
 
+class SameDeadline {
+ public:
+  static std::vector<grpc_slice> GetInitSlices() {
+    return {
+        grpc_slice_from_static_string("@\x0cgrpc-timeout\x03"
+                                      "30S")};
+  }
+  static std::vector<grpc_slice> GetBenchmarkSlices() {
+    // Use saved key and literal value.
+    return {MakeSlice({0x0f, 0x2f, 0x03, '3', '0', 'S'})};
+  }
+};
+
+class SameDeadlineBin {
+ public:
+  static std::vector<grpc_slice> GetInitSlices() {
+    return {MakeSlice({0x40, 0x10, 'g',  'r',  'p',  'c',  '-',  't',
+                       'i',  'm',  'e',  'o',  'u',  't',  '-',  'b',
+                       'i',  'n',  0x05, 0x00, 0x00, 0x00, 0x75, 0x30})};
+  }
+  static std::vector<grpc_slice> GetBenchmarkSlices() {
+    // Use saved key and literal value.
+    return {MakeSlice({0x0f, 0x2f, 0x05, 0x00, 0x00, 0x00, 0x75, 0x30})};
+  }
+};
+
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, EmptyBatch);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, IndexedSingleStaticElem);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, AddIndexedSingleStaticElem);
@@ -785,6 +893,8 @@ BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
                    RepresentativeServerInitialMetadata);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
                    RepresentativeServerTrailingMetadata);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, SameDeadline, DecodeTimeout);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, SameDeadlineBin, DecodeTimeout);
 
 }  // namespace hpack_parser_fixtures
 
