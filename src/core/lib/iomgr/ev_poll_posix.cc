@@ -24,6 +24,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <limits.h>
 #include <poll.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -37,12 +38,11 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/wakeup_fd_cv.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/block_annotate.h"
 #include "src/core/lib/support/murmur_hash.h"
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
@@ -50,7 +50,6 @@
 /*******************************************************************************
  * FD declarations
  */
-
 typedef struct grpc_fd_watcher {
   struct grpc_fd_watcher *next;
   struct grpc_fd_watcher *prev;
@@ -200,8 +199,8 @@ static void pollset_set_add_fd(grpc_exec_ctx *exec_ctx,
    - longer than a millisecond polls are rounded up to the next nearest
      millisecond to avoid spinning
    - infinite timeouts are converted to -1 */
-static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
-                                           gpr_timespec now);
+static int poll_deadline_to_millis_timeout(grpc_exec_ctx *exec_ctx,
+                                           grpc_millis deadline);
 
 /* Allow kick to wakeup the currently polling worker */
 #define GRPC_POLLSET_CAN_KICK_SELF 1
@@ -876,7 +875,7 @@ static void work_combine_error(grpc_error **composite, grpc_error *error) {
 
 static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                                 grpc_pollset_worker **worker_hdl,
-                                gpr_timespec now, gpr_timespec deadline) {
+                                grpc_millis deadline) {
   grpc_pollset_worker worker;
   if (worker_hdl) *worker_hdl = &worker;
   grpc_error *error = GRPC_ERROR_NONE;
@@ -945,7 +944,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       grpc_fd_watcher *watchers;
       struct pollfd *pfds;
 
-      timeout = poll_deadline_to_millis_timeout(deadline, now);
+      timeout = poll_deadline_to_millis_timeout(exec_ctx, deadline);
 
       if (pollset->fd_count + 2 <= inline_elements) {
         pfds = pollfd_space;
@@ -991,7 +990,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       GRPC_SCHEDULING_START_BLOCKING_REGION;
       GRPC_STATS_INC_SYSCALL_POLL(exec_ctx);
       r = grpc_poll_function(pfds, pfd_count, timeout);
-      GRPC_SCHEDULING_END_BLOCKING_REGION;
+      GRPC_SCHEDULING_END_BLOCKING_REGION_WITH_EXEC_CTX(exec_ctx);
 
       if (GRPC_TRACER_ON(grpc_polling_trace)) {
         gpr_log(GPR_DEBUG, "%p poll=%d", pollset, r);
@@ -1068,12 +1067,9 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       if (queued_work || worker.kicked_specifically) {
         /* If there's queued work on the list, then set the deadline to be
            immediate so we get back out of the polling loop quickly */
-        deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);
+        deadline = 0;
       }
       keep_polling = 1;
-    }
-    if (keep_polling) {
-      now = gpr_now(now.clock_type);
     }
   }
   gpr_tls_set(&g_current_thread_poller, 0);
@@ -1126,21 +1122,14 @@ static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   }
 }
 
-static int poll_deadline_to_millis_timeout(gpr_timespec deadline,
-                                           gpr_timespec now) {
-  gpr_timespec timeout;
-  static const int64_t max_spin_polling_us = 10;
-  if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) == 0) {
-    return -1;
-  }
-  if (gpr_time_cmp(deadline, gpr_time_add(now, gpr_time_from_micros(
-                                                   max_spin_polling_us,
-                                                   GPR_TIMESPAN))) <= 0) {
-    return 0;
-  }
-  timeout = gpr_time_sub(deadline, now);
-  return gpr_time_to_millis(gpr_time_add(
-      timeout, gpr_time_from_nanos(GPR_NS_PER_MS - 1, GPR_TIMESPAN)));
+static int poll_deadline_to_millis_timeout(grpc_exec_ctx *exec_ctx,
+                                           grpc_millis deadline) {
+  if (deadline == GRPC_MILLIS_INF_FUTURE) return -1;
+  if (deadline == 0) return 0;
+  grpc_millis n = deadline - grpc_exec_ctx_now(exec_ctx);
+  if (n < 0) return 0;
+  if (n > INT_MAX) return -1;
+  return (int)n;
 }
 
 /*******************************************************************************

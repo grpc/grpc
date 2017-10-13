@@ -21,11 +21,13 @@
 #ifdef GRPC_WINSOCK_SOCKET
 
 #include <winsock2.h>
+#include <limits>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 #include <grpc/support/thd.h>
+#include <grpc/support/useful.h>
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
@@ -40,25 +42,20 @@ static gpr_atm g_custom_events = 0;
 
 static HANDLE g_iocp;
 
-static DWORD deadline_to_millis_timeout(gpr_timespec deadline,
-                                        gpr_timespec now) {
-  gpr_timespec timeout;
-  static const int64_t max_spin_polling_us = 10;
-  if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) == 0) {
+static DWORD deadline_to_millis_timeout(grpc_exec_ctx *exec_ctx,
+                                        grpc_millis deadline) {
+  if (deadline == GRPC_MILLIS_INF_FUTURE) {
     return INFINITE;
   }
-  if (gpr_time_cmp(deadline, gpr_time_add(now, gpr_time_from_micros(
-                                                   max_spin_polling_us,
-                                                   GPR_TIMESPAN))) <= 0) {
-    return 0;
-  }
-  timeout = gpr_time_sub(deadline, now);
-  return (DWORD)gpr_time_to_millis(gpr_time_add(
-      timeout, gpr_time_from_nanos(GPR_NS_PER_MS - 1, GPR_TIMESPAN)));
+  grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+  if (deadline < now) return 0;
+  grpc_millis timeout = deadline - now;
+  if (timeout > std::numeric_limits<DWORD>::max()) return INFINITE;
+  return static_cast<DWORD>(deadline - now);
 }
 
 grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
-                                     gpr_timespec deadline) {
+                                     grpc_millis deadline) {
   BOOL success;
   DWORD bytes = 0;
   DWORD flags = 0;
@@ -67,9 +64,10 @@ grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
   grpc_winsocket *socket;
   grpc_winsocket_callback_info *info;
   GRPC_STATS_INC_SYSCALL_POLL(exec_ctx);
-  success = GetQueuedCompletionStatus(
-      g_iocp, &bytes, &completion_key, &overlapped,
-      deadline_to_millis_timeout(deadline, gpr_now(deadline.clock_type)));
+  success =
+      GetQueuedCompletionStatus(g_iocp, &bytes, &completion_key, &overlapped,
+                                deadline_to_millis_timeout(exec_ctx, deadline));
+  grpc_exec_ctx_invalidate_now(exec_ctx);
   if (success == 0 && overlapped == NULL) {
     return GRPC_IOCP_WORK_TIMEOUT;
   }
@@ -121,7 +119,7 @@ void grpc_iocp_flush(void) {
   grpc_iocp_work_status work_status;
 
   do {
-    work_status = grpc_iocp_work(&exec_ctx, gpr_inf_past(GPR_CLOCK_MONOTONIC));
+    work_status = grpc_iocp_work(&exec_ctx, GRPC_MILLIS_INF_PAST);
   } while (work_status == GRPC_IOCP_WORK_KICK ||
            grpc_exec_ctx_flush(&exec_ctx));
 }
@@ -129,7 +127,7 @@ void grpc_iocp_flush(void) {
 void grpc_iocp_shutdown(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   while (gpr_atm_acq_load(&g_custom_events)) {
-    grpc_iocp_work(&exec_ctx, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    grpc_iocp_work(&exec_ctx, GRPC_MILLIS_INF_FUTURE);
     grpc_exec_ctx_flush(&exec_ctx);
   }
   grpc_exec_ctx_finish(&exec_ctx);

@@ -266,8 +266,11 @@ class Server::SyncRequestThreadManager : public ThreadManager {
 
   WorkStatus PollForWork(void** tag, bool* ok) override {
     *tag = nullptr;
+    // TODO(ctiller): workaround for GPR_TIMESPAN based deadlines not working
+    // right now
     gpr_timespec deadline =
-        gpr_time_from_millis(cq_timeout_msec_, GPR_TIMESPAN);
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                     gpr_time_from_millis(cq_timeout_msec_, GPR_TIMESPAN));
 
     switch (server_cq_->AsyncNext(tag, ok, deadline)) {
       case CompletionQueue::TIMEOUT:

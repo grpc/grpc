@@ -22,8 +22,13 @@
 
 #define GRPC_STATUS_TO_HTTP2_ERROR(a, b) \
   GPR_ASSERT(grpc_status_to_http2_error(a) == (b))
-#define HTTP2_ERROR_TO_GRPC_STATUS(a, deadline, b) \
-  GPR_ASSERT(grpc_http2_error_to_grpc_status(a, deadline) == (b))
+#define HTTP2_ERROR_TO_GRPC_STATUS(a, deadline, b)                           \
+  do {                                                                       \
+    grpc_exec_ctx my_exec_ctx = GRPC_EXEC_CTX_INIT;                          \
+    GPR_ASSERT(grpc_http2_error_to_grpc_status(&my_exec_ctx, a, deadline) == \
+               (b));                                                         \
+    grpc_exec_ctx_finish(&my_exec_ctx);                                      \
+  } while (0)
 #define GRPC_STATUS_TO_HTTP2_STATUS(a, b) \
   GPR_ASSERT(grpc_status_to_http2_status(a) == (b))
 #define HTTP2_STATUS_TO_GRPC_STATUS(a, b) \
@@ -79,7 +84,7 @@ int main(int argc, char **argv) {
   GRPC_STATUS_TO_HTTP2_STATUS(GRPC_STATUS_UNAVAILABLE, 200);
   GRPC_STATUS_TO_HTTP2_STATUS(GRPC_STATUS_DATA_LOSS, 200);
 
-  const gpr_timespec before_deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  const grpc_millis before_deadline = GRPC_MILLIS_INF_FUTURE;
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_NO_ERROR, before_deadline,
                              GRPC_STATUS_INTERNAL);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_PROTOCOL_ERROR, before_deadline,
@@ -107,7 +112,7 @@ int main(int argc, char **argv) {
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_INADEQUATE_SECURITY, before_deadline,
                              GRPC_STATUS_PERMISSION_DENIED);
 
-  const gpr_timespec after_deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);
+  const grpc_millis after_deadline = 0;
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_NO_ERROR, after_deadline,
                              GRPC_STATUS_INTERNAL);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_PROTOCOL_ERROR, after_deadline,

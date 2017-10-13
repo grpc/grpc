@@ -9,7 +9,7 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Protobuf type <code>grpc.testing.ServerArgs</code>
+ * Generated from protobuf message <code>grpc.testing.ServerArgs</code>
  */
 class ServerArgs extends \Google\Protobuf\Internal\Message
 {
@@ -21,7 +21,8 @@ class ServerArgs extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>.grpc.testing.ServerConfig setup = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.ServerConfig setup = 1;</code>
+     * @return \Grpc\Testing\ServerConfig
      */
     public function getSetup()
     {
@@ -29,16 +30,21 @@ class ServerArgs extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>.grpc.testing.ServerConfig setup = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.ServerConfig setup = 1;</code>
+     * @param \Grpc\Testing\ServerConfig $var
+     * @return $this
      */
-    public function setSetup(&$var)
+    public function setSetup($var)
     {
         GPBUtil::checkMessage($var, \Grpc\Testing\ServerConfig::class);
         $this->writeOneof(1, $var);
+
+        return $this;
     }
 
     /**
-     * <code>.grpc.testing.Mark mark = 2;</code>
+     * Generated from protobuf field <code>.grpc.testing.Mark mark = 2;</code>
+     * @return \Grpc\Testing\Mark
      */
     public function getMark()
     {
@@ -46,14 +52,21 @@ class ServerArgs extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>.grpc.testing.Mark mark = 2;</code>
+     * Generated from protobuf field <code>.grpc.testing.Mark mark = 2;</code>
+     * @param \Grpc\Testing\Mark $var
+     * @return $this
      */
-    public function setMark(&$var)
+    public function setMark($var)
     {
         GPBUtil::checkMessage($var, \Grpc\Testing\Mark::class);
         $this->writeOneof(2, $var);
+
+        return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getArgtype()
     {
         return $this->whichOneof("argtype");

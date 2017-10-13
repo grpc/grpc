@@ -25,6 +25,7 @@
 
 typedef intptr_t gpr_atm;
 #define GPR_ATM_MAX INTPTR_MAX
+#define GPR_ATM_MIN INTPTR_MIN
 
 #ifdef GPR_LOW_LEVEL_COUNTERS
 extern gpr_atm gpr_counter_atm_cas;
