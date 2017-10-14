@@ -14,8 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 import os
+import subprocess
 import sys
 import yaml
 
@@ -131,7 +131,7 @@ try:
         "third_party/cares/config_darwin/ares_config.h",
         "third_party/cares/config_freebsd/ares_config.h",
         "third_party/cares/config_linux/ares_config.h",
-        "third_party/cares/config_openbsd/ares_config.h"
+        "third_party/cares/config_openbsd/ares_config.h",
     ],
   }]
 except:
