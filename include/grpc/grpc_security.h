@@ -387,7 +387,7 @@ typedef struct grpc_ssl_server_credentials_options
 GRPCAPI grpc_ssl_server_credentials_options *
 grpc_ssl_server_credentials_create_options_using_config(
     grpc_ssl_client_certificate_request_type client_certificate_request,
-    grpc_ssl_server_certificate_config *certificate_config);
+    grpc_ssl_server_certificate_config **certificate_config);
 
 /** Creates an options object using a certificate config fetcher. Use this
    method to reload the certificates and keys of the SSL server without
@@ -408,7 +408,7 @@ GRPCAPI void grpc_ssl_server_credentials_options_release(
     - Takes ownership of the options parameter. */
 GRPCAPI grpc_server_credentials *
 grpc_ssl_server_credentials_create_with_options(
-    grpc_ssl_server_credentials_options *options);
+    grpc_ssl_server_credentials_options **options);
 
 /** --- Server-side secure ports. --- */
 

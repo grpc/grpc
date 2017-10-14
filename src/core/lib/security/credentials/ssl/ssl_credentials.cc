@@ -220,15 +220,17 @@ void grpc_ssl_server_certificate_config_release(
 grpc_ssl_server_credentials_options *
 grpc_ssl_server_credentials_create_options_using_config(
     grpc_ssl_client_certificate_request_type client_certificate_request,
-    grpc_ssl_server_certificate_config *config) {
+    grpc_ssl_server_certificate_config **c) {
   grpc_ssl_server_credentials_options *options;
   grpc_ssl_server_credentials_options *retval = NULL;
+  grpc_ssl_server_certificate_config *config = NULL;
 
-  if (config == NULL) {
+  if (c == NULL || *c == NULL) {
     gpr_log(GPR_ERROR, "Certificate config must not be NULL.");
     goto done;
   }
 
+  config = *c;
   options = (grpc_ssl_server_credentials_options *)gpr_zalloc(
       sizeof(grpc_ssl_server_credentials_options));
   options->client_certificate_request = client_certificate_request;
@@ -284,7 +286,6 @@ grpc_server_credentials *grpc_ssl_server_credentials_create_ex(
     size_t num_key_cert_pairs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     void *reserved) {
-  grpc_server_credentials *c;
   grpc_ssl_server_credentials_options *options;
   grpc_ssl_server_certificate_config *cert_config;
 
@@ -299,25 +300,24 @@ grpc_server_credentials *grpc_ssl_server_credentials_create_ex(
   cert_config = grpc_ssl_server_certificate_config_create(
       pem_root_certs, pem_key_cert_pairs, num_key_cert_pairs);
   options = grpc_ssl_server_credentials_create_options_using_config(
-      client_certificate_request, cert_config);
+      client_certificate_request, &cert_config);
 
-  c = grpc_ssl_server_credentials_create_with_options(options);
-
-  grpc_ssl_server_credentials_options_release(options);
-  grpc_ssl_server_certificate_config_release(cert_config);
-  return c;
+  return grpc_ssl_server_credentials_create_with_options(&options);
 }
 
 grpc_server_credentials *grpc_ssl_server_credentials_create_with_options(
-    grpc_ssl_server_credentials_options *options) {
+    grpc_ssl_server_credentials_options **o) {
   grpc_ssl_server_credentials *c;
   grpc_server_credentials *retval = NULL;
+  grpc_ssl_server_credentials_options *options = NULL;
 
-  if (options == NULL) {
+  if (o == NULL || *o == NULL) {
     gpr_log(GPR_ERROR,
             "Invalid options trying to create SSL server credentials.");
     goto done;
   }
+
+  options = *o;
 
   if (options->certificate_config == NULL &&
       options->certificate_config_fetcher == NULL) {
