@@ -231,6 +231,7 @@ grpc_ssl_server_credentials_create_options_using_config(
   }
 
   config = *c;
+  *c = NULL;
   options = (grpc_ssl_server_credentials_options *)gpr_zalloc(
       sizeof(grpc_ssl_server_credentials_options));
   options->client_certificate_request = client_certificate_request;
@@ -241,7 +242,7 @@ grpc_ssl_server_credentials_create_options_using_config(
   retval = options;
 
 done:
-  gpr_free(config);
+  grpc_ssl_server_certificate_config_release(config);
   return retval;
 }
 
@@ -318,6 +319,7 @@ grpc_server_credentials *grpc_ssl_server_credentials_create_with_options(
   }
 
   options = *o;
+  *o = NULL;
 
   if (options->certificate_config == NULL &&
       options->certificate_config_fetcher == NULL) {
@@ -350,7 +352,7 @@ grpc_server_credentials *grpc_ssl_server_credentials_create_with_options(
   retval = &c->base;
 
 done:
-  gpr_free(options);
+  grpc_ssl_server_credentials_options_release(options);
   return retval;
 }
 
@@ -363,6 +365,5 @@ void grpc_ssl_server_credentials_options_release(
   }
 
   grpc_ssl_server_certificate_config_release(o->certificate_config);
-
   gpr_free(o);
 }
