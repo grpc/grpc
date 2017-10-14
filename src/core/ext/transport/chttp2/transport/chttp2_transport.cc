@@ -2593,10 +2593,6 @@ static void start_bdp_ping_locked(grpc_exec_ctx *exec_ctx, void *tp,
     gpr_log(GPR_DEBUG, "%s: Start BDP ping err=%s", t->peer_string,
             grpc_error_string(error));
   }
-  if (error != GRPC_ERROR_NONE) {
-    GRPC_CHTTP2_UNREF_TRANSPORT(exec_ctx, t, "bdp_ping");
-    return;
-  }
   /* Reset the keepalive ping timer */
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING) {
     grpc_timer_cancel(exec_ctx, &t->keepalive_ping_timer);
