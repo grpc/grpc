@@ -3,6 +3,23 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
+config_setting(
+    name = "ios_x86_64",
+    values = {"cpu": "ios_x86_64"},
+)
+config_setting(
+    name = "ios_armv7",
+    values = {"cpu": "ios_armv7"},
+)
+config_setting(
+    name = "ios_armv7s",
+    values = {"cpu": "ios_armv7s"},
+)
+config_setting(
+    name = "ios_arm64",
+    values = {"cpu": "ios_arm64"},
+)
+
 cc_library(
     name = "ares",
     srcs = [
@@ -81,6 +98,10 @@ cc_library(
         "cares/nameser.h",
         "cares/setup_once.h",
     ] + select({
+        ":ios_x86_64": ["config_darwin/ares_config.h"],
+        ":ios_armv7": ["config_darwin/ares_config.h"],
+        ":ios_armv7s": ["config_darwin/ares_config.h"],
+        ":ios_arm64": ["config_darwin/ares_config.h"],
         ":darwin": ["config_darwin/ares_config.h"],
         "//conditions:default": ["config_linux/ares_config.h"],
     }),
@@ -88,6 +109,10 @@ cc_library(
         ".",
         "cares"
     ] + select({
+        ":ios_x86_64": ["config_darwin"],
+        ":ios_armv7": ["config_darwin"],
+        ":ios_armv7s": ["config_darwin"],
+        ":ios_arm64": ["config_darwin"],
         ":darwin": ["config_darwin"],
         "//conditions:default": ["config_linux"],
     }),
