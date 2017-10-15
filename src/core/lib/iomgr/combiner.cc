@@ -62,13 +62,16 @@ struct grpc_combiner {
   gpr_refcount refs;
 };
 
-static void combiner_exec(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                          grpc_error *error);
+static void combiner_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                           grpc_error *error);
+static void combiner_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                         grpc_error *error);
 static void combiner_finally_exec(grpc_exec_ctx *exec_ctx,
                                   grpc_closure *closure, grpc_error *error);
+static void finish1(grpc_exec_ctx *exec_ctx, grpc_combiner *combiner);
 
 static const grpc_closure_scheduler_vtable scheduler = {
-    combiner_exec, combiner_exec, "combiner:immediately"};
+    combiner_run, combiner_sched, "combiner:immediately"};
 static const grpc_closure_scheduler_vtable finally_scheduler = {
     combiner_finally_exec, combiner_finally_exec, "combiner:finally"};
 
@@ -154,10 +157,10 @@ static void push_first_on_exec_ctx(grpc_exec_ctx *exec_ctx,
   ((grpc_combiner *)(((char *)((closure)->scheduler)) -          \
                      offsetof(grpc_combiner, scheduler_name)))
 
-static void combiner_exec(grpc_exec_ctx *exec_ctx, grpc_closure *cl,
-                          grpc_error *error) {
+static void combiner_sched(grpc_exec_ctx *exec_ctx, grpc_closure *cl,
+                           grpc_error *error) {
   GRPC_STATS_INC_COMBINER_LOCKS_SCHEDULED_ITEMS(exec_ctx);
-  GPR_TIMER_BEGIN("combiner.execute", 0);
+  GPR_TIMER_BEGIN("combiner.schedule", 0);
   grpc_combiner *lock = COMBINER_FROM_CLOSURE_SCHEDULER(cl, scheduler);
   gpr_atm last = gpr_atm_full_fetch_add(&lock->state, STATE_ELEM_COUNT_LOW_BIT);
   GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG,
@@ -184,10 +187,48 @@ static void combiner_exec(grpc_exec_ctx *exec_ctx, grpc_closure *cl,
   assert(cl->cb);
   cl->error_data.error = error;
   gpr_mpscq_push(&lock->queue, &cl->next_data.atm_next);
-  GPR_TIMER_END("combiner.execute", 0);
+  GPR_TIMER_END("combiner.schedule", 0);
 }
 
-static void move_next(grpc_exec_ctx *exec_ctx) {
+static void combiner_run(grpc_exec_ctx *exec_ctx, grpc_closure *cl,
+                         grpc_error *error) {
+  GRPC_STATS_INC_COMBINER_LOCKS_SCHEDULED_ITEMS(exec_ctx);
+  GPR_TIMER_BEGIN("combiner.run", 0);
+  grpc_combiner *lock = COMBINER_FROM_CLOSURE_SCHEDULER(cl, scheduler);
+  gpr_atm last = gpr_atm_full_fetch_add(&lock->state, STATE_ELEM_COUNT_LOW_BIT);
+  GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG,
+                              "C:%p grpc_combiner_execute c=%p last=%" PRIdPTR,
+                              lock, cl, last));
+  if (last == 1) {
+    GRPC_STATS_INC_COMBINER_LOCKS_INITIATED(exec_ctx);
+    GPR_TIMER_MARK("combiner.initiated", 0);
+    gpr_atm_no_barrier_store(&lock->initiating_exec_ctx_or_null,
+                             (gpr_atm)exec_ctx);
+    // first element on this list: add it to the list of combiner locks
+    // executing within this exec_ctx
+    push_first_on_exec_ctx(exec_ctx, lock);
+    cl->cb(exec_ctx, cl->cb_arg, error);
+    GRPC_ERROR_UNREF(error);
+    finish1(exec_ctx, lock);
+    return;
+  } else {
+    // there may be a race with setting here: if that happens, we may delay
+    // offload for one or two actions, and that's fine
+    gpr_atm initiator =
+        gpr_atm_no_barrier_load(&lock->initiating_exec_ctx_or_null);
+    if (initiator != 0 && initiator != (gpr_atm)exec_ctx) {
+      gpr_atm_no_barrier_store(&lock->initiating_exec_ctx_or_null, 0);
+    }
+    GPR_ASSERT(last & STATE_UNORPHANED);  // ensure lock has not been destroyed
+    assert(cl->cb);
+    cl->error_data.error = error;
+    gpr_mpscq_push(&lock->queue, &cl->next_data.atm_next);
+    GPR_TIMER_END("combiner.run", 0);
+  }
+}
+
+static void move_next(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
+  assert(lock == exec_ctx->active_combiner);
   exec_ctx->active_combiner =
       exec_ctx->active_combiner->next_combiner_on_this_exec_ctx;
   if (exec_ctx->active_combiner == NULL) {
@@ -202,7 +243,7 @@ static void offload(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
 static void queue_offload(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   GRPC_STATS_INC_COMBINER_LOCKS_OFFLOADED(exec_ctx);
-  move_next(exec_ctx);
+  move_next(exec_ctx, lock);
   GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG, "C:%p queue_offload", lock));
   GRPC_CLOSURE_SCHED(exec_ctx, &lock->offload, GRPC_ERROR_NONE);
 }
@@ -283,7 +324,13 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
   }
 
   GPR_TIMER_MARK("unref", 0);
-  move_next(exec_ctx);
+  finish1(exec_ctx, lock);
+  GPR_TIMER_END("combiner.continue_exec_ctx", 0);
+  return true;
+}
+
+void finish1(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
+  move_next(exec_ctx, lock);
   lock->time_to_execute_final_list = false;
   gpr_atm old_state =
       gpr_atm_full_fetch_add(&lock->state, -STATE_ELEM_COUNT_LOW_BIT);
@@ -308,23 +355,18 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
       break;
     case OLD_STATE_WAS(false, 1):
       // had one count, one unorphaned --> unlocked unorphaned
-      GPR_TIMER_END("combiner.continue_exec_ctx", 0);
-      return true;
+      return;
     case OLD_STATE_WAS(true, 1):
       // and one count, one orphaned --> unlocked and orphaned
       really_destroy(exec_ctx, lock);
-      GPR_TIMER_END("combiner.continue_exec_ctx", 0);
-      return true;
+      return;
     case OLD_STATE_WAS(false, 0):
     case OLD_STATE_WAS(true, 0):
       // these values are illegal - representing an already unlocked or
       // deleted lock
-      GPR_TIMER_END("combiner.continue_exec_ctx", 0);
-      GPR_UNREACHABLE_CODE(return true);
+      GPR_UNREACHABLE_CODE(return );
   }
   push_first_on_exec_ctx(exec_ctx, lock);
-  GPR_TIMER_END("combiner.continue_exec_ctx", 0);
-  return true;
 }
 
 static void enqueue_finally(grpc_exec_ctx *exec_ctx, void *closure,
