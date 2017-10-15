@@ -34,7 +34,25 @@
 namespace grpc_core {
 
 class Closure;
-class ClosureScheduler;
+
+// Base class for closure schedulers
+// TODO(ctiller): ... write stuff here ...
+class ClosureScheduler {
+ public:
+  class ScheduledClosure {
+   public:
+    ScheduledClosure(Closure *closure, grpc_error *error);
+
+   private:
+    Closure *closure_;
+    grpc_error *error_;
+  };
+
+  virtual void Schedule(grpc_exec_ctx *exec_ctx,
+                        ScheduledClosure scheduled_closure) = 0;
+  virtual void Run(grpc_exec_ctx *exec_ctx,
+                   ScheduledClosure scheduled_closure) = 0;
+};
 
 /// Closure base type
 /// TODO(ctiller): ... write stuff here ...
@@ -56,52 +74,22 @@ class Closure {
   ~Closure() {}
 
  private:
-  /// Allow access to post-scheduling fields here
-  friend class ClosureScheduler;
+  /// Allow access to Execute
+  friend class ClosureScheduler::ScheduledClosure;
 
   /// Actual invoked callback for the closure
   virtual void Execute(grpc_exec_ctx *exec_ctx, grpc_error *error) = 0;
 
-  union {
-    Closure *next_;
-    std::atomic<Closure *> atm_next_;
-  };
-  grpc_error *error_;
-
   ClosureScheduler *const scheduler_;
 };
 
-// Base class for closure schedulers
-// TODO(ctiller): ... write stuff here ...
-class ClosureScheduler {
- public:
-  virtual void Schedule(grpc_exec_ctx *exec_ctx, Closure *closure,
-                        grpc_error *error) = 0;
-  virtual void Run(grpc_exec_ctx *exec_ctx, Closure *closure,
-                   grpc_error *error) = 0;
-
- protected:
-  // Helper to enqueue some closure onto a linked list of closures, storing the
-  // error
-  void EnqueueClosure(Closure *closure, Closure *next, grpc_error *error) {
-    closure->next_ = next;
-    closure->error_ = error;
-  }
-
-  // Helper to actually execute a closure
-  void ExecuteClosure(grpc_exec_ctx *exec_ctx, Closure *closure) {
-    grpc_error *err = closure->error_;
-    closure->Execute(exec_ctx, err);
-    GRPC_ERROR_UNREF(err);
-  }
-};
-
 inline void Closure::Schedule(grpc_exec_ctx *exec_ctx, grpc_error *error) {
-  scheduler_->Schedule(exec_ctx, this, error);
+  scheduler_->Schedule(exec_ctx,
+                       ClosureScheduler::ScheduledClosure(this, error));
 }
 
 inline void Closure::Run(grpc_exec_ctx *exec_ctx, grpc_error *error) {
-  scheduler_->Run(exec_ctx, this, error);
+  scheduler_->Run(exec_ctx, ClosureScheduler::ScheduledClosure(this, error));
 }
 
 namespace closure_impl {
@@ -111,23 +99,23 @@ class BarrierScheduler final : public ClosureScheduler {
  public:
   BarrierScheduler(ClosureScheduler *next) : barrier_(0), next_(next) {}
 
-  virtual void Schedule(grpc_exec_ctx *exec_ctx, Closure *closure,
-                        grpc_error *error) override {
-    if (MaybePassBarrier(&error)) {
-      next_->Schedule(exec_ctx, closure, error);
+  virtual void Schedule(grpc_exec_ctx *exec_ctx,
+                        ScheduledClosure scheduled_closure) override {
+    if (MaybePassBarrier(&scheduled_closure)) {
+      next_->Schedule(exec_ctx, scheduled_closure);
     }
   }
-  virtual void Run(grpc_exec_ctx *exec_ctx, Closure *closure,
-                   grpc_error *error) override {
-    if (MaybePassBarrier(&error)) {
-      next_->Run(exec_ctx, closure, error);
+  virtual void Run(grpc_exec_ctx *exec_ctx,
+                   ScheduledClosure scheduled_closure) override {
+    if (MaybePassBarrier(&scheduled_closure)) {
+      next_->Run(exec_ctx, scheduled_closure);
     }
   }
 
   void InitiateOne() { gpr_atm_no_barrier_fetch_add(&barrier_, 1); }
 
  private:
-  bool MaybePassBarrier(grpc_error **error);
+  bool MaybePassBarrier(ScheduledClosure *scheduled_closure);
 
   gpr_atm barrier_;
   ClosureScheduler *const next_;
