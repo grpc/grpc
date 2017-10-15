@@ -285,9 +285,9 @@ static void hs_on_complete(grpc_exec_ctx *exec_ctx, void *user_data,
                                   : (grpc_byte_stream *)&calld->read_stream;
     // Re-enter call combiner for recv_message_ready, since the surface
     // code will release the call combiner for each callback it receives.
-    GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
-                             calld->recv_message_ready, GRPC_ERROR_REF(err),
-                             "resuming recv_message_ready from on_complete");
+    GRPC_CALL_COMBINER_RUN(exec_ctx, calld->call_combiner,
+                           calld->recv_message_ready, GRPC_ERROR_REF(err),
+                           "resuming recv_message_ready from on_complete");
     calld->recv_message_ready = NULL;
     calld->payload_bin_delivered = true;
   }

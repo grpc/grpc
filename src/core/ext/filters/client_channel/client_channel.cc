@@ -906,7 +906,7 @@ static void waiting_for_pick_batches_fail(grpc_exec_ctx *exec_ctx,
     GRPC_CLOSURE_INIT(&calld->handle_pending_batch_in_call_combiner[i],
                       fail_pending_batch_in_call_combiner, calld,
                       grpc_schedule_on_exec_ctx);
-    GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
+    GRPC_CALL_COMBINER_SCHED(exec_ctx, calld->call_combiner,
                              &calld->handle_pending_batch_in_call_combiner[i],
                              GRPC_ERROR_REF(error),
                              "waiting_for_pick_batches_fail");
@@ -949,7 +949,7 @@ static void waiting_for_pick_batches_resume(grpc_exec_ctx *exec_ctx,
     GRPC_CLOSURE_INIT(&calld->handle_pending_batch_in_call_combiner[i],
                       run_pending_batch_in_call_combiner, calld,
                       grpc_schedule_on_exec_ctx);
-    GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
+    GRPC_CALL_COMBINER_SCHED(exec_ctx, calld->call_combiner,
                              &calld->handle_pending_batch_in_call_combiner[i],
                              GRPC_ERROR_NONE,
                              "waiting_for_pick_batches_resume");

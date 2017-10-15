@@ -222,13 +222,13 @@ void grpc_transport_stream_op_batch_finish_with_failure(
                              batch->payload->send_message.send_message);
   }
   if (batch->recv_message) {
-    GRPC_CALL_COMBINER_START(exec_ctx, call_combiner,
+    GRPC_CALL_COMBINER_SCHED(exec_ctx, call_combiner,
                              batch->payload->recv_message.recv_message_ready,
                              GRPC_ERROR_REF(error),
                              "failing recv_message_ready");
   }
   if (batch->recv_initial_metadata) {
-    GRPC_CALL_COMBINER_START(
+    GRPC_CALL_COMBINER_SCHED(
         exec_ctx, call_combiner,
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
         GRPC_ERROR_REF(error), "failing recv_initial_metadata_ready");
