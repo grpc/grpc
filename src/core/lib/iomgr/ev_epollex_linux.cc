@@ -560,25 +560,25 @@ static grpc_error *pollset_kick_one(grpc_exec_ctx *exec_ctx,
                                     grpc_pollset_worker *specific_worker) {
   pollable *p = specific_worker->pollable_obj;
   grpc_core::mu_guard lock(&p->mu);
-GRPC_STATS_INC_POLLSET_KICK(exec_ctx);
+  GRPC_STATS_INC_POLLSET_KICK(exec_ctx);
   GPR_ASSERT(specific_worker != NULL);
   if (specific_worker->kicked) {
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
       gpr_log(GPR_DEBUG, "PS:%p kicked_specific_but_already_kicked", p);
     }
-GRPC_STATS_INC_POLLSET_KICKED_AGAIN(exec_ctx);
+    GRPC_STATS_INC_POLLSET_KICKED_AGAIN(exec_ctx);
     return GRPC_ERROR_NONE;
   }
   if (gpr_tls_get(&g_current_thread_worker) == (intptr_t)specific_worker) {
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
       gpr_log(GPR_DEBUG, "PS:%p kicked_specific_but_awake", p);
     }
-GRPC_STATS_INC_POLLSET_KICK_OWN_THREAD(exec_ctx);
+    GRPC_STATS_INC_POLLSET_KICK_OWN_THREAD(exec_ctx);
     specific_worker->kicked = true;
     return GRPC_ERROR_NONE;
-  } 
-if (specific_worker == p->root_worker) {
-GRPC_STATS_INC_POLLSET_KICK_WAKEUP_FD(exec_ctx);
+  }
+  if (specific_worker == p->root_worker) {
+    GRPC_STATS_INC_POLLSET_KICK_WAKEUP_FD(exec_ctx);
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
       gpr_log(GPR_DEBUG, "PS:%p kicked_specific_via_wakeup_fd", p);
     }
@@ -586,8 +586,8 @@ GRPC_STATS_INC_POLLSET_KICK_WAKEUP_FD(exec_ctx);
     grpc_error *error = grpc_wakeup_fd_wakeup(&p->wakeup);
     return error;
   }
-if (specific_worker->initialized_cv) {
-GRPC_STATS_INC_POLLSET_KICK_WAKEUP_CV(exec_ctx);
+  if (specific_worker->initialized_cv) {
+    GRPC_STATS_INC_POLLSET_KICK_WAKEUP_CV(exec_ctx);
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
       gpr_log(GPR_DEBUG, "PS:%p kicked_specific_via_cv", p);
     }
@@ -619,7 +619,9 @@ static grpc_error *pollset_kick(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
         pollset->kicked_without_poller = true;
         return GRPC_ERROR_NONE;
       } else {
-        return pollset_kick_one(exec_ctx, pollset, pollset->root_worker->links[PWLINK_POLLSET].next);
+        return pollset_kick_one(
+            exec_ctx, pollset,
+            pollset->root_worker->links[PWLINK_POLLSET].next);
       }
     } else {
       if (GRPC_TRACER_ON(grpc_polling_trace)) {
