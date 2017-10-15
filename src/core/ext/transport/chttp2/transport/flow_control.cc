@@ -459,12 +459,11 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
     }
   }
   if (tfc->enable_bdp_probe) {
-    action.need_ping =
-        grpc_bdp_estimator_need_ping(exec_ctx, &tfc->bdp_estimator);
+    action.need_ping = tfc->bdp_estimator->NeedPing(exec_ctx);
 
     // get bdp estimate and update initial_window accordingly.
     int64_t estimate = -1;
-    if (grpc_bdp_estimator_get_estimate(&tfc->bdp_estimator, &estimate)) {
+    if (tfc->bdp_estimator->EstimateBdp(&estimate)) {
       double target = 1 + log2((double)estimate);
 
       // target might change based on how much memory pressure we are under
@@ -491,7 +490,7 @@ grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
 
     // get bandwidth estimate and update max_frame accordingly.
     double bw_dbl = -1;
-    if (grpc_bdp_estimator_get_bw(&tfc->bdp_estimator, &bw_dbl)) {
+    if (tfc->bdp_estimator->EstimateBandwidth(&bw_dbl)) {
       // we target the max of BDP or bandwidth in microseconds.
       int32_t frame_size = (int32_t)GPR_CLAMP(
           GPR_MAX((int32_t)GPR_CLAMP(bw_dbl, 0, INT_MAX) / 1000,
