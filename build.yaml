@@ -3395,17 +3395,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: transport_metadata_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/metadata_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: transport_security_test
   build: test
   language: c
