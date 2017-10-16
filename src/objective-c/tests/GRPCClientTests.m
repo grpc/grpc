@@ -289,7 +289,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
     XCTAssertEqualObjects(userAgent, expectedUserAgent);
 
     // Change in format of user-agent field in a direction that does not match the regex will likely
-    // cause problem for certain gRPC users. @muxi for details.
+    // cause problem for certain gRPC users. For details, refer to internal doc https://goo.gl/c2diBc
     NSRegularExpression *regex =
         [NSRegularExpression regularExpressionWithPattern:@" grpc-[a-zA-Z0-9]+(-[a-zA-Z0-9]+)?/[^ ,]+( \\([^)]*\\))?"
                                                   options:0
