@@ -1599,8 +1599,8 @@ int grpc_client_channel_num_external_connectivity_watchers(
   return count;
 }
 
-static void on_external_watch_complete(grpc_exec_ctx *exec_ctx, void *arg,
-                                       grpc_error *error) {
+static void on_external_watch_complete_locked(grpc_exec_ctx *exec_ctx,
+                                              void *arg, grpc_error *error) {
   external_connectivity_watcher *w = (external_connectivity_watcher *)arg;
   grpc_closure *follow_up = w->on_complete;
   grpc_polling_entity_del_from_pollset_set(exec_ctx, &w->pollent,
@@ -1619,8 +1619,8 @@ static void watch_connectivity_state_locked(grpc_exec_ctx *exec_ctx, void *arg,
   if (w->state != NULL) {
     external_connectivity_watcher_list_append(w->chand, w);
     GRPC_CLOSURE_RUN(exec_ctx, w->watcher_timer_init, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_INIT(&w->my_closure, on_external_watch_complete, w,
-                      grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&w->my_closure, on_external_watch_complete_locked, w,
+                      grpc_combiner_scheduler(w->chand->combiner));
     grpc_connectivity_state_notify_on_state_change(
         exec_ctx, &w->chand->state_tracker, w->state, &w->my_closure);
   } else {
