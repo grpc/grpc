@@ -215,6 +215,7 @@ void grpc_ssl_server_certificate_config_release(
   }
   gpr_free(config->pem_key_cert_pairs);
   gpr_free(config->pem_root_certs);
+  gpr_free(config);
 }
 
 grpc_ssl_server_credentials_options *
