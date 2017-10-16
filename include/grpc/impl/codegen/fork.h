@@ -24,10 +24,9 @@
  * active gRPC function calls between calling grpc_prefork() and
  * grpc_postfork_parent()/grpc_postfork_child().
  *
- * Returns 1 on success, 0 otherwise.
  *
  * Typical use:
- * assert(grpc_prefork() == 1);
+ * grpc_prefork();
  * int pid = fork();
  * if (pid) {
  *  grpc_postfork_parent();
@@ -38,7 +37,7 @@
  * }
  */
 
-int grpc_prefork();
+void grpc_prefork();
 
 void grpc_postfork_parent();
 
