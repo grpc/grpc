@@ -1708,6 +1708,7 @@ static void cancel_pings(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   /* callback remaining pings: they're not allowed to call into the transpot,
      and maybe they hold resources that need to be freed */
   grpc_chttp2_ping_queue *pq = &t->ping_queue;
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
   for (size_t j = 0; j < GRPC_CHTTP2_PCL_COUNT; j++) {
     grpc_closure_list_fail_all(&pq->lists[j], GRPC_ERROR_REF(error));
     GRPC_CLOSURE_LIST_SCHED(exec_ctx, &pq->lists[j]);
@@ -1717,6 +1718,12 @@ static void cancel_pings(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
 static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                              grpc_closure *on_initiate, grpc_closure *on_ack) {
+  if (t->closed_with_error != GRPC_ERROR_NONE) {
+    GRPC_CLOSURE_SCHED(exec_ctx, on_initiate,
+                       GRPC_ERROR_REF(t->closed_with_error));
+    GRPC_CLOSURE_SCHED(exec_ctx, on_ack, GRPC_ERROR_REF(t->closed_with_error));
+    return;
+  }
   grpc_chttp2_ping_queue *pq = &t->ping_queue;
   grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_INITIATE], on_initiate,
                            GRPC_ERROR_NONE);
