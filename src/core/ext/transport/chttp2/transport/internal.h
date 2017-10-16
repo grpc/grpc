@@ -797,19 +797,19 @@ extern grpc_core::Tracer grpc_http_trace;
 extern grpc_core::Tracer grpc_flowctl_trace;
 
 #ifndef NDEBUG
-#define GRPC_FLOW_CONTROL_IF_TRACING(stmt)   \
-  if (!(grpc_flowctl_trace.enabled())) \
-    ;                                        \
-  else                                       \
+#define GRPC_FLOW_CONTROL_IF_TRACING(stmt) \
+  if (!(grpc_flowctl_trace.enabled()))     \
+    ;                                      \
+  else                                     \
   stmt
 #else
 #define GRPC_FLOW_CONTROL_IF_TRACING(stmt)
 #endif
 
-#define GRPC_CHTTP2_IF_TRACING(stmt)      \
-  if (!(grpc_http_trace.enabled())) \
-    ;                                     \
-  else                                    \
+#define GRPC_CHTTP2_IF_TRACING(stmt) \
+  if (!(grpc_http_trace.enabled()))  \
+    ;                                \
+  else                               \
   stmt
 
 void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,

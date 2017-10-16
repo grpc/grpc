@@ -23,8 +23,7 @@
 
 #include <grpc/support/useful.h>
 
-grpc_core::Tracer grpc_bdp_estimator_trace
-    (false, "bdp_estimator");
+grpc_core::Tracer grpc_bdp_estimator_trace(false, "bdp_estimator");
 
 namespace grpc_core {
 

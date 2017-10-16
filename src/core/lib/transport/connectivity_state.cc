@@ -24,8 +24,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-grpc_core::Tracer grpc_connectivity_state_trace
-    (false, "connectivity_state");
+grpc_core::Tracer grpc_connectivity_state_trace(false, "connectivity_state");
 
 const char *grpc_connectivity_state_name(grpc_connectivity_state state) {
   switch (state) {

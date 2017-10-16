@@ -38,8 +38,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-grpc_core::Tracer grpc_lb_round_robin_trace
-    (false, "round_robin");
+grpc_core::Tracer grpc_lb_round_robin_trace(false, "round_robin");
 
 /** List of entities waiting for a pick.
  *
@@ -918,7 +917,6 @@ static grpc_lb_policy_factory *round_robin_lb_factory_create() {
 
 extern "C" void grpc_lb_policy_round_robin_init() {
   grpc_register_lb_policy(round_robin_lb_factory_create());
-  
 }
 
 extern "C" void grpc_lb_policy_round_robin_shutdown() {}

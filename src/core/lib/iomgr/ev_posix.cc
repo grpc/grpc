@@ -36,12 +36,11 @@
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/support/env.h"
 
-grpc_core::Tracer grpc_polling_trace
-    (false, "polling"); /* Disabled by default */
+grpc_core::Tracer grpc_polling_trace(false,
+                                     "polling"); /* Disabled by default */
 
 #ifndef NDEBUG
-grpc_core::Tracer grpc_trace_fd_refcount
-    (false, "fd_refcount");
+grpc_core::Tracer grpc_trace_fd_refcount(false, "fd_refcount");
 #endif
 
 /** Default poll() function - a pointer so that it can be overridden by some
@@ -156,8 +155,6 @@ const grpc_event_engine_vtable *grpc_get_event_engine_test_only() {
 const char *grpc_get_poll_strategy_name() { return g_poll_strategy_name; }
 
 void grpc_event_engine_init(void) {
-  
-
   char *s = gpr_getenv("GRPC_POLL_STRATEGY");
   if (s == NULL) {
     s = gpr_strdup("all");

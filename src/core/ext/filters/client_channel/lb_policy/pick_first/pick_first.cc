@@ -28,8 +28,7 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
-grpc_core::Tracer grpc_lb_pick_first_trace
-    (false, "pick_first");
+grpc_core::Tracer grpc_lb_pick_first_trace(false, "pick_first");
 
 typedef struct pending_pick {
   struct pending_pick *next;
@@ -708,7 +707,6 @@ static grpc_lb_policy_factory *pick_first_lb_factory_create() {
 
 extern "C" void grpc_lb_policy_pick_first_init() {
   grpc_register_lb_policy(pick_first_lb_factory_create());
-  
 }
 
 extern "C" void grpc_lb_policy_pick_first_shutdown() {}

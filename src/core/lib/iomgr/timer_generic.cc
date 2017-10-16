@@ -45,8 +45,7 @@
 
 extern "C" {
 grpc_core::Tracer grpc_timer_trace(false, "timer");
-grpc_core::Tracer grpc_timer_check_trace
-    (false, "timer_check");
+grpc_core::Tracer grpc_timer_check_trace(false, "timer_check");
 }
 
 /* A "timer shard". Contains a 'heap' and a 'list' of timers. All timers with
@@ -247,8 +246,6 @@ void grpc_timer_list_init(grpc_exec_ctx *exec_ctx) {
   g_shared_mutables.min_timer = grpc_exec_ctx_now(exec_ctx);
   gpr_tls_init(&g_last_seen_min_timer);
   gpr_tls_set(&g_last_seen_min_timer, 0);
-  
-  
 
   for (i = 0; i < NUM_SHARDS; i++) {
     timer_shard *shard = &g_shards[i];

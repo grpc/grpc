@@ -49,8 +49,7 @@
  */
 
 #ifndef NDEBUG
-grpc_core::Tracer grpc_trace_metadata
-    (false, "metadata");
+grpc_core::Tracer grpc_trace_metadata(false, "metadata");
 #define DEBUG_ARGS , const char *file, int line
 #define FWD_DEBUG_ARGS , file, line
 #define REF_MD_LOCKED(shard, s) ref_md_locked((shard), (s), __FILE__, __LINE__)

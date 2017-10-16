@@ -259,10 +259,8 @@ struct grpc_call {
   gpr_atm recv_state;
 };
 
-grpc_core::Tracer grpc_call_error_trace
-    (false, "call_error");
-grpc_core::Tracer grpc_compression_trace
-    (false, "compression");
+grpc_core::Tracer grpc_call_error_trace(false, "call_error");
+grpc_core::Tracer grpc_compression_trace(false, "compression");
 
 #define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
 #define CALL_FROM_CALL_STACK(call_stack) (((grpc_call *)(call_stack)) - 1)

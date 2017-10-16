@@ -31,8 +31,7 @@
 
 #include "src/core/lib/iomgr/combiner.h"
 
-grpc_core::Tracer grpc_resource_quota_trace
-    (false, "resource_quota");
+grpc_core::Tracer grpc_resource_quota_trace(false, "resource_quota");
 
 #define MEMORY_USAGE_ESTIMATION_MAX 65536
 

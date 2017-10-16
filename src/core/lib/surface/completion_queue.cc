@@ -39,13 +39,10 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/event_string.h"
 
-grpc_core::Tracer grpc_trace_operation_failures
-    (false, "op_failure");
+grpc_core::Tracer grpc_trace_operation_failures(false, "op_failure");
 #ifndef NDEBUG
-grpc_core::Tracer grpc_trace_pending_tags
-    (false, "pending_tags");
-grpc_core::Tracer grpc_trace_cq_refcount
-    (false, "cq_refcount");
+grpc_core::Tracer grpc_trace_pending_tags(false, "pending_tags");
+grpc_core::Tracer grpc_trace_cq_refcount(false, "cq_refcount");
 #endif
 
 typedef struct {
@@ -328,18 +325,15 @@ static const cq_vtable g_cq_vtable[] = {
 #define POLLSET_FROM_CQ(cq) \
   ((grpc_pollset *)(cq->vtable->data_size + (char *)DATA_FROM_CQ(cq)))
 
-grpc_core::Tracer grpc_cq_pluck_trace
-    (true, "queue_pluck");
-grpc_core::Tracer grpc_cq_event_timeout_trace
-    (true, "queue_timeout");
+grpc_core::Tracer grpc_cq_pluck_trace(true, "queue_pluck");
+grpc_core::Tracer grpc_cq_event_timeout_trace(true, "queue_timeout");
 
-#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)    \
-  if (grpc_api_trace.enabled() &&                 \
-      (grpc_cq_pluck_trace.enabled() ||           \
-       (event)->type != GRPC_QUEUE_TIMEOUT)) {          \
-    char *_ev = grpc_event_string(event);               \
-    gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq, _ev); \
-    gpr_free(_ev);                                      \
+#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)                       \
+  if (grpc_api_trace.enabled() && (grpc_cq_pluck_trace.enabled() ||        \
+                                   (event)->type != GRPC_QUEUE_TIMEOUT)) { \
+    char *_ev = grpc_event_string(event);                                  \
+    gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq, _ev);                    \
+    gpr_free(_ev);                                                         \
   }
 
 static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *cq,
@@ -605,15 +599,13 @@ static void cq_end_op_for_next(grpc_exec_ctx *exec_ctx,
   GPR_TIMER_BEGIN("cq_end_op_for_next", 0);
 
   if (grpc_api_trace.enabled() ||
-      (grpc_trace_operation_failures.enabled() &&
-       error != GRPC_ERROR_NONE)) {
+      (grpc_trace_operation_failures.enabled() && error != GRPC_ERROR_NONE)) {
     const char *errmsg = grpc_error_string(error);
     GRPC_API_TRACE(
         "cq_end_op_for_next(exec_ctx=%p, cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
         7, (exec_ctx, cq, tag, errmsg, done, done_arg, storage));
-    if (grpc_trace_operation_failures.enabled() &&
-        error != GRPC_ERROR_NONE) {
+    if (grpc_trace_operation_failures.enabled() && error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag, errmsg);
     }
   }
@@ -689,15 +681,13 @@ static void cq_end_op_for_pluck(grpc_exec_ctx *exec_ctx,
   GPR_TIMER_BEGIN("cq_end_op_for_pluck", 0);
 
   if (grpc_api_trace.enabled() ||
-      (grpc_trace_operation_failures.enabled() &&
-       error != GRPC_ERROR_NONE)) {
+      (grpc_trace_operation_failures.enabled() && error != GRPC_ERROR_NONE)) {
     const char *errmsg = grpc_error_string(error);
     GRPC_API_TRACE(
         "cq_end_op_for_pluck(exec_ctx=%p, cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
         7, (exec_ctx, cq, tag, errmsg, done, done_arg, storage));
-    if (grpc_trace_operation_failures.enabled() &&
-        error != GRPC_ERROR_NONE) {
+    if (grpc_trace_operation_failures.enabled() && error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag, errmsg);
     }
   }

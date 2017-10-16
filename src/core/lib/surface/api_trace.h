@@ -47,7 +47,7 @@ extern grpc_core::Tracer grpc_api_trace;
 /* Due to the limitations of C89's preprocessor, the arity of the var-arg list
    'nargs' must be specified. */
 #define GRPC_API_TRACE(fmt, nargs, args)                      \
-  if (grpc_api_trace.enabled()) {                       \
+  if (grpc_api_trace.enabled()) {                             \
     gpr_log(GPR_INFO, fmt GRPC_API_TRACE_UNWRAP##nargs args); \
   }
 

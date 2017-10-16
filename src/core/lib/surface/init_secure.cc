@@ -38,11 +38,8 @@
 #endif
 
 void grpc_security_pre_init(void) {
-  
-  
 #ifndef NDEBUG
-  
-  
+
 #endif
 }
 
@@ -85,7 +82,4 @@ void grpc_register_security_filters(void) {
                                    maybe_prepend_server_auth_filter, NULL);
 }
 
-void grpc_security_init() {
-  grpc_security_register_handshaker_factories();
-  
-}
+void grpc_security_init() { grpc_security_register_handshaker_factories(); }
