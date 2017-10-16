@@ -149,10 +149,8 @@ class Config(object):
     for k, v in environ.items():
       actual_environ[k] = v
     if not flaky and shortname and shortname in flaky_tests:
-      print('Setting %s to flaky' % shortname)
       flaky = True
     if shortname in shortname_to_cpu:
-      print('Update CPU cost for %s: %f -> %f' % (shortname, cpu_cost, shortname_to_cpu[shortname]))
       cpu_cost = shortname_to_cpu[shortname]
     return jobset.JobSpec(cmdline=self.tool_prefix + cmdline,
                           shortname=shortname,
@@ -339,19 +337,24 @@ class CLanguage(object):
           # and filter test runs. We use them to split each individual test
           # into its own JobSpec, and thus into its own process.
           if 'benchmark' in target and target['benchmark']:
-            list_test_command = '--benchmark_list_tests'
-            filter_test_command = '--benchmark_filter=%s'
+            with open(os.devnull, 'w') as fnull:
+              tests = subprocess.check_output([binary, '--benchmark_list_tests'],
+                                              stderr=fnull)
+            base = None
+            for line in tests.split('\n'):
+              test = line.strip()
+              cmdline = [binary, '--benchmark_filter=%s$' % test] + target['args']
+              out.append(self.config.job_spec(cmdline,
+                                              shortname='%s:%s %s' % (binary, test, shortname_ext),
+                                              cpu_cost=cpu_cost,
+                                              timeout_seconds=_DEFAULT_TIMEOUT_SECONDS * timeout_scaling,
+                                              environ=env))
           elif 'gtest' in target and target['gtest']:
-            list_test_command = '--gtest_list_tests'
-            filter_test_command = '--gtest_filter=%s'
-
-          if list_test_command:
-            # here we parse the output of --gtest_list_tests (or 
-            # --benchmark_list_tests)to build up a complete list of 
-            # the tests contained in a binary for each test, we then 
+            # here we parse the output of --gtest_list_tests to build up a complete
+            # list of the tests contained in a binary for each test, we then
             # add a job to run, filtering for just that test.
             with open(os.devnull, 'w') as fnull:
-              tests = subprocess.check_output([binary, list_test_command],
+              tests = subprocess.check_output([binary, '--gtest_list_tests'],
                                               stderr=fnull)
             base = None
             for line in tests.split('\n'):
@@ -364,7 +367,7 @@ class CLanguage(object):
                 assert base is not None
                 assert line[1] == ' '
                 test = base + line.strip()
-                cmdline = [binary, filter_test_command % test] + target['args']
+                cmdline = [binary, '--gtest_filter=%s' % test] + target['args']
                 out.append(self.config.job_spec(cmdline,
                                                 shortname='%s %s' % (' '.join(cmdline), shortname_ext),
                                                 cpu_cost=cpu_cost,
