@@ -28,10 +28,7 @@
  *       AROUND VERY SPECIFIC USE CASES.
  */
 
-int grpc_prefork() {
-  gpr_log(GPR_ERROR, "Forking not supported on Windows");
-  return 0;
-}
+void grpc_prefork() { gpr_log(GPR_ERROR, "Forking not supported on Windows"); }
 
 void grpc_postfork_parent() {}
 
