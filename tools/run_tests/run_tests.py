@@ -159,8 +159,8 @@ class Config(object):
                           environ=actual_environ,
                           cpu_cost=cpu_cost,
                           timeout_seconds=(self.timeout_multiplier * timeout_seconds if timeout_seconds else None),
-                          flake_retries=5 if flaky or args.allow_flakes else 0,
-                          timeout_retries=3 if flaky or args.allow_flakes else 0)
+                          flake_retries=4 if flaky or args.allow_flakes else 0,
+                          timeout_retries=1 if flaky or args.allow_flakes else 0)
 
 
 def get_c_tests(travis, test_lang) :
@@ -1493,7 +1493,7 @@ def build_step_environ(cfg):
   return environ
 
 build_steps = list(set(
-                   jobset.JobSpec(cmdline, environ=build_step_environ(build_config), flake_retries=5)
+                   jobset.JobSpec(cmdline, environ=build_step_environ(build_config), flake_retries=2)
                    for l in languages
                    for cmdline in l.pre_build_steps()))
 if make_targets:
