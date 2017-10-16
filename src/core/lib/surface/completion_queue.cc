@@ -362,10 +362,23 @@ static bool cq_event_queue_push(grpc_cq_event_queue *q, grpc_cq_completion *c) {
 
 static grpc_cq_completion *cq_event_queue_pop(grpc_cq_event_queue *q) {
   grpc_cq_completion *c = NULL;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
   if (gpr_spinlock_trylock(&q->queue_lock)) {
-    c = (grpc_cq_completion *)gpr_mpscq_pop(&q->queue);
+    GRPC_STATS_INC_CQ_EV_QUEUE_TRYLOCK_SUCCESSES(&exec_ctx);
+
+    bool is_empty = false;
+    c = (grpc_cq_completion *)gpr_mpscq_pop_and_check_end(&q->queue, &is_empty);
     gpr_spinlock_unlock(&q->queue_lock);
+
+    if (c == NULL && !is_empty) {
+      GRPC_STATS_INC_CQ_EV_QUEUE_TRANSIENT_POP_FAILURES(&exec_ctx);
+    }
+  } else {
+    GRPC_STATS_INC_CQ_EV_QUEUE_TRYLOCK_FAILURES(&exec_ctx);
   }
+
+  grpc_exec_ctx_finish(&exec_ctx);
 
   if (c) {
     gpr_atm_no_barrier_fetch_add(&q->num_queue_items, -1);

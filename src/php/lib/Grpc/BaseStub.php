@@ -218,7 +218,7 @@ class BaseStub
      *                              (optional)
      * @param array    $options     An array of options (optional)
      *
-     * @return SimpleSurfaceActiveCall The active call object
+     * @return UnaryCall The active call object
      */
     protected function _simpleRequest($method,
                                    $argument,
@@ -253,7 +253,7 @@ class BaseStub
      *                              (optional)
      * @param array    $options     An array of options (optional)
      *
-     * @return ClientStreamingSurfaceActiveCall The active call object
+     * @return ClientStreamingCall The active call object
      */
     protected function _clientStreamRequest($method,
                                          $deserialize,
@@ -288,7 +288,7 @@ class BaseStub
      *                              (optional)
      * @param array    $options     An array of options (optional)
      *
-     * @return ServerStreamingSurfaceActiveCall The active call object
+     * @return ServerStreamingCall The active call object
      */
     protected function _serverStreamRequest($method,
                                          $argument,
@@ -322,7 +322,7 @@ class BaseStub
      *                              (optional)
      * @param array    $options     An array of options (optional)
      *
-     * @return BidiStreamingSurfaceActiveCall The active call object
+     * @return BidiStreamingCall The active call object
      */
     protected function _bidiRequest($method,
                                  $deserialize,

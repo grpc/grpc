@@ -104,6 +104,10 @@ const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "combiner_locks_scheduled_items",
     "combiner_locks_scheduled_final_items",
     "combiner_locks_offloaded",
+    "call_combiner_locks_initiated",
+    "call_combiner_locks_scheduled_items",
+    "call_combiner_set_notify_on_cancel",
+    "call_combiner_cancelled",
     "executor_scheduled_short_items",
     "executor_scheduled_long_items",
     "executor_scheduled_to_self",
@@ -112,6 +116,9 @@ const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "executor_push_retries",
     "server_requested_calls",
     "server_slowpath_requests_queued",
+    "cq_ev_queue_trylock_failures",
+    "cq_ev_queue_trylock_successes",
+    "cq_ev_queue_transient_pop_failures",
 };
 const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of client side calls created by this process",
@@ -210,6 +217,11 @@ const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of items scheduled against combiner locks",
     "Number of final items scheduled against combiner locks",
     "Number of combiner locks offloaded to different threads",
+    "Number of call combiner lock entries by process (first items queued to a "
+    "call combiner)",
+    "Number of items scheduled against call combiner locks",
+    "Number of times a cancellation callback was set on a call combiner",
+    "Number of times a call combiner was cancelled",
     "Number of finite runtime closures scheduled against the executor (gRPC "
     "thread pool)",
     "Number of potentially infinite runtime closures scheduled against the "
@@ -222,6 +234,12 @@ const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "How many calls were requested (not necessarily received) by the server",
     "How many times was the server slow path taken (indicates too few "
     "outstanding requests)",
+    "Number of lock (trylock) acquisition failures on completion queue event "
+    "queue. High value here indicates high contention on completion queues",
+    "Number of lock (trylock) acquisition successes on completion queue event "
+    "queue.",
+    "Number of times NULL was popped out of completion queue's event queue "
+    "even though the event queue was not empty",
 };
 const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
     "call_initial_size",
