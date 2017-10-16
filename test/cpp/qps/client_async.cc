@@ -194,10 +194,8 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
       void* got_tag;
       bool ok;
       while ((*cq)->Next(&got_tag, &ok)) {
-        gpr_log(GPR_ERROR, "CALLED %p", got_tag);
         delete ClientRpcContext::detag(got_tag);
       }
-      gpr_log(GPR_ERROR, "DONE");
     }
   }
 

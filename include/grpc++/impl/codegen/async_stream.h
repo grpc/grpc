@@ -1047,7 +1047,6 @@ class ServerAsyncReaderWriter final
   template <class T>
   void EnsureInitialMetadataSent(T* ops) {
     if (!ctx_->sent_initial_metadata_) {
-      gpr_log(GPR_ERROR, "SENDING INITILA METADATA");
       ops->SendInitialMetadata(ctx_->initial_metadata_,
                                ctx_->initial_metadata_flags());
       if (ctx_->compression_level_set()) {

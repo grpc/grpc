@@ -852,7 +852,6 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
       ret.success = c->next & 1u;
       ret.tag = c->tag;
       c->done(&exec_ctx, c->done_arg, c);
-      gpr_log(GPR_ERROR, "Stolen Completion");
       break;
     }
 
