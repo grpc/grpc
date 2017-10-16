@@ -727,10 +727,10 @@ static char *finish_kvs(kv_pairs *kvs) {
 }
 
 const char *grpc_error_string(grpc_error *err) {
-  GPR_TIMER_BEGIN("grpc_error_string", 0);
   if (err == GRPC_ERROR_NONE) return no_error_string;
   if (err == GRPC_ERROR_OOM) return oom_error_string;
   if (err == GRPC_ERROR_CANCELLED) return cancelled_error_string;
+  GPR_TIMER_BEGIN("grpc_error_string", 0);
 
   void *p = (void *)gpr_atm_acq_load(&err->atomics.error_string);
   if (p != NULL) {
