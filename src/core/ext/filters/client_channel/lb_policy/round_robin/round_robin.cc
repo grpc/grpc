@@ -893,8 +893,7 @@ static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
                                           grpc_lb_policy_args *args) {
   GPR_ASSERT(args->client_channel_factory != NULL);
   round_robin_lb_policy *p = (round_robin_lb_policy *)gpr_zalloc(sizeof(*p));
-  grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable, args->combiner,
-                      args->chand);
+  grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable, args->combiner);
   grpc_subchannel_index_ref();
   grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,
                                "round_robin");

@@ -41,8 +41,6 @@ extern "C" {
 
 extern const grpc_channel_filter grpc_client_channel_filter;
 
-typedef struct channel_data channel_data;
-
 grpc_connectivity_state grpc_client_channel_check_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, int try_to_connect);
 

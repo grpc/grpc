@@ -729,8 +729,7 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
     gpr_log(GPR_DEBUG, "Pick First %p created.", (void *)p);
   }
   pf_update_locked(exec_ctx, &p->base, args);
-  grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable, args->combiner,
-                      args->chand);
+  grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable, args->combiner);
   grpc_subchannel_index_ref();
   GRPC_CLOSURE_INIT(&p->connectivity_changed, pf_connectivity_changed_locked, p,
                     grpc_combiner_scheduler(args->combiner));
