@@ -28,12 +28,14 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/tls.h>
 
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/support/env.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -459,6 +461,14 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
   if (GetParam().inproc) {
     return;
   }
+  int poller_slowdown_factor = 1;
+  // It needs 2 pollset_works to reconnect the channel with polling engine
+  // "poll"
+  char* s = gpr_getenv("GRPC_POLL_STRATEGY");
+  if (s != NULL && 0 == strcmp(s, "poll")) {
+    poller_slowdown_factor = 2;
+  }
+  gpr_free(s);
   ResetStub();
   SendRpc(1);
   server_->Shutdown();
@@ -472,7 +482,9 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
   // channel.
   gpr_sleep_until(gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME),
-      gpr_time_from_millis(600 * grpc_test_slowdown_factor(), GPR_TIMESPAN)));
+      gpr_time_from_millis(
+          600 * poller_slowdown_factor * grpc_test_slowdown_factor(),
+          GPR_TIMESPAN)));
   SendRpc(1);
 }
 
