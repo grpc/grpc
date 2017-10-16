@@ -62,8 +62,6 @@
 #define HTTP2_DETAIL_MSG(STATUS_CODE) \
   "Received http2 header with status: " #STATUS_CODE
 
-#define UNPARSEABLE_DETAIL_MSG "Failed parsing HTTP/2"
-
 #define HTTP1_DETAIL_MSG "Trying to connect an http1.x server"
 
 /* TODO(zyc) Check the content of incomming data instead of using this length */
@@ -208,8 +206,10 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   cq_verify(cqv);
 
   GPR_ASSERT(status == expected_status);
-  GPR_ASSERT(-1 != grpc_slice_slice(details, grpc_slice_from_static_string(
-                                                 expected_detail)));
+  if (expected_detail != NULL) {
+    GPR_ASSERT(-1 != grpc_slice_slice(details, grpc_slice_from_static_string(
+                                                   expected_detail)));
+  }
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
@@ -330,8 +330,8 @@ int main(int argc, char **argv) {
            HTTP2_DETAIL_MSG(502));
 
   /* unparseable response */
-  run_test(UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1,
-           GRPC_STATUS_UNAVAILABLE, UNPARSEABLE_DETAIL_MSG);
+  run_test(UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1, GRPC_STATUS_UNKNOWN,
+           NULL);
 
   /* http1 response */
   run_test(HTTP1_RESP, sizeof(HTTP1_RESP) - 1, GRPC_STATUS_UNAVAILABLE,
