@@ -284,6 +284,7 @@ class CLanguage(object):
       if self._use_cmake and target.get('boringssl', False):
         # cmake doesn't build boringssl tests
         continue
+      auto_timeout_scaling = target.get('auto_timeout_scaling', True)
       polling_strategies = (_POLLING_STRATEGIES.get(self.platform, ['all'])
                             if target.get('uses_polling', True)
                             else ['none'])
@@ -299,7 +300,8 @@ class CLanguage(object):
           env['GRPC_DNS_RESOLVER'] = resolver
         shortname_ext = '' if polling_strategy=='all' else ' GRPC_POLL_STRATEGY=%s' % polling_strategy
         timeout_scaling = 1
-        if polling_strategy == 'poll-cv':
+
+        if auto_timeout_scaling and polling_strategy == 'poll-cv':
           timeout_scaling *= 5
 
         if polling_strategy in target.get('excluded_poll_engines', []):
@@ -307,12 +309,12 @@ class CLanguage(object):
 
         # Scale overall test timeout if running under various sanitizers.
         config = self.args.config
-        if ('asan' in config
-            or config == 'msan'
-            or config == 'tsan'
-            or config == 'ubsan'
-            or config == 'helgrind'
-            or config == 'memcheck'):
+        if auto_timeout_scaling and ('asan' in config
+                                     or config == 'msan'
+                                     or config == 'tsan'
+                                     or config == 'ubsan'
+                                     or config == 'helgrind'
+                                     or config == 'memcheck'):
           timeout_scaling *= 20
 
         if self.config.build_config in target['exclude_configs']:
