@@ -62,7 +62,8 @@ static grpc_security_status ssl_create_security_connector(
     }
   }
   status = grpc_ssl_channel_security_connector_create(
-      exec_ctx, call_creds, &c->config, target, overridden_target_name, sc);
+      exec_ctx, creds, call_creds, &c->config, target, overridden_target_name,
+      sc);
   if (status != GRPC_SECURITY_OK) {
     return status;
   }
