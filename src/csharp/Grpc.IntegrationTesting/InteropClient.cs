@@ -685,7 +685,7 @@ namespace Grpc.IntegrationTesting
 
         private static Metadata CreateClientCompressionMetadata(bool compressed)
         {
-            var algorithmName = compressed ? "gzip" : "identity";
+            var algorithmName = compressed ? "message/gzip" : "identity";
             return new Metadata
             {
                 { new Metadata.Entry(Metadata.CompressionRequestAlgorithmMetadataKey, algorithmName) }
