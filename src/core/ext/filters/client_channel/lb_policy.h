@@ -32,7 +32,6 @@ extern "C" {
 typedef struct grpc_lb_policy grpc_lb_policy;
 typedef struct grpc_lb_policy_vtable grpc_lb_policy_vtable;
 typedef struct grpc_lb_policy_args grpc_lb_policy_args;
-typedef struct channel_data channel_data;
 
 #ifndef NDEBUG
 extern grpc_tracer_flag grpc_trace_lb_policy_refcount;
@@ -216,8 +215,7 @@ void grpc_lb_policy_update_locked(grpc_exec_ctx *exec_ctx,
                                   grpc_lb_policy *policy,
                                   const grpc_lb_policy_args *lb_policy_args);
 
-/** Set the re-resolution closure to \a request_reresolution. To be invoked by
-    the caller to renew the re-resolution closure after it has been invoked. */
+/** Set the re-resolution closure to \a request_reresolution. */
 void grpc_lb_policy_set_reresolve_closure_locked(
     grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     grpc_closure *request_reresolution);

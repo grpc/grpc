@@ -33,7 +33,6 @@ void grpc_lb_policy_init(grpc_lb_policy *policy,
   gpr_atm_no_barrier_store(&policy->ref_pair, 1 << WEAK_REF_BITS);
   policy->interested_parties = grpc_pollset_set_create();
   policy->combiner = GRPC_COMBINER_REF(combiner, "lb_policy");
-  policy->request_reresolution = NULL;
 }
 
 #ifndef NDEBUG
