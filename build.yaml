@@ -3395,6 +3395,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: transport_metadata_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/metadata_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: transport_security_test
   build: test
   language: c
@@ -4779,16 +4789,6 @@ targets:
   - gpr_test_util
   - gpr
   timeout_seconds: 1200
-- name: transport_metadata_test
-  build: test
-  language: c++
-  src:
-  - test/core/transport/metadata_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: transport_pid_controller_test
   build: test
   language: c++
