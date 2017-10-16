@@ -23,7 +23,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 
 #ifndef NDEBUG
-extern grpc_tracer_flag grpc_trace_auth_context_refcount;
+extern grpc_core::Tracer grpc_trace_auth_context_refcount;
 #endif
 
 #ifdef __cplusplus

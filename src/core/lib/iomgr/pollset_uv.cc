@@ -35,8 +35,8 @@
 #include "src/core/lib/debug/trace.h"
 
 #ifndef NDEBUG
-grpc_tracer_flag grpc_trace_fd_refcount =
-    GRPC_TRACER_INITIALIZER(false, "fd_refcount");
+grpc_core::Tracer grpc_trace_fd_refcount
+    (false, "fd_refcount");
 #endif
 
 struct grpc_pollset {

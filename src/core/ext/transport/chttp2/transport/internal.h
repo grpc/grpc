@@ -793,12 +793,12 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
   (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
-extern grpc_tracer_flag grpc_http_trace;
-extern grpc_tracer_flag grpc_flowctl_trace;
+extern grpc_core::Tracer grpc_http_trace;
+extern grpc_core::Tracer grpc_flowctl_trace;
 
 #ifndef NDEBUG
 #define GRPC_FLOW_CONTROL_IF_TRACING(stmt)   \
-  if (!(GRPC_TRACER_ON(grpc_flowctl_trace))) \
+  if (!(grpc_flowctl_trace.enabled())) \
     ;                                        \
   else                                       \
   stmt
@@ -807,7 +807,7 @@ extern grpc_tracer_flag grpc_flowctl_trace;
 #endif
 
 #define GRPC_CHTTP2_IF_TRACING(stmt)      \
-  if (!(GRPC_TRACER_ON(grpc_http_trace))) \
+  if (!(grpc_http_trace.enabled())) \
     ;                                     \
   else                                    \
   stmt

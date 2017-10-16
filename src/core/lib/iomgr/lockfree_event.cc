@@ -22,7 +22,7 @@
 
 #include "src/core/lib/debug/trace.h"
 
-extern grpc_tracer_flag grpc_polling_trace;
+extern grpc_core::Tracer grpc_polling_trace;
 
 /* 'state' holds the to call when the fd is readable or writable respectively.
    It can contain one of the following values:
@@ -82,7 +82,7 @@ void grpc_lfev_notify_on(grpc_exec_ctx *exec_ctx, gpr_atm *state,
                          grpc_closure *closure, const char *variable) {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(state);
-    if (GRPC_TRACER_ON(grpc_polling_trace)) {
+    if (grpc_polling_trace.enabled()) {
       gpr_log(GPR_ERROR, "lfev_notify_on[%s]: %p curr=%p closure=%p", variable,
               state, (void *)curr, closure);
     }
@@ -148,7 +148,7 @@ bool grpc_lfev_set_shutdown(grpc_exec_ctx *exec_ctx, gpr_atm *state,
 
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(state);
-    if (GRPC_TRACER_ON(grpc_polling_trace)) {
+    if (grpc_polling_trace.enabled()) {
       gpr_log(GPR_ERROR, "lfev_set_shutdown: %p curr=%p err=%s", state,
               (void *)curr, grpc_error_string(shutdown_err));
     }
@@ -198,7 +198,7 @@ void grpc_lfev_set_ready(grpc_exec_ctx *exec_ctx, gpr_atm *state,
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(state);
 
-    if (GRPC_TRACER_ON(grpc_polling_trace)) {
+    if (grpc_polling_trace.enabled()) {
       gpr_log(GPR_ERROR, "lfev_set_ready[%s]: %p curr=%p", variable, state,
               (void *)curr);
     }

@@ -28,7 +28,7 @@ extern "C" {
 
 #ifndef NDEBUG
 
-extern grpc_tracer_flag grpc_trace_alarm_refcount;
+extern grpc_core::Tracer grpc_trace_alarm_refcount;
 
 #define GRPC_ALARM_REF(a, reason) alarm_ref_dbg(a, reason, __FILE__, __LINE__)
 #define GRPC_ALARM_UNREF(a, reason) \

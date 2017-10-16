@@ -160,7 +160,7 @@ grpc_error *grpc_channel_stack_builder_finish(
 void grpc_channel_stack_builder_destroy(grpc_exec_ctx *exec_ctx,
                                         grpc_channel_stack_builder *builder);
 
-extern grpc_tracer_flag grpc_trace_channel_stack_builder;
+extern grpc_core::Tracer grpc_trace_channel_stack_builder;
 
 #ifdef __cplusplus
 }

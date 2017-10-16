@@ -34,7 +34,7 @@
 
 #include <uv.h>
 
-extern grpc_tracer_flag grpc_tcp_trace;
+extern grpc_core::Tracer grpc_tcp_trace;
 
 #define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
 

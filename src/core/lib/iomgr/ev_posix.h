@@ -31,7 +31,7 @@
 extern "C" {
 #endif
 
-extern grpc_tracer_flag grpc_polling_trace; /* Disabled by default */
+extern grpc_core::Tracer grpc_polling_trace; /* Disabled by default */
 
 typedef struct grpc_fd grpc_fd;
 

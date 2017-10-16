@@ -22,8 +22,8 @@
 #define WEAK_REF_BITS 16
 
 #ifndef NDEBUG
-grpc_tracer_flag grpc_trace_lb_policy_refcount =
-    GRPC_TRACER_INITIALIZER(false, "lb_policy_refcount");
+grpc_core::Tracer grpc_trace_lb_policy_refcount
+    (false, "lb_policy_refcount");
 #endif
 
 void grpc_lb_policy_init(grpc_lb_policy *policy,
@@ -52,7 +52,7 @@ static gpr_atm ref_mutate(grpc_lb_policy *c, gpr_atm delta,
   gpr_atm old_val = barrier ? gpr_atm_full_fetch_add(&c->ref_pair, delta)
                             : gpr_atm_no_barrier_fetch_add(&c->ref_pair, delta);
 #ifndef NDEBUG
-  if (GRPC_TRACER_ON(grpc_trace_lb_policy_refcount)) {
+  if (grpc_trace_lb_policy_refcount.enabled()) {
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "LB_POLICY: %p %12s 0x%" PRIxPTR " -> 0x%" PRIxPTR " [%s]", c,
             purpose, old_val, old_val + delta, reason);

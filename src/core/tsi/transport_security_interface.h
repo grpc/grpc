@@ -60,7 +60,7 @@ const char *tsi_result_to_string(tsi_result result);
 
 /* --- tsi tracing --- */
 
-extern grpc_tracer_flag tsi_tracing_enabled;
+extern grpc_core::Tracer tsi_tracing_enabled;
 
 /* -- tsi_zero_copy_grpc_protector object --
 

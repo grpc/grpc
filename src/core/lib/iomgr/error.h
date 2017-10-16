@@ -39,7 +39,7 @@ extern "C" {
 typedef struct grpc_error grpc_error;
 
 #ifndef NDEBUG
-extern grpc_tracer_flag grpc_trace_error_refcount;
+extern grpc_core::Tracer grpc_trace_error_refcount;
 #endif
 
 typedef enum {

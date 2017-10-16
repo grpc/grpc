@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-extern grpc_tracer_flag tsi_tracing_enabled;
+extern grpc_core::Tracer tsi_tracing_enabled;
 
 /* Base for tsi_frame_protector implementations.
    See transport_security_interface.h for documentation. */
