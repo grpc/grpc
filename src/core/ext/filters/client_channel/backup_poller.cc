@@ -113,8 +113,8 @@ static void run_poller(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
     backup_poller_shutdown_unref(exec_ctx, p);
     return;
   }
-  grpc_error* err =
-      grpc_pollset_work(exec_ctx, p->pollset, NULL, GRPC_MILLIS_INF_PAST);
+  grpc_error* err = grpc_pollset_work(exec_ctx, p->pollset, NULL,
+                                      grpc_exec_ctx_now(exec_ctx));
   gpr_mu_unlock(p->pollset_mu);
   GRPC_LOG_IF_ERROR("Run client channel backup poller", err);
   grpc_timer_init(exec_ctx, &p->polling_timer,
