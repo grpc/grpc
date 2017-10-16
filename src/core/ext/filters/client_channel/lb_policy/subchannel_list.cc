@@ -107,7 +107,7 @@ grpc_lb_subchannel_list *grpc_lb_subchannel_list_create(
   // subchannel keys of subchannels from a different batch of addresses.
   static const char *keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS,
                                          GRPC_ARG_LB_ADDRESSES};
-  // Create a subchannels for each address.
+  // Create a subchannel for each address.
   grpc_subchannel_args sc_args;
   size_t subchannel_index = 0;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
@@ -245,7 +245,7 @@ void grpc_lb_subchannel_list_unref_for_connectivity_watch(
   grpc_lb_subchannel_list_unref(exec_ctx, subchannel_list, reason);
 }
 
-static void grpc_lb_subchannel_data_cancel_connectivity_watch(
+static void subchannel_data_cancel_connectivity_watch(
     grpc_exec_ctx *exec_ctx, grpc_lb_subchannel_data *sd, const char *reason) {
   if (GRPC_TRACER_ON(*sd->subchannel_list->tracer)) {
     gpr_log(
@@ -275,7 +275,7 @@ void grpc_lb_subchannel_list_shutdown_and_unref(
     // the callback is responsible for unreffing the subchannel.
     // Otherwise, unref the subchannel directly.
     if (sd->connectivity_notification_pending) {
-      grpc_lb_subchannel_data_cancel_connectivity_watch(exec_ctx, sd, reason);
+      subchannel_data_cancel_connectivity_watch(exec_ctx, sd, reason);
     } else if (sd->subchannel != NULL) {
       grpc_lb_subchannel_data_unref_subchannel(exec_ctx, sd, reason);
     }

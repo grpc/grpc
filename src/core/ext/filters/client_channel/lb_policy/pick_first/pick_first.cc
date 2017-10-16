@@ -409,11 +409,8 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
           exec_ctx, p->subchannel_list, "selected_not_ready+switch_to_update");
       p->subchannel_list = p->latest_pending_subchannel_list;
       p->latest_pending_subchannel_list = NULL;
-      grpc_lb_subchannel_data *new_sd =
-          &p->subchannel_list
-               ->subchannels[p->subchannel_list->checking_subchannel];
       grpc_connectivity_state_set(
-          exec_ctx, &p->state_tracker, new_sd->curr_connectivity_state,
+          exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
           GRPC_ERROR_REF(error), "selected_not_ready+switch_to_update");
     } else {
       if (sd->curr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
