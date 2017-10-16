@@ -38,8 +38,9 @@ static int ncpus = 0;
 static void init_num_cpus() {
   /* This must be signed. sysconf returns -1 when the number cannot be
      determined */
+  int cpu = sched_getcpu();
   ncpus = (int)sysconf(_SC_NPROCESSORS_ONLN);
-  if (ncpus < 1) {
+  if (ncpus < 1 || cpu < 0) {
     gpr_log(GPR_ERROR, "Cannot determine number of CPUs: assuming 1");
     ncpus = 1;
   }
@@ -56,6 +57,9 @@ unsigned gpr_cpu_current_cpu(void) {
   // sched_getcpu() is undefined on musl
   return 0;
 #else
+  if (gpr_cpu_num_cores() == 1) {
+    return 0;
+  }
   int cpu = sched_getcpu();
   if (cpu < 0) {
     gpr_log(GPR_ERROR, "Error determining current CPU: %s\n", strerror(errno));
