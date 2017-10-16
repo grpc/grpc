@@ -516,6 +516,7 @@ grpc_cc_library(
         "src/core/lib/support/env.h",
         "src/core/lib/support/memory.h",
         "src/core/lib/support/vector.h",
+        "src/core/lib/support/manual_constructor.h",
         "src/core/lib/support/mpscq.h",
         "src/core/lib/support/murmur_hash.h",
         "src/core/lib/support/spinlock.h",

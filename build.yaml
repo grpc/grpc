@@ -143,6 +143,7 @@ filegroups:
   - src/core/lib/support/atomic_with_atm.h
   - src/core/lib/support/atomic_with_std.h
   - src/core/lib/support/env.h
+  - src/core/lib/support/manual_constructor.h
   - src/core/lib/support/memory.h
   - src/core/lib/support/mpscq.h
   - src/core/lib/support/murmur_hash.h
@@ -742,7 +743,7 @@ filegroups:
   - test/core/end2end/fixtures/http_proxy_fixture.c
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
-  - test/core/util/debugger_macros.c
+  - test/core/util/debugger_macros.cc
   - test/core/util/grpc_profiler.c
   - test/core/util/memory_counters.c
   - test/core/util/mock_endpoint.c
@@ -1736,6 +1737,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: alloc_test
   build: test
   language: c
@@ -1744,6 +1746,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: alpn_test
   build: test
   language: c
@@ -1776,6 +1779,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: backoff_test
   build: test
   language: c
@@ -1786,6 +1790,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: bad_server_response_test
   build: test
   language: c
@@ -1799,16 +1804,6 @@ targets:
   - gpr
   exclude_iomgrs:
   - uv
-- name: bdp_estimator_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/bdp_estimator_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: bin_decoder_test
   build: test
   language: c
@@ -1817,6 +1812,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  uses_polling: false
 - name: bin_encoder_test
   build: test
   language: c
@@ -1825,6 +1821,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc
+  uses_polling: false
 - name: byte_stream_test
   build: test
   language: c
@@ -1835,6 +1832,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: census_context_test
   build: test
   language: c
@@ -1845,6 +1843,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: census_intrusive_hash_map_test
   build: test
   language: c
@@ -1855,6 +1854,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: census_resource_test
   build: test
   language: c
@@ -1865,6 +1865,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: census_trace_context_test
   build: test
   language: c
@@ -1875,6 +1876,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: channel_create_test
   build: test
   language: c
@@ -1903,6 +1905,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: chttp2_stream_map_test
   build: test
   language: c
@@ -1913,6 +1916,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: chttp2_varint_test
   build: test
   language: c
@@ -1923,6 +1927,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: client_fuzzer
   build: fuzzer
   language: c
@@ -1958,6 +1963,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: concurrent_connectivity_test
   cpu_cost: 2.0
   build: test
@@ -2045,6 +2051,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: ev_epollsig_linux_test
   cpu_cost: 3
   build: test
@@ -2177,6 +2184,7 @@ targets:
   deps:
   - gpr
   - grpc
+  uses_polling: false
 - name: gen_legal_metadata_characters
   build: tool
   language: c
@@ -2189,6 +2197,7 @@ targets:
   src:
   - tools/codegen/core/gen_percent_encoding_tables.c
   deps: []
+  uses_polling: false
 - name: goaway_server_test
   cpu_cost: 0.1
   build: test
@@ -2214,6 +2223,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: gpr_cmdline_test
   build: test
   language: c
@@ -2222,6 +2232,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: gpr_cpu_test
   cpu_cost: 30
   build: test
@@ -2231,6 +2242,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: gpr_env_test
   build: test
   language: c
@@ -2239,6 +2251,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: gpr_histogram_test
   build: test
   language: c
@@ -2247,6 +2260,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: gpr_host_port_test
   build: test
   language: c
@@ -2255,6 +2269,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: gpr_log_test
   build: test
   language: c
@@ -2263,6 +2278,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: gpr_mpscq_test
   cpu_cost: 30
   build: test
@@ -2282,6 +2298,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: gpr_stack_lockfree_test
   cpu_cost: 7
   build: test
@@ -2291,6 +2308,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: gpr_string_test
   build: test
   language: c
@@ -2299,6 +2317,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: gpr_sync_test
   cpu_cost: 10
   build: test
@@ -2308,6 +2327,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: gpr_thd_test
   cpu_cost: 10
   build: test
@@ -2317,6 +2337,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: gpr_time_test
   build: test
   language: c
@@ -2325,6 +2346,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: gpr_tls_test
   build: test
   language: c
@@ -2333,6 +2355,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: gpr_useful_test
   build: test
   language: c
@@ -2341,6 +2364,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: grpc_auth_context_test
   build: test
   language: c
@@ -2351,6 +2375,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: grpc_b64_test
   build: test
   language: c
@@ -2361,6 +2386,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: grpc_byte_buffer_reader_test
   build: test
   language: c
@@ -2371,6 +2397,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: grpc_channel_args_test
   build: test
   language: c
@@ -2381,6 +2408,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: grpc_channel_stack_builder_test
   build: test
   language: c
@@ -2401,6 +2429,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: grpc_completion_queue_test
   build: test
   language: c
@@ -2432,6 +2461,7 @@ targets:
   - grpc
   - gpr
   secure: true
+  uses_polling: false
 - name: grpc_credentials_test
   build: test
   language: c
@@ -2463,6 +2493,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: grpc_json_token_test
   build: test
   language: c
@@ -2477,6 +2508,7 @@ targets:
   - linux
   - posix
   - mac
+  uses_polling: false
 - name: grpc_jwt_verifier_test
   build: test
   language: c
@@ -2487,6 +2519,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: grpc_print_google_default_creds_token
   build: tool
   language: c
@@ -2495,6 +2528,7 @@ targets:
   deps:
   - grpc
   - gpr
+  uses_polling: false
 - name: grpc_security_connector_test
   build: test
   language: c
@@ -2513,6 +2547,7 @@ targets:
   deps:
   - grpc
   - gpr
+  uses_polling: false
 - name: handshake_client
   build: test
   language: c
@@ -2567,6 +2602,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: hpack_table_test
   build: test
   language: c
@@ -2577,6 +2613,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: http_parser_test
   build: test
   language: c
@@ -2587,6 +2624,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: http_request_fuzzer_test
   build: fuzzer
   language: c
@@ -2661,6 +2699,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: invalid_call_argument_test
   cpu_cost: 0.1
   build: test
@@ -2694,6 +2733,7 @@ targets:
   deps:
   - grpc
   - gpr
+  uses_polling: false
 - name: json_rewrite_test
   build: test
   language: c
@@ -2704,6 +2744,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: json_stream_error_test
   build: test
   language: c
@@ -2714,6 +2755,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: json_test
   build: test
   language: c
@@ -2724,6 +2766,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: lame_client_test
   build: test
   language: c
@@ -2746,6 +2789,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: load_file_test
   build: test
   language: c
@@ -2756,6 +2800,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: low_level_ping_pong_benchmark
   build: benchmark
   language: c
@@ -2781,6 +2826,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: memory_profile_server
   build: test
   run: false
@@ -2817,6 +2863,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: minimal_stack_is_minimal_test
   build: test
   language: c
@@ -2827,6 +2874,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: mlog_test
   flaky: true
   build: test
@@ -2838,6 +2886,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: multiple_server_queues_test
   build: test
   language: c
@@ -2856,6 +2905,7 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: nanopb_fuzzer_response_test
   build: fuzzer
   language: c
@@ -2915,6 +2965,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: percent_decode_fuzzer
   build: fuzzer
   language: c
@@ -2951,6 +3002,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: pollset_set_test
   build: test
   language: c
@@ -3080,6 +3132,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: slice_hash_table_test
   build: test
   language: c
@@ -3090,6 +3143,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: slice_string_helpers_test
   build: test
   language: c
@@ -3100,6 +3154,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: slice_test
   build: test
   language: c
@@ -3110,6 +3165,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: sockaddr_resolver_test
   build: test
   language: c
@@ -3184,6 +3240,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: stream_compression_test
   build: test
   language: c
@@ -3194,6 +3251,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: stream_owned_slice_test
   build: test
   language: c
@@ -3204,6 +3262,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: tcp_client_posix_test
   cpu_cost: 0.5
   build: test
@@ -3289,6 +3348,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: timeout_encoding_test
   build: test
   language: c
@@ -3299,6 +3359,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: timer_heap_test
   build: test
   language: c
@@ -3311,6 +3372,7 @@ targets:
   - gpr
   exclude_iomgrs:
   - uv
+  uses_polling: false
 - name: timer_list_test
   build: test
   language: c
@@ -3323,6 +3385,7 @@ targets:
   - gpr
   exclude_iomgrs:
   - uv
+  uses_polling: false
 - name: transport_connectivity_state_test
   build: test
   language: c
@@ -3343,6 +3406,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: transport_pid_controller_test
   build: test
   language: c
@@ -3353,6 +3417,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: transport_security_test
   build: test
   language: c
@@ -3461,6 +3526,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
+- name: bdp_estimator_test
+  build: test
+  language: c++
+  src:
+  - test/core/transport/bdp_estimator_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc++
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses_polling: false
 - name: bm_arena
   build: test
   language: c++
@@ -3482,6 +3561,7 @@ targets:
   - mac
   - linux
   - posix
+  uses_polling: false
 - name: bm_call_create
   build: test
   language: c++
@@ -3503,6 +3583,7 @@ targets:
   - mac
   - linux
   - posix
+  uses_polling: false
 - name: bm_chttp2_hpack
   build: test
   language: c++
@@ -3524,6 +3605,7 @@ targets:
   - mac
   - linux
   - posix
+  uses_polling: false
 - name: bm_chttp2_transport
   build: test
   language: c++
@@ -3629,6 +3711,7 @@ targets:
   - mac
   - linux
   - posix
+  uses_polling: false
 - name: bm_fullstack_streaming_ping_pong
   build: test
   language: c++
@@ -3757,6 +3840,7 @@ targets:
   - mac
   - linux
   - posix
+  uses_polling: false
 - name: bm_pollset
   build: test
   language: c++
@@ -3788,6 +3872,7 @@ targets:
   - grpc++
   - grpc
   - gpr
+  uses_polling: false
 - name: channel_filter_test
   gtest: true
   build: test
@@ -3798,6 +3883,7 @@ targets:
   - grpc++
   - grpc
   - gpr
+  uses_polling: false
 - name: cli_call_test
   gtest: true
   build: test
@@ -3877,6 +3963,7 @@ targets:
   - gpr
   filegroups:
   - grpc++_codegen_base
+  uses_polling: false
 - name: codegen_test_minimal
   gtest: true
   build: test
@@ -3895,6 +3982,7 @@ targets:
   filegroups:
   - grpc++_codegen_base
   - grpc++_codegen_base_src
+  uses_polling: false
 - name: credentials_test
   gtest: true
   build: test
@@ -3917,6 +4005,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: cxx_slice_test
   gtest: true
   build: test
@@ -3929,6 +4018,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: cxx_string_ref_test
   gtest: true
   build: test
@@ -3938,6 +4028,7 @@ targets:
   deps:
   - grpc++
   - grpc
+  uses_polling: false
 - name: cxx_time_test
   gtest: true
   build: test
@@ -3950,6 +4041,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: end2end_test
   gtest: true
   cpu_cost: 0.5
@@ -4013,6 +4105,7 @@ targets:
   - gpr
   args:
   - --generated_file_path=gens/src/proto/grpc/testing/
+  uses_polling: false
 - name: grpc_cli
   build: test
   run: false
@@ -4305,6 +4398,7 @@ targets:
   - gpr
   uses:
   - grpc++_test
+  uses_polling: false
 - name: metrics_client
   build: test
   run: false
@@ -4369,6 +4463,7 @@ targets:
   filegroups:
   - grpc++_codegen_base
   - grpc++_codegen_proto
+  uses_polling: false
 - name: qps_interarrival_test
   build: test
   run: false
@@ -4388,6 +4483,7 @@ targets:
   - mac
   - linux
   - posix
+  uses_polling: false
 - name: qps_json_driver
   build: test
   run: false
@@ -4624,6 +4720,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: status_test
   build: test
   language: c++
@@ -4635,6 +4732,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
 - name: streaming_throughput_test
   gtest: true
   build: test
@@ -4885,10 +4983,11 @@ defaults:
   ares:
     CFLAGS: -Wno-sign-conversion $(if $(subst Darwin,,$(SYSTEM)),,-Wno-shorten-64-to-32)
       $(if $(subst MINGW32,,$(SYSTEM)),-Wno-invalid-source-encoding,)
-    CPPFLAGS: -Ithird_party/cares -Ithird_party/cares/cares $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux)
-      $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) -fvisibility=hidden
-      -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst
-      MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
+    CPPFLAGS: -Ithird_party/cares -Ithird_party/cares/cares -fvisibility=hidden -D_GNU_SOURCE
+      $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) $(if $(subst
+      FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux)
+      $(if $(subst OpenBSD,,$(SYSTEM)),,-Ithird_party/cares/config_openbsd) -DWIN32_LEAN_AND_MEAN
+      -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
   benchmark:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:

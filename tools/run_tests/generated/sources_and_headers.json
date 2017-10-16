@@ -136,23 +136,6 @@
   }, 
   {
     "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "bdp_estimator_test", 
-    "src": [
-      "test/core/transport/bdp_estimator_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2609,6 +2592,25 @@
     "name": "auth_property_iterator_test", 
     "src": [
       "test/cpp/common/auth_property_iterator_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bdp_estimator_test", 
+    "src": [
+      "test/core/transport/bdp_estimator_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7502,7 +7504,9 @@
       "third_party/cares/cares/config-win32.h", 
       "third_party/cares/cares/setup_once.h", 
       "third_party/cares/config_darwin/ares_config.h", 
-      "third_party/cares/config_linux/ares_config.h"
+      "third_party/cares/config_freebsd/ares_config.h", 
+      "third_party/cares/config_linux/ares_config.h", 
+      "third_party/cares/config_openbsd/ares_config.h"
     ], 
     "is_filegroup": false, 
     "language": "c", 
@@ -7879,6 +7883,7 @@
       "src/core/lib/support/atomic_with_atm.h", 
       "src/core/lib/support/atomic_with_std.h", 
       "src/core/lib/support/env.h", 
+      "src/core/lib/support/manual_constructor.h", 
       "src/core/lib/support/memory.h", 
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.h", 
@@ -7926,6 +7931,7 @@
       "src/core/lib/support/atomic_with_atm.h", 
       "src/core/lib/support/atomic_with_std.h", 
       "src/core/lib/support/env.h", 
+      "src/core/lib/support/manual_constructor.h", 
       "src/core/lib/support/memory.h", 
       "src/core/lib/support/mpscq.h", 
       "src/core/lib/support/murmur_hash.h", 
@@ -8953,7 +8959,7 @@
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.c", 
       "test/core/iomgr/endpoint_tests.h", 
-      "test/core/util/debugger_macros.c", 
+      "test/core/util/debugger_macros.cc", 
       "test/core/util/debugger_macros.h", 
       "test/core/util/grpc_profiler.c", 
       "test/core/util/grpc_profiler.h", 

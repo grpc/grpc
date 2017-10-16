@@ -677,10 +677,10 @@ def cloud_to_prod_jobspec(language, test_case, server_host_name,
           cmdline=cmdline,
           cwd=cwd,
           environ=environ,
-          shortname='%s:%s:%s:%s' % (suite_name, server_host_name, language,
+          shortname='%s:%s:%s:%s' % (suite_name, language, server_host_name,
                                      test_case),
           timeout_seconds=_TEST_TIMEOUT,
-          flake_retries=5 if args.allow_flakes else 0,
+          flake_retries=4 if args.allow_flakes else 0,
           timeout_retries=2 if args.allow_flakes else 0,
           kill_handler=_job_kill_handler)
   if docker_image:
@@ -746,7 +746,7 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
           shortname='cloud_to_cloud:%s:%s_server:%s' % (language, server_name,
                                                         test_case),
           timeout_seconds=_TEST_TIMEOUT,
-          flake_retries=5 if args.allow_flakes else 0,
+          flake_retries=4 if args.allow_flakes else 0,
           timeout_retries=2 if args.allow_flakes else 0,
           kill_handler=_job_kill_handler)
   if docker_image:

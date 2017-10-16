@@ -381,7 +381,6 @@ add_dependencies(buildtests_c alpn_test)
 add_dependencies(buildtests_c arena_test)
 add_dependencies(buildtests_c backoff_test)
 add_dependencies(buildtests_c bad_server_response_test)
-add_dependencies(buildtests_c bdp_estimator_test)
 add_dependencies(buildtests_c bin_decoder_test)
 add_dependencies(buildtests_c bin_encoder_test)
 add_dependencies(buildtests_c byte_stream_test)
@@ -636,6 +635,7 @@ add_custom_target(buildtests_cxx)
 add_dependencies(buildtests_cxx alarm_cpp_test)
 add_dependencies(buildtests_cxx async_end2end_test)
 add_dependencies(buildtests_cxx auth_property_iterator_test)
+add_dependencies(buildtests_cxx bdp_estimator_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_arena)
 endif()
@@ -1621,7 +1621,7 @@ add_library(grpc_test_util
   test/core/end2end/fixtures/http_proxy_fixture.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
-  test/core/util/debugger_macros.c
+  test/core/util/debugger_macros.cc
   test/core/util/grpc_profiler.c
   test/core/util/memory_counters.c
   test/core/util/mock_endpoint.c
@@ -1886,7 +1886,7 @@ add_library(grpc_test_util_unsecure
   test/core/end2end/fixtures/http_proxy_fixture.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
-  test/core/util/debugger_macros.c
+  test/core/util/debugger_macros.cc
   test/core/util/grpc_profiler.c
   test/core/util/memory_counters.c
   test/core/util/mock_endpoint.c
@@ -5286,35 +5286,6 @@ target_include_directories(bad_server_response_test
 target_link_libraries(bad_server_response_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   test_tcp_server
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(bdp_estimator_test
-  test/core/transport/bdp_estimator_test.c
-)
-
-
-target_include_directories(bdp_estimator_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${BENCHMARK_ROOT_DIR}/include
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-  PRIVATE ${CARES_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
-)
-
-target_link_libraries(bdp_estimator_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
@@ -9305,6 +9276,46 @@ target_link_libraries(auth_property_iterator_test
   grpc++_test_util
   grpc_test_util
   grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(bdp_estimator_test
+  test/core/transport/bdp_estimator_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(bdp_estimator_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(bdp_estimator_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc++
+  grpc_test_util
   grpc
   gpr_test_util
   gpr
