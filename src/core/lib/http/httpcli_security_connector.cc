@@ -91,8 +91,17 @@ static void httpcli_ssl_check_peer(grpc_exec_ctx *exec_ctx,
   tsi_peer_destruct(&peer);
 }
 
+static int httpcli_ssl_cmp(grpc_security_connector *sc1,
+                           grpc_security_connector *sc2) {
+  grpc_httpcli_ssl_channel_security_connector *c1 =
+      (grpc_httpcli_ssl_channel_security_connector *)sc1;
+  grpc_httpcli_ssl_channel_security_connector *c2 =
+      (grpc_httpcli_ssl_channel_security_connector *)sc2;
+  return strcmp(c1->secure_peer_name, c2->secure_peer_name);
+}
+
 static grpc_security_connector_vtable httpcli_ssl_vtable = {
-    httpcli_ssl_destroy, httpcli_ssl_check_peer};
+    httpcli_ssl_destroy, httpcli_ssl_check_peer, httpcli_ssl_cmp};
 
 static grpc_security_status httpcli_ssl_channel_security_connector_create(
     grpc_exec_ctx *exec_ctx, const char *pem_root_certs,
@@ -123,6 +132,10 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
     *sc = NULL;
     return GRPC_SECURITY_ERROR;
   }
+  // We don't actually need a channel credentials object in this case,
+  // but we set it to a non-NULL address so that we don't trigger
+  // assertions in grpc_channel_security_connector_cmp().
+  c->base.channel_creds = (grpc_channel_credentials *)1;
   c->base.add_handshakers = httpcli_ssl_add_handshakers;
   *sc = &c->base;
   return GRPC_SECURITY_OK;
