@@ -255,6 +255,10 @@
   doc: Number of times a cancellation callback was set on a call combiner
 - counter: call_combiner_cancelled
   doc: Number of times a call combiner was cancelled
+- histogram: call_combiner_thread_switch
+  max: 16
+  buckets: 8
+  doc: Number of thread switches a call combiner has seen
 # executor
 - counter: executor_scheduled_short_items
   doc: Number of finite runtime closures scheduled against the executor

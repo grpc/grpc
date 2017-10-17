@@ -59,9 +59,12 @@ void grpc_call_combiner_destroy(grpc_exec_ctx* exec_ctx,
               tid);
     }
   }
+  gpr_atm num_thread_switch =
+      gpr_atm_acq_load(&call_combiner->num_thread_switch);
+  GRPC_STATS_INC_CALL_COMBINER_THREAD_SWITCH(exec_ctx, num_thread_switch);
   if (GRPC_TRACER_ON(grpc_call_combiner_thread_switch_trace)) {
     gpr_log(GPR_ERROR, "Call combiner [%p] num_thread_switch: %" PRIuPTR,
-            call_combiner, call_combiner->num_thread_switch);
+            call_combiner, num_thread_switch);
   }
 }
 
