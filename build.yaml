@@ -3543,6 +3543,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3565,6 +3566,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3587,6 +3589,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3609,6 +3612,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3630,6 +3634,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3651,6 +3656,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3672,6 +3678,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=4
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3693,6 +3700,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3717,6 +3725,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   excluded_poll_engines:
   - poll
@@ -3744,6 +3753,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   excluded_poll_engines:
   - poll
@@ -3770,6 +3780,7 @@ targets:
   - grpc++_test_config
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   excluded_poll_engines:
   - poll
@@ -3797,6 +3808,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   excluded_poll_engines:
   - poll
@@ -3822,6 +3834,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3844,6 +3857,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
