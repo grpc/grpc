@@ -725,8 +725,9 @@ static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   pollset_maybe_finish_shutdown(exec_ctx, pollset);
 }
 
-static grpc_error *pollable_process_events(grpc_exec_ctx *exec_ctx, grpc_pollset*pollset,
-                                          pollable *pollable_obj, bool drain) {
+static grpc_error *pollable_process_events(grpc_exec_ctx *exec_ctx,
+                                           grpc_pollset *pollset,
+                                           pollable *pollable_obj, bool drain) {
   static const char *err_desc = "pollset_process_events";
   grpc_error *error = GRPC_ERROR_NONE;
   for (int i = 0; (drain || i < MAX_EPOLL_EVENTS_HANDLED_EACH_POLL_CALL) &&
@@ -905,22 +906,22 @@ static void end_worker(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   gpr_mu_lock(&pollset->mu);
   gpr_mu_lock(&worker->pollable_obj->mu);
   switch (worker_remove(&worker->pollable_obj->root_worker, worker,
-                    PWLINK_POLLABLE)) {
-  case WRR_NEW_ROOT: {
+                        PWLINK_POLLABLE)) {
+    case WRR_NEW_ROOT: {
       // wakeup new poller
       grpc_pollset_worker *new_root = worker->pollable_obj->root_worker;
       GPR_ASSERT(new_root->initialized_cv);
       gpr_cv_signal(&new_root->cv);
       break;
     }
-  case WRR_EMPTIED:
-    if (pollset->active_pollable != worker->pollable_obj) {
-      // pollable no longer being polled: flush events
-      pollable_process_events(exec_ctx, pollset, worker->pollable_obj, true);
-    }
-    break;
-  case WRR_REMOVED:
-    break;
+    case WRR_EMPTIED:
+      if (pollset->active_pollable != worker->pollable_obj) {
+        // pollable no longer being polled: flush events
+        pollable_process_events(exec_ctx, pollset, worker->pollable_obj, true);
+      }
+      break;
+    case WRR_REMOVED:
+      break;
   }
   gpr_mu_unlock(&worker->pollable_obj->mu);
   POLLABLE_UNREF(worker->pollable_obj, "pollset_worker");
@@ -965,14 +966,15 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     if (begin_worker(exec_ctx, pollset, WORKER_PTR, worker_hdl, deadline)) {
       gpr_tls_set(&g_current_thread_pollset, (intptr_t)pollset);
       gpr_tls_set(&g_current_thread_worker, (intptr_t)WORKER_PTR);
-      if (WORKER_PTR->pollable_obj->event_cursor == WORKER_PTR->pollable_obj->event_count) {
+      if (WORKER_PTR->pollable_obj->event_cursor ==
+          WORKER_PTR->pollable_obj->event_count) {
         append_error(&error, pollset_epoll(exec_ctx, pollset,
                                            WORKER_PTR->pollable_obj, deadline),
                      err_desc);
       }
       append_error(&error,
-                   pollable_process_events(
-                       exec_ctx, pollset, WORKER_PTR->pollable_obj, false),
+                   pollable_process_events(exec_ctx, pollset,
+                                           WORKER_PTR->pollable_obj, false),
                    err_desc);
       grpc_exec_ctx_flush(exec_ctx);
       gpr_tls_set(&g_current_thread_pollset, 0);
