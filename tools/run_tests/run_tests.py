@@ -345,7 +345,7 @@ class CLanguage(object):
               if not test: continue
               cmdline = [binary, '--benchmark_filter=%s$' % test] + target['args']
               out.append(self.config.job_spec(cmdline,
-                                              shortname='%s:%s %s' % (binary, test, shortname_ext),
+                                              shortname='%s %s' % (' '.join(cmdline), shortname_ext),
                                               cpu_cost=cpu_cost,
                                               timeout_seconds=_DEFAULT_TIMEOUT_SECONDS * timeout_scaling,
                                               environ=env))
