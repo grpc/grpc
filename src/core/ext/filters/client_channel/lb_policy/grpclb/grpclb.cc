@@ -1025,10 +1025,11 @@ static void glb_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   if (glb_policy->rr_policy != NULL) {
     GRPC_LB_POLICY_UNREF(exec_ctx, glb_policy->rr_policy, "glb_shutdown");
   } else {
-    GPR_ASSERT(pol->request_reresolution != NULL);
-    GRPC_CLOSURE_SCHED(exec_ctx, pol->request_reresolution,
-                       GRPC_ERROR_CANCELLED);
-    pol->request_reresolution = NULL;
+    if (pol->request_reresolution != NULL) {
+      GRPC_CLOSURE_SCHED(exec_ctx, pol->request_reresolution,
+                         GRPC_ERROR_CANCELLED);
+      pol->request_reresolution = NULL;
+    }
   }
   // We destroy the LB channel here because
   // glb_lb_channel_on_connectivity_changed_cb needs a valid glb_policy
@@ -1883,6 +1884,7 @@ static void glb_set_reresolve_closure_locked(
     grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     grpc_closure *request_reresolution) {
   glb_lb_policy *glb_policy = (glb_lb_policy *)policy;
+  GPR_ASSERT(!glb_policy->shutting_down);
   GPR_ASSERT(glb_policy->base.request_reresolution == NULL);
   if (glb_policy->rr_policy != NULL) {
     grpc_lb_policy_set_reresolve_closure_locked(exec_ctx, glb_policy->rr_policy,

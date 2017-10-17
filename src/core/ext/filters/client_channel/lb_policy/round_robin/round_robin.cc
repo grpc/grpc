@@ -498,8 +498,8 @@ static void update_state_counters_locked(subchannel_data *sd) {
 
 /** Sets the policy's connectivity status based on that of the passed-in \a sd
  * (the subchannel_data associated with the updated subchannel) and the
- * subchannel list \a sd belongs to (sd->subchannel_list). If the policy
- * transitions to TRANSIENT_FAILURE, \a error will only be used, and a
+ * subchannel list \a sd belongs to (sd->subchannel_list). \a error will be used
+ * only if the policy transitions to state TRANSIENT_FAILURE, in which case
  * re-resolution will be requested. */
 static void update_lb_connectivity_status_locked(grpc_exec_ctx *exec_ctx,
                                                  subchannel_data *sd,
@@ -540,18 +540,7 @@ static void update_lb_connectivity_status_locked(grpc_exec_ctx *exec_ctx,
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                 GRPC_CHANNEL_TRANSIENT_FAILURE,
                                 GRPC_ERROR_REF(error), "rr_transient_failure");
-    if (p->base.request_reresolution != NULL) {
-      GRPC_CLOSURE_SCHED(exec_ctx, p->base.request_reresolution,
-                         GRPC_ERROR_NONE);
-      p->base.request_reresolution = NULL;
-      if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
-        gpr_log(GPR_DEBUG, "[RR %p] reresolution requested", p);
-      }
-    } else {
-      if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
-        gpr_log(GPR_DEBUG, "[RR %p] reresolution already in progress", p);
-      }
-    }
+    try_reresolve(exec_ctx, &p->base, grpc_lb_round_robin_trace);
   } else if (subchannel_list->num_idle == subchannel_list->num_subchannels) {
     /* 4) IDLE */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker, GRPC_CHANNEL_IDLE,
@@ -867,6 +856,8 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
 static void rr_set_reresolve_closure_locked(
     grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     grpc_closure *request_reresolution) {
+  round_robin_lb_policy *p = (round_robin_lb_policy *)policy;
+  GPR_ASSERT(!p->shutdown);
   GPR_ASSERT(policy->request_reresolution == NULL);
   policy->request_reresolution = request_reresolution;
 }

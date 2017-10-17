@@ -550,19 +550,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
             : p->checking_connectivity;
     if (publish_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       /* if the selected channel goes bad, request a re-resolution */
-      if (p->base.request_reresolution != NULL) {
-        GRPC_CLOSURE_SCHED(exec_ctx, p->base.request_reresolution,
-                           GRPC_ERROR_NONE);
-        p->base.request_reresolution = NULL;
-        if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
-          gpr_log(GPR_DEBUG, "Pick First %p reresolution requested", p);
-        }
-      } else {
-        if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
-          gpr_log(GPR_DEBUG, "Pick First %p reresolution already in progress",
-                  p);
-        }
-      }
+      try_reresolve(exec_ctx, &p->base, grpc_lb_pick_first_trace);
     }
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker, publish_state,
                                 GRPC_ERROR_REF(error), "selected_changed");
@@ -624,19 +612,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
           grpc_connectivity_state_set(
               exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
               GRPC_ERROR_REF(error), "connecting_transient_failure");
-          if (p->base.request_reresolution != NULL) {
-            GRPC_CLOSURE_SCHED(exec_ctx, p->base.request_reresolution,
-                               GRPC_ERROR_NONE);
-            p->base.request_reresolution = NULL;
-            if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
-              gpr_log(GPR_DEBUG, "Pick First %p reresolution requested", p);
-            }
-          } else {
-            if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
-              gpr_log(GPR_DEBUG,
-                      "Pick First %p reresolution already in progress", p);
-            }
-          }
+          try_reresolve(exec_ctx, &p->base, grpc_lb_pick_first_trace);
         }
         GRPC_ERROR_UNREF(error);
         p->checking_connectivity = grpc_subchannel_check_connectivity(
@@ -670,19 +646,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                     GRPC_CHANNEL_TRANSIENT_FAILURE,
                                     GRPC_ERROR_REF(error), "subchannel_failed");
         if (p->num_subchannels == 0) {
-          if (p->base.request_reresolution != NULL) {
-            GRPC_CLOSURE_SCHED(exec_ctx, p->base.request_reresolution,
-                               GRPC_ERROR_NONE);
-            p->base.request_reresolution = NULL;
-            if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
-              gpr_log(GPR_DEBUG, "Pick First %p reresolution requested", p);
-            }
-          } else {
-            if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
-              gpr_log(GPR_DEBUG,
-                      "Pick First %p reresolution already in progress", p);
-            }
-          }
+          try_reresolve(exec_ctx, &p->base, grpc_lb_pick_first_trace);
         } else {
           p->checking_subchannel %= p->num_subchannels;
           GRPC_ERROR_UNREF(error);
@@ -699,6 +663,8 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
 static void pf_set_reresolve_closure_locked(
     grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
     grpc_closure *request_reresolution) {
+  pick_first_lb_policy *p = (pick_first_lb_policy *)policy;
+  GPR_ASSERT(!p->shutdown);
   GPR_ASSERT(policy->request_reresolution == NULL);
   policy->request_reresolution = request_reresolution;
 }

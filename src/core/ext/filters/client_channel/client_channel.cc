@@ -375,11 +375,10 @@ static void parse_retry_throttle_params(const grpc_json *field, void *arg) {
 static void request_reresolution_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                         grpc_error *error) {
   reresolution_request_args *args = (reresolution_request_args *)arg;
-  grpc_lb_policy *lb_policy = args->lb_policy;
   channel_data *chand = args->chand;
   // If this invocation is for a stale LB policy, treat it as an LB shutdown
   // signal.
-  if (lb_policy != chand->lb_policy || error != GRPC_ERROR_NONE ||
+  if (args->lb_policy != chand->lb_policy || error != GRPC_ERROR_NONE ||
       chand->resolver == NULL) {
     GRPC_CHANNEL_STACK_UNREF(exec_ctx, chand->owning_stack, "re-resolution");
     gpr_free(args);

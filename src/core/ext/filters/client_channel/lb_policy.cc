@@ -169,3 +169,19 @@ void grpc_lb_policy_set_reresolve_closure_locked(
   policy->vtable->set_reresolve_closure_locked(exec_ctx, policy,
                                                request_reresolution);
 }
+
+void try_reresolve(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+                   grpc_tracer_flag grpc_lb_trace) {
+  if (policy->request_reresolution != NULL) {
+    GRPC_CLOSURE_SCHED(exec_ctx, policy->request_reresolution, GRPC_ERROR_NONE);
+    policy->request_reresolution = NULL;
+    if (GRPC_TRACER_ON(grpc_lb_trace)) {
+      gpr_log(GPR_DEBUG, "LB policy %p: reresolution requested.", policy);
+    }
+  } else {
+    if (GRPC_TRACER_ON(grpc_lb_trace)) {
+      gpr_log(GPR_DEBUG, "LB policy %p: reresolution already in progress.",
+              policy);
+    }
+  }
+}
