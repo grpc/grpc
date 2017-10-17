@@ -340,9 +340,9 @@ class CLanguage(object):
             with open(os.devnull, 'w') as fnull:
               tests = subprocess.check_output([binary, '--benchmark_list_tests'],
                                               stderr=fnull)
-            base = None
             for line in tests.split('\n'):
               test = line.strip()
+              if not test: continue
               cmdline = [binary, '--benchmark_filter=%s$' % test] + target['args']
               out.append(self.config.job_spec(cmdline,
                                               shortname='%s:%s %s' % (binary, test, shortname_ext),
