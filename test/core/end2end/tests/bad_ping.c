@@ -203,7 +203,6 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   // The connection should be closed immediately after the misbehaved pings,
   // the in-progress RPC should fail.
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "Endpoint read failed"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   validate_host_override_string("foo.test.google.fr:1234", call_details.host,
                                 config);

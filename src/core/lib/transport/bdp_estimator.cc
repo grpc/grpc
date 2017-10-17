@@ -33,13 +33,12 @@ BdpEstimator::BdpEstimator(const char *name)
       accumulator_(0),
       estimate_(65536),
       ping_start_time_(gpr_time_0(GPR_CLOCK_MONOTONIC)),
-      next_ping_scheduled_(0),
       inter_ping_delay_(100.0),  // start at 100ms
       stable_estimate_count_(0),
       bw_est_(0),
       name_(name) {}
 
-void BdpEstimator::CompletePing(grpc_exec_ctx *exec_ctx) {
+grpc_millis BdpEstimator::CompletePing(grpc_exec_ctx *exec_ctx) {
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_timespec dt_ts = gpr_time_sub(now, ping_start_time_);
   double dt = (double)dt_ts.tv_sec + 1e-9 * (double)dt_ts.tv_nsec;
@@ -79,7 +78,7 @@ void BdpEstimator::CompletePing(grpc_exec_ctx *exec_ctx) {
   }
   ping_state_ = PingState::UNSCHEDULED;
   accumulator_ = 0;
-  next_ping_scheduled_ = grpc_exec_ctx_now(exec_ctx) + inter_ping_delay_;
+  return grpc_exec_ctx_now(exec_ctx) + inter_ping_delay_;
 }
 
 }  // namespace grpc_core
