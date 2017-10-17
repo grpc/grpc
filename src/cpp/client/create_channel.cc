@@ -38,7 +38,7 @@ std::shared_ptr<Channel> CreateCustomChannel(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
     const ChannelArguments& args) {
-  internal::GrpcLibrary
+  GrpcLibraryCodegen
       init_lib;  // We need to call init in case of a bad creds.
   return creds
              ? creds->CreateChannel(target, args)
