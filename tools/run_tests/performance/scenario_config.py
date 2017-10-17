@@ -253,7 +253,7 @@ class CXXLanguage:
        req_size=300, resp_size=50,
        unconstrained_client='async', outstanding=30000, channels=300,
        offered_load=37500, secure=False,
-       async_server_threads=16, server_threads_per_cq=16,
+       async_server_threads=16, server_threads_per_cq=1,
        categories=[SMOKETEST] + [SCALABLE])
 
     for secure in [True, False]:
