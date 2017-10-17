@@ -26,6 +26,8 @@
 
 grpc_tracer_flag grpc_call_combiner_trace =
     GRPC_TRACER_INITIALIZER(false, "call_combiner");
+grpc_tracer_flag grpc_call_combiner_thread_switch_trace =
+    GRPC_TRACER_INITIALIZER(false, "call_combiner_thread_switch");
 
 static grpc_error* decode_cancel_state_error(gpr_atm cancel_state) {
   if (cancel_state & 1) {
@@ -38,13 +40,29 @@ static gpr_atm encode_cancel_state_error(grpc_error* error) {
   return (gpr_atm)1 | (gpr_atm)error;
 }
 
-void grpc_call_combiner_init(grpc_call_combiner* call_combiner) {
+void grpc_call_combiner_init(grpc_exec_ctx* exec_ctx,
+                             grpc_call_combiner* call_combiner) {
   gpr_mpscq_init(&call_combiner->queue);
+  gpr_atm_rel_store(&call_combiner->prev_tid, grpc_exec_ctx_tid(exec_ctx));
 }
 
-void grpc_call_combiner_destroy(grpc_call_combiner* call_combiner) {
+void grpc_call_combiner_destroy(grpc_exec_ctx* exec_ctx,
+                                grpc_call_combiner* call_combiner) {
   gpr_mpscq_destroy(&call_combiner->queue);
   GRPC_ERROR_UNREF(decode_cancel_state_error(call_combiner->cancel_state));
+  gpr_atm tid = grpc_exec_ctx_tid(exec_ctx);
+  gpr_atm prev_tid = gpr_atm_acq_load(&call_combiner->prev_tid);
+  if (prev_tid != tid) {
+    gpr_atm_full_fetch_add(&call_combiner->num_thread_switch, (gpr_atm)1);
+    if (GRPC_TRACER_ON(grpc_call_combiner_thread_switch_trace)) {
+      gpr_log(GPR_ERROR, "prev_tid: %" PRIuPTR ", tid: %" PRIuPTR, prev_tid,
+              tid);
+    }
+  }
+  if (GRPC_TRACER_ON(grpc_call_combiner_thread_switch_trace)) {
+    gpr_log(GPR_ERROR, "Call combiner [%p] num_thread_switch: %" PRIuPTR,
+            call_combiner, call_combiner->num_thread_switch);
+  }
 }
 
 #ifndef NDEBUG
@@ -56,6 +74,27 @@ void grpc_call_combiner_destroy(grpc_call_combiner* call_combiner) {
 #define DEBUG_FMT_STR
 #define DEBUG_FMT_ARGS
 #endif
+
+static void schedule_on_exec_ctx(grpc_exec_ctx* exec_ctx,
+                                 grpc_call_combiner* call_combiner,
+                                 grpc_closure* closure, grpc_error* error) {
+  gpr_atm tid = grpc_exec_ctx_tid(exec_ctx);
+  while (true) {
+    gpr_atm prev_tid = gpr_atm_acq_load(&call_combiner->prev_tid);
+    if (gpr_atm_full_cas(&call_combiner->prev_tid, prev_tid, tid)) {
+      if (prev_tid != tid) {
+        gpr_atm_full_fetch_add(&call_combiner->num_thread_switch, (gpr_atm)1);
+        if (GRPC_TRACER_ON(grpc_call_combiner_thread_switch_trace)) {
+          gpr_log(GPR_ERROR,
+                  "Call combiner [%p] prev_tid: %" PRIuPTR ", tid: %" PRIuPTR,
+                  call_combiner, prev_tid, tid);
+        }
+      }
+      GRPC_CLOSURE_SCHED(exec_ctx, closure, error);
+      break;
+    }
+  }
+}
 
 void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
                               grpc_call_combiner* call_combiner,
@@ -84,7 +123,7 @@ void grpc_call_combiner_start(grpc_exec_ctx* exec_ctx,
       gpr_log(GPR_DEBUG, "  EXECUTING IMMEDIATELY");
     }
     // Queue was empty, so execute this closure immediately.
-    GRPC_CLOSURE_SCHED(exec_ctx, closure, error);
+    schedule_on_exec_ctx(exec_ctx, call_combiner, closure, error);
   } else {
     if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
       gpr_log(GPR_INFO, "  QUEUING");
@@ -132,7 +171,8 @@ void grpc_call_combiner_stop(grpc_exec_ctx* exec_ctx,
         gpr_log(GPR_DEBUG, "  EXECUTING FROM QUEUE: closure=%p error=%s",
                 closure, grpc_error_string(closure->error_data.error));
       }
-      GRPC_CLOSURE_SCHED(exec_ctx, closure, closure->error_data.error);
+      schedule_on_exec_ctx(exec_ctx, call_combiner, closure,
+                           closure->error_data.error);
       break;
     }
   } else if (GRPC_TRACER_ON(grpc_call_combiner_trace)) {
@@ -177,7 +217,8 @@ void grpc_call_combiner_set_notify_on_cancel(grpc_exec_ctx* exec_ctx,
                     "call_combiner=%p: scheduling old cancel callback=%p",
                     call_combiner, closure);
           }
-          GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
+          schedule_on_exec_ctx(exec_ctx, call_combiner, closure,
+                               GRPC_ERROR_NONE);
         }
         break;
       }
@@ -206,7 +247,8 @@ void grpc_call_combiner_cancel(grpc_exec_ctx* exec_ctx,
                   "call_combiner=%p: scheduling notify_on_cancel callback=%p",
                   call_combiner, notify_on_cancel);
         }
-        GRPC_CLOSURE_SCHED(exec_ctx, notify_on_cancel, GRPC_ERROR_REF(error));
+        schedule_on_exec_ctx(exec_ctx, call_combiner, notify_on_cancel,
+                             GRPC_ERROR_REF(error));
       }
       break;
     }

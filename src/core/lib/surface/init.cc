@@ -132,6 +132,7 @@ void grpc_init(void) {
     grpc_register_tracer(&grpc_http1_trace);
     grpc_register_tracer(&grpc_cq_pluck_trace);  // default on
     grpc_register_tracer(&grpc_call_combiner_trace);
+    grpc_register_tracer(&grpc_call_combiner_thread_switch_trace);
     grpc_register_tracer(&grpc_combiner_trace);
     grpc_register_tracer(&grpc_server_channel_trace);
     grpc_register_tracer(&grpc_bdp_estimator_trace);
