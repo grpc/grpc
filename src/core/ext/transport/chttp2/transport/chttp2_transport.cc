@@ -612,7 +612,7 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
                                    grpc_error *error) {
   end_all_the_calls(exec_ctx, t, GRPC_ERROR_REF(error));
   cancel_pings(exec_ctx, t, GRPC_ERROR_REF(error));
-  if (t->closed_with_error == nullptr) {
+  if (t->closed_with_error == GRPC_ERROR_NONE) {
     if (!grpc_error_has_clear_grpc_status(error)) {
       error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
                                  GRPC_STATUS_UNAVAILABLE);
@@ -656,9 +656,8 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
     while (grpc_chttp2_list_pop_writable_stream(t, &s)) {
       GRPC_CHTTP2_STREAM_UNREF(exec_ctx, s, "chttp2_writing:close");
     }
-    if (t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE) {
-      grpc_endpoint_shutdown(exec_ctx, t->ep, GRPC_ERROR_REF(error));
-    }
+    GPR_ASSERT(t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE);
+    grpc_endpoint_shutdown(exec_ctx, t->ep, GRPC_ERROR_REF(error));
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -853,10 +852,6 @@ static void set_write_state(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       grpc_error *err = t->close_transport_on_writes_finished;
       t->close_transport_on_writes_finished = NULL;
       close_transport_locked(exec_ctx, t, err);
-    }
-    if (t->closed_with_error != GRPC_ERROR_NONE) {
-      grpc_endpoint_shutdown(exec_ctx, t->ep,
-                             GRPC_ERROR_REF(t->closed_with_error));
     }
   }
 }
@@ -1713,6 +1708,7 @@ static void cancel_pings(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   /* callback remaining pings: they're not allowed to call into the transpot,
      and maybe they hold resources that need to be freed */
   grpc_chttp2_ping_queue *pq = &t->ping_queue;
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
   for (size_t j = 0; j < GRPC_CHTTP2_PCL_COUNT; j++) {
     grpc_closure_list_fail_all(&pq->lists[j], GRPC_ERROR_REF(error));
     GRPC_CLOSURE_LIST_SCHED(exec_ctx, &pq->lists[j]);
@@ -1722,6 +1718,12 @@ static void cancel_pings(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
 static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                              grpc_closure *on_initiate, grpc_closure *on_ack) {
+  if (t->closed_with_error != GRPC_ERROR_NONE) {
+    GRPC_CLOSURE_SCHED(exec_ctx, on_initiate,
+                       GRPC_ERROR_REF(t->closed_with_error));
+    GRPC_CLOSURE_SCHED(exec_ctx, on_ack, GRPC_ERROR_REF(t->closed_with_error));
+    return;
+  }
   grpc_chttp2_ping_queue *pq = &t->ping_queue;
   grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_INITIATE], on_initiate,
                            GRPC_ERROR_NONE);
@@ -1780,10 +1782,9 @@ void grpc_chttp2_add_ping_strike(grpc_exec_ctx *exec_ctx,
                     GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM));
     /*The transport will be closed after the write is done */
     close_transport_locked(
-        exec_ctx, t,
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Too many pings"),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+        exec_ctx, t, grpc_error_set_int(
+                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Too many pings"),
+                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
   }
 }
 
@@ -2583,6 +2584,8 @@ static void read_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
   GPR_TIMER_END("reading_action_locked", 0);
 }
 
+// t is reffed prior to calling the first time, and once the callback chain
+// that kicks off finishes, it's unreffed
 static void schedule_bdp_ping_locked(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_transport *t) {
   t->flow_control.bdp_estimator->SchedulePing();
@@ -2754,8 +2757,11 @@ static void keepalive_watchdog_fired_locked(grpc_exec_ctx *exec_ctx, void *arg,
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_PINGING) {
     if (error == GRPC_ERROR_NONE) {
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
-      close_transport_locked(exec_ctx, t, grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                              "keepalive watchdog timeout"), GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL));
+      close_transport_locked(
+          exec_ctx, t,
+          grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                 "keepalive watchdog timeout"),
+                             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL));
     }
   } else {
     /* The watchdog timer should have been cancelled by
