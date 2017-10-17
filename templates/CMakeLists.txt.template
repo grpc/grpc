@@ -522,7 +522,7 @@
     PRIVATE <%text>${CARES_INCLUDE_DIR}</%text>
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
-    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/abseil-cpp
+    PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/abseil-cpp
   % if lib.build in ['test', 'private'] and lib.language == 'c++':
     PRIVATE third_party/googletest/googletest/include
     PRIVATE third_party/googletest/googletest
@@ -594,6 +594,7 @@
     PRIVATE <%text>${CARES_INCLUDE_DIR}</%text>
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/cares/cares
     PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/gflags/include
+    PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/abseil-cpp
   % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
     PRIVATE third_party/googletest/googletest/include
     PRIVATE third_party/googletest/googletest
