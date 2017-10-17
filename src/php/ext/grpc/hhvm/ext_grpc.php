@@ -213,10 +213,10 @@ class Server {
    * Add a secure http2 over tcp listener.
    * @param string $addr The address to add
    * @param ServerCredentials The ServerCredentials object
-   * @return bool True on success, false on failure
+   * @return int port on success, 0 on failure
    */
   <<__Native>>
-  public function addSecureHttp2Port(string $addr, ServerCredentials $serverCredentials): bool;
+  public function addSecureHttp2Port(string $addr, ServerCredentials $serverCredentials): int;
 
   /**
    * Start a server - tells all listeners to start listening
