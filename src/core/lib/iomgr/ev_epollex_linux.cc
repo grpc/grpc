@@ -1323,8 +1323,10 @@ static void pollset_set_add_pollset_set(grpc_exec_ctx *exec_ctx,
     a->pollsets = (pollable **)gpr_realloc(
         a->pollsets, a->pollset_capacity * sizeof(*a->pollsets));
   }
-  memcpy(a->pollsets + a->pollset_count, b->pollsets,
-         b->pollset_count * sizeof(*b->pollsets));
+  if (b->pollset_count > 0) {
+    memcpy(a->pollsets + a->pollset_count, b->pollsets,
+           b->pollset_count * sizeof(*b->pollsets));
+  }
   a->pollset_count += b->pollset_count;
   gpr_free(b->fds);
   gpr_free(b->pollsets);
