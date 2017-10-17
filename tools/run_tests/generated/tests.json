@@ -4524,6 +4524,7 @@
   }, 
   {
     "args": [], 
+    "benchmark": false, 
     "ci_platforms": [
       "linux", 
       "mac", 
