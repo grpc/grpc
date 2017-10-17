@@ -38,7 +38,8 @@ static grpc_security_status fake_transport_security_create_security_connector(
     grpc_call_credentials *call_creds, const char *target,
     const grpc_channel_args *args, grpc_channel_security_connector **sc,
     grpc_channel_args **new_args) {
-  *sc = grpc_fake_channel_security_connector_create(call_creds, target, args);
+  *sc =
+      grpc_fake_channel_security_connector_create(c, call_creds, target, args);
   return GRPC_SECURITY_OK;
 }
 
@@ -46,7 +47,7 @@ static grpc_security_status
 fake_transport_security_server_create_security_connector(
     grpc_exec_ctx *exec_ctx, grpc_server_credentials *c,
     grpc_server_security_connector **sc) {
-  *sc = grpc_fake_server_security_connector_create();
+  *sc = grpc_fake_server_security_connector_create(c);
   return GRPC_SECURITY_OK;
 }
 

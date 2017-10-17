@@ -245,7 +245,8 @@ class WriteContext {
   void UpdateStreamsNoLongerStalled() {
     grpc_chttp2_stream *s;
     while (grpc_chttp2_list_pop_stalled_by_transport(t_, &s)) {
-      if (!t_->closed && grpc_chttp2_list_add_writable_stream(t_, s)) {
+      if (t_->closed_with_error == GRPC_ERROR_NONE &&
+          grpc_chttp2_list_add_writable_stream(t_, s)) {
         if (!stream_ref_if_not_destroyed(&s->refcount->refs)) {
           grpc_chttp2_list_remove_writable_stream(t_, s);
         }

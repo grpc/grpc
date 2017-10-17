@@ -37,9 +37,11 @@ namespace {
 int g_clock = 0;
 
 gpr_timespec fake_gpr_now(gpr_clock_type clock_type) {
-  return (gpr_timespec){
-      .tv_sec = g_clock, .tv_nsec = 0, .clock_type = clock_type,
-  };
+  gpr_timespec ts;
+  ts.tv_sec = g_clock;
+  ts.tv_nsec = 0;
+  ts.clock_type = clock_type;
+  return ts;
 }
 
 void inc_time(void) { g_clock += 30; }
@@ -58,12 +60,10 @@ void AddSamples(BdpEstimator *estimator, int64_t *samples, size_t n) {
   estimator->AddIncomingBytes(1234567);
   inc_time();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  EXPECT_TRUE(estimator->NeedPing(&exec_ctx));
   estimator->SchedulePing();
   estimator->StartPing();
   for (size_t i = 0; i < n; i++) {
     estimator->AddIncomingBytes(samples[i]);
-    EXPECT_FALSE(estimator->NeedPing(&exec_ctx));
   }
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_millis(1, GPR_TIMESPAN)));
