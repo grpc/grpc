@@ -153,7 +153,6 @@ TransportFlowControl::TransportFlowControl(grpc_exec_ctx* exec_ctx,
     : t_(t),
       enable_bdp_probe_(enable_bdp_probe),
       bdp_estimator_(t->peer_string),
-      last_pid_update_(grpc_exec_ctx_now(exec_ctx)),
       pid_controller_(grpc_core::PidController::Args()
                           .set_gain_p(4)
                           .set_gain_i(8)
@@ -161,7 +160,8 @@ TransportFlowControl::TransportFlowControl(grpc_exec_ctx* exec_ctx,
                           .set_initial_control_value(TargetLogBdp())
                           .set_min_control_value(-1)
                           .set_max_control_value(25)
-                          .set_integral_range(10)) {}
+                          .set_integral_range(10)),
+      last_pid_update_(grpc_exec_ctx_now(exec_ctx)) {}
 
 uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   FlowControlTrace trace("t updt sent", this, nullptr);
