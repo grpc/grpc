@@ -163,7 +163,7 @@ class WriteOptions {
 
   /// Clears flag indicating that this is the last message in a stream,
   /// disabling coalescing.
-  inline WriteOptions& clear_last_messsage() {
+  inline WriteOptions& clear_last_message() {
     last_message_ = false;
     return *this;
   }
