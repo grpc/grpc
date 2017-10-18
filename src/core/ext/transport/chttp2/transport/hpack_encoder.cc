@@ -57,7 +57,7 @@ static const grpc_slice terminal_slice = {
     {{0, 0}}                  /* data.refcounted */
 };
 
-extern "C" grpc_tracer_flag grpc_http_trace;
+extern grpc_core::TraceFlag grpc_http_trace;
 
 typedef struct {
   int is_first_frame;
@@ -475,7 +475,7 @@ static void hpack_enc(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_compressor *c,
         "Reserved header (colon-prefixed) happening after regular ones.");
   }
 
-  if (GRPC_TRACER_ON(grpc_http_trace)) {
+  if (grpc_http_trace.enabled()) {
     char *k = grpc_slice_to_c_string(GRPC_MDKEY(elem));
     char *v = NULL;
     if (grpc_is_binary_header(GRPC_MDKEY(elem))) {
@@ -670,7 +670,7 @@ void grpc_chttp2_hpack_compressor_set_max_table_size(
     }
   }
   c->advertise_table_size_change = 1;
-  if (GRPC_TRACER_ON(grpc_http_trace)) {
+  if (grpc_http_trace.enabled()) {
     gpr_log(GPR_DEBUG, "set max table size from encoder to %d", max_table_size);
   }
 }
