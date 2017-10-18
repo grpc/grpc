@@ -33,13 +33,13 @@
 
 namespace grpc_core {
 
-template <typename T>
-class Closure;
+#include <stdio.h>
+#include <utility>
 
 /// Closure base type
 /// TODO(ctiller): ... write stuff here ...
 template <typename... Args>
-class Closure<void(Args...)> {
+class Closure {
  public:
   Closure() {}
   /// Schedule this closure to run in the future
@@ -66,23 +66,59 @@ class MemberClosure;
 
 template <class Scheduler, class T, typename... Args, void (T::*F)(Args...)>
 class MemberClosure<Scheduler, void (T::*)(Args...), F> final
-    : public Closure<void(Args...)>,
+    : public Closure<Args...>,
       private Scheduler {
  public:
   MemberClosure(T* p) : p_(p) {}
 
   void Schedule(Args&&... args) override {
-    this->Scheduler::DoSchedule(
-        [this, args...]() { (p_->*F)(std::forward<Args>(args)...); });
+    this->Scheduler::DoSchedule([this, args...]() { (p_->*F)(args...); });
   }
 
   void Run(Args&&... args) override {
-    this->Scheduler::DoRun(
-        [this, args...]() { (p_->*F)(std::forward<Args>(args)...); });
+    this->Scheduler::DoRun([this, args...]() { (p_->*F)(args...); });
   }
 
  private:
   T* const p_;
+};
+
+struct grpc_error;
+
+template <class Scheduler>
+class LegacyClosure : public Closure<grpc_error*>, public Scheduler {
+ public:
+  LegacyClosure(void (*const f)(void* arg, grpc_error* error), void* arg)
+      : f_(f), arg_(arg) {}
+
+  void Schedule(grpc_error*&& error) override {
+    this->Scheduler::DoSchedule([this, error]() { f_(arg_, error); });
+  }
+
+  void Run(grpc_error*&& error) override {
+    this->Scheduler::DoRun([this, error]() { f_(arg_, error); });
+  }
+
+ private:
+  void (*const f_)(void* arg, grpc_error* error);
+  void* arg_;
+};
+
+template <class Scheduler, void (*f)(void* arg, grpc_error* error)>
+class LegacyClosureT : public Closure<grpc_error*>, public Scheduler {
+ public:
+  explicit LegacyClosureT(void* arg) : arg_(arg) {}
+
+  void Schedule(grpc_error*&& error) override {
+    this->Scheduler::DoSchedule([this, error]() { f(arg_, error); });
+  }
+
+  void Run(grpc_error*&& error) override {
+    this->Scheduler::DoRun([this, error]() { f(arg_, error); });
+  }
+
+ private:
+  void* arg_;
 };
 
 class AcquiresNoLocks {
@@ -96,6 +132,24 @@ class AcquiresNoLocks {
     f();
   }
 };
+
+void foo(void*, grpc_error*);
+
+void test() {
+  class C {
+    void Foo(int a, int b, int c) { printf("%d %d %d", a, b, c); }
+
+   public:
+    MemberClosure<AcquiresNoLocks, void (C::*)(int, int, int), &C::Foo>
+        foo_closure{this};
+  };
+  C c;
+  LegacyClosure<AcquiresNoLocks> a(foo, nullptr);
+  a.Run(nullptr);
+  LegacyClosureT<AcquiresNoLocks, foo> b(nullptr);
+  b.Schedule(nullptr);
+  c.foo_closure.Run(sizeof(a), sizeof(b), sizeof(c));
+}
 
 }  // namespace grpc_core
 
