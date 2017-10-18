@@ -835,38 +835,26 @@ class Php7Language:
     yield _ping_pong_scenario(
         '%s_to_cpp_protobuf_sync_unary_ping_pong_1MB' % php7_extension_mode,
         rpc_type='UNARY', client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
-        server_language='c++', outstanding=1, req_size=1024*1024, resp_size=1024*1024, 
-        async_server_threads=1, unconstrained_client='sync', categories=[SMOKETEST, SCALABLE])
+        server_language='c++', req_size=1024*1024, resp_size=1024*1024, 
+        categories=[SMOKETEST, SCALABLE])
 
     yield _ping_pong_scenario(
         '%s_to_cpp_protobuf_sync_streaming_ping_pong_1MB' % php7_extension_mode,
         rpc_type='STREAMING', client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
-        server_language='c++', outstanding=1, req_size=1024*1024, resp_size=1024*1024,
-        async_server_threads=1, unconstrained_client='sync', categories=[SMOKETEST, SCALABLE])
+        server_language='c++', req_size=1024*1024, resp_size=1024*1024,
+        categories=[SMOKETEST, SCALABLE])
 
     # TODO(ddyihai): Investigate why when outstanding=1, QPS decrease when increase async_server_threads;
     # async_server_threads=2 is a good value here. The same for other languages.
     yield _ping_pong_scenario(
         '%s_to_cpp_protobuf_sync_unary_qps_unconstrained' % php7_extension_mode,
         rpc_type='UNARY', client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
-        server_language='c++', outstanding=1, async_server_threads=1, unconstrained_client='sync')
+        server_language='c++', categories=[SMOKETEST,SCALABLE])
 
     yield _ping_pong_scenario(
         '%s_to_cpp_protobuf_sync_streaming_qps_unconstrained' % php7_extension_mode,
         rpc_type='STREAMING', client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
-        server_language='c++', outstanding=1, async_server_threads=1, unconstrained_client='sync')
-
-    # TODO(ddyihai): The bottleneck in the server side prevent php client use all cores in the
-    # 32-core-environment. Set "server_num=2" if possiable can get x2 higher QPS.
-    yield _ping_pong_scenario(
-        '%s_to_cpp_protobuf_sync_unary_qps_unconstrained_32cores' % php7_extension_mode,
-        rpc_type='UNARY', client_type='SYNC_CLIENT', server_type='ASYNC_SERVER', channels=256,
-        server_language='c++', outstanding=1, unconstrained_client='sync')
-
-    yield _ping_pong_scenario(
-        '%s_to_cpp_protobuf_sync_streaming_qps_unconstrained_32cores' % php7_extension_mode,
-        rpc_type='STREAMING', client_type='SYNC_CLIENT', server_type='ASYNC_SERVER', channels=256,
-        server_language='c++', outstanding=1, unconstrained_client='sync')
+        server_language='c++', categories=[SMOKETEST,SCALABLE])
 
   def __str__(self):
     if self.php7_protobuf_c:

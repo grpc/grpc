@@ -72,7 +72,7 @@ function qps_client_main($proxy_address, $server_ind) {
     $proxystub = new Grpc\Testing\ProxyClientServiceClient($proxy_address, $proxystubopts);
     list($config, $status) = $proxystub->GetConfig(new Grpc\Testing\Void())->wait();
     hardAssertIfStatusOk($status);
-    hardAssert($config->getOutstandingRpcsPerChannel() == 1, "Only 1 outstanding RPC supported");
+    $outstanding_rpc_per_channel = $config->getOutstandingRpcsPerChannel();
 
     echo "[php-client] Got configuration from proxy, target is '$server_ind'th server" . $config->getServerTargets()[$server_ind] . "\n";
     $histres = $config->getHistogramParams()->getResolution();
@@ -107,7 +107,8 @@ function qps_client_main($proxy_address, $server_ind) {
     $payload->setType(Grpc\Testing\PayloadType::COMPRESSABLE);
     $payload->setBody(str_repeat("\0", $payload_size));
     $req->setPayload($payload);
-    $batch_max_count = 2000;
+    $batch_max_count = 2000*(max(1, $outstanding_rpc_per_channel/10));
+    # For 1M payload, the betch is too large to send the stats back to proxy in time.
     if ($payload_size >= 1024*1024) {
         $batch_max_count = 1;
     }
@@ -126,15 +127,23 @@ function qps_client_main($proxy_address, $server_ind) {
     $count = 0;
     $histogram_result = new Grpc\Testing\HistogramData;
     $telehist = $proxystub->ReportHist();
+    $outstanding_rpc_queue = array();
     if ($config->getRpcType() == Grpc\Testing\RpcType::UNARY) {
-        while (1) {
+	for ($i = 0; $i < $outstanding_rpc_per_channel; $i++) {
+	    $call = $stub->UnaryCall($req);
+            array_push($outstanding_rpc_queue, $call);
+	} 
+	while (1) {
             if ($poisson) {
                 time_sleep_until($issue);
                 $issue = $issue + $lamrecip * -log(1.0-rand()/(getrandmax()+1));
             }
-            $startreq = microtime(true);
-            list($resp,$status) = $stub->UnaryCall($req)->wait();
-            hardAssertIfStatusOk($status);
+	    $startreq = microtime(true);
+	    $current_call = array_shift($outstanding_rpc_queue);
+	    list($resp,$status) = $current_call->wait();
+	    hardAssertIfStatusOk($status);
+	    $call = $stub->UnaryCall($req);
+	    array_push($outstanding_rpc_queue, $call);
             $histogram->add((microtime(true)-$startreq)*1e9);
             $count += 1;
             if ($count == $batch_max_count) {
@@ -151,17 +160,23 @@ function qps_client_main($proxy_address, $server_ind) {
             }
         }
     } else {
-        $stream = $stub->StreamingCall();
+	for ($i = 0; $i < $outstanding_rpc_per_channel; $i++) {
+	     $stream = $stub->StreamingCall();
+	     $stream->write($req);
+	     array_push($outstanding_rpc_queue, $stream);
+	}
         while (1) {
             if ($poisson) {
                 time_sleep_until($issue);
                 $issue = $issue + $lamrecip * -log(1.0-rand()/(getrandmax()+1));
             }
-            $startreq = microtime(true);
-            $stream->write($req);
-            $resp = $stream->read();
-            $histogram->add((microtime(true)-$startreq)*1e9);
-            $count += 1;
+	    $startreq = microtime(true);
+	    for ($i = 0; $i < $outstanding_rpc_per_channel; $i++) {
+	        $resp = $outstanding_rpc_queue[$i]->read();
+	        $outstanding_rpc_queue[$i]->write($req);
+                $histogram->add((microtime(true)-$startreq)*1e9);
+                $count += 1;
+	    }
             if ($count == $batch_max_count) {
               $contents = $histogram->contents();
               $histogram_result->setBucket($contents);
