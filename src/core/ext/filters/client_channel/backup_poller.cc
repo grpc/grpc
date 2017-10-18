@@ -31,7 +31,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 
-#define DEFAULT_POLL_INTERVAL_MS 500
+#define DEFAULT_POLL_INTERVAL_MS 5000
 
 typedef struct backup_poller {
   grpc_timer polling_timer;
