@@ -346,11 +346,8 @@ static void rr_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
                                           "sl_shutdown_pending_rr_shutdown");
     p->latest_pending_subchannel_list = NULL;
   }
-  if (p->base.request_reresolution != NULL) {
-    GRPC_CLOSURE_SCHED(exec_ctx, pol->request_reresolution,
-                       GRPC_ERROR_CANCELLED);
-    p->base.request_reresolution = NULL;
-  }
+  grpc_lb_policy_try_reresolve(exec_ctx, &p->base, grpc_lb_round_robin_trace,
+                               GRPC_ERROR_CANCELLED);
 }
 
 static void rr_cancel_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
@@ -540,7 +537,8 @@ static void update_lb_connectivity_status_locked(grpc_exec_ctx *exec_ctx,
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                 GRPC_CHANNEL_TRANSIENT_FAILURE,
                                 GRPC_ERROR_REF(error), "rr_transient_failure");
-    try_reresolve(exec_ctx, &p->base, grpc_lb_round_robin_trace);
+    grpc_lb_policy_try_reresolve(exec_ctx, &p->base, grpc_lb_round_robin_trace,
+                                 GRPC_ERROR_NONE);
   } else if (subchannel_list->num_idle == subchannel_list->num_subchannels) {
     /* 4) IDLE */
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker, GRPC_CHANNEL_IDLE,
