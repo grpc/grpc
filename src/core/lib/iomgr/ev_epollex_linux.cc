@@ -472,6 +472,8 @@ static grpc_error *pollable_create(pollable_type type, pollable **p) {
   (*p)->pollset_set = NULL;
   (*p)->next = (*p)->prev = *p;
   (*p)->root_worker = NULL;
+  (*p)->event_cursor = 0;
+  (*p)->event_count = 0;
   return GRPC_ERROR_NONE;
 }
 
