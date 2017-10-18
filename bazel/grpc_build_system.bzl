@@ -23,6 +23,9 @@
 # each change must be ported from one to the other.
 #
 
+# The set of pollers to test against if a test exercises polling
+POLLERS = ['epollex', 'epollsig', 'epoll1', 'poll', 'poll-cv']
+
 def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
                     external_deps = [], deps = [], standalone = False,
                     language = "C++", testonly = False, visibility = None,
@@ -70,19 +73,35 @@ def grpc_proto_library(name, srcs = [], deps = [], well_known_protos = False,
     generate_mock = generate_mock,
   )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++"):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++"):
   copts = []
   if language.upper() == "C":
     copts = ["-std=c99"]
-  native.cc_test(
-    name = name,
-    srcs = srcs,
-    args = args,
-    data = data,
-    deps = deps + ["//external:" + dep for dep in external_deps],
-    copts = copts,
-    linkopts = ["-pthread"],
-  )
+  args = {
+    'name': name,
+    'srcs': srcs,
+    'args': args,
+    'data': data,
+    'deps': deps + ["//external:" + dep for dep in external_deps],
+    'copts': copts,
+    'linkopts': ["-pthread"],
+  }
+  if uses_polling:
+    native.cc_binary(testonly=True, **args)
+    for poller in POLLERS:
+      native.sh_test(
+        name = name + '@poller=' + poller,
+        data = [name],
+        srcs = [
+          '//test/core/util:run_with_poller_sh',
+        ],
+        args = [
+          poller,
+          '$(location %s)' % name
+        ],
+      )
+  else:
+    native.cc_test(**args)
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = []):
   copts = []
