@@ -37,9 +37,8 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-#ifndef NDEBUG
-grpc_core::TraceFlag grpc_trace_error_refcount(false, "error_refcount");
-#endif
+grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount(false,
+                                                        "error_refcount");
 
 static const char *error_int_name(grpc_error_ints key) {
   switch (key) {

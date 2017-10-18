@@ -80,6 +80,16 @@ class TraceFlag {
 #endif
 };
 
+#ifndef NDEBUG
+typedef TraceFlag DebugOnlyTraceFlag;
+#else
+class DebugOnlyTraceFlag {
+ public:
+  DebugOnlyTraceFlag(bool default_enabled, const char *name) {}
+  bool enabled() { return false; }
+};
+#endif
+
 }  // namespace grpc_core
 
 #endif  // __cplusplus

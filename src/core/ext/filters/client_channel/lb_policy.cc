@@ -21,9 +21,8 @@
 
 #define WEAK_REF_BITS 16
 
-#ifndef NDEBUG
-grpc_core::TraceFlag grpc_trace_lb_policy_refcount(false, "lb_policy_refcount");
-#endif
+grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(
+    false, "lb_policy_refcount");
 
 void grpc_lb_policy_init(grpc_lb_policy *policy,
                          const grpc_lb_policy_vtable *vtable,

@@ -93,9 +93,8 @@ static int g_default_max_ping_strikes = DEFAULT_MAX_PING_STRIKES;
 grpc_core::TraceFlag grpc_http_trace(false, "http");
 grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
 
-#ifndef NDEBUG
-grpc_core::TraceFlag grpc_trace_chttp2_refcount(false, "chttp2_refcount");
-#endif
+grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount(false,
+                                                         "chttp2_refcount");
 
 /* forward declarations of various callbacks that we'll build closures around */
 static void write_action_begin_locked(grpc_exec_ctx *exec_ctx, void *t,

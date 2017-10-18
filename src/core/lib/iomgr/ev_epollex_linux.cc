@@ -57,9 +57,8 @@
 #define MAX_EPOLL_EVENTS 100
 #define MAX_EPOLL_EVENTS_HANDLED_EACH_POLL_CALL 5
 
-#ifndef NDEBUG
-grpc_core::TraceFlag grpc_trace_pollable_refcount(false, "pollable_refcount");
-#endif
+grpc_core::DebugOnlyTraceFlag grpc_trace_pollable_refcount(false,
+                                                           "pollable_refcount");
 
 /*******************************************************************************
  * pollable Declarations
