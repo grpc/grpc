@@ -48,6 +48,7 @@ if 'linux' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_linux'),)
 if 'openbsd' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_openbsd'),)
+ADDRESS_SORTING_INCLUDE = (os.path.join('third_party', 'address_sorting'),)
 README = os.path.join(PYTHON_STEM, 'README.rst')
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
@@ -149,7 +150,7 @@ if "win32" in sys.platform:
 
 EXTENSION_INCLUDE_DIRECTORIES = (
     (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE + ZLIB_INCLUDE +
-    CARES_INCLUDE)
+    CARES_INCLUDE + ADDRESS_SORTING_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
 if "linux" in sys.platform:

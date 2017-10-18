@@ -46,6 +46,7 @@
     if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
       deps.append("${_gRPC_ZLIB_LIBRARIES}")
       deps.append("${_gRPC_CARES_LIBRARIES}")
+      deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
       if d == 'benchmark':
@@ -165,6 +166,9 @@
   include(cmake/ssl.cmake)
   include(cmake/gflags.cmake)
   include(cmake/benchmark.cmake)
+
+  include_directories(<%text>${CMAKE_CURRENT_SOURCE_DIR}/third_party/address_sorting</%text>)
+  set(_gRPC_ADDRESS_SORTING_LIBRARIES address_sorting)
 
   if(NOT MSVC)
     set(CMAKE_C_FLAGS   "<%text>${CMAKE_C_FLAGS}</%text> -std=c99")
@@ -375,6 +379,7 @@
     PRIVATE <%text>${_gRPC_BENCHMARK_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_CARES_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_GFLAGS_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/address_sorting
   % if lib.build in ['test', 'private'] and lib.language == 'c++':
     PRIVATE third_party/googletest/googletest/include
     PRIVATE third_party/googletest/googletest
@@ -455,6 +460,7 @@
     PRIVATE <%text>${_gRPC_BENCHMARK_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_CARES_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_GFLAGS_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/address_sorting
   % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
     PRIVATE third_party/googletest/googletest/include
     PRIVATE third_party/googletest/googletest
