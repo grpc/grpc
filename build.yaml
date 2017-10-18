@@ -5019,45 +5019,6 @@ defaults:
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
       $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
-node_modules:
-- deps:
-  - grpc
-  - gpr
-  - boringssl
-  - z
-  headers:
-  - src/node/ext/byte_buffer.h
-  - src/node/ext/call.h
-  - src/node/ext/call_credentials.h
-  - src/node/ext/channel.h
-  - src/node/ext/channel_credentials.h
-  - src/node/ext/completion_queue.h
-  - src/node/ext/server.h
-  - src/node/ext/server_credentials.h
-  - src/node/ext/slice.h
-  - src/node/ext/timeval.h
-  js:
-  - src/node/index.js
-  - src/node/src/client.js
-  - src/node/src/common.js
-  - src/node/src/credentials.js
-  - src/node/src/constants.js
-  - src/node/src/grpc_extension.js
-  - src/node/src/metadata.js
-  - src/node/src/server.js
-  name: grpc_node
-  src:
-  - src/node/ext/byte_buffer.cc
-  - src/node/ext/call.cc
-  - src/node/ext/call_credentials.cc
-  - src/node/ext/channel.cc
-  - src/node/ext/channel_credentials.cc
-  - src/node/ext/completion_queue.cc
-  - src/node/ext/node_grpc.cc
-  - src/node/ext/server.cc
-  - src/node/ext/server_credentials.cc
-  - src/node/ext/slice.cc
-  - src/node/ext/timeval.cc
 openssl_fallback:
   base_uri: https://openssl.org/source/old/1.0.2/
   extraction_dir: openssl-1.0.2f
