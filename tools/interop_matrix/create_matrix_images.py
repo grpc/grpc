@@ -174,7 +174,7 @@ def build_all_images_for_release(lang, release):
   # If we not using current tree or the sibling for grpc stack, do checkout.
   if args.git_checkout:
     stack_base = checkout_grpc_stack(lang, release)
-    var ={'go': 'GRPC_GO_ROOT', 'java': 'GRPC_JAVA_ROOT'}.get(lang, 'GRPC_ROOT')
+    var ={'go': 'GRPC_GO_ROOT', 'java': 'GRPC_JAVA_ROOT', 'node': 'GRPC_NODE_ROOT'}.get(lang, 'GRPC_ROOT')
     env[var] = stack_base
 
   for runtime in client_matrix.LANG_RUNTIME_MATRIX[lang]:

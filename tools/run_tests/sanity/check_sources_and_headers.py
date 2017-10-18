@@ -36,6 +36,7 @@ def get_target(name):
   assert False, 'no target %s' % name
 
 def target_has_header(target, name):
+  if name.startswith('absl/'): return True
   # print target['name'], name
   if name in target['headers']:
     return True

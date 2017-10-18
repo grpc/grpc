@@ -399,22 +399,19 @@ static double get_pid_controller_guess(grpc_exec_ctx* exec_ctx,
   if (!tfc->pid_controller_initialized) {
     tfc->last_pid_update = now;
     tfc->pid_controller_initialized = true;
-    grpc_pid_controller_args args;
-    memset(&args, 0, sizeof(args));
-    args.gain_p = 4;
-    args.gain_i = 8;
-    args.gain_d = 0;
-    args.initial_control_value = target;
-    args.min_control_value = -1;
-    args.max_control_value = 25;
-    args.integral_range = 10;
-    grpc_pid_controller_init(&tfc->pid_controller, args);
+    tfc->pid_controller.Init(grpc_core::PidController::Args()
+                                 .set_gain_p(4)
+                                 .set_gain_i(8)
+                                 .set_gain_d(0)
+                                 .set_initial_control_value(target)
+                                 .set_min_control_value(-1)
+                                 .set_max_control_value(25)
+                                 .set_integral_range(10));
     return pow(2, target);
   }
-  double bdp_error = target - grpc_pid_controller_last(&tfc->pid_controller);
+  double bdp_error = target - tfc->pid_controller->last_control_value();
   double dt = (double)(now - tfc->last_pid_update) * 1e-3;
-  double log2_bdp_guess =
-      grpc_pid_controller_update(&tfc->pid_controller, bdp_error, dt);
+  double log2_bdp_guess = tfc->pid_controller->Update(bdp_error, dt);
   tfc->last_pid_update = now;
   return pow(2, log2_bdp_guess);
 }
