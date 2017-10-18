@@ -150,6 +150,11 @@ class TransportFlowControl {
   // tell chttp2 exactly what it needs to do
   FlowControlAction MakeAction() { return UpdateAction(FlowControlAction()); }
 
+  // Call periodically (at a low-ish rate, 100ms - 10s makes sense)
+  // to perform more complex flow control calculations and return an action
+  // to let chttp2 change its parameters
+  FlowControlAction PeriodicUpdate(grpc_exec_ctx* exec_ctx);
+
   void StreamSentData(int64_t size) { remote_window_ -= size; }
 
   grpc_error* ValidateRecvData(int64_t incoming_frame_size);
@@ -198,8 +203,6 @@ class TransportFlowControl {
   }
 
   BdpEstimator* bdp_estimator() { return &bdp_estimator_; }
-
-  FlowControlAction PeriodicUpdate(grpc_exec_ctx* exec_ctx);
 
   void TestOnlyForceHugeWindow() {
     announced_window_ = 1024 * 1024 * 1024;
