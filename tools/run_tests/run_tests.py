@@ -371,7 +371,7 @@ class CLanguage(object):
                 out.append(self.config.job_spec(cmdline,
                                                 shortname='%s %s' % (' '.join(cmdline), shortname_ext),
                                                 cpu_cost=cpu_cost,
-                                                timeout_seconds=_DEFAULT_TIMEOUT_SECONDS * timeout_scaling,
+                                                timeout_seconds=target.get('timeout_seconds', _DEFAULT_TIMEOUT_SECONDS) * timeout_scaling,
                                                 environ=env))
           else:
             cmdline = [binary] + target['args']

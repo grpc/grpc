@@ -78,7 +78,7 @@ _WHITELIST_DICT = {
   '^src/python/': [_PYTHON_TEST_SUITE],
   '^src/ruby/': [_RUBY_TEST_SUITE],
   '^templates/': [],
-  '^test/core/': [_CORE_TEST_SUITE],
+  '^test/core/': [_CORE_TEST_SUITE, _CPP_TEST_SUITE],
   '^test/cpp/': [_CPP_TEST_SUITE],
   '^test/distrib/cpp/': [_CPP_TEST_SUITE],
   '^test/distrib/csharp/': [_CSHARP_TEST_SUITE],
