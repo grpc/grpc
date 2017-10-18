@@ -681,16 +681,6 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
 extern grpc_tracer_flag grpc_http_trace;
 extern grpc_tracer_flag grpc_flowctl_trace;
 
-#ifndef NDEBUG
-#define GRPC_FLOW_CONTROL_IF_TRACING(stmt)   \
-  if (!(GRPC_TRACER_ON(grpc_flowctl_trace))) \
-    ;                                        \
-  else                                       \
-  stmt
-#else
-#define GRPC_FLOW_CONTROL_IF_TRACING(stmt)
-#endif
-
 #define GRPC_CHTTP2_IF_TRACING(stmt)      \
   if (!(GRPC_TRACER_ON(grpc_http_trace))) \
     ;                                     \
