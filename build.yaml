@@ -1112,6 +1112,17 @@ filegroups:
   - grpc++
   - grpc
 libs:
+- name: address_sorting
+  build: private
+  language: c
+  headers:
+  - third_party/address_sorting/address_sorting.h
+  src:
+  - third_party/address_sorting/address_sorting.c
+  deps:
+  - grpc
+  - gpr
+  secure: false
 - name: gpr
   build: all
   language: c
@@ -5011,3 +5022,4 @@ ruby_gem:
   - ares
   - boringssl
   - z
+  - address_sorting

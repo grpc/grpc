@@ -31,6 +31,8 @@ extern "C" {
 
 typedef struct grpc_ares_request grpc_ares_request;
 
+extern grpc_tracer_flag grpc_trace_cares_address_sorting;
+
 /* Asynchronously resolve \a name. Use \a default_port if a port isn't
    designated in \a name, otherwise use the port in \a name. grpc_ares_init()
    must be called at least once before this function. \a on_done may be

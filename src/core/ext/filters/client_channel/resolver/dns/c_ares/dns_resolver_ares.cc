@@ -42,6 +42,7 @@
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/service_config.h"
+#include "third_party/address_sorting/address_sorting.h"
 
 #define GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS 1
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -436,6 +437,8 @@ extern "C" void grpc_resolver_dns_ares_init(void) {
     }
     grpc_resolve_address = grpc_resolve_address_ares;
     grpc_register_resolver_type(dns_ares_resolver_factory_create());
+    grpc_register_tracer(&grpc_trace_cares_address_sorting);
+    address_sorting_init();
   }
   gpr_free(resolver);
 }
@@ -445,6 +448,7 @@ extern "C" void grpc_resolver_dns_ares_shutdown(void) {
   if (resolver != NULL && gpr_stricmp(resolver, "ares") == 0) {
     grpc_ares_cleanup();
   }
+  address_sorting_shutdown();
   gpr_free(resolver);
 }
 

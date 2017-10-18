@@ -43,8 +43,13 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/support/string.h"
 
+#include "third_party/address_sorting/address_sorting.h"
+
 static gpr_once g_basic_init = GPR_ONCE_INIT;
 static gpr_mu g_init_mu;
+
+grpc_tracer_flag grpc_trace_cares_address_sorting =
+    GRPC_TRACER_INITIALIZER(false, "cares_address_sorting");
 
 struct grpc_ares_request {
   /** indicates the DNS server to use, if specified */
@@ -96,12 +101,37 @@ static void grpc_ares_request_ref(grpc_ares_request* r) {
   gpr_ref(&r->pending_queries);
 }
 
-static void grpc_ares_request_unref(grpc_exec_ctx* exec_ctx,
-                                    grpc_ares_request* r) {
+static void log_address_sorting_list(grpc_lb_addresses *lb_addrs,
+                                     const char *input_output_str) {
+  for (size_t i = 0; i < lb_addrs->num_addresses; i++) {
+    char *addr_str;
+    if (grpc_sockaddr_to_string(&addr_str, &lb_addrs->addresses[i].address,
+                                true)) {
+      gpr_log(GPR_INFO, "C-ares sockaddr address sorting %s index: %" PRIdPTR
+                        ". Sockaddr-to-string: %s",
+              input_output_str, i, addr_str);
+      gpr_free(addr_str);
+    } else {
+      gpr_log(GPR_INFO,
+              "Failed to convert sockaddr c-ares address sorting %s index: "
+              "%" PRIdPTR " to string.",
+              input_output_str, i);
+    }
+  }
+}
+
+static void grpc_ares_request_unref(grpc_exec_ctx *exec_ctx,
+                                    grpc_ares_request *r) {
   /* If there are no pending queries, invoke on_done callback and destroy the
      request */
   if (gpr_unref(&r->pending_queries)) {
-    /* TODO(zyc): Sort results with RFC6724 before invoking on_done. */
+    if (GRPC_TRACER_ON(grpc_trace_cares_address_sorting)) {
+      log_address_sorting_list(*(r->lb_addrs_out), "input");
+    }
+    address_sorting_rfc_6724_sort(*(r->lb_addrs_out));
+    if (GRPC_TRACER_ON(grpc_trace_cares_address_sorting)) {
+      log_address_sorting_list(*(r->lb_addrs_out), "output");
+    }
     if (exec_ctx == NULL) {
       /* A new exec_ctx is created here, as the c-ares interface does not
          provide one in ares_host_callback. It's safe to schedule on_done with
