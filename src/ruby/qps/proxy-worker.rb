@@ -29,6 +29,7 @@ require 'facter'
 require 'qps-common'
 require 'src/proto/grpc/testing/services_services_pb'
 require 'src/proto/grpc/testing/proxy-service_services_pb'
+require 'benchmark'
 
 class ProxyBenchmarkClientServiceImpl < Grpc::Testing::ProxyClientService::Service
   def initialize(port, c_ext)
@@ -42,6 +43,8 @@ class ProxyBenchmarkClientServiceImpl < Grpc::Testing::ProxyClientService::Servi
     @histogram = Histogram.new(@histres, @histmax)
     @start_time = Time.now
     @php_pid = Array.new(@config.client_channels)
+    @utime = Array.new(@config.client_channels, 0)
+    @stime = Array.new(@config.client_channels, 0)
     (0..@config.client_channels-1).each do |chan|
       Thread.new {
         if @use_c_ext
@@ -84,7 +87,16 @@ class ProxyBenchmarkClientServiceImpl < Grpc::Testing::ProxyClientService::Servi
     end
     Grpc::Testing::Void.new
   end
+  def get_time(pid)
+    command = "perl -MPOSIX -l -0777 -ne '@f = /\\(.*\\)|\\S+/gs;
+    printf \"%.2f %.2f\n\",
+      map {$_/POSIX::sysconf( &POSIX::_SC_CLK_TCK )}@f[13..14]' \"/proc/" + pid.to_s + "/stat\""
+    times = `#{command}`.strip.to_s.split(' ').to_a
+    return times[0].to_f, times[1].to_f
+  end
   def mark(reset)
+    report_utime = 0.0
+    report_stime = 0.0
     lat = Grpc::Testing::HistogramData.new(
       bucket: @histogram.contents,
       min_seen: @histogram.minimum,
@@ -97,8 +109,15 @@ class ProxyBenchmarkClientServiceImpl < Grpc::Testing::ProxyClientService::Servi
     if reset
       @start_time = Time.now
       @histogram = Histogram.new(@histres, @histmax)
+      (0..@config.client_channels-1).each do |chan|
+        current_utime, current_stime = get_time(@php_pid[chan])
+        report_utime += current_utime - @utime[chan]
+        report_stime += current_stime - @stime[chan]
+        @utime[chan] = current_utime
+        @stime[chan] = current_stime
+      end
     end
-    Grpc::Testing::ClientStats.new(latencies: lat, time_elapsed: elapsed)
+    Grpc::Testing::ClientStats.new(latencies: lat, time_elapsed: elapsed, time_user: report_utime, time_system: report_stime)
   end
 end
 
@@ -161,7 +180,7 @@ def proxymain
   Thread.abort_on_exception = true
 
   # Make sure proxy_server can handle the large number of calls in benchmarks
-  s = GRPC::RpcServer.new(pool_size: 4096)
+  s = GRPC::RpcServer.new(pool_size: 1024)
   port = s.add_http2_port("0.0.0.0:" + options['driver_port'].to_s,
                           :this_port_is_insecure)
   bmc = ProxyBenchmarkClientServiceImpl.new(port, options[:c_ext])
