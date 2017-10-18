@@ -72,7 +72,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "pid_controller_test",
     srcs = ["pid_controller_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
