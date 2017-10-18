@@ -1025,7 +1025,7 @@ static void glb_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   if (glb_policy->rr_policy != NULL) {
     GRPC_LB_POLICY_UNREF(exec_ctx, glb_policy->rr_policy, "glb_shutdown");
   } else {
-    grpc_lb_policy_try_reresolve(exec_ctx, pol, grpc_lb_glb_trace,
+    grpc_lb_policy_try_reresolve(exec_ctx, pol, &grpc_lb_glb_trace,
                                  GRPC_ERROR_CANCELLED);
   }
   // We destroy the LB channel here because

@@ -224,7 +224,7 @@ void grpc_lb_policy_set_reresolve_closure_locked(
     the LB policy implementations. */
 void grpc_lb_policy_try_reresolve(grpc_exec_ctx *exec_ctx,
                                   grpc_lb_policy *policy,
-                                  grpc_tracer_flag grpc_lb_trace,
+                                  grpc_tracer_flag *grpc_lb_trace,
                                   grpc_error *error);
 
 #ifdef __cplusplus

@@ -127,7 +127,7 @@ static void pf_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     gpr_free(pp);
     pp = next;
   }
-  grpc_lb_policy_try_reresolve(exec_ctx, pol, grpc_lb_pick_first_trace,
+  grpc_lb_policy_try_reresolve(exec_ctx, pol, &grpc_lb_pick_first_trace,
                                GRPC_ERROR_CANCELLED);
 }
 
@@ -547,8 +547,8 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
             : p->checking_connectivity;
     if (publish_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       /* if the selected channel goes bad, request a re-resolution */
-      grpc_lb_policy_try_reresolve(exec_ctx, &p->base, grpc_lb_pick_first_trace,
-                                   GRPC_ERROR_NONE);
+      grpc_lb_policy_try_reresolve(exec_ctx, &p->base,
+                                   &grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
     }
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker, publish_state,
                                 GRPC_ERROR_REF(error), "selected_changed");
@@ -611,7 +611,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
               exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
               GRPC_ERROR_REF(error), "connecting_transient_failure");
           grpc_lb_policy_try_reresolve(
-              exec_ctx, &p->base, grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
+              exec_ctx, &p->base, &grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
         }
         GRPC_ERROR_UNREF(error);
         p->checking_connectivity = grpc_subchannel_check_connectivity(
@@ -646,7 +646,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                     GRPC_ERROR_REF(error), "subchannel_failed");
         if (p->num_subchannels == 0) {
           grpc_lb_policy_try_reresolve(
-              exec_ctx, &p->base, grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
+              exec_ctx, &p->base, &grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
         } else {
           p->checking_subchannel %= p->num_subchannels;
           GRPC_ERROR_UNREF(error);
