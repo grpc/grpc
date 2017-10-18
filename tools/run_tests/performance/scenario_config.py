@@ -132,7 +132,6 @@ def _ping_pong_scenario(name, rpc_type,
     'name': name,
     'num_servers': 1,
     'num_clients': 1,
-    'spawn_local_worker_count': -2,
     'client_config': {
       'client_type': client_type,
       'security_params': _get_secargs(secure),
@@ -177,7 +176,6 @@ def _ping_pong_scenario(name, rpc_type,
     deep = int(math.ceil(1.0 * outstanding_calls / wide))
 
     scenario['num_clients'] = num_clients if num_clients is not None else 0  # use as many clients as available.
-    scenario['spawn_local_worker_count'] = -1 - scenario['num_clients']
     scenario['client_config']['outstanding_rpcs_per_channel'] = deep
     scenario['client_config']['client_channels'] = wide
     scenario['client_config']['async_client_threads'] = 0
@@ -254,8 +252,8 @@ class CXXLanguage:
        rpc_type='UNARY', client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
        req_size=300, resp_size=50,
        unconstrained_client='async', outstanding=30000, channels=300,
-       offered_load=37500, num_clients=2, secure=False,
-       async_server_threads=16, server_threads_per_cq=16,
+       offered_load=37500, secure=False,
+       async_server_threads=16, server_threads_per_cq=1,
        categories=[SMOKETEST] + [SCALABLE])
 
     for secure in [True, False]:

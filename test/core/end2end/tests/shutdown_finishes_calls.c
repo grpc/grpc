@@ -159,7 +159,9 @@ static void test_early_server_shutdown_finishes_inflight_calls(
 
   grpc_server_destroy(f.server);
 
-  GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
+  // new code should give INTERNAL, some older code will give UNAVAILABLE
+  GPR_ASSERT(status == GRPC_STATUS_INTERNAL ||
+             status == GRPC_STATUS_UNAVAILABLE);
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   validate_host_override_string("foo.test.google.fr:1234", call_details.host,
                                 config);

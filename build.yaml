@@ -427,6 +427,7 @@ filegroups:
   - src/core/lib/slice/slice_hash_table.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/support/vector.h
   - src/core/lib/surface/alarm_internal.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
@@ -777,6 +778,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
+  - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/frame_data.h
   - src/core/ext/transport/chttp2/transport/frame_goaway.h
@@ -3405,18 +3407,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  uses_polling: false
-- name: transport_pid_controller_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/pid_controller_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: transport_security_test
   build: test
   language: c
@@ -3555,6 +3545,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3577,6 +3568,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3599,6 +3591,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3621,6 +3614,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3642,6 +3636,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3663,6 +3658,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3684,6 +3680,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=4
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3705,6 +3702,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3729,6 +3727,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   excluded_poll_engines:
   - poll
@@ -3756,6 +3755,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   excluded_poll_engines:
   - poll
@@ -3782,6 +3782,7 @@ targets:
   - grpc++_test_config
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   excluded_poll_engines:
   - poll
@@ -3809,6 +3810,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   excluded_poll_engines:
   - poll
@@ -3834,6 +3836,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3856,6 +3859,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -4719,6 +4723,9 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  exclude_configs:
+  - tsan
+  timeout_seconds: 1200
   uses_polling: false
 - name: status_test
   build: test
@@ -4801,6 +4808,32 @@ targets:
   - gpr_test_util
   - gpr
   timeout_seconds: 1200
+- name: transport_pid_controller_test
+  build: test
+  language: c++
+  src:
+  - test/core/transport/pid_controller_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc++
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: vector_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/support/vector_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
 - name: writes_per_rpc_test
   gtest: true
   cpu_cost: 0.5
@@ -4982,6 +5015,7 @@ defaults:
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
   global:
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
+      -Ithird_party/abseil-cpp
     LDFLAGS: -g
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration

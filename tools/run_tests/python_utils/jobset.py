@@ -302,6 +302,7 @@ class Job(object):
           self._retries += 1
           self.result.num_failures += 1
           self.result.retries = self._timeout_retries + self._retries
+          # NOTE: job is restarted regardless of jobset's max_time setting
           self.start()
         else:
           self._state = _FAILURE
@@ -344,6 +345,7 @@ class Job(object):
         if self._spec.kill_handler:
           self._spec.kill_handler(self)
         self._process.terminate()
+        # NOTE: job is restarted regardless of jobset's max_time setting
         self.start()
       else:
         message('TIMEOUT', '%s [pid=%d, time=%.1fsec]' % (self._spec.shortname, self._process.pid, elapsed), stdout(), do_newline=True)

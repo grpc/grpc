@@ -35,6 +35,7 @@ cat << EOF | awk '{ print $1 }' | sort > $want_submodules
  cacf7f1d4e3d44d871b605da3b647f07d718623f third_party/zlib (v1.2.11)
  3be1924221e1326df520f8498d704a5c4c8d0cce third_party/cares/cares (cares-1_13_0)
  73594cde8c9a52a102c4341c244c833aa61b9c06 third_party/bloaty
+ cc4bed2d74f7c8717e31f9579214ab52a9c9c610 third_party/abseil-cpp
 EOF
 
 diff -u $submodules $want_submodules

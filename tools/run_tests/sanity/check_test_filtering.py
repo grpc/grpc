@@ -81,7 +81,8 @@ class TestFilteringTest(unittest.TestCase):
     self.test_filtering(['src/core/foo.bar'], [_LIST_OF_LANGUAGE_LABELS])
     # Testing individual languages
     self.test_filtering(['test/core/foo.bar'], [label for label in _LIST_OF_LANGUAGE_LABELS if label not in
-                                                filter_pull_request_tests._CORE_TEST_SUITE.labels])
+                                                filter_pull_request_tests._CORE_TEST_SUITE.labels +
+                                                filter_pull_request_tests._CPP_TEST_SUITE.labels])
     self.test_filtering(['src/cpp/foo.bar'], [label for label in _LIST_OF_LANGUAGE_LABELS if label not in
                                               filter_pull_request_tests._CPP_TEST_SUITE.labels])
     self.test_filtering(['src/csharp/foo.bar'], [label for label in _LIST_OF_LANGUAGE_LABELS if label not in

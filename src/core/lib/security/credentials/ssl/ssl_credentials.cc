@@ -62,7 +62,8 @@ static grpc_security_status ssl_create_security_connector(
     }
   }
   status = grpc_ssl_channel_security_connector_create(
-      exec_ctx, call_creds, &c->config, target, overridden_target_name, sc);
+      exec_ctx, creds, call_creds, &c->config, target, overridden_target_name,
+      sc);
   if (status != GRPC_SECURITY_OK) {
     return status;
   }
@@ -128,7 +129,8 @@ static grpc_security_status ssl_server_create_security_connector(
     grpc_exec_ctx *exec_ctx, grpc_server_credentials *creds,
     grpc_server_security_connector **sc) {
   grpc_ssl_server_credentials *c = (grpc_ssl_server_credentials *)creds;
-  return grpc_ssl_server_security_connector_create(exec_ctx, &c->config, sc);
+  return grpc_ssl_server_security_connector_create(exec_ctx, creds, &c->config,
+                                                   sc);
 }
 
 static grpc_server_credentials_vtable ssl_server_vtable = {
