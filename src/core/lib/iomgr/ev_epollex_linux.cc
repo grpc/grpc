@@ -635,6 +635,21 @@ static grpc_error *pollset_kick(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
         pollset->kicked_without_poller = true;
         return GRPC_ERROR_NONE;
       } else {
+        // We've been asked to kick a poller, but we haven't been told which one
+        // ... any will do
+        // We look at the pollset worker list because:
+        // 1. the pollable list may include workers from other pollers, so we'd
+        //    need to do an O(N) search
+        // 2. we'd additionally need to take the pollable lock, which we've so
+        //    far avoided
+        // Now, we would prefer to wake a poller in cv_wait, and not in
+        // epoll_wait (since the latter would imply the need to do an additional
+        // wakeup)
+        // We know that if a worker is at the root of a pollable, it's (likely)
+        // also the root of a pollset, and we know that if a worker is NOT at
+        // the root of a pollset, it's (likely) not at the root of a pollable,
+        // so we take our chances and choose the SECOND worker enqueued against
+        // the pollset as a worker that's likely to be in cv_wait
         return kick_one_worker(
             exec_ctx, pollset->root_worker->links[PWLINK_POLLSET].next);
       }
