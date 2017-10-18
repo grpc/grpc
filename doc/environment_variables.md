@@ -121,7 +121,7 @@ some configuration as environment variables that can be set.
   - ares - a DNS resolver based around the c-ares library
 
 * GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS
-  Default: 500
+  Default: 5000
   Declares the interval between two backup polls on client channels. These polls
   are run in the timer thread so that gRPC can process connection failures while
   there is no active polling thread. They help reconnect disconnected client
