@@ -29,7 +29,7 @@ extern "C" {
 struct tsi_frame_protector;
 struct tsi_zero_copy_grpc_protector;
 
-extern grpc_core::Tracer grpc_trace_secure_endpoint;
+extern grpc_core::TraceFlag grpc_trace_secure_endpoint;
 
 /* Takes ownership of protector, zero_copy_protector, and to_wrap, and refs
  * leftover_slices. If zero_copy_protector is not NULL, protector will never be

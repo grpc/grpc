@@ -44,7 +44,7 @@
 #include "src/core/tsi/transport_security_adapter.h"
 
 #ifndef NDEBUG
-grpc_core::Tracer grpc_trace_security_connector_refcount(
+grpc_core::TraceFlag grpc_trace_security_connector_refcount(
     false, "security_connector_refcount");
 #endif
 

@@ -25,7 +25,7 @@
 #include "src/core/lib/profiling/timers.h"
 
 #ifndef NDEBUG
-grpc_core::Tracer grpc_trace_closure(false, "closure");
+grpc_core::TraceFlag grpc_trace_closure(false, "closure");
 #endif
 
 #ifndef NDEBUG

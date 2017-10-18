@@ -28,7 +28,7 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
-grpc_core::Tracer grpc_lb_pick_first_trace(false, "pick_first");
+grpc_core::TraceFlag grpc_lb_pick_first_trace(false, "pick_first");
 
 typedef struct pending_pick {
   struct pending_pick *next;

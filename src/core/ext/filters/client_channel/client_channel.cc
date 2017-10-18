@@ -55,7 +55,7 @@
 
 /* Client channel implementation */
 
-grpc_core::Tracer grpc_client_channel_trace(false, "client_channel");
+grpc_core::TraceFlag grpc_client_channel_trace(false, "client_channel");
 
 /*************************************************************************
  * METHOD-CONFIG TABLE

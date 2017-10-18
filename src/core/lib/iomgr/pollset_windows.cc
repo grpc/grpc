@@ -31,7 +31,7 @@
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker *)1)
 
 #ifndef NDEBUG
-grpc_core::Tracer grpc_trace_fd_refcount(false, "fd_refcount");
+grpc_core::TraceFlag grpc_trace_fd_refcount(false, "fd_refcount");
 #endif
 
 gpr_mu grpc_polling_mu;

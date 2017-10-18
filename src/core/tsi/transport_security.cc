@@ -26,7 +26,7 @@
 
 /* --- Tracing. --- */
 
-grpc_core::Tracer tsi_tracing_enabled(false, "tsi");
+grpc_core::TraceFlag tsi_tracing_enabled(false, "tsi");
 
 /* --- tsi_result common implementation. --- */
 

@@ -28,7 +28,7 @@
 #include "src/core/lib/surface/completion_queue.h"
 
 #ifndef NDEBUG
-grpc_core::Tracer grpc_trace_alarm_refcount(false, "alarm_refcount");
+grpc_core::TraceFlag grpc_trace_alarm_refcount(false, "alarm_refcount");
 #endif
 
 struct grpc_alarm {

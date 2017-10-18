@@ -19,4 +19,4 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/debug/trace.h"
 
-grpc_core::Tracer grpc_api_trace(false, "api");
+grpc_core::TraceFlag grpc_api_trace(false, "api");

@@ -39,10 +39,10 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/event_string.h"
 
-grpc_core::Tracer grpc_trace_operation_failures(false, "op_failure");
+grpc_core::TraceFlag grpc_trace_operation_failures(false, "op_failure");
 #ifndef NDEBUG
-grpc_core::Tracer grpc_trace_pending_tags(false, "pending_tags");
-grpc_core::Tracer grpc_trace_cq_refcount(false, "cq_refcount");
+grpc_core::TraceFlag grpc_trace_pending_tags(false, "pending_tags");
+grpc_core::TraceFlag grpc_trace_cq_refcount(false, "cq_refcount");
 #endif
 
 typedef struct {
@@ -325,8 +325,8 @@ static const cq_vtable g_cq_vtable[] = {
 #define POLLSET_FROM_CQ(cq) \
   ((grpc_pollset *)(cq->vtable->data_size + (char *)DATA_FROM_CQ(cq)))
 
-grpc_core::Tracer grpc_cq_pluck_trace(true, "queue_pluck");
-grpc_core::Tracer grpc_cq_event_timeout_trace(true, "queue_timeout");
+grpc_core::TraceFlag grpc_cq_pluck_trace(true, "queue_pluck");
+grpc_core::TraceFlag grpc_cq_event_timeout_trace(true, "queue_timeout");
 
 #define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)                       \
   if (grpc_api_trace.enabled() && (grpc_cq_pluck_trace.enabled() ||        \

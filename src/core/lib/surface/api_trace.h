@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-extern grpc_core::Tracer grpc_api_trace;
+extern grpc_core::TraceFlag grpc_api_trace;
 
 /* Provide unwrapping macros because we're in C89 and variadic macros weren't
    introduced until C99... */

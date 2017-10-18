@@ -57,7 +57,7 @@ static const grpc_slice terminal_slice = {
     {{0, 0}}                  /* data.refcounted */
 };
 
-extern grpc_core::Tracer grpc_http_trace;
+extern grpc_core::TraceFlag grpc_http_trace;
 
 typedef struct {
   int is_first_frame;

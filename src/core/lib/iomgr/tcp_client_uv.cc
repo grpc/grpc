@@ -32,7 +32,7 @@
 #include "src/core/lib/iomgr/tcp_uv.h"
 #include "src/core/lib/iomgr/timer.h"
 
-extern grpc_core::Tracer grpc_tcp_trace;
+extern grpc_core::TraceFlag grpc_tcp_trace;
 
 typedef struct grpc_uv_tcp_connect {
   uv_connect_t connect_req;

@@ -22,7 +22,7 @@
 
 #include "src/core/lib/debug/trace.h"
 
-extern grpc_core::Tracer grpc_polling_trace;
+extern grpc_core::TraceFlag grpc_polling_trace;
 
 /* 'state' holds the to call when the fd is readable or writable respectively.
    It can contain one of the following values:

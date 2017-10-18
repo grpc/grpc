@@ -29,21 +29,21 @@ int grpc_tracer_set_enabled(const char *name, int enabled);
 
 namespace grpc_core {
 
-Tracer::Tracer(bool default_enabled, const char *name)
+TraceFlag::TraceFlag(bool default_enabled, const char *name)
     : next_tracer_(root_tracer_), name_(name), value_(default_enabled) {
   root_tracer_ = this;
 }
 
-void Tracer::List() {
+void TraceFlag::List() {
   gpr_log(GPR_DEBUG, "available tracers:");
-  Tracer *t;
+  TraceFlag *t;
   for (t = root_tracer_; t != nullptr; t = t->next_tracer_) {
     gpr_log(GPR_DEBUG, "\t%s", t->name_);
   }
 }
 
-bool Tracer::Set(const char *name, bool enabled) {
-  Tracer *t;
+bool TraceFlag::Set(const char *name, bool enabled) {
+  TraceFlag *t;
   if (0 == strcmp(name, "all")) {
     for (t = root_tracer_; t; t = t->next_tracer_) {
       t->set_enabled(enabled);
@@ -107,9 +107,9 @@ static void parse(const char *s) {
 
   for (i = 0; i < nstrings; i++) {
     if (strings[i][0] == '-') {
-      grpc_core::Tracer::Set(strings[i] + 1, false);
+      grpc_core::TraceFlag::Set(strings[i] + 1, false);
     } else {
-      grpc_core::Tracer::Set(strings[i], true);
+      grpc_core::TraceFlag::Set(strings[i], true);
     }
   }
 
@@ -130,5 +130,5 @@ void grpc_tracer_init(const char *env_var) {
 void grpc_tracer_shutdown(void) {}
 
 int grpc_tracer_set_enabled(const char *name, int enabled) {
-  return grpc_core::Tracer::Set(name, enabled != 0);
+  return grpc_core::TraceFlag::Set(name, enabled != 0);
 }

@@ -39,7 +39,7 @@ static const char *stream_list_id_string(grpc_chttp2_stream_list_id id) {
   GPR_UNREACHABLE_CODE(return "unknown");
 }
 
-grpc_core::Tracer grpc_trace_http2_stream_state(false, "http2_stream_state");
+grpc_core::TraceFlag grpc_trace_http2_stream_state(false, "http2_stream_state");
 
 /* core list management */
 

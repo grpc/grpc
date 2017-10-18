@@ -38,7 +38,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 #ifndef NDEBUG
-grpc_core::Tracer grpc_trace_error_refcount(false, "error_refcount");
+grpc_core::TraceFlag grpc_trace_error_refcount(false, "error_refcount");
 #endif
 
 static const char *error_int_name(grpc_error_ints key) {

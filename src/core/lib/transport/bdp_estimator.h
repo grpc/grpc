@@ -31,7 +31,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-extern grpc_core::Tracer grpc_bdp_estimator_trace;
+extern grpc_core::TraceFlag grpc_bdp_estimator_trace;
 
 namespace grpc_core {
 

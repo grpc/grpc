@@ -26,7 +26,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 #ifndef NDEBUG
-extern grpc_core::Tracer grpc_trace_metadata;
+extern grpc_core::TraceFlag grpc_trace_metadata;
 #endif
 
 #ifdef __cplusplus

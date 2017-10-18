@@ -38,7 +38,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 
-grpc_core::Tracer grpc_tcp_trace(false, "tcp");
+grpc_core::TraceFlag grpc_tcp_trace(false, "tcp");
 
 typedef struct {
   grpc_endpoint base;

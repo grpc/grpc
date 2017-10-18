@@ -36,11 +36,11 @@
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/support/env.h"
 
-grpc_core::Tracer grpc_polling_trace(false,
+grpc_core::TraceFlag grpc_polling_trace(false,
                                      "polling"); /* Disabled by default */
 
 #ifndef NDEBUG
-grpc_core::Tracer grpc_trace_fd_refcount(false, "fd_refcount");
+grpc_core::TraceFlag grpc_trace_fd_refcount(false, "fd_refcount");
 #endif
 
 /** Default poll() function - a pointer so that it can be overridden by some

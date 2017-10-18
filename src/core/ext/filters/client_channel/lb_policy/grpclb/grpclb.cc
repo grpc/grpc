@@ -126,7 +126,7 @@
 #define GRPC_GRPCLB_RECONNECT_JITTER 0.2
 #define GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS 10000
 
-grpc_core::Tracer grpc_lb_glb_trace(false, "glb");
+grpc_core::TraceFlag grpc_lb_glb_trace(false, "glb");
 
 /* add lb_token of selected subchannel (address) to the call's initial
  * metadata */

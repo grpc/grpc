@@ -49,7 +49,7 @@
 #define GRPC_FIONBIO FIONBIO
 #endif
 
-grpc_core::Tracer grpc_tcp_trace(false, "tcp");
+grpc_core::TraceFlag grpc_tcp_trace(false, "tcp");
 
 static grpc_error *set_non_block(SOCKET sock) {
   int status;

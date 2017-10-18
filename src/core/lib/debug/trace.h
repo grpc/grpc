@@ -44,10 +44,10 @@ void grpc_tracer_shutdown(void);
 
 namespace grpc_core {
 
-class Tracer {
+class TraceFlag {
  public:
-  Tracer(bool default_enabled, const char *name);
-  ~Tracer();
+  TraceFlag(bool default_enabled, const char *name);
+  ~TraceFlag();
 
   static bool Set(const char *tracer, bool enabled);
 
@@ -70,8 +70,8 @@ class Tracer {
 #endif
   }
 
-  static Tracer *root_tracer_;
-  Tracer *next_tracer_;
+  static TraceFlag *root_tracer_;
+  TraceFlag *next_tracer_;
   const char *const name_;
 #ifdef GRPC_THREADSAFE_TRACER
   gpr_atm value_;

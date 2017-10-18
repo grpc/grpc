@@ -30,7 +30,7 @@ typedef struct grpc_resolver grpc_resolver;
 typedef struct grpc_resolver_vtable grpc_resolver_vtable;
 
 #ifndef NDEBUG
-extern grpc_core::Tracer grpc_trace_resolver_refcount;
+extern grpc_core::TraceFlag grpc_trace_resolver_refcount;
 #endif
 
 /** \a grpc_resolver provides \a grpc_channel_args objects to its caller */

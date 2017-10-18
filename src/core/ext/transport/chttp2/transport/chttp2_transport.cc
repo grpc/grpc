@@ -90,11 +90,11 @@ static int g_default_max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA;
 static int g_default_max_ping_strikes = DEFAULT_MAX_PING_STRIKES;
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
-grpc_core::Tracer grpc_http_trace(false, "http");
-grpc_core::Tracer grpc_flowctl_trace(false, "flowctl");
+grpc_core::TraceFlag grpc_http_trace(false, "http");
+grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
 
 #ifndef NDEBUG
-grpc_core::Tracer grpc_trace_chttp2_refcount(false, "chttp2_refcount");
+grpc_core::TraceFlag grpc_trace_chttp2_refcount(false, "chttp2_refcount");
 #endif
 
 /* forward declarations of various callbacks that we'll build closures around */

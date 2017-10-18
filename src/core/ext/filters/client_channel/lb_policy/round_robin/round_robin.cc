@@ -38,7 +38,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-grpc_core::Tracer grpc_lb_round_robin_trace(false, "round_robin");
+grpc_core::TraceFlag grpc_lb_round_robin_trace(false, "round_robin");
 
 /** List of entities waiting for a pick.
  *

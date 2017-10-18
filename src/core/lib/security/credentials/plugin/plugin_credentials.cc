@@ -31,7 +31,7 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/validate_metadata.h"
 
-grpc_core::Tracer grpc_plugin_credentials_trace(false, "plugin_credentials");
+grpc_core::TraceFlag grpc_plugin_credentials_trace(false, "plugin_credentials");
 
 static void plugin_destruct(grpc_exec_ctx *exec_ctx,
                             grpc_call_credentials *creds) {

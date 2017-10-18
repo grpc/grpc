@@ -27,12 +27,12 @@
 extern "C" {
 #endif
 
-extern grpc_core::Tracer grpc_http_trace;
-extern grpc_core::Tracer grpc_flowctl_trace;
-extern grpc_core::Tracer grpc_trace_http2_stream_state;
+extern grpc_core::TraceFlag grpc_http_trace;
+extern grpc_core::TraceFlag grpc_flowctl_trace;
+extern grpc_core::TraceFlag grpc_trace_http2_stream_state;
 
 #ifndef NDEBUG
-extern grpc_core::Tracer grpc_trace_chttp2_refcount;
+extern grpc_core::TraceFlag grpc_trace_chttp2_refcount;
 #endif
 
 grpc_transport *grpc_create_chttp2_transport(

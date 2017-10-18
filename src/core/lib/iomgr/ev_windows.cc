@@ -22,7 +22,7 @@
 
 #include "src/core/lib/debug/trace.h"
 
-grpc_core::Tracer grpc_polling_trace(false,
+grpc_core::TraceFlag grpc_polling_trace(false,
                                      "polling"); /* Disabled by default */
 
 #endif  // GRPC_WINSOCK_SOCKET

@@ -43,7 +43,7 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/support/string.h"
 
-extern grpc_core::Tracer grpc_tcp_trace;
+extern grpc_core::TraceFlag grpc_tcp_trace;
 
 typedef struct {
   gpr_mu mu;

@@ -30,8 +30,8 @@
 #include <uv.h>
 
 extern "C" {
-grpc_core::Tracer grpc_timer_trace(false, "timer");
-grpc_core::Tracer grpc_timer_check_trace(false, "timer_check");
+grpc_core::TraceFlag grpc_timer_trace(false, "timer");
+grpc_core::TraceFlag grpc_timer_check_trace(false, "timer_check");
 }
 
 static void timer_close_callback(uv_handle_t *handle) { gpr_free(handle); }

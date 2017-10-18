@@ -31,7 +31,7 @@ extern "C" {
 extern const grpc_channel_filter grpc_server_top_filter;
 
 /** Lightweight tracing of server channel state */
-extern grpc_core::Tracer grpc_server_channel_trace;
+extern grpc_core::TraceFlag grpc_server_channel_trace;
 
 /* Add a listener to the server: when the server starts, it will call start,
    and when it shuts down, it will call destroy */

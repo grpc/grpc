@@ -24,7 +24,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/profiling/timers.h"
 
-grpc_core::Tracer grpc_call_combiner_trace(false, "call_combiner");
+grpc_core::TraceFlag grpc_call_combiner_trace(false, "call_combiner");
 
 static grpc_error* decode_cancel_state_error(gpr_atm cancel_state) {
   if (cancel_state & 1) {

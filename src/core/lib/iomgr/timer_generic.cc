@@ -44,8 +44,8 @@
 #define MAX_QUEUE_WINDOW_DURATION 1
 
 extern "C" {
-grpc_core::Tracer grpc_timer_trace(false, "timer");
-grpc_core::Tracer grpc_timer_check_trace(false, "timer_check");
+grpc_core::TraceFlag grpc_timer_trace(false, "timer");
+grpc_core::TraceFlag grpc_timer_check_trace(false, "timer_check");
 }
 
 /* A "timer shard". Contains a 'heap' and a 'list' of timers. All timers with

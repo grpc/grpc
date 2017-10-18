@@ -51,7 +51,7 @@ static gpr_spinlock g_adding_thread_lock = GPR_SPINLOCK_STATIC_INITIALIZER;
 
 GPR_TLS_DECL(g_this_thread_state);
 
-static grpc_core::Tracer executor_trace(false, "executor");
+static grpc_core::TraceFlag executor_trace(false, "executor");
 
 static void executor_thread(void *arg);
 

@@ -44,7 +44,7 @@ typedef struct grpc_transport grpc_transport;
 typedef struct grpc_stream grpc_stream;
 
 #ifndef NDEBUG
-extern grpc_core::Tracer grpc_trace_stream_refcount;
+extern grpc_core::TraceFlag grpc_trace_stream_refcount;
 #endif
 
 typedef struct grpc_stream_refcount {
