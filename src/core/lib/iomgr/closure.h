@@ -33,8 +33,7 @@
 
 namespace grpc_core {
 
-#include <stdio.h>
-#include <utility>
+class Combiner;
 
 /// Closure base type
 /// TODO(ctiller): ... write stuff here ...
@@ -61,23 +60,26 @@ class Closure {
 //  template <class F> void DoSchedule(F&& f);
 //  template <class F> void DoRun(F&& f);
 
-template <class Scheduler, class T, T>
+template <template <class Derived> class Scheduler, class T, T>
 class MemberClosure;
 
-template <class Scheduler, class T, typename... Args, void (T::*F)(Args...)>
+template <template <class Derived> class Scheduler, class T, typename... Args,
+          void (T::*F)(Args...)>
 class MemberClosure<Scheduler, void (T::*)(Args...), F> final
     : public Closure<Args...>,
-      private Scheduler {
+      public Scheduler<MemberClosure<Scheduler, void (T::*)(Args...), F>> {
  public:
   MemberClosure(T* p) : p_(p) {}
 
   void Schedule(Args&&... args) override {
-    this->Scheduler::DoSchedule([this, args...]() { (p_->*F)(args...); });
+    this->DoSchedule([this, args...]() { (p_->*F)(args...); });
   }
 
   void Run(Args&&... args) override {
-    this->Scheduler::DoRun([this, args...]() { (p_->*F)(args...); });
+    this->DoRun([this, args...]() { (p_->*F)(args...); });
   }
+
+  Combiner* combiner() { return p_->combiner(); }
 
  private:
   T* const p_;
@@ -85,18 +87,19 @@ class MemberClosure<Scheduler, void (T::*)(Args...), F> final
 
 struct grpc_error;
 
-template <class Scheduler>
-class LegacyClosure : public Closure<grpc_error*>, public Scheduler {
+template <template <class Derived> class Scheduler>
+class LegacyClosure : public Closure<grpc_error*>,
+                      public Scheduler<LegacyClosure<Scheduler>> {
  public:
   LegacyClosure(void (*const f)(void* arg, grpc_error* error), void* arg)
       : f_(f), arg_(arg) {}
 
   void Schedule(grpc_error*&& error) override {
-    this->Scheduler::DoSchedule([this, error]() { f_(arg_, error); });
+    this->DoSchedule([this, error]() { f_(arg_, error); });
   }
 
   void Run(grpc_error*&& error) override {
-    this->Scheduler::DoRun([this, error]() { f_(arg_, error); });
+    this->DoRun([this, error]() { f_(arg_, error); });
   }
 
  private:
@@ -104,25 +107,28 @@ class LegacyClosure : public Closure<grpc_error*>, public Scheduler {
   void* arg_;
 };
 
-template <class Scheduler, void (*f)(void* arg, grpc_error* error)>
-class LegacyClosureT : public Closure<grpc_error*>, public Scheduler {
+template <template <class Derived> class Scheduler,
+          void (*f)(void* arg, grpc_error* error)>
+class LegacyClosureT : public Closure<grpc_error*>,
+                       public Scheduler<LegacyClosureT<Scheduler, f>> {
  public:
   explicit LegacyClosureT(void* arg) : arg_(arg) {}
 
   void Schedule(grpc_error*&& error) override {
-    this->Scheduler::DoSchedule([this, error]() { f(arg_, error); });
+    this->DoSchedule([this, error]() { f(arg_, error); });
   }
 
   void Run(grpc_error*&& error) override {
-    this->Scheduler::DoRun([this, error]() { f(arg_, error); });
+    this->DoRun([this, error]() { f(arg_, error); });
   }
 
  private:
   void* arg_;
 };
 
+template <class Derived>
 class AcquiresNoLocks {
- public:
+ protected:
   template <class F>
   void DoSchedule(F&& f) {
     f();
@@ -133,22 +139,46 @@ class AcquiresNoLocks {
   }
 };
 
+template <class Derived>
+class RunOnCombiner {
+ protected:
+  template <class F>
+  void DoSchedule(F&& f) {
+    static_cast<Derived*>(this)->combiner()->Schedule(f);
+  }
+  template <class F>
+  void DoRun(F&& f) {
+    static_cast<Derived*>(this)->combiner()->Run(f);
+  }
+};
+
+class Combiner {
+ public:
+  void Schedule(std::function<void()>);
+  void Run(std::function<void()>);
+};
+
 void foo(void*, grpc_error*);
 
 void test() {
   class C {
     void Foo(int a, int b, int c) { printf("%d %d %d", a, b, c); }
+    Combiner c_;
 
    public:
     MemberClosure<AcquiresNoLocks, void (C::*)(int, int, int), &C::Foo>
         foo_closure{this};
+    Combiner* combiner() { return &c_; }
+    MemberClosure<RunOnCombiner, void (C::*)(int, int, int), &C::Foo>
+        foo_on_combiner_closure{this};
   };
   C c;
   LegacyClosure<AcquiresNoLocks> a(foo, nullptr);
   a.Run(nullptr);
   LegacyClosureT<AcquiresNoLocks, foo> b(nullptr);
   b.Schedule(nullptr);
-  c.foo_closure.Run(sizeof(a), sizeof(b), sizeof(c));
+  c.foo_closure.Run(sizeof(a), sizeof(b), sizeof(c.foo_on_combiner_closure));
+  c.foo_on_combiner_closure.Run(1, 2, 3);
 }
 
 }  // namespace grpc_core
