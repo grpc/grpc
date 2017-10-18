@@ -41,6 +41,8 @@ def _get_external_deps(external_deps):
     elif dep == "cares":
       ret += select({"//:grpc_no_ares": [],
                      "//conditions:default": ["//external:cares"],})
+    elif dep == "address_sorting":
+      ret += ["//third_party/address_sorting"]
     else:
       ret += ["//external:" + dep]
   return ret

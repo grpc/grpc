@@ -590,6 +590,11 @@
   EMBED_CARES ?= false
   endif
 
+  ADDRESS_SORTING_DEP = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
+  ADDRESS_SORTING_MERGE_OBJS = $(LIBADDRESS_SORTING_OBJS)
+  ADDRESS_SORTING_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
+  CPPFLAGS := -Ithird_party/address_sorting $(CPPFLAGS)
+
   ifeq ($(EMBED_CARES),true)
   CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
   CARES_MERGE_OBJS = $(LIBARES_OBJS)
@@ -1480,7 +1485,7 @@
   else
   % endif
 
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP)\
+  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)\
   ## The else here corresponds to the if secure earlier.
   % else:
   % if lib.language == 'c++':
@@ -1504,6 +1509,9 @@
   % if lib.name != 'ares':
   $(CARES_DEP) \
   % endif
+  % if lib.name != 'address_sorting':
+  $(ADDRESS_SORTING_DEP) \
+  % endif
   % endif
   % if lib.language == 'c++':
    $(PROTOBUF_DEP)\
@@ -1513,6 +1521,7 @@
    $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
    $(CARES_MERGE_OBJS) \
+   $(ADDRESS_SORTING_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -1526,6 +1535,7 @@
    $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
    $(CARES_MERGE_OBJS) \
+   $(ADDRESS_SORTING_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -1548,9 +1558,9 @@
     common = '$(LIB' + lib.name.upper() + '_OBJS)'
 
     link_libs = ''
-    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP)'
+    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)'
     mingw_libs = ''
-    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP)'
+    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)'
     if lib.language == 'c++':
       lib_deps += ' $(PROTOBUF_DEP)'
       mingw_lib_deps += ' $(PROTOBUF_DEP)'
@@ -1575,7 +1585,7 @@
     security = lib.get('secure', 'check')
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
-    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS)'
+    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS)'
 
     if security in [True, 'check']:
       for src in lib.src:
