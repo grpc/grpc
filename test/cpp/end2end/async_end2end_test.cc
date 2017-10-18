@@ -461,6 +461,7 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
   if (GetParam().inproc) {
     return;
   }
+  gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "200");
   int poller_slowdown_factor = 1;
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
@@ -478,12 +479,12 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
   while (cq_->Next(&ignored_tag, &ignored_ok))
     ;
   BuildAndStartServer();
-  // It needs more than kConnectivityCheckIntervalMsec time to reconnect the
-  // channel.
+  // It needs more than GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS time to
+  // reconnect the channel.
   gpr_sleep_until(gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME),
       gpr_time_from_millis(
-          600 * poller_slowdown_factor * grpc_test_slowdown_factor(),
+          300 * poller_slowdown_factor * grpc_test_slowdown_factor(),
           GPR_TIMESPAN)));
   SendRpc(1);
 }
