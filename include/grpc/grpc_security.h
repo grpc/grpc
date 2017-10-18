@@ -347,7 +347,7 @@ GRPCAPI void grpc_ssl_server_certificate_config_release(
    trusted CAs (for client authentication).
     - Use grpc_ssl_server_certificate_config_create to create the config.
     - The caller assumes ownership of the config. */
-typedef grpc_ssl_credentials_reload_status (
+typedef grpc_ssl_certificate_config_reload_status (
     *grpc_ssl_server_certificate_config_callback)(
     void *state, grpc_ssl_server_certificate_config **config);
 

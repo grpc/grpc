@@ -630,9 +630,9 @@ static const char **fill_alpn_protocol_strings(size_t *num_alpn_protocols) {
 }
 
 /* Attempts to replace the server_handshaker_factory with a new factory using
- * the provided grpc_server_credentials. Should the credentials not be of type
- * SSL or should the new factory creation fail, the existing factory will not be
- * replaced. Returns true on success (new factory created). */
+ * the provided grpc_ssl_server_certificate_config. Should new factory creation
+ * fail, the existing factory will not be replaced. Returns true on success (new
+ * factory created). */
 static bool try_replace_server_handshaker_factory(
     grpc_ssl_server_security_connector *sc,
     grpc_ssl_server_certificate_config *config) {
@@ -673,13 +673,13 @@ static bool try_replace_server_handshaker_factory(
   return true;
 }
 
-/* Attempts to fetch the server credentials if a callback is available. Current
- * credentials will continue to be used if the callback returns an error.
- * Returns true if new credentials were sucessfully loaded. */
+/* Attempts to fetch the server certificate config if a callback is available.
+ * Current certificate config will continue to be used if the callback returns
+ * an error. Returns true if new credentials were sucessfully loaded. */
 static bool try_fetch_ssl_server_credentials(
     grpc_ssl_server_security_connector *sc) {
   grpc_ssl_server_certificate_config *certificate_config = NULL;
-  grpc_ssl_credentials_reload_status cb_result;
+  grpc_ssl_certificate_config_reload_status cb_result;
   bool status;
 
   GPR_ASSERT(sc != NULL);
@@ -688,10 +688,10 @@ static bool try_fetch_ssl_server_credentials(
   cb_result = sc->certificate_config_fetcher.cb(
       sc->certificate_config_fetcher.state, &certificate_config);
 
-  if (cb_result == GRPC_SSL_CREDENTIALS_RELOAD_UNCHANGED) {
+  if (cb_result == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED) {
     gpr_log(GPR_DEBUG, "No change in SSL server credentials.");
     status = false;
-  } else if (cb_result == GRPC_SSL_CREDENTIALS_RELOAD_NEW) {
+  } else if (cb_result == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW) {
     status = try_replace_server_handshaker_factory(sc, certificate_config);
   } else {
     // Log error, continue using previously-loaded credentials.

@@ -143,21 +143,21 @@ static grpc_server_credentials_vtable ssl_server_vtable = {
 tsi_ssl_pem_key_cert_pair *convert_grpc_to_tsi_cert_pairs(
     const grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
     size_t num_key_cert_pairs) {
-  tsi_ssl_pem_key_cert_pair *tsi_pair = NULL;
+  tsi_ssl_pem_key_cert_pair *tsi_pairs = NULL;
   size_t i;
   if (num_key_cert_pairs > 0) {
     GPR_ASSERT(pem_key_cert_pairs != NULL);
-    tsi_pair = (tsi_ssl_pem_key_cert_pair *)gpr_zalloc(
+    tsi_pairs = (tsi_ssl_pem_key_cert_pair *)gpr_zalloc(
         num_key_cert_pairs * sizeof(tsi_ssl_pem_key_cert_pair));
     for (i = 0; i < num_key_cert_pairs; i++) {
       GPR_ASSERT(pem_key_cert_pairs[i].private_key != NULL);
       GPR_ASSERT(pem_key_cert_pairs[i].cert_chain != NULL);
-      tsi_pair[i].cert_chain = gpr_strdup(pem_key_cert_pairs[i].cert_chain);
-      tsi_pair[i].private_key = gpr_strdup(pem_key_cert_pairs[i].private_key);
+      tsi_pairs[i].cert_chain = gpr_strdup(pem_key_cert_pairs[i].cert_chain);
+      tsi_pairs[i].private_key = gpr_strdup(pem_key_cert_pairs[i].private_key);
     }
   }
 
-  return tsi_pair;
+  return tsi_pairs;
 }
 
 static void ssl_build_server_config(
