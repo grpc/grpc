@@ -152,6 +152,15 @@ void grpc_exec_ctx_invalidate_now(grpc_exec_ctx *exec_ctx) {
 
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis,
                                      gpr_clock_type clock_type) {
+  // special-case infinities as grpc_millis can be 32bit on some platforms
+  // while gpr_time_from_millis always takes an int64_t.
+  if (millis == GRPC_MILLIS_INF_FUTURE) {
+    return gpr_inf_future(clock_type);
+  }
+  if (millis == GRPC_MILLIS_INF_PAST) {
+    return gpr_inf_past(clock_type);
+  }
+
   if (clock_type == GPR_TIMESPAN) {
     return gpr_time_from_millis(millis, GPR_TIMESPAN);
   }

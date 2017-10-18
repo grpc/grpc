@@ -49,6 +49,7 @@ some configuration as environment variables that can be set.
   - connectivity_state - traces connectivity state changes to channels
   - channel_stack_builder - traces information about channel stacks being built
   - executor - traces grpc's internal thread pool ('the executor')
+  - glb - traces the grpclb load balancer
   - http - traces state in the http2 transport engine
   - http2_stream_state - traces all http2 stream state mutations.
   - http1 - traces HTTP/1.x operations performed by gRPC
@@ -56,11 +57,12 @@ some configuration as environment variables that can be set.
   - flowctl - traces http2 flow control
   - op_failure - traces error information when failure is pushed onto a
     completion queue
-  - round_robin - traces the round_robin load balancing policy
   - pick_first - traces the pick first load balancing policy
   - plugin_credentials - traces plugin credentials
+  - pollable_refcount - traces reference counting of 'pollable' objects (only 
+    in DEBUG)
   - resource_quota - trace resource quota objects internals
-  - glb - traces the grpclb load balancer
+  - round_robin - traces the round_robin load balancing policy
   - queue_pluck
   - queue_timeout
   - server_channel - lightweight trace of significant server channel events

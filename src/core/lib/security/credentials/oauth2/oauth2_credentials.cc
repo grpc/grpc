@@ -262,7 +262,7 @@ static bool oauth2_token_fetcher_get_request_metadata(
   grpc_mdelem cached_access_token_md = GRPC_MDNULL;
   gpr_mu_lock(&c->mu);
   if (!GRPC_MDISNULL(c->access_token_md) &&
-      (c->token_expiration + grpc_exec_ctx_now(exec_ctx) > refresh_threshold)) {
+      (c->token_expiration - grpc_exec_ctx_now(exec_ctx) > refresh_threshold)) {
     cached_access_token_md = GRPC_MDELEM_REF(c->access_token_md);
   }
   if (!GRPC_MDISNULL(cached_access_token_md)) {

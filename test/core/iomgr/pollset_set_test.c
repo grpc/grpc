@@ -24,6 +24,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
@@ -430,14 +431,13 @@ void pollset_set_test_empty_pollset() {
 }
 
 int main(int argc, char **argv) {
-  const char *poll_strategy = grpc_get_poll_strategy_name();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
-  grpc_iomgr_init(&exec_ctx);
-  grpc_iomgr_start(&exec_ctx);
+  grpc_init();
+  const char *poll_strategy = grpc_get_poll_strategy_name();
 
   if (poll_strategy != NULL &&
-      (strcmp(poll_strategy, "epoll") == 0 ||
+      (strcmp(poll_strategy, "epollsig") == 0 ||
        strcmp(poll_strategy, "epoll-threadpool") == 0)) {
     pollset_set_test_basic();
     pollset_set_test_dup_fds();
@@ -449,8 +449,8 @@ int main(int argc, char **argv) {
             poll_strategy);
   }
 
-  grpc_iomgr_shutdown(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
+  grpc_shutdown();
   return 0;
 }
 #else /* defined(GRPC_LINUX_EPOLL) */

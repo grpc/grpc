@@ -40,29 +40,10 @@ class BdpEstimator {
   explicit BdpEstimator(const char *name);
   ~BdpEstimator() {}
 
-  // Returns true if a reasonable estimate could be obtained
-  bool EstimateBdp(int64_t *estimate_out) const {
-    *estimate_out = estimate_;
-    return true;
-  }
-  bool EstimateBandwidth(double *bw_out) const {
-    *bw_out = bw_est_;
-    return true;
-  }
+  int64_t EstimateBdp() const { return estimate_; }
+  double EstimateBandwidth() const { return bw_est_; }
 
   void AddIncomingBytes(int64_t num_bytes) { accumulator_ += num_bytes; }
-
-  // Returns true if the user should schedule a ping
-  bool NeedPing(grpc_exec_ctx *exec_ctx) const {
-    switch (ping_state_) {
-      case PingState::UNSCHEDULED:
-        return grpc_exec_ctx_now(exec_ctx) >= next_ping_scheduled_;
-      case PingState::SCHEDULED:
-      case PingState::STARTED:
-        return false;
-    }
-    GPR_UNREACHABLE_CODE(return false);
-  }
 
   // Schedule a ping: call in response to receiving a true from
   // grpc_bdp_estimator_add_incoming_bytes once a ping has been scheduled by a
@@ -91,8 +72,8 @@ class BdpEstimator {
     ping_start_time_ = gpr_now(GPR_CLOCK_MONOTONIC);
   }
 
-  // Completes a previously started ping
-  void CompletePing(grpc_exec_ctx *exec_ctx);
+  // Completes a previously started ping, returns when to schedule the next one
+  grpc_millis CompletePing(grpc_exec_ctx *exec_ctx);
 
  private:
   enum class PingState { UNSCHEDULED, SCHEDULED, STARTED };
@@ -102,8 +83,6 @@ class BdpEstimator {
   int64_t estimate_;
   // when was the current ping started?
   gpr_timespec ping_start_time_;
-  // when should the next ping start?
-  grpc_millis next_ping_scheduled_;
   int inter_ping_delay_;
   int stable_estimate_count_;
   double bw_est_;

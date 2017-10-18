@@ -202,12 +202,12 @@ grpc_error *grpc_chttp2_settings_parser_parse(grpc_exec_ctx *exec_ctx, void *p,
           }
           if (id == GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE &&
               parser->incoming_settings[id] != parser->value) {
-            t->flow_control.initial_window_update +=
+            t->initial_window_update +=
                 (int64_t)parser->value - parser->incoming_settings[id];
             if (grpc_http_trace.enabled() || grpc_flowctl_trace.enabled()) {
               gpr_log(GPR_DEBUG, "%p[%s] adding %d for initial_window change",
                       t, t->is_client ? "cli" : "svr",
-                      (int)t->flow_control.initial_window_update);
+                      (int)t->initial_window_update);
             }
           }
           parser->incoming_settings[id] = parser->value;

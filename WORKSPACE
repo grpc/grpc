@@ -92,3 +92,8 @@ new_local_repository(
     path = "third_party/cares",
     build_file = "third_party/cares/cares.BUILD",
 )
+
+local_repository(
+    name = "com_google_absl",
+    path = "third_party/abseil-cpp",
+)
