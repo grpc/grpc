@@ -4389,7 +4389,9 @@
       "windows"
     ], 
     "cpu_cost": 1.0, 
-    "exclude_configs": [], 
+    "exclude_configs": [
+      "tsan"
+    ], 
     "exclude_iomgrs": [], 
     "flaky": false, 
     "gtest": true, 
@@ -4401,6 +4403,7 @@
       "posix", 
       "windows"
     ], 
+    "timeout_seconds": 1200, 
     "uses_polling": false
   }, 
   {
@@ -4496,6 +4499,30 @@
       "windows"
     ], 
     "timeout_seconds": 1200, 
+    "uses_polling": true
+  }, 
+  {
+    "args": [], 
+    "benchmark": false, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": true, 
+    "language": "c++", 
+    "name": "vector_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
     "uses_polling": true
   }, 
   {
