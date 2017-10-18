@@ -26,6 +26,7 @@ git submodule update --init
 # Set up gRPC-Go and gRPC-Java to test
 git clone --recursive https://github.com/grpc/grpc-go ./../grpc-go
 git clone --recursive https://github.com/grpc/grpc-java ./../grpc-java
+git clone --recursive https://github.com/grpc/grpc-node ./../grpc-node
 
 # Download json file.
 mkdir ~/service_account
