@@ -197,3 +197,29 @@ grpc_cc_test(
         "//test/core/util:gpr_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "memory_test",
+    srcs = ["memory_test.cc"],
+    language = "C++",
+    deps = [
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
+    name = "vector_test",
+    srcs = ["vector_test.cc"],
+    language = "C++",
+    deps = [
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
