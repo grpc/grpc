@@ -132,14 +132,14 @@ grpc_connectivity_state grpc_subchannel_check_connectivity(
 void grpc_subchannel_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_subchannel *channel,
     grpc_pollset_set *interested_parties, grpc_connectivity_state *state,
-    grpc_closure *notify);
+    grpc_core::Closure *notify);
 void grpc_connected_subchannel_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *channel,
     grpc_pollset_set *interested_parties, grpc_connectivity_state *state,
-    grpc_closure *notify);
+    grpc_core::Closure *notify);
 void grpc_connected_subchannel_ping(grpc_exec_ctx *exec_ctx,
                                     grpc_connected_subchannel *channel,
-                                    grpc_closure *notify);
+                                    grpc_core::Closure *notify);
 
 /** retrieve the grpc_connected_subchannel - or NULL if called before
     the subchannel becomes connected */
@@ -158,7 +158,7 @@ void grpc_subchannel_call_process_op(grpc_exec_ctx *exec_ctx,
 /** Must be called once per call. Sets the 'then_schedule_closure' argument for
     call stack destruction. */
 void grpc_subchannel_call_set_cleanup_closure(
-    grpc_subchannel_call *subchannel_call, grpc_closure *closure);
+    grpc_subchannel_call *subchannel_call, grpc_core::Closure *closure);
 
 grpc_call_stack *grpc_subchannel_call_get_call_stack(
     grpc_subchannel_call *subchannel_call);

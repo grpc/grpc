@@ -67,7 +67,7 @@ struct grpc_lb_policy_vtable {
                      const grpc_lb_policy_pick_args *pick_args,
                      grpc_connected_subchannel **target,
                      grpc_call_context_element *context, void **user_data,
-                     grpc_closure *on_complete);
+                     grpc_core::Closure *on_complete);
 
   /** \see grpc_lb_policy_cancel_pick */
   void (*cancel_pick_locked)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
@@ -82,7 +82,7 @@ struct grpc_lb_policy_vtable {
 
   /** \see grpc_lb_policy_ping_one */
   void (*ping_one_locked)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                          grpc_closure *closure);
+                          grpc_core::Closure *closure);
 
   /** Try to enter a READY connectivity state */
   void (*exit_idle_locked)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
@@ -98,7 +98,7 @@ struct grpc_lb_policy_vtable {
   void (*notify_on_state_change_locked)(grpc_exec_ctx *exec_ctx,
                                         grpc_lb_policy *policy,
                                         grpc_connectivity_state *state,
-                                        grpc_closure *closure);
+                                        grpc_core::Closure *closure);
 
   void (*update_locked)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                         const grpc_lb_policy_args *args);
@@ -164,13 +164,14 @@ int grpc_lb_policy_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                                const grpc_lb_policy_pick_args *pick_args,
                                grpc_connected_subchannel **target,
                                grpc_call_context_element *context,
-                               void **user_data, grpc_closure *on_complete);
+                               void **user_data,
+                               grpc_core::Closure *on_complete);
 
 /** Perform a connected subchannel ping (see \a grpc_connected_subchannel_ping)
     against one of the connected subchannels managed by \a policy. */
 void grpc_lb_policy_ping_one_locked(grpc_exec_ctx *exec_ctx,
                                     grpc_lb_policy *policy,
-                                    grpc_closure *closure);
+                                    grpc_core::Closure *closure);
 
 /** Cancel picks for \a target.
     The \a on_complete callback of the pending picks will be invoked with \a
@@ -197,7 +198,7 @@ void grpc_lb_policy_exit_idle_locked(grpc_exec_ctx *exec_ctx,
  * Updates \a *state with the new state of the policy */
 void grpc_lb_policy_notify_on_state_change_locked(
     grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-    grpc_connectivity_state *state, grpc_closure *closure);
+    grpc_connectivity_state *state, grpc_core::Closure *closure);
 
 grpc_connectivity_state grpc_lb_policy_check_connectivity_locked(
     grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
