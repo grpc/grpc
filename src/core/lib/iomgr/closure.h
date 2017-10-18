@@ -23,186 +23,214 @@
 
 #include <grpc/impl/codegen/exec_ctx_fwd.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <atomic>
+#include <utility>
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/support/atomic.h"
+#include "src/core/lib/support/memory.h"
 #include "src/core/lib/support/mpscq.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace grpc_core {
 
-struct grpc_closure;
-typedef struct grpc_closure grpc_closure;
+class Closure;
+class ClosureScheduler;
 
-#ifndef NDEBUG
-extern grpc_tracer_flag grpc_trace_closure;
-#endif
+/// Closure base type
+/// TODO(ctiller): ... write stuff here ...
+class Closure {
+ public:
+  Closure(ClosureScheduler *scheduler) : scheduler_(scheduler) {}
+  /// Schedule this closure to run in the future
+  /// This can be called from anywhere we have an exec_ctx (regardless of lock
+  /// state)
+  void Schedule(grpc_exec_ctx *exec_ctx, grpc_error *error);
+  /// Run this closure from a closure-safe run point
+  /// It's the callers responsibility to ensure that no locks are held by any
+  /// possible path to this code.
+  /// Note that within a closure callback is always (by definition) a safe place
+  /// to call Run (assuming no locks are held)
+  void Run(grpc_exec_ctx *exec_ctx, grpc_error *error);
 
-typedef struct grpc_closure_list {
-  grpc_closure *head;
-  grpc_closure *tail;
-} grpc_closure_list;
+ protected:
+  ~Closure() {}
 
-/** gRPC Callback definition.
- *
- * \param arg Arbitrary input.
- * \param error GRPC_ERROR_NONE if no error occurred, otherwise some grpc_error
- *              describing what went wrong.
- *              Error contract: it is not the cb's job to unref this error;
- *              the closure scheduler will do that after the cb returns */
-typedef void (*grpc_iomgr_cb_func)(grpc_exec_ctx *exec_ctx, void *arg,
-                                   grpc_error *error);
+ private:
+  /// Allow access to post-scheduling fields here
+  friend class ClosureScheduler;
 
-typedef struct grpc_closure_scheduler grpc_closure_scheduler;
+  /// Actual invoked callback for the closure
+  virtual void Execute(grpc_exec_ctx *exec_ctx, grpc_error *error) = 0;
 
-typedef struct grpc_closure_scheduler_vtable {
-  /* NOTE: for all these functions, closure->scheduler == the scheduler that was
-           used to find this vtable */
-  void (*run)(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-              grpc_error *error);
-  void (*sched)(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                grpc_error *error);
-  const char *name;
-} grpc_closure_scheduler_vtable;
+  union {
+    Closure *next_;
+    std::atomic<Closure *> atm_next_;
+  };
+  grpc_error *error_;
 
-/** Abstract type that can schedule closures for execution */
-struct grpc_closure_scheduler {
-  const grpc_closure_scheduler_vtable *vtable;
+  ClosureScheduler *const scheduler_;
 };
 
-/** A closure over a grpc_iomgr_cb_func. */
-struct grpc_closure {
-  /** Once queued, next indicates the next queued closure; before then, scratch
-   *  space */
-  union {
-    grpc_closure *next;
-    gpr_mpscq_node atm_next;
-    uintptr_t scratch;
-  } next_data;
+// Base class for closure schedulers
+// TODO(ctiller): ... write stuff here ...
+class ClosureScheduler {
+ public:
+  virtual void Schedule(grpc_exec_ctx *exec_ctx, Closure *closure,
+                        grpc_error *error) = 0;
+  virtual void Run(grpc_exec_ctx *exec_ctx, Closure *closure,
+                   grpc_error *error) = 0;
 
-  /** Bound callback. */
-  grpc_iomgr_cb_func cb;
+ protected:
+  // Helper to enqueue some closure onto a linked list of closures, storing the
+  // error
+  void EnqueueClosure(Closure *closure, Closure *next, grpc_error *error) {
+    closure->next_ = next;
+    closure->error_ = error;
+  }
 
-  /** Arguments to be passed to "cb". */
-  void *cb_arg;
-
-  /** Scheduler to schedule against: NULL to schedule against current execution
-      context */
-  grpc_closure_scheduler *scheduler;
-
-  /** Once queued, the result of the closure. Before then: scratch space */
-  union {
-    grpc_error *error;
-    uintptr_t scratch;
-  } error_data;
-
-// extra tracing and debugging for grpc_closure. This incurs a decent amount of
-// overhead per closure, so it must be enabled at compile time.
-#ifndef NDEBUG
-  bool scheduled;
-  bool run;  // true = run, false = scheduled
-  const char *file_created;
-  int line_created;
-  const char *file_initiated;
-  int line_initiated;
-#endif
+  // Helper to actually execute a closure
+  void ExecuteClosure(grpc_exec_ctx *exec_ctx, Closure *closure) {
+    grpc_error *err = closure->error_;
+    closure->Execute(exec_ctx, err);
+    GRPC_ERROR_UNREF(err);
+  }
 };
 
-/** Initializes \a closure with \a cb and \a cb_arg. Returns \a closure. */
-#ifndef NDEBUG
-grpc_closure *grpc_closure_init(const char *file, int line,
-                                grpc_closure *closure, grpc_iomgr_cb_func cb,
-                                void *cb_arg,
-                                grpc_closure_scheduler *scheduler);
-#define GRPC_CLOSURE_INIT(closure, cb, cb_arg, scheduler) \
-  grpc_closure_init(__FILE__, __LINE__, closure, cb, cb_arg, scheduler)
-#else
-grpc_closure *grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
-                                void *cb_arg,
-                                grpc_closure_scheduler *scheduler);
-#define GRPC_CLOSURE_INIT(closure, cb, cb_arg, scheduler) \
-  grpc_closure_init(closure, cb, cb_arg, scheduler)
-#endif
-
-/* Create a heap allocated closure: try to avoid except for very rare events */
-#ifndef NDEBUG
-grpc_closure *grpc_closure_create(const char *file, int line,
-                                  grpc_iomgr_cb_func cb, void *cb_arg,
-                                  grpc_closure_scheduler *scheduler);
-#define GRPC_CLOSURE_CREATE(cb, cb_arg, scheduler) \
-  grpc_closure_create(__FILE__, __LINE__, cb, cb_arg, scheduler)
-#else
-grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg,
-                                  grpc_closure_scheduler *scheduler);
-#define GRPC_CLOSURE_CREATE(cb, cb_arg, scheduler) \
-  grpc_closure_create(cb, cb_arg, scheduler)
-#endif
-
-#define GRPC_CLOSURE_LIST_INIT \
-  { NULL, NULL }
-
-void grpc_closure_list_init(grpc_closure_list *list);
-
-/** add \a closure to the end of \a list
-    and set \a closure's result to \a error
-    Returns true if \a list becomes non-empty */
-bool grpc_closure_list_append(grpc_closure_list *list, grpc_closure *closure,
-                              grpc_error *error);
-
-/** force all success bits in \a list to false */
-void grpc_closure_list_fail_all(grpc_closure_list *list,
-                                grpc_error *forced_failure);
-
-/** append all closures from \a src to \a dst and empty \a src. */
-void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst);
-
-/** return whether \a list is empty. */
-bool grpc_closure_list_empty(grpc_closure_list list);
-
-/** Run a closure directly. Caller ensures that no locks are being held above.
- *  Note that calling this at the end of a closure callback function itself is
- *  by definition safe. */
-#ifndef NDEBUG
-void grpc_closure_run(const char *file, int line, grpc_exec_ctx *exec_ctx,
-                      grpc_closure *closure, grpc_error *error);
-#define GRPC_CLOSURE_RUN(exec_ctx, closure, error) \
-  grpc_closure_run(__FILE__, __LINE__, exec_ctx, closure, error)
-#else
-void grpc_closure_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                      grpc_error *error);
-#define GRPC_CLOSURE_RUN(exec_ctx, closure, error) \
-  grpc_closure_run(exec_ctx, closure, error)
-#endif
-
-/** Schedule a closure to be run. Does not need to be run from a safe point. */
-#ifndef NDEBUG
-void grpc_closure_sched(const char *file, int line, grpc_exec_ctx *exec_ctx,
-                        grpc_closure *closure, grpc_error *error);
-#define GRPC_CLOSURE_SCHED(exec_ctx, closure, error) \
-  grpc_closure_sched(__FILE__, __LINE__, exec_ctx, closure, error)
-#else
-void grpc_closure_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                        grpc_error *error);
-#define GRPC_CLOSURE_SCHED(exec_ctx, closure, error) \
-  grpc_closure_sched(exec_ctx, closure, error)
-#endif
-
-/** Schedule all closures in a list to be run. Does not need to be run from a
- * safe point. */
-#ifndef NDEBUG
-void grpc_closure_list_sched(const char *file, int line,
-                             grpc_exec_ctx *exec_ctx,
-                             grpc_closure_list *closure_list);
-#define GRPC_CLOSURE_LIST_SCHED(exec_ctx, closure_list) \
-  grpc_closure_list_sched(__FILE__, __LINE__, exec_ctx, closure_list)
-#else
-void grpc_closure_list_sched(grpc_exec_ctx *exec_ctx,
-                             grpc_closure_list *closure_list);
-#define GRPC_CLOSURE_LIST_SCHED(exec_ctx, closure_list) \
-  grpc_closure_list_sched(exec_ctx, closure_list)
-#endif
-
-#ifdef __cplusplus
+inline void Closure::Schedule(grpc_exec_ctx *exec_ctx, grpc_error *error) {
+  scheduler_->Schedule(exec_ctx, this, error);
 }
-#endif
+
+inline void Closure::Run(grpc_exec_ctx *exec_ctx, grpc_error *error) {
+  scheduler_->Run(exec_ctx, this, error);
+}
+
+namespace closure_impl {
+// Per-closure scheduler to override how Schedule/Run are implemented for a
+// barrier
+class BarrierScheduler final : public ClosureScheduler {
+ public:
+  BarrierScheduler(ClosureScheduler *next) : barrier_(0), next_(next) {}
+
+  virtual void Schedule(grpc_exec_ctx *exec_ctx, Closure *closure,
+                        grpc_error *error) override {
+    if (MaybePassBarrier(&error)) {
+      next_->Schedule(exec_ctx, closure, error);
+    }
+  }
+  virtual void Run(grpc_exec_ctx *exec_ctx, Closure *closure,
+                   grpc_error *error) override {
+    if (MaybePassBarrier(&error)) {
+      next_->Run(exec_ctx, closure, error);
+    }
+  }
+
+  void InitiateOne() { gpr_atm_no_barrier_fetch_add(&barrier_, 1); }
+
+ private:
+  bool MaybePassBarrier(grpc_error **error);
+
+  gpr_atm barrier_;
+  ClosureScheduler *const next_;
+};
+}  // namespace closure_impl
+
+/// Adaptor that produces closures which must be called multiple times, and only
+/// on the Nth call (where N == the number of prior Initiate() calls) does the
+/// closure get executed
+template <class ContainedClosure>
+class BarrierClosure final {
+ public:
+  template <typename... Args>
+  BarrierClosure(ClosureScheduler *scheduler, Args &&... args)
+      : scheduler_(scheduler),
+        closure_(&scheduler_, std::forward<Args>(args)...) {}
+
+  /// Produce a new closure
+  Closure *Initiate() {
+    scheduler_.InitiateOne();
+    return &closure_;
+  }
+
+ private:
+  closure_impl::BarrierScheduler scheduler_;
+  ContainedClosure closure_;
+};
+
+/// A closure over a member function
+/// Templatized to avoid excessive virtual calls
+///
+/// Example:
+/// class Foo {
+///  public:
+///   Foo() : foo_closure_(this) {}
+///  private:
+///   void DoStuff(grpc_exec_ctx *exec_ctx, grpc_error *error) { /* ... */ }
+///   MemberClosure<Foo, &Foo::DoStuff> foo_closure_;
+/// };
+template <class T,
+          void (T::*Callback)(grpc_exec_ctx *exec_ctx, grpc_error *error)>
+class MemberClosure final : public Closure {
+ public:
+  MemberClosure(ClosureScheduler *scheduler, T *p)
+      : Closure(scheduler), p_(p) {}
+
+ private:
+  void Execute(grpc_exec_ctx *exec_ctx, grpc_error *error) override {
+    (p_->*Callback)(exec_ctx, error);
+  }
+
+  T *p_;
+};
+
+// Create a closure that can be called repeatedly (on the heap) given some
+// lambda
+//
+// Example:
+// auto c = MakeRepeatableClosure(OnExecCtx(),
+//                                [](grpc_exec_ctx *exec_ctx,
+//                                   grpc_error *error) {});
+// c->Schedule(exec_ctx, GRPC_ERROR_NONE);
+template <class F>
+UniquePtr<Closure> MakeRepeatableClosure(ClosureScheduler *scheduler, F f) {
+  class Impl final : public Closure {
+   public:
+    Impl(ClosureScheduler *scheduler, F f)
+        : Closure(scheduler), f_(std::move(f)) {}
+
+   private:
+    void Execute(grpc_exec_ctx *exec_ctx, grpc_error *error) override {
+      f_(exec_ctx, error);
+    }
+
+    F f_;
+  };
+  return MakeUnique<Impl>(scheduler, std::move(f));
+}
+
+// Create a closure given some lambda that automatically deletes itself after
+// execution
+//
+// Example:
+// MakeOneShotClosure(OnExecCtx(),
+//                    [](grpc_exec_ctx *exec_ctx, grpc_error *error) {})
+//   ->Schedule(exec_ctx, GRPC_ERROR_NONE);
+template <class F>
+Closure *MakeOneShotClosure(F f) {
+  class Impl final : public Closure {
+   public:
+    Impl(F f) : f_(std::move(f)) {}
+
+   private:
+    void Execute(grpc_exec_ctx *exec_ctx, grpc_error *error) override {
+      f_(exec_ctx, error);
+      Delete(this);
+    }
+
+    F f_;
+  };
+  return New<Impl>(std::move(f));
+}
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_IOMGR_CLOSURE_H */
