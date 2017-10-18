@@ -73,7 +73,6 @@ void RunServer() {
   grpc::SslServerCredentialsOptions::PemKeyCertPair server_cert_pair;
   server_cert_pair.private_key = LoadFromFile(kServerKey);
   server_cert_pair.cert_chain = LoadFromFile(kServerCert);
-  server_cert_pair.cert_chain.append(LoadFromFile(kRootCA));
 
   grpc::SslServerCredentialsOptions options = grpc::SslServerCredentialsOptions(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
