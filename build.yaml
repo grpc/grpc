@@ -427,6 +427,7 @@ filegroups:
   - src/core/lib/slice/slice_hash_table.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/support/vector.h
   - src/core/lib/surface/alarm_internal.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
@@ -3544,6 +3545,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3566,6 +3568,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3588,6 +3591,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3610,6 +3614,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3631,6 +3636,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3652,6 +3658,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3673,6 +3680,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=4
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3694,6 +3702,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3718,6 +3727,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   excluded_poll_engines:
   - poll
@@ -3745,6 +3755,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   excluded_poll_engines:
   - poll
@@ -3771,6 +3782,7 @@ targets:
   - grpc++_test_config
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   excluded_poll_engines:
   - poll
@@ -3798,6 +3810,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   excluded_poll_engines:
   - poll
@@ -3823,6 +3836,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -3845,6 +3859,7 @@ targets:
   - gpr
   args:
   - --benchmark_min_time=0
+  benchmark: true
   defaults: benchmark
   platforms:
   - mac
@@ -4802,6 +4817,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: vector_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/support/vector_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
 - name: writes_per_rpc_test
   gtest: true
   cpu_cost: 0.5
@@ -4983,6 +5012,7 @@ defaults:
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
   global:
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
+      -Ithird_party/abseil-cpp
     LDFLAGS: -g
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
