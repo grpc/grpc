@@ -16,7 +16,7 @@
 set -e
 
 # directories to run against
-DIRS="src/core/lib src/core/tsi src/core/ext src/cpp test/core test/cpp include src/compiler src/csharp src/ruby"
+DIRS="src/core/lib src/core/tsi src/core/ext src/cpp test/core test/cpp include src/compiler src/csharp src/ruby third_party/address_sorting"
 
 # file matching patterns to check
 GLOB="*.h *.c *.cc"
