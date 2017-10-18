@@ -40,15 +40,8 @@ class BdpEstimator {
   explicit BdpEstimator(const char *name);
   ~BdpEstimator() {}
 
-  // Returns true if a reasonable estimate could be obtained
-  bool EstimateBdp(int64_t *estimate_out) const {
-    *estimate_out = estimate_;
-    return true;
-  }
-  bool EstimateBandwidth(double *bw_out) const {
-    *bw_out = bw_est_;
-    return true;
-  }
+  int64_t EstimateBdp() const { return estimate_; }
+  double EstimateBandwidth() const { return bw_est_; }
 
   void AddIncomingBytes(int64_t num_bytes) { accumulator_ += num_bytes; }
 

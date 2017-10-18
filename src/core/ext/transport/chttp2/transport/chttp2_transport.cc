@@ -281,7 +281,6 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->endpoint_reading = 1;
   t->next_stream_id = is_client ? 1 : 2;
   t->is_client = is_client;
-  t->flow_control.Init(t);
   t->deframe_state = is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->is_first_frame = true;
   grpc_connectivity_state_init(
@@ -389,6 +388,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
   t->opt_target = GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY;
 
+  bool enable_bdp = true;
+
   if (channel_args) {
     for (i = 0; i < channel_args->num_args; i++) {
       if (0 == strcmp(channel_args->args[i].key,
@@ -449,8 +450,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
             &channel_args->args[i], {0, 0, MAX_WRITE_BUFFER_SIZE});
       } else if (0 ==
                  strcmp(channel_args->args[i].key, GRPC_ARG_HTTP2_BDP_PROBE)) {
-        t->flow_control->SetBdpProbe(
-            grpc_channel_arg_get_bool(&channel_args->args[i], true));
+        enable_bdp = grpc_channel_arg_get_bool(&channel_args->args[i], true);
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_KEEPALIVE_TIME_MS)) {
         const int value = grpc_channel_arg_get_integer(
@@ -545,6 +545,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     }
   }
 
+  t->flow_control.Init(exec_ctx, t, enable_bdp);
+
   /* No pings allowed before receiving a header or data frame. */
   t->ping_state.pings_before_data_required = 0;
   t->ping_state.is_delayed_ping_timer_set = false;
@@ -565,13 +567,13 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED;
   }
 
-  if (t->flow_control->bdp_probe()) {
+  if (enable_bdp) {
     GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
     schedule_bdp_ping_locked(exec_ctx, t);
-  }
 
-  grpc_chttp2_act_on_flowctl_action(
-      exec_ctx, t->flow_control->PeriodicUpdate(exec_ctx), t, NULL);
+    grpc_chttp2_act_on_flowctl_action(
+        exec_ctx, t->flow_control->PeriodicUpdate(exec_ctx), t, NULL);
+  }
 
   grpc_chttp2_initiate_write(exec_ctx, t,
                              GRPC_CHTTP2_INITIATE_WRITE_INITIAL_WRITE);

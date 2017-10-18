@@ -147,8 +147,21 @@ void FlowControlAction::Trace(grpc_chttp2_transport* t) const {
   gpr_free(mf_str);
 }
 
-TransportFlowControl::TransportFlowControl(const grpc_chttp2_transport* t)
-    : t_(t), bdp_estimator_(t->peer_string) {}
+TransportFlowControl::TransportFlowControl(grpc_exec_ctx* exec_ctx,
+                                           const grpc_chttp2_transport* t,
+                                           bool enable_bdp_probe)
+    : t_(t),
+      enable_bdp_probe_(enable_bdp_probe),
+      bdp_estimator_(t->peer_string),
+      last_pid_update_(grpc_exec_ctx_now(exec_ctx)),
+      pid_controller_(grpc_core::PidController::Args()
+                          .set_gain_p(4)
+                          .set_gain_i(8)
+                          .set_gain_d(0)
+                          .set_initial_control_value(TargetLogBdp())
+                          .set_min_control_value(-1)
+                          .set_max_control_value(25)
+                          .set_integral_range(10)) {}
 
 uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   FlowControlTrace trace("t updt sent", this, nullptr);
@@ -287,26 +300,19 @@ static double AdjustForMemoryPressure(grpc_resource_quota* quota,
   return target;
 }
 
+double TransportFlowControl::TargetLogBdp() {
+  return AdjustForMemoryPressure(
+      grpc_resource_user_quota(grpc_endpoint_get_resource_user(t_->ep)),
+      1 + log2(bdp_estimator_.EstimateBdp()));
+}
+
 double TransportFlowControl::SmoothLogBdp(grpc_exec_ctx* exec_ctx,
                                           double value) {
   grpc_millis now = grpc_exec_ctx_now(exec_ctx);
-  if (!pid_controller_initialized_) {
-    last_pid_update_ = now;
-    pid_controller_initialized_ = true;
-    pid_controller_.Init(grpc_core::PidController::Args()
-                             .set_gain_p(4)
-                             .set_gain_i(8)
-                             .set_gain_d(0)
-                             .set_initial_control_value(value)
-                             .set_min_control_value(-1)
-                             .set_max_control_value(25)
-                             .set_integral_range(10));
-    return value;
-  }
-  double bdp_error = value - pid_controller_->last_control_value();
+  double bdp_error = value - pid_controller_.last_control_value();
   const double dt = (double)(now - last_pid_update_) * 1e-3;
   last_pid_update_ = now;
-  return pid_controller_->Update(bdp_error, dt);
+  return pid_controller_.Update(bdp_error, dt);
 }
 
 FlowControlAction::Urgency TransportFlowControl::DeltaUrgency(
@@ -326,39 +332,29 @@ FlowControlAction TransportFlowControl::PeriodicUpdate(
   FlowControlAction action;
   if (enable_bdp_probe_) {
     // get bdp estimate and update initial_window accordingly.
-    int64_t estimate = -1;
-    if (bdp_estimator_.EstimateBdp(&estimate)) {
-      // target might change based on how much memory pressure we are under
-      // TODO(ncteisen): experiment with setting target to be huge under low
-      // memory pressure.
-      const double target =
-          pow(2, SmoothLogBdp(exec_ctx,
-                              AdjustForMemoryPressure(
-                                  grpc_resource_user_quota(
-                                      grpc_endpoint_get_resource_user(t_->ep)),
-                                  1 + log2((double)estimate))));
+    // target might change based on how much memory pressure we are under
+    // TODO(ncteisen): experiment with setting target to be huge under low
+    // memory pressure.
+    const double target = pow(2, SmoothLogBdp(exec_ctx, TargetLogBdp()));
 
-      // Though initial window 'could' drop to 0, we keep the floor at 128
-      target_initial_window_size_ = (int32_t)GPR_CLAMP(target, 128, INT32_MAX);
+    // Though initial window 'could' drop to 0, we keep the floor at 128
+    target_initial_window_size_ = (int32_t)GPR_CLAMP(target, 128, INT32_MAX);
 
-      action.set_send_initial_window_update(
-          DeltaUrgency(target_initial_window_size_,
-                       GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE),
-          target_initial_window_size_);
-    }
+    action.set_send_initial_window_update(
+        DeltaUrgency(target_initial_window_size_,
+                     GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE),
+        target_initial_window_size_);
 
     // get bandwidth estimate and update max_frame accordingly.
-    double bw_dbl = -1;
-    if (bdp_estimator_.EstimateBandwidth(&bw_dbl)) {
-      // we target the max of BDP or bandwidth in microseconds.
-      int32_t frame_size = (int32_t)GPR_CLAMP(
-          GPR_MAX((int32_t)GPR_CLAMP(bw_dbl, 0, INT_MAX) / 1000,
-                  target_initial_window_size_),
-          16384, 16777215);
-      action.set_send_max_frame_size_update(
-          DeltaUrgency(frame_size, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE),
-          frame_size);
-    }
+    double bw_dbl = bdp_estimator_.EstimateBandwidth();
+    // we target the max of BDP or bandwidth in microseconds.
+    int32_t frame_size = (int32_t)GPR_CLAMP(
+        GPR_MAX((int32_t)GPR_CLAMP(bw_dbl, 0, INT_MAX) / 1000,
+                target_initial_window_size_),
+        16384, 16777215);
+    action.set_send_max_frame_size_update(
+        DeltaUrgency(frame_size, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE),
+        frame_size);
   }
   return UpdateAction(action);
 }

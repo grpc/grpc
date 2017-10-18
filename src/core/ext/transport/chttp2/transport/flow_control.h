@@ -127,16 +127,9 @@ class FlowControlTrace {
 
 class TransportFlowControl {
  public:
-  TransportFlowControl(const grpc_chttp2_transport* t);
-  ~TransportFlowControl() {
-    if (pid_controller_initialized_) {
-      pid_controller_.Destroy();
-    }
-  }
-
-  // toggle bdp probing
-  // TODO(ctiller): make this safe to dynamically toggle
-  void SetBdpProbe(bool enable) { enable_bdp_probe_ = enable; }
+  TransportFlowControl(grpc_exec_ctx* exec_ctx, const grpc_chttp2_transport* t,
+                       bool enable_bdp_probe);
+  ~TransportFlowControl() {}
 
   bool bdp_probe() const { return enable_bdp_probe_; }
 
@@ -210,6 +203,7 @@ class TransportFlowControl {
   }
 
  private:
+  double TargetLogBdp();
   double SmoothLogBdp(grpc_exec_ctx* exec_ctx, double value);
   FlowControlAction::Urgency DeltaUrgency(int32_t value,
                                           grpc_chttp2_setting_id setting_id);
@@ -246,14 +240,13 @@ class TransportFlowControl {
   int32_t target_initial_window_size_ = kDefaultWindow;
 
   /** should we probe bdp? */
-  bool enable_bdp_probe_ = true;
+  const bool enable_bdp_probe_;
 
   /* bdp estimation */
   grpc_core::BdpEstimator bdp_estimator_;
 
   /* pid controller */
-  bool pid_controller_initialized_ = false;
-  grpc_core::ManualConstructor<grpc_core::PidController> pid_controller_;
+  grpc_core::PidController pid_controller_;
   grpc_millis last_pid_update_ = 0;
 };
 
