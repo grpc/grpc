@@ -91,7 +91,6 @@ static int g_default_max_ping_strikes = DEFAULT_MAX_PING_STRIKES;
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
 grpc_core::TraceFlag grpc_http_trace(false, "http");
-grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount(false,
                                                          "chttp2_refcount");

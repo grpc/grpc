@@ -29,6 +29,8 @@ int grpc_tracer_set_enabled(const char *name, int enabled);
 
 namespace grpc_core {
 
+TraceFlag* TraceFlag::root_tracer_ = nullptr;
+
 TraceFlag::TraceFlag(bool default_enabled, const char *name)
     : next_tracer_(root_tracer_), name_(name), value_(default_enabled) {
   root_tracer_ = this;

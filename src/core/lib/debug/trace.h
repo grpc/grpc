@@ -47,7 +47,7 @@ namespace grpc_core {
 class TraceFlag {
  public:
   TraceFlag(bool default_enabled, const char *name);
-  ~TraceFlag();
+  ~TraceFlag() { }
 
   static bool Set(const char *tracer, bool enabled);
 

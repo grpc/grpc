@@ -28,7 +28,6 @@ extern "C" {
 #endif
 
 extern grpc_core::TraceFlag grpc_http_trace;
-extern grpc_core::TraceFlag grpc_flowctl_trace;
 extern grpc_core::TraceFlag grpc_trace_http2_stream_state;
 
 #ifndef NDEBUG
