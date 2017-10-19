@@ -221,7 +221,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     void lock() { mu_.lock(); }
     void unlock() { mu_.unlock(); }
     virtual ~ServerRpcContext(){};
-    virtual bool RunNextState(bool) = 0;  // next state, false if done
+    virtual bool RunNextState(bool) = 0;  // next state, return false if done
     virtual void Reset() = 0;             // start this back at a clean state
    private:
     std::mutex mu_;
