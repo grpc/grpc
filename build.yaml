@@ -778,6 +778,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
+  - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/frame_data.h
   - src/core/ext/transport/chttp2/transport/frame_goaway.h
@@ -3406,18 +3407,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  uses_polling: false
-- name: transport_pid_controller_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/pid_controller_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: transport_security_test
   build: test
   language: c
@@ -4819,6 +4808,18 @@ targets:
   - gpr_test_util
   - gpr
   timeout_seconds: 1200
+- name: transport_pid_controller_test
+  build: test
+  language: c++
+  src:
+  - test/core/transport/pid_controller_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc++
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: vector_test
   gtest: true
   build: test

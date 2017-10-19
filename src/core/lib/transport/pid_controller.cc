@@ -19,45 +19,30 @@
 #include "src/core/lib/transport/pid_controller.h"
 #include <grpc/support/useful.h>
 
-void grpc_pid_controller_init(grpc_pid_controller *pid_controller,
-                              grpc_pid_controller_args args) {
-  pid_controller->args = args;
-  pid_controller->last_control_value = args.initial_control_value;
-  grpc_pid_controller_reset(pid_controller);
-}
+namespace grpc_core {
 
-void grpc_pid_controller_reset(grpc_pid_controller *pid_controller) {
-  pid_controller->last_error = 0.0;
-  pid_controller->last_dc_dt = 0.0;
-  pid_controller->error_integral = 0.0;
-}
+PidController::PidController(const Args &args)
+    : last_control_value_(args.initial_control_value()), args_(args) {}
 
-double grpc_pid_controller_update(grpc_pid_controller *pid_controller,
-                                  double error, double dt) {
-  if (dt == 0) return pid_controller->last_control_value;
+double PidController::Update(double error, double dt) {
+  if (dt <= 0) return last_control_value_;
   /* integrate error using the trapezoid rule */
-  pid_controller->error_integral +=
-      dt * (pid_controller->last_error + error) * 0.5;
-  pid_controller->error_integral = GPR_CLAMP(
-      pid_controller->error_integral, -pid_controller->args.integral_range,
-      pid_controller->args.integral_range);
-  double diff_error = (error - pid_controller->last_error) / dt;
+  error_integral_ += dt * (last_error_ + error) * 0.5;
+  error_integral_ = GPR_CLAMP(error_integral_, -args_.integral_range(),
+                              args_.integral_range());
+  double diff_error = (error - last_error_) / dt;
   /* calculate derivative of control value vs time */
-  double dc_dt = pid_controller->args.gain_p * error +
-                 pid_controller->args.gain_i * pid_controller->error_integral +
-                 pid_controller->args.gain_d * diff_error;
+  double dc_dt = args_.gain_p() * error + args_.gain_i() * error_integral_ +
+                 args_.gain_d() * diff_error;
   /* and perform trapezoidal integration */
-  double new_control_value = pid_controller->last_control_value +
-                             dt * (pid_controller->last_dc_dt + dc_dt) * 0.5;
-  new_control_value =
-      GPR_CLAMP(new_control_value, pid_controller->args.min_control_value,
-                pid_controller->args.max_control_value);
-  pid_controller->last_error = error;
-  pid_controller->last_dc_dt = dc_dt;
-  pid_controller->last_control_value = new_control_value;
+  double new_control_value =
+      last_control_value_ + dt * (last_dc_dt_ + dc_dt) * 0.5;
+  new_control_value = GPR_CLAMP(new_control_value, args_.min_control_value(),
+                                args_.max_control_value());
+  last_error_ = error;
+  last_dc_dt_ = dc_dt;
+  last_control_value_ = new_control_value;
   return new_control_value;
 }
 
-double grpc_pid_controller_last(grpc_pid_controller *pid_controller) {
-  return pid_controller->last_control_value;
-}
+}  // namespace grpc_core

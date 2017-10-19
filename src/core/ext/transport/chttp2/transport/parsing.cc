@@ -355,14 +355,15 @@ static grpc_error *init_data_frame_parser(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream *s =
       grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
   grpc_error *err = GRPC_ERROR_NONE;
-  err = grpc_chttp2_flowctl_recv_data(&t->flow_control,
-                                      s == NULL ? NULL : &s->flow_control,
-                                      t->incoming_frame_size);
-  grpc_chttp2_act_on_flowctl_action(
-      exec_ctx,
-      grpc_chttp2_flowctl_get_action(exec_ctx, &t->flow_control,
-                                     s == NULL ? NULL : &s->flow_control),
-      t, s);
+  grpc_core::chttp2::FlowControlAction action;
+  if (s == nullptr) {
+    err = t->flow_control->RecvData(t->incoming_frame_size);
+    action = t->flow_control->MakeAction();
+  } else {
+    err = s->flow_control->RecvData(t->incoming_frame_size);
+    action = s->flow_control->MakeAction();
+  }
+  grpc_chttp2_act_on_flowctl_action(exec_ctx, action, t, s);
   if (err != GRPC_ERROR_NONE) {
     goto error_handler;
   }
