@@ -1002,9 +1002,7 @@ typedef struct {
 typedef struct {
   grpc_transport_stream_op_batch *batch;
   bool send_ops_cached : 1;
-  bool handler_in_flight : 1;
   grpc_call_element *elem;
-  grpc_closure handle_in_call_combiner;
 } pending_batch;
 
 /** Call data.  Holds a pointer to grpc_subchannel_call and the
@@ -1150,7 +1148,6 @@ static void pending_batches_add(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(pending->batch == NULL);
   pending->batch = batch;
   pending->send_ops_cached = false;
-  pending->handler_in_flight = false;
   pending->elem = elem;
   // Check if the batch takes us over the retry buffer limit.
   subchannel_call_retry_state *retry_state =
@@ -1180,13 +1177,9 @@ static void pending_batches_add(grpc_exec_ctx *exec_ctx,
 // This is called via the call combiner, so access to calld is synchronized.
 static void fail_pending_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
                                                 void *arg, grpc_error *error) {
-  pending_batch *pending = (pending_batch *)arg;
-  call_data *calld = (call_data *)pending->elem->call_data;
-  // Must clear pending->batch before invoking
-  // grpc_transport_stream_op_batch_finish_with_failure(), since that
-  // results in yielding the call combiner.
-  grpc_transport_stream_op_batch *batch = pending->batch;
-  pending->batch = NULL;
+  grpc_transport_stream_op_batch *batch =
+      (grpc_transport_stream_op_batch *)arg;
+  call_data *calld = (call_data *)batch->handler_private.extra_arg;
   grpc_transport_stream_op_batch_finish_with_failure(
       exec_ctx, batch, GRPC_ERROR_REF(error), calld->call_combiner);
 }
@@ -1207,31 +1200,35 @@ static void pending_batches_fail(grpc_exec_ctx *exec_ctx,
             "chand=%p calld=%p: failing %" PRIdPTR " pending batches: %s",
             elem->channel_data, calld, num_batches, grpc_error_string(error));
   }
-  size_t first_batch_idx = GPR_ARRAY_SIZE(calld->pending_batches);
+  grpc_transport_stream_op_batch *batches
+      [GPR_ARRAY_SIZE(calld->pending_batches)];
+  size_t num_batches = 0;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
     pending_batch *pending = &calld->pending_batches[i];
-    if (pending->batch != NULL && !pending->handler_in_flight) {
-      pending->handler_in_flight = true;
-      if (yield_call_combiner &&
-          first_batch_idx == GPR_ARRAY_SIZE(calld->pending_batches)) {
-        first_batch_idx = i;
-      } else {
-        GRPC_CLOSURE_INIT(&pending->handle_in_call_combiner,
-                          fail_pending_batch_in_call_combiner, pending,
-                          grpc_schedule_on_exec_ctx);
-        GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
-                                 &pending->handle_in_call_combiner,
-                                 GRPC_ERROR_REF(error), "pending_batches_fail");
-      }
+    grpc_transport_stream_op_batch *batch = pending->batch;
+    if (batch != NULL) {
+      batches[num_batches++] = batch;
+      pending->batch = NULL;
     }
   }
-  if (first_batch_idx != GPR_ARRAY_SIZE(calld->pending_batches)) {
-    // Manually invoking callback function; does not take ownership of error.
-    fail_pending_batch_in_call_combiner(
-        exec_ctx, &calld->pending_batches[first_batch_idx], error);
-  } else if (yield_call_combiner) {
-    GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
-                            "pending_batches_fail");
+  for (size_t i = yield_call_combiner ? 1 : 0; i < num_batches; ++i) {
+    grpc_transport_stream_op_batch *batch = batches[i];
+    batch->handler_private.extra_arg = calld;
+    GRPC_CLOSURE_INIT(&batch->handler_private.closure,
+                      fail_pending_batch_in_call_combiner, batch,
+                      grpc_schedule_on_exec_ctx);
+    GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
+                             &batch->handler_private.closure,
+                             GRPC_ERROR_REF(error), "pending_batches_fail");
+  }
+  if (yield_call_combiner) {
+    if (num_batches > 0) {
+      grpc_transport_stream_op_batch_finish_with_failure(
+          exec_ctx, batches[0], GRPC_ERROR_REF(error), calld->call_combiner);
+    } else {
+      GRPC_CALL_COMBINER_STOP(exec_ctx, calld->call_combiner,
+                              "pending_batches_fail");
+    }
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -1240,15 +1237,11 @@ static void pending_batches_fail(grpc_exec_ctx *exec_ctx,
 static void resume_pending_batch_in_call_combiner(grpc_exec_ctx *exec_ctx,
                                                   void *arg,
                                                   grpc_error *ignored) {
-  pending_batch *pending = (pending_batch *)arg;
-  grpc_call_element *elem = pending->elem;
-  call_data *calld = (call_data *)elem->call_data;
-  // Must clear pending->batch before invoking
-  // grpc_subchannel_call_process_op(), since that results in yielding
-  // the call combiner.
-  grpc_transport_stream_op_batch *batch = pending->batch;
-  pending->batch = NULL;
-  grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call, batch);
+  grpc_transport_stream_op_batch *batch =
+      (grpc_transport_stream_op_batch *)arg;
+  grpc_subchannel_call *subchannel_call =
+      (grpc_subchannel_call *)batch->handler_private.extra_arg;
+  grpc_subchannel_call_process_op(exec_ctx, subchannel_call, batch);
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
@@ -1276,26 +1269,30 @@ static void pending_batches_resume(grpc_exec_ctx *exec_ctx,
     start_retriable_subchannel_batches(exec_ctx, elem, GRPC_ERROR_NONE);
   } else {
     // Retries not enabled; send down batches as-is.
-    size_t first_batch_idx = GPR_ARRAY_SIZE(calld->pending_batches);
+    grpc_transport_stream_op_batch *batches
+        [GPR_ARRAY_SIZE(calld->pending_batches)];
+    size_t num_batches = 0;
     for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
       pending_batch *pending = &calld->pending_batches[i];
-      if (pending->batch != NULL && !pending->handler_in_flight) {
-        pending->handler_in_flight = true;
-        if (first_batch_idx == GPR_ARRAY_SIZE(calld->pending_batches)) {
-          first_batch_idx = i;
-        } else {
-          GRPC_CLOSURE_INIT(&pending->handle_in_call_combiner,
-                            resume_pending_batch_in_call_combiner, pending,
-                            grpc_schedule_on_exec_ctx);
-          GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
-                                   &pending->handle_in_call_combiner,
-                                   GRPC_ERROR_NONE, "pending_batches_resume");
-        }
+      grpc_transport_stream_op_batch *batch = pending->batch;
+      if (batch != NULL) {
+        batches[num_batches++] = batch;
+        pending->batch = NULL;
       }
     }
-    GPR_ASSERT(first_batch_idx != GPR_ARRAY_SIZE(calld->pending_batches));
-    resume_pending_batch_in_call_combiner(
-        exec_ctx, &calld->pending_batches[first_batch_idx], GRPC_ERROR_NONE);
+    for (size_t i = 1; i < num_batches; ++i) {
+      grpc_transport_stream_op_batch *batch = batches[i];
+      batch->handler_private.extra_arg = calld->subchannel_call;
+      GRPC_CLOSURE_INIT(&batch->handler_private.closure,
+                        resume_pending_batch_in_call_combiner, batch,
+                        grpc_schedule_on_exec_ctx);
+      GRPC_CALL_COMBINER_START(exec_ctx, calld->call_combiner,
+                               &batch->handler_private.closure,
+                               GRPC_ERROR_NONE, "pending_batches_resume");
+    }
+    GPR_ASSERT(num_batches > 0);
+    grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call,
+                                    batches[0]);
   }
 }
 
@@ -2241,7 +2238,6 @@ static void start_retriable_subchannel_batches(grpc_exec_ctx *exec_ctx,
             chand, calld, num_batches, calld->subchannel_call);
   }
   GPR_ASSERT(num_batches > 0);
-  grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call, batches[0]);
   for (size_t i = 1; i < num_batches; ++i) {
     batches[i]->handler_private.extra_arg = calld->subchannel_call;
     GRPC_CLOSURE_INIT(&batches[i]->handler_private.closure,
@@ -2251,6 +2247,7 @@ static void start_retriable_subchannel_batches(grpc_exec_ctx *exec_ctx,
                              &batches[i]->handler_private.closure,
                              GRPC_ERROR_NONE, "start_subchannel_batch");
   }
+  grpc_subchannel_call_process_op(exec_ctx, calld->subchannel_call, batches[0]);
 }
 
 // Applies service config to the call.  Must be invoked once we know
