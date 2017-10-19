@@ -652,8 +652,8 @@ static bool try_replace_server_handshaker_factory(
   gpr_log(GPR_DEBUG, "Using new server certificate config (%p).", config);
 
   alpn_protocol_strings = fill_alpn_protocol_strings(&num_alpn_protocols);
-  cert_pairs = convert_grpc_to_tsi_cert_pairs(config->pem_key_cert_pairs,
-                                              config->num_key_cert_pairs);
+  cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(config->pem_key_cert_pairs,
+                                                   config->num_key_cert_pairs);
   result = tsi_create_ssl_server_handshaker_factory_ex(
       cert_pairs, config->num_key_cert_pairs, config->pem_root_certs,
       get_tsi_client_certificate_request_type(sc->client_certificate_request),
