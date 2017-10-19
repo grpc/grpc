@@ -23,6 +23,7 @@
 #include <mutex>
 #include <thread>
 
+#include <grpc++/alarm.h>
 #include <grpc++/generic/async_generic_service.h>
 #include <grpc++/resource_quota.h>
 #include <grpc++/security/server_credentials.h>
@@ -141,7 +142,8 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
                         std::placeholders::_3, srv_cqs_[j].get(),
                         srv_cqs_[j].get(), std::placeholders::_4);
           contexts_.emplace_back(new ServerRpcContextStreamingFromServerImpl(
-              request_streaming_from_server, process_rpc_bound));
+              request_streaming_from_server, process_rpc_bound,
+              srv_cqs_[j].get(), this));
         }
         if (request_streaming_both_ways_function) {
           // TODO(vjpai): Add this code
@@ -448,12 +450,15 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
                            grpc::ServerAsyncWriter<ResponseType> *, void *)>
             request_method,
         std::function<grpc::Status(const RequestType *, ResponseType *)>
-            invoke_method)
+            invoke_method,
+        grpc::CompletionQueue *cq, grpc::testing::Server *server)
         : srv_ctx_(new ServerContextType),
           next_state_(&ServerRpcContextStreamingFromServerImpl::request_done),
           request_method_(request_method),
           invoke_method_(invoke_method),
-          stream_(srv_ctx_.get()) {
+          stream_(srv_ctx_.get()),
+          cq_(cq),
+          server_(server) {
       request_method_(srv_ctx_.get(), &req_, &stream_,
                       AsyncQpsServerTest::tag(this));
     }
@@ -474,6 +479,13 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     bool request_done(bool ok) {
       if (!ok) {
         return false;
+      }
+      if (!server_->IsMarked()) {
+        // Hasn't yet gotten the first mark so need to wait a bit
+        alarm_.reset(new Alarm);
+        alarm_->Set(cq_, grpc_timeout_milliseconds_to_deadline(100),
+                    AsyncQpsServerTest::tag(this));
+        return true;
       }
       // invoke the method
       // Call the RPC processing function
@@ -500,6 +512,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     std::unique_ptr<ServerContextType> srv_ctx_;
     RequestType req_;
     ResponseType response_;
+    std::unique_ptr<grpc::Alarm> alarm_;
     bool (ServerRpcContextStreamingFromServerImpl::*next_state_)(bool);
     std::function<void(ServerContextType *, RequestType *,
                        grpc::ServerAsyncWriter<ResponseType> *, void *)>
@@ -507,6 +520,8 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     std::function<grpc::Status(const RequestType *, ResponseType *)>
         invoke_method_;
     grpc::ServerAsyncWriter<ResponseType> stream_;
+    grpc::CompletionQueue *cq_;
+    grpc::testing::Server *server_;
   };
 
   std::vector<std::thread> threads_;
