@@ -30,6 +30,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 #include "test/core/util/test_config.h"
 
 /* a large number */
@@ -363,6 +364,7 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   for (size_t i = 0; i < GRPC_STATIC_MDELEM_COUNT; i++) {
+    gpr_log(GPR_DEBUG, "%d", (int)i);
     grpc_mdelem p = GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[i],
                                      GRPC_MDELEM_STORAGE_STATIC);
     grpc_mdelem q =
@@ -382,6 +384,20 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
   grpc_shutdown();
 }
 
+static void test_static_timeout_metadata() {
+  for (int32_t i = -10; i < 100001; i++) {
+    grpc_mdelem md = grpc_static_timeout_elem(i);
+    if (i < 0 || i >= 10000) {GPR_ASSERT(GRPC_MDISNULL(md));}
+    GPR_ASSERT(grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT));
+    grpc_millis timeout;
+    GPR_ASSERT(grpc_http2_decode_timeout(GRPC_MDVALUE(md), &timeout));
+    GPR_ASSERT(((double)timeout - i)/(double)timeout < 0.1);
+    char* s = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+    gpr_log(GPR_INFO, "find %s from %d", s, (int)i);
+    gpr_free(s);
+  }
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_no_op();
@@ -398,5 +414,6 @@ int main(int argc, char **argv) {
   test_create_many_persistant_metadata();
   test_things_stick_around();
   test_user_data_works();
+  test_static_timeout_metadata();
   return 0;
 }
