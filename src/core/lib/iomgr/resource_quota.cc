@@ -31,8 +31,7 @@
 
 #include "src/core/lib/iomgr/combiner.h"
 
-grpc_tracer_flag grpc_resource_quota_trace =
-    GRPC_TRACER_INITIALIZER(false, "resource_quota");
+grpc_core::TraceFlag grpc_resource_quota_trace(false, "resource_quota");
 
 #define MEMORY_USAGE_ESTIMATION_MAX 65536
 
@@ -294,7 +293,7 @@ static bool rq_alloc(grpc_exec_ctx *exec_ctx,
   while ((resource_user = rulist_pop_head(resource_quota,
                                           GRPC_RULIST_AWAITING_ALLOCATION))) {
     gpr_mu_lock(&resource_user->mu);
-    if (GRPC_TRACER_ON(grpc_resource_quota_trace)) {
+    if (grpc_resource_quota_trace.enabled()) {
       gpr_log(GPR_DEBUG, "RQ: check allocation for user %p shutdown=%" PRIdPTR
                          " free_pool=%" PRId64,
               resource_user, gpr_atm_no_barrier_load(&resource_user->shutdown),
@@ -319,13 +318,13 @@ static bool rq_alloc(grpc_exec_ctx *exec_ctx,
       resource_user->free_pool = 0;
       resource_quota->free_pool -= amt;
       rq_update_estimate(resource_quota);
-      if (GRPC_TRACER_ON(grpc_resource_quota_trace)) {
+      if (grpc_resource_quota_trace.enabled()) {
         gpr_log(GPR_DEBUG, "RQ %s %s: grant alloc %" PRId64
                            " bytes; rq_free_pool -> %" PRId64,
                 resource_quota->name, resource_user->name, amt,
                 resource_quota->free_pool);
       }
-    } else if (GRPC_TRACER_ON(grpc_resource_quota_trace) &&
+    } else if (grpc_resource_quota_trace.enabled() &&
                resource_user->free_pool >= 0) {
       gpr_log(GPR_DEBUG, "RQ %s %s: discard already satisfied alloc request",
               resource_quota->name, resource_user->name);
@@ -356,7 +355,7 @@ static bool rq_reclaim_from_per_user_free_pool(
       resource_user->free_pool = 0;
       resource_quota->free_pool += amt;
       rq_update_estimate(resource_quota);
-      if (GRPC_TRACER_ON(grpc_resource_quota_trace)) {
+      if (grpc_resource_quota_trace.enabled()) {
         gpr_log(GPR_DEBUG, "RQ %s %s: reclaim_from_per_user_free_pool %" PRId64
                            " bytes; rq_free_pool -> %" PRId64,
                 resource_quota->name, resource_user->name, amt,
@@ -379,7 +378,7 @@ static bool rq_reclaim(grpc_exec_ctx *exec_ctx,
                                  : GRPC_RULIST_RECLAIMER_BENIGN;
   grpc_resource_user *resource_user = rulist_pop_head(resource_quota, list);
   if (resource_user == NULL) return false;
-  if (GRPC_TRACER_ON(grpc_resource_quota_trace)) {
+  if (grpc_resource_quota_trace.enabled()) {
     gpr_log(GPR_DEBUG, "RQ %s %s: initiate %s reclamation",
             resource_quota->name, resource_user->name,
             destructive ? "destructive" : "benign");
@@ -513,7 +512,7 @@ static void ru_post_destructive_reclaimer(grpc_exec_ctx *exec_ctx, void *ru,
 }
 
 static void ru_shutdown(grpc_exec_ctx *exec_ctx, void *ru, grpc_error *error) {
-  if (GRPC_TRACER_ON(grpc_resource_quota_trace)) {
+  if (grpc_resource_quota_trace.enabled()) {
     gpr_log(GPR_DEBUG, "RU shutdown %p", ru);
   }
   grpc_resource_user *resource_user = (grpc_resource_user *)ru;
@@ -811,7 +810,7 @@ void grpc_resource_user_alloc(grpc_exec_ctx *exec_ctx,
   ru_ref_by(resource_user, (gpr_atm)size);
   resource_user->free_pool -= (int64_t)size;
   resource_user->outstanding_allocations += (int64_t)size;
-  if (GRPC_TRACER_ON(grpc_resource_quota_trace)) {
+  if (grpc_resource_quota_trace.enabled()) {
     gpr_log(GPR_DEBUG, "RQ %s %s: alloc %" PRIdPTR "; free_pool -> %" PRId64,
             resource_user->resource_quota->name, resource_user->name, size,
             resource_user->free_pool);
@@ -836,7 +835,7 @@ void grpc_resource_user_free(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&resource_user->mu);
   bool was_zero_or_negative = resource_user->free_pool <= 0;
   resource_user->free_pool += (int64_t)size;
-  if (GRPC_TRACER_ON(grpc_resource_quota_trace)) {
+  if (grpc_resource_quota_trace.enabled()) {
     gpr_log(GPR_DEBUG, "RQ %s %s: free %" PRIdPTR "; free_pool -> %" PRId64,
             resource_user->resource_quota->name, resource_user->name, size,
             resource_user->free_pool);
@@ -865,7 +864,7 @@ void grpc_resource_user_post_reclaimer(grpc_exec_ctx *exec_ctx,
 
 void grpc_resource_user_finish_reclamation(grpc_exec_ctx *exec_ctx,
                                            grpc_resource_user *resource_user) {
-  if (GRPC_TRACER_ON(grpc_resource_quota_trace)) {
+  if (grpc_resource_quota_trace.enabled()) {
     gpr_log(GPR_DEBUG, "RQ %s %s: reclamation complete",
             resource_user->resource_quota->name, resource_user->name);
   }
