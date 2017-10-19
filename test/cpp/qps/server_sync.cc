@@ -35,6 +35,7 @@ namespace testing {
 
 class BenchmarkServiceImpl final : public BenchmarkService::Service {
  public:
+  BenchmarkServiceImpl(grpc::testing::Server* server) : server_(server) {}
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) override {
     auto s = SetResponse(request, response);
@@ -76,6 +77,9 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
     if (!s.ok()) {
       return s;
     }
+    // Don't start doing a server push until the test has really been started
+    server_->WaitForMarked();
+
     return ServerPush(context, stream, response, nullptr);
   }
   Status StreamingBothWays(
@@ -149,11 +153,14 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
     }
     return Status::OK;
   }
+
+  grpc::testing::Server* server_;
 };
 
 class SynchronousServer final : public grpc::testing::Server {
  public:
-  explicit SynchronousServer(const ServerConfig& config) : Server(config) {
+  explicit SynchronousServer(const ServerConfig& config)
+      : Server(config), service_(this) {
     ServerBuilder builder;
 
     char* server_address = NULL;

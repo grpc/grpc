@@ -41,6 +41,8 @@ class Server {
  public:
   explicit Server(const ServerConfig& config)
       : timer_(new UsageTimer), last_reset_poll_count_(0) {
+    gpr_atm_rel_store(&marked_, static_cast<gpr_atm>(0));
+    gpr_event_init(&mark_received_);
     cores_ = gpr_cpu_num_cores();
     if (config.port()) {
       port_ = config.port();
@@ -75,8 +77,19 @@ class Server {
     stats.set_idle_cpu_time(timer_result.idle_cpu_time);
     stats.set_cq_poll_count(poll_count);
     CoreStatsToProto(core_stats, stats.mutable_core_stats());
+
+    if (!gpr_atm_full_cas(&marked_, static_cast<gpr_atm>(0),
+                          static_cast<gpr_atm>(1))) {
+      gpr_event_set(&mark_received_, (void*)1);
+    }
     return stats;
   }
+
+  void WaitForMarked() {
+    gpr_event_wait(&mark_received_, gpr_inf_future(GPR_CLOCK_REALTIME));
+  }
+
+  bool IsMarked() { return static_cast<bool>(gpr_atm_acq_load(&marked_)); }
 
   static bool SetPayload(PayloadType type, int size, Payload* payload) {
     // TODO(yangg): Support UNCOMPRESSABLE payload.
@@ -145,6 +158,8 @@ class Server {
   int cores_;
   std::unique_ptr<UsageTimer> timer_;
   int last_reset_poll_count_;
+  gpr_atm marked_;
+  gpr_event mark_received_;
 };
 
 std::unique_ptr<Server> CreateSynchronousServer(const ServerConfig& config);
