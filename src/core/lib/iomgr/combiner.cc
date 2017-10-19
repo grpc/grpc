@@ -68,7 +68,8 @@ static void combiner_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                          grpc_error *error);
 static void combiner_finally_exec(grpc_exec_ctx *exec_ctx,
                                   grpc_closure *closure, grpc_error *error);
-static void finish1(grpc_exec_ctx *exec_ctx, grpc_combiner *combiner);
+// returns true if there are still things enqueued on this combiner
+static bool finish1(grpc_exec_ctx *exec_ctx, grpc_combiner *combiner) GRPC_MUST_USE_RESULT;
 
 static const grpc_closure_scheduler_vtable scheduler = {
     combiner_run, combiner_sched, "combiner:immediately"};
@@ -209,7 +210,9 @@ static void combiner_run(grpc_exec_ctx *exec_ctx, grpc_closure *cl,
     push_first_on_exec_ctx(exec_ctx, lock);
     cl->cb(exec_ctx, cl->cb_arg, error);
     GRPC_ERROR_UNREF(error);
-    finish1(exec_ctx, lock);
+    if (finish1(exec_ctx, lock)) {
+      push_last_on_exec_ctx(exec_ctx, lock);
+    }
     return;
   } else {
     // there may be a race with setting here: if that happens, we may delay
@@ -324,12 +327,14 @@ bool grpc_combiner_continue_exec_ctx(grpc_exec_ctx *exec_ctx) {
   }
 
   GPR_TIMER_MARK("unref", 0);
-  finish1(exec_ctx, lock);
+  if (finish1(exec_ctx, lock)) {
+    push_first_on_exec_ctx(exec_ctx, lock);
+  }
   GPR_TIMER_END("combiner.continue_exec_ctx", 0);
   return true;
 }
 
-void finish1(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
+bool finish1(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   move_next(exec_ctx, lock);
   lock->time_to_execute_final_list = false;
   gpr_atm old_state =
@@ -345,28 +350,27 @@ void finish1(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   switch (old_state) {
     default:
       // we have multiple queued work items: just continue executing them
-      break;
+      return true;
     case OLD_STATE_WAS(false, 2):
     case OLD_STATE_WAS(true, 2):
       // we're down to one queued item: if it's the final list we should do that
       if (!grpc_closure_list_empty(lock->final_list)) {
         lock->time_to_execute_final_list = true;
       }
-      break;
+      return true;
     case OLD_STATE_WAS(false, 1):
       // had one count, one unorphaned --> unlocked unorphaned
-      return;
+      return false;
     case OLD_STATE_WAS(true, 1):
       // and one count, one orphaned --> unlocked and orphaned
       really_destroy(exec_ctx, lock);
-      return;
+      return false;
     case OLD_STATE_WAS(false, 0):
     case OLD_STATE_WAS(true, 0):
       // these values are illegal - representing an already unlocked or
       // deleted lock
-      GPR_UNREACHABLE_CODE(return );
+      GPR_UNREACHABLE_CODE(return false);
   }
-  push_first_on_exec_ctx(exec_ctx, lock);
 }
 
 static void enqueue_finally(grpc_exec_ctx *exec_ctx, void *closure,
