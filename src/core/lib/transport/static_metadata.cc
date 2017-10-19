@@ -101,7 +101,8 @@ static uint8_t g_bytes[] = {
     102, 108, 97,  116, 101, 105, 100, 101, 110, 116, 105, 116, 121, 44,  103,
     122, 105, 112, 100, 101, 102, 108, 97,  116, 101, 44,  103, 122, 105, 112,
     105, 100, 101, 110, 116, 105, 116, 121, 44,  100, 101, 102, 108, 97,  116,
-    101, 44,  103, 122, 105, 112};
+    101, 44,  103, 122, 105, 112, 103, 114, 112, 99,  45,  116, 105, 109, 101,
+    111, 117, 116, 45,  98,  105, 110};
 
 static void static_ref(void *unused) {}
 static void static_unref(grpc_exec_ctx *exec_ctx, void *unused) {}
@@ -316,6 +317,7 @@ const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT] = {
     {&grpc_static_metadata_refcounts[97], {{g_bytes + 1040, 13}}},
     {&grpc_static_metadata_refcounts[98], {{g_bytes + 1053, 12}}},
     {&grpc_static_metadata_refcounts[99], {{g_bytes + 1065, 21}}},
+    {&grpc_static_metadata_refcounts[99], {{g_bytes + 1086, 16}}},
 };
 
 uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] = {

@@ -454,6 +454,12 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
           &s->metadata_buffer[0], grpc_exec_ctx_now(exec_ctx) + timeout);
     }
     GRPC_MDELEM_UNREF(exec_ctx, md);
+  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT_BIN)) {
+    grpc_millis timeout;
+    grpc_http2_decode_timeout_bin(GRPC_MDVALUE(md), &timeout);
+    grpc_chttp2_incoming_metadata_buffer_set_deadline(
+        &s->metadata_buffer[0], grpc_exec_ctx_now(exec_ctx) + timeout);
+    GRPC_MDELEM_UNREF(exec_ctx, md);
   } else {
     const size_t new_size = s->metadata_buffer[0].size + GRPC_MDELEM_LENGTH(md);
     const size_t metadata_size_limit =

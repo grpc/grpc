@@ -75,6 +75,7 @@ typedef struct {
   /* maximum size of a frame */
   size_t max_frame_size;
   bool use_true_binary_metadata;
+  bool use_binary_timeout;
 } framer_state;
 
 /* fills p (which is expected to be 9 bytes long) with a data frame header */
@@ -587,10 +588,19 @@ static void deadline_enc(grpc_exec_ctx *exec_ctx,
                          framer_state *st) {
   char timeout_str[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
   grpc_mdelem mdelem;
-  grpc_http2_encode_timeout(deadline - grpc_exec_ctx_now(exec_ctx),
-                            timeout_str);
-  mdelem = grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_TIMEOUT,
-                                   grpc_slice_from_copied_string(timeout_str));
+  if (st->use_binary_timeout) {
+    grpc_http2_encode_timeout_bin(deadline - grpc_exec_ctx_now(exec_ctx),
+                                  timeout_str);
+    mdelem =
+        grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_TIMEOUT_BIN,
+                                grpc_slice_from_copied_buffer(timeout_str, 4));
+  } else {
+    grpc_http2_encode_timeout(deadline - grpc_exec_ctx_now(exec_ctx),
+                              timeout_str);
+    mdelem =
+        grpc_mdelem_from_slices(exec_ctx, GRPC_MDSTR_GRPC_TIMEOUT,
+                                grpc_slice_from_copied_string(timeout_str));
+  }
   hpack_enc(exec_ctx, c, mdelem, st);
   GRPC_MDELEM_UNREF(exec_ctx, mdelem);
 }
@@ -692,6 +702,7 @@ void grpc_chttp2_encode_header(grpc_exec_ctx *exec_ctx,
   st.stats = options->stats;
   st.max_frame_size = options->max_frame_size;
   st.use_true_binary_metadata = options->use_true_binary_metadata;
+  st.use_binary_timeout = options->use_binary_timeout;
 
   /* Encode a metadata batch; store the returned values, representing
      a metadata element that needs to be unreffed back into the metadata

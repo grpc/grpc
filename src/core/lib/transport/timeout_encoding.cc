@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include "src/core/lib/support/string.h"
 
@@ -83,9 +84,33 @@ void grpc_http2_encode_timeout(grpc_millis timeout, char *buffer) {
   }
 }
 
+void grpc_http2_encode_timeout_bin(grpc_millis timeout, char *buffer) {
+  uint32_t timeout32 = (uint32_t)((timeout <= 0) ? 0 : timeout);
+  buffer[3] = (char)(uint8_t)(timeout32 & 0xff);
+  timeout32 >>= 8;
+  buffer[2] = (char)(uint8_t)(timeout32 & 0xff);
+  timeout32 >>= 8;
+  buffer[1] = (char)(uint8_t)(timeout32 & 0xff);
+  timeout32 >>= 8;
+  buffer[0] = (char)(uint8_t)(timeout32 & 0xff);
+}
+
 static int is_all_whitespace(const char *p, const char *end) {
   while (p != end && *p == ' ') p++;
   return p == end;
+}
+
+void grpc_http2_decode_timeout_bin(grpc_slice text, grpc_millis *timeout) {
+  GPR_ASSERT(GRPC_SLICE_LENGTH(text) == 4);
+  uint32_t timeout32 = 0;
+  timeout32 = *(GRPC_SLICE_START_PTR(text));
+  timeout32 <<= 8;
+  timeout32 += *(GRPC_SLICE_START_PTR(text) + 1);
+  timeout32 <<= 8;
+  timeout32 += *(GRPC_SLICE_START_PTR(text) + 2);
+  timeout32 <<= 8;
+  timeout32 += *(GRPC_SLICE_START_PTR(text) + 3);
+  *timeout = (grpc_millis)timeout32;
 }
 
 int grpc_http2_decode_timeout(grpc_slice text, grpc_millis *timeout) {
