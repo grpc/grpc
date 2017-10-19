@@ -68,19 +68,19 @@ typedef struct {
   const grpc_lb_user_data_vtable *user_data_vtable;
 } grpc_lb_subchannel_data;
 
-// Unrefs the subchannel contained in sd.
+/// Unrefs the subchannel contained in sd.
 void grpc_lb_subchannel_data_unref_subchannel(grpc_exec_ctx *exec_ctx,
                                               grpc_lb_subchannel_data *sd,
                                               const char *reason);
 
-// Starts watching the connectivity state of the subchannel.
-// The connectivity_changed_cb callback must invoke either
-// grpc_lb_subchannel_data_stop_connectivity_watch() or again call
-// grpc_lb_subchannel_data_start_connectivity_watch().
+/// Starts watching the connectivity state of the subchannel.
+/// The connectivity_changed_cb callback must invoke either
+/// grpc_lb_subchannel_data_stop_connectivity_watch() or again call
+/// grpc_lb_subchannel_data_start_connectivity_watch().
 void grpc_lb_subchannel_data_start_connectivity_watch(
     grpc_exec_ctx *exec_ctx, grpc_lb_subchannel_data *sd);
 
-// Stops watching the connectivity state of the subchannel.
+/// Stops watching the connectivity state of the subchannel.
 void grpc_lb_subchannel_data_stop_connectivity_watch(
     grpc_exec_ctx *exec_ctx, grpc_lb_subchannel_data *sd);
 
@@ -132,16 +132,16 @@ void grpc_lb_subchannel_list_unref(grpc_exec_ctx *exec_ctx,
                                    grpc_lb_subchannel_list *subchannel_list,
                                    const char *reason);
 
-// Takes and releases refs needed for a connectivity notification.
-// This includes a ref to subchannel_list and a weak ref to the LB policy.
+/// Takes and releases refs needed for a connectivity notification.
+/// This includes a ref to subchannel_list and a weak ref to the LB policy.
 void grpc_lb_subchannel_list_ref_for_connectivity_watch(
     grpc_lb_subchannel_list *subchannel_list, const char *reason);
 void grpc_lb_subchannel_list_unref_for_connectivity_watch(
     grpc_exec_ctx *exec_ctx, grpc_lb_subchannel_list *subchannel_list,
     const char *reason);
 
-// Mark subchannel_list as discarded. Unsubscribes all its subchannels. The
-// connectivity state notification callback will ultimately unref it.
+/// Mark subchannel_list as discarded. Unsubscribes all its subchannels. The
+/// connectivity state notification callback will ultimately unref it.
 void grpc_lb_subchannel_list_shutdown_and_unref(
     grpc_exec_ctx *exec_ctx, grpc_lb_subchannel_list *subchannel_list,
     const char *reason);

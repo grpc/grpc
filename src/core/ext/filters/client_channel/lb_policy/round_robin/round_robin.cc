@@ -187,15 +187,12 @@ static void rr_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   grpc_connectivity_state_set(
       exec_ctx, &p->state_tracker, GRPC_CHANNEL_SHUTDOWN,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Shutdown"), "rr_shutdown");
-  const bool latest_is_current =
-      p->subchannel_list == p->latest_pending_subchannel_list;
   if (p->subchannel_list != NULL) {
     grpc_lb_subchannel_list_shutdown_and_unref(exec_ctx, p->subchannel_list,
                                                "sl_shutdown_rr_shutdown");
     p->subchannel_list = NULL;
   }
-  if (!latest_is_current && p->latest_pending_subchannel_list != NULL &&
-      !p->latest_pending_subchannel_list->shutting_down) {
+  if (p->latest_pending_subchannel_list != NULL) {
     grpc_lb_subchannel_list_shutdown_and_unref(
         exec_ctx, p->latest_pending_subchannel_list,
         "sl_shutdown_pending_rr_shutdown");

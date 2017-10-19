@@ -427,7 +427,7 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
         grpc_lb_subchannel_data_stop_connectivity_watch(exec_ctx, sd);
         grpc_lb_subchannel_list_unref_for_connectivity_watch(
             exec_ctx, sd->subchannel_list, "pf_selected_shutdown");
-        pf_shutdown_locked(exec_ctx, &p->base);
+        shutdown_locked(exec_ctx, p, GRPC_ERROR_REF(error));
       }
     }
     return;
