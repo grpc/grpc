@@ -145,7 +145,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   connect->resource_quota = resource_quota;
   uv_tcp_init(uv_default_loop(), connect->tcp_handle);
   connect->connect_req.data = connect;
-  connect->refs = 1;
+  connect->refs = 2;  // One for the connect operation, one for the timer.
 
   if (GRPC_TRACER_ON(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting",

@@ -24,7 +24,7 @@ cdef class Call:
     self.references = []
 
   def _start_batch(self, operations, tag, retain_self):
-    if not self.is_valid:
+    if self.c_call == NULL:
       raise ValueError("invalid call object cannot be used from Python")
     cdef grpc_call_error result
     cdef Operations cy_operations = Operations(operations)
@@ -53,7 +53,7 @@ cdef class Call:
       self, grpc_status_code error_code=GRPC_STATUS__DO_NOT_USE,
       details=None):
     details = str_to_bytes(details)
-    if not self.is_valid:
+    if self.c_call == NULL:
       raise ValueError("invalid call object cannot be used from Python")
     if (details is None) != (error_code == GRPC_STATUS__DO_NOT_USE):
       raise ValueError("if error_code is specified, so must details "
@@ -89,13 +89,12 @@ cdef class Call:
       gpr_free(peer)
     return result
 
+  def close(self):
+    if self.c_call != NULL:
+      grpc_call_unref(self.c_call)
+      self.c_call = NULL
+
   def __dealloc__(self):
     if self.c_call != NULL:
       grpc_call_unref(self.c_call)
     grpc_shutdown()
-
-  # The object *should* always be valid from Python. Used for debugging.
-  @property
-  def is_valid(self):
-    return self.c_call != NULL
-

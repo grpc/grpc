@@ -38,7 +38,13 @@ g_stands_for = "gambit"
 
 core_version = "5.0.0-dev"
 
+<<<<<<< HEAD
 version = "1.7.0-pre1"
+||||||| merged common ancestors
+version = "1.6.1"
+=======
+version = "1.6.7"
+>>>>>>> google/v1.6.x
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
