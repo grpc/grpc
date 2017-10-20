@@ -118,6 +118,8 @@ class ServerInterface : public CallHook {
 
   virtual void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) = 0;
 
+  virtual bool PerformOpsOnCallImmediate(CallOpSetInterface* ops, Call* call) = 0;
+
   class BaseAsyncRequest : public CompletionQueueTag {
    public:
     BaseAsyncRequest(ServerInterface* server, ServerContext* context,
