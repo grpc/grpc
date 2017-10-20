@@ -125,30 +125,35 @@ template <class Scheduler, class T, void (T::*F)()>
 const typename ClosureRef<>::VTable MemClosure<Scheduler, T, F>::vtable = {
     MemClosure<Scheduler, T, F>::Schedule, MemClosure<Scheduler, T, F>::Run};
 
+template <class Scheduler>
+class MakesClosuresForScheduler {
+ public:
+  template <void (*F)(), typename Env = std::nullptr_t>
+  ClosureRef<> MakeClosure(Env* env = nullptr) {
+    return ClosureRef<>(&closure_impl::FnClosure<Scheduler, Env, F>::vtable,
+                        env);
+  }
+
+  template <typename T, void (*F)(T), typename Env = std::nullptr_t>
+  ClosureRef<T> MakeClosure(Env* env = nullptr) {
+    return ClosureRef<int>(
+        &closure_impl::FnClosure1<Scheduler, Env, T, F>::vtable, env);
+  }
+
+  template <typename T, void (T::*F)()>
+  ClosureRef<> MakeClosure(T* p) {
+    return ClosureRef<>(&closure_impl::MemClosure<Scheduler, T, F>::vtable, p);
+  }
+};
+
 }  // namespace closure_impl
-
-template <class Scheduler, void (*F)(), typename Env = std::nullptr_t>
-ClosureRef<> MakeClosure(Env* env = nullptr) {
-  return ClosureRef<>(&closure_impl::FnClosure<Scheduler, Env, F>::vtable, env);
-}
-
-template <class Scheduler, typename T, void (*F)(T),
-          typename Env = std::nullptr_t>
-ClosureRef<T> MakeClosure(Env* env = nullptr) {
-  return ClosureRef<int>(
-      &closure_impl::FnClosure1<Scheduler, Env, T, F>::vtable, env);
-}
-
-template <class Scheduler, typename T, void (T::*F)()>
-ClosureRef<> MakeClosure(T* p) {
-  return ClosureRef<>(&closure_impl::MemClosure<Scheduler, T, F>::vtable, p);
-}
 
 //
 // SCHEDULERS
 //
 
-class AcquiresNoLocks {
+class AcquiresNoLocks
+    : public closure_impl::MakesClosuresForScheduler<AcquiresNoLocks> {
  public:
   template <class T, class F>
   static void Schedule(F&& f, T* env) {
@@ -165,7 +170,7 @@ class AcquiresNoLocks {
 template <class F>
 void QueueOnExecCtx(F&& f);
 
-class RunInCurrentThread {
+class RunInCurrentThread : public closure_impl::MakesClosuresForScheduler<RunInCurrentThread> {
  public:
   template <class T, class F>
   static void Schedule(F&& f, T* env) {
@@ -177,7 +182,7 @@ class RunInCurrentThread {
   }
 };
 
-class RunInCombiner {
+class RunInCombiner : public closure_impl::MakesClosuresForScheduler<RunInCombiner> {
  public:
   template <class T, class F>
   static void Schedule(F&& f, T* env) {
