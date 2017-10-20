@@ -560,24 +560,6 @@ typedef struct {
   grpc_ssl_client_certificate_request_type client_certificate_request;
 } grpc_ssl_server_security_connector;
 
-static int grpc_ssl_server_security_connector_cmp(
-    grpc_ssl_server_security_connector *sc1,
-    grpc_ssl_server_security_connector *sc2) {
-  GPR_ASSERT(sc1->server_handshaker_factory != NULL);
-  GPR_ASSERT(sc2->server_handshaker_factory != NULL);
-  int c =
-      GPR_ICMP(sc1->server_handshaker_factory, sc2->server_handshaker_factory);
-  if (c != 0) return c;
-  c = GPR_ICMP(sc1->certificate_config_fetcher.cb,
-               sc2->certificate_config_fetcher.cb);
-  if (c != 0) return c;
-  c = GPR_ICMP(sc1->certificate_config_fetcher.user_data,
-               sc2->certificate_config_fetcher.user_data);
-  if (c != 0) return c;
-  return GPR_ICMP(sc1->client_certificate_request,
-                  sc2->client_certificate_request);
-}
-
 static bool server_connector_has_cert_config_fetcher(
     grpc_ssl_server_security_connector *c) {
   GPR_ASSERT(c != NULL);
@@ -660,9 +642,8 @@ static bool try_replace_server_handshaker_factory(
   size_t num_alpn_protocols = 0;
   const char **alpn_protocol_strings =
       fill_alpn_protocol_strings(&num_alpn_protocols);
-  tsi_ssl_pem_key_cert_pair *cert_pairs =
-      grpc_convert_grpc_to_tsi_cert_pairs(config->pem_key_cert_pairs,
-                                          config->num_key_cert_pairs);
+  tsi_ssl_pem_key_cert_pair *cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(
+      config->pem_key_cert_pairs, config->num_key_cert_pairs);
   tsi_ssl_server_handshaker_factory *new_handshaker_factory = NULL;
   tsi_result result = tsi_create_ssl_server_handshaker_factory_ex(
       cert_pairs, config->num_key_cert_pairs, config->pem_root_certs,
@@ -859,13 +840,9 @@ static int ssl_channel_cmp(grpc_security_connector *sc1,
 
 static int ssl_server_cmp(grpc_security_connector *sc1,
                           grpc_security_connector *sc2) {
-  int c =
-      grpc_server_security_connector_cmp((grpc_server_security_connector *)sc1,
-                                         (grpc_server_security_connector *)sc2);
-  if (c != 0) return c;
-  return grpc_ssl_server_security_connector_cmp(
-      (grpc_ssl_server_security_connector *)sc1,
-      (grpc_ssl_server_security_connector *)sc2);
+  return grpc_server_security_connector_cmp(
+      (grpc_server_security_connector *)sc1,
+      (grpc_server_security_connector *)sc2);
 }
 
 static void add_shallow_auth_property_to_peer(tsi_peer *peer,
