@@ -20,9 +20,9 @@
 #define GRPC_CORE_LIB_SUPPORT_FUNCTION_H
 
 #include <stddef.h>
-#include <memory>
 #include <type_traits>
 #include <utility>
+#include "src/core/lib/support/memory.h"
 
 namespace grpc_core {
 
@@ -70,17 +70,17 @@ const VTable<R, Args...> Traits<R(Args...), F, false>::vtable_ = {
 template <typename R, typename... Args, typename F>
 class Traits<R(Args...), F, true> {
  private:
-  typedef std::unique_ptr<F> Ptr;
+  typedef UniquePtr<F> Ptr;
 
  public:
   static const VTable<R, Args...>* Construct(F&& f, void* storage) {
-    new (storage) Ptr(new F(std::move(f)));
+    new (storage) Ptr(New<F>(std::move(f)));
     return &vtable_;
   }
 
  private:
   static void CopyConstruct(const void* from, void* to) {
-    new (to) Ptr(new F(*static_cast<Ptr*>(from)->get()));
+    new (to) Ptr(New<F>(*static_cast<Ptr*>(from)->get()));
   }
   static void MoveConstruct(void* from, void* to) {
     new (to) Ptr(std::move(*static_cast<Ptr*>(from)));
