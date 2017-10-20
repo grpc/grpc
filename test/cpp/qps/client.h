@@ -226,8 +226,6 @@ class Client {
   }
 
   virtual void DestroyMultithreading() = 0;
-  virtual void InitThreadFunc(size_t thread_idx) = 0;
-  virtual bool ThreadFunc(HistogramEntry* histogram, size_t thread_idx) = 0;
 
   void SetupLoadTest(const ClientConfig& config, size_t num_threads) {
     // Set up the load distribution based on the number of threads
@@ -275,7 +273,6 @@ class Client {
                         : std::bind(&Client::NextIssueTime, this, thread_idx);
   }
 
- private:
   class Thread {
    public:
     Thread(Client* client, size_t idx)
@@ -295,6 +292,16 @@ class Client {
       MergeStatusHistogram(statuses_, s);
     }
 
+    void UpdateHistogram(HistogramEntry* entry) {
+      std::lock_guard<std::mutex> g(mu_);
+      if (entry->value_used()) {
+        histogram_.Add(entry->value());
+      }
+      if (entry->status_used()) {
+        statuses_[entry->status()]++;
+      }
+    }
+
    private:
     Thread(const Thread&);
     Thread& operator=(const Thread&);
@@ -310,29 +317,8 @@ class Client {
         wait_loop++;
       }
 
-      client_->InitThreadFunc(idx_);
-
-      for (;;) {
-        // run the loop body
-        HistogramEntry entry;
-        const bool thread_still_ok = client_->ThreadFunc(&entry, idx_);
-        // lock, update histogram if needed and see if we're done
-        std::lock_guard<std::mutex> g(mu_);
-        if (entry.value_used()) {
-          histogram_.Add(entry.value());
-        }
-        if (entry.status_used()) {
-          statuses_[entry.status()]++;
-        }
-        if (!thread_still_ok) {
-          gpr_log(GPR_ERROR, "Finishing client thread due to RPC error");
-        }
-        if (!thread_still_ok ||
-            static_cast<bool>(gpr_atm_acq_load(&client_->thread_pool_done_))) {
-          client_->CompleteThread();
-          return;
-        }
-      }
+      client_->ThreadFunc(idx_, this);
+      client_->CompleteThread();
     }
 
     std::mutex mu_;
@@ -342,6 +328,12 @@ class Client {
     const size_t idx_;
     std::thread impl_;
   };
+
+  bool ThreadCompleted() {
+    return static_cast<bool>(gpr_atm_acq_load(&thread_pool_done_));
+  }
+
+  virtual void ThreadFunc(size_t thread_idx, Client::Thread* t) = 0;
 
   std::vector<std::unique_ptr<Thread>> threads_;
   std::unique_ptr<UsageTimer> timer_;
