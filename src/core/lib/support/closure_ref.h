@@ -27,6 +27,12 @@
 
 namespace grpc_core {
 
+namespace closure_impl {
+// forward-declaration
+template <class Scheduler>
+class MakesClosuresForScheduler;
+}  // namespace closure_impl
+
 // Value type reference to some closure
 // Template arguments list argument types to the closure
 // Closures have an implicit scheduling policy bound when they are created
@@ -38,7 +44,6 @@ class ClosureRef {
     void (*run)(void* env, Args&&... args);
   };
 
-  ClosureRef(const VTable* vtable, void* env) : vtable_(vtable), env_(env) {}
   ClosureRef() : vtable_(&null_vtable_), env_(nullptr) {}
 
   // Run this closure, in-place if possible
@@ -53,6 +58,11 @@ class ClosureRef {
   }
 
  private:
+  template <class Scheduler>
+  friend class closure_impl::MakesClosuresForScheduler;
+
+  ClosureRef(const VTable* vtable, void* env) : vtable_(vtable), env_(env) {}
+
   const VTable* vtable_;
   void* env_;
 
@@ -904,10 +914,10 @@ ClosureRef<> Hidden();
 
 void test() {
   // simple closures around functions, member functions
-  ClosureRef<> print_line = MakeClosure<AcquiresNoLocks, PrintLine>();
-  ClosureRef<int> print_int = MakeClosure<AcquiresNoLocks, int, PrintInt>();
+  ClosureRef<> print_line = AcquiresNoLocks::MakeClosure<PrintLine>();
+  ClosureRef<int> print_int = AcquiresNoLocks::MakeClosure<int, PrintInt>();
   Foo foo;
-  ClosureRef<> foo_cb = MakeClosure<AcquiresNoLocks, Foo, &Foo::Callback>(&foo);
+  ClosureRef<> foo_cb = AcquiresNoLocks::MakeClosure<Foo, &Foo::Callback>(&foo);
 
   print_line.UnsafeRun();
   print_int.UnsafeRun(42);
@@ -915,17 +925,17 @@ void test() {
 
   // exec context test
   ClosureRef<> foo_cb_in_exec_ctx =
-      MakeClosure<RunInCurrentThread, Foo, &Foo::Callback>(&foo);
+      RunInCurrentThread::MakeClosure<Foo, &Foo::Callback>(&foo);
   foo_cb_in_exec_ctx.Schedule();
 
   // combiner lock test - picks up combiner from Foo
   ClosureRef<> foo_cb_in_combiner =
-      MakeClosure<RunInCombiner, Foo, &Foo::Callback>(&foo);
+      RunInCombiner::MakeClosure<Foo, &Foo::Callback>(&foo);
   foo_cb_in_combiner.Schedule();
   // can pass in a raw function too, but need to provide an environment
   // in this case something that provides a combiner() method
   ClosureRef<> print_line_in_combiner =
-      MakeClosure<RunInCombiner, PrintLine>(&foo);
+      RunInCombiner::MakeClosure<PrintLine>(&foo);
   print_line_in_combiner.Schedule();
 
   Hidden().UnsafeRun();
