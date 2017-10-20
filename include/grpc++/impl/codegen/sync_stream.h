@@ -19,6 +19,7 @@
 #ifndef GRPCXX_IMPL_CODEGEN_SYNC_STREAM_H
 #define GRPCXX_IMPL_CODEGEN_SYNC_STREAM_H
 
+#include <grpc/support/log.h>
 #include <grpc++/impl/codegen/call.h>
 #include <grpc++/impl/codegen/channel_interface.h>
 #include <grpc++/impl/codegen/client_context.h>
@@ -609,6 +610,7 @@ class ServerWriter final : public ServerWriterInterface<W> {
       return true;
     }
     ctx_->has_pending_ops_ = false;
+    gpr_log(GPR_ERROR, "PLUCKING");
     return call_->cq()->Pluck(&ctx_->pending_ops_);
   }
 
@@ -678,8 +680,10 @@ class ServerReaderWriterBody final {
     // https://github.com/grpc/grpc/issues/11546
     if (options.is_last_message()) {
       ctx_->has_pending_ops_ = true;
+      gpr_log(GPR_ERROR, "PLUCKING");
       return true;
     }
+    gpr_log(GPR_ERROR, "PLUCKING");
     ctx_->has_pending_ops_ = false;
     return call_->cq()->Pluck(&ctx_->pending_ops_);
   }

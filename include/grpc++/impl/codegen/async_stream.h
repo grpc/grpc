@@ -19,6 +19,7 @@
 #ifndef GRPCXX_IMPL_CODEGEN_ASYNC_STREAM_H
 #define GRPCXX_IMPL_CODEGEN_ASYNC_STREAM_H
 
+#include <grpc/support/log.h>
 #include <grpc++/impl/codegen/call.h>
 #include <grpc++/impl/codegen/channel_interface.h>
 #include <grpc++/impl/codegen/core_codegen_interface.h>
@@ -116,6 +117,8 @@ class AsyncWriterInterface {
   /// \param[in] msg The message to be written.
   /// \param[in] tag The tag identifying the operation.
   virtual void Write(const W& msg, void* tag) = 0;
+
+  virtual bool WriteImmediate(const W& msg, void* tag) = 0;
 
   /// Request the writing of \a msg using WriteOptions \a options with
   /// identifying tag \a tag.
@@ -351,6 +354,20 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
     call_.PerformOps(&write_ops_);
   }
 
+  bool WriteImmediate(const W& msg, void* tag) override {
+    assert(started_);
+    write_ops_.set_output_tag(tag);
+    // TODO(ctiller): don't assert
+    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg).ok());
+    bool finished = call_.PerformOpsImmediate(&write_ops_);
+    if (finished) {
+      void* dummy;
+      bool dummy_bool;
+      write_ops_.FinalizeResult(&dummy, &dummy_bool);
+    }
+    return finished;
+  }
+
   void WritesDone(void* tag) override {
     assert(started_);
     write_ops_.set_output_tag(tag);
@@ -497,6 +514,22 @@ class ClientAsyncReaderWriter final
     GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg).ok());
     call_.PerformOps(&write_ops_);
   }
+
+  bool WriteImmediate(const W& msg, void* tag) override {
+    assert(started_);
+    write_ops_.set_output_tag(tag);
+    // TODO(ctiller): don't assert
+    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg).ok());
+
+    bool finished = call_.PerformOpsImmediate(&write_ops_);
+    if (finished) {
+      void* dummy;
+      bool dummy_bool;
+      write_ops_.FinalizeResult(&dummy, &dummy_bool);
+    }
+    return finished;
+  }
+
 
   void Write(const W& msg, WriteOptions options, void* tag) override {
     assert(started_);
@@ -778,6 +811,21 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
     call_.PerformOps(&write_ops_);
   }
 
+  bool WriteImmediate(const W& msg, void* tag) override {
+    write_ops_.set_output_tag(tag);
+    EnsureInitialMetadataSent(&write_ops_);
+    // TODO(ctiller): don't assert
+    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg).ok());
+    bool finished = call_.PerformOpsImmediate(&write_ops_);
+    if (finished) {
+      void* dummy;
+      bool dummy_bool;
+      write_ops_.FinalizeResult(&dummy, &dummy_bool);
+    }
+    return finished;
+  }
+
+
   void Write(const W& msg, WriteOptions options, void* tag) override {
     write_ops_.set_output_tag(tag);
     if (options.is_last_message()) {
@@ -931,6 +979,20 @@ class ServerAsyncReaderWriter final
     // TODO(ctiller): don't assert
     GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg).ok());
     call_.PerformOps(&write_ops_);
+  }
+
+  bool WriteImmediate(const W& msg, void* tag) override {
+    write_ops_.set_output_tag(tag);
+    EnsureInitialMetadataSent(&write_ops_);
+    // TODO(ctiller): don't assert
+    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg).ok());
+    bool finished = call_.PerformOpsImmediate(&write_ops_);
+    if (finished) {
+      void* dummy;
+      bool dummy_bool;
+      write_ops_.FinalizeResult(&dummy, &dummy_bool);
+    }
+    return finished;
   }
 
   void Write(const W& msg, WriteOptions options, void* tag) override {

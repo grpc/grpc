@@ -177,6 +177,8 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
 
   void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) override;
 
+  bool PerformOpsOnCallImmediate(CallOpSetInterface* ops, Call* call) override;
+
   void ShutdownInternal(gpr_timespec deadline) override;
 
   int max_receive_message_size() const override {

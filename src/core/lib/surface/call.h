@@ -78,6 +78,14 @@ void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *call);
   grpc_call_internal_unref(exec_ctx, call)
 #endif
 
+typedef struct {
+  void* tag;
+  int completed;
+} start_batch_tag;
+
+void grpc_call_global_init();
+start_batch_tag* grpc_call_get_curr_start_batch_tag();
+
 grpc_call_stack *grpc_call_get_call_stack(grpc_call *call);
 
 grpc_call_error grpc_call_start_batch_and_execute(grpc_exec_ctx *exec_ctx,

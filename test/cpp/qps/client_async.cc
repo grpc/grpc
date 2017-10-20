@@ -231,6 +231,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
       (*ss)->shutdown = true;
     }
     for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
+      gpr_log(GPR_ERROR, "SHUTDOWN CQ");
       (*cq)->Shutdown();
     }
     this->EndThreads();  // this needed for resolution
@@ -350,8 +351,11 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
           }
           start_ = UsageTimer::Now();
           next_state_ = State::WRITE_DONE;
-          stream_->Write(req_, ClientRpcContext::tag(this));
-          return true;
+          if (stream_->WriteImmediate(req_, ClientRpcContext::tag(this))) {
+            break;
+          } else {
+            return true;
+          }
         case State::WRITE_DONE:
           if (!ok) {
             return false;
@@ -510,8 +514,11 @@ class ClientRpcContextStreamingFromClientImpl : public ClientRpcContext {
           }
           start_ = UsageTimer::Now();
           next_state_ = State::WRITE_DONE;
-          stream_->Write(req_, ClientRpcContext::tag(this));
-          return true;
+          if(stream_->WriteImmediate(req_, ClientRpcContext::tag(this))) {
+            break;
+          } else {
+            return true;
+          }
         case State::WRITE_DONE:
           if (!ok) {
             return false;
@@ -751,8 +758,11 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
           }
           start_ = UsageTimer::Now();
           next_state_ = State::WRITE_DONE;
-          stream_->Write(req_, ClientRpcContext::tag(this));
-          return true;
+          if(stream_->WriteImmediate(req_, ClientRpcContext::tag(this))) {
+            break;
+          } else {
+            return true;
+          }
         case State::WRITE_DONE:
           if (!ok) {
             return false;
