@@ -560,6 +560,24 @@ typedef struct {
   grpc_ssl_client_certificate_request_type client_certificate_request;
 } grpc_ssl_server_security_connector;
 
+static int grpc_ssl_server_security_connector_cmp(
+    grpc_ssl_server_security_connector *sc1,
+    grpc_ssl_server_security_connector *sc2) {
+  GPR_ASSERT(sc1->server_handshaker_factory != NULL);
+  GPR_ASSERT(sc2->server_handshaker_factory != NULL);
+  int c =
+      GPR_ICMP(sc1->server_handshaker_factory, sc2->server_handshaker_factory);
+  if (c != 0) return c;
+  c = GPR_ICMP(sc1->certificate_config_fetcher.cb,
+               sc2->certificate_config_fetcher.cb);
+  if (c != 0) return c;
+  c = GPR_ICMP(sc1->certificate_config_fetcher.user_data,
+               sc2->certificate_config_fetcher.user_data);
+  if (c != 0) return c;
+  return GPR_ICMP(sc1->client_certificate_request,
+                  sc2->client_certificate_request);
+}
+
 static bool server_connector_has_cert_config_fetcher(
     grpc_ssl_server_security_connector *c) {
   GPR_ASSERT(c != NULL);
@@ -686,7 +704,6 @@ static bool try_fetch_ssl_server_credentials(
 
   cb_result = sc->certificate_config_fetcher.cb(
       sc->certificate_config_fetcher.user_data, &certificate_config);
-
   if (cb_result == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED) {
     gpr_log(GPR_DEBUG, "No change in SSL server credentials.");
     status = false;
@@ -701,7 +718,7 @@ static bool try_fetch_ssl_server_credentials(
   }
 
   if (certificate_config != NULL) {
-    grpc_ssl_server_certificate_config_release(certificate_config);
+    grpc_ssl_server_certificate_config_destroy(certificate_config);
   }
 
   return status;
@@ -853,9 +870,13 @@ static int ssl_channel_cmp(grpc_security_connector *sc1,
 
 static int ssl_server_cmp(grpc_security_connector *sc1,
                           grpc_security_connector *sc2) {
-  return grpc_server_security_connector_cmp(
-      (grpc_server_security_connector *)sc1,
-      (grpc_server_security_connector *)sc2);
+  int c =
+      grpc_server_security_connector_cmp((grpc_server_security_connector *)sc1,
+                                         (grpc_server_security_connector *)sc2);
+  if (c != 0) return c;
+  return grpc_ssl_server_security_connector_cmp(
+      (grpc_ssl_server_security_connector *)sc1,
+      (grpc_ssl_server_security_connector *)sc2);
 }
 
 static void add_shallow_auth_property_to_peer(tsi_peer *peer,

@@ -289,6 +289,7 @@ grpc_server_credentials *grpc_ssl_server_credentials_create_ex(
 grpc_server_credentials *grpc_ssl_server_credentials_create_with_options(
     grpc_ssl_server_credentials_options *options) {
   grpc_server_credentials *retval = NULL;
+  grpc_ssl_server_credentials *c = NULL;
 
   if (options == NULL) {
     gpr_log(GPR_ERROR,
@@ -308,7 +309,7 @@ grpc_server_credentials *grpc_ssl_server_credentials_create_with_options(
     goto done;
   }
 
-  grpc_ssl_server_credentials *c = (grpc_ssl_server_credentials *)gpr_zalloc(
+  c = (grpc_ssl_server_credentials *)gpr_zalloc(
       sizeof(grpc_ssl_server_credentials));
   c->base.type = GRPC_CHANNEL_CREDENTIALS_TYPE_SSL;
   gpr_ref_init(&c->base.refcount, 1);
