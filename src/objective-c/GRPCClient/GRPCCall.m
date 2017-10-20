@@ -296,7 +296,7 @@ static NSString * const kBearerPrefix = @"Bearer ";
 // network queue if the write didn't succeed.
 // If the call is a unary call, parameter \a errorHandler will be ignored and
 // the error handler of GRPCOpSendClose will be executed in case of error.
-- (void)writeMessage:(NSData *)message withErrorHandler:(void (^)())errorHandler {
+- (void)writeMessage:(NSData *)message withErrorHandler:(void (^)(void))errorHandler {
 
   __weak GRPCCall *weakSelf = self;
   void(^resumingHandler)(void) = ^{
@@ -342,7 +342,7 @@ static NSString * const kBearerPrefix = @"Bearer ";
 
 // Only called from the call queue. The error handler will be called from the
 // network queue if the requests stream couldn't be closed successfully.
-- (void)finishRequestWithErrorHandler:(void (^)())errorHandler {
+- (void)finishRequestWithErrorHandler:(void (^)(void))errorHandler {
   if (!_unaryCall) {
     [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendClose alloc] init]]
                               errorHandler:errorHandler];
@@ -438,7 +438,7 @@ static NSString * const kBearerPrefix = @"Bearer ";
   }
   _connectivityMonitor = [GRPCConnectivityMonitor monitorWithHost:host];
   __weak typeof(self) weakSelf = self;
-  void (^handler)() = ^{
+  void (^handler)(void) = ^{
     typeof(self) strongSelf = weakSelf;
     [strongSelf finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                     code:GRPCErrorCodeUnavailable

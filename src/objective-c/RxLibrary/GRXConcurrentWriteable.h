@@ -46,7 +46,7 @@
  * Enqueues writeValue: to be sent to the writeable in the main thread.
  * The passed handler is invoked from the main thread after writeValue: returns.
  */
-- (void)enqueueValue:(id)value completionHandler:(void (^)())handler;
+- (void)enqueueValue:(id)value completionHandler:(void (^)(void))handler;
 
 /**
  * Enqueues writesFinishedWithError:nil to be sent to the writeable in the main thread. After that
