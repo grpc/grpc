@@ -34,7 +34,7 @@ extern "C" grpc_tracer_flag grpc_flowctl_trace;
 
 namespace grpc {
 namespace testing {
-  class TrickledCHTTP2; // to make this a friend
+class TrickledCHTTP2;  // to make this a friend
 }  // namespace testing
 }  // namespace grpc
 
