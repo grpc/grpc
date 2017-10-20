@@ -1880,7 +1880,12 @@ static void on_complete(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     grpc_error *error;
     const char *reason;
   } closure_to_execute;
-  closure_to_execute closures[GPR_ARRAY_SIZE(calld->pending_batches) + 1];
+  // Max number of closures is number of pending batches plus one for
+  // each of:
+  // - deferred recv_initial_metadata_ready
+  // - deferred recv_message_ready
+  // - starting a new batch for pending send ops
+  closure_to_execute closures[GPR_ARRAY_SIZE(calld->pending_batches) + 3];
   size_t num_closures = 0;
   // If there are deferred recv_initial_metadata_ready or recv_message_ready
   // callbacks, add them to closures.
@@ -2098,13 +2103,9 @@ static void start_retriable_subchannel_batches(grpc_exec_ctx *exec_ctx,
   }
   subchannel_call_retry_state *retry_state = (subchannel_call_retry_state *)
       grpc_connected_subchannel_call_get_parent_data(calld->subchannel_call);
-// FIXME: do we actually need to add 1 here?  i suspect that if there
-// are batches to replay, then we will definitely not have one of the
-// other batches...
-  // We can start up to 7 batches, one for each pending batch, plus one
-  // for replaying previously-returned send_* batches.
+  // We can start up to 6 batches.
   grpc_transport_stream_op_batch *batches
-      [GPR_ARRAY_SIZE(calld->pending_batches) + 1];
+      [GPR_ARRAY_SIZE(calld->pending_batches)];
   size_t num_batches = 0;
   // Replay previously-returned send_* ops if needed.
   subchannel_batch_data *replay_batch_data = NULL;
