@@ -75,23 +75,24 @@ template <class R>
 class ClientAsyncResponseReader final
     : public ClientAsyncResponseReaderInterface<R> {
  public:
-  /// Start a call and write the request out if \a start is set.
-  /// \a tag will be notified on \a cq when the call has been started (i.e.
-  /// intitial metadata sent) and \a request has been written out.
-  /// If \a start is not set, the actual call must be initiated by StartCall
-  /// Note that \a context will be used to fill in custom initial metadata
-  /// used to send to the server when starting the call.
-  template <class W>
-  static ClientAsyncResponseReader* Create(ChannelInterface* channel,
-                                           CompletionQueue* cq,
-                                           const RpcMethod& method,
-                                           ClientContext* context,
-                                           const W& request, bool start) {
-    Call call = channel->CreateCall(method, context, cq);
-    return new (g_core_codegen_interface->grpc_call_arena_alloc(
-        call.call(), sizeof(ClientAsyncResponseReader)))
-        ClientAsyncResponseReader(call, context, request, start);
-  }
+  struct internal {
+    /// Start a call and write the request out if \a start is set.
+    /// \a tag will be notified on \a cq when the call has been started (i.e.
+    /// intitial metadata sent) and \a request has been written out.
+    /// If \a start is not set, the actual call must be initiated by StartCall
+    /// Note that \a context will be used to fill in custom initial metadata
+    /// used to send to the server when starting the call.
+    template <class W>
+    static ClientAsyncResponseReader* Create(
+        ChannelInterface* channel, CompletionQueue* cq,
+        const ::grpc::internal::RpcMethod& method, ClientContext* context,
+        const W& request, bool start) {
+      ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
+      return new (g_core_codegen_interface->grpc_call_arena_alloc(
+          call.call(), sizeof(ClientAsyncResponseReader)))
+          ClientAsyncResponseReader(call, context, request, start);
+    }
+  };
 
   // always allocated against a call arena, no memory free required
   static void operator delete(void* ptr, std::size_t size) {
@@ -138,12 +139,12 @@ class ClientAsyncResponseReader final
 
  private:
   ClientContext* const context_;
-  Call call_;
+  ::grpc::internal::Call call_;
   bool started_;
 
   template <class W>
-  ClientAsyncResponseReader(Call call, ClientContext* context, const W& request,
-                            bool start)
+  ClientAsyncResponseReader(::grpc::internal::Call call, ClientContext* context,
+                            const W& request, bool start)
       : context_(context), call_(call), started_(start) {
     // Bind the metadata at time of StartCallInternal but set up the rest here
     // TODO(ctiller): don't assert
@@ -162,19 +163,23 @@ class ClientAsyncResponseReader final
   static void* operator new(std::size_t size);
   static void* operator new(std::size_t size, void* p) { return p; }
 
-  SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-                  CallOpClientSendClose>
+  ::grpc::internal::SneakyCallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+                                    ::grpc::internal::CallOpSendMessage,
+                                    ::grpc::internal::CallOpClientSendClose>
       init_buf;
-  CallOpSet<CallOpRecvInitialMetadata> meta_buf;
-  CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>,
-            CallOpClientRecvStatus>
+  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
+      meta_buf;
+  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
+                              ::grpc::internal::CallOpRecvMessage<R>,
+                              ::grpc::internal::CallOpClientRecvStatus>
       finish_buf;
 };
 
 /// Async server-side API for handling unary calls, where the single
 /// response message sent to the client is of type \a W.
 template <class W>
-class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
+class ServerAsyncResponseWriter final
+    : public internal::ServerAsyncStreamingInterface {
  public:
   explicit ServerAsyncResponseWriter(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
@@ -262,13 +267,15 @@ class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
   }
 
  private:
-  void BindCall(Call* call) override { call_ = *call; }
+  void BindCall(::grpc::internal::Call* call) override { call_ = *call; }
 
-  Call call_;
+  ::grpc::internal::Call call_;
   ServerContext* ctx_;
-  CallOpSet<CallOpSendInitialMetadata> meta_buf_;
-  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-            CallOpServerSendStatus>
+  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
+      meta_buf_;
+  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+                              ::grpc::internal::CallOpSendMessage,
+                              ::grpc::internal::CallOpServerSendStatus>
       finish_buf_;
 };
 

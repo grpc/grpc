@@ -52,7 +52,7 @@ namespace {
 int kConnectivityCheckIntervalMsec = 500;
 void WatchStateChange(void* arg);
 
-class TagSaver final : public CompletionQueueTag {
+class TagSaver final : public internal::CompletionQueueTag {
  public:
   explicit TagSaver(void* tag) : tag_(tag) {}
   ~TagSaver() override {}
@@ -259,8 +259,9 @@ grpc::string Channel::GetServiceConfigJSON() const {
                              &channel_info.service_config_json);
 }
 
-Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
-                         CompletionQueue* cq) {
+internal::Call Channel::CreateCall(const internal::RpcMethod& method,
+                                   ClientContext* context,
+                                   CompletionQueue* cq) {
   const bool kRegistered = method.channel_tag() && context->authority().empty();
   grpc_call* c_call = NULL;
   if (kRegistered) {
@@ -292,10 +293,11 @@ Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
   }
   grpc_census_call_set_context(c_call, context->census_context());
   context->set_call(c_call, shared_from_this());
-  return Call(c_call, this, cq);
+  return internal::Call(c_call, this, cq);
 }
 
-void Channel::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
+void Channel::PerformOpsOnCall(internal::CallOpSetInterface* ops,
+                               internal::Call* call) {
   static const size_t MAX_OPS = 8;
   size_t nops = 0;
   grpc_op cops[MAX_OPS];
