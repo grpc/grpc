@@ -66,7 +66,8 @@ const typename ClosureRef<Args...>::VTable ClosureRef<Args...>::null_vtable_ = {
 // Expect to write a code generator for this
 //
 
-namespace impl {
+namespace closure_impl {
+
 template <class Scheduler, class Env, void (*F)()>
 class FnClosure {
  public:
@@ -80,6 +81,7 @@ class FnClosure {
     Scheduler::Run([](void*) { F(); }, static_cast<Env*>(env));
   }
 };
+
 template <class Scheduler, class Env, void (*F)()>
 const typename ClosureRef<>::VTable FnClosure<Scheduler, Env, F>::vtable = {
     FnClosure<Scheduler, Env, F>::Schedule, FnClosure<Scheduler, Env, F>::Run};
@@ -97,6 +99,7 @@ class FnClosure1 {
     Scheduler::Run([t](void*) { F(t); }, static_cast<Env*>(env));
   }
 };
+
 template <class Scheduler, class Env, typename T, void (*F)(T)>
 const typename ClosureRef<T>::VTable FnClosure1<Scheduler, Env, T, F>::vtable =
     {FnClosure1<Scheduler, Env, T, F>::Schedule,
@@ -117,25 +120,28 @@ class MemClosure {
                    static_cast<T*>(env));
   }
 };
+
 template <class Scheduler, class T, void (T::*F)()>
 const typename ClosureRef<>::VTable MemClosure<Scheduler, T, F>::vtable = {
     MemClosure<Scheduler, T, F>::Schedule, MemClosure<Scheduler, T, F>::Run};
-}
+
+}  // namespace closure_impl
 
 template <class Scheduler, void (*F)(), typename Env = std::nullptr_t>
 ClosureRef<> MakeClosure(Env* env = nullptr) {
-  return ClosureRef<>(&impl::FnClosure<Scheduler, Env, F>::vtable, env);
+  return ClosureRef<>(&closure_impl::FnClosure<Scheduler, Env, F>::vtable, env);
 }
 
 template <class Scheduler, typename T, void (*F)(T),
           typename Env = std::nullptr_t>
 ClosureRef<T> MakeClosure(Env* env = nullptr) {
-  return ClosureRef<int>(&impl::FnClosure1<Scheduler, Env, T, F>::vtable, env);
+  return ClosureRef<int>(
+      &closure_impl::FnClosure1<Scheduler, Env, T, F>::vtable, env);
 }
 
 template <class Scheduler, typename T, void (T::*F)()>
 ClosureRef<> MakeClosure(T* p) {
-  return ClosureRef<>(&impl::MemClosure<Scheduler, T, F>::vtable, p);
+  return ClosureRef<>(&closure_impl::MemClosure<Scheduler, T, F>::vtable, p);
 }
 
 //
@@ -154,6 +160,8 @@ class AcquiresNoLocks {
   }
 };
 
+// TODO(ctiller): move this into it's final place
+#if 0
 template <class F>
 void QueueOnExecCtx(F&& f);
 
@@ -242,6 +250,7 @@ void test() {
   ClosureRef<> empty;
   empty.Run();
 }
+#endif
 
 }  // namespace grpc_core
 
