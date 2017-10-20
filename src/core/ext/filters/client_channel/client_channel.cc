@@ -2319,12 +2319,8 @@ static void create_subchannel_call(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem, grpc_error *error) {
   channel_data *chand = (channel_data *)elem->channel_data;
   call_data *calld = (call_data *)elem->call_data;
-// FIXME: want to not allocate this if we're already committed, but then
-// need some way to know to avoid looking at retry_state in
-// start_retriable_subchannel_batches()
   const size_t parent_data_size =
-      chand->enable_retries // && !calld->retry_committed
-      ? sizeof(subchannel_call_retry_state) : 0;
+      chand->enable_retries ? sizeof(subchannel_call_retry_state) : 0;
   const grpc_connected_subchannel_call_args call_args = {
       calld->pollent,                  // pollent
       calld->path,                     // path
