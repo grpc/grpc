@@ -22,6 +22,7 @@ BENCHMARK_SECONDS=30
 
 SMOKETEST='smoketest'
 SCALABLE='scalable'
+INPROC='inproc'
 SWEEP='sweep'
 DEFAULT_CATEGORIES=[SCALABLE, SMOKETEST]
 
@@ -236,7 +237,7 @@ class CXXLanguage:
       unconstrained_client='async', outstanding=100, channels=1,
       num_clients=1,
       secure=False,
-      categories=[SMOKETEST] + [SCALABLE])
+      categories=[SMOKETEST] + [INPROC] + [SCALABLE])
 
     yield _ping_pong_scenario(
       'cpp_protobuf_async_streaming_from_client_1channel_1MB', rpc_type='STREAMING_FROM_CLIENT',
@@ -245,7 +246,7 @@ class CXXLanguage:
       unconstrained_client='async', outstanding=1, channels=1,
       num_clients=1,
       secure=False,
-      categories=[SMOKETEST] + [SCALABLE])
+      categories=[SMOKETEST] + [INPROC] + [SCALABLE])
 
     yield _ping_pong_scenario(
        'cpp_protobuf_async_unary_75Kqps_600channel_60Krpcs_300Breq_50Bresp',
@@ -258,7 +259,7 @@ class CXXLanguage:
 
     for secure in [True, False]:
       secstr = 'secure' if secure else 'insecure'
-      smoketest_categories = ([SMOKETEST] if secure else []) + [SCALABLE]
+      smoketest_categories = ([SMOKETEST] if secure else [INPROC]) + [SCALABLE]
 
       yield _ping_pong_scenario(
           'cpp_generic_async_streaming_ping_pong_%s' % secstr,

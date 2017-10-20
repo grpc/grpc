@@ -74,14 +74,17 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
                                  ResponseType *)>
           process_rpc)
       : Server(config) {
-    char *server_address = NULL;
-
-    gpr_join_host_port(&server_address, "::", port());
-
     ServerBuilder builder;
-    builder.AddListeningPort(server_address,
-                             Server::CreateServerCredentials(config));
-    gpr_free(server_address);
+
+    auto port_num = port();
+    // Negative port number means inproc server, so no listen port needed
+    if (port_num >= 0) {
+      char *server_address = NULL;
+      gpr_join_host_port(&server_address, "::", port_num);
+      builder.AddListeningPort(server_address,
+                               Server::CreateServerCredentials(config));
+      gpr_free(server_address);
+    }
 
     register_service(&builder, &async_service_);
 
@@ -181,6 +184,11 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
       count += grpc_get_cq_poll_num((*cq)->cq());
     }
     return count;
+  }
+
+  std::shared_ptr<Channel> InProcessChannel(
+      const ChannelArguments &args) override {
+    return server_->InProcessChannel(args);
   }
 
  private:
