@@ -1979,7 +1979,7 @@ static void test_retry_throttled(grpc_end2end_test_config config) {
 // - cancel from surface
 // - deadline exceeded
 // - retry committed after replaying 1 of 2 previously-completed
-//   send_message ops
+//   send_message ops (and sending another message after that)
 
 void retry(grpc_end2end_test_config config) {
   test_retry_basic(config);

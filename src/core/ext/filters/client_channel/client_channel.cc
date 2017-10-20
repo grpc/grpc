@@ -903,7 +903,7 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
  */
 
 // Max number of batches that can be pending on a call at any given
-// time.  This includes:
+// time.  This includes one batch for each of the following ops:
 //   recv_initial_metadata
 //   send_initial_metadata
 //   recv_message
@@ -912,39 +912,44 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 //   send_trailing_metadata
 #define MAX_PENDING_BATCHES 6
 
-// FIXME: update comments
-
 // Retry support:
 //
-// There are 2 sets of data to maintain:
+// In order to support retries, we act as a proxy for stream op batches.
+// When we get a batch from the surface, we add it to our list of pending
+// batches, and we then use those batches to construct separate "child"
+// batches to be started on the subchannel call.  When the child batches
+// return, we then decide which pending batches have been completed and
+// schedule their callbacks accordingly.  If a subchannel call fails and
+// we want to retry it, we do a new pick and start again, constructing
+// new "child" batches for the new subchannel call.
+//
+// Note that retries are committed when receiving data from the server
+// (except for Trailers-Only responses).  However, there may be many
+// send ops started before receiving any data, so we may have already
+// completed some number of send ops (and returned the completions up to
+// the surface) by the time we realize that we need to retry.  To deal
+// with this, we cache data for send ops, so that we can replay them on a
+// different subchannel call even after we have completed the original
+// batches.
+//
+// There are two sets of data to maintain:
 // - In call_data (in the parent channel), we maintain a list of pending
-//   ops and cached data for those ops.
+//   ops and cached data for send ops.
 // - In the subchannel call, we maintain state to indicate what ops have
 //   already been sent down to that call.
 //
-// When new ops come down, we first try to send them immediately.  If
-// they fail and are retryable, then we do a new pick and start again.
-//
-// when new ops come down:
-// - if retries are enabled, create subchannel_batch_data and use that
-//   to send down batch
-// - otherwise, send down as-is
-//
-// In on_complete:
-// - if failed and is retryable, start new pick and then retry
-// - otherwise, return to surface
-//
-// synchronization problems:
-// - new batch coming down and retry started at the same time, how do we
-//   know which ops to include?
+// When constructing the "child" batches, we compare those two sets of
+// data to see which batches need to be sent to the subchannel call.
 
 // State used for starting a retryable batch on a subchannel call.
 // This provides its own grpc_transport_stream_op_batch and other data
 // structures needed to populate the ops in the batch.
+// We allocate one struct on the arena for each attempt at starting a
+// batch on a given subchannel call.
 typedef struct {
   gpr_refcount refs;
   grpc_call_element *elem;
-  grpc_subchannel_call *subchannel_call;
+  grpc_subchannel_call *subchannel_call;  // Holds a ref.
   // The batch to use in the subchannel call.
   // Its payload field points to subchannel_call_retry_state.batch_payload.
   grpc_transport_stream_op_batch batch;
@@ -973,8 +978,7 @@ typedef struct {
 // Retry state associated with a subchannel call.
 // Stored in the parent_data of the subchannel call object.
 typedef struct {
-  // These fields indicate which ops have been sent down to this
-  // subchannel call.
+  // These fields indicate which ops have been started on this subchannel call.
   size_t started_send_message_count;
   size_t started_recv_message_count;
   bool started_send_initial_metadata : 1;
@@ -998,9 +1002,13 @@ typedef struct {
   bool retry_dispatched : 1;
 } subchannel_call_retry_state;
 
+// Pending batches stored in call data.
 typedef struct {
+  // The pending batch.  If NULL, this slot is empty.
   grpc_transport_stream_op_batch *batch;
+  // Indicates whether payload for send ops has been cached in call data.
   bool send_ops_cached : 1;
+  // A back-pointer to the call element.
   grpc_call_element *elem;
 } pending_batch;
 
@@ -1057,14 +1065,14 @@ typedef struct client_channel_call_data {
   grpc_backoff retry_backoff;
   grpc_timer retry_timer;
 
-  // Copy of initial metadata.
-  // Populated when we receive a send_initial_metadata op.
+  // Cached data for retrying send ops.
+  // send_initial_metadata
   bool seen_send_initial_metadata;
   grpc_linked_mdelem *send_initial_metadata_storage;
   grpc_metadata_batch send_initial_metadata;
   uint32_t send_initial_metadata_flags;
   gpr_atm *peer_string;
-  // The contents for sent messages.
+  // send_message
   // When we get a send_message op, we replace the original byte stream
   // with a grpc_caching_byte_stream that caches the slices to a
   // local buffer for use in retries.  We use initial_send_message as the
@@ -1074,9 +1082,7 @@ typedef struct client_channel_call_data {
   size_t num_seen_send_message_ops;
   grpc_byte_stream_cache initial_send_message;
   grpc_byte_stream_cache *send_messages;
-  // Copy of trailing metadata.
-  // Populated when we receive a send_trailing_metadata op.
-  // Non-NULL if we've received a send_trailing_metadata op.
+  // send_trailing_metadata
   bool seen_send_trailing_metadata;
   grpc_linked_mdelem *send_trailing_metadata_storage;
   grpc_metadata_batch send_trailing_metadata;
@@ -2090,8 +2096,7 @@ static void add_retriable_recv_trailing_metadata_op(
       &batch_data->collect_stats;
 }
 
-// FIXME: need to figure out the right condition under which to
-// trigger transparent retries
+// TODO(roth): In a subsequent PR, add support for transparent retries.
 static void start_retriable_subchannel_batches(grpc_exec_ctx *exec_ctx,
                                                void *arg, grpc_error *ignored) {
   grpc_call_element *elem = (grpc_call_element *)arg;
