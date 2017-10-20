@@ -4,8 +4,6 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
@@ -22,7 +20,8 @@ class StreamingInputCallResponse extends \Google\Protobuf\Internal\Message
      */
     private $aggregated_payload_size = 0;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct();
     }
@@ -31,6 +30,7 @@ class StreamingInputCallResponse extends \Google\Protobuf\Internal\Message
      * Aggregated size of payloads received from the client.
      *
      * Generated from protobuf field <code>int32 aggregated_payload_size = 1;</code>
+     *
      * @return int
      */
     public function getAggregatedPayloadSize()
@@ -42,7 +42,9 @@ class StreamingInputCallResponse extends \Google\Protobuf\Internal\Message
      * Aggregated size of payloads received from the client.
      *
      * Generated from protobuf field <code>int32 aggregated_payload_size = 1;</code>
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setAggregatedPayloadSize($var)
@@ -52,6 +54,4 @@ class StreamingInputCallResponse extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

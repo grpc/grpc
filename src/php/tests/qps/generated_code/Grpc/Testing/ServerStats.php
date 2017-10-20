@@ -4,68 +4,68 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Generated from protobuf message <code>grpc.testing.ServerStats</code>
+ * Generated from protobuf message <code>grpc.testing.ServerStats</code>.
  */
 class ServerStats extends \Google\Protobuf\Internal\Message
 {
     /**
-     * wall clock time change in seconds since last reset
+     * wall clock time change in seconds since last reset.
      *
      * Generated from protobuf field <code>double time_elapsed = 1;</code>
      */
     private $time_elapsed = 0.0;
     /**
-     * change in user time (in seconds) used by the server since last reset
+     * change in user time (in seconds) used by the server since last reset.
      *
      * Generated from protobuf field <code>double time_user = 2;</code>
      */
     private $time_user = 0.0;
     /**
      * change in server time (in seconds) used by the server process and all
-     * threads since last reset
+     * threads since last reset.
      *
      * Generated from protobuf field <code>double time_system = 3;</code>
      */
     private $time_system = 0.0;
     /**
-     * change in total cpu time of the server (data from proc/stat)
+     * change in total cpu time of the server (data from proc/stat).
      *
      * Generated from protobuf field <code>uint64 total_cpu_time = 4;</code>
      */
     private $total_cpu_time = 0;
     /**
-     * change in idle time of the server (data from proc/stat)
+     * change in idle time of the server (data from proc/stat).
      *
      * Generated from protobuf field <code>uint64 idle_cpu_time = 5;</code>
      */
     private $idle_cpu_time = 0;
     /**
-     * Number of polls called inside completion queue
+     * Number of polls called inside completion queue.
      *
      * Generated from protobuf field <code>uint64 cq_poll_count = 6;</code>
      */
     private $cq_poll_count = 0;
     /**
-     * Core library stats
+     * Core library stats.
      *
      * Generated from protobuf field <code>.grpc.core.Stats core_stats = 7;</code>
      */
     private $core_stats = null;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Stats::initOnce();
         parent::__construct();
     }
 
     /**
-     * wall clock time change in seconds since last reset
+     * wall clock time change in seconds since last reset.
      *
      * Generated from protobuf field <code>double time_elapsed = 1;</code>
+     *
      * @return float
      */
     public function getTimeElapsed()
@@ -74,10 +74,12 @@ class ServerStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * wall clock time change in seconds since last reset
+     * wall clock time change in seconds since last reset.
      *
      * Generated from protobuf field <code>double time_elapsed = 1;</code>
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setTimeElapsed($var)
@@ -89,9 +91,10 @@ class ServerStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * change in user time (in seconds) used by the server since last reset
+     * change in user time (in seconds) used by the server since last reset.
      *
      * Generated from protobuf field <code>double time_user = 2;</code>
+     *
      * @return float
      */
     public function getTimeUser()
@@ -100,10 +103,12 @@ class ServerStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * change in user time (in seconds) used by the server since last reset
+     * change in user time (in seconds) used by the server since last reset.
      *
      * Generated from protobuf field <code>double time_user = 2;</code>
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setTimeUser($var)
@@ -116,9 +121,10 @@ class ServerStats extends \Google\Protobuf\Internal\Message
 
     /**
      * change in server time (in seconds) used by the server process and all
-     * threads since last reset
+     * threads since last reset.
      *
      * Generated from protobuf field <code>double time_system = 3;</code>
+     *
      * @return float
      */
     public function getTimeSystem()
@@ -128,10 +134,12 @@ class ServerStats extends \Google\Protobuf\Internal\Message
 
     /**
      * change in server time (in seconds) used by the server process and all
-     * threads since last reset
+     * threads since last reset.
      *
      * Generated from protobuf field <code>double time_system = 3;</code>
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setTimeSystem($var)
@@ -143,9 +151,10 @@ class ServerStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * change in total cpu time of the server (data from proc/stat)
+     * change in total cpu time of the server (data from proc/stat).
      *
      * Generated from protobuf field <code>uint64 total_cpu_time = 4;</code>
+     *
      * @return int|string
      */
     public function getTotalCpuTime()
@@ -154,10 +163,12 @@ class ServerStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * change in total cpu time of the server (data from proc/stat)
+     * change in total cpu time of the server (data from proc/stat).
      *
      * Generated from protobuf field <code>uint64 total_cpu_time = 4;</code>
+     *
      * @param int|string $var
+     *
      * @return $this
      */
     public function setTotalCpuTime($var)
@@ -169,9 +180,10 @@ class ServerStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * change in idle time of the server (data from proc/stat)
+     * change in idle time of the server (data from proc/stat).
      *
      * Generated from protobuf field <code>uint64 idle_cpu_time = 5;</code>
+     *
      * @return int|string
      */
     public function getIdleCpuTime()
@@ -180,10 +192,12 @@ class ServerStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * change in idle time of the server (data from proc/stat)
+     * change in idle time of the server (data from proc/stat).
      *
      * Generated from protobuf field <code>uint64 idle_cpu_time = 5;</code>
+     *
      * @param int|string $var
+     *
      * @return $this
      */
     public function setIdleCpuTime($var)
@@ -195,9 +209,10 @@ class ServerStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of polls called inside completion queue
+     * Number of polls called inside completion queue.
      *
      * Generated from protobuf field <code>uint64 cq_poll_count = 6;</code>
+     *
      * @return int|string
      */
     public function getCqPollCount()
@@ -206,10 +221,12 @@ class ServerStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of polls called inside completion queue
+     * Number of polls called inside completion queue.
      *
      * Generated from protobuf field <code>uint64 cq_poll_count = 6;</code>
+     *
      * @param int|string $var
+     *
      * @return $this
      */
     public function setCqPollCount($var)
@@ -221,9 +238,10 @@ class ServerStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Core library stats
+     * Core library stats.
      *
      * Generated from protobuf field <code>.grpc.core.Stats core_stats = 7;</code>
+     *
      * @return \Grpc\Core\Stats
      */
     public function getCoreStats()
@@ -232,10 +250,12 @@ class ServerStats extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Core library stats
+     * Core library stats.
      *
      * Generated from protobuf field <code>.grpc.core.Stats core_stats = 7;</code>
+     *
      * @param \Grpc\Core\Stats $var
+     *
      * @return $this
      */
     public function setCoreStats($var)
@@ -245,6 +265,4 @@ class ServerStats extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

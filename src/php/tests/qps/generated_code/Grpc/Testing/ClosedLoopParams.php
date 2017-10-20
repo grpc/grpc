@@ -4,10 +4,6 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
-use Google\Protobuf\Internal\GPBUtil;
-
 /**
  * Once an RPC finishes, immediately start a new one.
  * No configuration parameters needed.
@@ -16,11 +12,9 @@ use Google\Protobuf\Internal\GPBUtil;
  */
 class ClosedLoopParams extends \Google\Protobuf\Internal\Message
 {
-
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
         parent::__construct();
     }
-
 }
-

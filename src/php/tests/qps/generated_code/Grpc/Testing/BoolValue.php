@@ -4,14 +4,12 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
  * TODO(dgq): Go back to using well-known types once
  * https://github.com/grpc/grpc/issues/6980 has been fixed.
- * import "google/protobuf/wrappers.proto";
+ * import "google/protobuf/wrappers.proto";.
  *
  * Generated from protobuf message <code>grpc.testing.BoolValue</code>
  */
@@ -24,7 +22,8 @@ class BoolValue extends \Google\Protobuf\Internal\Message
      */
     private $value = false;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct();
     }
@@ -33,6 +32,7 @@ class BoolValue extends \Google\Protobuf\Internal\Message
      * The bool value.
      *
      * Generated from protobuf field <code>bool value = 1;</code>
+     *
      * @return bool
      */
     public function getValue()
@@ -44,7 +44,9 @@ class BoolValue extends \Google\Protobuf\Internal\Message
      * The bool value.
      *
      * Generated from protobuf field <code>bool value = 1;</code>
+     *
      * @param bool $var
+     *
      * @return $this
      */
     public function setValue($var)
@@ -54,6 +56,4 @@ class BoolValue extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

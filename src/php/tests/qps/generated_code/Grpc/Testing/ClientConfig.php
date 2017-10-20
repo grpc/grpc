@@ -4,12 +4,10 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Generated from protobuf message <code>grpc.testing.ClientConfig</code>
+ * Generated from protobuf message <code>grpc.testing.ClientConfig</code>.
  */
 class ClientConfig extends \Google\Protobuf\Internal\Message
 {
@@ -20,11 +18,11 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
      */
     private $server_targets;
     /**
-     * Generated from protobuf field <code>.grpc.testing.ClientType client_type = 2;</code>
+     * Generated from protobuf field <code>.grpc.testing.ClientType client_type = 2;</code>.
      */
     private $client_type = 0;
     /**
-     * Generated from protobuf field <code>.grpc.testing.SecurityParams security_params = 3;</code>
+     * Generated from protobuf field <code>.grpc.testing.SecurityParams security_params = 3;</code>.
      */
     private $security_params = null;
     /**
@@ -36,7 +34,7 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     private $outstanding_rpcs_per_channel = 0;
     /**
      * Number of independent client channels to create.
-     * i-th channel will connect to server_target[i % server_targets.size()]
+     * i-th channel will connect to server_target[i % server_targets.size()].
      *
      * Generated from protobuf field <code>int32 client_channels = 5;</code>
      */
@@ -48,7 +46,7 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
      */
     private $async_client_threads = 0;
     /**
-     * Generated from protobuf field <code>.grpc.testing.RpcType rpc_type = 8;</code>
+     * Generated from protobuf field <code>.grpc.testing.RpcType rpc_type = 8;</code>.
      */
     private $rpc_type = 0;
     /**
@@ -58,47 +56,48 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
      */
     private $load_params = null;
     /**
-     * Generated from protobuf field <code>.grpc.testing.PayloadConfig payload_config = 11;</code>
+     * Generated from protobuf field <code>.grpc.testing.PayloadConfig payload_config = 11;</code>.
      */
     private $payload_config = null;
     /**
-     * Generated from protobuf field <code>.grpc.testing.HistogramParams histogram_params = 12;</code>
+     * Generated from protobuf field <code>.grpc.testing.HistogramParams histogram_params = 12;</code>.
      */
     private $histogram_params = null;
     /**
-     * Specify the cores we should run the client on, if desired
+     * Specify the cores we should run the client on, if desired.
      *
      * Generated from protobuf field <code>repeated int32 core_list = 13;</code>
      */
     private $core_list;
     /**
-     * Generated from protobuf field <code>int32 core_limit = 14;</code>
+     * Generated from protobuf field <code>int32 core_limit = 14;</code>.
      */
     private $core_limit = 0;
     /**
-     * If we use an OTHER_CLIENT client_type, this string gives more detail
+     * If we use an OTHER_CLIENT client_type, this string gives more detail.
      *
      * Generated from protobuf field <code>string other_client_api = 15;</code>
      */
     private $other_client_api = '';
     /**
-     * Generated from protobuf field <code>repeated .grpc.testing.ChannelArg channel_args = 16;</code>
+     * Generated from protobuf field <code>repeated .grpc.testing.ChannelArg channel_args = 16;</code>.
      */
     private $channel_args;
     /**
-     * Number of threads that share each completion queue
+     * Number of threads that share each completion queue.
      *
      * Generated from protobuf field <code>int32 threads_per_cq = 17;</code>
      */
     private $threads_per_cq = 0;
     /**
-     * Number of messages on a stream before it gets finished/restarted
+     * Number of messages on a stream before it gets finished/restarted.
      *
      * Generated from protobuf field <code>int32 messages_per_stream = 18;</code>
      */
     private $messages_per_stream = 0;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
         parent::__construct();
     }
@@ -107,6 +106,7 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
      * List of targets to connect to. At least one target needs to be specified.
      *
      * Generated from protobuf field <code>repeated string server_targets = 1;</code>
+     *
      * @return \Google\Protobuf\Internal\RepeatedField
      */
     public function getServerTargets()
@@ -118,7 +118,9 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
      * List of targets to connect to. At least one target needs to be specified.
      *
      * Generated from protobuf field <code>repeated string server_targets = 1;</code>
+     *
      * @param string[]|\Google\Protobuf\Internal\RepeatedField $var
+     *
      * @return $this
      */
     public function setServerTargets($var)
@@ -130,7 +132,8 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.testing.ClientType client_type = 2;</code>
+     * Generated from protobuf field <code>.grpc.testing.ClientType client_type = 2;</code>.
+     *
      * @return int
      */
     public function getClientType()
@@ -139,8 +142,10 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.testing.ClientType client_type = 2;</code>
+     * Generated from protobuf field <code>.grpc.testing.ClientType client_type = 2;</code>.
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setClientType($var)
@@ -152,7 +157,8 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.testing.SecurityParams security_params = 3;</code>
+     * Generated from protobuf field <code>.grpc.testing.SecurityParams security_params = 3;</code>.
+     *
      * @return \Grpc\Testing\SecurityParams
      */
     public function getSecurityParams()
@@ -161,8 +167,10 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.testing.SecurityParams security_params = 3;</code>
+     * Generated from protobuf field <code>.grpc.testing.SecurityParams security_params = 3;</code>.
+     *
      * @param \Grpc\Testing\SecurityParams $var
+     *
      * @return $this
      */
     public function setSecurityParams($var)
@@ -178,6 +186,7 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
      * For synchronous client, use a separate thread for each outstanding RPC.
      *
      * Generated from protobuf field <code>int32 outstanding_rpcs_per_channel = 4;</code>
+     *
      * @return int
      */
     public function getOutstandingRpcsPerChannel()
@@ -190,7 +199,9 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
      * For synchronous client, use a separate thread for each outstanding RPC.
      *
      * Generated from protobuf field <code>int32 outstanding_rpcs_per_channel = 4;</code>
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setOutstandingRpcsPerChannel($var)
@@ -203,9 +214,10 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
 
     /**
      * Number of independent client channels to create.
-     * i-th channel will connect to server_target[i % server_targets.size()]
+     * i-th channel will connect to server_target[i % server_targets.size()].
      *
      * Generated from protobuf field <code>int32 client_channels = 5;</code>
+     *
      * @return int
      */
     public function getClientChannels()
@@ -215,10 +227,12 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
 
     /**
      * Number of independent client channels to create.
-     * i-th channel will connect to server_target[i % server_targets.size()]
+     * i-th channel will connect to server_target[i % server_targets.size()].
      *
      * Generated from protobuf field <code>int32 client_channels = 5;</code>
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setClientChannels($var)
@@ -233,6 +247,7 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
      * Only for async client. Number of threads to use to start/manage RPCs.
      *
      * Generated from protobuf field <code>int32 async_client_threads = 7;</code>
+     *
      * @return int
      */
     public function getAsyncClientThreads()
@@ -244,7 +259,9 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
      * Only for async client. Number of threads to use to start/manage RPCs.
      *
      * Generated from protobuf field <code>int32 async_client_threads = 7;</code>
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setAsyncClientThreads($var)
@@ -256,7 +273,8 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.testing.RpcType rpc_type = 8;</code>
+     * Generated from protobuf field <code>.grpc.testing.RpcType rpc_type = 8;</code>.
+     *
      * @return int
      */
     public function getRpcType()
@@ -265,8 +283,10 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.testing.RpcType rpc_type = 8;</code>
+     * Generated from protobuf field <code>.grpc.testing.RpcType rpc_type = 8;</code>.
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setRpcType($var)
@@ -281,6 +301,7 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
      * The requested load for the entire client (aggregated over all the threads).
      *
      * Generated from protobuf field <code>.grpc.testing.LoadParams load_params = 10;</code>
+     *
      * @return \Grpc\Testing\LoadParams
      */
     public function getLoadParams()
@@ -292,7 +313,9 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
      * The requested load for the entire client (aggregated over all the threads).
      *
      * Generated from protobuf field <code>.grpc.testing.LoadParams load_params = 10;</code>
+     *
      * @param \Grpc\Testing\LoadParams $var
+     *
      * @return $this
      */
     public function setLoadParams($var)
@@ -304,7 +327,8 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.testing.PayloadConfig payload_config = 11;</code>
+     * Generated from protobuf field <code>.grpc.testing.PayloadConfig payload_config = 11;</code>.
+     *
      * @return \Grpc\Testing\PayloadConfig
      */
     public function getPayloadConfig()
@@ -313,8 +337,10 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.testing.PayloadConfig payload_config = 11;</code>
+     * Generated from protobuf field <code>.grpc.testing.PayloadConfig payload_config = 11;</code>.
+     *
      * @param \Grpc\Testing\PayloadConfig $var
+     *
      * @return $this
      */
     public function setPayloadConfig($var)
@@ -326,7 +352,8 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.testing.HistogramParams histogram_params = 12;</code>
+     * Generated from protobuf field <code>.grpc.testing.HistogramParams histogram_params = 12;</code>.
+     *
      * @return \Grpc\Testing\HistogramParams
      */
     public function getHistogramParams()
@@ -335,8 +362,10 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.testing.HistogramParams histogram_params = 12;</code>
+     * Generated from protobuf field <code>.grpc.testing.HistogramParams histogram_params = 12;</code>.
+     *
      * @param \Grpc\Testing\HistogramParams $var
+     *
      * @return $this
      */
     public function setHistogramParams($var)
@@ -348,9 +377,10 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Specify the cores we should run the client on, if desired
+     * Specify the cores we should run the client on, if desired.
      *
      * Generated from protobuf field <code>repeated int32 core_list = 13;</code>
+     *
      * @return \Google\Protobuf\Internal\RepeatedField
      */
     public function getCoreList()
@@ -359,10 +389,12 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Specify the cores we should run the client on, if desired
+     * Specify the cores we should run the client on, if desired.
      *
      * Generated from protobuf field <code>repeated int32 core_list = 13;</code>
+     *
      * @param int[]|\Google\Protobuf\Internal\RepeatedField $var
+     *
      * @return $this
      */
     public function setCoreList($var)
@@ -374,7 +406,8 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>int32 core_limit = 14;</code>
+     * Generated from protobuf field <code>int32 core_limit = 14;</code>.
+     *
      * @return int
      */
     public function getCoreLimit()
@@ -383,8 +416,10 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>int32 core_limit = 14;</code>
+     * Generated from protobuf field <code>int32 core_limit = 14;</code>.
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setCoreLimit($var)
@@ -396,9 +431,10 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * If we use an OTHER_CLIENT client_type, this string gives more detail
+     * If we use an OTHER_CLIENT client_type, this string gives more detail.
      *
      * Generated from protobuf field <code>string other_client_api = 15;</code>
+     *
      * @return string
      */
     public function getOtherClientApi()
@@ -407,22 +443,25 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * If we use an OTHER_CLIENT client_type, this string gives more detail
+     * If we use an OTHER_CLIENT client_type, this string gives more detail.
      *
      * Generated from protobuf field <code>string other_client_api = 15;</code>
+     *
      * @param string $var
+     *
      * @return $this
      */
     public function setOtherClientApi($var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->other_client_api = $var;
 
         return $this;
     }
 
     /**
-     * Generated from protobuf field <code>repeated .grpc.testing.ChannelArg channel_args = 16;</code>
+     * Generated from protobuf field <code>repeated .grpc.testing.ChannelArg channel_args = 16;</code>.
+     *
      * @return \Google\Protobuf\Internal\RepeatedField
      */
     public function getChannelArgs()
@@ -431,8 +470,10 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>repeated .grpc.testing.ChannelArg channel_args = 16;</code>
+     * Generated from protobuf field <code>repeated .grpc.testing.ChannelArg channel_args = 16;</code>.
+     *
      * @param \Grpc\Testing\ChannelArg[]|\Google\Protobuf\Internal\RepeatedField $var
+     *
      * @return $this
      */
     public function setChannelArgs($var)
@@ -444,9 +485,10 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of threads that share each completion queue
+     * Number of threads that share each completion queue.
      *
      * Generated from protobuf field <code>int32 threads_per_cq = 17;</code>
+     *
      * @return int
      */
     public function getThreadsPerCq()
@@ -455,10 +497,12 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of threads that share each completion queue
+     * Number of threads that share each completion queue.
      *
      * Generated from protobuf field <code>int32 threads_per_cq = 17;</code>
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setThreadsPerCq($var)
@@ -470,9 +514,10 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of messages on a stream before it gets finished/restarted
+     * Number of messages on a stream before it gets finished/restarted.
      *
      * Generated from protobuf field <code>int32 messages_per_stream = 18;</code>
+     *
      * @return int
      */
     public function getMessagesPerStream()
@@ -481,10 +526,12 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Number of messages on a stream before it gets finished/restarted
+     * Number of messages on a stream before it gets finished/restarted.
      *
      * Generated from protobuf field <code>int32 messages_per_stream = 18;</code>
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setMessagesPerStream($var)
@@ -494,6 +541,4 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

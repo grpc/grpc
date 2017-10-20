@@ -4,20 +4,14 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
-use Google\Protobuf\Internal\GPBUtil;
-
 /**
- * Generated from protobuf message <code>grpc.testing.CoreRequest</code>
+ * Generated from protobuf message <code>grpc.testing.CoreRequest</code>.
  */
 class CoreRequest extends \Google\Protobuf\Internal\Message
 {
-
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
         parent::__construct();
     }
-
 }
-

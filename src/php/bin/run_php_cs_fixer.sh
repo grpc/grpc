@@ -23,3 +23,9 @@ php-cs-fixer fix lib/Grpc || true
 php-cs-fixer fix tests/generated_code || true
 php-cs-fixer fix tests/interop || true
 php-cs-fixer fix tests/unit_tests || true
+php-cs-fixer fix tests/qps/generated_code/GPBMetadata/Src/Proto/Grpc/Testing || true
+php-cs-fixer fix tests/qps/generated_code/GPBMetadata/Src/Proto/Grpc/Core || true
+php-cs-fixer fix tests/qps/generated_code/Grpc/Testing || true
+php-cs-fixer fix tests/qps/generated_code/Grpc/Core || true
+php-cs-fixer fix tests/qps/client.php || true
+php-cs-fixer fix tests/qps/histogram.php || true

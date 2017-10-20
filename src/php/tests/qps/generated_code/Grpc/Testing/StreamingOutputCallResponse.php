@@ -4,8 +4,6 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
@@ -22,7 +20,8 @@ class StreamingOutputCallResponse extends \Google\Protobuf\Internal\Message
      */
     private $payload = null;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct();
     }
@@ -31,6 +30,7 @@ class StreamingOutputCallResponse extends \Google\Protobuf\Internal\Message
      * Payload to increase response size.
      *
      * Generated from protobuf field <code>.grpc.testing.Payload payload = 1;</code>
+     *
      * @return \Grpc\Testing\Payload
      */
     public function getPayload()
@@ -42,7 +42,9 @@ class StreamingOutputCallResponse extends \Google\Protobuf\Internal\Message
      * Payload to increase response size.
      *
      * Generated from protobuf field <code>.grpc.testing.Payload payload = 1;</code>
+     *
      * @param \Grpc\Testing\Payload $var
+     *
      * @return $this
      */
     public function setPayload($var)
@@ -52,6 +54,4 @@ class StreamingOutputCallResponse extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

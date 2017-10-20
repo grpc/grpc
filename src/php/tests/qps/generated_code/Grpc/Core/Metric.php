@@ -4,28 +4,28 @@
 
 namespace Grpc\Core;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Generated from protobuf message <code>grpc.core.Metric</code>
+ * Generated from protobuf message <code>grpc.core.Metric</code>.
  */
 class Metric extends \Google\Protobuf\Internal\Message
 {
     /**
-     * Generated from protobuf field <code>string name = 1;</code>
+     * Generated from protobuf field <code>string name = 1;</code>.
      */
     private $name = '';
     protected $value;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Core\Stats::initOnce();
         parent::__construct();
     }
 
     /**
-     * Generated from protobuf field <code>string name = 1;</code>
+     * Generated from protobuf field <code>string name = 1;</code>.
+     *
      * @return string
      */
     public function getName()
@@ -34,20 +34,23 @@ class Metric extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>string name = 1;</code>
+     * Generated from protobuf field <code>string name = 1;</code>.
+     *
      * @param string $var
+     *
      * @return $this
      */
     public function setName($var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->name = $var;
 
         return $this;
     }
 
     /**
-     * Generated from protobuf field <code>uint64 count = 10;</code>
+     * Generated from protobuf field <code>uint64 count = 10;</code>.
+     *
      * @return int|string
      */
     public function getCount()
@@ -56,8 +59,10 @@ class Metric extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>uint64 count = 10;</code>
+     * Generated from protobuf field <code>uint64 count = 10;</code>.
+     *
      * @param int|string $var
+     *
      * @return $this
      */
     public function setCount($var)
@@ -69,7 +74,8 @@ class Metric extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.core.Histogram histogram = 11;</code>
+     * Generated from protobuf field <code>.grpc.core.Histogram histogram = 11;</code>.
+     *
      * @return \Grpc\Core\Histogram
      */
     public function getHistogram()
@@ -78,8 +84,10 @@ class Metric extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>.grpc.core.Histogram histogram = 11;</code>
+     * Generated from protobuf field <code>.grpc.core.Histogram histogram = 11;</code>.
+     *
      * @param \Grpc\Core\Histogram $var
+     *
      * @return $this
      */
     public function setHistogram($var)
@@ -95,8 +103,6 @@ class Metric extends \Google\Protobuf\Internal\Message
      */
     public function getValue()
     {
-        return $this->whichOneof("value");
+        return $this->whichOneof('value');
     }
-
 }
-

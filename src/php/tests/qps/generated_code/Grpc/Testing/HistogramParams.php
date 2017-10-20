@@ -4,39 +4,39 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Histogram params based on grpc/support/histogram.c
+ * Histogram params based on grpc/support/histogram.c.
  *
  * Generated from protobuf message <code>grpc.testing.HistogramParams</code>
  */
 class HistogramParams extends \Google\Protobuf\Internal\Message
 {
     /**
-     * first bucket is [0, 1 + resolution)
+     * first bucket is [0, 1 + resolution).
      *
      * Generated from protobuf field <code>double resolution = 1;</code>
      */
     private $resolution = 0.0;
     /**
-     * use enough buckets to allow this value
+     * use enough buckets to allow this value.
      *
      * Generated from protobuf field <code>double max_possible = 2;</code>
      */
     private $max_possible = 0.0;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Stats::initOnce();
         parent::__construct();
     }
 
     /**
-     * first bucket is [0, 1 + resolution)
+     * first bucket is [0, 1 + resolution).
      *
      * Generated from protobuf field <code>double resolution = 1;</code>
+     *
      * @return float
      */
     public function getResolution()
@@ -45,10 +45,12 @@ class HistogramParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * first bucket is [0, 1 + resolution)
+     * first bucket is [0, 1 + resolution).
      *
      * Generated from protobuf field <code>double resolution = 1;</code>
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setResolution($var)
@@ -60,9 +62,10 @@ class HistogramParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * use enough buckets to allow this value
+     * use enough buckets to allow this value.
      *
      * Generated from protobuf field <code>double max_possible = 2;</code>
+     *
      * @return float
      */
     public function getMaxPossible()
@@ -71,10 +74,12 @@ class HistogramParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * use enough buckets to allow this value
+     * use enough buckets to allow this value.
      *
      * Generated from protobuf field <code>double max_possible = 2;</code>
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setMaxPossible($var)
@@ -84,6 +89,4 @@ class HistogramParams extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

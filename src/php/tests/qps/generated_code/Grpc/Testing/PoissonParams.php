@@ -4,8 +4,6 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
@@ -23,7 +21,8 @@ class PoissonParams extends \Google\Protobuf\Internal\Message
      */
     private $offered_load = 0.0;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
         parent::__construct();
     }
@@ -32,6 +31,7 @@ class PoissonParams extends \Google\Protobuf\Internal\Message
      * The rate of arrivals (a.k.a. lambda parameter of the exp distribution).
      *
      * Generated from protobuf field <code>double offered_load = 1;</code>
+     *
      * @return float
      */
     public function getOfferedLoad()
@@ -43,7 +43,9 @@ class PoissonParams extends \Google\Protobuf\Internal\Message
      * The rate of arrivals (a.k.a. lambda parameter of the exp distribution).
      *
      * Generated from protobuf field <code>double offered_load = 1;</code>
+     *
      * @param float $var
+     *
      * @return $this
      */
     public function setOfferedLoad($var)
@@ -53,6 +55,4 @@ class PoissonParams extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

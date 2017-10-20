@@ -22,14 +22,15 @@ namespace Grpc\Testing;
 
 /**
  */
-class WorkerServiceClient extends \Grpc\BaseStub {
-
+class WorkerServiceClient extends \Grpc\BaseStub
+{
     /**
-     * @param string $hostname hostname
-     * @param array $opts channel options
-     * @param \Grpc\Channel $channel (optional) re-use channel object
+     * @param string        $hostname hostname
+     * @param array         $opts     channel options
+     * @param \Grpc\Channel $channel  (optional) re-use channel object
      */
-    public function __construct($hostname, $opts, $channel = null) {
+    public function __construct($hostname, $opts, $channel = null)
+    {
         parent::__construct($hostname, $opts, $channel);
     }
 
@@ -40,12 +41,14 @@ class WorkerServiceClient extends \Grpc\BaseStub {
      * stats. Closing the stream will initiate shutdown of the test server
      * and once the shutdown has finished, the OK status is sent to terminate
      * this RPC.
+     *
      * @param array $metadata metadata
-     * @param array $options call options
+     * @param array $options  call options
      */
-    public function RunServer($metadata = [], $options = []) {
+    public function RunServer($metadata = [], $options = [])
+    {
         return $this->_bidiRequest('/grpc.testing.WorkerService/RunServer',
-        ['\Grpc\Testing\ServerStatus','decode'],
+        ['\Grpc\Testing\ServerStatus', 'decode'],
         $metadata, $options);
     }
 
@@ -56,23 +59,27 @@ class WorkerServiceClient extends \Grpc\BaseStub {
      * stats. Closing the stream will initiate shutdown of the test client
      * and once the shutdown has finished, the OK status is sent to terminate
      * this RPC.
+     *
      * @param array $metadata metadata
-     * @param array $options call options
+     * @param array $options  call options
      */
-    public function RunClient($metadata = [], $options = []) {
+    public function RunClient($metadata = [], $options = [])
+    {
         return $this->_bidiRequest('/grpc.testing.WorkerService/RunClient',
-        ['\Grpc\Testing\ClientStatus','decode'],
+        ['\Grpc\Testing\ClientStatus', 'decode'],
         $metadata, $options);
     }
 
     /**
-     * Just return the core count - unary call
+     * Just return the core count - unary call.
+     *
      * @param \Grpc\Testing\CoreRequest $argument input argument
-     * @param array $metadata metadata
-     * @param array $options call options
+     * @param array                     $metadata metadata
+     * @param array                     $options  call options
      */
     public function CoreCount(\Grpc\Testing\CoreRequest $argument,
-      $metadata = [], $options = []) {
+      $metadata = [], $options = [])
+    {
         return $this->_simpleRequest('/grpc.testing.WorkerService/CoreCount',
         $argument,
         ['\Grpc\Testing\CoreResponse', 'decode'],
@@ -80,17 +87,18 @@ class WorkerServiceClient extends \Grpc\BaseStub {
     }
 
     /**
-     * Quit this worker
+     * Quit this worker.
+     *
      * @param \Grpc\Testing\Void $argument input argument
-     * @param array $metadata metadata
-     * @param array $options call options
+     * @param array              $metadata metadata
+     * @param array              $options  call options
      */
     public function QuitWorker(\Grpc\Testing\Void $argument,
-      $metadata = [], $options = []) {
+      $metadata = [], $options = [])
+    {
         return $this->_simpleRequest('/grpc.testing.WorkerService/QuitWorker',
         $argument,
         ['\Grpc\Testing\Void', 'decode'],
         $metadata, $options);
     }
-
 }

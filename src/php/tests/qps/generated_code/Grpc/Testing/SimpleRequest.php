@@ -4,8 +4,6 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
@@ -57,7 +55,7 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      */
     private $response_compressed = null;
     /**
-     * Whether server should return a given status
+     * Whether server should return a given status.
      *
      * Generated from protobuf field <code>.grpc.testing.EchoStatus response_status = 7;</code>
      */
@@ -69,7 +67,8 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      */
     private $expect_compressed = null;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct();
     }
@@ -80,6 +79,7 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * If response_type is RANDOM, server randomly chooses one from other formats.
      *
      * Generated from protobuf field <code>.grpc.testing.PayloadType response_type = 1;</code>
+     *
      * @return int
      */
     public function getResponseType()
@@ -93,7 +93,9 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * If response_type is RANDOM, server randomly chooses one from other formats.
      *
      * Generated from protobuf field <code>.grpc.testing.PayloadType response_type = 1;</code>
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setResponseType($var)
@@ -108,6 +110,7 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * Desired payload size in the response from the server.
      *
      * Generated from protobuf field <code>int32 response_size = 2;</code>
+     *
      * @return int
      */
     public function getResponseSize()
@@ -119,7 +122,9 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * Desired payload size in the response from the server.
      *
      * Generated from protobuf field <code>int32 response_size = 2;</code>
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setResponseSize($var)
@@ -134,6 +139,7 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * Optional input payload sent along with the request.
      *
      * Generated from protobuf field <code>.grpc.testing.Payload payload = 3;</code>
+     *
      * @return \Grpc\Testing\Payload
      */
     public function getPayload()
@@ -145,7 +151,9 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * Optional input payload sent along with the request.
      *
      * Generated from protobuf field <code>.grpc.testing.Payload payload = 3;</code>
+     *
      * @param \Grpc\Testing\Payload $var
+     *
      * @return $this
      */
     public function setPayload($var)
@@ -160,6 +168,7 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * Whether SimpleResponse should include username.
      *
      * Generated from protobuf field <code>bool fill_username = 4;</code>
+     *
      * @return bool
      */
     public function getFillUsername()
@@ -171,7 +180,9 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * Whether SimpleResponse should include username.
      *
      * Generated from protobuf field <code>bool fill_username = 4;</code>
+     *
      * @param bool $var
+     *
      * @return $this
      */
     public function setFillUsername($var)
@@ -186,6 +197,7 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * Whether SimpleResponse should include OAuth scope.
      *
      * Generated from protobuf field <code>bool fill_oauth_scope = 5;</code>
+     *
      * @return bool
      */
     public function getFillOauthScope()
@@ -197,7 +209,9 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * Whether SimpleResponse should include OAuth scope.
      *
      * Generated from protobuf field <code>bool fill_oauth_scope = 5;</code>
+     *
      * @param bool $var
+     *
      * @return $this
      */
     public function setFillOauthScope($var)
@@ -215,6 +229,7 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * the response's compression status.
      *
      * Generated from protobuf field <code>.grpc.testing.BoolValue response_compressed = 6;</code>
+     *
      * @return \Grpc\Testing\BoolValue
      */
     public function getResponseCompressed()
@@ -229,7 +244,9 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * the response's compression status.
      *
      * Generated from protobuf field <code>.grpc.testing.BoolValue response_compressed = 6;</code>
+     *
      * @param \Grpc\Testing\BoolValue $var
+     *
      * @return $this
      */
     public function setResponseCompressed($var)
@@ -241,9 +258,10 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Whether server should return a given status
+     * Whether server should return a given status.
      *
      * Generated from protobuf field <code>.grpc.testing.EchoStatus response_status = 7;</code>
+     *
      * @return \Grpc\Testing\EchoStatus
      */
     public function getResponseStatus()
@@ -252,10 +270,12 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Whether server should return a given status
+     * Whether server should return a given status.
      *
      * Generated from protobuf field <code>.grpc.testing.EchoStatus response_status = 7;</code>
+     *
      * @param \Grpc\Testing\EchoStatus $var
+     *
      * @return $this
      */
     public function setResponseStatus($var)
@@ -270,6 +290,7 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * Whether the server should expect this request to be compressed.
      *
      * Generated from protobuf field <code>.grpc.testing.BoolValue expect_compressed = 8;</code>
+     *
      * @return \Grpc\Testing\BoolValue
      */
     public function getExpectCompressed()
@@ -281,7 +302,9 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * Whether the server should expect this request to be compressed.
      *
      * Generated from protobuf field <code>.grpc.testing.BoolValue expect_compressed = 8;</code>
+     *
      * @param \Grpc\Testing\BoolValue $var
+     *
      * @return $this
      */
     public function setExpectCompressed($var)
@@ -291,6 +314,4 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

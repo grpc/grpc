@@ -4,8 +4,6 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
@@ -17,17 +15,19 @@ use Google\Protobuf\Internal\GPBUtil;
 class ReconnectParams extends \Google\Protobuf\Internal\Message
 {
     /**
-     * Generated from protobuf field <code>int32 max_reconnect_backoff_ms = 1;</code>
+     * Generated from protobuf field <code>int32 max_reconnect_backoff_ms = 1;</code>.
      */
     private $max_reconnect_backoff_ms = 0;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct();
     }
 
     /**
-     * Generated from protobuf field <code>int32 max_reconnect_backoff_ms = 1;</code>
+     * Generated from protobuf field <code>int32 max_reconnect_backoff_ms = 1;</code>.
+     *
      * @return int
      */
     public function getMaxReconnectBackoffMs()
@@ -36,8 +36,10 @@ class ReconnectParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>int32 max_reconnect_backoff_ms = 1;</code>
+     * Generated from protobuf field <code>int32 max_reconnect_backoff_ms = 1;</code>.
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setMaxReconnectBackoffMs($var)
@@ -47,6 +49,4 @@ class ReconnectParams extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

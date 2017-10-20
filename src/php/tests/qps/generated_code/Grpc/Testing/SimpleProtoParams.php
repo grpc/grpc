@@ -4,31 +4,31 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Generated from protobuf message <code>grpc.testing.SimpleProtoParams</code>
+ * Generated from protobuf message <code>grpc.testing.SimpleProtoParams</code>.
  */
 class SimpleProtoParams extends \Google\Protobuf\Internal\Message
 {
     /**
-     * Generated from protobuf field <code>int32 req_size = 1;</code>
+     * Generated from protobuf field <code>int32 req_size = 1;</code>.
      */
     private $req_size = 0;
     /**
-     * Generated from protobuf field <code>int32 resp_size = 2;</code>
+     * Generated from protobuf field <code>int32 resp_size = 2;</code>.
      */
     private $resp_size = 0;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Payloads::initOnce();
         parent::__construct();
     }
 
     /**
-     * Generated from protobuf field <code>int32 req_size = 1;</code>
+     * Generated from protobuf field <code>int32 req_size = 1;</code>.
+     *
      * @return int
      */
     public function getReqSize()
@@ -37,8 +37,10 @@ class SimpleProtoParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>int32 req_size = 1;</code>
+     * Generated from protobuf field <code>int32 req_size = 1;</code>.
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setReqSize($var)
@@ -50,7 +52,8 @@ class SimpleProtoParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>int32 resp_size = 2;</code>
+     * Generated from protobuf field <code>int32 resp_size = 2;</code>.
+     *
      * @return int
      */
     public function getRespSize()
@@ -59,8 +62,10 @@ class SimpleProtoParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>int32 resp_size = 2;</code>
+     * Generated from protobuf field <code>int32 resp_size = 2;</code>.
+     *
      * @param int $var
+     *
      * @return $this
      */
     public function setRespSize($var)
@@ -70,6 +75,4 @@ class SimpleProtoParams extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

@@ -20,24 +20,26 @@ namespace Grpc\Testing;
 
 /**
  */
-class ProxyClientServiceClient extends \Grpc\BaseStub {
-
+class ProxyClientServiceClient extends \Grpc\BaseStub
+{
     /**
-     * @param string $hostname hostname
-     * @param array $opts channel options
-     * @param \Grpc\Channel $channel (optional) re-use channel object
+     * @param string        $hostname hostname
+     * @param array         $opts     channel options
+     * @param \Grpc\Channel $channel  (optional) re-use channel object
      */
-    public function __construct($hostname, $opts, $channel = null) {
+    public function __construct($hostname, $opts, $channel = null)
+    {
         parent::__construct($hostname, $opts, $channel);
     }
 
     /**
      * @param \Grpc\Testing\Void $argument input argument
-     * @param array $metadata metadata
-     * @param array $options call options
+     * @param array              $metadata metadata
+     * @param array              $options  call options
      */
     public function GetConfig(\Grpc\Testing\Void $argument,
-      $metadata = [], $options = []) {
+      $metadata = [], $options = [])
+    {
         return $this->_simpleRequest('/grpc.testing.ProxyClientService/GetConfig',
         $argument,
         ['\Grpc\Testing\ClientConfig', 'decode'],
@@ -46,22 +48,23 @@ class ProxyClientServiceClient extends \Grpc\BaseStub {
 
     /**
      * @param array $metadata metadata
-     * @param array $options call options
+     * @param array $options  call options
      */
-    public function ReportTime($metadata = [], $options = []) {
+    public function ReportTime($metadata = [], $options = [])
+    {
         return $this->_clientStreamRequest('/grpc.testing.ProxyClientService/ReportTime',
-        ['\Grpc\Testing\Void','decode'],
+        ['\Grpc\Testing\Void', 'decode'],
         $metadata, $options);
     }
 
     /**
      * @param array $metadata metadata
-     * @param array $options call options
+     * @param array $options  call options
      */
-    public function ReportHist($metadata = [], $options = []) {
+    public function ReportHist($metadata = [], $options = [])
+    {
         return $this->_clientStreamRequest('/grpc.testing.ProxyClientService/ReportHist',
-        ['\Grpc\Testing\Void','decode'],
+        ['\Grpc\Testing\Void', 'decode'],
         $metadata, $options);
     }
-
 }

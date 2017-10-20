@@ -4,8 +4,6 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
@@ -18,21 +16,23 @@ use Google\Protobuf\Internal\GPBUtil;
 class ReconnectInfo extends \Google\Protobuf\Internal\Message
 {
     /**
-     * Generated from protobuf field <code>bool passed = 1;</code>
+     * Generated from protobuf field <code>bool passed = 1;</code>.
      */
     private $passed = false;
     /**
-     * Generated from protobuf field <code>repeated int32 backoff_ms = 2;</code>
+     * Generated from protobuf field <code>repeated int32 backoff_ms = 2;</code>.
      */
     private $backoff_ms;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct();
     }
 
     /**
-     * Generated from protobuf field <code>bool passed = 1;</code>
+     * Generated from protobuf field <code>bool passed = 1;</code>.
+     *
      * @return bool
      */
     public function getPassed()
@@ -41,8 +41,10 @@ class ReconnectInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>bool passed = 1;</code>
+     * Generated from protobuf field <code>bool passed = 1;</code>.
+     *
      * @param bool $var
+     *
      * @return $this
      */
     public function setPassed($var)
@@ -54,7 +56,8 @@ class ReconnectInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>repeated int32 backoff_ms = 2;</code>
+     * Generated from protobuf field <code>repeated int32 backoff_ms = 2;</code>.
+     *
      * @return \Google\Protobuf\Internal\RepeatedField
      */
     public function getBackoffMs()
@@ -63,8 +66,10 @@ class ReconnectInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>repeated int32 backoff_ms = 2;</code>
+     * Generated from protobuf field <code>repeated int32 backoff_ms = 2;</code>.
+     *
      * @param int[]|\Google\Protobuf\Internal\RepeatedField $var
+     *
      * @return $this
      */
     public function setBackoffMs($var)
@@ -74,6 +79,4 @@ class ReconnectInfo extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

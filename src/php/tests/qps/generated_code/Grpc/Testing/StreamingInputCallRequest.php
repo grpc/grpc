@@ -4,8 +4,6 @@
 
 namespace Grpc\Testing;
 
-use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
@@ -31,7 +29,8 @@ class StreamingInputCallRequest extends \Google\Protobuf\Internal\Message
      */
     private $expect_compressed = null;
 
-    public function __construct() {
+    public function __construct()
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct();
     }
@@ -40,6 +39,7 @@ class StreamingInputCallRequest extends \Google\Protobuf\Internal\Message
      * Optional input payload sent along with the request.
      *
      * Generated from protobuf field <code>.grpc.testing.Payload payload = 1;</code>
+     *
      * @return \Grpc\Testing\Payload
      */
     public function getPayload()
@@ -51,7 +51,9 @@ class StreamingInputCallRequest extends \Google\Protobuf\Internal\Message
      * Optional input payload sent along with the request.
      *
      * Generated from protobuf field <code>.grpc.testing.Payload payload = 1;</code>
+     *
      * @param \Grpc\Testing\Payload $var
+     *
      * @return $this
      */
     public function setPayload($var)
@@ -69,6 +71,7 @@ class StreamingInputCallRequest extends \Google\Protobuf\Internal\Message
      * the request's compression status.
      *
      * Generated from protobuf field <code>.grpc.testing.BoolValue expect_compressed = 2;</code>
+     *
      * @return \Grpc\Testing\BoolValue
      */
     public function getExpectCompressed()
@@ -83,7 +86,9 @@ class StreamingInputCallRequest extends \Google\Protobuf\Internal\Message
      * the request's compression status.
      *
      * Generated from protobuf field <code>.grpc.testing.BoolValue expect_compressed = 2;</code>
+     *
      * @param \Grpc\Testing\BoolValue $var
+     *
      * @return $this
      */
     public function setExpectCompressed($var)
@@ -93,6 +98,4 @@ class StreamingInputCallRequest extends \Google\Protobuf\Internal\Message
 
         return $this;
     }
-
 }
-

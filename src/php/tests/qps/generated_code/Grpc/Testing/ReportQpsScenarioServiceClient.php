@@ -22,29 +22,31 @@ namespace Grpc\Testing;
 
 /**
  */
-class ReportQpsScenarioServiceClient extends \Grpc\BaseStub {
-
+class ReportQpsScenarioServiceClient extends \Grpc\BaseStub
+{
     /**
-     * @param string $hostname hostname
-     * @param array $opts channel options
-     * @param \Grpc\Channel $channel (optional) re-use channel object
+     * @param string        $hostname hostname
+     * @param array         $opts     channel options
+     * @param \Grpc\Channel $channel  (optional) re-use channel object
      */
-    public function __construct($hostname, $opts, $channel = null) {
+    public function __construct($hostname, $opts, $channel = null)
+    {
         parent::__construct($hostname, $opts, $channel);
     }
 
     /**
      * Report results of a QPS test benchmark scenario.
+     *
      * @param \Grpc\Testing\ScenarioResult $argument input argument
-     * @param array $metadata metadata
-     * @param array $options call options
+     * @param array                        $metadata metadata
+     * @param array                        $options  call options
      */
     public function ReportScenario(\Grpc\Testing\ScenarioResult $argument,
-      $metadata = [], $options = []) {
+      $metadata = [], $options = [])
+    {
         return $this->_simpleRequest('/grpc.testing.ReportQpsScenarioService/ReportScenario',
         $argument,
         ['\Grpc\Testing\Void', 'decode'],
         $metadata, $options);
     }
-
 }
