@@ -298,7 +298,6 @@ get_tsi_client_certificate_request_type(
       return TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
 
     default:
-      // Is this a sane default
       return TSI_DONT_REQUEST_CLIENT_CERTIFICATE;
   }
 }
@@ -686,7 +685,7 @@ static bool try_fetch_ssl_server_credentials(
   if (!server_connector_has_cert_config_fetcher(sc)) return false;
 
   cb_result = sc->certificate_config_fetcher.cb(
-      sc->certificate_config_fetcher.state, &certificate_config);
+      sc->certificate_config_fetcher.user_data, &certificate_config);
 
   if (cb_result == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED) {
     gpr_log(GPR_DEBUG, "No change in SSL server credentials.");
@@ -715,10 +714,9 @@ static void ssl_server_add_handshakers(grpc_exec_ctx *exec_ctx,
       (grpc_ssl_server_security_connector *)sc;
   // Instantiate TSI handshaker.
   tsi_handshaker *tsi_hs = NULL;
-  tsi_result result;
 
   try_fetch_ssl_server_credentials(c);
-  result = tsi_ssl_server_handshaker_factory_create_handshaker(
+  tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
       c->server_handshaker_factory, &tsi_hs);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
@@ -1087,47 +1085,42 @@ grpc_ssl_server_security_connector_initialize(
 grpc_security_status grpc_ssl_server_security_connector_create(
     grpc_exec_ctx *exec_ctx, grpc_server_credentials *gsc,
     grpc_server_security_connector **sc) {
-  size_t num_alpn_protocols = 0;
-  const char **alpn_protocol_strings =
-      fill_alpn_protocol_strings(&num_alpn_protocols);
   tsi_result result = TSI_OK;
   grpc_ssl_server_credentials *server_credentials =
       (grpc_ssl_server_credentials *)gsc;
-  grpc_ssl_server_security_connector *c = NULL;
   grpc_security_status retval = GRPC_SECURITY_OK;
 
-  if (server_credentials == NULL) {
-    gpr_log(GPR_ERROR, "Invalid SSL server credentials.");
-    retval = GRPC_SECURITY_ERROR;
-  } else if (sc == NULL) {
-    gpr_log(GPR_ERROR, "Invalid server security connector.");
-    retval = GRPC_SECURITY_ERROR;
-  } else {
-    c = grpc_ssl_server_security_connector_initialize(
-        server_credentials->config.client_certificate_request,
-        server_credentials->certificate_config_fetcher, gsc);
+  GPR_ASSERT(server_credentials != NULL);
+  GPR_ASSERT(sc != NULL);
 
-    if (server_connector_has_cert_config_fetcher(c)) {
-      // Load initial credentials from certificate_config_fetcher:
-      if (!try_fetch_ssl_server_credentials(c)) {
-        gpr_log(GPR_ERROR,
-                "Failed loading SSL server credentials from fetcher.");
-        retval = GRPC_SECURITY_ERROR;
-      }
-    } else {
-      result = tsi_create_ssl_server_handshaker_factory_ex(
-          server_credentials->config.pem_key_cert_pairs,
-          server_credentials->config.num_key_cert_pairs,
-          server_credentials->config.pem_root_certs,
-          get_tsi_client_certificate_request_type(
-              server_credentials->config.client_certificate_request),
-          ssl_cipher_suites(), alpn_protocol_strings,
-          (uint16_t)num_alpn_protocols, &c->server_handshaker_factory);
-      if (result != TSI_OK) {
-        gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
-                tsi_result_to_string(result));
-        retval = GRPC_SECURITY_ERROR;
-      }
+  grpc_ssl_server_security_connector *c =
+      grpc_ssl_server_security_connector_initialize(
+          server_credentials->config.client_certificate_request,
+          server_credentials->certificate_config_fetcher, gsc);
+
+  if (server_connector_has_cert_config_fetcher(c)) {
+    // Load initial credentials from certificate_config_fetcher:
+    if (!try_fetch_ssl_server_credentials(c)) {
+      gpr_log(GPR_ERROR, "Failed loading SSL server credentials from fetcher.");
+      retval = GRPC_SECURITY_ERROR;
+    }
+  } else {
+    size_t num_alpn_protocols = 0;
+    const char **alpn_protocol_strings =
+        fill_alpn_protocol_strings(&num_alpn_protocols);
+    result = tsi_create_ssl_server_handshaker_factory_ex(
+        server_credentials->config.pem_key_cert_pairs,
+        server_credentials->config.num_key_cert_pairs,
+        server_credentials->config.pem_root_certs,
+        get_tsi_client_certificate_request_type(
+            server_credentials->config.client_certificate_request),
+        ssl_cipher_suites(), alpn_protocol_strings,
+        (uint16_t)num_alpn_protocols, &c->server_handshaker_factory);
+    gpr_free((void *)alpn_protocol_strings);
+    if (result != TSI_OK) {
+      gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
+              tsi_result_to_string(result));
+      retval = GRPC_SECURITY_ERROR;
     }
   }
 
@@ -1138,6 +1131,5 @@ grpc_security_status grpc_ssl_server_security_connector_create(
     if (sc != NULL) *sc = NULL;
   }
 
-  gpr_free((void *)alpn_protocol_strings);
   return retval;
 }

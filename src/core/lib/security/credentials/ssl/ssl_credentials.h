@@ -37,7 +37,7 @@ struct grpc_ssl_server_certificate_config {
 
 typedef struct {
   grpc_ssl_server_certificate_config_callback cb;
-  void *state;
+  void *user_data;
 } grpc_ssl_server_certificate_config_fetcher;
 
 typedef struct {
