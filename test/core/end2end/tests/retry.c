@@ -1563,10 +1563,6 @@ static void test_retry_disabled(grpc_end2end_test_config config) {
 // Tests that we can continue to send/recv messages on a streaming call
 // after retries are committed.
 static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
-
-// FIXME: remove this once ready to make this test work
-return;
-
   grpc_call *c;
   grpc_call *s;
   grpc_op ops[6];
@@ -1734,23 +1730,23 @@ return;
   CQ_EXPECT_COMPLETION(cqv, tag(4), true);
   cq_verify(cqv);
 
-  // Server receives a second message and a close.
+  // Server receives a second message.
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &request_payload_recv;
-  op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->data.recv_message.recv_message = &request2_payload_recv;
   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(104), true);
   cq_verify(cqv);
 
-  // Server sends a second message and status.
+  // Server receives a close, sends a second message, and sends status.
   memset(ops, 0, sizeof(ops));
   op = ops;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = response2_payload;
   op++;
@@ -1764,6 +1760,17 @@ return;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(105), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(105), true);
+  cq_verify(cqv);
+
+  // Client receives a second message.
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message.recv_message = &response2_payload_recv;
+  op++;
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(5), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(5), true);
   cq_verify(cqv);
 
   // Client receives status.
