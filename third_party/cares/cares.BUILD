@@ -3,6 +3,15 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
+# Android is not officially supported.
+# This just helps with the build for now.
+config_setting(
+    name = "android",
+    values = {
+      "crosstool_top": "//external:android/crosstool",
+    },
+)
+
 config_setting(
     name = "ios_x86_64",
     values = {"cpu": "ios_x86_64"},
@@ -103,6 +112,7 @@ cc_library(
         ":ios_armv7s": ["config_darwin/ares_config.h"],
         ":ios_arm64": ["config_darwin/ares_config.h"],
         ":darwin": ["config_darwin/ares_config.h"],
+        ":android": ["config_android/ares_config.h"],
         "//conditions:default": ["config_linux/ares_config.h"],
     }),
     includes = [
@@ -114,6 +124,7 @@ cc_library(
         ":ios_armv7s": ["config_darwin"],
         ":ios_arm64": ["config_darwin"],
         ":darwin": ["config_darwin"],
+        ":android": ["config_android"],
         "//conditions:default": ["config_linux"],
     }),
     linkstatic = 1,
