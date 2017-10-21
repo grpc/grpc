@@ -131,7 +131,7 @@ void grpc_client_channel_start_backup_polling(
   gpr_mu_lock(&g_poller_mu);
   if (g_poller == NULL) {
     g_poller = (backup_poller*)gpr_zalloc(sizeof(backup_poller));
-    g_poller->pollset = (grpc_pollset*)gpr_malloc(grpc_pollset_size());
+    g_poller->pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
     g_poller->shutting_down = false;
     grpc_pollset_init(g_poller->pollset, &g_poller->pollset_mu);
     gpr_ref_init(&g_poller->refs, 0);
