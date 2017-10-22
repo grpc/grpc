@@ -22,6 +22,7 @@
 #include <assert.h>
 #include <stdbool.h>
 
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
@@ -37,9 +38,8 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/transport/bdp_estimator.h"
+#include "src/core/lib/support/manual_constructor.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/pid_controller.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 #ifdef __cplusplus
@@ -237,48 +237,6 @@ typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
 } grpc_chttp2_keepalive_state;
 
-typedef struct {
-  /** initial window change. This is tracked as we parse settings frames from
-   * the remote peer. If there is a positive delta, then we will make all
-   * streams readable since they may have become unstalled */
-  int64_t initial_window_update;
-
-  /** Our bookkeeping for the remote peer's available window */
-  int64_t remote_window;
-
-  /** calculating what we should give for local window:
-      we track the total amount of flow control over initial window size
-      across all streams: this is data that we want to receive right now (it
-      has an outstanding read)
-      and the total amount of flow control under initial window size across all
-      streams: this is data we've read early
-      we want to adjust incoming_window such that:
-      incoming_window = total_over - max(bdp - total_under, 0) */
-  int64_t announced_stream_total_over_incoming_window;
-  int64_t announced_stream_total_under_incoming_window;
-
-  /** This is out window according to what we have sent to our remote peer. The
-   * difference between this and target window is what we use to decide when
-   * to send WINDOW_UPDATE frames. */
-  int64_t announced_window;
-
-  int32_t target_initial_window_size;
-
-  /** should we probe bdp? */
-  bool enable_bdp_probe;
-
-  /* bdp estimation */
-  grpc_bdp_estimator bdp_estimator;
-
-  /* pid controller */
-  bool pid_controller_initialized;
-  grpc_pid_controller pid_controller;
-  grpc_millis last_pid_update;
-
-  // pointer back to transport for tracing
-  const grpc_chttp2_transport *t;
-} grpc_chttp2_transport_flowctl;
-
 struct grpc_chttp2_transport {
   grpc_transport base; /* must be first */
   gpr_refcount refs;
@@ -297,7 +255,7 @@ struct grpc_chttp2_transport {
   /** is the transport destroying itself? */
   uint8_t destroying;
   /** has the upper layer closed the transport? */
-  uint8_t closed;
+  grpc_error *closed_with_error;
 
   /** is there a read request to the endpoint outstanding? */
   uint8_t endpoint_reading;
@@ -339,7 +297,7 @@ struct grpc_chttp2_transport {
   /** hpack encoding */
   grpc_chttp2_hpack_compressor hpack_compressor;
   /** is this a client? */
-  uint8_t is_client;
+  bool is_client;
 
   /** data to write next write */
   grpc_slice_buffer qbuf;
@@ -349,14 +307,14 @@ struct grpc_chttp2_transport {
   uint32_t write_buffer_size;
 
   /** have we seen a goaway */
-  uint8_t seen_goaway;
+  bool seen_goaway;
   /** have we sent a goaway */
   grpc_chttp2_sent_goaway_state sent_goaway_state;
 
   /** are the local settings dirty and need to be sent? */
-  uint8_t dirtied_local_settings;
+  bool dirtied_local_settings;
   /** have local settings been sent? */
-  uint8_t sent_local_settings;
+  bool sent_local_settings;
   /** bitmask of setting indexes to send out */
   uint32_t force_send_settings;
   /** settings values */
@@ -394,7 +352,12 @@ struct grpc_chttp2_transport {
   /** parser for goaway frames */
   grpc_chttp2_goaway_parser goaway_parser;
 
-  grpc_chttp2_transport_flowctl flow_control;
+  grpc_core::ManualConstructor<grpc_core::chttp2::TransportFlowControl>
+      flow_control;
+  /** initial window change. This is tracked as we parse settings frames from
+   * the remote peer. If there is a positive delta, then we will make all
+   * streams readable since they may have become unstalled */
+  int64_t initial_window_update = 0;
 
   /* deframing */
   grpc_chttp2_deframe_transport_state deframe_state;
@@ -421,6 +384,7 @@ struct grpc_chttp2_transport {
   grpc_chttp2_write_cb *write_cb_pool;
 
   /* bdp estimator */
+  grpc_closure next_bdp_ping_timer_expired_locked;
   grpc_closure start_bdp_ping_locked;
   grpc_closure finish_bdp_ping_locked;
 
@@ -440,6 +404,10 @@ struct grpc_chttp2_transport {
   grpc_closure benign_reclaimer_locked;
   /** destructive cleanup closure */
   grpc_closure destructive_reclaimer_locked;
+
+  /* next bdp ping timer */
+  bool have_next_bdp_ping_timer;
+  grpc_timer next_bdp_ping_timer;
 
   /* keep-alive ping support */
   /** Closure to initialize a keepalive ping */
@@ -470,25 +438,6 @@ typedef enum {
   GRPC_METADATA_PUBLISHED_FROM_WIRE,
   GPRC_METADATA_PUBLISHED_AT_CLOSE
 } grpc_published_metadata_method;
-
-typedef struct {
-  /** window available for us to send to peer, over or under the initial window
-   * size of the transport... ie:
-   * remote_window = remote_window_delta + transport.initial_window_size */
-  int64_t remote_window_delta;
-
-  /** window available for peer to send to us (as a delta on
-   * transport.initial_window_size)
-   * local_window = local_window_delta + transport.initial_window_size */
-  int64_t local_window_delta;
-
-  /** window available for peer to send to us over this stream that we have
-   * announced to the peer */
-  int64_t announced_window_delta;
-
-  // read only pointer back to stream for data
-  const grpc_chttp2_stream *s;
-} grpc_chttp2_stream_flowctl;
 
 struct grpc_chttp2_stream {
   grpc_chttp2_transport *t;
@@ -583,7 +532,8 @@ struct grpc_chttp2_stream {
   bool sent_initial_metadata;
   bool sent_trailing_metadata;
 
-  grpc_chttp2_stream_flowctl flow_control;
+  grpc_core::ManualConstructor<grpc_core::chttp2::StreamFlowControl>
+      flow_control;
 
   grpc_slice_buffer flow_controlled_buffer;
 
@@ -657,8 +607,8 @@ bool grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport *t,
     returns non-zero if there was a stream available */
 bool grpc_chttp2_list_pop_writable_stream(grpc_chttp2_transport *t,
                                           grpc_chttp2_stream **s);
-bool grpc_chttp2_list_remove_writable_stream(
-    grpc_chttp2_transport *t, grpc_chttp2_stream *s) GRPC_MUST_USE_RESULT;
+bool grpc_chttp2_list_remove_writable_stream(grpc_chttp2_transport *t,
+                                             grpc_chttp2_stream *s);
 
 bool grpc_chttp2_list_add_writing_stream(grpc_chttp2_transport *t,
                                          grpc_chttp2_stream *s);
@@ -694,74 +644,10 @@ bool grpc_chttp2_list_remove_stalled_by_stream(grpc_chttp2_transport *t,
 
 /********* Flow Control ***************/
 
-// we have sent data on the wire
-void grpc_chttp2_flowctl_sent_data(grpc_chttp2_transport_flowctl *tfc,
-                                   grpc_chttp2_stream_flowctl *sfc,
-                                   int64_t size);
-
-// we have received data from the wire
-grpc_error *grpc_chttp2_flowctl_recv_data(grpc_chttp2_transport_flowctl *tfc,
-                                          grpc_chttp2_stream_flowctl *sfc,
-                                          int64_t incoming_frame_size);
-
-// returns an announce if we should send a transport update to our peer,
-// else returns zero
-uint32_t grpc_chttp2_flowctl_maybe_send_transport_update(
-    grpc_chttp2_transport_flowctl *tfc, bool writing_anyway);
-
-// returns an announce if we should send a stream update to our peer, else
-// returns zero
-uint32_t grpc_chttp2_flowctl_maybe_send_stream_update(
-    grpc_chttp2_transport_flowctl *tfc, grpc_chttp2_stream_flowctl *sfc);
-
-// we have received a WINDOW_UPDATE frame for a transport
-void grpc_chttp2_flowctl_recv_transport_update(
-    grpc_chttp2_transport_flowctl *tfc, uint32_t size);
-
-// we have received a WINDOW_UPDATE frame for a stream
-void grpc_chttp2_flowctl_recv_stream_update(grpc_chttp2_transport_flowctl *tfc,
-                                            grpc_chttp2_stream_flowctl *sfc,
-                                            uint32_t size);
-
-// the application is asking for a certain amount of bytes
-void grpc_chttp2_flowctl_incoming_bs_update(grpc_chttp2_transport_flowctl *tfc,
-                                            grpc_chttp2_stream_flowctl *sfc,
-                                            size_t max_size_hint,
-                                            size_t have_already);
-
-void grpc_chttp2_flowctl_destroy_stream(grpc_chttp2_transport_flowctl *tfc,
-                                        grpc_chttp2_stream_flowctl *sfc);
-
-typedef enum {
-  // Nothing to be done.
-  GRPC_CHTTP2_FLOWCTL_NO_ACTION_NEEDED = 0,
-  // Initiate a write to update the initial window immediately.
-  GRPC_CHTTP2_FLOWCTL_UPDATE_IMMEDIATELY,
-  // Push the flow control update into a send buffer, to be sent
-  // out the next time a write is initiated.
-  GRPC_CHTTP2_FLOWCTL_QUEUE_UPDATE,
-} grpc_chttp2_flowctl_urgency;
-
-typedef struct {
-  grpc_chttp2_flowctl_urgency send_stream_update;
-  grpc_chttp2_flowctl_urgency send_transport_update;
-  grpc_chttp2_flowctl_urgency send_setting_update;
-  uint32_t initial_window_size;
-  uint32_t max_frame_size;
-  bool need_ping;
-} grpc_chttp2_flowctl_action;
-
-// Reads the flow control data and returns and actionable struct that will tell
-// chttp2 exactly what it needs to do
-grpc_chttp2_flowctl_action grpc_chttp2_flowctl_get_action(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_flowctl *tfc,
-    grpc_chttp2_stream_flowctl *sfc);
-
 // Takes in a flow control action and performs all the needed operations.
-void grpc_chttp2_act_on_flowctl_action(grpc_exec_ctx *exec_ctx,
-                                       grpc_chttp2_flowctl_action action,
-                                       grpc_chttp2_transport *t,
-                                       grpc_chttp2_stream *s);
+void grpc_chttp2_act_on_flowctl_action(
+    grpc_exec_ctx *exec_ctx, const grpc_core::chttp2::FlowControlAction &action,
+    grpc_chttp2_transport *t, grpc_chttp2_stream *s);
 
 /********* End of Flow Control ***************/
 
@@ -794,16 +680,6 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
 
 extern grpc_tracer_flag grpc_http_trace;
 extern grpc_tracer_flag grpc_flowctl_trace;
-
-#ifndef NDEBUG
-#define GRPC_FLOW_CONTROL_IF_TRACING(stmt)   \
-  if (!(GRPC_TRACER_ON(grpc_flowctl_trace))) \
-    ;                                        \
-  else                                       \
-  stmt
-#else
-#define GRPC_FLOW_CONTROL_IF_TRACING(stmt)
-#endif
 
 #define GRPC_CHTTP2_IF_TRACING(stmt)      \
   if (!(GRPC_TRACER_ON(grpc_http_trace))) \

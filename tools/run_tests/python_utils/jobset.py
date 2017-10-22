@@ -302,6 +302,7 @@ class Job(object):
           self._retries += 1
           self.result.num_failures += 1
           self.result.retries = self._timeout_retries + self._retries
+          # NOTE: job is restarted regardless of jobset's max_time setting
           self.start()
         else:
           self._state = _FAILURE
@@ -344,6 +345,7 @@ class Job(object):
         if self._spec.kill_handler:
           self._spec.kill_handler(self)
         self._process.terminate()
+        # NOTE: job is restarted regardless of jobset's max_time setting
         self.start()
       else:
         message('TIMEOUT', '%s [pid=%d, time=%.1fsec]' % (self._spec.shortname, self._process.pid, elapsed), stdout(), do_newline=True)
@@ -412,7 +414,7 @@ class Jobset(object):
       if current_cpu_cost + spec.cpu_cost <= self._maxjobs:
         if len(self._running) < self._maxjobs_cpu_agnostic:
           break
-      self.reap()
+      self.reap(spec.shortname, spec.cpu_cost)
     if self.cancelled(): return False
     job = Job(spec,
               self._newline_on_success,
@@ -424,7 +426,7 @@ class Jobset(object):
       self.resultset[job.GetSpec().shortname] = []
     return True
 
-  def reap(self):
+  def reap(self, waiting_for=None, waiting_for_cost=None):
     """Collect the dead jobs."""
     while self._running:
       dead = set()
@@ -452,8 +454,12 @@ class Jobset(object):
           sofar = now - self._start_time
           remaining = sofar / self._completed * (self._remaining + len(self._running))
           rstr = 'ETA %.1f sec; %s' % (remaining, rstr)
-        message('WAITING', '%s%d jobs running, %d complete, %d failed' % (
-            rstr, len(self._running), self._completed, self._failures))
+        if waiting_for is not None:
+          wstr = ' next: %s @ %.2f cpu' % (waiting_for, waiting_for_cost)
+        else:
+          wstr = ''
+        message('WAITING', '%s%d jobs running, %d complete, %d failed (load %.2f)%s' % (
+            rstr, len(self._running), self._completed, self._failures, self.cpu_cost(), wstr))
       if platform_string() == 'windows':
         time.sleep(0.1)
       else:

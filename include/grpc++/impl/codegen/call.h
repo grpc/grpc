@@ -163,7 +163,7 @@ class WriteOptions {
 
   /// Clears flag indicating that this is the last message in a stream,
   /// disabling coalescing.
-  inline WriteOptions& clear_last_messsage() {
+  inline WriteOptions& clear_last_message() {
     last_message_ = false;
     return *this;
   }
@@ -318,7 +318,11 @@ template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
   bool own_buf;
-  Status result = SerializationTraits<M>::Serialize(
+  // TODO(vjpai): Remove the void below when possible
+  // The void in the template parameter below should not be needed
+  // (since it should be implicit) but is needed due to an observed
+  // difference in behavior between clang and gcc for certain internal users
+  Status result = SerializationTraits<M, void>::Serialize(
       message, send_buf_.bbuf_ptr(), &own_buf);
   if (!own_buf) {
     send_buf_.Duplicate();

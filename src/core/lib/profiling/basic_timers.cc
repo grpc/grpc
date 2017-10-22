@@ -209,9 +209,9 @@ static void init_output() {
 
 static void rotate_log() {
   /* Using malloc here, as this code could end up being called by gpr_malloc */
-  gpr_timer_log *new = malloc(sizeof(*new));
+  gpr_timer_log *log = static_cast<gpr_timer_log *>(malloc(sizeof(*log)));
   gpr_once_init(&g_once_init, init_output);
-  new->num_entries = 0;
+  log->num_entries = 0;
   pthread_mutex_lock(&g_mu);
   if (g_thread_log != NULL) {
     timer_log_remove(&g_in_progress_logs, g_thread_log);
@@ -221,9 +221,9 @@ static void rotate_log() {
   } else {
     g_thread_id = g_next_thread_id++;
   }
-  timer_log_push_back(&g_in_progress_logs, new);
+  timer_log_push_back(&g_in_progress_logs, log);
   pthread_mutex_unlock(&g_mu);
-  g_thread_log = new;
+  g_thread_log = log;
 }
 
 static void gpr_timers_log_add(const char *tagstr, marker_type type,

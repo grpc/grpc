@@ -236,6 +236,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     this->EndThreads();  // this needed for resolution
   }
 
+  void InitThreadFunc(size_t thread_idx) override final {}
   bool ThreadFunc(HistogramEntry* entry, size_t thread_idx) override final {
     void* got_tag;
     bool ok;

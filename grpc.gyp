@@ -57,6 +57,7 @@
       '-Wno-long-long',
       '-Wno-unused-parameter',
       '-DOSATOMIC_USE_INLINED=1',
+      '-Ithird_party/abseil-cpp',
     ],
     'ldflags': [
       '-g',
@@ -134,6 +135,7 @@
             '-Wno-long-long',
             '-Wno-unused-parameter',
             '-DOSATOMIC_USE_INLINED=1',
+            '-Ithird_party/abseil-cpp',
           ],
           'OTHER_CPLUSPLUSFLAGS': [
             '-g',
@@ -143,6 +145,7 @@
             '-Wno-long-long',
             '-Wno-unused-parameter',
             '-DOSATOMIC_USE_INLINED=1',
+            '-Ithird_party/abseil-cpp',
             '-stdlib=libc++',
             '-std=c++11',
             '-Wno-error=deprecated-declarations'
@@ -515,7 +518,7 @@
         'test/core/end2end/fixtures/http_proxy_fixture.c',
         'test/core/end2end/fixtures/proxy.c',
         'test/core/iomgr/endpoint_tests.c',
-        'test/core/util/debugger_macros.c',
+        'test/core/util/debugger_macros.cc',
         'test/core/util/grpc_profiler.c',
         'test/core/util/memory_counters.c',
         'test/core/util/mock_endpoint.c',
@@ -722,7 +725,7 @@
         'test/core/end2end/fixtures/http_proxy_fixture.c',
         'test/core/end2end/fixtures/proxy.c',
         'test/core/iomgr/endpoint_tests.c',
-        'test/core/util/debugger_macros.c',
+        'test/core/util/debugger_macros.cc',
         'test/core/util/grpc_profiler.c',
         'test/core/util/memory_counters.c',
         'test/core/util/mock_endpoint.c',

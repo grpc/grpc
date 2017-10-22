@@ -165,6 +165,7 @@ static void combiner_exec(grpc_exec_ctx *exec_ctx, grpc_closure *cl,
                               lock, cl, last));
   if (last == 1) {
     GRPC_STATS_INC_COMBINER_LOCKS_INITIATED(exec_ctx);
+    GPR_TIMER_MARK("combiner.initiated", 0);
     gpr_atm_no_barrier_store(&lock->initiating_exec_ctx_or_null,
                              (gpr_atm)exec_ctx);
     // first element on this list: add it to the list of combiner locks

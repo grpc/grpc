@@ -20,12 +20,19 @@
 
 void TrackCounters::Finish(benchmark::State &state) {
   std::ostringstream out;
+  for (const auto &l : labels_) {
+    out << l << ' ';
+  }
   AddToLabel(out, state);
   std::string label = out.str();
   if (label.length() && label[0] == ' ') {
     label = label.substr(1);
   }
   state.SetLabel(label.c_str());
+}
+
+void TrackCounters::AddLabel(const grpc::string &label) {
+  labels_.push_back(label);
 }
 
 void TrackCounters::AddToLabel(std::ostream &out, benchmark::State &state) {
