@@ -188,3 +188,26 @@ describe('Proto message enum serialize and deserialize', function() {
     assert.deepEqual(numberDeserialized, {enum_value: 2});
   });
 });
+// This should be tested only with protobuf.js 6.x
+var describe6 =
+    protobuf_js_6_common.isProbablyProtobufJs6(messages_proto) ?
+        describe : describe.skip;
+describe6('loadObject', function() {
+  var loaded = protobuf_js_6_common.loadObject(messages_proto);
+  it('should return the loaded object for non-namespaces', function() {
+    assert(loaded.LongValues instanceof ProtoBuf.Type);
+    assert.equal(loaded.LongValues.name, 'LongValues');
+
+    assert(loaded.SequenceValues instanceof ProtoBuf.Type);
+    assert.equal(loaded.SequenceValues.name, 'SequenceValues');
+
+    assert(loaded.OneOfValues instanceof ProtoBuf.Type);
+    assert.equal(loaded.OneOfValues.name, 'OneOfValues');
+
+    assert(loaded.TestEnum instanceof ProtoBuf.Enum);
+    assert.equal(loaded.TestEnum.name, 'TestEnum');
+
+    assert(loaded.EnumValues instanceof ProtoBuf.Type);
+    assert.equal(loaded.EnumValues.name, 'EnumValues');
+  });
+});
