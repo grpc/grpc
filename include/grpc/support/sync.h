@@ -19,8 +19,8 @@
 #ifndef GRPC_SUPPORT_SYNC_H
 #define GRPC_SUPPORT_SYNC_H
 
-#include <grpc/impl/codegen/gpr_types.h> /* for gpr_timespec */
-#include <grpc/impl/codegen/sync.h>
+#include <grpc/impl/codegen/codegen_gpr_types.h> /* for gpr_timespec */
+#include <grpc/impl/codegen/codegen_sync.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -17,7 +17,7 @@
  */
 
 /* The comments about status codes are copied verbatim (with some formatting
- * modifications) from include/grpc/impl/codegen/status.h, for the purpose of
+ * modifications) from include/grpc/impl/codegen/codegen_status.h, for the purpose of
  * including them in generated documentation.
  */
 /**
@@ -151,7 +151,7 @@ exports.status = {
 };
 
 /* The comments about propagation bit flags are copied rom
- * include/grpc/impl/codegen/propagation_bits.h for the purpose of including
+ * include/grpc/impl/codegen/codegen_propagation_bits.h for the purpose of including
  * them in generated documentation.
  */
 /**
@@ -174,7 +174,7 @@ exports.propagate = {
 };
 
 /* Many of the following comments are copied from
- * include/grpc/impl/codegen/grpc_types.h
+ * include/grpc/impl/codegen/codegen_grpc_types.h
  */
 /**
  * Call error constants. Call errors almost always indicate bugs in the gRPC

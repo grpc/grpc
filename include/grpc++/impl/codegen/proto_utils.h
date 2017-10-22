@@ -25,9 +25,9 @@
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/serialization_traits.h>
 #include <grpc++/impl/codegen/status.h>
-#include <grpc/impl/codegen/byte_buffer_reader.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/slice.h>
+#include <grpc/impl/codegen/codegen_byte_buffer_reader.h>
+#include <grpc/impl/codegen/codegen_grpc_types.h>
+#include <grpc/impl/codegen/codegen_slice.h>
 
 namespace grpc {
 

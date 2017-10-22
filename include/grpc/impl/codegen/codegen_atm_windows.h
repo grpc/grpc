@@ -20,7 +20,7 @@
 #define GRPC_IMPL_CODEGEN_ATM_WINDOWS_H
 
 /** Win32 variant of atm_platform.h */
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/impl/codegen/codegen_port_platform.h>
 
 typedef intptr_t gpr_atm;
 #define GPR_ATM_MAX INTPTR_MAX

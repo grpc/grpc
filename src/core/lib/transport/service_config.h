@@ -17,7 +17,7 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_SERVICE_CONFIG_H
 #define GRPC_CORE_LIB_TRANSPORT_SERVICE_CONFIG_H
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/codegen_grpc_types.h>
 
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_hash_table.h"

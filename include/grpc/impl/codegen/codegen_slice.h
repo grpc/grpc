@@ -19,12 +19,12 @@
 #ifndef GRPC_IMPL_CODEGEN_SLICE_H
 #define GRPC_IMPL_CODEGEN_SLICE_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/impl/codegen/codegen_port_platform.h>
 
 #include <stddef.h>
 
-#include <grpc/impl/codegen/exec_ctx_fwd.h>
-#include <grpc/impl/codegen/gpr_slice.h>
+#include <grpc/impl/codegen/codegen_exec_ctx_fwd.h>
+#include <grpc/impl/codegen/codegen_gpr_slice.h>
 
 typedef struct grpc_slice grpc_slice;
 

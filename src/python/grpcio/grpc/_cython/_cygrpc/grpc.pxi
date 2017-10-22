@@ -36,7 +36,7 @@ cdef extern from "grpc/byte_buffer_reader.h":
     pass
 
 
-cdef extern from "grpc/impl/codegen/exec_ctx_fwd.h":
+cdef extern from "grpc/impl/codegen/codegen_exec_ctx_fwd.h":
 
   struct grpc_exec_ctx:
     # We don't care about the internals

@@ -19,6 +19,6 @@
 #ifndef GRPC_STATUS_H
 #define GRPC_STATUS_H
 
-#include <grpc/impl/codegen/status.h>
+#include <grpc/impl/codegen/codegen_status.h>
 
 #endif /* GRPC_STATUS_H */

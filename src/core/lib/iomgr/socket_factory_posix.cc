@@ -23,7 +23,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/socket_factory_posix.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/codegen_grpc_types.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 

@@ -21,7 +21,7 @@
 
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/time.h>
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/codegen_connectivity_state.h>
 
 namespace grpc {
 class Call;

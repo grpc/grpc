@@ -24,7 +24,7 @@
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/codegen_grpc_types.h>
 
 namespace grpc {
 

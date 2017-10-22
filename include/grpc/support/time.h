@@ -19,7 +19,7 @@
 #ifndef GRPC_SUPPORT_TIME_H
 #define GRPC_SUPPORT_TIME_H
 
-#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/impl/codegen/codegen_gpr_types.h>
 
 #include <stddef.h>
 #include <time.h>

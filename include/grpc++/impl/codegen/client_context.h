@@ -48,8 +48,8 @@
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/string_ref.h>
 #include <grpc++/impl/codegen/time.h>
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/codegen/codegen_compression_types.h>
+#include <grpc/impl/codegen/codegen_propagation_bits.h>
 
 struct census_context;
 struct grpc_call;

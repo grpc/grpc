@@ -21,7 +21,7 @@
 
 /* atm_platform.h for gcc and gcc-like compilers with the
    __atomic_* interface.  */
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/impl/codegen/codegen_port_platform.h>
 
 typedef intptr_t gpr_atm;
 #define GPR_ATM_MAX INTPTR_MAX

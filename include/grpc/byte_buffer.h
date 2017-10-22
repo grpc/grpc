@@ -19,7 +19,7 @@
 #ifndef GRPC_BYTE_BUFFER_H
 #define GRPC_BYTE_BUFFER_H
 
-#include <grpc/impl/codegen/byte_buffer.h>
+#include <grpc/impl/codegen/codegen_byte_buffer.h>
 #include <grpc/slice_buffer.h>
 
 #endif /* GRPC_BYTE_BUFFER_H */

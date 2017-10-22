@@ -19,13 +19,13 @@
 #ifndef GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/impl/codegen/codegen_port_platform.h>
 
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/exec_ctx_fwd.h>
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/impl/codegen/slice.h>
-#include <grpc/impl/codegen/status.h>
+#include <grpc/impl/codegen/codegen_compression_types.h>
+#include <grpc/impl/codegen/codegen_exec_ctx_fwd.h>
+#include <grpc/impl/codegen/codegen_gpr_types.h>
+#include <grpc/impl/codegen/codegen_slice.h>
+#include <grpc/impl/codegen/codegen_status.h>
 
 #include <stddef.h>
 

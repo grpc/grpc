@@ -23,7 +23,7 @@
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/string_ref.h>
 
-#include <grpc/impl/codegen/slice.h>
+#include <grpc/impl/codegen/codegen_slice.h>
 
 namespace grpc {
 

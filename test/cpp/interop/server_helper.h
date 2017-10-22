@@ -22,7 +22,7 @@
 #include <memory>
 
 #include <grpc/compression.h>
-#include <grpc/impl/codegen/atm.h>
+#include <grpc/impl/codegen/codegen_atm.h>
 
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server_context.h>

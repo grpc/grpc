@@ -11,12 +11,12 @@
                      "include/grpc/support/tls_gcc.h",
                      "include/grpc/support/tls_msvc.h",
                      "include/grpc/support/tls_pthread.h",
-                     "include/grpc/impl/codegen/atm_gcc_atomic.h",
-                     "include/grpc/impl/codegen/atm_gcc_sync.h",
-                     "include/grpc/impl/codegen/atm_windows.h",
-                     "include/grpc/impl/codegen/sync_custom.h",
-                     "include/grpc/impl/codegen/sync_posix.h",
-                     "include/grpc/impl/codegen/sync_windows.h"]
+                     "include/grpc/impl/codegen/codegen_atm_gcc_atomic.h",
+                     "include/grpc/impl/codegen/codegen_atm_gcc_sync.h",
+                     "include/grpc/impl/codegen/codegen_atm_windows.h",
+                     "include/grpc/impl/codegen/codegen_sync_custom.h",
+                     "include/grpc/impl/codegen/codegen_sync_posix.h",
+                     "include/grpc/impl/codegen/codegen_sync_windows.h"]
 
   def grpc_public_headers_no_dir(libs):
     out = []
