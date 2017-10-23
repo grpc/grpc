@@ -286,14 +286,10 @@ static double AdjustForMemoryPressure(grpc_resource_quota* quota,
                                       double target) {
   // do not increase window under heavy memory pressure.
   double memory_pressure = grpc_resource_quota_get_memory_pressure(quota);
-  static const double kLowMemPressure = 0.1;
-  static const double kZeroTarget = 22;
+  // TODO(ncteisen,ctiller): re tune this to optimize under low mem pressure
   static const double kHighMemPressure = 0.8;
   static const double kMaxMemPressure = 0.9;
-  if (memory_pressure < kLowMemPressure && target < kZeroTarget) {
-    target = (target - kZeroTarget) * memory_pressure / kLowMemPressure +
-             kZeroTarget;
-  } else if (memory_pressure > kHighMemPressure) {
+  if (memory_pressure > kHighMemPressure) {
     target *= 1 - GPR_MIN(1, (memory_pressure - kHighMemPressure) /
                                  (kMaxMemPressure - kHighMemPressure));
   }
