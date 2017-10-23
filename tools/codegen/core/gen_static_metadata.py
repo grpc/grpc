@@ -45,6 +45,7 @@ CONFIG = [
     'grpc-server-stats-bin',
     'grpc-tags-bin',
     'grpc-trace-bin',
+    'grpc-retry-attempts',
     '',
     # channel arg keys
     'grpc.wait_for_ready',
@@ -159,6 +160,7 @@ METADATA_BATCH_CALLOUTS = [
     ('user-agent', True),
     ('host', True),
     ('lb-token', True),
+    ('grpc-retry-attempts', True),
 ]
 
 COMPRESSION_ALGORITHMS = [

@@ -947,11 +947,10 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 // data to see which batches need to be sent to the subchannel call.
 
 // FIXME: still missing in retry implementation:
-// - add initial metadata for retries
 // - implement server push-back
 
 // TODO(roth): In subsequent PRs:
-// - add support for transparent retries
+// - add support for transparent retries (including initial metadata)
 // - figure out how to record stats in census for retries
 //   (census filter is on top of this one)
 // - add census stats for retries
@@ -1075,7 +1074,7 @@ typedef struct client_channel_call_data {
 
   // Retry state.
   bool retry_committed : 1;
-  int num_attempts;
+  int num_attempts_completed;
   size_t bytes_buffered_for_retry;
   grpc_backoff retry_backoff;
   grpc_timer retry_timer;
@@ -1509,8 +1508,8 @@ static bool maybe_retry(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     return false;
   }
   // Check whether we have retries remaining.
-  ++calld->num_attempts;
-  if (calld->num_attempts == retry_policy->max_attempts) {
+  ++calld->num_attempts_completed;
+  if (calld->num_attempts_completed == retry_policy->max_attempts) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: exceeded %d retry attempts", chand,
               calld, retry_policy->max_attempts);
@@ -1534,7 +1533,7 @@ static bool maybe_retry(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   }
   // Compute backoff delay.
   grpc_millis next_attempt_time;
-  if (calld->num_attempts == 1) {
+  if (calld->num_attempts_completed == 1) {
     grpc_backoff_init(
         &calld->retry_backoff, retry_policy->initial_backoff_ms,
         retry_policy->backoff_multiplier, RETRY_BACKOFF_JITTER,
@@ -1980,17 +1979,44 @@ static void start_batch_in_call_combiner(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_subchannel_call_process_op(exec_ctx, subchannel_call, batch);
 }
 
+static const char *g_retry_count_strings[] = {"1", "2", "3", "4"};
+
 static void add_retriable_send_initial_metadata_op(
     grpc_exec_ctx *exec_ctx, call_data *calld,
     subchannel_call_retry_state *retry_state,
     subchannel_batch_data *batch_data) {
+  // If we've already completed one or more attempts, add the
+  // grpc-retry-attempts header.
   batch_data->send_initial_metadata_storage =
       (grpc_linked_mdelem *)gpr_arena_alloc(
           calld->arena,
-          sizeof(grpc_linked_mdelem) * calld->send_initial_metadata.list.count);
+          sizeof(grpc_linked_mdelem) *
+          (calld->send_initial_metadata.list.count +
+           (calld->num_attempts_completed > 0)));
   grpc_metadata_batch_copy(exec_ctx, &calld->send_initial_metadata,
                            &batch_data->send_initial_metadata,
                            batch_data->send_initial_metadata_storage);
+  if (batch_data->send_initial_metadata.idx.named.grpc_retry_attempts != NULL) {
+    grpc_metadata_batch_remove(
+        exec_ctx, &batch_data->send_initial_metadata,
+        batch_data->send_initial_metadata.idx.named.grpc_retry_attempts);
+  }
+  if (calld->num_attempts_completed > 0) {
+    grpc_mdelem retry_md = grpc_mdelem_from_slices(
+        exec_ctx, GRPC_MDSTR_GRPC_RETRY_ATTEMPTS,
+        grpc_slice_from_static_string(
+            g_retry_count_strings[calld->num_attempts_completed - 1]));
+    grpc_error *error = grpc_metadata_batch_add_tail(
+        exec_ctx, &batch_data->send_initial_metadata,
+        &batch_data->send_initial_metadata_storage[
+            calld->send_initial_metadata.list.count],
+        retry_md);
+    if (error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "error adding retry metadata: %s",
+              grpc_error_string(error));
+      GPR_ASSERT(false);
+    }
+  }
   retry_state->started_send_initial_metadata = true;
   batch_data->batch.send_initial_metadata = true;
   batch_data->batch.payload->send_initial_metadata.send_initial_metadata =
@@ -2443,7 +2469,7 @@ static bool pick_callback_start_locked(grpc_exec_ctx *exec_ctx,
     calld->connected_subchannel = NULL;
   }
   // Only get service config data on the first attempt.
-  if (calld->num_attempts == 0) {
+  if (calld->num_attempts_completed == 0) {
     apply_service_config_to_call_locked(exec_ctx, elem);
   }
   // If the application explicitly set wait_for_ready, use that.
