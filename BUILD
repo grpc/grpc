@@ -36,9 +36,9 @@ load(
 # This should be updated along with build.yaml
 g_stands_for = "gambit"
 
-core_version = "5.0.0-dev"
+core_version = "5.0.0"
 
-version = "1.7.0-pre1"
+version = "1.7.0"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
