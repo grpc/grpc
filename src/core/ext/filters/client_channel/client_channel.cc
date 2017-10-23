@@ -61,6 +61,8 @@
 
 /* Client channel implementation */
 
+#define MAX_MAX_RETRY_ATTEMPTS 5
+
 // FIXME: what's the right default for this?
 #define DEFAULT_PER_RPC_RETRY_BUFFER_SIZE (1 << 30)
 
@@ -82,7 +84,7 @@ typedef enum {
 } wait_for_ready_value;
 
 typedef struct {
-  int max_retry_attempts;
+  int max_attempts;
   int initial_backoff_ms;
   int max_backoff_ms;
   int backoff_multiplier;
@@ -172,12 +174,14 @@ static bool parse_retry_policy(grpc_json *field,
   for (grpc_json *sub_field = field->child; sub_field != NULL;
        sub_field = sub_field->next) {
     if (sub_field->key == NULL) return false;
-    if (strcmp(sub_field->key, "maxRetryAttempts") == 0) {
-      if (retry_policy->max_retry_attempts != 0) return false;  // Duplicate.
+    if (strcmp(sub_field->key, "maxAttempts") == 0) {
+      if (retry_policy->max_attempts != 0) return false;  // Duplicate.
       if (sub_field->type != GRPC_JSON_NUMBER) return false;
-      retry_policy->max_retry_attempts =
-          gpr_parse_nonnegative_int(sub_field->value);
-      if (retry_policy->max_retry_attempts <= 0) return false;
+      retry_policy->max_attempts = gpr_parse_nonnegative_int(sub_field->value);
+      if (retry_policy->max_attempts <= 1) return false;
+      if (retry_policy->max_attempts > MAX_MAX_RETRY_ATTEMPTS) {
+        retry_policy->max_attempts = MAX_MAX_RETRY_ATTEMPTS;
+      }
     } else if (strcmp(sub_field->key, "initialBackoffMs") == 0) {
       if (retry_policy->initial_backoff_ms != 0) return false;  // Duplicate.
       if (sub_field->type != GRPC_JSON_NUMBER) return false;
@@ -943,7 +947,6 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 // data to see which batches need to be sent to the subchannel call.
 
 // FIXME: still missing in retry implementation:
-// - change from maxRetryAttempts to maxAttempts
 // - add initial metadata for retries
 // - implement server push-back
 
@@ -1072,7 +1075,7 @@ typedef struct client_channel_call_data {
 
   // Retry state.
   bool retry_committed : 1;
-  int num_retry_attempts;
+  int num_attempts;
   size_t bytes_buffered_for_retry;
   grpc_backoff retry_backoff;
   grpc_timer retry_timer;
@@ -1506,10 +1509,11 @@ static bool maybe_retry(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     return false;
   }
   // Check whether we have retries remaining.
-  if (calld->num_retry_attempts == retry_policy->max_retry_attempts) {
+  ++calld->num_attempts;
+  if (calld->num_attempts == retry_policy->max_attempts) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: exceeded %d retry attempts", chand,
-              calld, retry_policy->max_retry_attempts);
+              calld, retry_policy->max_attempts);
     }
     return false;
   }
@@ -1530,7 +1534,7 @@ static bool maybe_retry(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   }
   // Compute backoff delay.
   grpc_millis next_attempt_time;
-  if (calld->num_retry_attempts == 0) {
+  if (calld->num_attempts == 1) {
     grpc_backoff_init(
         &calld->retry_backoff, retry_policy->initial_backoff_ms,
         retry_policy->backoff_multiplier, RETRY_BACKOFF_JITTER,
@@ -1552,7 +1556,6 @@ static bool maybe_retry(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                   &calld->pick_closure);
   // Update bookkeeping.
   if (retry_state != NULL) retry_state->retry_dispatched = true;
-  ++calld->num_retry_attempts;
   return true;
 }
 
@@ -2440,7 +2443,7 @@ static bool pick_callback_start_locked(grpc_exec_ctx *exec_ctx,
     calld->connected_subchannel = NULL;
   }
   // Only get service config data on the first attempt.
-  if (calld->num_retry_attempts == 0) {
+  if (calld->num_attempts == 0) {
     apply_service_config_to_call_locked(exec_ctx, elem);
   }
   // If the application explicitly set wait_for_ready, use that.
