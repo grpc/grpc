@@ -21,7 +21,6 @@ filegroups:
   - include/grpc/census.h
   src:
   - src/core/ext/census/grpc_context.cc
-  plugin: census_grpc_plugin
   uses:
   - grpc_base
   - nanopb
