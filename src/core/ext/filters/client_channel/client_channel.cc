@@ -49,6 +49,7 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/support/string.h"
+#include "src/core/lib/support/vector.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -1075,13 +1076,8 @@ typedef struct client_channel_call_data {
   // send_message
   // When we get a send_message op, we replace the original byte stream
   // with a grpc_caching_byte_stream that caches the slices to a
-  // local buffer for use in retries.  We use initial_send_message as the
-  // cache for the first send_message op, so that we don't need to allocate
-  // memory for unary RPCs.  All subsequent messages are stored in
-  // send_messages, which are dynamically allocated as needed.
-  size_t num_seen_send_message_ops;
-  grpc_byte_stream_cache initial_send_message;
-  grpc_byte_stream_cache *send_messages;
+  // local buffer for use in retries.
+  grpc_core::InlinedVector<grpc_byte_stream_cache*, 3> send_messages;
   // send_trailing_metadata
   bool seen_send_trailing_metadata;
   grpc_linked_mdelem *send_trailing_metadata_storage;
@@ -1124,16 +1120,8 @@ static void retry_commit(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   if (retry_state->completed_send_initial_metadata) {
     grpc_metadata_batch_destroy(exec_ctx, &calld->send_initial_metadata);
   }
-  if (retry_state->completed_send_message_count > 0) {
-    grpc_byte_stream_cache_destroy(exec_ctx, &calld->initial_send_message);
-    for (size_t i = 0; i < retry_state->completed_send_message_count - 1; ++i) {
-      grpc_byte_stream_cache_destroy(exec_ctx, &calld->send_messages[i]);
-    }
-  }
-  if (retry_state->completed_send_message_count ==
-      calld->num_seen_send_message_ops) {
-    gpr_free(calld->send_messages);
-    calld->send_messages = NULL;
+  for (size_t i = 0; i < retry_state->completed_send_message_count; ++i) {
+    grpc_byte_stream_cache_destroy(exec_ctx, calld->send_messages[i]);
   }
   if (retry_state->completed_send_trailing_metadata) {
     grpc_metadata_batch_destroy(exec_ctx, &calld->send_trailing_metadata);
@@ -1380,13 +1368,6 @@ static void maybe_clear_pending_batch(call_data *calld,
   }
 }
 
-static grpc_byte_stream_cache *get_send_message_cache(call_data *calld,
-                                                      size_t index) {
-  GPR_ASSERT(index < calld->num_seen_send_message_ops);
-  return index == 0 ? &calld->initial_send_message
-                    : &calld->send_messages[index - 1];
-}
-
 // Caches data for send ops so that it can be retried later, if not
 // already cached.
 static void maybe_cache_send_ops_for_batch(grpc_exec_ctx *exec_ctx,
@@ -1414,16 +1395,11 @@ static void maybe_cache_send_ops_for_batch(grpc_exec_ctx *exec_ctx,
   }
   // Set up cache for send_message ops.
   if (batch->send_message) {
-    if (calld->num_seen_send_message_ops > 0) {
-      calld->send_messages = (grpc_byte_stream_cache *)gpr_realloc(
-          calld->send_messages,
-          sizeof(grpc_byte_stream_cache) * calld->num_seen_send_message_ops);
-    }
-    ++calld->num_seen_send_message_ops;
-    grpc_byte_stream_cache *cache =
-        get_send_message_cache(calld, calld->num_seen_send_message_ops - 1);
+    grpc_byte_stream_cache *cache = (grpc_byte_stream_cache *)gpr_arena_alloc(
+        calld->arena, sizeof(grpc_byte_stream_cache));
     grpc_byte_stream_cache_init(cache,
                                 batch->payload->send_message.send_message);
+    calld->send_messages.push_back(cache);
   }
   // Save metadata batch for send_trailing_metadata ops.
   if (batch->send_trailing_metadata) {
@@ -1759,7 +1735,7 @@ static bool pending_batch_is_completed(
   }
   if (pending->batch->send_message &&
       retry_state->completed_send_message_count <
-          calld->num_seen_send_message_ops) {
+          calld->send_messages.size()) {
     return false;
   }
   if (pending->batch->send_trailing_metadata &&
@@ -1862,18 +1838,9 @@ static void on_complete(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       grpc_metadata_batch_destroy(exec_ctx, &calld->send_initial_metadata);
     }
     if (batch_data->batch.send_message) {
-      if (retry_state->completed_send_message_count == 1) {
-        grpc_byte_stream_cache_destroy(exec_ctx, &calld->initial_send_message);
-      } else {
-        grpc_byte_stream_cache_destroy(
-            exec_ctx,
-            &calld->send_messages[retry_state->completed_send_message_count -
-                                  2]);
-        if (retry_state->completed_send_message_count ==
-            calld->num_seen_send_message_ops) {
-          gpr_free(calld->send_messages);
-        }
-      }
+      grpc_byte_stream_cache_destroy(
+          exec_ctx,
+          calld->send_messages[retry_state->completed_send_message_count - 1]);
     }
     if (batch_data->batch.send_trailing_metadata) {
       grpc_metadata_batch_destroy(exec_ctx, &calld->send_trailing_metadata);
@@ -1918,7 +1885,7 @@ static void on_complete(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   // callback to start_retriable_subchannel_batches() to closures.
   bool have_pending_send_message_ops =
       retry_state->started_send_message_count <
-          calld->num_seen_send_message_ops;
+          calld->send_messages.size();
   bool have_pending_send_trailing_metadata_op =
       calld->seen_send_trailing_metadata &&
       !retry_state->started_send_trailing_metadata;
@@ -2025,7 +1992,7 @@ static void add_retriable_send_message_op(
     subchannel_call_retry_state *retry_state,
     subchannel_batch_data *batch_data) {
   grpc_byte_stream_cache *cache =
-      get_send_message_cache(calld, retry_state->started_send_message_count);
+      calld->send_messages[retry_state->started_send_message_count];
   ++retry_state->started_send_message_count;
   grpc_caching_byte_stream_init(&batch_data->send_message, cache);
   batch_data->batch.send_message = true;
@@ -2133,7 +2100,7 @@ static void start_retriable_subchannel_batches(grpc_exec_ctx *exec_ctx,
   bool send_message_op_in_flight = retry_state->started_send_message_count <
                                    retry_state->completed_send_message_count;
   if (retry_state->started_send_message_count <
-          calld->num_seen_send_message_ops &&
+          calld->send_messages.size() &&
       !send_message_op_in_flight &&
       !calld->pending_send_message) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
@@ -2155,7 +2122,7 @@ static void start_retriable_subchannel_batches(grpc_exec_ctx *exec_ctx,
   // send_trailing_metadata.
   if (calld->seen_send_trailing_metadata &&
       retry_state->started_send_message_count ==
-          calld->num_seen_send_message_ops &&
+          calld->send_messages.size() &&
       !retry_state->started_send_trailing_metadata &&
       !calld->pending_send_trailing_metadata) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
@@ -2198,7 +2165,7 @@ static void start_retriable_subchannel_batches(grpc_exec_ctx *exec_ctx,
     // send_message ops after send_trailing_metadata.
     if (batch->send_trailing_metadata &&
         (retry_state->started_send_message_count + batch->send_message <
-             calld->num_seen_send_message_ops ||
+             calld->send_messages.size() ||
          retry_state->started_send_trailing_metadata)) {
       continue;
     }

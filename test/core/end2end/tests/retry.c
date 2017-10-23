@@ -305,15 +305,19 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
   grpc_call_details call_details;
   grpc_slice request_payload_slice = grpc_slice_from_static_string("foo");
   grpc_slice request2_payload_slice = grpc_slice_from_static_string("bar");
-  grpc_slice response_payload_slice = grpc_slice_from_static_string("baz");
+  grpc_slice request3_payload_slice = grpc_slice_from_static_string("baz");
+  grpc_slice response_payload_slice = grpc_slice_from_static_string("quux");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer *request2_payload =
       grpc_raw_byte_buffer_create(&request2_payload_slice, 1);
+  grpc_byte_buffer *request3_payload =
+      grpc_raw_byte_buffer_create(&request3_payload_slice, 1);
   grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   grpc_byte_buffer *request_payload_recv = NULL;
   grpc_byte_buffer *request2_payload_recv = NULL;
+  grpc_byte_buffer *request3_payload_recv = NULL;
   grpc_byte_buffer *response_payload_recv = NULL;
   grpc_status_code status;
   grpc_call_error error;
@@ -421,21 +425,18 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(102), true);
   cq_verify(cqv);
 
-  // Client sends a second message and a close.
+  // Client sends a second message.
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = request2_payload;
-  op++;
-  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(3), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(3), true);
   cq_verify(cqv);
 
-  // Server receives the second message and the close and sends both
-  // initial and trailing metadata.
+  // Server receives the second message.
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
@@ -446,6 +447,7 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(103), true);
   cq_verify(cqv);
 
+  // Server sends both initial and trailing metadata.
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -459,10 +461,12 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
   op->data.send_status_from_server.status = GRPC_STATUS_ABORTED;
   op->data.send_status_from_server.status_details = &status_details;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(103), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(104), true);
   cq_verify(cqv);
+
+  // Clean up from first attempt.
   grpc_call_unref(s);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_metadata_array_init(&request_metadata_recv);
@@ -505,13 +509,45 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(202), true);
   cq_verify(cqv);
 
-  // Server receives a second message and a close and sends initial
-  // metadata, a message, and trailing metadata.
+  // Server receives a second message.
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &request2_payload_recv;
   op++;
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(203), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(203), true);
+  cq_verify(cqv);
+
+  // Client sends a third message and a close.
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message.send_message = request3_payload;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op++;
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(4), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(4), true);
+  cq_verify(cqv);
+
+  // Server receives a third message.
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message.recv_message = &request3_payload_recv;
+  op++;
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(204), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(204), true);
+  cq_verify(cqv);
+
+  // Server receives a close and sends initial metadata, a message, and
+  // trailing metadata.
+  memset(ops, 0, sizeof(ops));
+  op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
@@ -528,10 +564,9 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
   op->data.send_status_from_server.status = GRPC_STATUS_ABORTED;
   op->data.send_status_from_server.status_details = &status_details;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(203), NULL);
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(205), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
-
-  CQ_EXPECT_COMPLETION(cqv, tag(203), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(205), true);
   CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
 
@@ -550,6 +585,7 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
   grpc_call_details_destroy(&call_details);
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(request2_payload);
+  grpc_byte_buffer_destroy(request3_payload);
   grpc_byte_buffer_destroy(response_payload);
   GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv,
                                   request_payload_slice));
@@ -557,6 +593,9 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
   GPR_ASSERT(byte_buffer_eq_slice(request2_payload_recv,
                                   request2_payload_slice));
   grpc_byte_buffer_destroy(request2_payload_recv);
+  GPR_ASSERT(byte_buffer_eq_slice(request3_payload_recv,
+                                  request3_payload_slice));
+  grpc_byte_buffer_destroy(request3_payload_recv);
   grpc_byte_buffer_destroy(response_payload_recv);
 
   grpc_call_unref(c);
