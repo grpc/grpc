@@ -127,3 +127,7 @@ some configuration as environment variables that can be set.
   won't fail. Set to 1 to turn off this watcher and save a thread. Please note
   this is a temporary work-around, it will be removed in the future once we have
   support for automatically reestablishing failed connections.
+
+* GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL
+  if set, flow control will be effectively disabled. This means that we will
+  set initial_window to max_int, and set max_frame to 64k.
