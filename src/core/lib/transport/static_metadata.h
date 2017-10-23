@@ -33,7 +33,7 @@ extern "C" {
 
 #include "src/core/lib/transport/metadata.h"
 
-#define GRPC_STATIC_MDSTR_COUNT 101
+#define GRPC_STATIC_MDSTR_COUNT 102
 extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];
 /* ":path" */
 #define GRPC_MDSTR_PATH (grpc_static_slice_table[0])
@@ -82,166 +82,168 @@ extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];
 #define GRPC_MDSTR_LB_TOKEN (grpc_static_slice_table[21])
 /* "grpc-retry-attempts" */
 #define GRPC_MDSTR_GRPC_RETRY_ATTEMPTS (grpc_static_slice_table[22])
+/* "grpc-retry-pushback-ms" */
+#define GRPC_MDSTR_GRPC_RETRY_PUSHBACK_MS (grpc_static_slice_table[23])
 /* "grpc-timeout" */
-#define GRPC_MDSTR_GRPC_TIMEOUT (grpc_static_slice_table[23])
+#define GRPC_MDSTR_GRPC_TIMEOUT (grpc_static_slice_table[24])
 /* "" */
-#define GRPC_MDSTR_EMPTY (grpc_static_slice_table[24])
+#define GRPC_MDSTR_EMPTY (grpc_static_slice_table[25])
 /* "grpc.wait_for_ready" */
-#define GRPC_MDSTR_GRPC_DOT_WAIT_FOR_READY (grpc_static_slice_table[25])
+#define GRPC_MDSTR_GRPC_DOT_WAIT_FOR_READY (grpc_static_slice_table[26])
 /* "grpc.timeout" */
-#define GRPC_MDSTR_GRPC_DOT_TIMEOUT (grpc_static_slice_table[26])
+#define GRPC_MDSTR_GRPC_DOT_TIMEOUT (grpc_static_slice_table[27])
 /* "grpc.max_request_message_bytes" */
 #define GRPC_MDSTR_GRPC_DOT_MAX_REQUEST_MESSAGE_BYTES \
-  (grpc_static_slice_table[27])
+  (grpc_static_slice_table[28])
 /* "grpc.max_response_message_bytes" */
 #define GRPC_MDSTR_GRPC_DOT_MAX_RESPONSE_MESSAGE_BYTES \
-  (grpc_static_slice_table[28])
+  (grpc_static_slice_table[29])
 /* "/grpc.lb.v1.LoadBalancer/BalanceLoad" */
 #define GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD \
-  (grpc_static_slice_table[29])
+  (grpc_static_slice_table[30])
 /* "0" */
-#define GRPC_MDSTR_0 (grpc_static_slice_table[30])
+#define GRPC_MDSTR_0 (grpc_static_slice_table[31])
 /* "1" */
-#define GRPC_MDSTR_1 (grpc_static_slice_table[31])
+#define GRPC_MDSTR_1 (grpc_static_slice_table[32])
 /* "2" */
-#define GRPC_MDSTR_2 (grpc_static_slice_table[32])
+#define GRPC_MDSTR_2 (grpc_static_slice_table[33])
 /* "identity" */
-#define GRPC_MDSTR_IDENTITY (grpc_static_slice_table[33])
+#define GRPC_MDSTR_IDENTITY (grpc_static_slice_table[34])
 /* "gzip" */
-#define GRPC_MDSTR_GZIP (grpc_static_slice_table[34])
+#define GRPC_MDSTR_GZIP (grpc_static_slice_table[35])
 /* "deflate" */
-#define GRPC_MDSTR_DEFLATE (grpc_static_slice_table[35])
+#define GRPC_MDSTR_DEFLATE (grpc_static_slice_table[36])
 /* "trailers" */
-#define GRPC_MDSTR_TRAILERS (grpc_static_slice_table[36])
+#define GRPC_MDSTR_TRAILERS (grpc_static_slice_table[37])
 /* "application/grpc" */
-#define GRPC_MDSTR_APPLICATION_SLASH_GRPC (grpc_static_slice_table[37])
+#define GRPC_MDSTR_APPLICATION_SLASH_GRPC (grpc_static_slice_table[38])
 /* "POST" */
-#define GRPC_MDSTR_POST (grpc_static_slice_table[38])
+#define GRPC_MDSTR_POST (grpc_static_slice_table[39])
 /* "200" */
-#define GRPC_MDSTR_200 (grpc_static_slice_table[39])
+#define GRPC_MDSTR_200 (grpc_static_slice_table[40])
 /* "404" */
-#define GRPC_MDSTR_404 (grpc_static_slice_table[40])
+#define GRPC_MDSTR_404 (grpc_static_slice_table[41])
 /* "http" */
-#define GRPC_MDSTR_HTTP (grpc_static_slice_table[41])
+#define GRPC_MDSTR_HTTP (grpc_static_slice_table[42])
 /* "https" */
-#define GRPC_MDSTR_HTTPS (grpc_static_slice_table[42])
+#define GRPC_MDSTR_HTTPS (grpc_static_slice_table[43])
 /* "grpc" */
-#define GRPC_MDSTR_GRPC (grpc_static_slice_table[43])
+#define GRPC_MDSTR_GRPC (grpc_static_slice_table[44])
 /* "GET" */
-#define GRPC_MDSTR_GET (grpc_static_slice_table[44])
+#define GRPC_MDSTR_GET (grpc_static_slice_table[45])
 /* "PUT" */
-#define GRPC_MDSTR_PUT (grpc_static_slice_table[45])
+#define GRPC_MDSTR_PUT (grpc_static_slice_table[46])
 /* "/" */
-#define GRPC_MDSTR_SLASH (grpc_static_slice_table[46])
+#define GRPC_MDSTR_SLASH (grpc_static_slice_table[47])
 /* "/index.html" */
-#define GRPC_MDSTR_SLASH_INDEX_DOT_HTML (grpc_static_slice_table[47])
+#define GRPC_MDSTR_SLASH_INDEX_DOT_HTML (grpc_static_slice_table[48])
 /* "204" */
-#define GRPC_MDSTR_204 (grpc_static_slice_table[48])
+#define GRPC_MDSTR_204 (grpc_static_slice_table[49])
 /* "206" */
-#define GRPC_MDSTR_206 (grpc_static_slice_table[49])
+#define GRPC_MDSTR_206 (grpc_static_slice_table[50])
 /* "304" */
-#define GRPC_MDSTR_304 (grpc_static_slice_table[50])
+#define GRPC_MDSTR_304 (grpc_static_slice_table[51])
 /* "400" */
-#define GRPC_MDSTR_400 (grpc_static_slice_table[51])
+#define GRPC_MDSTR_400 (grpc_static_slice_table[52])
 /* "500" */
-#define GRPC_MDSTR_500 (grpc_static_slice_table[52])
+#define GRPC_MDSTR_500 (grpc_static_slice_table[53])
 /* "accept-charset" */
-#define GRPC_MDSTR_ACCEPT_CHARSET (grpc_static_slice_table[53])
+#define GRPC_MDSTR_ACCEPT_CHARSET (grpc_static_slice_table[54])
 /* "gzip, deflate" */
-#define GRPC_MDSTR_GZIP_COMMA_DEFLATE (grpc_static_slice_table[54])
+#define GRPC_MDSTR_GZIP_COMMA_DEFLATE (grpc_static_slice_table[55])
 /* "accept-language" */
-#define GRPC_MDSTR_ACCEPT_LANGUAGE (grpc_static_slice_table[55])
+#define GRPC_MDSTR_ACCEPT_LANGUAGE (grpc_static_slice_table[56])
 /* "accept-ranges" */
-#define GRPC_MDSTR_ACCEPT_RANGES (grpc_static_slice_table[56])
+#define GRPC_MDSTR_ACCEPT_RANGES (grpc_static_slice_table[57])
 /* "accept" */
-#define GRPC_MDSTR_ACCEPT (grpc_static_slice_table[57])
+#define GRPC_MDSTR_ACCEPT (grpc_static_slice_table[58])
 /* "access-control-allow-origin" */
-#define GRPC_MDSTR_ACCESS_CONTROL_ALLOW_ORIGIN (grpc_static_slice_table[58])
+#define GRPC_MDSTR_ACCESS_CONTROL_ALLOW_ORIGIN (grpc_static_slice_table[59])
 /* "age" */
-#define GRPC_MDSTR_AGE (grpc_static_slice_table[59])
+#define GRPC_MDSTR_AGE (grpc_static_slice_table[60])
 /* "allow" */
-#define GRPC_MDSTR_ALLOW (grpc_static_slice_table[60])
+#define GRPC_MDSTR_ALLOW (grpc_static_slice_table[61])
 /* "authorization" */
-#define GRPC_MDSTR_AUTHORIZATION (grpc_static_slice_table[61])
+#define GRPC_MDSTR_AUTHORIZATION (grpc_static_slice_table[62])
 /* "cache-control" */
-#define GRPC_MDSTR_CACHE_CONTROL (grpc_static_slice_table[62])
+#define GRPC_MDSTR_CACHE_CONTROL (grpc_static_slice_table[63])
 /* "content-disposition" */
-#define GRPC_MDSTR_CONTENT_DISPOSITION (grpc_static_slice_table[63])
+#define GRPC_MDSTR_CONTENT_DISPOSITION (grpc_static_slice_table[64])
 /* "content-language" */
-#define GRPC_MDSTR_CONTENT_LANGUAGE (grpc_static_slice_table[64])
+#define GRPC_MDSTR_CONTENT_LANGUAGE (grpc_static_slice_table[65])
 /* "content-length" */
-#define GRPC_MDSTR_CONTENT_LENGTH (grpc_static_slice_table[65])
+#define GRPC_MDSTR_CONTENT_LENGTH (grpc_static_slice_table[66])
 /* "content-location" */
-#define GRPC_MDSTR_CONTENT_LOCATION (grpc_static_slice_table[66])
+#define GRPC_MDSTR_CONTENT_LOCATION (grpc_static_slice_table[67])
 /* "content-range" */
-#define GRPC_MDSTR_CONTENT_RANGE (grpc_static_slice_table[67])
+#define GRPC_MDSTR_CONTENT_RANGE (grpc_static_slice_table[68])
 /* "cookie" */
-#define GRPC_MDSTR_COOKIE (grpc_static_slice_table[68])
+#define GRPC_MDSTR_COOKIE (grpc_static_slice_table[69])
 /* "date" */
-#define GRPC_MDSTR_DATE (grpc_static_slice_table[69])
+#define GRPC_MDSTR_DATE (grpc_static_slice_table[70])
 /* "etag" */
-#define GRPC_MDSTR_ETAG (grpc_static_slice_table[70])
+#define GRPC_MDSTR_ETAG (grpc_static_slice_table[71])
 /* "expect" */
-#define GRPC_MDSTR_EXPECT (grpc_static_slice_table[71])
+#define GRPC_MDSTR_EXPECT (grpc_static_slice_table[72])
 /* "expires" */
-#define GRPC_MDSTR_EXPIRES (grpc_static_slice_table[72])
+#define GRPC_MDSTR_EXPIRES (grpc_static_slice_table[73])
 /* "from" */
-#define GRPC_MDSTR_FROM (grpc_static_slice_table[73])
+#define GRPC_MDSTR_FROM (grpc_static_slice_table[74])
 /* "if-match" */
-#define GRPC_MDSTR_IF_MATCH (grpc_static_slice_table[74])
+#define GRPC_MDSTR_IF_MATCH (grpc_static_slice_table[75])
 /* "if-modified-since" */
-#define GRPC_MDSTR_IF_MODIFIED_SINCE (grpc_static_slice_table[75])
+#define GRPC_MDSTR_IF_MODIFIED_SINCE (grpc_static_slice_table[76])
 /* "if-none-match" */
-#define GRPC_MDSTR_IF_NONE_MATCH (grpc_static_slice_table[76])
+#define GRPC_MDSTR_IF_NONE_MATCH (grpc_static_slice_table[77])
 /* "if-range" */
-#define GRPC_MDSTR_IF_RANGE (grpc_static_slice_table[77])
+#define GRPC_MDSTR_IF_RANGE (grpc_static_slice_table[78])
 /* "if-unmodified-since" */
-#define GRPC_MDSTR_IF_UNMODIFIED_SINCE (grpc_static_slice_table[78])
+#define GRPC_MDSTR_IF_UNMODIFIED_SINCE (grpc_static_slice_table[79])
 /* "last-modified" */
-#define GRPC_MDSTR_LAST_MODIFIED (grpc_static_slice_table[79])
+#define GRPC_MDSTR_LAST_MODIFIED (grpc_static_slice_table[80])
 /* "lb-cost-bin" */
-#define GRPC_MDSTR_LB_COST_BIN (grpc_static_slice_table[80])
+#define GRPC_MDSTR_LB_COST_BIN (grpc_static_slice_table[81])
 /* "link" */
-#define GRPC_MDSTR_LINK (grpc_static_slice_table[81])
+#define GRPC_MDSTR_LINK (grpc_static_slice_table[82])
 /* "location" */
-#define GRPC_MDSTR_LOCATION (grpc_static_slice_table[82])
+#define GRPC_MDSTR_LOCATION (grpc_static_slice_table[83])
 /* "max-forwards" */
-#define GRPC_MDSTR_MAX_FORWARDS (grpc_static_slice_table[83])
+#define GRPC_MDSTR_MAX_FORWARDS (grpc_static_slice_table[84])
 /* "proxy-authenticate" */
-#define GRPC_MDSTR_PROXY_AUTHENTICATE (grpc_static_slice_table[84])
+#define GRPC_MDSTR_PROXY_AUTHENTICATE (grpc_static_slice_table[85])
 /* "proxy-authorization" */
-#define GRPC_MDSTR_PROXY_AUTHORIZATION (grpc_static_slice_table[85])
+#define GRPC_MDSTR_PROXY_AUTHORIZATION (grpc_static_slice_table[86])
 /* "range" */
-#define GRPC_MDSTR_RANGE (grpc_static_slice_table[86])
+#define GRPC_MDSTR_RANGE (grpc_static_slice_table[87])
 /* "referer" */
-#define GRPC_MDSTR_REFERER (grpc_static_slice_table[87])
+#define GRPC_MDSTR_REFERER (grpc_static_slice_table[88])
 /* "refresh" */
-#define GRPC_MDSTR_REFRESH (grpc_static_slice_table[88])
+#define GRPC_MDSTR_REFRESH (grpc_static_slice_table[89])
 /* "retry-after" */
-#define GRPC_MDSTR_RETRY_AFTER (grpc_static_slice_table[89])
+#define GRPC_MDSTR_RETRY_AFTER (grpc_static_slice_table[90])
 /* "server" */
-#define GRPC_MDSTR_SERVER (grpc_static_slice_table[90])
+#define GRPC_MDSTR_SERVER (grpc_static_slice_table[91])
 /* "set-cookie" */
-#define GRPC_MDSTR_SET_COOKIE (grpc_static_slice_table[91])
+#define GRPC_MDSTR_SET_COOKIE (grpc_static_slice_table[92])
 /* "strict-transport-security" */
-#define GRPC_MDSTR_STRICT_TRANSPORT_SECURITY (grpc_static_slice_table[92])
+#define GRPC_MDSTR_STRICT_TRANSPORT_SECURITY (grpc_static_slice_table[93])
 /* "transfer-encoding" */
-#define GRPC_MDSTR_TRANSFER_ENCODING (grpc_static_slice_table[93])
+#define GRPC_MDSTR_TRANSFER_ENCODING (grpc_static_slice_table[94])
 /* "vary" */
-#define GRPC_MDSTR_VARY (grpc_static_slice_table[94])
+#define GRPC_MDSTR_VARY (grpc_static_slice_table[95])
 /* "via" */
-#define GRPC_MDSTR_VIA (grpc_static_slice_table[95])
+#define GRPC_MDSTR_VIA (grpc_static_slice_table[96])
 /* "www-authenticate" */
-#define GRPC_MDSTR_WWW_AUTHENTICATE (grpc_static_slice_table[96])
+#define GRPC_MDSTR_WWW_AUTHENTICATE (grpc_static_slice_table[97])
 /* "identity,deflate" */
-#define GRPC_MDSTR_IDENTITY_COMMA_DEFLATE (grpc_static_slice_table[97])
+#define GRPC_MDSTR_IDENTITY_COMMA_DEFLATE (grpc_static_slice_table[98])
 /* "identity,gzip" */
-#define GRPC_MDSTR_IDENTITY_COMMA_GZIP (grpc_static_slice_table[98])
+#define GRPC_MDSTR_IDENTITY_COMMA_GZIP (grpc_static_slice_table[99])
 /* "deflate,gzip" */
-#define GRPC_MDSTR_DEFLATE_COMMA_GZIP (grpc_static_slice_table[99])
+#define GRPC_MDSTR_DEFLATE_COMMA_GZIP (grpc_static_slice_table[100])
 /* "identity,deflate,gzip" */
 #define GRPC_MDSTR_IDENTITY_COMMA_DEFLATE_COMMA_GZIP \
-  (grpc_static_slice_table[100])
+  (grpc_static_slice_table[101])
 
 extern const grpc_slice_refcount_vtable grpc_static_metadata_vtable;
 extern grpc_slice_refcount
@@ -540,6 +542,7 @@ typedef enum {
   GRPC_BATCH_HOST,
   GRPC_BATCH_LB_TOKEN,
   GRPC_BATCH_GRPC_RETRY_ATTEMPTS,
+  GRPC_BATCH_GRPC_RETRY_PUSHBACK_MS,
   GRPC_BATCH_CALLOUTS_COUNT
 } grpc_metadata_batch_callouts_index;
 
@@ -569,6 +572,7 @@ typedef union {
     struct grpc_linked_mdelem *host;
     struct grpc_linked_mdelem *lb_token;
     struct grpc_linked_mdelem *grpc_retry_attempts;
+    struct grpc_linked_mdelem *grpc_retry_pushback_ms;
   } named;
 } grpc_metadata_batch_callouts;
 

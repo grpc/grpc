@@ -48,6 +48,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/support/vector.h"
 #include "src/core/lib/surface/channel.h"
@@ -946,9 +947,6 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 // When constructing the "child" batches, we compare those two sets of
 // data to see which batches need to be sent to the subchannel call.
 
-// FIXME: still missing in retry implementation:
-// - implement server push-back
-
 // TODO(roth): In subsequent PRs:
 // - add support for transparent retries (including initial metadata)
 // - figure out how to record stats in census for retries
@@ -1074,6 +1072,7 @@ typedef struct client_channel_call_data {
 
   // Retry state.
   bool retry_committed : 1;
+  bool last_attempt_got_server_pushback : 1;
   int num_attempts_completed;
   size_t bytes_buffered_for_retry;
   grpc_backoff retry_backoff;
@@ -1445,7 +1444,8 @@ static void start_pick_locked(grpc_exec_ctx *exec_ctx, void *arg,
 // Returns true if the call is being retried.
 static bool maybe_retry(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                         subchannel_batch_data *batch_data,
-                        grpc_status_code status) {
+                        grpc_status_code status,
+                        grpc_mdelem *server_pushback_md) {
   channel_data *chand = (channel_data *)elem->channel_data;
   call_data *calld = (call_data *)elem->call_data;
   // Get retry policy.
@@ -1525,6 +1525,27 @@ static bool maybe_retry(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     }
     return false;
   }
+  // Check server push-back.
+  grpc_millis server_pushback_ms = -1;
+  if (server_pushback_md != NULL) {
+    // If the value is "-1" or any other unparseable string, we do not retry.
+    uint32_t ms;
+    if (!grpc_parse_slice_to_uint32(GRPC_MDVALUE(*server_pushback_md), &ms)) {
+      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+        gpr_log(GPR_DEBUG,
+                "chand=%p calld=%p: not retrying due to server push-back",
+                chand, calld);
+      }
+      return false;
+    } else {
+      if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+        gpr_log(GPR_DEBUG,
+                "chand=%p calld=%p: server push-back: retry in %u ms", chand,
+                calld, ms);
+      }
+      server_pushback_ms = (grpc_millis)ms;
+    }
+  }
   // Reset subchannel call.
   if (calld->subchannel_call != NULL) {
     GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, calld->subchannel_call,
@@ -1533,13 +1554,18 @@ static bool maybe_retry(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   }
   // Compute backoff delay.
   grpc_millis next_attempt_time;
-  if (calld->num_attempts_completed == 1) {
+  if (server_pushback_ms >= 0) {
+    next_attempt_time = grpc_exec_ctx_now(exec_ctx) + server_pushback_ms;
+    calld->last_attempt_got_server_pushback = true;
+  } else if (calld->num_attempts_completed == 1 ||
+             calld->last_attempt_got_server_pushback) {
     grpc_backoff_init(
         &calld->retry_backoff, retry_policy->initial_backoff_ms,
         retry_policy->backoff_multiplier, RETRY_BACKOFF_JITTER,
         GPR_MIN(retry_policy->initial_backoff_ms, retry_policy->max_backoff_ms),
         retry_policy->max_backoff_ms);
     next_attempt_time = grpc_backoff_begin(exec_ctx, &calld->retry_backoff);
+    calld->last_attempt_got_server_pushback = false;
   } else {
     next_attempt_time = grpc_backoff_step(exec_ctx, &calld->retry_backoff);
   }
@@ -1619,7 +1645,8 @@ static void recv_initial_metadata_ready(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_status_code status;
     grpc_error_get_status(exec_ctx, error, calld->deadline, &status, NULL,
                           NULL);
-    if (maybe_retry(exec_ctx, batch_data->elem, batch_data, status)) {
+    if (maybe_retry(exec_ctx, batch_data->elem, batch_data, status,
+                    NULL /* server_pushback_md */)) {
       batch_data_unref(exec_ctx, batch_data);
       return;
     }
@@ -1709,7 +1736,8 @@ static void recv_message_ready(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_status_code status;
     grpc_error_get_status(exec_ctx, error, calld->deadline, &status, NULL,
                           NULL);
-    if (maybe_retry(exec_ctx, batch_data->elem, batch_data, status)) {
+    if (maybe_retry(exec_ctx, batch_data->elem, batch_data, status,
+                    NULL /* server_pushback_md */)) {
       batch_data_unref(exec_ctx, batch_data);
       return;
     }
@@ -1811,6 +1839,7 @@ static void on_complete(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   // an error or (b) we receive status.
   bool call_finished = false;
   grpc_status_code status = GRPC_STATUS_OK;
+  grpc_mdelem *server_pushback_md = NULL;
   if (error != GRPC_ERROR_NONE) {  // Case (a).
     call_finished = true;
     grpc_error_get_status(exec_ctx, error, calld->deadline, &status, NULL,
@@ -1822,13 +1851,17 @@ static void on_complete(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
             .recv_trailing_metadata;
     GPR_ASSERT(md_batch->idx.named.grpc_status != NULL);
     status = grpc_get_status_from_metadata(md_batch->idx.named.grpc_status->md);
+    if (md_batch->idx.named.grpc_retry_pushback_ms != NULL) {
+      server_pushback_md = &md_batch->idx.named.grpc_retry_pushback_ms->md;
+    }
   }
   if (call_finished && GRPC_TRACER_ON(grpc_client_channel_trace)) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: call finished, status=%s", chand,
             calld, grpc_status_string(status));
   }
   // If the call is finished, check if we should retry.
-  if (call_finished && maybe_retry(exec_ctx, elem, batch_data, status)) {
+  if (call_finished &&
+      maybe_retry(exec_ctx, elem, batch_data, status, server_pushback_md)) {
     batch_data_unref(exec_ctx, batch_data);
     // Unref batch_data for deferred recv_initial_metadata_ready or
     // recv_message_ready callbacks, if any.
@@ -2372,7 +2405,8 @@ static void pick_done(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     grpc_error_get_status(exec_ctx, error, calld->deadline, &status, NULL,
                           NULL);
     if (error == GRPC_ERROR_NONE || calld->method_params == NULL ||
-        !maybe_retry(exec_ctx, elem, NULL /* batch_data */, status)) {
+        !maybe_retry(exec_ctx, elem, NULL /* batch_data */, status,
+                     NULL /* server_pushback_md */)) {
       grpc_error *new_error =
           error == GRPC_ERROR_NONE
               ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(

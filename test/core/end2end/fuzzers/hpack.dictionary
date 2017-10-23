@@ -22,6 +22,7 @@
 "\x04host"
 "\x08lb-token"
 "\x13grpc-retry-attempts"
+"\x16grpc-retry-pushback-ms"
 "\x0Cgrpc-timeout"
 "\x00"
 "\x13grpc.wait_for_ready"
