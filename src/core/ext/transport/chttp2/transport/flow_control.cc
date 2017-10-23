@@ -350,8 +350,8 @@ FlowControlAction TransportFlowControl::PeriodicUpdate(
     // we target the max of BDP or bandwidth in microseconds.
     int32_t frame_size = (int32_t)GPR_CLAMP(
         GPR_MAX((int32_t)GPR_CLAMP(bw_dbl, 0, INT_MAX) / 1000,
-                target_initial_window_size_),
-        16384, 16777215);
+                target_initial_window_size_ / 3),
+        16384, 64000);
     action.set_send_max_frame_size_update(
         DeltaUrgency(frame_size, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE),
         frame_size);
