@@ -186,8 +186,8 @@ def compatible(fopt, topt):
 def grpc_end2end_tests():
   grpc_cc_library(
     name = 'end2end_tests',
-    srcs = ['end2end_tests.c', 'end2end_test_utils.c'] + [
-             'tests/%s.c' % t
+    srcs = ['end2end_tests.cc', 'end2end_test_utils.cc'] + [
+             'tests/%s.cc' % t
              for t in sorted(END2END_TESTS.keys())],
     hdrs = [
       'tests/cancel_test_helpers.h',
@@ -205,7 +205,7 @@ def grpc_end2end_tests():
   for f, fopt in END2END_FIXTURES.items():
     grpc_cc_binary(
       name = '%s_test' % f,
-      srcs = ['fixtures/%s.c' % f],
+      srcs = ['fixtures/%s.cc' % f],
       language = "C",
       deps = [
         ':end2end_tests',
