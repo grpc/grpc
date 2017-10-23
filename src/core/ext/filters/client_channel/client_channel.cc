@@ -942,6 +942,17 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 // When constructing the "child" batches, we compare those two sets of
 // data to see which batches need to be sent to the subchannel call.
 
+// FIXME: still missing in retry implementation:
+// - change from maxRetryAttempts to maxAttempts
+// - add initial metadata for retries
+// - implement server push-back
+
+// TODO(roth): In subsequent PRs:
+// - add support for transparent retries
+// - figure out how to record stats in census for retries
+//   (census filter is on top of this one)
+// - add census stats for retries
+
 // State used for starting a retryable batch on a subchannel call.
 // This provides its own grpc_transport_stream_op_batch and other data
 // structures needed to populate the ops in the batch.
@@ -2063,7 +2074,6 @@ static void add_retriable_recv_trailing_metadata_op(
       &batch_data->collect_stats;
 }
 
-// TODO(roth): In a subsequent PR, add support for transparent retries.
 static void start_retriable_subchannel_batches(grpc_exec_ctx *exec_ctx,
                                                void *arg, grpc_error *ignored) {
   grpc_call_element *elem = (grpc_call_element *)arg;
