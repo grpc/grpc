@@ -178,6 +178,7 @@ grpc_lb_subchannel_list *grpc_lb_subchannel_list_create(
     // grpc_connectivity_state to signal an undefined previous state.
     sd->prev_connectivity_state = GRPC_CHANNEL_INIT;
     sd->curr_connectivity_state = subchannel_connectivity_state;
+    sd->pending_connectivity_state_unsafe = subchannel_connectivity_state;
     sd->user_data_vtable = addresses->user_data_vtable;
     if (sd->user_data_vtable != NULL) {
       sd->user_data =
