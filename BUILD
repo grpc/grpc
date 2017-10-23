@@ -515,6 +515,8 @@ grpc_cc_library(
         "src/core/lib/support/atomic_with_std.h",
         "src/core/lib/support/env.h",
         "src/core/lib/support/memory.h",
+        "src/core/lib/support/vector.h",
+        "src/core/lib/support/manual_constructor.h",
         "src/core/lib/support/mpscq.h",
         "src/core/lib/support/murmur_hash.h",
         "src/core/lib/support/spinlock.h",
@@ -528,6 +530,7 @@ grpc_cc_library(
     public_hdrs = GPR_PUBLIC_HDRS,
     deps = [
         "gpr_codegen",
+        "@com_google_absl//absl/container:inlined_vector"
     ],
 )
 
@@ -1275,6 +1278,7 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/bin_encoder.h",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.h",
         "src/core/ext/transport/chttp2/transport/frame.h",
+        "src/core/ext/transport/chttp2/transport/flow_control.h",
         "src/core/ext/transport/chttp2/transport/frame_data.h",
         "src/core/ext/transport/chttp2/transport/frame_goaway.h",
         "src/core/ext/transport/chttp2/transport/frame_ping.h",

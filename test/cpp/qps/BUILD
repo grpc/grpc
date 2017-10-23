@@ -109,6 +109,18 @@ grpc_cc_library(
     deps = ["//:gpr"],
 )
 
+grpc_cc_test(
+    name = "inproc_sync_unary_ping_pong_test",
+    srcs = ["inproc_sync_unary_ping_pong_test.cc"],
+    deps = [
+        ":benchmark_config",
+        ":driver_impl",
+        "//:grpc++",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
+)
+
 grpc_cc_library(
     name = "interarrival",
     hdrs = ["interarrival.h"],

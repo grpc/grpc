@@ -327,7 +327,7 @@ CXXFLAGS += -std=c++11
 ifeq ($(SYSTEM),Darwin)
 CXXFLAGS += -stdlib=libc++
 endif
-CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
+CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp
 LDFLAGS += -g
 
 CPPFLAGS += $(CPPFLAGS_$(CONFIG))
@@ -952,7 +952,6 @@ api_fuzzer: $(BINDIR)/$(CONFIG)/api_fuzzer
 arena_test: $(BINDIR)/$(CONFIG)/arena_test
 backoff_test: $(BINDIR)/$(CONFIG)/backoff_test
 bad_server_response_test: $(BINDIR)/$(CONFIG)/bad_server_response_test
-bdp_estimator_test: $(BINDIR)/$(CONFIG)/bdp_estimator_test
 bin_decoder_test: $(BINDIR)/$(CONFIG)/bin_decoder_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
 byte_stream_test: $(BINDIR)/$(CONFIG)/byte_stream_test
@@ -1092,7 +1091,6 @@ timer_heap_test: $(BINDIR)/$(CONFIG)/timer_heap_test
 timer_list_test: $(BINDIR)/$(CONFIG)/timer_list_test
 transport_connectivity_state_test: $(BINDIR)/$(CONFIG)/transport_connectivity_state_test
 transport_metadata_test: $(BINDIR)/$(CONFIG)/transport_metadata_test
-transport_pid_controller_test: $(BINDIR)/$(CONFIG)/transport_pid_controller_test
 transport_security_test: $(BINDIR)/$(CONFIG)/transport_security_test
 udp_server_test: $(BINDIR)/$(CONFIG)/udp_server_test
 uri_fuzzer_test: $(BINDIR)/$(CONFIG)/uri_fuzzer_test
@@ -1101,6 +1099,7 @@ wakeup_fd_cv_test: $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test
 alarm_cpp_test: $(BINDIR)/$(CONFIG)/alarm_cpp_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
+bdp_estimator_test: $(BINDIR)/$(CONFIG)/bdp_estimator_test
 bm_arena: $(BINDIR)/$(CONFIG)/bm_arena
 bm_call_create: $(BINDIR)/$(CONFIG)/bm_call_create
 bm_chttp2_hpack: $(BINDIR)/$(CONFIG)/bm_chttp2_hpack
@@ -1149,6 +1148,7 @@ h2_ssl_cert_test: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test
 health_service_end2end_test: $(BINDIR)/$(CONFIG)/health_service_end2end_test
 http2_client: $(BINDIR)/$(CONFIG)/http2_client
 hybrid_end2end_test: $(BINDIR)/$(CONFIG)/hybrid_end2end_test
+inproc_sync_unary_ping_pong_test: $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test
 interop_client: $(BINDIR)/$(CONFIG)/interop_client
 interop_server: $(BINDIR)/$(CONFIG)/interop_server
 interop_test: $(BINDIR)/$(CONFIG)/interop_test
@@ -1180,6 +1180,8 @@ streaming_throughput_test: $(BINDIR)/$(CONFIG)/streaming_throughput_test
 stress_test: $(BINDIR)/$(CONFIG)/stress_test
 thread_manager_test: $(BINDIR)/$(CONFIG)/thread_manager_test
 thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
+transport_pid_controller_test: $(BINDIR)/$(CONFIG)/transport_pid_controller_test
+vector_test: $(BINDIR)/$(CONFIG)/vector_test
 writes_per_rpc_test: $(BINDIR)/$(CONFIG)/writes_per_rpc_test
 public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
 boringssl_aes_test: $(BINDIR)/$(CONFIG)/boringssl_aes_test
@@ -1225,7 +1227,6 @@ connection_prefix_bad_client_test: $(BINDIR)/$(CONFIG)/connection_prefix_bad_cli
 head_of_line_blocking_bad_client_test: $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test
 headers_bad_client_test: $(BINDIR)/$(CONFIG)/headers_bad_client_test
 initial_settings_frame_bad_client_test: $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test
-large_metadata_bad_client_test: $(BINDIR)/$(CONFIG)/large_metadata_bad_client_test
 server_registered_method_bad_client_test: $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test
 simple_request_bad_client_test: $(BINDIR)/$(CONFIG)/simple_request_bad_client_test
 unknown_frame_bad_client_test: $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test
@@ -1352,7 +1353,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/arena_test \
   $(BINDIR)/$(CONFIG)/backoff_test \
   $(BINDIR)/$(CONFIG)/bad_server_response_test \
-  $(BINDIR)/$(CONFIG)/bdp_estimator_test \
   $(BINDIR)/$(CONFIG)/bin_decoder_test \
   $(BINDIR)/$(CONFIG)/bin_encoder_test \
   $(BINDIR)/$(CONFIG)/byte_stream_test \
@@ -1473,7 +1473,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/timer_list_test \
   $(BINDIR)/$(CONFIG)/transport_connectivity_state_test \
   $(BINDIR)/$(CONFIG)/transport_metadata_test \
-  $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/transport_security_test \
   $(BINDIR)/$(CONFIG)/udp_server_test \
   $(BINDIR)/$(CONFIG)/uri_parser_test \
@@ -1484,7 +1483,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test \
   $(BINDIR)/$(CONFIG)/headers_bad_client_test \
   $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test \
-  $(BINDIR)/$(CONFIG)/large_metadata_bad_client_test \
   $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test \
   $(BINDIR)/$(CONFIG)/simple_request_bad_client_test \
   $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test \
@@ -1545,6 +1543,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_cpp_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/bdp_estimator_test \
   $(BINDIR)/$(CONFIG)/bm_arena \
   $(BINDIR)/$(CONFIG)/bm_call_create \
   $(BINDIR)/$(CONFIG)/bm_chttp2_hpack \
@@ -1586,6 +1585,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/health_service_end2end_test \
   $(BINDIR)/$(CONFIG)/http2_client \
   $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
+  $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/interop_client \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
@@ -1617,6 +1617,8 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/stress_test \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
+  $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
+  $(BINDIR)/$(CONFIG)/vector_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/boringssl_aes_test \
   $(BINDIR)/$(CONFIG)/boringssl_asn1_test \
@@ -1666,6 +1668,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_cpp_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/bdp_estimator_test \
   $(BINDIR)/$(CONFIG)/bm_arena \
   $(BINDIR)/$(CONFIG)/bm_call_create \
   $(BINDIR)/$(CONFIG)/bm_chttp2_hpack \
@@ -1707,6 +1710,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/health_service_end2end_test \
   $(BINDIR)/$(CONFIG)/http2_client \
   $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
+  $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/interop_client \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
@@ -1738,6 +1742,8 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/stress_test \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
+  $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
+  $(BINDIR)/$(CONFIG)/vector_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure \
   $(BINDIR)/$(CONFIG)/resolver_component_test \
@@ -1766,8 +1772,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/backoff_test || ( echo test backoff_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_server_response_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bad_server_response_test || ( echo test bad_server_response_test failed ; exit 1 )
-	$(E) "[RUN]     Testing bdp_estimator_test"
-	$(Q) $(BINDIR)/$(CONFIG)/bdp_estimator_test || ( echo test bdp_estimator_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_decoder_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bin_decoder_test || ( echo test bin_decoder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_encoder_test"
@@ -1992,8 +1996,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/transport_connectivity_state_test || ( echo test transport_connectivity_state_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_metadata_test"
 	$(Q) $(BINDIR)/$(CONFIG)/transport_metadata_test || ( echo test transport_metadata_test failed ; exit 1 )
-	$(E) "[RUN]     Testing transport_pid_controller_test"
-	$(Q) $(BINDIR)/$(CONFIG)/transport_pid_controller_test || ( echo test transport_pid_controller_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_security_test"
 	$(Q) $(BINDIR)/$(CONFIG)/transport_security_test || ( echo test transport_security_test failed ; exit 1 )
 	$(E) "[RUN]     Testing udp_server_test"
@@ -2014,8 +2016,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/headers_bad_client_test || ( echo test headers_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing initial_settings_frame_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test || ( echo test initial_settings_frame_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing large_metadata_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/large_metadata_bad_client_test || ( echo test large_metadata_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_registered_method_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test || ( echo test server_registered_method_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing simple_request_bad_client_test"
@@ -2040,6 +2040,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/async_end2end_test || ( echo test async_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing auth_property_iterator_test"
 	$(Q) $(BINDIR)/$(CONFIG)/auth_property_iterator_test || ( echo test auth_property_iterator_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bdp_estimator_test"
+	$(Q) $(BINDIR)/$(CONFIG)/bdp_estimator_test || ( echo test bdp_estimator_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_arena"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_arena || ( echo test bm_arena failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_call_create"
@@ -2114,6 +2116,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test || ( echo test h2_ssl_cert_test failed ; exit 1 )
 	$(E) "[RUN]     Testing health_service_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/health_service_end2end_test || ( echo test health_service_end2end_test failed ; exit 1 )
+	$(E) "[RUN]     Testing inproc_sync_unary_ping_pong_test"
+	$(Q) $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test || ( echo test inproc_sync_unary_ping_pong_test failed ; exit 1 )
 	$(E) "[RUN]     Testing interop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/interop_test || ( echo test interop_test failed ; exit 1 )
 	$(E) "[RUN]     Testing memory_test"
@@ -2154,6 +2158,10 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/thread_manager_test || ( echo test thread_manager_test failed ; exit 1 )
 	$(E) "[RUN]     Testing thread_stress_test"
 	$(Q) $(BINDIR)/$(CONFIG)/thread_stress_test || ( echo test thread_stress_test failed ; exit 1 )
+	$(E) "[RUN]     Testing transport_pid_controller_test"
+	$(Q) $(BINDIR)/$(CONFIG)/transport_pid_controller_test || ( echo test transport_pid_controller_test failed ; exit 1 )
+	$(E) "[RUN]     Testing vector_test"
+	$(Q) $(BINDIR)/$(CONFIG)/vector_test || ( echo test vector_test failed ; exit 1 )
 	$(E) "[RUN]     Testing writes_per_rpc_test"
 	$(Q) $(BINDIR)/$(CONFIG)/writes_per_rpc_test || ( echo test writes_per_rpc_test failed ; exit 1 )
 	$(E) "[RUN]     Testing resolver_component_tests_runner_invoker_unsecure"
@@ -3610,7 +3618,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/end2end/fixtures/http_proxy_fixture.c \
     test/core/end2end/fixtures/proxy.c \
     test/core/iomgr/endpoint_tests.c \
-    test/core/util/debugger_macros.c \
+    test/core/util/debugger_macros.cc \
     test/core/util/grpc_profiler.c \
     test/core/util/memory_counters.c \
     test/core/util/mock_endpoint.c \
@@ -3865,7 +3873,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/end2end/fixtures/http_proxy_fixture.c \
     test/core/end2end/fixtures/proxy.c \
     test/core/iomgr/endpoint_tests.c \
-    test/core/util/debugger_macros.c \
+    test/core/util/debugger_macros.cc \
     test/core/util/grpc_profiler.c \
     test/core/util/memory_counters.c \
     test/core/util/mock_endpoint.c \
@@ -8425,7 +8433,7 @@ PUBLIC_HEADERS_C += \
 
 LIBARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBARES_SRC))))
 
-$(LIBARES_OBJS): CPPFLAGS += -Ithird_party/cares -Ithird_party/cares/cares $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) -fvisibility=hidden -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
+$(LIBARES_OBJS): CPPFLAGS += -Ithird_party/cares -Ithird_party/cares/cares -fvisibility=hidden -D_GNU_SOURCE $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) $(if $(subst FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst OpenBSD,,$(SYSTEM)),,-Ithird_party/cares/config_openbsd) -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
 $(LIBARES_OBJS): CFLAGS += -Wno-sign-conversion $(if $(subst Darwin,,$(SYSTEM)),,-Wno-shorten-64-to-32) $(if $(subst MINGW32,,$(SYSTEM)),-Wno-invalid-source-encoding,)
 
 $(LIBDIR)/$(CONFIG)/libares.a: $(ZLIB_DEP)  $(LIBARES_OBJS) 
@@ -8962,38 +8970,6 @@ deps_bad_server_response_test: $(BAD_SERVER_RESPONSE_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(BAD_SERVER_RESPONSE_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-BDP_ESTIMATOR_TEST_SRC = \
-    test/core/transport/bdp_estimator_test.c \
-
-BDP_ESTIMATOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BDP_ESTIMATOR_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/bdp_estimator_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/bdp_estimator_test: $(BDP_ESTIMATOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BDP_ESTIMATOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bdp_estimator_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/transport/bdp_estimator_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_bdp_estimator_test: $(BDP_ESTIMATOR_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(BDP_ESTIMATOR_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -13452,38 +13428,6 @@ endif
 endif
 
 
-TRANSPORT_PID_CONTROLLER_TEST_SRC = \
-    test/core/transport/pid_controller_test.c \
-
-TRANSPORT_PID_CONTROLLER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TRANSPORT_PID_CONTROLLER_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/transport_pid_controller_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/transport_pid_controller_test: $(TRANSPORT_PID_CONTROLLER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(TRANSPORT_PID_CONTROLLER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/transport_pid_controller_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/transport/pid_controller_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_transport_pid_controller_test: $(TRANSPORT_PID_CONTROLLER_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(TRANSPORT_PID_CONTROLLER_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 TRANSPORT_SECURITY_TEST_SRC = \
     test/core/tsi/transport_security_test.c \
 
@@ -13769,6 +13713,49 @@ deps_auth_property_iterator_test: $(AUTH_PROPERTY_ITERATOR_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(AUTH_PROPERTY_ITERATOR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+BDP_ESTIMATOR_TEST_SRC = \
+    test/core/transport/bdp_estimator_test.cc \
+
+BDP_ESTIMATOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BDP_ESTIMATOR_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bdp_estimator_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/bdp_estimator_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bdp_estimator_test: $(PROTOBUF_DEP) $(BDP_ESTIMATOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BDP_ESTIMATOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bdp_estimator_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/bdp_estimator_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_bdp_estimator_test: $(BDP_ESTIMATOR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BDP_ESTIMATOR_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -15818,6 +15805,49 @@ endif
 endif
 
 
+INPROC_SYNC_UNARY_PING_PONG_TEST_SRC = \
+    test/cpp/qps/inproc_sync_unary_ping_pong_test.cc \
+
+INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INPROC_SYNC_UNARY_PING_PONG_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test: $(PROTOBUF_DEP) $(INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/inproc_sync_unary_ping_pong_test.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_inproc_sync_unary_ping_pong_test: $(INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
@@ -17191,6 +17221,92 @@ endif
 endif
 
 
+TRANSPORT_PID_CONTROLLER_TEST_SRC = \
+    test/core/transport/pid_controller_test.cc \
+
+TRANSPORT_PID_CONTROLLER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TRANSPORT_PID_CONTROLLER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/transport_pid_controller_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/transport_pid_controller_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/transport_pid_controller_test: $(PROTOBUF_DEP) $(TRANSPORT_PID_CONTROLLER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(TRANSPORT_PID_CONTROLLER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/transport_pid_controller_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/pid_controller_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_transport_pid_controller_test: $(TRANSPORT_PID_CONTROLLER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(TRANSPORT_PID_CONTROLLER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+VECTOR_TEST_SRC = \
+    test/core/support/vector_test.cc \
+
+VECTOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(VECTOR_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/vector_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/vector_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/vector_test: $(PROTOBUF_DEP) $(VECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(VECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/vector_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/support/vector_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_vector_test: $(VECTOR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(VECTOR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 WRITES_PER_RPC_TEST_SRC = \
     test/cpp/performance/writes_per_rpc_test.cc \
 
@@ -18469,26 +18585,6 @@ deps_initial_settings_frame_bad_client_test: $(INITIAL_SETTINGS_FRAME_BAD_CLIENT
 
 ifneq ($(NO_DEPS),true)
 -include $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS:.o=.dep)
-endif
-
-
-LARGE_METADATA_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/large_metadata.c \
-
-LARGE_METADATA_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LARGE_METADATA_BAD_CLIENT_TEST_SRC))))
-
-
-$(BINDIR)/$(CONFIG)/large_metadata_bad_client_test: $(LARGE_METADATA_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(LARGE_METADATA_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/large_metadata_bad_client_test
-
-$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/large_metadata.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_large_metadata_bad_client_test: $(LARGE_METADATA_BAD_CLIENT_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_DEPS),true)
--include $(LARGE_METADATA_BAD_CLIENT_TEST_OBJS:.o=.dep)
 endif
 
 

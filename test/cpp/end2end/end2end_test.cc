@@ -220,7 +220,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   End2endTest()
       : is_server_started_(false),
         kMaxMessageSize_(8192),
-        special_service_("special") {
+        special_service_("special"),
+        first_picked_port_(0) {
     GetParam().Log();
   }
 
@@ -229,10 +230,14 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       server_->Shutdown();
       if (proxy_server_) proxy_server_->Shutdown();
     }
+    if (first_picked_port_ > 0) {
+      grpc_recycle_unused_port(first_picked_port_);
+    }
   }
 
   void StartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
     int port = grpc_pick_unused_port_or_die();
+    first_picked_port_ = port;
     server_address_ << "127.0.0.1:" << port;
     // Setup server
     BuildAndStartServer(processor);
@@ -328,6 +333,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   TestServiceImpl special_service_;
   TestServiceImplDupPkg dup_pkg_service_;
   grpc::string user_agent_prefix_;
+  int first_picked_port_;
 };
 
 static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
