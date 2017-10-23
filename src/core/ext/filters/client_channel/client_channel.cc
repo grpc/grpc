@@ -1071,6 +1071,7 @@ typedef struct client_channel_call_data {
   bool pending_send_trailing_metadata : 1;
 
   // Retry state.
+  bool enable_retries : 1;
   bool retry_committed : 1;
   bool last_attempt_got_server_pushback : 1;
   int num_attempts_completed;
@@ -1167,12 +1168,8 @@ static void pending_batches_add(grpc_exec_ctx *exec_ctx,
     calld->pending_send_trailing_metadata = true;
   }
   // Check if the batch takes us over the retry buffer limit.
-  subchannel_call_retry_state *retry_state =
-      calld->subchannel_call == NULL
-      ? NULL
-      : (subchannel_call_retry_state *)
-            grpc_connected_subchannel_call_get_parent_data(
-                calld->subchannel_call);
+  // Note: We don't check trailing metadata here, because gRPC clients
+  // do not send trailing metadata.
   if (batch->send_initial_metadata) {
     calld->bytes_buffered_for_retry += grpc_metadata_batch_size(
         batch->payload->send_initial_metadata.send_initial_metadata);
@@ -1187,7 +1184,16 @@ static void pending_batches_add(grpc_exec_ctx *exec_ctx,
               "chand=%p calld=%p: exceeded retry buffer size, committing",
               chand, calld);
     }
+    subchannel_call_retry_state *retry_state =
+        calld->subchannel_call == NULL
+        ? NULL
+        : (subchannel_call_retry_state *)
+              grpc_connected_subchannel_call_get_parent_data(
+                  calld->subchannel_call);
     retry_commit(exec_ctx, elem, retry_state);
+    // If we are not going to retry and have not yet started, pretend
+    // retries are disabled so that we don't bother with retry overhead.
+    if (calld->num_attempts_completed == 0) calld->enable_retries = false;
   }
 }
 
@@ -1279,7 +1285,7 @@ static void pending_batches_resume(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *elem) {
   channel_data *chand = (channel_data *)elem->channel_data;
   call_data *calld = (call_data *)elem->call_data;
-  if (chand->enable_retries) {
+  if (calld->enable_retries) {
     start_retriable_subchannel_batches(exec_ctx, elem, GRPC_ERROR_NONE);
     return;
   }
@@ -2364,7 +2370,7 @@ static void create_subchannel_call(grpc_exec_ctx *exec_ctx,
   channel_data *chand = (channel_data *)elem->channel_data;
   call_data *calld = (call_data *)elem->call_data;
   const size_t parent_data_size =
-      chand->enable_retries ? sizeof(subchannel_call_retry_state) : 0;
+      calld->enable_retries ? sizeof(subchannel_call_retry_state) : 0;
   const grpc_connected_subchannel_call_args call_args = {
       calld->pollent,                  // pollent
       calld->path,                     // path
@@ -2809,6 +2815,7 @@ static grpc_error *cc_init_call_elem(grpc_exec_ctx *exec_ctx,
     grpc_deadline_state_init(exec_ctx, elem, args->call_stack,
                              args->call_combiner, calld->deadline);
   }
+  calld->enable_retries = chand->enable_retries;
   return GRPC_ERROR_NONE;
 }
 
