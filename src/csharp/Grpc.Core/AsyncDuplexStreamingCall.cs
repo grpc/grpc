@@ -35,7 +35,21 @@ namespace Grpc.Core
         readonly Func<Metadata> getTrailersFunc;
         readonly Action disposeAction;
 
-        internal AsyncDuplexStreamingCall(IClientStreamWriter<TRequest> requestStream, IAsyncStreamReader<TResponse> responseStream, Task<Metadata> responseHeadersAsync, Func<Status> getStatusFunc, Func<Metadata> getTrailersFunc, Action disposeAction)
+        /// <summary>
+        /// Creates a new AsyncDuplexStreamingCall object with the specified properties.
+        /// </summary>
+        /// <param name="requestStream">Stream of request values.</param>
+        /// <param name="responseStream">Stream of response values.</param>
+        /// <param name="responseHeadersAsync">Response headers of the asynchronous call.</param>
+        /// <param name="getStatusFunc">Delegate returning the status of the call.</param>
+        /// <param name="getTrailersFunc">Delegate returning the trailing metadata of the call.</param>
+        /// <param name="disposeAction">Delegate to invoke when Dispose is called on the call object.</param>
+        public AsyncDuplexStreamingCall(IClientStreamWriter<TRequest> requestStream,
+                                        IAsyncStreamReader<TResponse> responseStream,
+                                        Task<Metadata> responseHeadersAsync,
+                                        Func<Status> getStatusFunc,
+                                        Func<Metadata> getTrailersFunc,
+                                        Action disposeAction)
         {
             this.requestStream = requestStream;
             this.responseStream = responseStream;

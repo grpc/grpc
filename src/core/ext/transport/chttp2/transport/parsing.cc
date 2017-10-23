@@ -355,14 +355,15 @@ static grpc_error *init_data_frame_parser(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream *s =
       grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
   grpc_error *err = GRPC_ERROR_NONE;
-  err = grpc_chttp2_flowctl_recv_data(&t->flow_control,
-                                      s == NULL ? NULL : &s->flow_control,
-                                      t->incoming_frame_size);
-  grpc_chttp2_act_on_flowctl_action(
-      exec_ctx,
-      grpc_chttp2_flowctl_get_action(exec_ctx, &t->flow_control,
-                                     s == NULL ? NULL : &s->flow_control),
-      t, s);
+  grpc_core::chttp2::FlowControlAction action;
+  if (s == nullptr) {
+    err = t->flow_control->RecvData(t->incoming_frame_size);
+    action = t->flow_control->MakeAction();
+  } else {
+    err = s->flow_control->RecvData(t->incoming_frame_size);
+    action = s->flow_control->MakeAction();
+  }
+  grpc_chttp2_act_on_flowctl_action(exec_ctx, action, t, s);
   if (err != GRPC_ERROR_NONE) {
     goto error_handler;
   }
@@ -434,19 +435,21 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
     grpc_millis *cached_timeout =
         static_cast<grpc_millis *>(grpc_mdelem_get_user_data(md, free_timeout));
     grpc_millis timeout;
-    if (cached_timeout == NULL) {
-      /* not already parsed: parse it now, and store the result away */
-      cached_timeout = (grpc_millis *)gpr_malloc(sizeof(grpc_millis));
-      if (!grpc_http2_decode_timeout(GRPC_MDVALUE(md), cached_timeout)) {
+    if (cached_timeout != NULL) {
+      timeout = *cached_timeout;
+    } else {
+      if (!grpc_http2_decode_timeout(GRPC_MDVALUE(md), &timeout)) {
         char *val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
         gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
         gpr_free(val);
-        *cached_timeout = GRPC_MILLIS_INF_FUTURE;
+        timeout = GRPC_MILLIS_INF_FUTURE;
       }
-      timeout = *cached_timeout;
-      grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
-    } else {
-      timeout = *cached_timeout;
+      if (GRPC_MDELEM_IS_INTERNED(md)) {
+        /* store the result */
+        cached_timeout = (grpc_millis *)gpr_malloc(sizeof(grpc_millis));
+        *cached_timeout = timeout;
+        grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
+      }
     }
     if (timeout != GRPC_MILLIS_INF_FUTURE) {
       grpc_chttp2_incoming_metadata_buffer_set_deadline(
