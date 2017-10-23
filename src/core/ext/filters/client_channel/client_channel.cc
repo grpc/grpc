@@ -62,12 +62,15 @@
 
 /* Client channel implementation */
 
+// As per the retry design, we do not allow more than 5 retry attempts.
 #define MAX_MAX_RETRY_ATTEMPTS 5
 
-// FIXME: what's the right default for this?
-#define DEFAULT_PER_RPC_RETRY_BUFFER_SIZE (1 << 30)
+// By default, we buffer 1 MiB per RPC for retries.
+// TODO(roth): Do we have any data to suggest a better value?
+#define DEFAULT_PER_RPC_RETRY_BUFFER_SIZE (1 << 20)
 
-// FIXME: what's the right value for this?
+// This value was picked arbitrarily.  It can be changed if there is
+// any even moderately compelling reason to do so.
 #define RETRY_BACKOFF_JITTER 0.2
 
 grpc_tracer_flag grpc_client_channel_trace =
