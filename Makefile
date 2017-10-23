@@ -1148,6 +1148,7 @@ h2_ssl_cert_test: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test
 health_service_end2end_test: $(BINDIR)/$(CONFIG)/health_service_end2end_test
 http2_client: $(BINDIR)/$(CONFIG)/http2_client
 hybrid_end2end_test: $(BINDIR)/$(CONFIG)/hybrid_end2end_test
+inproc_sync_unary_ping_pong_test: $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test
 interop_client: $(BINDIR)/$(CONFIG)/interop_client
 interop_server: $(BINDIR)/$(CONFIG)/interop_server
 interop_test: $(BINDIR)/$(CONFIG)/interop_test
@@ -1584,6 +1585,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/health_service_end2end_test \
   $(BINDIR)/$(CONFIG)/http2_client \
   $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
+  $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/interop_client \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
@@ -1708,6 +1710,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/health_service_end2end_test \
   $(BINDIR)/$(CONFIG)/http2_client \
   $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
+  $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/interop_client \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
@@ -2113,6 +2116,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test || ( echo test h2_ssl_cert_test failed ; exit 1 )
 	$(E) "[RUN]     Testing health_service_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/health_service_end2end_test || ( echo test health_service_end2end_test failed ; exit 1 )
+	$(E) "[RUN]     Testing inproc_sync_unary_ping_pong_test"
+	$(Q) $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test || ( echo test inproc_sync_unary_ping_pong_test failed ; exit 1 )
 	$(E) "[RUN]     Testing interop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/interop_test || ( echo test interop_test failed ; exit 1 )
 	$(E) "[RUN]     Testing memory_test"
@@ -15794,6 +15799,49 @@ deps_hybrid_end2end_test: $(HYBRID_END2END_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(HYBRID_END2END_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+INPROC_SYNC_UNARY_PING_PONG_TEST_SRC = \
+    test/cpp/qps/inproc_sync_unary_ping_pong_test.cc \
+
+INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INPROC_SYNC_UNARY_PING_PONG_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test: $(PROTOBUF_DEP) $(INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/inproc_sync_unary_ping_pong_test.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_inproc_sync_unary_ping_pong_test: $(INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS:.o=.dep)
 endif
 endif
 

@@ -4314,6 +4314,25 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: inproc_sync_unary_ping_pong_test
+  build: test
+  language: c++
+  src:
+  - test/cpp/qps/inproc_sync_unary_ping_pong_test.cc
+  deps:
+  - qps
+  - grpc++_core_stats
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: interop_client
   build: test
   run: false
