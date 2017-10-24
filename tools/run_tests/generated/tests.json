@@ -3547,7 +3547,8 @@
     "exclude_iomgrs": [], 
     "excluded_poll_engines": [
       "poll", 
-      "poll-cv"
+      "poll-cv", 
+      "epollex"
     ], 
     "flaky": false, 
     "gtest": true, 
@@ -3941,7 +3942,8 @@
     "exclude_iomgrs": [], 
     "excluded_poll_engines": [
       "poll", 
-      "poll-cv"
+      "poll-cv", 
+      "epollex"
     ], 
     "flaky": false, 
     "gtest": false, 
