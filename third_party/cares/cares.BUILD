@@ -3,7 +3,7 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
-# Android is not officially supported.
+# Android is not officially supported through C++.
 # This just helps with the build for now.
 config_setting(
     name = "android",
@@ -12,6 +12,8 @@ config_setting(
     },
 )
 
+# iOS is not officially supported through C++.
+# This just helps with the build for now.
 config_setting(
     name = "ios_x86_64",
     values = {"cpu": "ios_x86_64"},
