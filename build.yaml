@@ -3948,6 +3948,7 @@ targets:
   excluded_poll_engines:
   - poll
   - poll-cv
+  - epollex
 - name: codegen_test_full
   gtest: true
   build: test
@@ -4256,6 +4257,7 @@ targets:
   excluded_poll_engines:
   - poll
   - poll-cv
+  - epollex
 - name: h2_ssl_cert_test
   gtest: true
   build: test
