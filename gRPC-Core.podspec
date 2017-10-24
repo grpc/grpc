@@ -1008,7 +1008,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/*.{c,h}',
                       'test/core/end2end/fixtures/*.h',
                       'test/core/end2end/data/*.{c,h}',
-                      'test/core/util/debugger_macros.{c,h}',
+                      'test/core/util/debugger_macros.{cc,h}',
                       'test/core/util/test_config.{c,h}',
                       'test/core/util/port.h',
                       'test/core/util/port.c',
