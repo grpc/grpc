@@ -27,7 +27,8 @@ if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ] && [ -n "$RUN_TESTS_FLAGS" ]; the
   export RUN_TESTS_FLAGS="$RUN_TESTS_FLAGS --filter_pr_tests --base_branch origin/$ghprbTargetBranch"
 fi
 
-tools/run_tests/run_tests_matrix.py $RUN_TESTS_FLAGS || FAILED="true"
+# Throttle stdout, so workers don't run out of memory
+tools/run_tests/run_tests_matrix.py $RUN_TESTS_FLAGS | pv -q -L 128000 || FAILED="true"
 
 # Reveal leftover processes that might be left behind by the build
 ps aux | grep -i kbuilder

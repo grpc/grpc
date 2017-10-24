@@ -29,6 +29,9 @@ sudo mkdir -p /tmp/xdg-cache-home
 PYTHONWARNINGS=ignore XDG_CACHE_HOME=/tmp/xdg-cache-home sudo -E pip install setuptools wheel
 PYTHONWARNINGS=ignore XDG_CACHE_HOME=/tmp/xdg-cache-home sudo -E pip install coverage==4.4 pylint==1.6.5
 
+# Need pv to throttle stdout, so machines don't run out of memory
+sudo apt-get install -y pv
+
 # Download Docker images from DockerHub
 export DOCKERHUB_ORGANIZATION=grpctesting
 
