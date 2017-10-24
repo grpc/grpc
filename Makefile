@@ -1019,6 +1019,7 @@ grpc_json_token_test: $(BINDIR)/$(CONFIG)/grpc_json_token_test
 grpc_jwt_verifier_test: $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test
 grpc_print_google_default_creds_token: $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token
 grpc_security_connector_test: $(BINDIR)/$(CONFIG)/grpc_security_connector_test
+grpc_ssl_credentials_test: $(BINDIR)/$(CONFIG)/grpc_ssl_credentials_test
 grpc_verify_jwt: $(BINDIR)/$(CONFIG)/grpc_verify_jwt
 handshake_client: $(BINDIR)/$(CONFIG)/handshake_client
 handshake_server: $(BINDIR)/$(CONFIG)/handshake_server
@@ -1148,6 +1149,7 @@ h2_ssl_cert_test: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test
 health_service_end2end_test: $(BINDIR)/$(CONFIG)/health_service_end2end_test
 http2_client: $(BINDIR)/$(CONFIG)/http2_client
 hybrid_end2end_test: $(BINDIR)/$(CONFIG)/hybrid_end2end_test
+inproc_sync_unary_ping_pong_test: $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test
 interop_client: $(BINDIR)/$(CONFIG)/interop_client
 interop_server: $(BINDIR)/$(CONFIG)/interop_server
 interop_test: $(BINDIR)/$(CONFIG)/interop_test
@@ -1412,6 +1414,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/grpc_json_token_test \
   $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test \
   $(BINDIR)/$(CONFIG)/grpc_security_connector_test \
+  $(BINDIR)/$(CONFIG)/grpc_ssl_credentials_test \
   $(BINDIR)/$(CONFIG)/handshake_client \
   $(BINDIR)/$(CONFIG)/handshake_server \
   $(BINDIR)/$(CONFIG)/hpack_parser_test \
@@ -1584,6 +1587,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/health_service_end2end_test \
   $(BINDIR)/$(CONFIG)/http2_client \
   $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
+  $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/interop_client \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
@@ -1708,6 +1712,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/health_service_end2end_test \
   $(BINDIR)/$(CONFIG)/http2_client \
   $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
+  $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/interop_client \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
@@ -1883,6 +1888,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test || ( echo test grpc_jwt_verifier_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_security_connector_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_security_connector_test || ( echo test grpc_security_connector_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_ssl_credentials_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_ssl_credentials_test || ( echo test grpc_ssl_credentials_test failed ; exit 1 )
 	$(E) "[RUN]     Testing handshake_client"
 	$(Q) $(BINDIR)/$(CONFIG)/handshake_client || ( echo test handshake_client failed ; exit 1 )
 	$(E) "[RUN]     Testing handshake_server"
@@ -2113,6 +2120,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test || ( echo test h2_ssl_cert_test failed ; exit 1 )
 	$(E) "[RUN]     Testing health_service_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/health_service_end2end_test || ( echo test health_service_end2end_test failed ; exit 1 )
+	$(E) "[RUN]     Testing inproc_sync_unary_ping_pong_test"
+	$(Q) $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test || ( echo test inproc_sync_unary_ping_pong_test failed ; exit 1 )
 	$(E) "[RUN]     Testing interop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/interop_test || ( echo test interop_test failed ; exit 1 )
 	$(E) "[RUN]     Testing memory_test"
@@ -11114,6 +11123,38 @@ endif
 endif
 
 
+GRPC_SSL_CREDENTIALS_TEST_SRC = \
+    test/core/security/ssl_credentials_test.c \
+
+GRPC_SSL_CREDENTIALS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_SSL_CREDENTIALS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/grpc_ssl_credentials_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/grpc_ssl_credentials_test: $(GRPC_SSL_CREDENTIALS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_SSL_CREDENTIALS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_ssl_credentials_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/security/ssl_credentials_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_grpc_ssl_credentials_test: $(GRPC_SSL_CREDENTIALS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GRPC_SSL_CREDENTIALS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 GRPC_VERIFY_JWT_SRC = \
     test/core/security/verify_jwt.c \
 
@@ -15794,6 +15835,49 @@ deps_hybrid_end2end_test: $(HYBRID_END2END_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(HYBRID_END2END_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+INPROC_SYNC_UNARY_PING_PONG_TEST_SRC = \
+    test/cpp/qps/inproc_sync_unary_ping_pong_test.cc \
+
+INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INPROC_SYNC_UNARY_PING_PONG_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test: $(PROTOBUF_DEP) $(INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/inproc_sync_unary_ping_pong_test.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_inproc_sync_unary_ping_pong_test: $(INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS:.o=.dep)
 endif
 endif
 

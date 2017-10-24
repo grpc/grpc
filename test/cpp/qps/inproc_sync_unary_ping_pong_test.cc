@@ -46,16 +46,9 @@ static void RunSynchronousUnaryPingPong() {
   ServerConfig server_config;
   server_config.set_server_type(SYNC_SERVER);
 
-  // Set up security params
-  SecurityParams security;
-  security.set_use_test_ca(true);
-  security.set_server_host_override("foo.test.google.fr");
-  client_config.mutable_security_params()->CopyFrom(security);
-  server_config.mutable_security_params()->CopyFrom(security);
-
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2, "",
-                  kInsecureCredentialsType, false);
+                  kInsecureCredentialsType, true);
 
   GetReporter()->ReportQPS(*result);
   GetReporter()->ReportLatency(*result);

@@ -204,7 +204,7 @@ grpc_server_security_connector *grpc_fake_server_security_connector_create(
 /* Config for ssl clients. */
 
 typedef struct {
-  tsi_ssl_pem_key_cert_pair pem_key_cert_pair;
+  tsi_ssl_pem_key_cert_pair *pem_key_cert_pair;
   char *pem_root_certs;
 } grpc_ssl_config;
 

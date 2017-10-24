@@ -379,6 +379,13 @@ static void endpoint_add_to_pollset_set(grpc_exec_ctx *exec_ctx,
   grpc_endpoint_add_to_pollset_set(exec_ctx, ep->wrapped_ep, pollset_set);
 }
 
+static void endpoint_delete_from_pollset_set(grpc_exec_ctx *exec_ctx,
+                                             grpc_endpoint *secure_ep,
+                                             grpc_pollset_set *pollset_set) {
+  secure_endpoint *ep = (secure_endpoint *)secure_ep;
+  grpc_endpoint_delete_from_pollset_set(exec_ctx, ep->wrapped_ep, pollset_set);
+}
+
 static char *endpoint_get_peer(grpc_endpoint *secure_ep) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
   return grpc_endpoint_get_peer(ep->wrapped_ep);
@@ -399,6 +406,7 @@ static const grpc_endpoint_vtable vtable = {endpoint_read,
                                             endpoint_write,
                                             endpoint_add_to_pollset,
                                             endpoint_add_to_pollset_set,
+                                            endpoint_delete_from_pollset_set,
                                             endpoint_shutdown,
                                             endpoint_destroy,
                                             endpoint_get_resource_user,

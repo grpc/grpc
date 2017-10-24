@@ -459,6 +459,7 @@ add_dependencies(buildtests_c grpc_json_token_test)
 endif()
 add_dependencies(buildtests_c grpc_jwt_verifier_test)
 add_dependencies(buildtests_c grpc_security_connector_test)
+add_dependencies(buildtests_c grpc_ssl_credentials_test)
 if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c handshake_client)
 endif()
@@ -707,6 +708,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx http2_client)
 endif()
 add_dependencies(buildtests_cxx hybrid_end2end_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx inproc_sync_unary_ping_pong_test)
+endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx interop_client)
 endif()
@@ -7288,6 +7292,36 @@ target_link_libraries(grpc_security_connector_test
 )
 
 endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(grpc_ssl_credentials_test
+  test/core/security/ssl_credentials_test.c
+)
+
+
+target_include_directories(grpc_ssl_credentials_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
+)
+
+target_link_libraries(grpc_ssl_credentials_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
 
 add_executable(grpc_verify_jwt
   test/core/security/verify_jwt.c
@@ -11527,6 +11561,52 @@ target_link_libraries(hybrid_end2end_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+add_executable(inproc_sync_unary_ping_pong_test
+  test/cpp/qps/inproc_sync_unary_ping_pong_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(inproc_sync_unary_ping_pong_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${BENCHMARK_ROOT_DIR}/include
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+  PRIVATE ${CARES_INCLUDE_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/cares/cares
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/gflags/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(inproc_sync_unary_ping_pong_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  qps
+  grpc++_core_stats
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
