@@ -228,21 +228,32 @@ static grpc_error *on_handshake_next_done_locked(
                        &h->on_handshake_data_received_from_peer);
     return error;
   }
+
   // Handle TSI errors.
-  if (result != TSI_OK) {
-    if (result == TSI_SEND_ALERT_AND_CLOSE && bytes_to_send_size > 0) {
-      gpr_log(GPR_DEBUG,
-              "Encountered TSI error. Sending alert message before closing");
-      grpc_slice to_send = grpc_slice_from_copied_buffer(
-          (const char *)bytes_to_send, bytes_to_send_size);
-      grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &h->outgoing);
-      grpc_slice_buffer_add(&h->outgoing, to_send);
-      grpc_endpoint_write(exec_ctx, h->args->endpoint, &h->outgoing,
-                          &h->on_handshake_data_sent_to_peer);
-    }
+  if (result == TSI_SEND_ALERT_AND_CLOSE && bytes_to_send_size > 0) {
+    gpr_log(GPR_DEBUG,
+            "Encountered TSI error. Sending alert message before closing");
+    // Send an alert message before terminating the handshake.
+    grpc_slice to_send = grpc_slice_from_copied_buffer(
+      (const char *)bytes_to_send, bytes_to_send_size);
+    grpc_slice_buffer_reset_and_unref_internal(exec_ctx, &h->outgoing);
+    grpc_slice_buffer_add(&h->outgoing, to_send);
+    // To ensure that the alert is sent before the handshaker is destroyed,
+    // we must not return an error at this point. Instead, we set the shutdown
+    // flag so that the write callback can signal the handshaker to shutdown
+    // after the write has completed.
+    h->shutdown = true;
+    grpc_endpoint_write(exec_ctx, h->args->endpoint, &h->outgoing,
+                        &h->on_handshake_data_sent_to_peer);
+    return error;
+  } else if (result != TSI_OK) {
+    // The handshaker encountered an error and there is nothing to send to the
+    // peer. We can return an error to signal that the handshaker should be
+    // shutdown.
     return grpc_set_tsi_error_result(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake failed"), result);
   }
+
   // Update handshaker result.
   if (handshaker_result != NULL) {
     GPR_ASSERT(h->handshaker_result == NULL);
@@ -357,11 +368,6 @@ static void on_handshake_data_sent_to_peer(grpc_exec_ctx *exec_ctx, void *arg,
                                            grpc_error *error) {
   security_handshaker *h = (security_handshaker *)arg;
   gpr_mu_lock(&h->mu);
-  if (h->shutdown) {
-    // Allow alert messages to be sent on shutdown. (TSI_SEND_ALERT_AND_CLOSE).
-    gpr_mu_unlock(&h->mu);
-    return;
-  }
   if (error != GRPC_ERROR_NONE) {
     security_handshake_failed_locked(
         exec_ctx, h, GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
@@ -370,6 +376,15 @@ static void on_handshake_data_sent_to_peer(grpc_exec_ctx *exec_ctx, void *arg,
     security_handshaker_unref(exec_ctx, h);
     return;
   }
+  if (h->shutdown) {
+    // Allow final messages to be sent on shutdown. (TSI_SEND_ALERT_AND_CLOSE).
+    security_handshake_failed_locked(
+        exec_ctx, h, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Handshake terminated after final write"));
+    gpr_mu_unlock(&h->mu);
+    return;
+  }
+
   // We may be done.
   if (h->handshaker_result == NULL) {
     grpc_endpoint_read(exec_ctx, h->args->endpoint, h->args->read_buffer,
