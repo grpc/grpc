@@ -1027,15 +1027,19 @@ static void glb_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   while (pp != NULL) {
     pending_pick *next = pp->next;
     *pp->target = NULL;
-    GRPC_CLOSURE_SCHED(exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
-                       GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(
+        exec_ctx, &pp->wrapped_on_complete_arg.wrapper_closure,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Shutdown"));
+    gpr_free(pp);
     pp = next;
   }
 
   while (pping != NULL) {
     pending_ping *next = pping->next;
-    GRPC_CLOSURE_SCHED(exec_ctx, &pping->wrapped_notify_arg.wrapper_closure,
-                       GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(
+        exec_ctx, &pping->wrapped_notify_arg.wrapper_closure,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Shutdown"));
+    gpr_free(pping);
     pping = next;
   }
 }
