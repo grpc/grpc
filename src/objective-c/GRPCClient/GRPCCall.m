@@ -244,9 +244,12 @@ static NSString * const kBearerPrefix = @"Bearer ";
 // method.
 // TODO(jcanizales): Rename to readResponseIfNotPaused.
 - (void)startNextRead {
-  if (self.state == GRXWriterStatePaused) {
-    return;
+  @synchronized(self) {
+    if (self.state == GRXWriterStatePaused) {
+      return;
+    }
   }
+  
   __weak GRPCCall *weakSelf = self;
   __weak GRXConcurrentWriteable *weakWriteable = _responseWriteable;
 
