@@ -3784,11 +3784,11 @@ targets:
   - --benchmark_min_time=0
   benchmark: true
   defaults: benchmark
+  exclude_configs:
+  - tsan
   excluded_poll_engines:
   - poll
   - poll-cv
-  exclude_configs:
-  - tsan
   platforms:
   - mac
   - linux
