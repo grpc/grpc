@@ -44,10 +44,16 @@ auto &force_library_initialization = Library::get();
 class DummyEndpoint : public grpc_endpoint {
  public:
   DummyEndpoint() {
-    static const grpc_endpoint_vtable my_vtable = {
-        read,     write,   add_to_pollset,    add_to_pollset_set,
-        shutdown, destroy, get_resource_user, get_peer,
-        get_fd};
+    static const grpc_endpoint_vtable my_vtable = {read,
+                                                   write,
+                                                   add_to_pollset,
+                                                   add_to_pollset_set,
+                                                   delete_from_pollset_set,
+                                                   shutdown,
+                                                   destroy,
+                                                   get_resource_user,
+                                                   get_peer,
+                                                   get_fd};
     grpc_endpoint::vtable = &my_vtable;
     ru_ = grpc_resource_user_create(Library::get().rq(), "dummy_endpoint");
   }
@@ -101,6 +107,10 @@ class DummyEndpoint : public grpc_endpoint {
 
   static void add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                                  grpc_pollset_set *pollset) {}
+
+  static void delete_from_pollset_set(grpc_exec_ctx *exec_ctx,
+                                      grpc_endpoint *ep,
+                                      grpc_pollset_set *pollset) {}
 
   static void shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                        grpc_error *why) {
