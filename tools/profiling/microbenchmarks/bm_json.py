@@ -76,7 +76,7 @@ _BM_SPECS = {
     'dyn': ['end_of_stream', 'request_size'],
   },
   'BM_HpackParserParseHeader': {
-    'tpl': ['fixture'],
+    'tpl': ['fixture', 'on_header'],
     'dyn': [],
   },
   'BM_CallCreateDestroy': {

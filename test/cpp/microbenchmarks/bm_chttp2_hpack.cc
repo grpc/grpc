@@ -443,7 +443,7 @@ static void UnrefHeader(grpc_exec_ctx *exec_ctx, void *user_data,
 }
 
 template <class Fixture,
-          void (*OnHeader)(grpc_exec_ctx *, void *, grpc_mdelem) = UnrefHeader>
+          void (*OnHeader)(grpc_exec_ctx *, void *, grpc_mdelem)>
 static void BM_HpackParserParseHeader(benchmark::State &state) {
   TrackCounters track_counters;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -836,32 +836,32 @@ class SameDeadline {
   }
 };
 
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, EmptyBatch);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, IndexedSingleStaticElem);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, AddIndexedSingleStaticElem);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, KeyIndexedSingleStaticElem);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, IndexedSingleInternedElem);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, AddIndexedSingleInternedElem);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, KeyIndexedSingleInternedElem);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedElem);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<1, false>);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<3, false>);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<10, false>);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<31, false>);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<100, false>);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<1, true>);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<3, true>);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<10, true>);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<31, true>);
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<100, true>);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, EmptyBatch, UnrefHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, IndexedSingleStaticElem, UnrefHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, AddIndexedSingleStaticElem, UnrefHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, KeyIndexedSingleStaticElem, UnrefHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, IndexedSingleInternedElem, UnrefHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, AddIndexedSingleInternedElem, UnrefHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, KeyIndexedSingleInternedElem, UnrefHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedElem, UnrefHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<1, false>, UnrefHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<3, false>, UnrefHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<10, false>, UnrefHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<31, false>, UnrefHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<100, false>, UnrefHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<1, true>, UnrefHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<3, true>, UnrefHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<10, true>, UnrefHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<31, true>, UnrefHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, NonIndexedBinaryElem<100, true>, UnrefHeader);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
-                   RepresentativeClientInitialMetadata);
+                   RepresentativeClientInitialMetadata, UnrefHeader );
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
-                   MoreRepresentativeClientInitialMetadata);
+                   MoreRepresentativeClientInitialMetadata, UnrefHeader );
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
-                   RepresentativeServerInitialMetadata);
+                   RepresentativeServerInitialMetadata, UnrefHeader );
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
-                   RepresentativeServerTrailingMetadata);
+                   RepresentativeServerTrailingMetadata, UnrefHeader  );
 
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, SameDeadline, OnHeaderOld);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, SameDeadline, OnHeaderNew);
