@@ -4952,8 +4952,12 @@ configs:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
   counters:
-    CPPFLAGS: -O2 -DGPR_LOW_LEVEL_COUNTERS
+    AR: gcc-ar
+    AROTPS: rcs
+    CPPFLAGS: -O3 -flto -DGPR_LOW_LEVEL_COUNTERS
     DEFINES: NDEBUG
+    LDFLAGS: -O3 -flto
+    RANLIB: gcc-ranlib
   dbg:
     CPPFLAGS: -O0
     CXXFLAGS: -fno-exceptions
@@ -4972,8 +4976,12 @@ configs:
     LDFLAGS: -rdynamic
     valgrind: --tool=helgrind
   lto:
-    CPPFLAGS: -O2
+    AR: gcc-ar
+    AROPTS: rcs
+    CPPFLAGS: -O3 -flto
     DEFINES: NDEBUG
+    LDFLAGS: -O3 -flto
+    RANLIB: gcc-ranlib
   memcheck:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
@@ -4992,9 +5000,11 @@ configs:
     LDXX: clang++
     compile_the_world: true
   mutrace:
-    CPPFLAGS: -O3 -fno-omit-frame-pointer
+    AR: gcc-ar
+    AROPTS: rcs
+    CPPFLAGS: -O3 -fno-omit-frame-pointer -flto
     DEFINES: NDEBUG
-    LDFLAGS: -rdynamic
+    LDFLAGS: -rdynamic -O3 -flto
   opt:
     CPPFLAGS: -O2
     CXXFLAGS: -fno-exceptions

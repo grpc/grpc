@@ -158,15 +158,15 @@ def diff(bms, loops, regex, track, old, new, counters):
   for bm in bms:
     for loop in range(0, loops):
       for line in subprocess.check_output(
-        ['bm_diff_%s/opt/%s' % (old, bm),
-         '--benchmark_list_tests', 
+        ['bm_diff_%s/lto/%s' % (old, bm),
+         '--benchmark_list_tests',
          '--benchmark_filter=%s' % regex]).splitlines():
         stripped_line = line.strip().replace("/", "_").replace(
           "<", "_").replace(">", "_").replace(", ", "_")
-        js_new_opt = _read_json('%s.%s.opt.%s.%d.json' %
+        js_new_lto = _read_json('%s.%s.lto.%s.%d.json' %
                     (bm, stripped_line, new, loop),
                     badjson_files, nonexistant_files)
-        js_old_opt = _read_json('%s.%s.opt.%s.%d.json' %
+        js_old_lto = _read_json('%s.%s.lto.%s.%d.json' %
                     (bm, stripped_line, old, loop),
                     badjson_files, nonexistant_files)
         if counters:
@@ -180,12 +180,12 @@ def diff(bms, loops, regex, track, old, new, counters):
           js_new_ctr = None
           js_old_ctr = None
 
-        for row in bm_json.expand_json(js_new_ctr, js_new_opt):
+        for row in bm_json.expand_json(js_new_ctr, js_new_lto):
           name = row['cpp_name']
           if name.endswith('_mean') or name.endswith('_stddev'):
             continue
           benchmarks[name].add_sample(track, row, True)
-        for row in bm_json.expand_json(js_old_ctr, js_old_opt):
+        for row in bm_json.expand_json(js_old_ctr, js_old_lto):
           name = row['cpp_name']
           if name.endswith('_mean') or name.endswith('_stddev'):
             continue

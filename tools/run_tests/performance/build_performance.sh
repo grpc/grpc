@@ -53,7 +53,14 @@ do
     fi
     ;;
   "csharp")
-    python tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8 --compiler coreclr
+    if [ "$CONFIG" == "lto" ]
+    then
+      CS_CONFIG="opt"
+      make CONFIG=${CS_CONFIG} EMBED_OPENSSL=true EMBED_ZLIB=true qps_worker qps_json_driver -j8
+    else
+      CS_CONFIG=$CONFIG
+    fi
+    python tools/run_tests/run_tests.py -l $language -c $CS_CONFIG --build_only -j 8 --compiler coreclr
     ;;
   *)
     python tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8

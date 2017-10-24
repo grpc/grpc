@@ -49,7 +49,7 @@ grpc_config = ENV['GRPC_CONFIG'] || 'opt'
 
 ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
-ENV['AR'] = RbConfig::CONFIG['AR'] + ' rcs'
+ENV['AR'] = RbConfig::CONFIG['AR'] unless grpc_config == 'lto'
 ENV['CC'] = RbConfig::CONFIG['CC']
 ENV['CXX'] = RbConfig::CONFIG['CXX']
 ENV['LD'] = ENV['CC']

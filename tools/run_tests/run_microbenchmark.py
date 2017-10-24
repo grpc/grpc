@@ -170,14 +170,14 @@ def run_summary(bm_name, cfg, base_json_name):
 
 def collect_summary(bm_name, args):
   heading('Summary: %s [no counters]' % bm_name)
-  text(run_summary(bm_name, 'opt', bm_name))
+  text(run_summary(bm_name, 'lto', bm_name))
   heading('Summary: %s [with counters]' % bm_name)
   text(run_summary(bm_name, 'counters', bm_name))
   if args.bigquery_upload:
     with open('%s.csv' % bm_name, 'w') as f:
       f.write(subprocess.check_output(['tools/profiling/microbenchmarks/bm2bq.py',
                                        '%s.counters.json' % bm_name,
-                                       '%s.opt.json' % bm_name]))
+                                       '%s.lto.json' % bm_name]))
     subprocess.check_call(['bq', 'load', 'microbenchmarks.microbenchmarks', '%s.csv' % bm_name])
 
 collectors = {
