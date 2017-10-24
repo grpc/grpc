@@ -1803,9 +1803,8 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx *exec_ctx,
       break;
     }
     case GRPC_CHANNEL_IDLE:
-      // lb channel inactive (probably shutdown prior to update). Restart lb
-      // call to kick the lb channel into gear.
-      GPR_ASSERT(glb_policy->lb_call == NULL);
+    // lb channel inactive (probably shutdown prior to update). Restart lb
+    // call to kick the lb channel into gear.
     /* fallthrough */
     case GRPC_CHANNEL_READY:
       if (glb_policy->lb_call != NULL) {
