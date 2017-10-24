@@ -36,6 +36,9 @@ namespace grpc_core {
 namespace chttp2 {
 
 static constexpr uint32_t kDefaultWindow = 65535;
+static constexpr uint32_t kMaxWindow = 0x7fffffffu;
+// this is not a typo. It is the max value of the max_frame parameter.
+static constexpr uint32_t kMaxMaxFrame = 64000;
 
 class TransportFlowControl;
 class StreamFlowControl;
@@ -176,6 +179,7 @@ class TransportFlowControl {
                                  target_initial_window_size_);
   }
   int64_t announced_window() const { return announced_window_; }
+  bool experimental_disable_flow_control() const { return experimental_disable_flow_control_; }
 
   const grpc_chttp2_transport* transport() const { return t_; }
 
@@ -217,6 +221,7 @@ class TransportFlowControl {
   }
 
   const grpc_chttp2_transport* const t_;
+  bool experimental_disable_flow_control_ = false;
 
   /** Our bookkeeping for the remote peer's available window */
   int64_t remote_window_ = kDefaultWindow;
@@ -240,7 +245,7 @@ class TransportFlowControl {
   int32_t target_initial_window_size_ = kDefaultWindow;
 
   /** should we probe bdp? */
-  const bool enable_bdp_probe_;
+  bool enable_bdp_probe_;
 
   /* bdp estimation */
   grpc_core::BdpEstimator bdp_estimator_;
