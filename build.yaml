@@ -3787,6 +3787,8 @@ targets:
   excluded_poll_engines:
   - poll
   - poll-cv
+  exclude_configs:
+  - tsan
   platforms:
   - mac
   - linux
