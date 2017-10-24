@@ -794,34 +794,6 @@ static void OnHeaderNew(grpc_exec_ctx *exec_ctx, void *user_data,
   }
 }
 
-// Current implementation.
-static void OnHeaderOld(grpc_exec_ctx *exec_ctx, void *user_data,
-                        grpc_mdelem md) {
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
-    grpc_millis *cached_timeout =
-        static_cast<grpc_millis *>(grpc_mdelem_get_user_data(md, free_timeout));
-    grpc_millis timeout;
-    if (cached_timeout == NULL) {
-      /* not already parsed: parse it now, and store the result away */
-      cached_timeout = (grpc_millis *)gpr_malloc(sizeof(grpc_millis));
-      if (!grpc_http2_decode_timeout(GRPC_MDVALUE(md), cached_timeout)) {
-        char *val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-        gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
-        gpr_free(val);
-        *cached_timeout = GRPC_MILLIS_INF_FUTURE;
-      }
-      timeout = *cached_timeout;
-      grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
-    } else {
-      timeout = *cached_timeout;
-    }
-    benchmark::DoNotOptimize(timeout);
-    GRPC_MDELEM_UNREF(exec_ctx, md);
-  } else {
-    GPR_ASSERT(0);
-  }
-}
-
 // Send the same deadline repeatedly
 class SameDeadline {
  public:
@@ -863,7 +835,6 @@ BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
                    RepresentativeServerTrailingMetadata, UnrefHeader  );
 
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, SameDeadline, OnHeaderOld);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, SameDeadline, OnHeaderNew);
 
 }  // namespace hpack_parser_fixtures
