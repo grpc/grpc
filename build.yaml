@@ -4056,6 +4056,23 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
+- name: end2end_stress_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/lb/v1/load_balancer.proto
+  - test/cpp/end2end/end2end_stress_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  excluded_poll_engines:
+  - poll
+  - poll-cv
 - name: end2end_test
   gtest: true
   cpu_cost: 0.5
