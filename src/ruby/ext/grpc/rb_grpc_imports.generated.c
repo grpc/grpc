@@ -77,6 +77,8 @@ grpc_completion_queue_next_type grpc_completion_queue_next_import;
 grpc_completion_queue_pluck_type grpc_completion_queue_pluck_import;
 grpc_completion_queue_shutdown_type grpc_completion_queue_shutdown_import;
 grpc_completion_queue_destroy_type grpc_completion_queue_destroy_import;
+grpc_completion_queue_thread_local_cache_init_type grpc_completion_queue_thread_local_cache_init_import;
+grpc_completion_queue_thread_local_cache_flush_type grpc_completion_queue_thread_local_cache_flush_import;
 grpc_alarm_create_type grpc_alarm_create_import;
 grpc_alarm_set_type grpc_alarm_set_import;
 grpc_alarm_cancel_type grpc_alarm_cancel_import;
@@ -385,6 +387,8 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_completion_queue_pluck_import = (grpc_completion_queue_pluck_type) GetProcAddress(library, "grpc_completion_queue_pluck");
   grpc_completion_queue_shutdown_import = (grpc_completion_queue_shutdown_type) GetProcAddress(library, "grpc_completion_queue_shutdown");
   grpc_completion_queue_destroy_import = (grpc_completion_queue_destroy_type) GetProcAddress(library, "grpc_completion_queue_destroy");
+  grpc_completion_queue_thread_local_cache_init_import = (grpc_completion_queue_thread_local_cache_init_type) GetProcAddress(library, "grpc_completion_queue_thread_local_cache_init");
+  grpc_completion_queue_thread_local_cache_flush_import = (grpc_completion_queue_thread_local_cache_flush_type) GetProcAddress(library, "grpc_completion_queue_thread_local_cache_flush");
   grpc_alarm_create_import = (grpc_alarm_create_type) GetProcAddress(library, "grpc_alarm_create");
   grpc_alarm_set_import = (grpc_alarm_set_type) GetProcAddress(library, "grpc_alarm_set");
   grpc_alarm_cancel_import = (grpc_alarm_cancel_type) GetProcAddress(library, "grpc_alarm_cancel");
