@@ -71,4 +71,29 @@ CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
   }
 }
 
+CompletionQueue::CompletionQueueTLSCache::CompletionQueueTLSCache(
+    CompletionQueue* cq)
+    : cq_(cq), flushed_(false) {
+  grpc_completion_queue_thread_local_cache_init(cq_->cq_);
+}
+
+CompletionQueue::CompletionQueueTLSCache::~CompletionQueueTLSCache() {
+  GPR_ASSERT(flushed_);
+}
+
+bool CompletionQueue::CompletionQueueTLSCache::Flush(void** tag, bool* ok) {
+  int res = 0;
+  void* res_tag;
+  flushed_ = true;
+  if (grpc_completion_queue_thread_local_cache_flush(cq_->cq_, &res_tag,
+                                                     &res)) {
+    auto cq_tag = static_cast<CompletionQueueTag*>(res_tag);
+    *ok = res == 1;
+    if (cq_tag->FinalizeResult(tag, ok)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 }  // namespace grpc

@@ -158,6 +158,80 @@ static void test_cq_end_op(void) {
   }
 }
 
+static void test_cq_tls_cache_full(void) {
+  grpc_event ev;
+  grpc_completion_queue *cc;
+  grpc_cq_completion completion;
+  grpc_cq_polling_type polling_types[] = {
+      GRPC_CQ_DEFAULT_POLLING, GRPC_CQ_NON_LISTENING, GRPC_CQ_NON_POLLING};
+  grpc_completion_queue_attributes attr;
+  grpc_exec_ctx init_exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_exec_ctx exec_ctx;
+  void *tag = create_test_tag();
+  void *res_tag;
+  int ok;
+
+  LOG_TEST("test_cq_tls_cache_full");
+
+  attr.version = 1;
+  attr.cq_completion_type = GRPC_CQ_NEXT;
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(polling_types); i++) {
+    exec_ctx = init_exec_ctx;  // Reset exec_ctx
+    attr.cq_polling_type = polling_types[i];
+    cc = grpc_completion_queue_create(
+        grpc_completion_queue_factory_lookup(&attr), &attr, NULL);
+
+    grpc_completion_queue_thread_local_cache_init(cc);
+    GPR_ASSERT(grpc_cq_begin_op(cc, tag));
+    grpc_cq_end_op(&exec_ctx, cc, tag, GRPC_ERROR_NONE,
+                   do_nothing_end_completion, NULL, &completion);
+
+    ev = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
+    GPR_ASSERT(ev.type == GRPC_QUEUE_TIMEOUT);
+
+    GPR_ASSERT(
+        grpc_completion_queue_thread_local_cache_flush(cc, &res_tag, &ok) == 1);
+    GPR_ASSERT(res_tag == tag);
+    GPR_ASSERT(ok);
+
+    ev = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
+    GPR_ASSERT(ev.type == GRPC_QUEUE_TIMEOUT);
+
+    shutdown_and_destroy(cc);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+}
+
+static void test_cq_tls_cache_empty(void) {
+  grpc_completion_queue *cc;
+  grpc_cq_polling_type polling_types[] = {
+      GRPC_CQ_DEFAULT_POLLING, GRPC_CQ_NON_LISTENING, GRPC_CQ_NON_POLLING};
+  grpc_completion_queue_attributes attr;
+  grpc_exec_ctx init_exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_exec_ctx exec_ctx;
+  void *res_tag;
+  int ok;
+
+  LOG_TEST("test_cq_tls_cache_empty");
+
+  attr.version = 1;
+  attr.cq_completion_type = GRPC_CQ_NEXT;
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(polling_types); i++) {
+    exec_ctx = init_exec_ctx;  // Reset exec_ctx
+    attr.cq_polling_type = polling_types[i];
+    cc = grpc_completion_queue_create(
+        grpc_completion_queue_factory_lookup(&attr), &attr, NULL);
+
+    GPR_ASSERT(
+        grpc_completion_queue_thread_local_cache_flush(cc, &res_tag, &ok) == 0);
+    grpc_completion_queue_thread_local_cache_init(cc);
+    GPR_ASSERT(
+        grpc_completion_queue_thread_local_cache_flush(cc, &res_tag, &ok) == 0);
+    shutdown_and_destroy(cc);
+    grpc_exec_ctx_finish(&exec_ctx);
+  }
+}
+
 static void test_shutdown_then_next_polling(void) {
   grpc_cq_polling_type polling_types[] = {
       GRPC_CQ_DEFAULT_POLLING, GRPC_CQ_NON_LISTENING, GRPC_CQ_NON_POLLING};
@@ -300,6 +374,8 @@ int main(int argc, char **argv) {
   test_cq_end_op();
   test_pluck();
   test_pluck_after_shutdown();
+  test_cq_tls_cache_full();
+  test_cq_tls_cache_empty();
   grpc_shutdown();
   return 0;
 }

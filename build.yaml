@@ -2540,6 +2540,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: grpc_ssl_credentials_test
+  build: test
+  language: c
+  src:
+  - test/core/security/ssl_credentials_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_verify_jwt
   build: tool
   language: c
@@ -3948,6 +3958,7 @@ targets:
   excluded_poll_engines:
   - poll
   - poll-cv
+  - epollex
 - name: codegen_test_full
   gtest: true
   build: test
@@ -4256,6 +4267,7 @@ targets:
   excluded_poll_engines:
   - poll
   - poll-cv
+  - epollex
 - name: h2_ssl_cert_test
   gtest: true
   build: test
