@@ -119,37 +119,10 @@ while (q.pop(&f)) {
 }
 ```
 
-`offload` is more than `break`; it does `break` but also causes some
-other thread that is currently waiting on a poll to break out of its
-poll. This is done by setting up a per-polling-island work-queue
-(distributor) wakeup FD. The work-queue is the converse of the combiner; it
-tries to spray events onto as many threads as possible to get as much concurrency as possible.
+`offload` offloads to the work to an `executor` which is an internal pool of threads. 
+`offload_combiner_work_to_some_other_thread` makes one of the threads in the
+executor to pick up and continue the work on the combiner.
 
-So `offload` really does:
-
-``` 
-  workqueue.run(continue_from_while_loop);
-  break;
-```
-
-This needs us to add another class variable for a `workqueue`
-(which is really conceptually a distributor).
-
-```
-workqueue::run(f) {
-  q.push(f)
-  eventfd.wakeup()
-}
-
-workqueue::readable() {
-  eventfd.consume();
-  q.pop(&f);
-  f();
-  if (!q.empty()) {
-    eventfd.wakeup(); // spray across as many threads as are waiting on this workqueue
-  }
-}
-```
 
 In principle, `run_finally` could get starved, but this hasn't
 happened in practice. If we were concerned about this, we could put a
