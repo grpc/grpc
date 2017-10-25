@@ -312,11 +312,6 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
               exec_ctx, p->subchannel_list, "pf_update_includes_selected");
         }
         p->subchannel_list = subchannel_list;
-        if (p->selected->connected_subchannel != NULL) {
-          sd->connected_subchannel = GRPC_CONNECTED_SUBCHANNEL_REF(
-              grpc_subchannel_get_connected_subchannel(sd->subchannel),
-              "pf_update_includes_selected");
-        }
         p->selected = sd;
         destroy_unselected_subchannels_locked(exec_ctx, p);
         // If there was a previously pending update (which may or may
