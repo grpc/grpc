@@ -58,6 +58,19 @@ cdef class CallCredentials:
     grpc_shutdown()
 
 
+cdef class ServerCertificateConfig:
+
+  def __cinit__(self):
+    grpc_init()
+    self.c_cert_config = NULL
+    self.references = []
+
+  def __dealloc__(self):
+    if self.c_cert_config != NULL:
+      grpc_ssl_server_certificate_config_destroy(self.c_cert_config)
+    grpc_shutdown()
+
+
 cdef class ServerCredentials:
 
   def __cinit__(self):
@@ -258,7 +271,7 @@ def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
                            bint force_client_auth):
   pem_root_certs = str_to_bytes(pem_root_certs)
   cdef char *c_pem_root_certs = NULL
-  if pem_root_certs is not None: 
+  if pem_root_certs is not None:
     c_pem_root_certs = pem_root_certs
   pem_key_cert_pairs = list(pem_key_cert_pairs)
   for pair in pem_key_cert_pairs:
@@ -285,3 +298,45 @@ def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
       NULL)
   return credentials
 
+def server_certificate_config_ssl(pem_root_certs, pem_key_cert_pairs):
+  pem_root_certs = str_to_bytes(pem_root_certs)
+  cdef char *c_pem_root_certs = NULL
+  if pem_root_certs is not None:
+    c_pem_root_certs = pem_root_certs
+  pem_key_cert_pairs = list(pem_key_cert_pairs)
+  for pair in pem_key_cert_pairs:
+    if not isinstance(pair, SslPemKeyCertPair):
+      raise TypeError("expected pem_key_cert_pairs to be sequence of "
+                      "SslPemKeyCertPair")
+  cdef ServerCertificateConfig cert_config = ServerCertificateConfig()
+  cert_config.references.append(pem_key_cert_pairs)
+  cert_config.references.append(pem_root_certs)
+  cert_config.c_ssl_pem_key_cert_pairs_count = len(pem_key_cert_pairs)
+  with nogil:
+    cert_config.c_ssl_pem_key_cert_pairs = (
+        <grpc_ssl_pem_key_cert_pair *>gpr_malloc(
+            sizeof(grpc_ssl_pem_key_cert_pair) *
+                cert_config.c_ssl_pem_key_cert_pairs_count
+        ))
+  for i in range(cert_config.c_ssl_pem_key_cert_pairs_count):
+    cert_config.c_ssl_pem_key_cert_pairs[i] = (
+        (<SslPemKeyCertPair>pem_key_cert_pairs[i]).c_pair)
+  cert_config.c_cert_config = grpc_ssl_server_certificate_config_create(
+      c_pem_root_certs, cert_config.c_ssl_pem_key_cert_pairs,
+      cert_config.c_ssl_pem_key_cert_pairs_count)
+  return cert_config
+
+def server_credentials_ssl_with_cert_config_fetcher(cert_config_fetcher_cb,
+                           bint force_client_auth):
+  if not callable(cert_config_fetcher_cb):
+    raise ValueError('cert_config_fetcher_cb must be callable')
+  cdef ServerCredentials credentials = ServerCredentials()
+  credentials.references.append(cert_config_fetcher_cb)
+  cdef grpc_ssl_server_credentials_options* options = NULL
+  options = grpc_ssl_server_credentials_create_options_using_config_fetcher(
+    GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY if force_client_auth else GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
+    _get_server_cert_config_cb_wrapper,
+    <void*>cert_config_fetcher_cb)
+  # grpc_ssl_server_credentials_create_with_options takes ownership of options
+  credentials.c_credentials = grpc_ssl_server_credentials_create_with_options(options)
+  return credentials
