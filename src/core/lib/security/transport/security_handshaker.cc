@@ -47,6 +47,9 @@ typedef struct {
   gpr_refcount refs;
 
   bool shutdown;
+
+  // Indicates the error to fail with after writing to the endpoint. Used to
+  // send alert messages to the peer on handshake failure.
   grpc_error *fail_after_write;
 
   // Endpoint and read buffer to destroy after a shutdown.
