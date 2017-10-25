@@ -463,7 +463,7 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_lb_subchannel_list_unref_for_connectivity_watch(
         exec_ctx, sd->subchannel_list, "rr_connectivity_shutdown");
     if (new_policy_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
-      shutdown_locked(exec_ctx, &p->base, GRPC_ERROR_REF(error));
+      shutdown_locked(exec_ctx, p, GRPC_ERROR_REF(error));
     }
   } else {  // sd not in SHUTDOWN
     if (sd->curr_connectivity_state == GRPC_CHANNEL_READY) {
@@ -572,21 +572,22 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
   const grpc_arg *arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   if (arg == NULL || arg->type != GRPC_ARG_POINTER) {
+    gpr_log(GPR_ERROR, "[RR %p] update provided no addresses; ignoring", p);
+    // If we don't have a current subchannel list, go into TRANSIENT_FAILURE.
+    // Otherwise, keep using the current subchannel list (ignore this update).
     if (p->subchannel_list == NULL) {
-      // If we don't have a current subchannel list, go into TRANSIENT FAILURE.
       grpc_connectivity_state_set(
           exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args"),
           "rr_update_missing");
-    } else {
-      // otherwise, keep using the current subchannel list (ignore this update).
-      gpr_log(GPR_ERROR,
-              "[RR %p] No valid LB addresses channel arg for update, ignoring.",
-              (void *)p);
     }
     return;
   }
   grpc_lb_addresses *addresses = (grpc_lb_addresses *)arg->value.pointer.p;
+  if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
+    gpr_log(GPR_DEBUG, "[RR %p] received update with %" PRIdPTR " addresses",
+            p, addresses->num_addresses);
+  }
   grpc_lb_subchannel_list *subchannel_list = grpc_lb_subchannel_list_create(
       exec_ctx, &p->base, &grpc_lb_round_robin_trace, addresses, args,
       rr_connectivity_changed_locked);
