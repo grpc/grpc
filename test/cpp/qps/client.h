@@ -433,9 +433,6 @@ class ClientImpl : public Client {
             !config.security_params().use_test_ca(),
             std::shared_ptr<CallCredentials>(), args);
         gpr_log(GPR_INFO, "Connecting to %s", target.c_str());
-        GPR_ASSERT(channel_->WaitForConnected(
-            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                         gpr_time_from_seconds(300, GPR_TIMESPAN))));
         is_inproc_ = false;
       } else {
         grpc::string tgt = target;

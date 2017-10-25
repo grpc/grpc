@@ -31,9 +31,10 @@ require 'src/proto/grpc/testing/services_services_pb'
 require 'src/proto/grpc/testing/proxy-service_services_pb'
 
 class ProxyBenchmarkClientServiceImpl < Grpc::Testing::ProxyClientService::Service
-  def initialize(port, c_ext)
+  def initialize(port, c_ext, php_client_bin)
     @mytarget = "localhost:" + port.to_s
     @use_c_ext = c_ext
+    @php_client_bin = php_client_bin
   end
   def setup(config)
     @config = config
@@ -49,11 +50,11 @@ class ProxyBenchmarkClientServiceImpl < Grpc::Testing::ProxyClientService::Servi
           command = "php -d extension=" + File.expand_path(File.dirname(__FILE__)) +
             "/../../php/tests/qps/vendor/google/protobuf/php/ext/google/protobuf/modules/protobuf.so " +
             "-d extension=" + File.expand_path(File.dirname(__FILE__)) + "/../../php/ext/grpc/modules/grpc.so " +
-            File.expand_path(File.dirname(__FILE__)) + "/../../php/tests/qps/client.php " + @mytarget + " #{chan%@config.server_targets.length}"
+            File.expand_path(File.dirname(__FILE__)) + "/" + @php_client_bin + " " + @mytarget + " #{chan%@config.server_targets.length}"
         else
           puts "Use protobuf php extension"
           command = "php -d extension=" + File.expand_path(File.dirname(__FILE__)) + "/../../php/ext/grpc/modules/grpc.so " +
-            File.expand_path(File.dirname(__FILE__)) + "/../../php/tests/qps/client.php " + @mytarget + " #{chan%@config.server_targets.length}"
+            File.expand_path(File.dirname(__FILE__)) + "/" + @php_client_bin + " " + @mytarget + " #{chan%@config.server_targets.length}"
         end
         puts "[ruby proxy] Starting #{chan}th php-client command use c protobuf #{@use_c_ext}: " + command
         @php_pid[chan] = spawn(command)
@@ -145,7 +146,8 @@ end
 
 def proxymain
   options = {
-    'driver_port' => 0
+    'driver_port' => 0,
+    'php_client_bin' => '../../php/tests/qps/client.php'
   }
   OptionParser.new do |opts|
     opts.banner = 'Usage: [--driver_port <port>]'
@@ -154,6 +156,10 @@ def proxymain
     end
     opts.on("-c", "--[no-]use_protobuf_c_extension", "Use protobuf C-extention") do |c|
       options[:c_ext] = c
+    end
+    opts.on("-b", "--php_client_bin [FILE]",
+      "PHP client to execute; path relative to this script") do |c|
+      options['php_client_bin'] = c
     end
   end.parse!
 
@@ -164,7 +170,7 @@ def proxymain
   s = GRPC::RpcServer.new(pool_size: 1024)
   port = s.add_http2_port("0.0.0.0:" + options['driver_port'].to_s,
                           :this_port_is_insecure)
-  bmc = ProxyBenchmarkClientServiceImpl.new(port, options[:c_ext])
+  bmc = ProxyBenchmarkClientServiceImpl.new(port, options[:c_ext], options['php_client_bin'])
   s.handle(bmc)
   s.handle(ProxyWorkerServiceImpl.new(s, bmc))
   s.run

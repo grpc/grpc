@@ -165,7 +165,7 @@ TransportFlowControl::TransportFlowControl(grpc_exec_ctx* exec_ctx,
 
 uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   FlowControlTrace trace("t updt sent", this, nullptr);
-  const uint32_t target_announced_window = target_window();
+  const uint32_t target_announced_window = (const uint32_t)target_window();
   if ((writing_anyway || announced_window_ <= target_announced_window / 2) &&
       announced_window_ != target_announced_window) {
     const uint32_t announce = (uint32_t)GPR_CLAMP(
