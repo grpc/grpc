@@ -114,40 +114,30 @@ if we know that it is valid to do so:
 while (q.pop(&f)) {
   f();
   if (control_can_be_returned && some_still_queued_thing_is_covered_by_poller) {
-    offload_combiner_work_to_some_other_thread();
+    queue_offload(); // Queue offload work to some other thread
   }
 }
 ```
 
-`offload` is more than `break`; it does `break` but also causes some
-other thread that is currently waiting on a poll to break out of its
-poll. This is done by setting up a per-polling-island work-queue
-(distributor) wakeup FD. The work-queue is the converse of the combiner; it
-tries to spray events onto as many threads as possible to get as much concurrency as possible.
+`queue_offload` detaches the combiner from the current thread's executor and
+ offloads to the work to `executor` which is an internal pool of threads.
 
-So `offload` really does:
-
-``` 
-  workqueue.run(continue_from_while_loop);
-  break;
-```
-
-This needs us to add another class variable for a `workqueue`
-(which is really conceptually a distributor).
+More precisely:
 
 ```
-workqueue::run(f) {
-  q.push(f)
-  eventfd.wakeup()
+queue_offload() {
+   detach() // Detach the combiner from current thread's exec_ctx
+
+   // combiner->offload is a closure that points to the function
+   // 'offload()' (see below) and is previously initialized to run on 'executor'
+   closure_sched(&combiner->offload);
 }
 
-workqueue::readable() {
-  eventfd.consume();
-  q.pop(&f);
-  f();
-  if (!q.empty()) {
-    eventfd.wakeup(); // spray across as many threads as are waiting on this workqueue
-  }
+// Note that this function runs in the executor thread
+offload() {
+  // Attach the combiner to the current thread's (i.e executor thread's) exec_ctx
+  // This ensures that the thread's exec_ctx flush resumes the work on the combiner
+  attach();
 }
 ```
 
