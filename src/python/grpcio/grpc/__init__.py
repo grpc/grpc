@@ -1220,7 +1220,8 @@ def composite_channel_credentials(channel_credentials, *call_credentials):
 
 def ssl_server_credentials(private_key_certificate_chain_pairs,
                            root_certificates=None,
-                           require_client_auth=False):
+                           require_client_auth=False,
+                           get_server_credentials_cb=None):
     """Creates a ServerCredentials for use with an SSL-enabled Server.
 
   Args:
@@ -1232,6 +1233,20 @@ def ssl_server_credentials(private_key_certificate_chain_pairs,
     require_client_auth: A boolean indicating whether or not to require
       clients to be authenticated. May only be True if root_certificates
       is not None.
+    get_server_credentials_cb: A callable that takes no argument and
+      should return None or a ServerCredentials. If specified, this
+      callback will be called on _every_ new client connection but
+      before the TLS handshake starts. Return None and the server
+      continues to use its currently configured credentials; return a
+      ServerCredentials object (as returned by this very function),
+      and the server will replace its currently configured credentials
+      with the returned credentials, to be used for handshaking with
+      the aforementioned client and future clients (of course, until
+      replaced again). NOTE: the callback should not specify a
+      get_server_credentials_cb in the ServerCredentials it returns:
+      it would be ignored anyway---i.e., this callback machinery
+      allows the user to update the server's credentials, but not
+      update the callback itself.
 
   Returns:
     A ServerCredentials for use with an SSL-enabled Server. Typically, this
@@ -1249,7 +1264,7 @@ def ssl_server_credentials(private_key_certificate_chain_pairs,
             _cygrpc.server_credentials_ssl(root_certificates, [
                 _cygrpc.SslPemKeyCertPair(key, pem)
                 for key, pem in private_key_certificate_chain_pairs
-            ], require_client_auth))
+            ], require_client_auth, get_server_credentials_cb))
 
 
 def channel_ready_future(channel):
