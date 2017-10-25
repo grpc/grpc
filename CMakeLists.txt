@@ -7295,7 +7295,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_ssl_credentials_test
-  test/core/security/ssl_credentials_test.c
+  test/core/security/ssl_credentials_test.cc
 )
 
 

@@ -1231,7 +1231,7 @@
     "language": "c", 
     "name": "grpc_ssl_credentials_test", 
     "src": [
-      "test/core/security/ssl_credentials_test.c"
+      "test/core/security/ssl_credentials_test.cc"
     ], 
     "third_party": false, 
     "type": "target"

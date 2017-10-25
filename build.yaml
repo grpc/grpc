@@ -2544,7 +2544,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/security/ssl_credentials_test.c
+  - test/core/security/ssl_credentials_test.cc
   deps:
   - grpc_test_util
   - grpc

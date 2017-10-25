@@ -11124,7 +11124,7 @@ endif
 
 
 GRPC_SSL_CREDENTIALS_TEST_SRC = \
-    test/core/security/ssl_credentials_test.c \
+    test/core/security/ssl_credentials_test.cc \
 
 GRPC_SSL_CREDENTIALS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_SSL_CREDENTIALS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
