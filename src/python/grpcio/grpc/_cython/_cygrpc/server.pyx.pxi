@@ -17,6 +17,36 @@ cimport cpython
 import time
 
 
+cdef grpc_ssl_certificate_config_reload_status _get_server_cert_config_cb_wrapper(
+        void* user_data, grpc_ssl_server_certificate_config **config) with gil:
+  """
+  Args:
+    user_data (callable): Callback that takes no arguments and should return
+      a grpc.ServerCertificateConfig to replace the server's current cert,
+      or None for no change.
+
+  We are not catching any exception here, because cython will happily catch
+  and ignore it, and will log for us, and also the core lib will continue
+  as if the cert has not changed, which is a reasonable behavior.
+  """
+  # this should be a grpc._cython._cygrpc.credentials.ServerCertificateConfig
+  cdef ServerCertificateConfig server_cert_config = None
+  if not user_data:
+    raise ValueError('internal error: user_data must be specified')
+  user_cb = <object>user_data
+  server_cert_config_wrapper = user_cb()
+  if server_cert_config_wrapper is None:
+    return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED
+  server_cert_config = server_cert_config_wrapper._cert_config
+  if server_cert_config.c_cert_config == NULL:
+    # this could happen if the user is reusing the same cert config object
+    # whose c_cert_config we have previously cleared out
+    raise ValueError('Did you reuse the cert config? That is not supported.')
+  config[0] = <grpc_ssl_server_certificate_config*>server_cert_config.c_cert_config
+  # our caller will assume ownership of memory so we forget about it here
+  server_cert_config.c_cert_config = NULL
+  return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW
+
 cdef class Server:
 
   def __cinit__(self, ChannelArgs arguments):

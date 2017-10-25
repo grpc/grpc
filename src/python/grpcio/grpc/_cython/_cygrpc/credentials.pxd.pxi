@@ -28,6 +28,14 @@ cdef class CallCredentials:
   cdef list references
 
 
+cdef class ServerCertificateConfig:
+
+  cdef grpc_ssl_server_certificate_config *c_cert_config
+  cdef grpc_ssl_pem_key_cert_pair *c_ssl_pem_key_cert_pairs
+  cdef size_t c_ssl_pem_key_cert_pairs_count
+  cdef list references
+
+
 cdef class ServerCredentials:
 
   cdef grpc_server_credentials *c_credentials

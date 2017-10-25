@@ -424,6 +424,23 @@ class ServerCredentials(object):
         self._credentials = credentials
 
 
+class ServerCertificateConfig(object):
+    """A certificate config for use with an SSL-enabled Server, e.g., can
+    be returned in the certificate config fetching callback.
+
+    This class has no supported interface -- it exists to define the
+    type of its instances and its instances exist to be passed to
+    other functions.
+
+    NOTE: do not re-use instances of this class, i.e, always create a
+    new instance when passing/returning to the library.
+
+    """
+
+    def __init__(self, cert_config):
+        self._cert_config = cert_config
+
+
 ########################  Multi-Callable Interfaces  ###########################
 
 
@@ -1252,6 +1269,65 @@ def ssl_server_credentials(private_key_certificate_chain_pairs,
             ], require_client_auth))
 
 
+def ssl_server_credentials_with_cert_config_fetcher(cert_config_fetcher_cb,
+                                                    require_client_auth=False):
+    """Creates a ServerCredentials for use with an SSL-enabled Server.
+
+    Args:
+      cert_config_fetcher_cb (callable): a callback that takes no
+        arguments and should return a ServerCertificateConfig to
+        replace the server's current cert, or None for no change
+        (i.e., the server will continue its current certificate
+        config). The library will call this callback once during
+        server instantiation to obtain the initial certificate
+        config---a valid ServerCertificateConfig must be returned in
+        this case. Then, the library will call this callback on
+        *every* new client connection before starting the TLS
+        handshake with the client, thus allowing the user application
+        to optionally return a new ServerCertificateConfig that the
+        server will then use for the handshake.
+      require_client_auth: A boolean indicating whether or not to
+        require clients to be authenticated. May only be True if
+        root_certificates is not None.
+
+    Returns:
+      A ServerCredentials for use with an SSL-enabled
+      Server. Typically, this object is an argument to
+      add_secure_port() method during server setup.
+    """
+
+    if not callable(cert_config_fetcher_cb):
+        raise ValueError('cert_config_fetcher_cb must be callable')
+    return ServerCredentials(
+        _cygrpc.server_credentials_ssl_with_cert_config_fetcher(
+            cert_config_fetcher_cb, require_client_auth))
+
+
+def ssl_server_certificate_config(private_key_certificate_chain_pairs,
+                                  root_certificates=None):
+    """Creates a ServerCertificateConfig for use with an SSL-enabled Server.
+
+    Args:
+      private_key_certificate_chain_pairs: A list of pairs of the form
+        [PEM-encoded private key, PEM-encoded certificate chain].
+      root_certificates: An optional byte string of PEM-encoded client root
+        certificates that the server will use to verify client authentication.
+
+    Returns:
+      A ServerCertificateConfig that can be returned in the certificate config
+      fetching callback.
+    """
+    if len(private_key_certificate_chain_pairs) == 0:
+        raise ValueError(
+            'At least one private key-certificate chain pair is required!')
+    else:
+        return ServerCertificateConfig(
+            _cygrpc.server_certificate_config_ssl(root_certificates, [
+                _cygrpc.SslPemKeyCertPair(key, pem)
+                for key, pem in private_key_certificate_chain_pairs
+            ]))
+
+
 def channel_ready_future(channel):
     """Creates a Future that tracks when a Channel is ready.
 
@@ -1334,7 +1410,7 @@ __all__ = ('FutureTimeoutError', 'FutureCancelledError', 'Future',
            'ChannelConnectivity', 'StatusCode', 'RpcError', 'RpcContext',
            'Call', 'ChannelCredentials', 'CallCredentials',
            'AuthMetadataContext', 'AuthMetadataPluginCallback',
-           'AuthMetadataPlugin', 'ServerCredentials', 'UnaryUnaryMultiCallable',
+           'AuthMetadataPlugin', 'ServerCertificateConfig', 'ServerCredentials', 'UnaryUnaryMultiCallable',
            'UnaryStreamMultiCallable', 'StreamUnaryMultiCallable',
            'StreamStreamMultiCallable', 'Channel', 'ServicerContext',
            'RpcMethodHandler', 'HandlerCallDetails', 'GenericRpcHandler',
