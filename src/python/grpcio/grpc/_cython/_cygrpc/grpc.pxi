@@ -415,6 +415,10 @@ cdef extern from "grpc/grpc_security.h":
     void *user_data,
     grpc_ssl_server_certificate_config **config)
 
+  grpc_ssl_server_credentials_options *grpc_ssl_server_credentials_create_options_using_config(
+    grpc_ssl_client_certificate_request_type client_certificate_request,
+    grpc_ssl_server_certificate_config *certificate_config)
+
   grpc_ssl_server_credentials_options* grpc_ssl_server_credentials_create_options_using_config_fetcher(
     grpc_ssl_client_certificate_request_type client_certificate_request,
     grpc_ssl_server_certificate_config_callback cb,
