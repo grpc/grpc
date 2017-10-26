@@ -121,24 +121,16 @@ static bool parse_timeout(grpc_json *field, grpc_millis *timeout) {
       gpr_free(buf);
       return false;
     }
-    // There should always be exactly 3, 6, or 9 fractional digits.
-    int multiplier = 1;
-    switch (strlen(decimal_point + 1)) {
-      case 9:
-        break;
-      case 6:
-        multiplier *= 1000;
-        break;
-      case 3:
-        multiplier *= 1000000;
-        break;
-      default:  // Unsupported number of digits.
-        gpr_free(buf);
-        return false;
+    int num_digits = (int)strlen(decimal_point + 1);
+    if (num_digits > 9) {  // We don't accept greater precision than nanos.
+      gpr_free(buf);
+      return false;
     }
-    nanos *= multiplier;
+    for (int i = 0; i < (9 - num_digits); ++i) {
+      nanos *= 10;
+    }
   }
-  int seconds = gpr_parse_nonnegative_int(buf);
+  int seconds = decimal_point == buf ? 0 : gpr_parse_nonnegative_int(buf);
   gpr_free(buf);
   if (seconds == -1) return false;
   *timeout = seconds * GPR_MS_PER_SEC + nanos / GPR_NS_PER_MS;
