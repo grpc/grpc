@@ -267,6 +267,11 @@ def call_credentials_metadata_plugin(CredentialsMetadataPlugin plugin):
   credentials.references.append(plugin)
   return credentials
 
+# TODO(cauthu): the credentials stuff needs more testing. the
+# SecureServerSecureClient test is rather inadequate
+
+# TODO(cauthu): duplicated code here and
+# server_certificate_config_ssl(): need fix
 def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
                            bint force_client_auth):
   pem_root_certs = str_to_bytes(pem_root_certs)
@@ -291,11 +296,17 @@ def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
   for i in range(credentials.c_ssl_pem_key_cert_pairs_count):
     credentials.c_ssl_pem_key_cert_pairs[i] = (
         (<SslPemKeyCertPair>pem_key_cert_pairs[i]).c_pair)
-  credentials.c_credentials = grpc_ssl_server_credentials_create(
+  cdef grpc_ssl_server_certificate_config *c_cert_config = NULL
+  c_cert_config = grpc_ssl_server_certificate_config_create(
       c_pem_root_certs, credentials.c_ssl_pem_key_cert_pairs,
-      credentials.c_ssl_pem_key_cert_pairs_count,
-      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY if force_client_auth else GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
-      NULL)
+      credentials.c_ssl_pem_key_cert_pairs_count)
+  cdef grpc_ssl_server_credentials_options* c_options = NULL
+  # C-core assumes ownership of c_cert_config
+  c_options = grpc_ssl_server_credentials_create_options_using_config(
+    GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY if force_client_auth else GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
+    c_cert_config)
+  # C-core assumes ownership of c_options
+  credentials.c_credentials = grpc_ssl_server_credentials_create_with_options(c_options)
   return credentials
 
 def server_certificate_config_ssl(pem_root_certs, pem_key_cert_pairs):
@@ -332,11 +343,11 @@ def server_credentials_ssl_with_cert_config_fetcher(cert_config_fetcher_cb,
     raise ValueError('cert_config_fetcher_cb must be callable')
   cdef ServerCredentials credentials = ServerCredentials()
   credentials.references.append(cert_config_fetcher_cb)
-  cdef grpc_ssl_server_credentials_options* options = NULL
-  options = grpc_ssl_server_credentials_create_options_using_config_fetcher(
+  cdef grpc_ssl_server_credentials_options* c_options = NULL
+  c_options = grpc_ssl_server_credentials_create_options_using_config_fetcher(
     GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY if force_client_auth else GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
     _get_server_cert_config_cb_wrapper,
     <void*>cert_config_fetcher_cb)
-  # grpc_ssl_server_credentials_create_with_options takes ownership of options
-  credentials.c_credentials = grpc_ssl_server_credentials_create_with_options(options)
+  # C-core assumes ownership of c_options
+  credentials.c_credentials = grpc_ssl_server_credentials_create_with_options(c_options)
   return credentials
