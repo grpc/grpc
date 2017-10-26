@@ -182,9 +182,9 @@ static void shutdown_locked(grpc_exec_ctx *exec_ctx, round_robin_lb_policy *p,
     GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete, GRPC_ERROR_REF(error));
     gpr_free(pp);
   }
-  grpc_connectivity_state_set(
-      exec_ctx, &p->state_tracker, GRPC_CHANNEL_SHUTDOWN,
-      GRPC_ERROR_REF(error), "rr_shutdown");
+  grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
+                              GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
+                              "rr_shutdown");
   if (p->subchannel_list != NULL) {
     grpc_lb_subchannel_list_shutdown_and_unref(exec_ctx, p->subchannel_list,
                                                "sl_shutdown_rr_shutdown");
@@ -585,8 +585,8 @@ static void rr_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
   }
   grpc_lb_addresses *addresses = (grpc_lb_addresses *)arg->value.pointer.p;
   if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
-    gpr_log(GPR_DEBUG, "[RR %p] received update with %" PRIdPTR " addresses",
-            p, addresses->num_addresses);
+    gpr_log(GPR_DEBUG, "[RR %p] received update with %" PRIdPTR " addresses", p,
+            addresses->num_addresses);
   }
   grpc_lb_subchannel_list *subchannel_list = grpc_lb_subchannel_list_create(
       exec_ctx, &p->base, &grpc_lb_round_robin_trace, addresses, args,
