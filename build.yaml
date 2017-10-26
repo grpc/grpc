@@ -2791,6 +2791,21 @@ targets:
   platforms:
   - linux
   secure: true
+- name: handshake_verify_peer_options
+  build: test
+  language: c
+  src:
+  - test/core/handshake/verify_peer_options.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  platforms:
+  - linux
+  secure: true
 - name: histogram_test
   build: test
   language: c
