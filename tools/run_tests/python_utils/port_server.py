@@ -31,7 +31,9 @@ import platform
 # increment this number whenever making a change to ensure that
 # the changes are picked up by running CI servers
 # note that all changes must be backwards compatible
-_MY_VERSION = 20
+
+# TODO: increase to 21 before merging
+_MY_VERSION = 19
 
 
 if len(sys.argv) == 2 and sys.argv[1] == 'dump_version':
@@ -181,5 +183,9 @@ class Handler(BaseHTTPRequestHandler):
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
   """Handle requests in a separate thread"""
+  def server_activate(self):
+    # The default server_activate for HTTPServer sets the listen backlog
+    # to 5. Make sure that this is large enough for tests.
+    self.socket.listen(100)
 
 ThreadedHTTPServer(('', args.port), Handler).serve_forever()
