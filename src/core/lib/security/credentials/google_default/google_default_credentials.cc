@@ -231,7 +231,8 @@ end:
       creds->base.vtable = &google_default_credentials_vtable;
       creds->base.type = GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT;
       gpr_ref_init(&creds->base.refcount, 1);
-      creds->ssl_creds = grpc_ssl_credentials_create(nullptr, nullptr, nullptr);
+      creds->ssl_creds =
+          grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
       GPR_ASSERT(creds->ssl_creds != nullptr);
       grpc_alts_credentials_options* options =
           grpc_alts_credentials_client_options_create();
