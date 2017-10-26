@@ -778,6 +778,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
+  - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/frame_data.h
   - src/core/ext/transport/chttp2/transport/frame_goaway.h
@@ -2539,6 +2540,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: grpc_ssl_credentials_test
+  build: test
+  language: c
+  src:
+  - test/core/security/ssl_credentials_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_verify_jwt
   build: tool
   language: c
@@ -3406,18 +3417,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  uses_polling: false
-- name: transport_pid_controller_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/pid_controller_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: transport_security_test
   build: test
   language: c
@@ -3959,6 +3958,7 @@ targets:
   excluded_poll_engines:
   - poll
   - poll-cv
+  - epollex
 - name: codegen_test_full
   gtest: true
   build: test
@@ -4267,6 +4267,7 @@ targets:
   excluded_poll_engines:
   - poll
   - poll-cv
+  - epollex
 - name: h2_ssl_cert_test
   gtest: true
   build: test
@@ -4325,6 +4326,25 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: inproc_sync_unary_ping_pong_test
+  build: test
+  language: c++
+  src:
+  - test/cpp/qps/inproc_sync_unary_ping_pong_test.cc
+  deps:
+  - qps
+  - grpc++_core_stats
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: interop_client
   build: test
   run: false
@@ -4819,6 +4839,18 @@ targets:
   - gpr_test_util
   - gpr
   timeout_seconds: 1200
+- name: transport_pid_controller_test
+  build: test
+  language: c++
+  src:
+  - test/core/transport/pid_controller_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc++
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: vector_test
   gtest: true
   build: test

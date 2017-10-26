@@ -315,15 +315,10 @@ static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   gpr_free(p);
 }
 
-static void rr_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
-  round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
-  if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
-    gpr_log(GPR_DEBUG, "[RR %p] Shutting down Round Robin policy at %p",
-            (void *)pol, (void *)pol);
-  }
-  p->shutdown = true;
+static void fail_pending_picks_for_shutdown(grpc_exec_ctx *exec_ctx,
+                                            round_robin_lb_policy *p) {
   pending_pick *pp;
-  while ((pp = p->pending_picks)) {
+  while ((pp = p->pending_picks) != NULL) {
     p->pending_picks = pp->next;
     *pp->target = NULL;
     GRPC_CLOSURE_SCHED(
@@ -331,6 +326,16 @@ static void rr_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Shutdown"));
     gpr_free(pp);
   }
+}
+
+static void rr_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
+  round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
+  if (GRPC_TRACER_ON(grpc_lb_round_robin_trace)) {
+    gpr_log(GPR_DEBUG, "[RR %p] Shutting down Round Robin policy at %p",
+            (void *)pol, (void *)pol);
+  }
+  p->shutdown = true;
+  fail_pending_picks_for_shutdown(exec_ctx, p);
   grpc_connectivity_state_set(
       exec_ctx, &p->state_tracker, GRPC_CHANNEL_SHUTDOWN,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Shutdown"), "rr_shutdown");
@@ -621,14 +626,8 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
       sd->user_data = NULL;
     }
     if (new_policy_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
-      // the policy is shutting down. Flush all the pending picks...
-      pending_pick *pp;
-      while ((pp = p->pending_picks)) {
-        p->pending_picks = pp->next;
-        *pp->target = NULL;
-        GRPC_CLOSURE_SCHED(exec_ctx, pp->on_complete, GRPC_ERROR_NONE);
-        gpr_free(pp);
-      }
+      // The policy is shutting down. Fail all of the pending picks.
+      fail_pending_picks_for_shutdown(exec_ctx, p);
     }
     rr_subchannel_list_unref(exec_ctx, sd->subchannel_list,
                              "sd_shutdown+started_picking");

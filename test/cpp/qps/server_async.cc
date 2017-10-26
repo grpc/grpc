@@ -74,14 +74,17 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
                                  ResponseType *)>
           process_rpc)
       : Server(config) {
-    char *server_address = NULL;
-
-    gpr_join_host_port(&server_address, "::", port());
-
     ServerBuilder builder;
-    builder.AddListeningPort(server_address,
-                             Server::CreateServerCredentials(config));
-    gpr_free(server_address);
+
+    auto port_num = port();
+    // Negative port number means inproc server, so no listen port needed
+    if (port_num >= 0) {
+      char *server_address = NULL;
+      gpr_join_host_port(&server_address, "::", port_num);
+      builder.AddListeningPort(server_address,
+                               Server::CreateServerCredentials(config));
+      gpr_free(server_address);
+    }
 
     register_service(&builder, &async_service_);
 
@@ -183,6 +186,11 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     return count;
   }
 
+  std::shared_ptr<Channel> InProcessChannel(
+      const ChannelArguments &args) override {
+    return server_->InProcessChannel(args);
+  }
+
  private:
   void ShutdownThreadFunc() {
     // TODO (vpai): Remove this deadline and allow Shutdown to finish properly
@@ -194,23 +202,32 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     // Wait until work is available or we are shutting down
     bool ok;
     void *got_tag;
-    while (srv_cqs_[cq_[thread_idx]]->Next(&got_tag, &ok)) {
-      ServerRpcContext *ctx = detag(got_tag);
+    if (!srv_cqs_[cq_[thread_idx]]->Next(&got_tag, &ok)) {
+      return;
+    }
+    ServerRpcContext *ctx;
+    std::mutex *mu_ptr;
+    do {
+      ctx = detag(got_tag);
       // The tag is a pointer to an RPC context to invoke
       // Proceed while holding a lock to make sure that
       // this thread isn't supposed to shut down
-      std::lock_guard<std::mutex> l(shutdown_state_[thread_idx]->mutex);
+      mu_ptr = &shutdown_state_[thread_idx]->mutex;
+      mu_ptr->lock();
       if (shutdown_state_[thread_idx]->shutdown) {
+        mu_ptr->unlock();
         return;
       }
-      std::lock_guard<ServerRpcContext> l2(*ctx);
-      const bool still_going = ctx->RunNextState(ok);
-      // if this RPC context is done, refresh it
-      if (!still_going) {
-        ctx->Reset();
-      }
-    }
-    return;
+    } while (srv_cqs_[cq_[thread_idx]]->DoThenAsyncNext(
+        [&, ctx, ok, mu_ptr]() {
+          ctx->lock();
+          if (!ctx->RunNextState(ok)) {
+            ctx->Reset();
+          }
+          ctx->unlock();
+          mu_ptr->unlock();
+        },
+        &got_tag, &ok, gpr_inf_future(GPR_CLOCK_REALTIME)));
   }
 
   class ServerRpcContext {

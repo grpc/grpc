@@ -1222,6 +1222,23 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "grpc_ssl_credentials_test", 
+    "src": [
+      "test/core/security/ssl_credentials_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc"
     ], 
     "headers": [], 
@@ -2447,23 +2464,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "transport_pid_controller_test", 
-    "src": [
-      "test/core/transport/pid_controller_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "transport_security_test", 
     "src": [
       "test/core/tsi/transport_security_test.c"
@@ -3574,6 +3574,28 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_core_stats", 
+      "grpc++_test_config", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "qps"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "inproc_sync_unary_ping_pong_test", 
+    "src": [
+      "test/cpp/qps/inproc_sync_unary_ping_pong_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
@@ -4238,6 +4260,25 @@
     "name": "thread_stress_test", 
     "src": [
       "test/cpp/end2end/thread_stress_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "transport_pid_controller_test", 
+    "src": [
+      "test/core/transport/pid_controller_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4913,24 +4954,6 @@
     "name": "initial_settings_frame_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/initial_settings_frame.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "bad_client_test", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "large_metadata_bad_client_test", 
-    "src": [
-      "test/core/bad_client/tests/large_metadata.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -9026,6 +9049,7 @@
       "src/core/ext/transport/chttp2/transport/bin_decoder.h", 
       "src/core/ext/transport/chttp2/transport/bin_encoder.h", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.h", 
+      "src/core/ext/transport/chttp2/transport/flow_control.h", 
       "src/core/ext/transport/chttp2/transport/frame.h", 
       "src/core/ext/transport/chttp2/transport/frame_data.h", 
       "src/core/ext/transport/chttp2/transport/frame_goaway.h", 
@@ -9055,6 +9079,7 @@
       "src/core/ext/transport/chttp2/transport/chttp2_transport.cc", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.h", 
       "src/core/ext/transport/chttp2/transport/flow_control.cc", 
+      "src/core/ext/transport/chttp2/transport/flow_control.h", 
       "src/core/ext/transport/chttp2/transport/frame.h", 
       "src/core/ext/transport/chttp2/transport/frame_data.cc", 
       "src/core/ext/transport/chttp2/transport/frame_data.h", 

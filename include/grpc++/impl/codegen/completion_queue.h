@@ -109,6 +109,30 @@ class CompletionQueue : private GrpcLibraryCodegen {
     TIMEOUT     ///< deadline was reached.
   };
 
+  /// EXPERIMENTAL
+  /// First executes \a F, then reads from the queue, blocking up to
+  /// \a deadline (or the queue's shutdown).
+  /// Both \a tag and \a ok are updated upon success (if an event is available
+  /// within the \a deadline).  A \a tag points to an arbitrary location usually
+  /// employed to uniquely identify an event.
+  ///
+  /// \param F[in] Function to execute before calling AsyncNext on this queue.
+  /// \param tag[out] Upon sucess, updated to point to the event's tag.
+  /// \param ok[out] Upon sucess, true if read a regular event, false otherwise.
+  /// \param deadline[in] How long to block in wait for an event.
+  ///
+  /// \return The type of event read.
+  template <typename T, typename F>
+  NextStatus DoThenAsyncNext(F&& f, void** tag, bool* ok, const T& deadline) {
+    CompletionQueueTLSCache cache = CompletionQueueTLSCache(this);
+    f();
+    if (cache.Flush(tag, ok)) {
+      return GOT_EVENT;
+    } else {
+      return AsyncNext(tag, ok, deadline);
+    }
+  }
+
   /// Read from the queue, blocking up to \a deadline (or the queue's shutdown).
   /// Both \a tag and \a ok are updated upon success (if an event is available
   /// within the \a deadline).  A \a tag points to an arbitrary location usually
@@ -212,6 +236,21 @@ class CompletionQueue : private GrpcLibraryCodegen {
                                   ClientContext* context,
                                   const InputMessage& request,
                                   OutputMessage* result);
+
+  /// EXPERIMENTAL
+  /// Creates a Thread Local cache to store the first event
+  /// On this completion queue queued from this thread.  Once
+  /// initialized, it must be flushed on the same thread.
+  class CompletionQueueTLSCache {
+   public:
+    CompletionQueueTLSCache(CompletionQueue* cq);
+    ~CompletionQueueTLSCache();
+    bool Flush(void** tag, bool* ok);
+
+   private:
+    CompletionQueue* cq_;
+    bool flushed_;
+  };
 
   NextStatus AsyncNextInternal(void** tag, bool* ok, gpr_timespec deadline);
 
