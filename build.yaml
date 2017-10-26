@@ -1892,7 +1892,7 @@ targets:
   build: tool
   language: c
   src:
-  - test/build/check_epollexclusive.cc
+  - test/build/check_epollexclusive.c
   deps:
   - grpc
   - gpr

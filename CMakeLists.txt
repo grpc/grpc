@@ -5541,7 +5541,7 @@ target_link_libraries(channel_create_test
 endif (gRPC_BUILD_TESTS)
 
 add_executable(check_epollexclusive
-  test/build/check_epollexclusive.cc
+  test/build/check_epollexclusive.c
 )
 
 
@@ -14765,7 +14765,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(api_fuzzer_one_entry
   test/core/end2end/fuzzers/api_fuzzer.cc
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14796,7 +14796,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(client_fuzzer_one_entry
   test/core/end2end/fuzzers/client_fuzzer.cc
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14827,7 +14827,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(hpack_parser_fuzzer_test_one_entry
   test/core/transport/chttp2/hpack_parser_fuzzer_test.cc
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14858,7 +14858,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(http_request_fuzzer_test_one_entry
   test/core/http/request_fuzzer.cc
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14889,7 +14889,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(http_response_fuzzer_test_one_entry
   test/core/http/response_fuzzer.cc
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14920,7 +14920,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(json_fuzzer_test_one_entry
   test/core/json/fuzzer.cc
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14951,7 +14951,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(nanopb_fuzzer_response_test_one_entry
   test/core/nanopb/fuzzer_response.cc
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -14982,7 +14982,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(nanopb_fuzzer_serverlist_test_one_entry
   test/core/nanopb/fuzzer_serverlist.cc
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -15013,7 +15013,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(percent_decode_fuzzer_one_entry
   test/core/slice/percent_decode_fuzzer.cc
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -15044,7 +15044,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(percent_encode_fuzzer_one_entry
   test/core/slice/percent_encode_fuzzer.cc
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -15075,7 +15075,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(server_fuzzer_one_entry
   test/core/end2end/fuzzers/server_fuzzer.cc
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -15106,7 +15106,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(ssl_server_fuzzer_one_entry
   test/core/security/ssl_server_fuzzer.cc
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 
@@ -15137,7 +15137,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(uri_fuzzer_test_one_entry
   test/core/client_channel/uri_fuzzer_test.cc
-  test/core/util/one_corpus_entry_fuzzer.c
+  test/core/util/one_corpus_entry_fuzzer.cc
 )
 
 

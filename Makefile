@@ -9233,7 +9233,7 @@ endif
 
 
 CHECK_EPOLLEXCLUSIVE_SRC = \
-    test/build/check_epollexclusive.cc \
+    test/build/check_epollexclusive.c \
 
 CHECK_EPOLLEXCLUSIVE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHECK_EPOLLEXCLUSIVE_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -19848,7 +19848,7 @@ endif
 
 API_FUZZER_ONE_ENTRY_SRC = \
     test/core/end2end/fuzzers/api_fuzzer.cc \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 API_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(API_FUZZER_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -19883,7 +19883,7 @@ endif
 
 CLIENT_FUZZER_ONE_ENTRY_SRC = \
     test/core/end2end/fuzzers/client_fuzzer.cc \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 CLIENT_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CLIENT_FUZZER_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -19918,7 +19918,7 @@ endif
 
 HPACK_PARSER_FUZZER_TEST_ONE_ENTRY_SRC = \
     test/core/transport/chttp2/hpack_parser_fuzzer_test.cc \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 HPACK_PARSER_FUZZER_TEST_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HPACK_PARSER_FUZZER_TEST_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -19953,7 +19953,7 @@ endif
 
 HTTP_REQUEST_FUZZER_TEST_ONE_ENTRY_SRC = \
     test/core/http/request_fuzzer.cc \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 HTTP_REQUEST_FUZZER_TEST_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTP_REQUEST_FUZZER_TEST_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -19988,7 +19988,7 @@ endif
 
 HTTP_RESPONSE_FUZZER_TEST_ONE_ENTRY_SRC = \
     test/core/http/response_fuzzer.cc \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 HTTP_RESPONSE_FUZZER_TEST_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTP_RESPONSE_FUZZER_TEST_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -20023,7 +20023,7 @@ endif
 
 JSON_FUZZER_TEST_ONE_ENTRY_SRC = \
     test/core/json/fuzzer.cc \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 JSON_FUZZER_TEST_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(JSON_FUZZER_TEST_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -20058,7 +20058,7 @@ endif
 
 NANOPB_FUZZER_RESPONSE_TEST_ONE_ENTRY_SRC = \
     test/core/nanopb/fuzzer_response.cc \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 NANOPB_FUZZER_RESPONSE_TEST_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(NANOPB_FUZZER_RESPONSE_TEST_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -20093,7 +20093,7 @@ endif
 
 NANOPB_FUZZER_SERVERLIST_TEST_ONE_ENTRY_SRC = \
     test/core/nanopb/fuzzer_serverlist.cc \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 NANOPB_FUZZER_SERVERLIST_TEST_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(NANOPB_FUZZER_SERVERLIST_TEST_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -20128,7 +20128,7 @@ endif
 
 PERCENT_DECODE_FUZZER_ONE_ENTRY_SRC = \
     test/core/slice/percent_decode_fuzzer.cc \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 PERCENT_DECODE_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_DECODE_FUZZER_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -20163,7 +20163,7 @@ endif
 
 PERCENT_ENCODE_FUZZER_ONE_ENTRY_SRC = \
     test/core/slice/percent_encode_fuzzer.cc \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 PERCENT_ENCODE_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_ENCODE_FUZZER_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -20198,7 +20198,7 @@ endif
 
 SERVER_FUZZER_ONE_ENTRY_SRC = \
     test/core/end2end/fuzzers/server_fuzzer.cc \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 SERVER_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_FUZZER_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -20233,7 +20233,7 @@ endif
 
 SSL_SERVER_FUZZER_ONE_ENTRY_SRC = \
     test/core/security/ssl_server_fuzzer.cc \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 SSL_SERVER_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SSL_SERVER_FUZZER_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -20268,7 +20268,7 @@ endif
 
 URI_FUZZER_TEST_ONE_ENTRY_SRC = \
     test/core/client_channel/uri_fuzzer_test.cc \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 URI_FUZZER_TEST_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(URI_FUZZER_TEST_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)

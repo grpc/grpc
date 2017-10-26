@@ -43,8 +43,8 @@ static void test_slice_malloc_returns_something_sensible(void) {
     slice = grpc_slice_malloc(length);
     /* If there is a length, slice.data must be non-NULL. If length is zero
        we don't care. */
-    if (length) {
-      GPR_ASSERT(GRPC_SLICE_START_PTR(slice));
+    if (length > GRPC_SLICE_INLINED_SIZE) {
+      GPR_ASSERT(slice.data.refcounted.bytes);
     }
     /* Returned slice length must be what was requested. */
     GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == length);
