@@ -26,6 +26,8 @@ EXPORTS
     grpc_completion_queue_pluck
     grpc_completion_queue_shutdown
     grpc_completion_queue_destroy
+    grpc_completion_queue_thread_local_cache_init
+    grpc_completion_queue_thread_local_cache_flush
     grpc_alarm_create
     grpc_alarm_set
     grpc_alarm_cancel

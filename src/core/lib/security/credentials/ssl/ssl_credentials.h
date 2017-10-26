@@ -20,6 +20,10 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
   grpc_channel_credentials base;
   grpc_ssl_config config;
@@ -29,5 +33,16 @@ typedef struct {
   grpc_server_credentials base;
   grpc_ssl_server_config config;
 } grpc_ssl_server_credentials;
+
+tsi_ssl_pem_key_cert_pair *grpc_convert_grpc_to_tsi_cert_pairs(
+    const grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
+    size_t num_key_cert_pairs);
+
+void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair *kp,
+                                             size_t num_key_cert_pairs);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_SSL_SSL_CREDENTIALS_H */

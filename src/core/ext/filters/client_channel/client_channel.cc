@@ -1205,6 +1205,9 @@ static void pick_after_resolver_result_cancel_locked(grpc_exec_ctx *exec_ctx,
                              "Pick cancelled", &error, 1));
 }
 
+static void pick_after_resolver_result_start_locked(grpc_exec_ctx *exec_ctx,
+                                                    grpc_call_element *elem);
+
 static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
                                                    void *arg,
                                                    grpc_error *error) {
@@ -1228,7 +1231,7 @@ static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
               chand, calld);
     }
     async_pick_done_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
-  } else {
+  } else if (chand->lb_policy != NULL) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver returned, doing pick",
               chand, calld);
@@ -1241,6 +1244,30 @@ static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
       // instead of pick_done_locked().
       async_pick_done_locked(exec_ctx, elem, GRPC_ERROR_NONE);
     }
+  }
+  // TODO(roth): It should be impossible for chand->lb_policy to be NULL
+  // here, so the rest of this code should never actually be executed.
+  // However, we have reports of a crash on iOS that triggers this case,
+  // so we are temporarily adding this to restore branches that were
+  // removed in https://github.com/grpc/grpc/pull/12297.  Need to figure
+  // out what is actually causing this to occur and then figure out the
+  // right way to deal with it.
+  else if (chand->resolver != NULL) {
+    // No LB policy, so try again.
+    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      gpr_log(GPR_DEBUG,
+              "chand=%p calld=%p: resolver returned but no LB policy, "
+              "trying again",
+              chand, calld);
+    }
+    pick_after_resolver_result_start_locked(exec_ctx, elem);
+  } else {
+    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver disconnected", chand,
+              calld);
+    }
+    async_pick_done_locked(
+        exec_ctx, elem, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected"));
   }
 }
 
