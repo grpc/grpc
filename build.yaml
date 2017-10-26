@@ -4250,6 +4250,7 @@ targets:
   excluded_poll_engines:
   - poll
   - poll-cv
+  - epollex
 - name: grpclb_test
   gtest: false
   build: test
