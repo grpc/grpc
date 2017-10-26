@@ -1378,7 +1378,8 @@ def method_handlers_generic_handler(service, method_handlers):
 
 def ssl_channel_credentials(root_certificates=None,
                             private_key=None,
-                            certificate_chain=None):
+                            certificate_chain=None,
+                            verify_options=None):
     """Creates a ChannelCredentials for use with an SSL-enabled Channel.
 
     Args:
@@ -1395,7 +1396,7 @@ def ssl_channel_credentials(root_certificates=None,
     """
     return ChannelCredentials(
         _cygrpc.SSLChannelCredentials(root_certificates, private_key,
-                                      certificate_chain))
+                                      certificate_chain, verify_options))
 
 
 def metadata_call_credentials(metadata_plugin, name=None):
