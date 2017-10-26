@@ -179,7 +179,9 @@ class TransportFlowControl {
                                  target_initial_window_size_);
   }
   int64_t announced_window() const { return announced_window_; }
-  bool experimental_disable_flow_control() const { return experimental_disable_flow_control_; }
+  bool experimental_disable_flow_control() const {
+    return experimental_disable_flow_control_;
+  }
 
   const grpc_chttp2_transport* transport() const { return t_; }
 

@@ -573,8 +573,10 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
         exec_ctx, t->flow_control->PeriodicUpdate(exec_ctx), t, NULL);
   }
   if (t->flow_control->experimental_disable_flow_control()) {
-    queue_setting_update(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE, grpc_core::chttp2::kMaxMaxFrame);
-    queue_setting_update(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE, grpc_core::chttp2::kMaxWindow);
+    queue_setting_update(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
+                         grpc_core::chttp2::kMaxMaxFrame);
+    queue_setting_update(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
+                         grpc_core::chttp2::kMaxWindow);
   }
 
   grpc_chttp2_initiate_write(exec_ctx, t,

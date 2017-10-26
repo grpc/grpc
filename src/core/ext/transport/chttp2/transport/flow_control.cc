@@ -29,8 +29,8 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/support/env.h"
+#include "src/core/lib/support/string.h"
 
 namespace grpc_core {
 namespace chttp2 {
@@ -163,14 +163,15 @@ TransportFlowControl::TransportFlowControl(grpc_exec_ctx* exec_ctx,
                           .set_max_control_value(25)
                           .set_integral_range(10)),
       last_pid_update_(grpc_exec_ctx_now(exec_ctx)) {
-        char* disable_flow_control = gpr_getenv("GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL");
-        if (disable_flow_control != NULL) {
-          experimental_disable_flow_control_ = true;
-          enable_bdp_probe_ = false;
-          target_initial_window_size_ = kMaxWindow;
-          gpr_free(disable_flow_control);
-        }
-      }
+  char* disable_flow_control =
+      gpr_getenv("GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL");
+  if (disable_flow_control != NULL) {
+    experimental_disable_flow_control_ = true;
+    enable_bdp_probe_ = false;
+    target_initial_window_size_ = kMaxWindow;
+    gpr_free(disable_flow_control);
+  }
+}
 
 uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   FlowControlTrace trace("t updt sent", this, nullptr);
@@ -378,7 +379,8 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
         announced_window_delta_ + sent_init_window <= sent_init_window / 2) {
       action.set_send_stream_update(
           FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
-    } else if (local_window_delta_ > announced_window_delta_ && !tfc_->experimental_disable_flow_control()) {
+    } else if (local_window_delta_ > announced_window_delta_ &&
+               !tfc_->experimental_disable_flow_control()) {
       action.set_send_stream_update(FlowControlAction::Urgency::QUEUE_UPDATE);
     }
   }
