@@ -16,6 +16,8 @@
  *
  */
 
+#include <unistd.h>
+
 #include "src/core/lib/transport/status_conversion.h"
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
@@ -38,6 +40,7 @@ int main(int argc, char **argv) {
   int i;
 
   grpc_test_init(argc, argv);
+  grpc_init();
 
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_OK, GRPC_HTTP2_NO_ERROR);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_CANCELLED, GRPC_HTTP2_CANCEL);
@@ -129,6 +132,7 @@ int main(int argc, char **argv) {
                              GRPC_STATUS_INTERNAL);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_REFUSED_STREAM, after_deadline,
                              GRPC_STATUS_UNAVAILABLE);
+  sleep(1);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_CANCEL, after_deadline,
                              GRPC_STATUS_DEADLINE_EXCEEDED);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_COMPRESSION_ERROR, after_deadline,
@@ -157,6 +161,8 @@ int main(int argc, char **argv) {
   for (i = 0; i <= 999; i++) {
     grpc_http2_status_to_grpc_status(i);
   }
+
+  grpc_shutdown();
 
   return 0;
 }
