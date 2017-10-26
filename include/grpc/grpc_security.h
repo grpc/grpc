@@ -24,6 +24,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -163,6 +164,12 @@ typedef struct {
   const char* cert_chain;
 } grpc_ssl_pem_key_cert_pair;
 
+typedef struct {
+    int (*verify_peer_callback)(const char*, const char*, void*);
+    void *verify_peer_callback_userdata;
+    void (*verify_peer_destruct)(void*);
+} verify_peer_options;
+
 /** Creates an SSL credentials object.
    - pem_root_certs is the NULL-terminated string containing the PEM encoding
      of the server root certificates. If this parameter is NULL, the
@@ -176,7 +183,7 @@ typedef struct {
      not have such a key/cert pair. */
 GRPCAPI grpc_channel_credentials* grpc_ssl_credentials_create(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    void* reserved);
+    verify_peer_options* verify_options, void* reserved);
 
 /** --- grpc_call_credentials object.
 

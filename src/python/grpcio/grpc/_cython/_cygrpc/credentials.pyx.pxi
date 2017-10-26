@@ -112,12 +112,12 @@ cdef class SSLChannelCredentials(ChannelCredentials):
       c_pem_root_certificates = self._pem_root_certificates
     if self._private_key is None and self._certificate_chain is None:
       return grpc_ssl_credentials_create(
-          c_pem_root_certificates, NULL, NULL)
+          c_pem_root_certificates, NULL, NULL, NULL)
     else:
       c_pem_key_certificate_pair.private_key = self._private_key
       c_pem_key_certificate_pair.certificate_chain = self._certificate_chain
       return grpc_ssl_credentials_create(
-          c_pem_root_certificates, &c_pem_key_certificate_pair, NULL)
+          c_pem_root_certificates, &c_pem_key_certificate_pair, NULL, NULL)
 
 
 cdef class CompositeChannelCredentials(ChannelCredentials):

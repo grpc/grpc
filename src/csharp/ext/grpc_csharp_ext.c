@@ -935,11 +935,11 @@ grpcsharp_ssl_credentials_create(const char* pem_root_certs,
   if (key_cert_pair_cert_chain || key_cert_pair_private_key) {
     key_cert_pair.cert_chain = key_cert_pair_cert_chain;
     key_cert_pair.private_key = key_cert_pair_private_key;
-    return grpc_ssl_credentials_create(pem_root_certs, &key_cert_pair, NULL);
+    return grpc_ssl_credentials_create(pem_root_certs, &key_cert_pair, NULL, NULL);
   } else {
     GPR_ASSERT(!key_cert_pair_cert_chain);
     GPR_ASSERT(!key_cert_pair_private_key);
-    return grpc_ssl_credentials_create(pem_root_certs, NULL, NULL);
+    return grpc_ssl_credentials_create(pem_root_certs, NULL, NULL, NULL);
   }
 }
 

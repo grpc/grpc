@@ -170,7 +170,7 @@ typedef enum { NONE, SELF_SIGNED, SIGNED, BAD_CERT_PAIR } certtype;
         break;                                                               \
     }                                                                        \
     ssl_creds =                                                              \
-        grpc_ssl_credentials_create(test_root_cert, key_cert_pair, NULL);    \
+        grpc_ssl_credentials_create(test_root_cert, key_cert_pair, NULL, NULL);    \
     grpc_arg ssl_name_override = {                                           \
         GRPC_ARG_STRING,                                                     \
         const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),                \
