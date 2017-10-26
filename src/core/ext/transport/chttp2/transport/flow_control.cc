@@ -165,6 +165,7 @@ TransportFlowControl::TransportFlowControl(grpc_exec_ctx* exec_ctx,
       last_pid_update_(grpc_exec_ctx_now(exec_ctx)) {
   char* disable_flow_control =
       gpr_getenv("GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL");
+  disable_flow_control = gpr_strdup("force this flag to be true");
   if (disable_flow_control != NULL) {
     experimental_disable_flow_control_ = true;
     enable_bdp_probe_ = false;
