@@ -38,18 +38,20 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
 
 class CertConfigFetcher(object):
-  def __init__(self, client_ca_pem, my_key_1_pem, my_cert_1_pem,
-               my_key_2_pem, my_cert_2_pem,
+  def __init__(self, client_ca_1_pem, my_key_1_pem, my_cert_1_pem,
+               client_ca_2_pem, my_key_2_pem, my_cert_2_pem,
                switch_cert_on_client_num):
     self.client_num = -1
-    self.client_ca_pem = client_ca_pem
+    self.client_ca_2_pem = client_ca_2_pem
     self.my_key_2_pem = my_key_2_pem
     self.my_cert_2_pem = my_cert_2_pem
     self.switch_cert_on_client_num = switch_cert_on_client_num
     self.cert_config = grpc.ssl_server_certificate_config(
         [(my_key_1_pem, my_cert_1_pem)],
-        root_certificates=self.client_ca_pem,
+        root_certificates=client_ca_1_pem,
       )
+    # we simulate cb failures at 2 and 3
+    assert self.switch_cert_on_client_num > 3
 
   def __call__(self):
     self.client_num += 1
@@ -68,7 +70,7 @@ class CertConfigFetcher(object):
         # do the switch
         return grpc.ssl_server_certificate_config(
           [(self.my_key_2_pem, self.my_cert_2_pem)],
-          root_certificates=self.client_ca_pem,
+          root_certificates=self.client_ca_2_pem,
         )
 
 
@@ -76,9 +78,11 @@ def serve():
 
   # server will switch its cert at this client number (1-based)
   switch_cert_on_client_num = int(sys.argv[1])
+  require_client_auth = (sys.argv[2] == 'True')
 
   # for verifying clients
-  client_ca_pem = open(_get_abs_path('cert_hier_1/certs/ca.cert.pem')).read()
+  client_ca_1_pem = open(_get_abs_path('cert_hier_1/certs/ca.cert.pem')).read()
+  client_ca_2_pem = open(_get_abs_path('cert_hier_2/certs/ca.cert.pem')).read()
 
   my_key_1_pem = \
     open(_get_abs_path('cert_hier_1/intermediate/private/localhost-1.key.pem')).read()
@@ -94,13 +98,16 @@ def serve():
     open(_get_abs_path('cert_hier_2/intermediate/certs/intermediate.cert.pem')).read(),
   ])
 
-  cert_config_fetcher = CertConfigFetcher(client_ca_pem,
-                                          my_key_1_pem, my_cert_1_pem,
-                                          my_key_2_pem, my_cert_2_pem,
+  ## we will start with using cert/key1 and trusting ca2 for client
+  ## auth; then after switch, we will use cert/key2 and trust ca1 for
+  ## client auth
+
+  cert_config_fetcher = CertConfigFetcher(client_ca_2_pem, my_key_1_pem, my_cert_1_pem,
+                                          client_ca_1_pem, my_key_2_pem, my_cert_2_pem,
                                           switch_cert_on_client_num)
 
   server_credentials = grpc.ssl_server_credentials_with_cert_config_fetcher(
-    cert_config_fetcher, require_client_auth=True)
+    cert_config_fetcher, require_client_auth=require_client_auth)
 
   server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
   helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)

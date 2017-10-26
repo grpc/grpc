@@ -90,7 +90,7 @@ def check_background_client_success(stdout, stderr,
 class ServerSSLCertReloadTest(unittest.TestCase):
 
     def test_server_ssl_cert_reload(self):
-        switch_cert_on_client_num = 8
+        switch_cert_on_client_num = 9
 
         # use tempfiles to contain the client's cert plus intermediate
         # cert from the two cert hierarchies
@@ -117,15 +117,13 @@ class ServerSSLCertReloadTest(unittest.TestCase):
         server_ca_2_fpath = _get_abs_path('cert_hier_2/certs/ca.cert.pem')
 
         greeter_client_path = _get_abs_path('greeter_client.py')
-        cmd_for_cert_hier_1 = ['python', greeter_client_path,
-                               server_ca_1_fpath, client_key_1_fpath,
-                               client_chain_1_fp.name]
 
+        require_client_auth = True
 
         devnull_fp = open(os.devnull)
         server_process = subprocess.Popen(
             ['python', _get_abs_path('greeter_server.py'),
-             str(switch_cert_on_client_num)],
+             str(switch_cert_on_client_num), str(require_client_auth)],
             stdout=devnull_fp, stderr=devnull_fp)
         processes.append(server_process)
         # give server a second to initialize
@@ -133,46 +131,62 @@ class ServerSSLCertReloadTest(unittest.TestCase):
         time.sleep(1)
 
         print 'things should work...',
-        stdout, stderr = run_client(cmd_for_cert_hier_1)
+        stdout, stderr = run_client(
+            ['python', greeter_client_path,
+             server_ca_1_fpath, client_key_2_fpath, client_chain_2_fp.name])
         assert_client_success(stdout, stderr)
         print 'nice!'
 
         print 'client should reject server...',
-        # fails because client uses ca2 and so will reject server
+        # fails because client trusts ca1 and so will reject server
         stdout, stderr = run_client(
             ['python', greeter_client_path,
-             server_ca_2_fpath, client_key_1_fpath, client_chain_1_fp.name])
+             server_ca_2_fpath, client_key_2_fpath, client_chain_2_fp.name])
         assert_client_failure(stdout, stderr, True)
         # this assert is fragile, i.e., depends on how the core lib logs the error
         assert 'SSL_ERROR_SSL: error:1000007d:SSL routines:OPENSSL_internal:CERTIFICATE_VERIFY_FAILED' in stderr
         print 'good'
 
         print 'should work again...',
-        stdout, stderr = run_client(cmd_for_cert_hier_1)
+        stdout, stderr = run_client(
+            ['python', greeter_client_path,
+             server_ca_1_fpath, client_key_2_fpath, client_chain_2_fp.name])
         assert_client_success(stdout, stderr)
         print 'good'
 
         print 'client should be rejected by server...',
-        # fails because client key/cert2, so server will reject
+        # fails because client uses key/cert1, but server trusts ca2,
+        # so server will reject
         stdout, stderr = run_client(
             ['python', greeter_client_path,
-             server_ca_1_fpath, client_key_2_fpath, client_chain_2_fp.name])
+             server_ca_1_fpath, client_key_1_fpath, client_chain_1_fp.name])
+        assert_client_failure(stdout, stderr, False)
+        print 'good'
+
+        print 'one more time, client should be rejected by server...',
+        stdout, stderr = run_client(
+            ['python', greeter_client_path,
+             server_ca_1_fpath, client_key_1_fpath, client_chain_1_fp.name])
         assert_client_failure(stdout, stderr, False)
         print 'good'
 
         print 'should work again...',
-        stdout, stderr = run_client(cmd_for_cert_hier_1)
+        stdout, stderr = run_client(
+            ['python', greeter_client_path,
+             server_ca_1_fpath, client_key_2_fpath, client_chain_2_fp.name])
         assert_client_success(stdout, stderr)
         print 'good'
 
         print 'should work again...',
-        stdout, stderr = run_client(cmd_for_cert_hier_1)
+        stdout, stderr = run_client(
+            ['python', greeter_client_path,
+             server_ca_1_fpath, client_key_2_fpath, client_chain_2_fp.name])
         assert_client_success(stdout, stderr)
         print 'good'
 
         background_client_process = subprocess.Popen(
             ['python', _get_abs_path('greeter_client_2.py'), server_ca_1_fpath,
-             client_key_1_fpath, client_chain_1_fp.name, "4"],
+             client_key_2_fpath, client_chain_2_fp.name, "4"],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             env={'GRPC_VERBOSITY': 'ERROR'})
         processes.append(background_client_process)
@@ -183,7 +197,9 @@ class ServerSSLCertReloadTest(unittest.TestCase):
 
         print
         print 'moment of truth!! client should reject server because the server switch cert...',
-        stdout, stderr = run_client(cmd_for_cert_hier_1)
+        stdout, stderr = run_client(
+            ['python', greeter_client_path,
+             server_ca_1_fpath, client_key_2_fpath, client_chain_2_fp.name])
         assert_client_failure(stdout, stderr, True)
         print 'NICE!!'
         print
@@ -212,7 +228,9 @@ class ServerSSLCertReloadTest(unittest.TestCase):
         print 'good'
 
         print 'another check... client should fail...',
-        stdout, stderr = run_client(cmd_for_cert_hier_1)
+        stdout, stderr = run_client(
+            ['python', greeter_client_path,
+             server_ca_1_fpath, client_key_2_fpath, client_chain_2_fp.name])
         assert_client_failure(stdout, stderr, True)
         print 'good'
 
@@ -226,6 +244,8 @@ class ServerSSLCertReloadTest(unittest.TestCase):
         assert server_process.poll() is None
         print 'good'
 
+        print 'now kill server process'
+        server_process.terminate()
 
 
 if __name__ == '__main__':
