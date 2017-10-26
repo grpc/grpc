@@ -300,7 +300,7 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
         if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
           gpr_log(GPR_INFO,
                   "Pick First %p found already selected subchannel %p "
-                  "at update index %" PRIdPTR " of %" PRIdPTR "; update done",
+                  "at update index %" PRIuPTR " of %" PRIuPTR "; update done",
                   p, p->selected->subchannel, i,
                   subchannel_list->num_subchannels);
         }
@@ -360,8 +360,8 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
   pick_first_lb_policy *p = (pick_first_lb_policy *)sd->subchannel_list->policy;
   if (GRPC_TRACER_ON(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_DEBUG,
-            "Pick First %p connectivity changed for subchannel %p (%" PRIdPTR
-            " of %" PRIdPTR
+            "Pick First %p connectivity changed for subchannel %p (%" PRIuPTR
+            " of %" PRIuPTR
             "), subchannel_list %p: state=%s p->shutdown=%d "
             "sd->subchannel_list->shutting_down=%d error=%s",
             (void *)p, (void *)sd->subchannel,

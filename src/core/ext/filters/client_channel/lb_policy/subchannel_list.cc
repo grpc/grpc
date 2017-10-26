@@ -34,8 +34,8 @@ void grpc_lb_subchannel_data_unref_subchannel(grpc_exec_ctx *exec_ctx,
   if (sd->subchannel != NULL) {
     if (GRPC_TRACER_ON(*sd->subchannel_list->tracer)) {
       gpr_log(
-          GPR_DEBUG, "[%s %p] subchannel list %p index %" PRIdPTR
-                     " of %" PRIdPTR " (subchannel %p): unreffing subchannel",
+          GPR_DEBUG, "[%s %p] subchannel list %p index %" PRIuPTR
+                     " of %" PRIuPTR " (subchannel %p): unreffing subchannel",
           sd->subchannel_list->tracer->name, sd->subchannel_list->policy,
           sd->subchannel_list, (size_t)(sd - sd->subchannel_list->subchannels),
           sd->subchannel_list->num_subchannels, sd->subchannel);
@@ -59,7 +59,7 @@ void grpc_lb_subchannel_data_start_connectivity_watch(
     grpc_exec_ctx *exec_ctx, grpc_lb_subchannel_data *sd) {
   if (GRPC_TRACER_ON(*sd->subchannel_list->tracer)) {
     gpr_log(GPR_DEBUG,
-            "[%s %p] subchannel list %p index %" PRIdPTR " of %" PRIdPTR
+            "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
             " (subchannel %p): requesting connectivity change notification",
             sd->subchannel_list->tracer->name, sd->subchannel_list->policy,
             sd->subchannel_list,
@@ -77,7 +77,7 @@ void grpc_lb_subchannel_data_stop_connectivity_watch(
     grpc_exec_ctx *exec_ctx, grpc_lb_subchannel_data *sd) {
   if (GRPC_TRACER_ON(*sd->subchannel_list->tracer)) {
     gpr_log(
-        GPR_DEBUG, "[%s %p] subchannel list %p index %" PRIdPTR " of %" PRIdPTR
+        GPR_DEBUG, "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
                    " (subchannel %p): stopping connectivity watch",
         sd->subchannel_list->tracer->name, sd->subchannel_list->policy,
         sd->subchannel_list, (size_t)(sd - sd->subchannel_list->subchannels),
@@ -95,7 +95,7 @@ grpc_lb_subchannel_list *grpc_lb_subchannel_list_create(
       (grpc_lb_subchannel_list *)gpr_zalloc(sizeof(*subchannel_list));
   if (GRPC_TRACER_ON(*tracer)) {
     gpr_log(GPR_DEBUG,
-            "[%s %p] Creating subchannel list %p for %" PRIdPTR " subchannels",
+            "[%s %p] Creating subchannel list %p for %" PRIuPTR " subchannels",
             tracer->name, p, subchannel_list, addresses->num_addresses);
   }
   subchannel_list->policy = p;
@@ -159,7 +159,7 @@ grpc_lb_subchannel_list *grpc_lb_subchannel_list_create(
     if (GRPC_TRACER_ON(*tracer)) {
       char *address_uri =
           grpc_sockaddr_to_uri(&addresses->addresses[i].address);
-      gpr_log(GPR_DEBUG, "[%s %p] subchannel list %p index %" PRIdPTR
+      gpr_log(GPR_DEBUG, "[%s %p] subchannel list %p index %" PRIuPTR
                          ": Created subchannel %p for address uri %s; "
                          "initial connectivity state: %s",
               tracer->name, p, subchannel_list, subchannel_index, subchannel,
@@ -255,7 +255,7 @@ static void subchannel_data_cancel_connectivity_watch(
     grpc_exec_ctx *exec_ctx, grpc_lb_subchannel_data *sd, const char *reason) {
   if (GRPC_TRACER_ON(*sd->subchannel_list->tracer)) {
     gpr_log(
-        GPR_DEBUG, "[%s %p] subchannel list %p index %" PRIdPTR " of %" PRIdPTR
+        GPR_DEBUG, "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
                    " (subchannel %p): canceling connectivity watch (%s)",
         sd->subchannel_list->tracer->name, sd->subchannel_list->policy,
         sd->subchannel_list, (size_t)(sd - sd->subchannel_list->subchannels),

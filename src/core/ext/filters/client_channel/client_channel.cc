@@ -898,7 +898,7 @@ static void waiting_for_pick_batches_fail(grpc_exec_ctx *exec_ctx,
   call_data *calld = (call_data *)elem->call_data;
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
     gpr_log(GPR_DEBUG,
-            "chand=%p calld=%p: failing %" PRIdPTR " pending batches: %s",
+            "chand=%p calld=%p: failing %" PRIuPTR " pending batches: %s",
             elem->channel_data, calld, calld->waiting_for_pick_batches_count,
             grpc_error_string(error));
   }
@@ -940,7 +940,7 @@ static void waiting_for_pick_batches_resume(grpc_exec_ctx *exec_ctx,
   channel_data *chand = (channel_data *)elem->channel_data;
   call_data *calld = (call_data *)elem->call_data;
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-    gpr_log(GPR_DEBUG, "chand=%p calld=%p: sending %" PRIdPTR
+    gpr_log(GPR_DEBUG, "chand=%p calld=%p: sending %" PRIuPTR
                        " pending batches to subchannel_call=%p",
             chand, calld, calld->waiting_for_pick_batches_count,
             calld->subchannel_call);
