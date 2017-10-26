@@ -22,12 +22,10 @@
 #include <grpc/grpc.h>
 #include <sstream>
 
-extern "C" {
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/support/spinlock.h"
-}
 
 #include "test/cpp/microbenchmarks/helpers.h"
 

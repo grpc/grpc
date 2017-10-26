@@ -26,9 +26,7 @@
 #include <grpc/support/log.h>
 #include "test/cpp/microbenchmarks/helpers.h"
 
-extern "C" {
 #include "src/core/lib/surface/completion_queue.h"
-}
 
 namespace grpc {
 namespace testing {

@@ -32,10 +32,8 @@
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 
-extern "C" {
 #include "src/core/lib/support/env.h"
 #include "test/core/util/port.h"
-}
 
 DEFINE_bool(
     running_under_bazel, false,

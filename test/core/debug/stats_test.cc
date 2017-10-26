@@ -16,9 +16,7 @@
  *
  */
 
-extern "C" {
 #include "src/core/lib/debug/stats.h"
-}
 
 #include <mutex>
 #include <thread>

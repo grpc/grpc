@@ -23,10 +23,8 @@
 #include <grpc/support/useful.h>
 #include <gtest/gtest.h>
 
-extern "C" {
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
-}
 
 namespace grpc {
 namespace testing {

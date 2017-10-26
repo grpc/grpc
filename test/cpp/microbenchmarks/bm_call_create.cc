@@ -29,7 +29,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-extern "C" {
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
@@ -43,7 +42,6 @@ extern "C" {
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport_impl.h"
-}
 
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"

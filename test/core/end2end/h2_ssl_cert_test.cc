@@ -16,9 +16,7 @@
  *
  */
 
-extern "C" {
 #include "test/core/end2end/end2end_tests.h"
-}
 
 #include <stdio.h>
 #include <string.h>
@@ -27,7 +25,6 @@ extern "C" {
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 
-extern "C" {
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/support/env.h"
@@ -37,7 +34,6 @@ extern "C" {
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-}
 
 #include <gtest/gtest.h>
 
