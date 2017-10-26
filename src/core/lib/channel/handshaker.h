@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H
 #define GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/codegen_grpc_types.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"

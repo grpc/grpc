@@ -12,6 +12,6 @@ be cleaned up the next time we are going to bump the major version
 number:
 
 - remove `GRPC_ARG_MAX_MESSAGE_LENGTH` channel arg from
-  `include/grpc/impl/codegen/grpc_types.h` (commit `af00d8b`)
+  `include/grpc/impl/codegen/codegen_grpc_types.h` (commit `af00d8b`)
   (cannot be done until after next grpc release, so that TensorFlow can
   use the same code both internally and externally)

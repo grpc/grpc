@@ -19,7 +19,7 @@
 #ifndef GRPC_IMPL_CODEGEN_GPR_TYPES_H
 #define GRPC_IMPL_CODEGEN_GPR_TYPES_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/impl/codegen/codegen_port_platform.h>
 
 #include <stddef.h>
 

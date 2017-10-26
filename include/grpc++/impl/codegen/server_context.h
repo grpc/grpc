@@ -23,7 +23,7 @@
 #include <memory>
 #include <vector>
 
-#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/codegen_compression_types.h>
 
 #include <grpc++/impl/codegen/call.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>

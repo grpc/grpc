@@ -42,15 +42,15 @@ extern "C" {
 #endif
 
 /* Platform-specific type declarations of gpr_mu and gpr_cv.   */
-#include <grpc/impl/codegen/port_platform.h>
-#include <grpc/impl/codegen/sync_generic.h>
+#include <grpc/impl/codegen/codegen_port_platform.h>
+#include <grpc/impl/codegen/codegen_sync_generic.h>
 
 #if defined(GPR_POSIX_SYNC)
-#include <grpc/impl/codegen/sync_posix.h>
+#include <grpc/impl/codegen/codegen_sync_posix.h>
 #elif defined(GPR_WINDOWS)
-#include <grpc/impl/codegen/sync_windows.h>
+#include <grpc/impl/codegen/codegen_sync_windows.h>
 #elif defined(GPR_CUSTOM_SYNC)
-#include <grpc/impl/codegen/sync_custom.h>
+#include <grpc/impl/codegen/codegen_sync_custom.h>
 #else
 #error Unable to determine platform for sync
 #endif

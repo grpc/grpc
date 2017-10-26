@@ -67,14 +67,14 @@
    gpr_atm gpr_atm_full_xchg(gpr_atm *p, gpr_atm n);
 */
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/impl/codegen/codegen_port_platform.h>
 
 #if defined(GPR_GCC_ATOMIC)
-#include <grpc/impl/codegen/atm_gcc_atomic.h>
+#include <grpc/impl/codegen/codegen_atm_gcc_atomic.h>
 #elif defined(GPR_GCC_SYNC)
-#include <grpc/impl/codegen/atm_gcc_sync.h>
+#include <grpc/impl/codegen/codegen_atm_gcc_sync.h>
 #elif defined(GPR_WINDOWS_ATOMIC)
-#include <grpc/impl/codegen/atm_windows.h>
+#include <grpc/impl/codegen/codegen_atm_windows.h>
 #else
 #error could not determine platform for atm
 #endif

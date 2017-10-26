@@ -36,9 +36,9 @@
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/string_ref.h>
 
-#include <grpc/impl/codegen/atm.h>
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/codegen_atm.h>
+#include <grpc/impl/codegen/codegen_compression_types.h>
+#include <grpc/impl/codegen/codegen_grpc_types.h>
 
 namespace grpc {
 

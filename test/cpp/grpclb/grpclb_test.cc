@@ -25,7 +25,7 @@
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/byte_buffer_reader.h>
+#include <grpc/impl/codegen/codegen_byte_buffer_reader.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>

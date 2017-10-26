@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H
 #define GRPC_CORE_LIB_IOMGR_TCP_CLIENT_H
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/codegen_grpc_types.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/pollset_set.h"

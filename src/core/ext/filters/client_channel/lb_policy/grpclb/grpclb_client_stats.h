@@ -21,7 +21,7 @@
 
 #include <stdbool.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/codegen_grpc_types.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -19,11 +19,11 @@
 #ifndef GRPC_COMPRESSION_H
 #define GRPC_COMPRESSION_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/impl/codegen/codegen_port_platform.h>
 
 #include <stdlib.h>
 
-#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/codegen_compression_types.h>
 #include <grpc/slice.h>
 
 #ifdef __cplusplus

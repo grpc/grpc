@@ -19,7 +19,7 @@
 #ifndef GRPC_IMPL_CODEGEN_BYTE_BUFFER_H
 #define GRPC_IMPL_CODEGEN_BYTE_BUFFER_H
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/codegen_grpc_types.h>
 
 #ifdef __cplusplus
 extern "C" {

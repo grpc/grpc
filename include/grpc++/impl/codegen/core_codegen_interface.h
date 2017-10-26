@@ -21,9 +21,9 @@
 
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/status.h>
-#include <grpc/impl/codegen/byte_buffer_reader.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/sync.h>
+#include <grpc/impl/codegen/codegen_byte_buffer_reader.h>
+#include <grpc/impl/codegen/codegen_grpc_types.h>
+#include <grpc/impl/codegen/codegen_sync.h>
 
 extern "C" {
 struct grpc_byte_buffer;

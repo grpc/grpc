@@ -16,17 +16,25 @@
  *
  */
 
-#ifndef GRPC_IMPL_CODEGEN_SYNC_POSIX_H
-#define GRPC_IMPL_CODEGEN_SYNC_POSIX_H
+#ifndef GRPC_IMPL_CODEGEN_SYNC_GENERIC_H
+#define GRPC_IMPL_CODEGEN_SYNC_GENERIC_H
+/* Generic type defintions for gpr_sync. */
 
-#include <grpc/impl/codegen/sync_generic.h>
+#include <grpc/impl/codegen/codegen_atm.h>
 
-#include <pthread.h>
+/* gpr_event */
+typedef struct { gpr_atm state; } gpr_event;
 
-typedef pthread_mutex_t gpr_mu;
-typedef pthread_cond_t gpr_cv;
-typedef pthread_once_t gpr_once;
+#define GPR_EVENT_INIT \
+  { 0 }
 
-#define GPR_ONCE_INIT PTHREAD_ONCE_INIT
+/* gpr_refcount */
+typedef struct { gpr_atm count; } gpr_refcount;
 
-#endif /* GRPC_IMPL_CODEGEN_SYNC_POSIX_H */
+/* gpr_stats_counter */
+typedef struct { gpr_atm value; } gpr_stats_counter;
+
+#define GPR_STATS_INIT \
+  { 0 }
+
+#endif /* GRPC_IMPL_CODEGEN_SYNC_GENERIC_H */

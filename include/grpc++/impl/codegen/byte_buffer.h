@@ -19,7 +19,7 @@
 #ifndef GRPCXX_IMPL_CODEGEN_BYTE_BUFFER_H
 #define GRPCXX_IMPL_CODEGEN_BYTE_BUFFER_H
 
-#include <grpc/impl/codegen/byte_buffer.h>
+#include <grpc/impl/codegen/codegen_byte_buffer.h>
 
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/core_codegen_interface.h>

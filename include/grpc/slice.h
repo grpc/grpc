@@ -19,7 +19,7 @@
 #ifndef GRPC_SLICE_H
 #define GRPC_SLICE_H
 
-#include <grpc/impl/codegen/slice.h>
+#include <grpc/impl/codegen/codegen_slice.h>
 #include <grpc/support/sync.h>
 
 #ifdef __cplusplus

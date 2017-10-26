@@ -28,7 +28,7 @@ extern "C" {
 #include "src/core/lib/surface/api_trace.h"
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/codegen_compression_types.h>
 
 typedef void (*grpc_ioreq_completion_func)(grpc_exec_ctx *exec_ctx,
                                            grpc_call *call, int success,

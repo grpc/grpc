@@ -21,7 +21,7 @@
 
 #include <grpc++/grpc++.h>
 #include <grpc++/resource_quota.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/codegen_grpc_types.h>
 #include <grpc/support/log.h>
 extern "C" {
 #include "src/core/lib/channel/channel_args.h"

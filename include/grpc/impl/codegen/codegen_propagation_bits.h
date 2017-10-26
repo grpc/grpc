@@ -19,7 +19,7 @@
 #ifndef GRPC_IMPL_CODEGEN_PROPAGATION_BITS_H
 #define GRPC_IMPL_CODEGEN_PROPAGATION_BITS_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/impl/codegen/codegen_port_platform.h>
 
 #ifdef __cplusplus
 extern "C" {

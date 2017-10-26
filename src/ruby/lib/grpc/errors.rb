@@ -25,7 +25,7 @@ module GRPC
   # E.g., the GRPC::Cancelled class corresponds to status CANCELLED.
   #
   # See
-  # https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/status.h
+  # https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/codegen_status.h
   # for detailed descriptions of each status code.
   class BadStatus < StandardError
     attr_reader :code, :details, :metadata

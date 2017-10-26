@@ -22,9 +22,9 @@
 #include <grpc/status.h>
 
 #include <grpc/byte_buffer.h>
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/codegen/codegen_connectivity_state.h>
+#include <grpc/impl/codegen/codegen_grpc_types.h>
+#include <grpc/impl/codegen/codegen_propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
 #include <stddef.h>

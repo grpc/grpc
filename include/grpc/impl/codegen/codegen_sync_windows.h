@@ -19,7 +19,7 @@
 #ifndef GRPC_IMPL_CODEGEN_SYNC_WINDOWS_H
 #define GRPC_IMPL_CODEGEN_SYNC_WINDOWS_H
 
-#include <grpc/impl/codegen/sync_generic.h>
+#include <grpc/impl/codegen/codegen_sync_generic.h>
 
 typedef struct {
   CRITICAL_SECTION cs; /* Not an SRWLock until Vista is unsupported */

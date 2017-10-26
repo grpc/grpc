@@ -889,18 +889,18 @@ foreach(_hdr
   include/grpc/support/tls_msvc.h
   include/grpc/support/tls_pthread.h
   include/grpc/support/useful.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/gpr_slice.h
-  include/grpc/impl/codegen/gpr_types.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/codegen_atm.h
+  include/grpc/impl/codegen/codegen_atm_gcc_atomic.h
+  include/grpc/impl/codegen/codegen_atm_gcc_sync.h
+  include/grpc/impl/codegen/codegen_atm_windows.h
+  include/grpc/impl/codegen/codegen_gpr_slice.h
+  include/grpc/impl/codegen/codegen_gpr_types.h
+  include/grpc/impl/codegen/codegen_port_platform.h
+  include/grpc/impl/codegen/codegen_sync.h
+  include/grpc/impl/codegen/codegen_sync_custom.h
+  include/grpc/impl/codegen/codegen_sync_generic.h
+  include/grpc/impl/codegen/codegen_sync_posix.h
+  include/grpc/impl/codegen/codegen_sync_windows.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -1259,27 +1259,27 @@ target_link_libraries(grpc
 )
 
 foreach(_hdr
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/exec_ctx_fwd.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/gpr_slice.h
-  include/grpc/impl/codegen/gpr_types.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/codegen_byte_buffer.h
+  include/grpc/impl/codegen/codegen_byte_buffer_reader.h
+  include/grpc/impl/codegen/codegen_compression_types.h
+  include/grpc/impl/codegen/codegen_connectivity_state.h
+  include/grpc/impl/codegen/codegen_exec_ctx_fwd.h
+  include/grpc/impl/codegen/codegen_grpc_types.h
+  include/grpc/impl/codegen/codegen_propagation_bits.h
+  include/grpc/impl/codegen/codegen_slice.h
+  include/grpc/impl/codegen/codegen_status.h
+  include/grpc/impl/codegen/codegen_atm.h
+  include/grpc/impl/codegen/codegen_atm_gcc_atomic.h
+  include/grpc/impl/codegen/codegen_atm_gcc_sync.h
+  include/grpc/impl/codegen/codegen_atm_windows.h
+  include/grpc/impl/codegen/codegen_gpr_slice.h
+  include/grpc/impl/codegen/codegen_gpr_types.h
+  include/grpc/impl/codegen/codegen_port_platform.h
+  include/grpc/impl/codegen/codegen_sync.h
+  include/grpc/impl/codegen/codegen_sync_custom.h
+  include/grpc/impl/codegen/codegen_sync_generic.h
+  include/grpc/impl/codegen/codegen_sync_posix.h
+  include/grpc/impl/codegen/codegen_sync_windows.h
   include/grpc/grpc_security.h
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
@@ -1570,27 +1570,27 @@ target_link_libraries(grpc_cronet
 )
 
 foreach(_hdr
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/exec_ctx_fwd.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/gpr_slice.h
-  include/grpc/impl/codegen/gpr_types.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/codegen_byte_buffer.h
+  include/grpc/impl/codegen/codegen_byte_buffer_reader.h
+  include/grpc/impl/codegen/codegen_compression_types.h
+  include/grpc/impl/codegen/codegen_connectivity_state.h
+  include/grpc/impl/codegen/codegen_exec_ctx_fwd.h
+  include/grpc/impl/codegen/codegen_grpc_types.h
+  include/grpc/impl/codegen/codegen_propagation_bits.h
+  include/grpc/impl/codegen/codegen_slice.h
+  include/grpc/impl/codegen/codegen_status.h
+  include/grpc/impl/codegen/codegen_atm.h
+  include/grpc/impl/codegen/codegen_atm_gcc_atomic.h
+  include/grpc/impl/codegen/codegen_atm_gcc_sync.h
+  include/grpc/impl/codegen/codegen_atm_windows.h
+  include/grpc/impl/codegen/codegen_gpr_slice.h
+  include/grpc/impl/codegen/codegen_gpr_types.h
+  include/grpc/impl/codegen/codegen_port_platform.h
+  include/grpc/impl/codegen/codegen_sync.h
+  include/grpc/impl/codegen/codegen_sync_custom.h
+  include/grpc/impl/codegen/codegen_sync_generic.h
+  include/grpc/impl/codegen/codegen_sync_posix.h
+  include/grpc/impl/codegen/codegen_sync_windows.h
   include/grpc/grpc_cronet.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
@@ -1851,27 +1851,27 @@ target_link_libraries(grpc_test_util
 )
 
 foreach(_hdr
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/exec_ctx_fwd.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/gpr_slice.h
-  include/grpc/impl/codegen/gpr_types.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/codegen_byte_buffer.h
+  include/grpc/impl/codegen/codegen_byte_buffer_reader.h
+  include/grpc/impl/codegen/codegen_compression_types.h
+  include/grpc/impl/codegen/codegen_connectivity_state.h
+  include/grpc/impl/codegen/codegen_exec_ctx_fwd.h
+  include/grpc/impl/codegen/codegen_grpc_types.h
+  include/grpc/impl/codegen/codegen_propagation_bits.h
+  include/grpc/impl/codegen/codegen_slice.h
+  include/grpc/impl/codegen/codegen_status.h
+  include/grpc/impl/codegen/codegen_atm.h
+  include/grpc/impl/codegen/codegen_atm_gcc_atomic.h
+  include/grpc/impl/codegen/codegen_atm_gcc_sync.h
+  include/grpc/impl/codegen/codegen_atm_windows.h
+  include/grpc/impl/codegen/codegen_gpr_slice.h
+  include/grpc/impl/codegen/codegen_gpr_types.h
+  include/grpc/impl/codegen/codegen_port_platform.h
+  include/grpc/impl/codegen/codegen_sync.h
+  include/grpc/impl/codegen/codegen_sync_custom.h
+  include/grpc/impl/codegen/codegen_sync_generic.h
+  include/grpc/impl/codegen/codegen_sync_posix.h
+  include/grpc/impl/codegen/codegen_sync_windows.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -2116,27 +2116,27 @@ target_link_libraries(grpc_test_util_unsecure
 )
 
 foreach(_hdr
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/exec_ctx_fwd.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/gpr_slice.h
-  include/grpc/impl/codegen/gpr_types.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/codegen_byte_buffer.h
+  include/grpc/impl/codegen/codegen_byte_buffer_reader.h
+  include/grpc/impl/codegen/codegen_compression_types.h
+  include/grpc/impl/codegen/codegen_connectivity_state.h
+  include/grpc/impl/codegen/codegen_exec_ctx_fwd.h
+  include/grpc/impl/codegen/codegen_grpc_types.h
+  include/grpc/impl/codegen/codegen_propagation_bits.h
+  include/grpc/impl/codegen/codegen_slice.h
+  include/grpc/impl/codegen/codegen_status.h
+  include/grpc/impl/codegen/codegen_atm.h
+  include/grpc/impl/codegen/codegen_atm_gcc_atomic.h
+  include/grpc/impl/codegen/codegen_atm_gcc_sync.h
+  include/grpc/impl/codegen/codegen_atm_windows.h
+  include/grpc/impl/codegen/codegen_gpr_slice.h
+  include/grpc/impl/codegen/codegen_gpr_types.h
+  include/grpc/impl/codegen/codegen_port_platform.h
+  include/grpc/impl/codegen/codegen_sync.h
+  include/grpc/impl/codegen/codegen_sync_custom.h
+  include/grpc/impl/codegen/codegen_sync_generic.h
+  include/grpc/impl/codegen/codegen_sync_posix.h
+  include/grpc/impl/codegen/codegen_sync_windows.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -2416,27 +2416,27 @@ target_link_libraries(grpc_unsecure
 )
 
 foreach(_hdr
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/exec_ctx_fwd.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/gpr_slice.h
-  include/grpc/impl/codegen/gpr_types.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/codegen_byte_buffer.h
+  include/grpc/impl/codegen/codegen_byte_buffer_reader.h
+  include/grpc/impl/codegen/codegen_compression_types.h
+  include/grpc/impl/codegen/codegen_connectivity_state.h
+  include/grpc/impl/codegen/codegen_exec_ctx_fwd.h
+  include/grpc/impl/codegen/codegen_grpc_types.h
+  include/grpc/impl/codegen/codegen_propagation_bits.h
+  include/grpc/impl/codegen/codegen_slice.h
+  include/grpc/impl/codegen/codegen_status.h
+  include/grpc/impl/codegen/codegen_atm.h
+  include/grpc/impl/codegen/codegen_atm_gcc_atomic.h
+  include/grpc/impl/codegen/codegen_atm_gcc_sync.h
+  include/grpc/impl/codegen/codegen_atm_windows.h
+  include/grpc/impl/codegen/codegen_gpr_slice.h
+  include/grpc/impl/codegen/codegen_gpr_types.h
+  include/grpc/impl/codegen/codegen_port_platform.h
+  include/grpc/impl/codegen/codegen_sync.h
+  include/grpc/impl/codegen/codegen_sync_custom.h
+  include/grpc/impl/codegen/codegen_sync_generic.h
+  include/grpc/impl/codegen/codegen_sync_posix.h
+  include/grpc/impl/codegen/codegen_sync_windows.h
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
@@ -2706,18 +2706,18 @@ foreach(_hdr
   include/grpc/support/tls_msvc.h
   include/grpc/support/tls_pthread.h
   include/grpc/support/useful.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/gpr_slice.h
-  include/grpc/impl/codegen/gpr_types.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/codegen_atm.h
+  include/grpc/impl/codegen/codegen_atm_gcc_atomic.h
+  include/grpc/impl/codegen/codegen_atm_gcc_sync.h
+  include/grpc/impl/codegen/codegen_atm_windows.h
+  include/grpc/impl/codegen/codegen_gpr_slice.h
+  include/grpc/impl/codegen/codegen_gpr_types.h
+  include/grpc/impl/codegen/codegen_port_platform.h
+  include/grpc/impl/codegen/codegen_sync.h
+  include/grpc/impl/codegen/codegen_sync_custom.h
+  include/grpc/impl/codegen/codegen_sync_generic.h
+  include/grpc/impl/codegen/codegen_sync_posix.h
+  include/grpc/impl/codegen/codegen_sync_windows.h
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
@@ -2729,15 +2729,15 @@ foreach(_hdr
   include/grpc/slice_buffer.h
   include/grpc/status.h
   include/grpc/support/workaround_list.h
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/exec_ctx_fwd.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/status.h
+  include/grpc/impl/codegen/codegen_byte_buffer.h
+  include/grpc/impl/codegen/codegen_byte_buffer_reader.h
+  include/grpc/impl/codegen/codegen_compression_types.h
+  include/grpc/impl/codegen/codegen_connectivity_state.h
+  include/grpc/impl/codegen/codegen_exec_ctx_fwd.h
+  include/grpc/impl/codegen/codegen_grpc_types.h
+  include/grpc/impl/codegen/codegen_propagation_bits.h
+  include/grpc/impl/codegen/codegen_slice.h
+  include/grpc/impl/codegen/codegen_status.h
   include/grpc++/impl/codegen/async_stream.h
   include/grpc++/impl/codegen/async_unary_call.h
   include/grpc++/impl/codegen/byte_buffer.h
@@ -3205,18 +3205,18 @@ foreach(_hdr
   include/grpc/support/tls_msvc.h
   include/grpc/support/tls_pthread.h
   include/grpc/support/useful.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/gpr_slice.h
-  include/grpc/impl/codegen/gpr_types.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/codegen_atm.h
+  include/grpc/impl/codegen/codegen_atm_gcc_atomic.h
+  include/grpc/impl/codegen/codegen_atm_gcc_sync.h
+  include/grpc/impl/codegen/codegen_atm_windows.h
+  include/grpc/impl/codegen/codegen_gpr_slice.h
+  include/grpc/impl/codegen/codegen_gpr_types.h
+  include/grpc/impl/codegen/codegen_port_platform.h
+  include/grpc/impl/codegen/codegen_sync.h
+  include/grpc/impl/codegen/codegen_sync_custom.h
+  include/grpc/impl/codegen/codegen_sync_generic.h
+  include/grpc/impl/codegen/codegen_sync_posix.h
+  include/grpc/impl/codegen/codegen_sync_windows.h
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
@@ -3228,15 +3228,15 @@ foreach(_hdr
   include/grpc/slice_buffer.h
   include/grpc/status.h
   include/grpc/support/workaround_list.h
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/exec_ctx_fwd.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/status.h
+  include/grpc/impl/codegen/codegen_byte_buffer.h
+  include/grpc/impl/codegen/codegen_byte_buffer_reader.h
+  include/grpc/impl/codegen/codegen_compression_types.h
+  include/grpc/impl/codegen/codegen_connectivity_state.h
+  include/grpc/impl/codegen/codegen_exec_ctx_fwd.h
+  include/grpc/impl/codegen/codegen_grpc_types.h
+  include/grpc/impl/codegen/codegen_propagation_bits.h
+  include/grpc/impl/codegen/codegen_slice.h
+  include/grpc/impl/codegen/codegen_status.h
   include/grpc++/impl/codegen/async_stream.h
   include/grpc++/impl/codegen/async_unary_call.h
   include/grpc++/impl/codegen/byte_buffer.h
@@ -3633,27 +3633,27 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/exec_ctx_fwd.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/gpr_slice.h
-  include/grpc/impl/codegen/gpr_types.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/codegen_byte_buffer.h
+  include/grpc/impl/codegen/codegen_byte_buffer_reader.h
+  include/grpc/impl/codegen/codegen_compression_types.h
+  include/grpc/impl/codegen/codegen_connectivity_state.h
+  include/grpc/impl/codegen/codegen_exec_ctx_fwd.h
+  include/grpc/impl/codegen/codegen_grpc_types.h
+  include/grpc/impl/codegen/codegen_propagation_bits.h
+  include/grpc/impl/codegen/codegen_slice.h
+  include/grpc/impl/codegen/codegen_status.h
+  include/grpc/impl/codegen/codegen_atm.h
+  include/grpc/impl/codegen/codegen_atm_gcc_atomic.h
+  include/grpc/impl/codegen/codegen_atm_gcc_sync.h
+  include/grpc/impl/codegen/codegen_atm_windows.h
+  include/grpc/impl/codegen/codegen_gpr_slice.h
+  include/grpc/impl/codegen/codegen_gpr_types.h
+  include/grpc/impl/codegen/codegen_port_platform.h
+  include/grpc/impl/codegen/codegen_sync.h
+  include/grpc/impl/codegen/codegen_sync_custom.h
+  include/grpc/impl/codegen/codegen_sync_generic.h
+  include/grpc/impl/codegen/codegen_sync_posix.h
+  include/grpc/impl/codegen/codegen_sync_windows.h
   include/grpc++/impl/codegen/proto_utils.h
   include/grpc++/impl/codegen/config_protobuf.h
 )
@@ -3774,27 +3774,27 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/exec_ctx_fwd.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/status.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/gpr_slice.h
-  include/grpc/impl/codegen/gpr_types.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/codegen_byte_buffer.h
+  include/grpc/impl/codegen/codegen_byte_buffer_reader.h
+  include/grpc/impl/codegen/codegen_compression_types.h
+  include/grpc/impl/codegen/codegen_connectivity_state.h
+  include/grpc/impl/codegen/codegen_exec_ctx_fwd.h
+  include/grpc/impl/codegen/codegen_grpc_types.h
+  include/grpc/impl/codegen/codegen_propagation_bits.h
+  include/grpc/impl/codegen/codegen_slice.h
+  include/grpc/impl/codegen/codegen_status.h
+  include/grpc/impl/codegen/codegen_atm.h
+  include/grpc/impl/codegen/codegen_atm_gcc_atomic.h
+  include/grpc/impl/codegen/codegen_atm_gcc_sync.h
+  include/grpc/impl/codegen/codegen_atm_windows.h
+  include/grpc/impl/codegen/codegen_gpr_slice.h
+  include/grpc/impl/codegen/codegen_gpr_types.h
+  include/grpc/impl/codegen/codegen_port_platform.h
+  include/grpc/impl/codegen/codegen_sync.h
+  include/grpc/impl/codegen/codegen_sync_custom.h
+  include/grpc/impl/codegen/codegen_sync_generic.h
+  include/grpc/impl/codegen/codegen_sync_posix.h
+  include/grpc/impl/codegen/codegen_sync_windows.h
   include/grpc++/impl/codegen/proto_utils.h
   include/grpc++/impl/codegen/config_protobuf.h
 )
@@ -3955,18 +3955,18 @@ foreach(_hdr
   include/grpc/support/tls_msvc.h
   include/grpc/support/tls_pthread.h
   include/grpc/support/useful.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/gpr_slice.h
-  include/grpc/impl/codegen/gpr_types.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
+  include/grpc/impl/codegen/codegen_atm.h
+  include/grpc/impl/codegen/codegen_atm_gcc_atomic.h
+  include/grpc/impl/codegen/codegen_atm_gcc_sync.h
+  include/grpc/impl/codegen/codegen_atm_windows.h
+  include/grpc/impl/codegen/codegen_gpr_slice.h
+  include/grpc/impl/codegen/codegen_gpr_types.h
+  include/grpc/impl/codegen/codegen_port_platform.h
+  include/grpc/impl/codegen/codegen_sync.h
+  include/grpc/impl/codegen/codegen_sync_custom.h
+  include/grpc/impl/codegen/codegen_sync_generic.h
+  include/grpc/impl/codegen/codegen_sync_posix.h
+  include/grpc/impl/codegen/codegen_sync_windows.h
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
@@ -3978,15 +3978,15 @@ foreach(_hdr
   include/grpc/slice_buffer.h
   include/grpc/status.h
   include/grpc/support/workaround_list.h
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/exec_ctx_fwd.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/status.h
+  include/grpc/impl/codegen/codegen_byte_buffer.h
+  include/grpc/impl/codegen/codegen_byte_buffer_reader.h
+  include/grpc/impl/codegen/codegen_compression_types.h
+  include/grpc/impl/codegen/codegen_connectivity_state.h
+  include/grpc/impl/codegen/codegen_exec_ctx_fwd.h
+  include/grpc/impl/codegen/codegen_grpc_types.h
+  include/grpc/impl/codegen/codegen_propagation_bits.h
+  include/grpc/impl/codegen/codegen_slice.h
+  include/grpc/impl/codegen/codegen_status.h
   include/grpc++/impl/codegen/async_stream.h
   include/grpc++/impl/codegen/async_unary_call.h
   include/grpc++/impl/codegen/byte_buffer.h

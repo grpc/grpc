@@ -24,8 +24,8 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/codegen_compression_types.h>
+#include <grpc/impl/codegen/codegen_grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <string.h>
 
