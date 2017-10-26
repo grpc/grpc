@@ -87,7 +87,12 @@ static void method_parameters_unref(method_parameters *method_params) {
   }
 }
 
-static void method_parameters_free(grpc_exec_ctx *exec_ctx, void *value) {
+// Wrappers to pass to grpc_service_config_create_method_config_table().
+static void *method_parameters_ref_wrapper(void *value) {
+  return method_parameters_ref((method_parameters *)value);
+}
+static void method_parameters_unref_wrapper(grpc_exec_ctx *exec_ctx,
+                                            void *value) {
   method_parameters_unref((method_parameters *)value);
 }
 
@@ -472,7 +477,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
         retry_throttle_data = parsing_state.retry_throttle_data;
         method_params_table = grpc_service_config_create_method_config_table(
             exec_ctx, service_config, method_parameters_create_from_json,
-            method_parameters_free);
+            method_parameters_ref_wrapper, method_parameters_unref_wrapper);
         grpc_service_config_destroy(service_config);
       }
     }
