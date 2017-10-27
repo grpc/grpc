@@ -89,12 +89,19 @@ typedef enum {
 
 typedef struct {
   int max_attempts;
-  int initial_backoff_ms;
-  int max_backoff_ms;
-  int backoff_multiplier;
+  grpc_millis initial_backoff;
+  grpc_millis max_backoff;
+  float backoff_multiplier;
   grpc_status_code *retryable_status_codes;
   size_t num_retryable_status_codes;
 } retry_policy_params;
+
+static void retry_policy_params_free(retry_policy_params *retry_policy) {
+  if (retry_policy != NULL) {
+    gpr_free(retry_policy->retryable_status_codes);
+    gpr_free(retry_policy);
+  }
+}
 
 typedef struct {
   gpr_refcount refs;
@@ -111,10 +118,7 @@ static method_parameters *method_parameters_ref(
 
 static void method_parameters_unref(method_parameters *method_params) {
   if (gpr_unref(&method_params->refs)) {
-    if (method_params->retry_policy != NULL) {
-      gpr_free(method_params->retry_policy->retryable_status_codes);
-    }
-    gpr_free(method_params->retry_policy);
+    retry_policy_params_free(method_params->retry_policy);
     gpr_free(method_params);
   }
 }
@@ -133,7 +137,7 @@ static bool parse_wait_for_ready(grpc_json *field,
   return true;
 }
 
-static bool parse_timeout(grpc_json *field, grpc_millis *timeout) {
+static bool parse_duration(grpc_json *field, grpc_millis *duration) {
   if (field->type != GRPC_JSON_STRING) return false;
   size_t len = strlen(field->value);
   if (field->value[len - 1] != 's') return false;
@@ -168,7 +172,7 @@ static bool parse_timeout(grpc_json *field, grpc_millis *timeout) {
   int seconds = gpr_parse_nonnegative_int(buf);
   gpr_free(buf);
   if (seconds == -1) return false;
-  *timeout = seconds * GPR_MS_PER_SEC + nanos / GPR_NS_PER_MS;
+  *duration = seconds * GPR_MS_PER_SEC + nanos / GPR_NS_PER_MS;
   return true;
 }
 
@@ -186,18 +190,24 @@ static bool parse_retry_policy(grpc_json *field,
       if (retry_policy->max_attempts > MAX_MAX_RETRY_ATTEMPTS) {
         retry_policy->max_attempts = MAX_MAX_RETRY_ATTEMPTS;
       }
-    } else if (strcmp(sub_field->key, "initialBackoffMs") == 0) {
-      if (retry_policy->initial_backoff_ms != 0) return false;  // Duplicate.
+    } else if (strcmp(sub_field->key, "initialBackoff") == 0) {
+      if (retry_policy->initial_backoff > 0) return false;  // Duplicate.
+      if (!parse_duration(sub_field, &retry_policy->initial_backoff)) {
+        return false;
+      }
+      if (retry_policy->initial_backoff == 0) return false;
+    } else if (strcmp(sub_field->key, "maxBackoff") == 0) {
+      if (retry_policy->max_backoff > 0) return false;  // Duplicate.
+      if (!parse_duration(sub_field, &retry_policy->max_backoff)) return false;
+      if (retry_policy->max_backoff == 0) return false;
+    } else if (strcmp(sub_field->key, "backoffMultiplier") == 0) {
+      if (retry_policy->backoff_multiplier != 0) return false;  // Duplicate.
       if (sub_field->type != GRPC_JSON_NUMBER) return false;
-      retry_policy->initial_backoff_ms =
-          gpr_parse_nonnegative_int(sub_field->value);
-      if (retry_policy->initial_backoff_ms <= 0) return false;
-    } else if (strcmp(sub_field->key, "maxBackoffMs") == 0) {
-      if (retry_policy->max_backoff_ms != 0) return false;  // Duplicate.
-      if (sub_field->type != GRPC_JSON_NUMBER) return false;
-      retry_policy->max_backoff_ms =
-          gpr_parse_nonnegative_int(sub_field->value);
-      if (retry_policy->max_backoff_ms <= 0) return false;
+      if (sscanf(sub_field->value, "%f", &retry_policy->backoff_multiplier)
+          != 1) {
+        return false;
+      }
+      if (retry_policy->backoff_multiplier <= 0) return false;
     } else if (strcmp(sub_field->key, "retryableStatusCodes") == 0) {
       if (retry_policy->retryable_status_codes != NULL) {
         return false;  // Duplicate.
@@ -220,6 +230,14 @@ static bool parse_retry_policy(grpc_json *field,
       }
     }
   }
+  // Make sure required fields are set.
+  if (retry_policy->max_attempts == 0 ||
+      retry_policy->initial_backoff == 0 ||
+      retry_policy->max_backoff == 0 ||
+      retry_policy->backoff_multiplier == 0 ||
+      retry_policy->retryable_status_codes == NULL) {
+    return false;
+  }
   return true;
 }
 
@@ -237,7 +255,7 @@ static void *method_parameters_create_from_json(const grpc_json *json,
       if (!parse_wait_for_ready(field, &wait_for_ready)) goto error;
     } else if (strcmp(field->key, "timeout") == 0) {
       if (timeout > 0) return NULL;  // Duplicate.
-      if (!parse_timeout(field, &timeout)) goto error;
+      if (!parse_duration(field, &timeout)) goto error;
     } else if (strcmp(field->key, "retryPolicy") == 0 && enable_retries) {
       if (retry_policy != NULL) goto error;  // Duplicate.
       retry_policy = (retry_policy_params *)gpr_zalloc(sizeof(*retry_policy));
@@ -251,8 +269,7 @@ static void *method_parameters_create_from_json(const grpc_json *json,
   value->retry_policy = retry_policy;
   return value;
 error:
-  if (retry_policy != NULL) gpr_free(retry_policy->retryable_status_codes);
-  gpr_free(retry_policy);
+  retry_policy_params_free(retry_policy);
   return NULL;
 }
 
@@ -1569,10 +1586,10 @@ static bool maybe_retry(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   } else if (calld->num_attempts_completed == 1 ||
              calld->last_attempt_got_server_pushback) {
     grpc_backoff_init(
-        &calld->retry_backoff, retry_policy->initial_backoff_ms,
+        &calld->retry_backoff, retry_policy->initial_backoff,
         retry_policy->backoff_multiplier, RETRY_BACKOFF_JITTER,
-        GPR_MIN(retry_policy->initial_backoff_ms, retry_policy->max_backoff_ms),
-        retry_policy->max_backoff_ms);
+        GPR_MIN(retry_policy->initial_backoff, retry_policy->max_backoff),
+        retry_policy->max_backoff);
     next_attempt_time = grpc_backoff_begin(exec_ctx, &calld->retry_backoff);
     calld->last_attempt_got_server_pushback = false;
   } else {
@@ -1581,7 +1598,7 @@ static bool maybe_retry(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
     gpr_log(GPR_DEBUG,
             "chand=%p calld=%p: retrying failed call in %" PRIdPTR " ms", chand,
-            calld, next_attempt_time);
+            calld, next_attempt_time - grpc_exec_ctx_now(exec_ctx));
   }
   // Schedule retry after computed delay.
   GRPC_CLOSURE_INIT(&calld->pick_closure, start_pick_locked, elem,
