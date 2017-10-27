@@ -161,9 +161,6 @@ module GRPC
     # Default poll period is 1s
     DEFAULT_POLL_PERIOD = 1
 
-    # Signal check period is 0.25s
-    SIGNAL_CHECK_PERIOD = 0.25
-
     # setup_connect_md_proc is used by #initialize to validate the
     # connect_md_proc.
     def self.setup_connect_md_proc(a_proc)
