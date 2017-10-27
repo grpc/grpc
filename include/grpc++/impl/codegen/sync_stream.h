@@ -156,21 +156,25 @@ class ClientReaderInterface : public internal::ClientStreamingInterface,
   virtual void WaitForInitialMetadata() = 0;
 };
 
+namespace internal {
+template <class R>
+class ClientReaderFactory {
+ public:
+  template <class W>
+  static ClientReader<R>* Create(ChannelInterface* channel,
+                                 const ::grpc::internal::RpcMethod& method,
+                                 ClientContext* context, const W& request) {
+    return new ClientReader<R>(channel, method, context, request);
+  }
+};
+}  // namespace internal
+
 /// Synchronous (blocking) client-side API for doing server-streaming RPCs,
 /// where the stream of messages coming from the server has messages
 /// of type \a R.
 template <class R>
 class ClientReader final : public ClientReaderInterface<R> {
  public:
-  struct internal {
-    template <class W>
-    static ClientReader* Create(ChannelInterface* channel,
-                                const ::grpc::internal::RpcMethod& method,
-                                ClientContext* context, const W& request) {
-      return new ClientReader(channel, method, context, request);
-    }
-  };
-
   /// See the \a ClientStreamingInterface.WaitForInitialMetadata method for
   /// semantics.
   ///
@@ -225,6 +229,7 @@ class ClientReader final : public ClientReaderInterface<R> {
   }
 
  private:
+  friend class internal::ClientReaderFactory<R>;
   ClientContext* context_;
   CompletionQueue cq_;
   ::grpc::internal::Call call_;
@@ -269,21 +274,25 @@ class ClientWriterInterface : public internal::ClientStreamingInterface,
   virtual bool WritesDone() = 0;
 };
 
+namespace internal {
+template <class W>
+class ClientWriterFactory {
+ public:
+  template <class R>
+  static ClientWriter<W>* Create(::grpc::ChannelInterface* channel,
+                                 const ::grpc::internal::RpcMethod& method,
+                                 ClientContext* context, R* response) {
+    return new ClientWriter<W>(channel, method, context, response);
+  }
+};
+}  // namespace internal
+
 /// Synchronous (blocking) client-side API for doing client-streaming RPCs,
 /// where the outgoing message stream coming from the client has messages of
 /// type \a W.
 template <class W>
 class ClientWriter : public ClientWriterInterface<W> {
  public:
-  struct internal {
-    template <class R>
-    static ClientWriter* Create(::grpc::ChannelInterface* channel,
-                                const ::grpc::internal::RpcMethod& method,
-                                ClientContext* context, R* response) {
-      return new ClientWriter(channel, method, context, response);
-    }
-  };
-
   /// See the \a ClientStreamingInterface.WaitForInitialMetadata method for
   /// semantics.
   ///
@@ -355,12 +364,13 @@ class ClientWriter : public ClientWriterInterface<W> {
   }
 
  private:
+  friend class internal::ClientWriterFactory<W>;
+
   /// Block to create a stream (i.e. send request headers and other initial
   /// metadata to the server). Note that \a context will be used to fill
   /// in custom initial metadata. \a response will be filled in with the
   /// single expected response message from the server upon a successful
   /// call to the \a Finish method of this instance.
-
   template <class R>
   ClientWriter(ChannelInterface* channel,
                const ::grpc::internal::RpcMethod& method,
@@ -415,6 +425,18 @@ class ClientReaderWriterInterface : public internal::ClientStreamingInterface,
   virtual bool WritesDone() = 0;
 };
 
+namespace internal {
+template <class W, class R>
+class ClientReaderWriterFactory {
+ public:
+  static ClientReaderWriter<W, R>* Create(
+      ::grpc::ChannelInterface* channel,
+      const ::grpc::internal::RpcMethod& method, ClientContext* context) {
+    return new ClientReaderWriter<W, R>(channel, method, context);
+  }
+};
+}  // namespace internal
+
 /// Synchronous (blocking) client-side API for bi-directional streaming RPCs,
 /// where the outgoing message stream coming from the client has messages of
 /// type \a W, and the incoming messages stream coming from the server has
@@ -422,14 +444,6 @@ class ClientReaderWriterInterface : public internal::ClientStreamingInterface,
 template <class W, class R>
 class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
  public:
-  struct internal {
-    static ClientReaderWriter* Create(::grpc::ChannelInterface* channel,
-                                      const ::grpc::internal::RpcMethod& method,
-                                      ClientContext* context) {
-      return new ClientReaderWriter(channel, method, context);
-    }
-  };
-
   /// Block waiting to read initial metadata from the server.
   /// This call is optional, but if it is used, it cannot be used concurrently
   /// with or after the \a Finish method.
@@ -523,6 +537,8 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   }
 
  private:
+  friend class internal::ClientReaderWriterFactory<W, R>;
+
   ClientContext* context_;
   CompletionQueue cq_;
   ::grpc::internal::Call call_;

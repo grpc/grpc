@@ -69,31 +69,35 @@ class ClientAsyncResponseReaderInterface {
   virtual void Finish(R* msg, Status* status, void* tag) = 0;
 };
 
+namespace internal {
+template <class R>
+class ClientAsyncResponseReaderFactory {
+ public:
+  /// Start a call and write the request out if \a start is set.
+  /// \a tag will be notified on \a cq when the call has been started (i.e.
+  /// intitial metadata sent) and \a request has been written out.
+  /// If \a start is not set, the actual call must be initiated by StartCall
+  /// Note that \a context will be used to fill in custom initial metadata
+  /// used to send to the server when starting the call.
+  template <class W>
+  static ClientAsyncResponseReader<R>* Create(
+      ChannelInterface* channel, CompletionQueue* cq,
+      const ::grpc::internal::RpcMethod& method, ClientContext* context,
+      const W& request, bool start) {
+    ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
+    return new (g_core_codegen_interface->grpc_call_arena_alloc(
+        call.call(), sizeof(ClientAsyncResponseReader<R>)))
+        ClientAsyncResponseReader<R>(call, context, request, start);
+  }
+};
+}  // namespace internal
+
 /// Async API for client-side unary RPCs, where the message response
 /// received from the server is of type \a R.
 template <class R>
 class ClientAsyncResponseReader final
     : public ClientAsyncResponseReaderInterface<R> {
  public:
-  struct internal {
-    /// Start a call and write the request out if \a start is set.
-    /// \a tag will be notified on \a cq when the call has been started (i.e.
-    /// intitial metadata sent) and \a request has been written out.
-    /// If \a start is not set, the actual call must be initiated by StartCall
-    /// Note that \a context will be used to fill in custom initial metadata
-    /// used to send to the server when starting the call.
-    template <class W>
-    static ClientAsyncResponseReader* Create(
-        ChannelInterface* channel, CompletionQueue* cq,
-        const ::grpc::internal::RpcMethod& method, ClientContext* context,
-        const W& request, bool start) {
-      ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
-      return new (g_core_codegen_interface->grpc_call_arena_alloc(
-          call.call(), sizeof(ClientAsyncResponseReader)))
-          ClientAsyncResponseReader(call, context, request, start);
-    }
-  };
-
   // always allocated against a call arena, no memory free required
   static void operator delete(void* ptr, std::size_t size) {
     assert(size == sizeof(ClientAsyncResponseReader));
@@ -138,6 +142,7 @@ class ClientAsyncResponseReader final
   }
 
  private:
+  friend class internal::ClientAsyncResponseReaderFactory<R>;
   ClientContext* const context_;
   ::grpc::internal::Call call_;
   bool started_;
