@@ -504,12 +504,11 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_call_details_init(&call_details);
-  GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv,
-                                  request_payload_slice));
+  GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
   grpc_byte_buffer_destroy(request_payload_recv);
   request_payload_recv = NULL;
-  GPR_ASSERT(byte_buffer_eq_slice(request2_payload_recv,
-                                  request2_payload_slice));
+  GPR_ASSERT(
+      byte_buffer_eq_slice(request2_payload_recv, request2_payload_slice));
   grpc_byte_buffer_destroy(request2_payload_recv);
   request2_payload_recv = NULL;
 
@@ -619,14 +618,13 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
   grpc_byte_buffer_destroy(request2_payload);
   grpc_byte_buffer_destroy(request3_payload);
   grpc_byte_buffer_destroy(response_payload);
-  GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv,
-                                  request_payload_slice));
+  GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
   grpc_byte_buffer_destroy(request_payload_recv);
-  GPR_ASSERT(byte_buffer_eq_slice(request2_payload_recv,
-                                  request2_payload_slice));
+  GPR_ASSERT(
+      byte_buffer_eq_slice(request2_payload_recv, request2_payload_slice));
   grpc_byte_buffer_destroy(request2_payload_recv);
-  GPR_ASSERT(byte_buffer_eq_slice(request3_payload_recv,
-                                  request3_payload_slice));
+  GPR_ASSERT(
+      byte_buffer_eq_slice(request3_payload_recv, request3_payload_slice));
   grpc_byte_buffer_destroy(request3_payload_recv);
   grpc_byte_buffer_destroy(response_payload_recv);
 
@@ -876,17 +874,16 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   grpc_byte_buffer_destroy(request2_payload);
   grpc_byte_buffer_destroy(response_payload);
   grpc_byte_buffer_destroy(response2_payload);
-  GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv,
-                                  request_payload_slice));
+  GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
   grpc_byte_buffer_destroy(request_payload_recv);
-  GPR_ASSERT(byte_buffer_eq_slice(request2_payload_recv,
-                                  request2_payload_slice));
+  GPR_ASSERT(
+      byte_buffer_eq_slice(request2_payload_recv, request2_payload_slice));
   grpc_byte_buffer_destroy(request2_payload_recv);
-  GPR_ASSERT(byte_buffer_eq_slice(response_payload_recv,
-                                  response_payload_slice));
+  GPR_ASSERT(
+      byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
   grpc_byte_buffer_destroy(response_payload_recv);
-  GPR_ASSERT(byte_buffer_eq_slice(response2_payload_recv,
-                                  response2_payload_slice));
+  GPR_ASSERT(
+      byte_buffer_eq_slice(response2_payload_recv, response2_payload_slice));
   grpc_byte_buffer_destroy(response2_payload_recv);
   grpc_call_unref(c);
   grpc_call_unref(s);
@@ -1282,30 +1279,26 @@ static void test_retry_exceeds_buffer_size_in_initial_batch(
   char *peer;
 
   grpc_arg args[] = {
-      {
-          .key = GRPC_ARG_SERVICE_CONFIG,
-          .type = GRPC_ARG_STRING,
-          .value.string =
-              "{\n"
-              "  \"methodConfig\": [ {\n"
-              "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
-              "    ],\n"
-              "    \"retryPolicy\": {\n"
-              "      \"maxAttempts\": 2,\n"
-              "      \"initialBackoff\": \"1s\",\n"
-              "      \"maxBackoff\": \"120s\",\n"
-              "      \"backoffMultiplier\": 1.6,\n"
-              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
-              "    }\n"
-              "  } ]\n"
-              "}"
-     },
-     {
-         .key = GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE,
-         .type = GRPC_ARG_INTEGER,
-         .value.integer = 2
-     }};
+      {.key = GRPC_ARG_SERVICE_CONFIG,
+       .type = GRPC_ARG_STRING,
+       .value.string =
+           "{\n"
+           "  \"methodConfig\": [ {\n"
+           "    \"name\": [\n"
+           "      { \"service\": \"service\", \"method\": \"method\" }\n"
+           "    ],\n"
+           "    \"retryPolicy\": {\n"
+           "      \"maxAttempts\": 2,\n"
+           "      \"initialBackoff\": \"1s\",\n"
+           "      \"maxBackoff\": \"120s\",\n"
+           "      \"backoffMultiplier\": 1.6,\n"
+           "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+           "    }\n"
+           "  } ]\n"
+           "}"},
+      {.key = GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE,
+       .type = GRPC_ARG_INTEGER,
+       .value.integer = 2}};
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   grpc_end2end_test_fixture f = begin_test(
       config, "retry_exceeds_buffer_size_in_initial_batch", &client_args, NULL);
@@ -1452,34 +1445,32 @@ static void test_retry_exceeds_buffer_size_in_subsequent_batch(
   char *peer;
 
   grpc_arg args[] = {
+      {.key = GRPC_ARG_SERVICE_CONFIG,
+       .type = GRPC_ARG_STRING,
+       .value.string =
+           "{\n"
+           "  \"methodConfig\": [ {\n"
+           "    \"name\": [\n"
+           "      { \"service\": \"service\", \"method\": \"method\" }\n"
+           "    ],\n"
+           "    \"retryPolicy\": {\n"
+           "      \"maxAttempts\": 2,\n"
+           "      \"initialBackoff\": \"1s\",\n"
+           "      \"maxBackoff\": \"120s\",\n"
+           "      \"backoffMultiplier\": 1.6,\n"
+           "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+           "    }\n"
+           "  } ]\n"
+           "}"},
       {
-          .key = GRPC_ARG_SERVICE_CONFIG,
-          .type = GRPC_ARG_STRING,
-          .value.string =
-              "{\n"
-              "  \"methodConfig\": [ {\n"
-              "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
-              "    ],\n"
-              "    \"retryPolicy\": {\n"
-              "      \"maxAttempts\": 2,\n"
-              "      \"initialBackoff\": \"1s\",\n"
-              "      \"maxBackoff\": \"120s\",\n"
-              "      \"backoffMultiplier\": 1.6,\n"
-              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
-              "    }\n"
-              "  } ]\n"
-              "}"
-     },
-     {
-         .key = GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE,
-         .type = GRPC_ARG_INTEGER,
-         .value.integer = 102400,
-     }};
+          .key = GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE,
+          .type = GRPC_ARG_INTEGER,
+          .value.integer = 102400,
+      }};
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
-  grpc_end2end_test_fixture f = begin_test(
-      config, "retry_exceeds_buffer_size_in_subsequent_batch", &client_args,
-      NULL);
+  grpc_end2end_test_fixture f =
+      begin_test(config, "retry_exceeds_buffer_size_in_subsequent_batch",
+                 &client_args, NULL);
 
   cq_verifier *cqv = cq_verifier_create(f.cq);
 
@@ -1950,30 +1941,26 @@ static void test_retry_disabled(grpc_end2end_test_config config) {
   char *peer;
 
   grpc_arg args[] = {
-    {
-      .key = GRPC_ARG_SERVICE_CONFIG,
-      .type = GRPC_ARG_STRING,
-      .value.string =
-          "{\n"
-          "  \"methodConfig\": [ {\n"
-          "    \"name\": [\n"
-          "      { \"service\": \"service\", \"method\": \"method\" }\n"
-          "    ],\n"
-          "    \"retryPolicy\": {\n"
-          "      \"maxAttempts\": 2,\n"
-          "      \"initialBackoff\": \"1s\",\n"
-          "      \"maxBackoff\": \"120s\",\n"
-          "      \"backoffMultiplier\": 1.6,\n"
-          "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
-          "    }\n"
-          "  } ]\n"
-          "}"
-    },
-    {
-      .key = GRPC_ARG_ENABLE_RETRIES,
-      .type = GRPC_ARG_INTEGER,
-      .value.integer = 0
-    }};
+      {.key = GRPC_ARG_SERVICE_CONFIG,
+       .type = GRPC_ARG_STRING,
+       .value.string =
+           "{\n"
+           "  \"methodConfig\": [ {\n"
+           "    \"name\": [\n"
+           "      { \"service\": \"service\", \"method\": \"method\" }\n"
+           "    ],\n"
+           "    \"retryPolicy\": {\n"
+           "      \"maxAttempts\": 2,\n"
+           "      \"initialBackoff\": \"1s\",\n"
+           "      \"maxBackoff\": \"120s\",\n"
+           "      \"backoffMultiplier\": 1.6,\n"
+           "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+           "    }\n"
+           "  } ]\n"
+           "}"},
+      {.key = GRPC_ARG_ENABLE_RETRIES,
+       .type = GRPC_ARG_INTEGER,
+       .value.integer = 0}};
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   grpc_end2end_test_fixture f =
       begin_test(config, "retry_disabled", &client_args, NULL);

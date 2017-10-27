@@ -52,7 +52,8 @@ size_t gpr_arena_destroy(gpr_arena *arena) {
 
 void *gpr_arena_alloc(gpr_arena *arena, size_t size) {
   gpr_mu_lock(&arena->mu);
-  arena->ptrs = gpr_realloc(arena->ptrs, sizeof(void*) * (arena->num_ptrs + 1));
+  arena->ptrs =
+      gpr_realloc(arena->ptrs, sizeof(void *) * (arena->num_ptrs + 1));
   void *retval = arena->ptrs[arena->num_ptrs++] = gpr_zalloc(size);
   gpr_mu_unlock(&arena->mu);
   return retval;

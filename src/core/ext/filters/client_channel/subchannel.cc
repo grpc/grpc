@@ -750,7 +750,7 @@ grpc_error *grpc_connected_subchannel_create_call(
   grpc_channel_stack *chanstk = CHANNEL_STACK_FROM_CONNECTION(con);
   *call = (grpc_subchannel_call *)gpr_arena_alloc(
       args->arena, sizeof(grpc_subchannel_call) + chanstk->call_stack_size +
-                   args->parent_data_size);
+                       args->parent_data_size);
   grpc_call_stack *callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
   (*call)->connection = GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
   const grpc_call_element_args call_args = {

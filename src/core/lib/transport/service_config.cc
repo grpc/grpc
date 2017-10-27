@@ -205,8 +205,8 @@ grpc_slice_hash_table* grpc_service_config_create_method_config_table(
       size_t idx = 0;
       for (grpc_json* method = field->child; method != NULL;
            method = method->next) {
-        if (!parse_json_method_config(exec_ctx, method, create_value,
-                                      user_data, entries, &idx)) {
+        if (!parse_json_method_config(exec_ctx, method, create_value, user_data,
+                                      entries, &idx)) {
           return NULL;
         }
       }
