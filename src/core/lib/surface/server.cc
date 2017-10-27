@@ -537,6 +537,7 @@ static void publish_new_rpc(grpc_exec_ctx *exec_ctx, void *arg,
     return;
   }
 
+  gpr_mu_lock(&server->mu_call);
   for (size_t i = 0; i < server->cq_count; i++) {
     size_t cq_idx = (chand->cq_idx + i) % server->cq_count;
     int request_id = gpr_stack_lockfree_pop(rm->requests_per_cq[cq_idx]);
@@ -549,13 +550,13 @@ static void publish_new_rpc(grpc_exec_ctx *exec_ctx, void *arg,
       gpr_mu_unlock(&calld->mu_state);
       publish_call(exec_ctx, server, calld, cq_idx,
                    &server->requested_calls_per_cq[cq_idx][request_id]);
+      gpr_mu_unlock(&server->mu_call);
       return; /* early out */
     }
   }
 
   /* no cq to take the request found: queue it on the slow list */
   GRPC_STATS_INC_SERVER_SLOWPATH_REQUESTS_QUEUED(exec_ctx);
-  gpr_mu_lock(&server->mu_call);
   gpr_mu_lock(&calld->mu_state);
   calld->state = PENDING;
   gpr_mu_unlock(&calld->mu_state);
@@ -1398,10 +1399,10 @@ static grpc_call_error queue_call_request(grpc_exec_ctx *exec_ctx,
   }
   server->requested_calls_per_cq[cq_idx][request_id] = *rc;
   gpr_free(rc);
+  gpr_mu_lock(&server->mu_call);
   if (gpr_stack_lockfree_push(rm->requests_per_cq[cq_idx], request_id)) {
     /* this was the first queued request: we need to lock and start
        matching calls */
-    gpr_mu_lock(&server->mu_call);
     while ((calld = rm->pending_head) != NULL) {
       request_id = gpr_stack_lockfree_pop(rm->requests_per_cq[cq_idx]);
       if (request_id == -1) break;
@@ -1425,8 +1426,8 @@ static grpc_call_error queue_call_request(grpc_exec_ctx *exec_ctx,
       }
       gpr_mu_lock(&server->mu_call);
     }
-    gpr_mu_unlock(&server->mu_call);
   }
+  gpr_mu_unlock(&server->mu_call);
   return GRPC_CALL_OK;
 }
 
