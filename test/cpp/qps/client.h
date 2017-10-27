@@ -443,7 +443,7 @@ class ClientImpl : public Client {
         if (!is_inproc_) {
           GPR_ASSERT(channel_->WaitForConnected(
               gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                           gpr_time_from_seconds(10, GPR_TIMESPAN))));
+                           gpr_time_from_seconds(30, GPR_TIMESPAN))));
         }
       }));
     }
