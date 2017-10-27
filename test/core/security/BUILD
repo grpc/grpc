@@ -91,6 +91,18 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "ssl_credentials_test",
+    srcs = ["ssl_credentials_test.c"],
+    language = "C",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ]
+)
+
 grpc_cc_binary(
     name = "create_jwt",
     srcs = ["create_jwt.c"],
