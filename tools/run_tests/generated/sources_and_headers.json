@@ -7453,7 +7453,6 @@
     "headers": [
       "third_party/benchmark/include/benchmark/benchmark.h", 
       "third_party/benchmark/include/benchmark/benchmark_api.h", 
-      "third_party/benchmark/include/benchmark/macros.h", 
       "third_party/benchmark/include/benchmark/reporter.h", 
       "third_party/benchmark/src/arraysize.h", 
       "third_party/benchmark/src/benchmark_api_internal.h", 
@@ -7461,6 +7460,7 @@
       "third_party/benchmark/src/colorprint.h", 
       "third_party/benchmark/src/commandlineflags.h", 
       "third_party/benchmark/src/complexity.h", 
+      "third_party/benchmark/src/counter.h", 
       "third_party/benchmark/src/cycleclock.h", 
       "third_party/benchmark/src/internal_macros.h", 
       "third_party/benchmark/src/log.h", 
