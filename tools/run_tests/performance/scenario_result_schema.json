@@ -592,6 +592,11 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_cq_tls_cache_hits", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_call_initial_size", 
         "type": "STRING"
       }, 
@@ -1420,6 +1425,11 @@
       {
         "mode": "NULLABLE", 
         "name": "core_cq_ev_queue_transient_pop_failures", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_cq_tls_cache_hits", 
         "type": "INTEGER"
       }, 
       {

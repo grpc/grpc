@@ -292,3 +292,5 @@
 - counter: cq_ev_queue_transient_pop_failures
   doc: Number of times NULL was popped out of completion queue's event queue
        even though the event queue was not empty
+- counter: cq_tls_cache_hits
+  doc: Number of times a event was delivered from the thread-local cache

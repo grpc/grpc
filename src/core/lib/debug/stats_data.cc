@@ -119,6 +119,7 @@ const char *grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "cq_ev_queue_trylock_failures",
     "cq_ev_queue_trylock_successes",
     "cq_ev_queue_transient_pop_failures",
+    "cq_tls_cache_hits",
 };
 const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of client side calls created by this process",
@@ -240,6 +241,7 @@ const char *grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "queue.",
     "Number of times NULL was popped out of completion queue's event queue "
     "even though the event queue was not empty",
+    "Number of times a event was delivered from the thread-local cache",
 };
 const char *grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
     "call_initial_size",
