@@ -191,11 +191,11 @@ static void test_retry_basic(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(101), true);
   cq_verify(cqv);
 
-  // Make sure the "grpc-retry-attempts" header was not sent in the
+  // Make sure the "grpc-previous-rpc-attempts" header was not sent in the
   // initial attempt.
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
     GPR_ASSERT(grpc_slice_str_cmp(request_metadata_recv.metadata[i].key,
-                                  "grpc-retry-attempts") != 0);
+                                  "grpc-previous-rpc-attempts") != 0);
   }
 
   peer = grpc_call_get_peer(s);
@@ -239,11 +239,11 @@ static void test_retry_basic(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(201), true);
   cq_verify(cqv);
 
-  // Make sure the "grpc-retry-attempts" header was sent in the retry.
+  // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
   bool found_retry_header = false;
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
     if (grpc_slice_str_cmp(request_metadata_recv.metadata[i].key,
-                           "grpc-retry-attempts") == 0) {
+                           "grpc-previous-rpc-attempts") == 0) {
       GPR_ASSERT(grpc_slice_str_cmp(request_metadata_recv.metadata[i].value,
                                     "1") == 0);
       found_retry_header = true;

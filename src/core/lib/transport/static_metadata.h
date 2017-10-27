@@ -80,8 +80,8 @@ extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];
 #define GRPC_MDSTR_HOST (grpc_static_slice_table[20])
 /* "lb-token" */
 #define GRPC_MDSTR_LB_TOKEN (grpc_static_slice_table[21])
-/* "grpc-retry-attempts" */
-#define GRPC_MDSTR_GRPC_RETRY_ATTEMPTS (grpc_static_slice_table[22])
+/* "grpc-previous-rpc-attempts" */
+#define GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS (grpc_static_slice_table[22])
 /* "grpc-retry-pushback-ms" */
 #define GRPC_MDSTR_GRPC_RETRY_PUSHBACK_MS (grpc_static_slice_table[23])
 /* "grpc-timeout" */
@@ -541,7 +541,7 @@ typedef enum {
   GRPC_BATCH_USER_AGENT,
   GRPC_BATCH_HOST,
   GRPC_BATCH_LB_TOKEN,
-  GRPC_BATCH_GRPC_RETRY_ATTEMPTS,
+  GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS,
   GRPC_BATCH_GRPC_RETRY_PUSHBACK_MS,
   GRPC_BATCH_CALLOUTS_COUNT
 } grpc_metadata_batch_callouts_index;
@@ -571,7 +571,7 @@ typedef union {
     struct grpc_linked_mdelem *user_agent;
     struct grpc_linked_mdelem *host;
     struct grpc_linked_mdelem *lb_token;
-    struct grpc_linked_mdelem *grpc_retry_attempts;
+    struct grpc_linked_mdelem *grpc_previous_rpc_attempts;
     struct grpc_linked_mdelem *grpc_retry_pushback_ms;
   } named;
 } grpc_metadata_batch_callouts;

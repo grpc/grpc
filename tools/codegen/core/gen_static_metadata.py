@@ -45,7 +45,7 @@ CONFIG = [
     'grpc-server-stats-bin',
     'grpc-tags-bin',
     'grpc-trace-bin',
-    'grpc-retry-attempts',
+    'grpc-previous-rpc-attempts',
     'grpc-retry-pushback-ms',
     '',
     # channel arg keys
@@ -161,7 +161,7 @@ METADATA_BATCH_CALLOUTS = [
     ('user-agent', True),
     ('host', True),
     ('lb-token', True),
-    ('grpc-retry-attempts', True),
+    ('grpc-previous-rpc-attempts', True),
     ('grpc-retry-pushback-ms', True),
 ]
 

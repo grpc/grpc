@@ -21,7 +21,7 @@
 "\x0Auser-agent"
 "\x04host"
 "\x08lb-token"
-"\x13grpc-retry-attempts"
+"\x1Agrpc-previous-rpc-attempts"
 "\x16grpc-retry-pushback-ms"
 "\x0Cgrpc-timeout"
 "\x00"

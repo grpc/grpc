@@ -2055,14 +2055,15 @@ static void add_retriable_send_initial_metadata_op(
   grpc_metadata_batch_copy(exec_ctx, &calld->send_initial_metadata,
                            &batch_data->send_initial_metadata,
                            batch_data->send_initial_metadata_storage);
-  if (batch_data->send_initial_metadata.idx.named.grpc_retry_attempts != NULL) {
+  if (batch_data->send_initial_metadata.idx.named.grpc_previous_rpc_attempts
+      != NULL) {
     grpc_metadata_batch_remove(
         exec_ctx, &batch_data->send_initial_metadata,
-        batch_data->send_initial_metadata.idx.named.grpc_retry_attempts);
+        batch_data->send_initial_metadata.idx.named.grpc_previous_rpc_attempts);
   }
   if (calld->num_attempts_completed > 0) {
     grpc_mdelem retry_md = grpc_mdelem_from_slices(
-        exec_ctx, GRPC_MDSTR_GRPC_RETRY_ATTEMPTS,
+        exec_ctx, GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS,
         grpc_slice_from_static_string(
             g_retry_count_strings[calld->num_attempts_completed - 1]));
     grpc_error *error = grpc_metadata_batch_add_tail(
