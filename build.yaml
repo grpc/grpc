@@ -14,7 +14,7 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 5.0.0
   g_stands_for: gambit
-  version: 1.7.0
+  version: 1.7.1
 filegroups:
 - name: census
   public_headers:
