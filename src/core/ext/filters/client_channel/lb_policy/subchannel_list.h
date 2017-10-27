@@ -97,7 +97,7 @@ struct grpc_lb_subchannel_list {
   /** Index into subchannels of the one we're currently checking.
    * Used when connecting to subchannels serially instead of in parallel. */
   // TODO(roth): When we have time, we can probably make this go away
-  // and the index dynamically by subtracting
+  // and compute the index dynamically by subtracting
   // subchannel_list->subchannels from the subchannel_data pointer.
   size_t checking_subchannel;
 

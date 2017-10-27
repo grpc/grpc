@@ -334,6 +334,7 @@ static void update_state_counters_locked(grpc_lb_subchannel_data *sd) {
     GPR_ASSERT(subchannel_list->num_idle > 0);
     --subchannel_list->num_idle;
   }
+  sd->prev_connectivity_state = sd->curr_connectivity_state;
   if (sd->curr_connectivity_state == GRPC_CHANNEL_READY) {
     ++subchannel_list->num_ready;
   } else if (sd->curr_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
@@ -451,7 +452,6 @@ static void rr_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
   sd->curr_connectivity_state = sd->pending_connectivity_state_unsafe;
   // Update state counters and determine new overall state.
   update_state_counters_locked(sd);
-  sd->prev_connectivity_state = sd->curr_connectivity_state;
   const grpc_connectivity_state new_policy_connectivity_state =
       update_lb_connectivity_status_locked(exec_ctx, sd, GRPC_ERROR_REF(error));
   // If the sd's new state is SHUTDOWN, unref the subchannel, and if the new

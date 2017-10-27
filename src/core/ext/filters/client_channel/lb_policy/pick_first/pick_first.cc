@@ -312,6 +312,10 @@ static void pf_update_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
               exec_ctx, p->subchannel_list, "pf_update_includes_selected");
         }
         p->subchannel_list = subchannel_list;
+        if (p->selected->connected_subchannel != NULL) {
+          sd->connected_subchannel = GRPC_CONNECTED_SUBCHANNEL_REF(
+              p->selected->connected_subchannel, "pf_update_includes_selected");
+        }
         p->selected = sd;
         destroy_unselected_subchannels_locked(exec_ctx, p);
         // If there was a previously pending update (which may or may
@@ -442,8 +446,6 @@ static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
   }
   while (true) {
     switch (sd->curr_connectivity_state) {
-      case GRPC_CHANNEL_INIT:
-        GPR_UNREACHABLE_CODE(return );
       case GRPC_CHANNEL_READY: {
         // Case 2.  Promote p->latest_pending_subchannel_list to
         // p->subchannel_list.

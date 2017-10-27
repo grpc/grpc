@@ -137,34 +137,13 @@ grpc_lb_subchannel_list *grpc_lb_subchannel_list_create(
       }
       continue;
     }
-    grpc_error *error;
-    // Get the connectivity state of the subchannel. Already existing ones may
-    // be in a state other than INIT.
-    const grpc_connectivity_state subchannel_connectivity_state =
-        grpc_subchannel_check_connectivity(subchannel, &error);
-    if (error != GRPC_ERROR_NONE) {
-      // The subchannel is in error (e.g. shutting down). Ignore it.
-      if (GRPC_TRACER_ON(*tracer)) {
-        char *address_uri =
-            grpc_sockaddr_to_uri(&addresses->addresses[i].address);
-        gpr_log(GPR_DEBUG,
-                "[%s %p] subchannel for address uri %s shutting down, ignoring",
-                tracer->name, subchannel_list->policy, address_uri);
-        gpr_free(address_uri);
-      }
-      GRPC_SUBCHANNEL_UNREF(exec_ctx, subchannel, "new_sc_connectivity_error");
-      GRPC_ERROR_UNREF(error);
-      continue;
-    }
     if (GRPC_TRACER_ON(*tracer)) {
       char *address_uri =
           grpc_sockaddr_to_uri(&addresses->addresses[i].address);
       gpr_log(GPR_DEBUG, "[%s %p] subchannel list %p index %" PRIuPTR
-                         ": Created subchannel %p for address uri %s; "
-                         "initial connectivity state: %s",
+                         ": Created subchannel %p for address uri %s",
               tracer->name, p, subchannel_list, subchannel_index, subchannel,
-              address_uri,
-              grpc_connectivity_state_name(subchannel_connectivity_state));
+              address_uri);
       gpr_free(address_uri);
     }
     grpc_lb_subchannel_data *sd =
@@ -174,16 +153,11 @@ grpc_lb_subchannel_list *grpc_lb_subchannel_list_create(
     GRPC_CLOSURE_INIT(&sd->connectivity_changed_closure,
                       connectivity_changed_cb, sd,
                       grpc_combiner_scheduler(args->combiner));
-    // Use some sentinel value outside of the range of
-    // grpc_connectivity_state to signal an undefined previous state.
-    sd->prev_connectivity_state = GRPC_CHANNEL_INIT;
-    sd->curr_connectivity_state = subchannel_connectivity_state;
-    sd->pending_connectivity_state_unsafe = subchannel_connectivity_state;
-    if (sd->curr_connectivity_state == GRPC_CHANNEL_READY) {
-      sd->connected_subchannel = GRPC_CONNECTED_SUBCHANNEL_REF(
-          grpc_subchannel_get_connected_subchannel(sd->subchannel),
-          "ready_at_sl_creation");
-    }
+    // We assume that the current state is IDLE.  If not, we'll get a
+    // callback telling us that.
+    sd->prev_connectivity_state = GRPC_CHANNEL_IDLE;
+    sd->curr_connectivity_state = GRPC_CHANNEL_IDLE;
+    sd->pending_connectivity_state_unsafe = GRPC_CHANNEL_IDLE;
     sd->user_data_vtable = addresses->user_data_vtable;
     if (sd->user_data_vtable != NULL) {
       sd->user_data =
@@ -191,6 +165,7 @@ grpc_lb_subchannel_list *grpc_lb_subchannel_list_create(
     }
   }
   subchannel_list->num_subchannels = subchannel_index;
+  subchannel_list->num_idle = subchannel_index;
   return subchannel_list;
 }
 
