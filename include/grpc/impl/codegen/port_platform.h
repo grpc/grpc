@@ -299,7 +299,7 @@
 
 // Android specifc logic to detect brokeness around TLS support.
 #if defined(__ANDROID__) && defined(__clang__)
-#include "third_party/absl/base/config.h"
+#include "absl/base/config.h"
 
 #if !defined(ABSL_HAVE_TLS) && defined(GPR_GCC_TLS)
 #undef GPR_GCC_TLS
