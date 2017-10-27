@@ -8298,6 +8298,7 @@ LIBBENCHMARK_SRC = \
     third_party/benchmark/src/commandlineflags.cc \
     third_party/benchmark/src/complexity.cc \
     third_party/benchmark/src/console_reporter.cc \
+    third_party/benchmark/src/counter.cc \
     third_party/benchmark/src/csv_reporter.cc \
     third_party/benchmark/src/json_reporter.cc \
     third_party/benchmark/src/reporter.cc \
