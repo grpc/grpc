@@ -16,10 +16,8 @@
  *
  */
 
-#include <unistd.h>
-
-#include <grpc/support/log.h>
 #include "src/core/lib/transport/status_conversion.h"
+#include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
 
 #define GRPC_STATUS_TO_HTTP2_ERROR(a, b) \
@@ -132,10 +130,11 @@ int main(int argc, char **argv) {
                              GRPC_STATUS_INTERNAL);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_REFUSED_STREAM, after_deadline,
                              GRPC_STATUS_UNAVAILABLE);
-  // We only have millisecond granularity in our timing code. This sleeps for 2
+  // We only have millisecond granularity in our timing code. This sleeps for 5
   // millis to ensure that the status conversion code will pick up the fact
   // that the deadline has expired.
-  usleep(2000);
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                               gpr_time_from_millis(5, GPR_TIMESPAN)));
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_CANCEL, after_deadline,
                              GRPC_STATUS_DEADLINE_EXCEEDED);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_COMPRESSION_ERROR, after_deadline,
