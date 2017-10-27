@@ -556,14 +556,15 @@ typedef struct {
 typedef struct {
   grpc_server_security_connector base;
   tsi_ssl_server_handshaker_factory *server_handshaker_factory;
-  grpc_ssl_server_certificate_config_fetcher certificate_config_fetcher;
-  grpc_ssl_client_certificate_request_type client_certificate_request;
 } grpc_ssl_server_security_connector;
 
 static bool server_connector_has_cert_config_fetcher(
     grpc_ssl_server_security_connector *c) {
   GPR_ASSERT(c != NULL);
-  return c->certificate_config_fetcher.cb != NULL;
+  grpc_ssl_server_credentials *server_creds =
+      (grpc_ssl_server_credentials *)c->base.server_creds;
+  GPR_ASSERT(server_creds != NULL);
+  return server_creds->certificate_config_fetcher.cb != NULL;
 }
 
 static void ssl_channel_destroy(grpc_exec_ctx *exec_ctx,
@@ -645,9 +646,12 @@ static bool try_replace_server_handshaker_factory(
   tsi_ssl_pem_key_cert_pair *cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(
       config->pem_key_cert_pairs, config->num_key_cert_pairs);
   tsi_ssl_server_handshaker_factory *new_handshaker_factory = NULL;
+  grpc_ssl_server_credentials *server_creds =
+      (grpc_ssl_server_credentials *)sc->base.server_creds;
   tsi_result result = tsi_create_ssl_server_handshaker_factory_ex(
       cert_pairs, config->num_key_cert_pairs, config->pem_root_certs,
-      get_tsi_client_certificate_request_type(sc->client_certificate_request),
+      get_tsi_client_certificate_request_type(
+          server_creds->config.client_certificate_request),
       ssl_cipher_suites(), alpn_protocol_strings, (uint16_t)num_alpn_protocols,
       &new_handshaker_factory);
   gpr_free(cert_pairs);
@@ -674,9 +678,12 @@ static bool try_fetch_ssl_server_credentials(
   GPR_ASSERT(sc != NULL);
   if (!server_connector_has_cert_config_fetcher(sc)) return false;
 
+  grpc_ssl_server_credentials *server_creds =
+      (grpc_ssl_server_credentials *)sc->base.server_creds;
   grpc_ssl_certificate_config_reload_status cb_result =
-      sc->certificate_config_fetcher.cb(
-          sc->certificate_config_fetcher.user_data, &certificate_config);
+      server_creds->certificate_config_fetcher.cb(
+          server_creds->certificate_config_fetcher.user_data,
+          &certificate_config);
   if (cb_result == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED) {
     gpr_log(GPR_DEBUG, "No change in SSL server credentials.");
     status = false;
@@ -1053,8 +1060,6 @@ error:
 
 static grpc_ssl_server_security_connector *
 grpc_ssl_server_security_connector_initialize(
-    grpc_ssl_client_certificate_request_type client_certificate_request,
-    grpc_ssl_server_certificate_config_fetcher certificate_config_fetcher,
     grpc_server_credentials *server_creds) {
   grpc_ssl_server_security_connector *c =
       (grpc_ssl_server_security_connector *)gpr_zalloc(
@@ -1064,9 +1069,6 @@ grpc_ssl_server_security_connector_initialize(
   c->base.base.vtable = &ssl_server_vtable;
   c->base.add_handshakers = ssl_server_add_handshakers;
   c->base.server_creds = grpc_server_credentials_ref(server_creds);
-
-  c->certificate_config_fetcher = certificate_config_fetcher;
-  c->client_certificate_request = client_certificate_request;
   return c;
 }
 
@@ -1082,9 +1084,7 @@ grpc_security_status grpc_ssl_server_security_connector_create(
   GPR_ASSERT(sc != NULL);
 
   grpc_ssl_server_security_connector *c =
-      grpc_ssl_server_security_connector_initialize(
-          server_credentials->config.client_certificate_request,
-          server_credentials->certificate_config_fetcher, gsc);
+      grpc_ssl_server_security_connector_initialize(gsc);
   if (server_connector_has_cert_config_fetcher(c)) {
     // Load initial credentials from certificate_config_fetcher:
     if (!try_fetch_ssl_server_credentials(c)) {
