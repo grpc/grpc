@@ -297,6 +297,22 @@
 #endif
 #endif /* GPR_NO_AUTODETECT_PLATFORM */
 
+// Android specifc logic to detect brokeness around TLS support.
+#if defined(__ANDROID__) && defined(__clang__)
+#include "third_party/absl/base/config.h"
+
+#if !defined(ABSL_HAVE_TLS) && defined(GPR_GCC_TLS)
+#undef GPR_GCC_TLS
+#define GPR_PTHREAD_TLS 1
+#endif //!defined(ABSL_HAVE_TLS) && defined(GPR_GCC_TLS)
+
+// cpu_posix.cc depends on TLS and cpu_linux.cc doesn't.
+#if !defined(GPR_GCC_TLS) && defined(GPR_CPU_POSIX)
+#undef GPR_CPU_POSIX
+#define GPR_CPU_LINUX 1
+#endif  //! defined(GPR_GCC_TLS) && defined(GPR_CPU_POSIX)
+#endif // defined(__ANDROID__) && defined(__clang__)
+
 #if defined(__has_include)
 #if __has_include(<atomic>)
 #define GRPC_HAS_CXX11_ATOMIC
