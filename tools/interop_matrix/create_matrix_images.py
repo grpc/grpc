@@ -177,10 +177,22 @@ def build_all_images_for_release(lang, release):
     var ={'go': 'GRPC_GO_ROOT', 'java': 'GRPC_JAVA_ROOT', 'node': 'GRPC_NODE_ROOT'}.get(lang, 'GRPC_ROOT')
     env[var] = stack_base
 
-  for runtime in client_matrix.LANG_RUNTIME_MATRIX[lang]:
+  # Python and Node only have one docker template.
+  if 'python' in lang:
+    runtime = 'python'
     job = build_image_jobspec(runtime, env, release)
     docker_images.append(job.tag)
     build_jobs.append(job)
+  elif 'node' in lang:
+    runtime = 'node'
+    job = build_image_jobspec(runtime, env, release)
+    docker_images.append(job.tag)
+    build_jobs.append(job)
+  else:
+    for runtime in client_matrix.LANG_RUNTIME_MATRIX[lang]:
+      job = build_image_jobspec(runtime, env, release)
+      docker_images.append(job.tag)
+      build_jobs.append(job)
 
   jobset.message('START', 'Building interop docker images.', do_newline=True)
   print('Jobs to run: \n%s\n' % '\n'.join(str(j) for j in build_jobs))
