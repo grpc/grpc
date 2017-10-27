@@ -378,6 +378,7 @@ int grpc_completion_queue_thread_local_cache_flush(grpc_completion_queue *cq,
     storage->done(&exec_ctx, storage->done_arg, storage);
     *ok = (storage->next & (uintptr_t)(1)) == 1;
     ret = 1;
+    GRPC_STATS_INC_CQ_TLS_CACHE_HITS(&exec_ctx);
     cq_next_data *cqd = (cq_next_data *)DATA_FROM_CQ(cq);
     if (gpr_atm_full_fetch_add(&cqd->pending_events, -1) == 1) {
       GRPC_CQ_INTERNAL_REF(cq, "shutting_down");

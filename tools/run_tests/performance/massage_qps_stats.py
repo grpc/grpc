@@ -116,6 +116,7 @@ def massage_qps_stats(scenario_result):
     stats["core_cq_ev_queue_trylock_failures"] = massage_qps_stats_helpers.counter(core_stats, "cq_ev_queue_trylock_failures")
     stats["core_cq_ev_queue_trylock_successes"] = massage_qps_stats_helpers.counter(core_stats, "cq_ev_queue_trylock_successes")
     stats["core_cq_ev_queue_transient_pop_failures"] = massage_qps_stats_helpers.counter(core_stats, "cq_ev_queue_transient_pop_failures")
+    stats["core_cq_tls_cache_hits"] = massage_qps_stats_helpers.counter(core_stats, "cq_tls_cache_hits")
     h = massage_qps_stats_helpers.histogram(core_stats, "call_initial_size")
     stats["core_call_initial_size"] = ",".join("%f" % x for x in h.buckets)
     stats["core_call_initial_size_bkts"] = ",".join("%f" % x for x in h.boundaries)
