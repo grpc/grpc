@@ -2664,6 +2664,7 @@ static void test_retry_server_pushback_disabled(
 // - cancel while retry timer is pending
 
 void retry(grpc_end2end_test_config config) {
+  GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_basic(config);
   test_retry_streaming(config);
   test_retry_streaming_after_commit(config);

@@ -22,7 +22,7 @@ def fixture_options(fullstack=True, includes_proxy=False, dns_resolver=True,
                     name_resolution=True, secure=True, tracing=False,
                     platforms=['windows', 'linux', 'mac', 'posix'],
                     is_inproc=False, is_http2=True, supports_proxy_auth=False,
-                    supports_write_buffering=True):
+                    supports_write_buffering=True, client_channel=True):
   return struct(
     fullstack=fullstack,
     includes_proxy=includes_proxy,
@@ -33,8 +33,9 @@ def fixture_options(fullstack=True, includes_proxy=False, dns_resolver=True,
     is_inproc=is_inproc,
     is_http2=is_http2,
     supports_proxy_auth=supports_proxy_auth,
-    supports_write_buffering=supports_write_buffering
-    #platforms=platforms
+    supports_write_buffering=supports_write_buffering,
+    client_channel=client_channel,
+    #platforms=platforms,
   )
 
 
@@ -45,6 +46,7 @@ END2END_FIXTURES = {
     'h2_load_reporting': fixture_options(),
     'h2_fakesec': fixture_options(),
     'h2_fd': fixture_options(dns_resolver=False, fullstack=False,
+                             client_channel=False,
                              platforms=['linux', 'mac', 'posix']),
     'h2_full': fixture_options(),
     'h2_full+pipe': fixture_options(platforms=['linux']),
@@ -53,10 +55,12 @@ END2END_FIXTURES = {
     'h2_http_proxy': fixture_options(supports_proxy_auth=True),
     'h2_oauth2': fixture_options(),
     'h2_proxy': fixture_options(includes_proxy=True),
-    'h2_sockpair_1byte': fixture_options(fullstack=False, dns_resolver=False),
-    'h2_sockpair': fixture_options(fullstack=False, dns_resolver=False),
+    'h2_sockpair_1byte': fixture_options(fullstack=False, dns_resolver=False,
+                                         client_channel=False),
+    'h2_sockpair': fixture_options(fullstack=False, dns_resolver=False,
+                                   client_channel=False),
     'h2_sockpair+trace': fixture_options(fullstack=False, dns_resolver=False,
-                                         tracing=True),
+                                         tracing=True, client_channel=False),
     'h2_ssl': fixture_options(secure=True),
     'h2_ssl_proxy': fixture_options(includes_proxy=True, secure=True),
     'h2_uds': fixture_options(dns_resolver=False,
@@ -70,7 +74,8 @@ END2END_FIXTURES = {
 def test_options(needs_fullstack=False, needs_dns=False, needs_names=False,
                  proxyable=True, secure=False, traceable=False,
                  exclude_inproc=False, needs_http2=False,
-                 needs_proxy_auth=False, needs_write_buffering=False):
+                 needs_proxy_auth=False, needs_write_buffering=False,
+                 needs_client_channel=False):
   return struct(
     needs_fullstack=needs_fullstack,
     needs_dns=needs_dns,
@@ -81,7 +86,8 @@ def test_options(needs_fullstack=False, needs_dns=False, needs_names=False,
     exclude_inproc=exclude_inproc,
     needs_http2=needs_http2,
     needs_proxy_auth=needs_proxy_auth,
-    needs_write_buffering=needs_write_buffering
+    needs_write_buffering=needs_write_buffering,
+    needs_client_channel=needs_client_channel,
   )
 
 
@@ -116,7 +122,8 @@ END2END_TESTS = {
     'invoke_large_request': test_options(),
     'keepalive_timeout': test_options(proxyable=False, needs_http2=True),
     'large_metadata': test_options(),
-    'max_concurrent_streams': test_options(proxyable=False, exclude_inproc=True),
+    'max_concurrent_streams': test_options(proxyable=False,
+                                           exclude_inproc=True),
     'max_connection_age': test_options(exclude_inproc=True),
     'max_connection_idle': test_options(needs_fullstack=True, proxyable=False),
     'max_message_length': test_options(),
@@ -132,7 +139,7 @@ END2END_TESTS = {
     'registered_call': test_options(),
     'request_with_flags': test_options(proxyable=False),
     'request_with_payload': test_options(),
-    'retry': test_options(),
+    'retry': test_options(needs_client_channel=True),
     'server_finishes_request': test_options(),
     'shutdown_finishes_calls': test_options(),
     'shutdown_finishes_tags': test_options(),
@@ -141,7 +148,8 @@ END2END_TESTS = {
     'simple_metadata': test_options(),
     'simple_request': test_options(),
     'streaming_error_response': test_options(),
-    'stream_compression_compressed_payload': test_options(proxyable=False, exclude_inproc=True),
+    'stream_compression_compressed_payload': test_options(proxyable=False,
+                                                          exclude_inproc=True),
     'stream_compression_payload': test_options(exclude_inproc=True),
     'stream_compression_ping_pong_streaming': test_options(exclude_inproc=True),
     'trailing_metadata': test_options(),
@@ -180,6 +188,9 @@ def compatible(fopt, topt):
       return False
   if topt.needs_write_buffering:
     if not fopt.supports_write_buffering:
+      return False
+  if topt.needs_client_channel:
+    if not fopt.client_channel:
       return False
   return True
 
