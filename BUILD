@@ -551,6 +551,7 @@ grpc_cc_library(
         "include/grpc/impl/codegen/sync_posix.h",
         "include/grpc/impl/codegen/sync_windows.h",
     ],
+    deps = ["@com_google_absl//absl/base:config"],
 )
 
 grpc_cc_library(
