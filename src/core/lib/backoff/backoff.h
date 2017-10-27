@@ -36,7 +36,7 @@ typedef struct {
   double jitter;
 
   /// const: minimum time between retries
-  grpc_millis min_backoff;
+  grpc_millis min_connect_timeout;
 
   /// const: maximum time between retries
   grpc_millis max_backoff;
@@ -48,16 +48,29 @@ typedef struct {
   uint32_t rng_state;
 } grpc_backoff;
 
+typedef struct {
+  /// Deadline to be used for the current attempt.
+  grpc_millis current_deadline;
+
+  /// Deadline to be used for the next attempt, following the backoff strategy.
+  grpc_millis next_backoff_deadline;
+} grpc_backoff_deadlines;
+
 /// Initialize backoff machinery - does not need to be destroyed
 void grpc_backoff_init(grpc_backoff *backoff, grpc_millis initial_backoff,
                        double multiplier, double jitter,
-                       grpc_millis min_timeout, grpc_millis max_timeout);
+                       grpc_millis min_connect_timeout,
+                       grpc_millis max_backoff);
 
-/// Begin retry loop: returns a timespec for the NEXT retry
-grpc_millis grpc_backoff_begin(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff);
+/// Begin retry loop: returns the deadlines to be used for the current attempt
+/// and the subsequent retry, if any.
+grpc_backoff_deadlines grpc_backoff_begin(grpc_exec_ctx *exec_ctx,
+                                          grpc_backoff *backoff);
 
-/// Step a retry loop: returns a timespec for the NEXT retry
-grpc_millis grpc_backoff_step(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff);
+/// Step a retry loop: returns the deadlines to be used for the current attempt
+/// and the subsequent retry, if any.
+grpc_backoff_deadlines grpc_backoff_step(grpc_exec_ctx *exec_ctx,
+                                         grpc_backoff *backoff);
 
 /// Reset the backoff, so the next grpc_backoff_step will be a
 /// grpc_backoff_begin.

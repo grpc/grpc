@@ -22,21 +22,24 @@
 
 void grpc_backoff_init(grpc_backoff *backoff, grpc_millis initial_backoff,
                        double multiplier, double jitter,
-                       grpc_millis min_backoff, grpc_millis max_backoff) {
+                       grpc_millis min_connect_timeout,
+                       grpc_millis max_backoff) {
   backoff->initial_backoff = initial_backoff;
   backoff->multiplier = multiplier;
   backoff->jitter = jitter;
-  backoff->min_backoff = min_backoff;
+  backoff->min_connect_timeout = min_connect_timeout;
   backoff->max_backoff = max_backoff;
   backoff->rng_state = (uint32_t)gpr_now(GPR_CLOCK_REALTIME).tv_nsec;
 }
 
-grpc_millis grpc_backoff_begin(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff) {
+grpc_backoff_deadlines grpc_backoff_begin(grpc_exec_ctx *exec_ctx,
+                                          grpc_backoff *backoff) {
   backoff->current_backoff = backoff->initial_backoff;
-  const grpc_millis current_deadline =
-      grpc_exec_ctx_now(exec_ctx) + backoff->initial_backoff;
-  return GPR_MAX(current_deadline,
-                 grpc_exec_ctx_now(exec_ctx) + backoff->min_backoff);
+  const grpc_millis initial_timeout =
+      GPR_MAX(backoff->initial_backoff, backoff->min_connect_timeout);
+  const grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+  return (grpc_backoff_deadlines){now + initial_timeout,
+                                  now + backoff->current_backoff};
 }
 
 /* Generate a random number between 0 and 1. */
@@ -53,17 +56,22 @@ static double generate_uniform_random_number_between(uint32_t *rng_state,
   return a + generate_uniform_random_number(rng_state) * range;
 }
 
-grpc_millis grpc_backoff_step(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff) {
+grpc_backoff_deadlines grpc_backoff_step(grpc_exec_ctx *exec_ctx,
+                                         grpc_backoff *backoff) {
   backoff->current_backoff = (grpc_millis)(GPR_MIN(
       backoff->current_backoff * backoff->multiplier, backoff->max_backoff));
+
   const double jitter = generate_uniform_random_number_between(
       &backoff->rng_state, -backoff->jitter * backoff->current_backoff,
       backoff->jitter * backoff->current_backoff);
-  const grpc_millis current_deadline =
-      grpc_exec_ctx_now(exec_ctx) +
-      (grpc_millis)(backoff->current_backoff + jitter);
-  return GPR_MAX(current_deadline,
-                 grpc_exec_ctx_now(exec_ctx) + backoff->min_backoff);
+
+  const grpc_millis current_timeout =
+      GPR_MAX((grpc_millis)(backoff->current_backoff + jitter),
+              backoff->min_connect_timeout);
+
+  const grpc_millis now = grpc_exec_ctx_now(exec_ctx);
+  return (grpc_backoff_deadlines){now + current_timeout,
+                                  now + backoff->current_backoff};
 }
 
 void grpc_backoff_reset(grpc_backoff *backoff) {
