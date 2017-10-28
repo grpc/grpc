@@ -2579,6 +2579,23 @@ targets:
   language: c
   src:
   - test/core/handshake/server_ssl.c
+  - test/core/handshake/server_ssl_common.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  platforms:
+  - linux
+  secure: true
+- name: handshake_server_with_readahead_handshaker
+  build: test
+  language: c
+  src:
+  - test/core/handshake/readahead_handshaker_server_ssl.c
+  - test/core/handshake/server_ssl_common.c
   deps:
   - grpc_test_util
   - grpc
