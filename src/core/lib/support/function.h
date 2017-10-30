@@ -44,7 +44,9 @@ class Traits;
 template <typename R, typename... Args, typename F>
 class Traits<R(Args...), F, false> {
  public:
-  static const VTable<R, Args...>* Construct(F&& f, void* storage) {
+  template <class T>
+  static const VTable<R, Args...>* Construct(F&& f, T* storage) {
+    static_assert(sizeof(*storage) >= sizeof(F), "Size of storage too small");
     new (storage) F(std::move(f));
     return &vtable_;
   }
