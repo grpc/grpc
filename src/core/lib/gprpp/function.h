@@ -251,4 +251,4 @@ class TrivialInplaceFunction<R(Args...), kInplaceStorage> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SUPPORT_FUNCTION_H
+#endif /* GRPC_CORE_LIB_SUPPORT_FUNCTION_H */
