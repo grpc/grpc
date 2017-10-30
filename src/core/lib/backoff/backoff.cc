@@ -69,9 +69,11 @@ grpc_backoff_deadlines grpc_backoff_step(grpc_exec_ctx *exec_ctx,
       GPR_MAX((grpc_millis)(backoff->current_backoff + jitter),
               backoff->min_connect_timeout);
 
+  const grpc_millis next_timeout = GPR_MIN(
+      (grpc_millis)(backoff->current_backoff + jitter), backoff->max_backoff);
+
   const grpc_millis now = grpc_exec_ctx_now(exec_ctx);
-  return (grpc_backoff_deadlines){now + current_timeout,
-                                  now + backoff->current_backoff};
+  return (grpc_backoff_deadlines){now + current_timeout, now + next_timeout};
 }
 
 void grpc_backoff_reset(grpc_backoff *backoff) {
