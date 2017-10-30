@@ -95,6 +95,59 @@ TYPED_TEST(FuncTest, MemberFunctionLambda) {
   delete foo;
 }
 
+TYPED_TEST(FuncTest, MemberValueLambda) {
+  class Foo {
+   public:
+    int Answer() const { return 42; }
+    int Ident(int x) const { return x; }
+  };
+  Foo foo;
+  typename TypeParam::template Func<int()> answer = [foo]() {
+    return foo.Answer();
+  };
+  EXPECT_EQ(42, answer());
+  typename TypeParam::template Func<int(int)> id = [foo](int i) {
+    return foo.Ident(i);
+  };
+  EXPECT_EQ(123, id(123));
+}
+
+template <bool kHandlesNonTrivial>
+class NonTrivialTests;
+
+template <>
+class NonTrivialTests<false> {
+ public:
+  static void ComplexLambda() {}
+};
+
+template <>
+class NonTrivialTests<true> {
+ public:
+  static void ComplexLambda() {
+    class Foo {
+     public:
+      int Answer() const { return 42; }
+      int Ident(int x) const { return x; }
+
+      std::string complicated_thing;
+    };
+    Foo foo;
+    typename TypeParam::template Func<int()> answer = [foo]() {
+      return foo.Answer();
+    };
+    EXPECT_EQ(42, answer());
+    typename TypeParam::template Func<int(int)> id = [foo](int i) {
+      return foo.Ident(i);
+    };
+    EXPECT_EQ(123, id(123));
+  }
+};
+
+TYPED_TEST(FuncTest, ComplexLambda) {
+  NonTrivialTests<TypeParam::kAllowsNonTrivialFunctions>::ComplexLambda();
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
