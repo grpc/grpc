@@ -1038,8 +1038,6 @@ typedef struct {
   grpc_transport_stream_op_batch *batch;
   // Indicates whether payload for send ops has been cached in call data.
   bool send_ops_cached : 1;
-  // A back-pointer to the call element.
-  grpc_call_element *elem;
 } pending_batch;
 
 /** Call data.  Holds a pointer to grpc_subchannel_call and the
@@ -1175,7 +1173,6 @@ static void pending_batches_add(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(pending->batch == NULL);
   pending->batch = batch;
   pending->send_ops_cached = false;
-  pending->elem = elem;
   if (batch->send_initial_metadata) {
     calld->pending_send_initial_metadata = true;
   }
@@ -1382,8 +1379,10 @@ static void batch_data_unref(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static void maybe_clear_pending_batch(call_data *calld,
+static void maybe_clear_pending_batch(grpc_call_element *elem,
                                       pending_batch *pending) {
+  call_data *calld = (call_data *)elem->call_data;
+  channel_data *chand = (channel_data *)elem->channel_data;
   grpc_transport_stream_op_batch *batch = pending->batch;
   if (batch->on_complete == NULL &&
       (!batch->recv_initial_metadata ||
@@ -1392,8 +1391,6 @@ static void maybe_clear_pending_batch(call_data *calld,
       (!batch->recv_message ||
        batch->payload->recv_message.recv_message_ready == NULL)) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-      channel_data *chand = (channel_data *)pending->elem->channel_data;
-      call_data *calld = (call_data *)pending->elem->call_data;
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: clearing pending batch", chand,
               calld);
     }
@@ -1641,7 +1638,7 @@ static void invoke_recv_initial_metadata_callback(grpc_exec_ctx *exec_ctx,
           .recv_initial_metadata_ready;
   pending->batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
       NULL;
-  maybe_clear_pending_batch(calld, pending);
+  maybe_clear_pending_batch(batch_data->elem, pending);
   batch_data_unref(exec_ctx, batch_data);
   // Invoke callback.
   GRPC_CLOSURE_RUN(exec_ctx, recv_initial_metadata_ready,
@@ -1731,7 +1728,7 @@ static void invoke_recv_message_callback(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_closure *recv_message_ready =
       pending->batch->payload->recv_message.recv_message_ready;
   pending->batch->payload->recv_message.recv_message_ready = NULL;
-  maybe_clear_pending_batch(calld, pending);
+  maybe_clear_pending_batch(batch_data->elem, pending);
   batch_data_unref(exec_ctx, batch_data);
   // Invoke callback.
   GRPC_CLOSURE_RUN(exec_ctx, recv_message_ready, GRPC_ERROR_REF(error));
@@ -2000,7 +1997,7 @@ static void on_complete(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       closure->error = GRPC_ERROR_REF(error);
       closure->reason = "on_complete for pending batch";
       pending->batch->on_complete = NULL;
-      maybe_clear_pending_batch(calld, pending);
+      maybe_clear_pending_batch(elem, pending);
     }
   }
   batch_data_unref(exec_ctx, batch_data);
