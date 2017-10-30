@@ -1075,6 +1075,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_lb_subchannel_list",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_pick_first",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc",
@@ -1083,6 +1098,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_lb_subchannel_list",
     ],
 )
 
@@ -1095,6 +1111,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_lb_subchannel_list",
     ],
 )
 

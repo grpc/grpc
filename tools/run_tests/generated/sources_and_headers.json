@@ -8684,7 +8684,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel"
+      "grpc_client_channel", 
+      "grpc_lb_subchannel_list"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -8700,7 +8701,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel"
+      "grpc_client_channel", 
+      "grpc_lb_subchannel_list"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -8708,6 +8710,25 @@
     "name": "grpc_lb_policy_round_robin", 
     "src": [
       "src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_client_channel"
+    ], 
+    "headers": [
+      "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_lb_subchannel_list", 
+    "src": [
+      "src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
