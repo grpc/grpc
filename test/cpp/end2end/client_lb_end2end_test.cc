@@ -303,7 +303,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   ports.clear();
   SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET none *******");
-  grpc_connectivity_state channel_state = GRPC_CHANNEL_INIT;
+  grpc_connectivity_state channel_state;
   do {
     channel_state = channel_->GetState(true /* try to connect */);
   } while (channel_state == GRPC_CHANNEL_READY);
@@ -479,7 +479,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   // An empty update will result in the channel going into TRANSIENT_FAILURE.
   ports.clear();
   SetNextResolution(ports);
-  grpc_connectivity_state channel_state = GRPC_CHANNEL_INIT;
+  grpc_connectivity_state channel_state;
   do {
     channel_state = channel_->GetState(true /* try to connect */);
   } while (channel_state == GRPC_CHANNEL_READY);

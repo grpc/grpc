@@ -872,6 +872,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
+        "src/core/ext/filters/client_channel/backup_poller.cc",
         "src/core/ext/filters/client_channel/channel_connectivity.cc",
         "src/core/ext/filters/client_channel/client_channel.cc",
         "src/core/ext/filters/client_channel/client_channel_factory.cc",
@@ -894,6 +895,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/uri_parser.cc",
     ],
     hdrs = [
+        "src/core/ext/filters/client_channel/backup_poller.h",
         "src/core/ext/filters/client_channel/client_channel.h",
         "src/core/ext/filters/client_channel/client_channel_factory.h",
         "src/core/ext/filters/client_channel/connector.h",
@@ -1075,6 +1077,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_lb_subchannel_list",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_pick_first",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc",
@@ -1083,6 +1100,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_lb_subchannel_list",
     ],
 )
 
@@ -1095,6 +1113,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_lb_subchannel_list",
     ],
 )
 

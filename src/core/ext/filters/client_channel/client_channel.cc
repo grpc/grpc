@@ -31,6 +31,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
@@ -712,6 +713,7 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   chand->interested_parties = grpc_pollset_set_create();
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
                                "client_channel");
+  grpc_client_channel_start_backup_polling(exec_ctx, chand->interested_parties);
   // Record client channel factory.
   const grpc_arg *arg = grpc_channel_args_find(args->channel_args,
                                                GRPC_ARG_CLIENT_CHANNEL_FACTORY);
@@ -790,6 +792,7 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   if (chand->method_params_table != NULL) {
     grpc_slice_hash_table_unref(exec_ctx, chand->method_params_table);
   }
+  grpc_client_channel_stop_backup_polling(exec_ctx, chand->interested_parties);
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
   grpc_pollset_set_destroy(exec_ctx, chand->interested_parties);
   GRPC_COMBINER_UNREF(exec_ctx, chand->combiner, "client_channel");
@@ -898,7 +901,7 @@ static void waiting_for_pick_batches_fail(grpc_exec_ctx *exec_ctx,
   call_data *calld = (call_data *)elem->call_data;
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
     gpr_log(GPR_DEBUG,
-            "chand=%p calld=%p: failing %" PRIdPTR " pending batches: %s",
+            "chand=%p calld=%p: failing %" PRIuPTR " pending batches: %s",
             elem->channel_data, calld, calld->waiting_for_pick_batches_count,
             grpc_error_string(error));
   }
@@ -940,7 +943,7 @@ static void waiting_for_pick_batches_resume(grpc_exec_ctx *exec_ctx,
   channel_data *chand = (channel_data *)elem->channel_data;
   call_data *calld = (call_data *)elem->call_data;
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-    gpr_log(GPR_DEBUG, "chand=%p calld=%p: sending %" PRIdPTR
+    gpr_log(GPR_DEBUG, "chand=%p calld=%p: sending %" PRIuPTR
                        " pending batches to subchannel_call=%p",
             chand, calld, calld->waiting_for_pick_batches_count,
             calld->subchannel_call);

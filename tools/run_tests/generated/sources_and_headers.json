@@ -7453,7 +7453,6 @@
     "headers": [
       "third_party/benchmark/include/benchmark/benchmark.h", 
       "third_party/benchmark/include/benchmark/benchmark_api.h", 
-      "third_party/benchmark/include/benchmark/macros.h", 
       "third_party/benchmark/include/benchmark/reporter.h", 
       "third_party/benchmark/src/arraysize.h", 
       "third_party/benchmark/src/benchmark_api_internal.h", 
@@ -7461,6 +7460,7 @@
       "third_party/benchmark/src/colorprint.h", 
       "third_party/benchmark/src/commandlineflags.h", 
       "third_party/benchmark/src/complexity.h", 
+      "third_party/benchmark/src/counter.h", 
       "third_party/benchmark/src/cycleclock.h", 
       "third_party/benchmark/src/internal_macros.h", 
       "third_party/benchmark/src/log.h", 
@@ -8467,6 +8467,7 @@
       "grpc_deadline_filter"
     ], 
     "headers": [
+      "src/core/ext/filters/client_channel/backup_poller.h", 
       "src/core/ext/filters/client_channel/client_channel.h", 
       "src/core/ext/filters/client_channel/client_channel_factory.h", 
       "src/core/ext/filters/client_channel/connector.h", 
@@ -8490,6 +8491,8 @@
     "language": "c", 
     "name": "grpc_client_channel", 
     "src": [
+      "src/core/ext/filters/client_channel/backup_poller.cc", 
+      "src/core/ext/filters/client_channel/backup_poller.h", 
       "src/core/ext/filters/client_channel/channel_connectivity.cc", 
       "src/core/ext/filters/client_channel/client_channel.cc", 
       "src/core/ext/filters/client_channel/client_channel.h", 
@@ -8684,7 +8687,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel"
+      "grpc_client_channel", 
+      "grpc_lb_subchannel_list"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -8700,7 +8704,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel"
+      "grpc_client_channel", 
+      "grpc_lb_subchannel_list"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -8708,6 +8713,25 @@
     "name": "grpc_lb_policy_round_robin", 
     "src": [
       "src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_client_channel"
+    ], 
+    "headers": [
+      "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_lb_subchannel_list", 
+    "src": [
+      "src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

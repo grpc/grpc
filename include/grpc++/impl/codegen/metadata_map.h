@@ -23,6 +23,7 @@
 
 namespace grpc {
 
+namespace internal {
 class MetadataMap {
  public:
   MetadataMap() { memset(&arr_, 0, sizeof(arr_)); }
@@ -50,6 +51,7 @@ class MetadataMap {
   grpc_metadata_array arr_;
   std::multimap<grpc::string_ref, grpc::string_ref> map_;
 };
+}  // namespace internal
 
 }  // namespace grpc
 
