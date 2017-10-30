@@ -8467,6 +8467,7 @@
       "grpc_deadline_filter"
     ], 
     "headers": [
+      "src/core/ext/filters/client_channel/backup_poller.h", 
       "src/core/ext/filters/client_channel/client_channel.h", 
       "src/core/ext/filters/client_channel/client_channel_factory.h", 
       "src/core/ext/filters/client_channel/connector.h", 
@@ -8490,6 +8491,8 @@
     "language": "c", 
     "name": "grpc_client_channel", 
     "src": [
+      "src/core/ext/filters/client_channel/backup_poller.cc", 
+      "src/core/ext/filters/client_channel/backup_poller.h", 
       "src/core/ext/filters/client_channel/channel_connectivity.cc", 
       "src/core/ext/filters/client_channel/client_channel.cc", 
       "src/core/ext/filters/client_channel/client_channel.h", 

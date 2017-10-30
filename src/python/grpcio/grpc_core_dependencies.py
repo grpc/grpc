@@ -254,6 +254,7 @@ CORE_SOURCE_FILES = [
   'src/core/tsi/transport_security_adapter.cc',
   'src/core/ext/transport/chttp2/server/chttp2_server.cc',
   'src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc',
+  'src/core/ext/filters/client_channel/backup_poller.cc',
   'src/core/ext/filters/client_channel/channel_connectivity.cc',
   'src/core/ext/filters/client_channel/client_channel.cc',
   'src/core/ext/filters/client_channel/client_channel_factory.cc',

@@ -907,6 +907,8 @@ src/core/ext/census/trace_string.h \
 src/core/ext/census/tracing.cc \
 src/core/ext/census/tracing.h \
 src/core/ext/filters/client_channel/README.md \
+src/core/ext/filters/client_channel/backup_poller.cc \
+src/core/ext/filters/client_channel/backup_poller.h \
 src/core/ext/filters/client_channel/channel_connectivity.cc \
 src/core/ext/filters/client_channel/client_channel.cc \
 src/core/ext/filters/client_channel/client_channel.h \

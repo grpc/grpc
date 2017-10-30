@@ -463,6 +463,7 @@ filegroups:
   - grpc_trace_headers
 - name: grpc_client_channel
   headers:
+  - src/core/ext/filters/client_channel/backup_poller.h
   - src/core/ext/filters/client_channel/client_channel.h
   - src/core/ext/filters/client_channel/client_channel_factory.h
   - src/core/ext/filters/client_channel/connector.h
@@ -482,6 +483,7 @@ filegroups:
   - src/core/ext/filters/client_channel/subchannel_index.h
   - src/core/ext/filters/client_channel/uri_parser.h
   src:
+  - src/core/ext/filters/client_channel/backup_poller.cc
   - src/core/ext/filters/client_channel/channel_connectivity.cc
   - src/core/ext/filters/client_channel/client_channel.cc
   - src/core/ext/filters/client_channel/client_channel_factory.cc
