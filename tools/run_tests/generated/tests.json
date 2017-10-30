@@ -4522,7 +4522,6 @@
       "posix", 
       "windows"
     ], 
-    "timeout_seconds": 1200, 
     "uses_polling": true
   }, 
   {

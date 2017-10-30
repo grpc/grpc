@@ -4838,7 +4838,6 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
-  timeout_seconds: 1200
 - name: transport_pid_controller_test
   build: test
   language: c++
