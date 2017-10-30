@@ -515,6 +515,7 @@ grpc_cc_library(
         "src/core/lib/support/atomic_with_std.h",
         "src/core/lib/support/env.h",
         "src/core/lib/support/memory.h",
+        "src/core/lib/support/function.h",
         "src/core/lib/support/vector.h",
         "src/core/lib/support/manual_constructor.h",
         "src/core/lib/support/mpscq.h",
