@@ -143,7 +143,7 @@ grpc_connectivity_state Channel::GetState(bool try_to_connect) {
 
 namespace {
 
-class TagSaver final : public CompletionQueueTag {
+class TagSaver final : public internal::CompletionQueueTag {
  public:
   explicit TagSaver(void* tag) : tag_(tag) {}
   ~TagSaver() override {}
