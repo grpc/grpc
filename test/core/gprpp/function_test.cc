@@ -137,10 +137,14 @@ class NonTrivialTests<TypeParam, true> {
   static void ComplexLambda() {
     class Foo {
      public:
+      Foo() : x_(123) {}
+      Foo(const Foo& other) : x_(other.x_ + 1) {}
+      ~Foo() {}
       int Answer() const { return 42; }
       int Ident(int x) const { return x; }
 
-      std::string complicated_thing;
+     private:
+      int x_;
     };
     Foo foo;
     typename TypeParam::template Func<int()> answer = [foo]() {
