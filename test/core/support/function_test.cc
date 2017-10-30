@@ -91,6 +91,7 @@ TYPED_TEST(FuncTest, MemberFunctionLambda) {
     return foo->Ident(i);
   };
   EXPECT_EQ(123, id(123));
+  delete foo;
 }
 
 }  // namespace testing
