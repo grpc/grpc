@@ -176,7 +176,7 @@ static LONG crash_handler(struct _EXCEPTION_POINTERS *ex_info) {
 
 static void abort_handler(int sig) {
   fprintf(stderr, "Abort handler called.\n");
-  print_current_stack(NULL);
+  print_current_stack();
   if (IsDebuggerPresent()) {
     __debugbreak();
   } else {

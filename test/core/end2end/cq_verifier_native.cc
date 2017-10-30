@@ -31,7 +31,7 @@ struct cq_verifier {
 };
 
 cq_verifier *cq_verifier_create(grpc_completion_queue *cq) {
-  cq_verifier *v = gpr_malloc(sizeof(cq_verifier));
+  cq_verifier *v = static_cast<cq_verifier *>(gpr_malloc(sizeof(cq_verifier)));
   v->cq = cq;
   cq_verifier_set_first_expectation(v, NULL);
   return v;

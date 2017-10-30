@@ -75,7 +75,8 @@ static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 static void close_cb(uv_handle_t *handle) { gpr_free(handle); }
 
 static void connection_cb(uv_stream_t *server, int status) {
-  uv_tcp_t *client_handle = gpr_malloc(sizeof(uv_tcp_t));
+  uv_tcp_t *client_handle =
+      static_cast<uv_tcp_t *>(gpr_malloc(sizeof(uv_tcp_t)));
   GPR_ASSERT(0 == status);
   GPR_ASSERT(0 == uv_tcp_init(uv_default_loop(), client_handle));
   GPR_ASSERT(0 == uv_accept(server, (uv_stream_t *)client_handle));
@@ -85,7 +86,7 @@ static void connection_cb(uv_stream_t *server, int status) {
 void test_succeeds(void) {
   grpc_resolved_address resolved_addr;
   struct sockaddr_in *addr = (struct sockaddr_in *)resolved_addr.addr;
-  uv_tcp_t *svr_handle = gpr_malloc(sizeof(uv_tcp_t));
+  uv_tcp_t *svr_handle = static_cast<uv_tcp_t *>(gpr_malloc(sizeof(uv_tcp_t)));
   int connections_complete_before;
   grpc_closure done;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -186,7 +187,7 @@ void test_fails(void) {
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
                             grpc_error *error) {
-  grpc_pollset_destroy(exec_ctx, p);
+  grpc_pollset_destroy(exec_ctx, static_cast<grpc_pollset *>(p));
 }
 
 int main(int argc, char **argv) {
@@ -194,7 +195,7 @@ int main(int argc, char **argv) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
   grpc_init();
-  g_pollset = gpr_malloc(grpc_pollset_size());
+  g_pollset = static_cast<grpc_pollset *>(gpr_malloc(grpc_pollset_size()));
   grpc_pollset_init(g_pollset, &g_mu);
   grpc_exec_ctx_finish(&exec_ctx);
   test_succeeds();

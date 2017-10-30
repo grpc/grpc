@@ -43,7 +43,7 @@ struct cq_verifier {
 };
 
 cq_verifier *cq_verifier_create(grpc_completion_queue *cq) {
-  cq_verifier *v = gpr_malloc(sizeof(cq_verifier));
+  cq_verifier *v = static_cast<cq_verifier *>(gpr_malloc(sizeof(cq_verifier)));
   v->cq = cq;
   v->first_expectation = NULL;
   uv_timer_init(uv_default_loop(), &v->timer);
@@ -58,7 +58,7 @@ static void timer_close_cb(uv_handle_t *handle) {
 void cq_verifier_destroy(cq_verifier *v) {
   cq_verify(v);
   uv_close((uv_handle_t *)&v->timer, timer_close_cb);
-  while ((timer_state)v->timer.data != TIMER_CLOSED) {
+  while (reinterpret_cast<timer_state>(v->timer.data) != TIMER_CLOSED) {
     uv_run(uv_default_loop(), UV_RUN_NOWAIT);
   }
   gpr_free(v);
@@ -85,7 +85,7 @@ grpc_event cq_verifier_next_event(cq_verifier *v, int timeout_seconds) {
   ev = grpc_completion_queue_next(v->cq, gpr_inf_past(GPR_CLOCK_MONOTONIC),
                                   NULL);
   // Stop the loop if the timer goes off or we get a non-timeout event
-  while (((timer_state)v->timer.data != TIMER_TRIGGERED) &&
+  while ((reinterpret_cast<timer_state>(v->timer.data) != TIMER_TRIGGERED) &&
          ev.type == GRPC_QUEUE_TIMEOUT) {
     uv_run(uv_default_loop(), UV_RUN_ONCE);
     ev = grpc_completion_queue_next(v->cq, gpr_inf_past(GPR_CLOCK_MONOTONIC),

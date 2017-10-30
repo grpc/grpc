@@ -76,7 +76,7 @@ static void on_connect_result_set(on_connect_result *result,
 
 static void server_weak_ref_shutdown(grpc_exec_ctx *exec_ctx, void *arg,
                                      grpc_error *error) {
-  server_weak_ref *weak_ref = arg;
+  server_weak_ref *weak_ref = static_cast<server_weak_ref *>(arg);
   weak_ref->server = NULL;
 }
 
@@ -190,8 +190,10 @@ static void close_cb(uv_handle_t *handle) { gpr_free(handle); }
 static void tcp_connect(grpc_exec_ctx *exec_ctx, const struct sockaddr *remote,
                         socklen_t remote_len, on_connect_result *result) {
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
-  uv_tcp_t *client_handle = gpr_malloc(sizeof(uv_tcp_t));
-  uv_connect_t *req = gpr_malloc(sizeof(uv_connect_t));
+  uv_tcp_t *client_handle =
+      static_cast<uv_tcp_t *>(gpr_malloc(sizeof(uv_tcp_t)));
+  uv_connect_t *req =
+      static_cast<uv_connect_t *>(gpr_malloc(sizeof(uv_connect_t)));
   int nconnects_before;
 
   gpr_mu_lock(g_mu);
@@ -291,7 +293,7 @@ static void test_connect(unsigned n) {
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
                             grpc_error *error) {
-  grpc_pollset_destroy(exec_ctx, p);
+  grpc_pollset_destroy(exec_ctx, static_cast<grpc_pollset *>(p));
 }
 
 int main(int argc, char **argv) {
@@ -299,7 +301,7 @@ int main(int argc, char **argv) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
   grpc_init();
-  g_pollset = gpr_malloc(grpc_pollset_size());
+  g_pollset = static_cast<grpc_pollset *>(gpr_malloc(grpc_pollset_size()));
   grpc_pollset_init(g_pollset, &g_mu);
 
   test_no_op();

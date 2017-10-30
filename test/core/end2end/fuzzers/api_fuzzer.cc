@@ -387,7 +387,7 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
       *r->addrs = addrs;
     } else if (r->lb_addrs != NULL) {
       grpc_lb_addresses *lb_addrs = grpc_lb_addresses_create(1, NULL);
-      grpc_lb_addresses_set_address(lb_addrs, 0, NULL, 0, NULL, NULL, NULL);
+      grpc_lb_addresses_set_address(lb_addrs, 0, NULL, 0, false, NULL, NULL);
       *r->lb_addrs = lb_addrs;
     }
     GRPC_CLOSURE_SCHED(exec_ctx, r->on_done, GRPC_ERROR_NONE);
