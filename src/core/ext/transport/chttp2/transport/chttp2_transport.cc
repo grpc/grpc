@@ -54,8 +54,6 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_impl.h"
 
-#define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
-#define MAX_WINDOW 0x7fffffffu
 #define MAX_WRITE_BUFFER_SIZE (64 * 1024 * 1024)
 #define DEFAULT_MAX_HEADER_LIST_SIZE (8 * 1024)
 
@@ -567,12 +565,18 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED;
   }
 
-  if (enable_bdp) {
+  if (enable_bdp && !t->flow_control->experimental_disable_flow_control()) {
     GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
     schedule_bdp_ping_locked(exec_ctx, t);
 
     grpc_chttp2_act_on_flowctl_action(
         exec_ctx, t->flow_control->PeriodicUpdate(exec_ctx), t, NULL);
+  }
+  if (t->flow_control->experimental_disable_flow_control()) {
+    queue_setting_update(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
+                         grpc_core::chttp2::kMaxMaxFrame);
+    queue_setting_update(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
+                         grpc_core::chttp2::kMaxWindow);
   }
 
   grpc_chttp2_initiate_write(exec_ctx, t,
