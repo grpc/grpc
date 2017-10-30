@@ -19,6 +19,7 @@
 #include "src/core/lib/support/function.h"
 #include "test/core/util/test_config.h"
 
+#include <stdio.h>
 #include <gtest/gtest.h>
 
 namespace grpc_core {
@@ -59,6 +60,11 @@ typedef ::testing::Types<FunctionFixture, InplaceFunctionFixture,
     FixtureTypes;
 TYPED_TEST_CASE(FuncTest, FixtureTypes);
 
+template <template <class, size_t> class Func, size_t kInplaceStorage>
+int CopyThenCall(Func<int(int), kInplaceStorage> copy, int n) {
+  return copy(n);
+}
+
 static int CAnswer() { return 42; }
 
 static int CIdent(int x) { return x; }
@@ -68,6 +74,7 @@ TYPED_TEST(FuncTest, CFunction) {
   EXPECT_EQ(42, answer());
   typename TypeParam::template Func<int(int)> id = &CIdent;
   EXPECT_EQ(123, id(123));
+  EXPECT_EQ(123, CopyThenCall(id, 123));
 }
 
 TYPED_TEST(FuncTest, FreeLambda) {
@@ -75,6 +82,7 @@ TYPED_TEST(FuncTest, FreeLambda) {
   EXPECT_EQ(42, answer());
   typename TypeParam::template Func<int(int)> id = [](int i) { return i; };
   EXPECT_EQ(123, id(123));
+  EXPECT_EQ(123, CopyThenCall(id, 123));
 }
 
 TYPED_TEST(FuncTest, MemberFunctionLambda) {
@@ -92,6 +100,7 @@ TYPED_TEST(FuncTest, MemberFunctionLambda) {
     return foo->Ident(i);
   };
   EXPECT_EQ(123, id(123));
+  EXPECT_EQ(123, CopyThenCall(id, 123));
   delete foo;
 }
 
@@ -110,19 +119,20 @@ TYPED_TEST(FuncTest, MemberValueLambda) {
     return foo.Ident(i);
   };
   EXPECT_EQ(123, id(123));
+  EXPECT_EQ(123, CopyThenCall(id, 123));
 }
 
-template <bool kHandlesNonTrivial>
+template <class TypeParam, bool kHandlesNonTrivial>
 class NonTrivialTests;
 
-template <>
-class NonTrivialTests<false> {
+template <class TypeParam>
+class NonTrivialTests<TypeParam, false> {
  public:
-  static void ComplexLambda() {}
+  static void ComplexLambda() { printf("Skipped: %s\n", __PRETTY_FUNCTION__); }
 };
 
-template <>
-class NonTrivialTests<true> {
+template <class TypeParam>
+class NonTrivialTests<TypeParam, true> {
  public:
   static void ComplexLambda() {
     class Foo {
@@ -141,11 +151,51 @@ class NonTrivialTests<true> {
       return foo.Ident(i);
     };
     EXPECT_EQ(123, id(123));
+    EXPECT_EQ(123, CopyThenCall(id, 123));
   }
 };
 
 TYPED_TEST(FuncTest, ComplexLambda) {
-  NonTrivialTests<TypeParam::kAllowsNonTrivialFunctions>::ComplexLambda();
+  NonTrivialTests<TypeParam,
+                  TypeParam::kAllowsNonTrivialFunctions>::ComplexLambda();
+}
+
+template <class TypeParam, bool kHandlesNonTrivial>
+class LargeFunctionTests;
+
+template <class TypeParam>
+class LargeFunctionTests<TypeParam, false> {
+ public:
+  static void LargeLambda() { printf("Skipped: %s\n", __PRETTY_FUNCTION__); }
+};
+
+template <class TypeParam>
+class LargeFunctionTests<TypeParam, true> {
+ public:
+  static void LargeLambda() {
+    class Foo {
+     public:
+      int Answer() const { return 42; }
+      int Ident(int x) const { return x; }
+
+      char very_big[1024];
+    };
+    Foo foo;
+    typename TypeParam::template Func<int()> answer = [foo]() {
+      return foo.Answer();
+    };
+    EXPECT_EQ(42, answer());
+    typename TypeParam::template Func<int(int)> id = [foo](int i) {
+      return foo.Ident(i);
+    };
+    EXPECT_EQ(123, id(123));
+    EXPECT_EQ(123, CopyThenCall(id, 123));
+  }
+};
+
+TYPED_TEST(FuncTest, LargeLambda) {
+  LargeFunctionTests<TypeParam,
+                     TypeParam::kAllowsLargeFunctions>::LargeLambda();
 }
 
 }  // namespace testing

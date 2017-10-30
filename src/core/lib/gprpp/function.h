@@ -20,6 +20,7 @@
 #define GRPC_CORE_LIB_SUPPORT_FUNCTION_H
 
 #include <stddef.h>
+#include <string.h>
 #include <type_traits>
 #include <utility>
 #include "src/core/lib/support/memory.h"
@@ -80,7 +81,7 @@ class Traits<R(Args...), F, true> {
 
  private:
   static void CopyConstruct(const void* from, void* to) {
-    new (to) Ptr(New<F>(*static_cast<Ptr*>(from)->get()));
+    new (to) Ptr(New<F>(*static_cast<const Ptr*>(from)->get()));
   }
   static void MoveConstruct(void* from, void* to) {
     new (to) Ptr(std::move(*static_cast<Ptr*>(from)));
@@ -154,13 +155,13 @@ class Function<R(Args...), kInplaceStorage> {
     return *this;
   }
 
-  R operator()(Args&&... args) {
+  R operator()(Args... args) {
     return vtable_->invoke(&storage_, std::forward<Args>(args)...);
   }
 
  private:
   const function_impl::VTable<R, Args...>* vtable_;
-  std::aligned_storage<kInplaceStorage> storage_;
+  typename std::aligned_storage<kInplaceStorage>::type storage_;
 };
 
 // InplaceFunction<> is like Function<>, but causes a compile time error if the
@@ -208,30 +209,40 @@ class InplaceFunction<R(Args...), kInplaceStorage> {
     return *this;
   }
 
-  R operator()(Args&&... args) {
+  R operator()(Args... args) {
     return vtable_->invoke(&storage_, std::forward<Args>(args)...);
   }
 
  private:
   const function_impl::VTable<R, Args...>* vtable_;
-  std::aligned_storage<kInplaceStorage> storage_;
+  typename std::aligned_storage<kInplaceStorage>::type storage_;
 };
 
 namespace function_impl {
-// TODO(ctiller): use type_traits versions of these
+// TODO(ctiller): use type_traits versions of these when compiler support is
+// available
 #if defined(__has_extension)
-#if __has_extension(has_trivial_copy)
+#if __has_extension(has_trivial_copy) && __has_extension(has_trivial_destructor)
 template <typename T>
 struct is_trivially_copyable {
   static const constexpr bool value = __has_trivial_copy(T);
+};
+template <typename T>
+struct is_trivially_destructable {
+  static const constexpr bool value = __has_trivial_destructor(T);
 };
 #define GRPC_INTERNAL_FUNCTION_USING_COMPILER
 #endif
 #endif
 #ifndef GRPC_INTERNAL_FUNCTION_USING_COMPILER
+//#warning Using subsitute type_trait functions
 // assume that other compilers will check this similarly enough
 template <typename T>
 struct is_trivially_copyable {
+  static const constexpr bool value = true;
+};
+template <typename T>
+struct is_trivially_destructable {
   static const constexpr bool value = true;
 };
 #endif
@@ -249,7 +260,8 @@ class TrivialInplaceFunction<R(Args...), kInplaceStorage> {
     static_assert(
         sizeof(F) <= kInplaceStorage,
         "TrivialInplaceFunction functor must be smaller than kInplaceStorage");
-    static_assert(function_impl::is_trivially_copyable<F>::value,
+    static_assert(function_impl::is_trivially_copyable<F>::value &&
+                      function_impl::is_trivially_destructable<F>::value,
                   "TrivialInplaceFunction functor must be trivially copyable "
                   "and destructable");
     invoke_ = function_impl::Traits<R(Args...), F, false>::Construct(
@@ -257,17 +269,40 @@ class TrivialInplaceFunction<R(Args...), kInplaceStorage> {
                   ->invoke;
   }
 
-  TrivialInplaceFunction(const TrivialInplaceFunction&) = default;
-  TrivialInplaceFunction(TrivialInplaceFunction&) = default;
-  TrivialInplaceFunction(TrivialInplaceFunction&&) = default;
+  TrivialInplaceFunction(const TrivialInplaceFunction& other)
+      : invoke_(other.invoke_) {
+    memcpy(&storage_, &other.storage_, sizeof(storage_));
+  }
+  TrivialInplaceFunction(TrivialInplaceFunction& other)
+      : invoke_(other.invoke_) {
+    memcpy(&storage_, &other.storage_, sizeof(storage_));
+  }
+  TrivialInplaceFunction(TrivialInplaceFunction&& other)
+      : invoke_(other.invoke_) {
+    memcpy(&storage_, &other.storage_, sizeof(storage_));
+  }
 
-  R operator()(Args&&... args) {
+  TrivialInplaceFunction& operator=(const TrivialInplaceFunction& rhs) {
+    if (this == &rhs) return *this;
+    invoke_ = rhs.invoke_;
+    memcpy(&storage_, &rhs.storage_, sizeof(storage_));
+    return *this;
+  }
+
+  TrivialInplaceFunction& operator=(TrivialInplaceFunction&& rhs) {
+    if (this == &rhs) return *this;
+    invoke_ = rhs.invoke_;
+    memcpy(&storage_, &rhs.storage_, sizeof(storage_));
+    return *this;
+  }
+
+  R operator()(Args... args) {
     return invoke_(&storage_, std::forward<Args>(args)...);
   }
 
  private:
   R (*invoke_)(void* storage, Args&&... args);
-  std::aligned_storage<kInplaceStorage> storage_;
+  typename std::aligned_storage<kInplaceStorage>::type storage_;
 };
 
 }  // namespace grpc_core
