@@ -217,6 +217,26 @@ class InplaceFunction<R(Args...), kInplaceStorage> {
   std::aligned_storage<kInplaceStorage> storage_;
 };
 
+namespace function_impl {
+// TODO(ctiller): use type_traits versions of these
+#if defined(__has_extension)
+#if __has_extension(has_trivial_copy)
+template <typename T>
+struct is_trivially_copyable {
+  static const constexpr bool value = __has_trivial_copy(T);
+};
+#define GRPC_INTERNAL_FUNCTION_USING_COMPILER
+#endif
+#endif
+#ifndef GRPC_INTERNAL_FUNCTION_USING_COMPILER
+// assume that other compilers will check this similarly enough
+template <typename T>
+struct is_trivially_copyable {
+  static const constexpr bool value = true;
+};
+#endif
+}
+
 // TrivialInplaceFunction<> is like InplaceFunction<>, but causes a compile time
 // error if the contained functor is not trivial (meaning memcpy-able members)
 // Given the functor is trivial, take advantage of this to provide a more
@@ -229,8 +249,9 @@ class TrivialInplaceFunction<R(Args...), kInplaceStorage> {
     static_assert(
         sizeof(F) <= kInplaceStorage,
         "TrivialInplaceFunction functor must be smaller than kInplaceStorage");
-    static_assert(std::is_trivially_copyable<F>::value,
-                  "TrivialInplaceFunction functor must be trivial");
+    static_assert(function_impl::is_trivially_copyable<F>::value,
+                  "TrivialInplaceFunction functor must be trivially copyable "
+                  "and destructable");
     invoke_ = function_impl::Traits<R(Args...), F, false>::Construct(
                   std::forward<F>(f), &storage_)
                   ->invoke;
