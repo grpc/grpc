@@ -114,6 +114,7 @@ filegroups:
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/atomic_with_atm.h
   - src/core/lib/gprpp/atomic_with_std.h
+  - src/core/lib/gprpp/function.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/thd.h
@@ -4110,6 +4111,21 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: function_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/gprpp/function_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
+  uses_polling: false
 - name: generic_end2end_test
   gtest: true
   build: test

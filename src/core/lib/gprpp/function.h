@@ -229,7 +229,7 @@ class TrivialInplaceFunction<R(Args...), kInplaceStorage> {
     static_assert(
         sizeof(F) <= kInplaceStorage,
         "TrivialInplaceFunction functor must be smaller than kInplaceStorage");
-    static_assert(std::is_trivial<F>::value,
+    static_assert(std::is_trivially_copyable<F>::value,
                   "TrivialInplaceFunction functor must be trivial");
     invoke_ = function_impl::Traits<R(Args...), F, false>::Construct(
                   std::forward<F>(f), &storage_)
@@ -245,7 +245,7 @@ class TrivialInplaceFunction<R(Args...), kInplaceStorage> {
   }
 
  private:
-  R (*invoke_)(void* storage, Args... args);
+  R (*invoke_)(void* storage, Args&&... args);
   std::aligned_storage<kInplaceStorage> storage_;
 };
 

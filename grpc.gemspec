@@ -94,6 +94,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/atomic.h )
   s.files += %w( src/core/lib/gprpp/atomic_with_atm.h )
   s.files += %w( src/core/lib/gprpp/atomic_with_std.h )
+  s.files += %w( src/core/lib/gprpp/function.h )
   s.files += %w( src/core/lib/gprpp/manual_constructor.h )
   s.files += %w( src/core/lib/gprpp/memory.h )
   s.files += %w( src/core/lib/gprpp/thd.h )

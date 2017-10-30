@@ -1119,6 +1119,7 @@ src/core/lib/gprpp/atomic.h \
 src/core/lib/gprpp/atomic_with_atm.h \
 src/core/lib/gprpp/atomic_with_std.h \
 src/core/lib/gprpp/debug_location.h \
+src/core/lib/gprpp/function.h \
 src/core/lib/gprpp/inlined_vector.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/memory.h \

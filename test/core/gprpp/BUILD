@@ -1,4 +1,4 @@
-# Copyright 2016 gRPC authors.
+b# Copyright 2016 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,6 +17,19 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_c
 licenses(["notice"])  # Apache v2
 
 grpc_package(name = "test/core/gprpp")
+
+grpc_cc_test(
+    name = "function_test",
+    srcs = ["function_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr_base",
+        "//test/core/util:gpr_test_util",
+    ],
+)
 
 grpc_cc_test(
     name = "manual_constructor_test",
