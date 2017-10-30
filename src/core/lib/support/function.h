@@ -271,32 +271,13 @@ class TrivialInplaceFunction<R(Args...), kInplaceStorage> {
                   ->invoke;
   }
 
-  TrivialInplaceFunction(const TrivialInplaceFunction& other)
-      : invoke_(other.invoke_) {
-    memcpy(&storage_, &other.storage_, sizeof(storage_));
-  }
-  TrivialInplaceFunction(TrivialInplaceFunction& other)
-      : invoke_(other.invoke_) {
-    memcpy(&storage_, &other.storage_, sizeof(storage_));
-  }
-  TrivialInplaceFunction(TrivialInplaceFunction&& other)
-      : invoke_(other.invoke_) {
-    memcpy(&storage_, &other.storage_, sizeof(storage_));
-  }
+  TrivialInplaceFunction(const TrivialInplaceFunction& other) = default;
+  TrivialInplaceFunction(TrivialInplaceFunction& other) = default;
+  TrivialInplaceFunction(TrivialInplaceFunction&& other) = default;
 
-  TrivialInplaceFunction& operator=(const TrivialInplaceFunction& rhs) {
-    if (this == &rhs) return *this;
-    invoke_ = rhs.invoke_;
-    memcpy(&storage_, &rhs.storage_, sizeof(storage_));
-    return *this;
-  }
-
-  TrivialInplaceFunction& operator=(TrivialInplaceFunction&& rhs) {
-    if (this == &rhs) return *this;
-    invoke_ = rhs.invoke_;
-    memcpy(&storage_, &rhs.storage_, sizeof(storage_));
-    return *this;
-  }
+  TrivialInplaceFunction& operator=(const TrivialInplaceFunction& rhs) =
+      default;
+  TrivialInplaceFunction& operator=(TrivialInplaceFunction&& rhs) = default;
 
   R operator()(Args... args) {
     return invoke_(&storage_, std::forward<Args>(args)...);
