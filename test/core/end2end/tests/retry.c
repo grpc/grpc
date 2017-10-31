@@ -32,6 +32,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/support/string.h"
+#include "src/core/lib/transport/static_metadata.h"
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
@@ -196,8 +197,8 @@ static void test_retry_basic(grpc_end2end_test_config config) {
   // Make sure the "grpc-previous-rpc-attempts" header was not sent in the
   // initial attempt.
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    GPR_ASSERT(grpc_slice_str_cmp(request_metadata_recv.metadata[i].key,
-                                  "grpc-previous-rpc-attempts") != 0);
+    GPR_ASSERT(!grpc_slice_eq(request_metadata_recv.metadata[i].key,
+                              GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS));
   }
 
   peer = grpc_call_get_peer(s);
@@ -244,8 +245,8 @@ static void test_retry_basic(grpc_end2end_test_config config) {
   // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
   bool found_retry_header = false;
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    if (grpc_slice_str_cmp(request_metadata_recv.metadata[i].key,
-                           "grpc-previous-rpc-attempts") == 0) {
+    if (grpc_slice_eq(request_metadata_recv.metadata[i].key,
+                      GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS)) {
       GPR_ASSERT(grpc_slice_str_cmp(request_metadata_recv.metadata[i].value,
                                     "1") == 0);
       found_retry_header = true;
@@ -2267,7 +2268,7 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
 
   grpc_metadata pushback_md;
   memset(&pushback_md, 0, sizeof(pushback_md));
-  pushback_md.key = grpc_slice_from_static_string("grpc-retry-pushback-ms");
+  pushback_md.key = GRPC_MDSTR_GRPC_RETRY_PUSHBACK_MS;
   pushback_md.value = grpc_slice_from_static_string("2000");
 
   grpc_arg arg = {
@@ -2485,7 +2486,7 @@ static void test_retry_server_pushback_disabled(
 
   grpc_metadata pushback_md;
   memset(&pushback_md, 0, sizeof(pushback_md));
-  pushback_md.key = grpc_slice_from_static_string("grpc-retry-pushback-ms");
+  pushback_md.key = GRPC_MDSTR_GRPC_RETRY_PUSHBACK_MS;
   pushback_md.value = grpc_slice_from_static_string("-1");
 
   grpc_arg arg = {

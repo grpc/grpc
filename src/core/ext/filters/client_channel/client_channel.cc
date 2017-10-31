@@ -188,6 +188,9 @@ static bool parse_retry_policy(grpc_json *field,
       retry_policy->max_attempts = gpr_parse_nonnegative_int(sub_field->value);
       if (retry_policy->max_attempts <= 1) return false;
       if (retry_policy->max_attempts > MAX_MAX_RETRY_ATTEMPTS) {
+        gpr_log(GPR_INFO,
+                "service config: clamped retryPolicy.maxAttempts at %d",
+                MAX_MAX_RETRY_ATTEMPTS);
         retry_policy->max_attempts = MAX_MAX_RETRY_ATTEMPTS;
       }
     } else if (strcmp(sub_field->key, "initialBackoff") == 0) {
