@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <utility>
+#include "src/core/lib/support/tuple.h"
 
 namespace grpc_core {
 
@@ -100,19 +101,12 @@ class MakesClosuresForScheduler {
                              static_cast<Env*>(env));
       }
 
-      void operator()(Env* env) const {
-        Call(int_seq_for<Args...>());
-      }
+      void operator()(Env* env) { TupleCall(F, std::move(args_)); }
 
      private:
       FuncClosure(Args&&... args) : args_(std::forward<Args>(args)...) {}
 
-      template <int I...>
-      void Call(int_seq<I...>) {
-        f(std::get<I>(args_));
-      }
-
-      const std::tuple<Args...> args_;
+      Tuple<Args...> args_;
     };
 
     template <class C, void (C::*F)(Args...)>
@@ -121,13 +115,20 @@ class MakesClosuresForScheduler {
       static const typename ClosureRef<Args...>::VTable vtable;
 
       static void Schedule(void* env, Args&&... args) {
-        Scheduler::Schedule([=](C* p) { (p->*F)(args...); },
+        Scheduler::Schedule(MemberClosure(std::forward<Args>(args)...),
                             static_cast<C*>(env));
       }
       static void Run(void* env, Args&&... args) {
-        Scheduler::UnsafeRun([=](C* p) { (p->*F)(args...); },
+        Scheduler::UnsafeRun(MemberClosure(std::forward<Args>(args)...),
                              static_cast<C*>(env));
       }
+
+      void operator()(C* p) { TupleCallMember(p, F, std::move(args_)); }
+
+     private:
+      MemberClosure(Args&&... args) : args_(std::forward<Args>(args)...) {}
+
+      Tuple<Args...> args_;
     };
 
    public:
