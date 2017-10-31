@@ -328,21 +328,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/load_reporting/server_load_reporting_filter.cc \
     src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc \
-    src/core/ext/census/base_resources.cc \
-    src/core/ext/census/context.cc \
-    src/core/ext/census/gen/census.pb.c \
-    src/core/ext/census/gen/trace_context.pb.c \
     src/core/ext/census/grpc_context.cc \
-    src/core/ext/census/grpc_filter.cc \
-    src/core/ext/census/grpc_plugin.cc \
-    src/core/ext/census/initialize.cc \
-    src/core/ext/census/intrusive_hash_map.cc \
-    src/core/ext/census/mlog.cc \
-    src/core/ext/census/operation.cc \
-    src/core/ext/census/placeholders.cc \
-    src/core/ext/census/resource.cc \
-    src/core/ext/census/trace_context.cc \
-    src/core/ext/census/tracing.cc \
     src/core/ext/filters/max_age/max_age_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc \
@@ -660,7 +646,6 @@ if test "$PHP_GRPC" != "no"; then
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/boringssl)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/census)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/census/gen)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/grpclb)
