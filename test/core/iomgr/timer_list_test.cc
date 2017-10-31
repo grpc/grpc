@@ -31,8 +31,8 @@
 
 #define MAX_CB 30
 
-extern grpc_tracer_flag grpc_timer_trace;
-extern grpc_tracer_flag grpc_timer_check_trace;
+extern "C" grpc_tracer_flag grpc_timer_trace;
+extern "C" grpc_tracer_flag grpc_timer_check_trace;
 
 static int cb_called[MAX_CB][2];
 

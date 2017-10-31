@@ -56,7 +56,7 @@ static grpc_server *g_server;
 static grpc_channel *g_channel;
 static grpc_resource_quota *g_resource_quota;
 
-extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
+extern "C" gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 static gpr_timespec now_impl(gpr_clock_type clock_type) {
   GPR_ASSERT(clock_type != GPR_TIMESPAN);
@@ -436,7 +436,7 @@ grpc_ares_request *my_dns_lookup_ares(
 // client connection
 
 // defined in tcp_client_posix.c
-extern void (*grpc_tcp_client_connect_impl)(
+extern "C" void (*grpc_tcp_client_connect_impl)(
     grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep,
     grpc_pollset_set *interested_parties, const grpc_channel_args *channel_args,
     const grpc_resolved_address *addr, gpr_timespec deadline);
