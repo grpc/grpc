@@ -274,6 +274,8 @@ const typename ClosureRef<Args...>::VTable MakesClosuresForScheduler<
 // SCHEDULERS
 //
 
+// Scheduler for callbacks that promise to acquire no mutexes
+// In this case Schedule is equivalent to UnsafeRun
 class AcquiresNoLocks
     : public closure_impl::MakesClosuresForScheduler<AcquiresNoLocks> {
  public:
