@@ -19,42 +19,8 @@ filegroups:
 - name: census
   public_headers:
   - include/grpc/census.h
-  headers:
-  - src/core/ext/census/aggregation.h
-  - src/core/ext/census/base_resources.h
-  - src/core/ext/census/census_interface.h
-  - src/core/ext/census/census_rpc_stats.h
-  - src/core/ext/census/gen/census.pb.h
-  - src/core/ext/census/gen/trace_context.pb.h
-  - src/core/ext/census/grpc_filter.h
-  - src/core/ext/census/intrusive_hash_map.h
-  - src/core/ext/census/intrusive_hash_map_internal.h
-  - src/core/ext/census/mlog.h
-  - src/core/ext/census/resource.h
-  - src/core/ext/census/rpc_metric_id.h
-  - src/core/ext/census/trace_context.h
-  - src/core/ext/census/trace_label.h
-  - src/core/ext/census/trace_propagation.h
-  - src/core/ext/census/trace_status.h
-  - src/core/ext/census/trace_string.h
-  - src/core/ext/census/tracing.h
   src:
-  - src/core/ext/census/base_resources.cc
-  - src/core/ext/census/context.cc
-  - src/core/ext/census/gen/census.pb.c
-  - src/core/ext/census/gen/trace_context.pb.c
   - src/core/ext/census/grpc_context.cc
-  - src/core/ext/census/grpc_filter.cc
-  - src/core/ext/census/grpc_plugin.cc
-  - src/core/ext/census/initialize.cc
-  - src/core/ext/census/intrusive_hash_map.cc
-  - src/core/ext/census/mlog.cc
-  - src/core/ext/census/operation.cc
-  - src/core/ext/census/placeholders.cc
-  - src/core/ext/census/resource.cc
-  - src/core/ext/census/trace_context.cc
-  - src/core/ext/census/tracing.cc
-  plugin: census_grpc_plugin
   uses:
   - grpc_base
   - nanopb
@@ -1846,50 +1812,6 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: census_context_test
-  build: test
-  language: c
-  src:
-  - test/core/census/context_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
-- name: census_intrusive_hash_map_test
-  build: test
-  language: c
-  src:
-  - test/core/census/intrusive_hash_map_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
-- name: census_resource_test
-  build: test
-  language: c
-  src:
-  - test/core/census/resource_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
-- name: census_trace_context_test
-  build: test
-  language: c
-  src:
-  - test/core/census/trace_context_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: channel_create_test
   build: test
   language: c
@@ -2892,18 +2814,6 @@ targets:
   language: c
   src:
   - test/core/channel/minimal_stack_is_minimal_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
-- name: mlog_test
-  flaky: true
-  build: test
-  language: c
-  src:
-  - test/core/census/mlog_test.cc
   deps:
   - grpc_test_util
   - grpc
