@@ -99,6 +99,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/support/string_windows.h )
   s.files += %w( src/core/lib/support/time_precise.h )
   s.files += %w( src/core/lib/support/tmpfile.h )
+  s.files += %w( src/core/lib/support/tuple.h )
   s.files += %w( src/core/lib/profiling/basic_timers.cc )
   s.files += %w( src/core/lib/profiling/stap_timers.cc )
   s.files += %w( src/core/lib/support/alloc.cc )
