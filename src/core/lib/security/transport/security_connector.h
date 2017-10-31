@@ -248,8 +248,8 @@ typedef struct {
   specific error code otherwise.
 */
 grpc_security_status grpc_ssl_server_security_connector_create(
-    grpc_exec_ctx *exec_ctx, grpc_server_credentials *server_creds,
-    const grpc_ssl_server_config *config, grpc_server_security_connector **sc);
+    grpc_exec_ctx *exec_ctx, grpc_server_credentials *server_credentials,
+    grpc_server_security_connector **sc);
 
 /* Util. */
 const tsi_peer_property *tsi_peer_get_property_by_name(const tsi_peer *peer,

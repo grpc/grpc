@@ -25,6 +25,7 @@
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
 extern "C" {
@@ -259,7 +260,8 @@ class InProcessCHTTP2 : public EndpointPairFixture {
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     EndpointPairFixture::AddToLabel(out, state);
     out << " writes/iter:"
-        << (double)stats_.num_writes / (double)state.iterations();
+        << static_cast<double>(gpr_atm_no_barrier_load(&stats_.num_writes)) /
+               static_cast<double>(state.iterations());
   }
 
  private:

@@ -120,10 +120,10 @@ some configuration as environment variables that can be set.
     perform name resolution
   - ares - a DNS resolver based around the c-ares library
 
-* GRPC_DISABLE_CHANNEL_CONNECTIVITY_WATCHER
-  The channel connectivity watcher uses one extra thread to check the channel
-  state every 500 ms on the client side. It can help reconnect disconnected
-  client channels (mostly due to idleness), so that the next RPC on this channel
-  won't fail. Set to 1 to turn off this watcher and save a thread. Please note
-  this is a temporary work-around, it will be removed in the future once we have
-  support for automatically reestablishing failed connections.
+* GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS
+  Default: 5000
+  Declares the interval between two backup polls on client channels. These polls
+  are run in the timer thread so that gRPC can process connection failures while
+  there is no active polling thread. They help reconnect disconnected client
+  channels (mostly due to idleness), so that the next RPC on this channel won't
+  fail. Set to 0 to turn off the backup polls.

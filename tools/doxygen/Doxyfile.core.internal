@@ -907,6 +907,8 @@ src/core/ext/census/trace_string.h \
 src/core/ext/census/tracing.cc \
 src/core/ext/census/tracing.h \
 src/core/ext/filters/client_channel/README.md \
+src/core/ext/filters/client_channel/backup_poller.cc \
+src/core/ext/filters/client_channel/backup_poller.h \
 src/core/ext/filters/client_channel/channel_connectivity.cc \
 src/core/ext/filters/client_channel/client_channel.cc \
 src/core/ext/filters/client_channel/client_channel.h \
@@ -935,6 +937,8 @@ src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balan
 src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h \
 src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
 src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
+src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc \
+src/core/ext/filters/client_channel/lb_policy/subchannel_list.h \
 src/core/ext/filters/client_channel/lb_policy_factory.cc \
 src/core/ext/filters/client_channel/lb_policy_factory.h \
 src/core/ext/filters/client_channel/lb_policy_registry.cc \

@@ -206,13 +206,12 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
       return;
     }
     ServerRpcContext *ctx;
-    std::mutex *mu_ptr;
+    std::mutex *mu_ptr = &shutdown_state_[thread_idx]->mutex;
     do {
       ctx = detag(got_tag);
       // The tag is a pointer to an RPC context to invoke
       // Proceed while holding a lock to make sure that
       // this thread isn't supposed to shut down
-      mu_ptr = &shutdown_state_[thread_idx]->mutex;
       mu_ptr->lock();
       if (shutdown_state_[thread_idx]->shutdown) {
         mu_ptr->unlock();

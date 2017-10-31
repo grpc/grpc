@@ -611,7 +611,6 @@ static void update_lb_connectivity_status_locked(
     case GRPC_CHANNEL_SHUTDOWN:
       GPR_ASSERT(rr_state_error != GRPC_ERROR_NONE);
       break;
-    case GRPC_CHANNEL_INIT:
     case GRPC_CHANNEL_IDLE:
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_READY:
@@ -1790,7 +1789,6 @@ static void glb_lb_channel_on_connectivity_changed_cb(grpc_exec_ctx *exec_ctx,
   // embedded RR policy. Note that the current RR policy, if any, will stay in
   // effect until an update from the new lb_call is received.
   switch (glb_policy->lb_channel_connectivity) {
-    case GRPC_CHANNEL_INIT:
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
       /* resub. */

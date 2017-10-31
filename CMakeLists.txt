@@ -1154,6 +1154,7 @@ add_library(grpc
   src/core/tsi/transport_security_adapter.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
   src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
@@ -1194,6 +1195,7 @@ add_library(grpc
   third_party/nanopb/pb_encode.c
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
+  src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
@@ -1480,6 +1482,7 @@ add_library(grpc_cronet
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
@@ -1772,6 +1775,7 @@ add_library(grpc_test_util
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/debug/trace.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
@@ -2039,6 +2043,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/debug/trace.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
@@ -2325,6 +2330,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
@@ -2368,6 +2374,7 @@ add_library(grpc_unsecure
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
+  src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/census/base_resources.cc
   src/core/ext/census/context.cc
@@ -3062,6 +3069,7 @@ add_library(grpc++_cronet
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
+  src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
