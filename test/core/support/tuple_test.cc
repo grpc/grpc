@@ -16,8 +16,8 @@
  *
  */
 
+#include "src/core/lib/support/tuple.h"
 #include <gtest/gtest.h>
-#include "src/core/lib/support/memory.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
