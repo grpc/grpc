@@ -555,7 +555,8 @@ static test_strategy test_strategies[] = {
 
 static const char *socket_types[] = {"tcp", "socketpair", "pipe"};
 
-int create_socket(char *socket_type, fd_pair *client_fds, fd_pair *server_fds) {
+int create_socket(const char *socket_type, fd_pair *client_fds,
+                  fd_pair *server_fds) {
   if (strcmp(socket_type, "tcp") == 0) {
     create_sockets_tcp(client_fds, server_fds);
   } else if (strcmp(socket_type, "socketpair") == 0) {
@@ -569,7 +570,7 @@ int create_socket(char *socket_type, fd_pair *client_fds, fd_pair *server_fds) {
   return 0;
 }
 
-static int run_benchmark(char *socket_type, thread_args *client_args,
+static int run_benchmark(const char *socket_type, thread_args *client_args,
                          thread_args *server_args) {
   gpr_thd_id tid;
   int rv = 0;
@@ -598,7 +599,7 @@ static int run_all_benchmarks(size_t msg_size) {
           static_cast<thread_args *>(gpr_malloc(sizeof(thread_args)));
       thread_args *server_args =
           static_cast<thread_args *>(gpr_malloc(sizeof(thread_args)));
-      char *socket_type = socket_types[j];
+      const char *socket_type = socket_types[j];
 
       client_args->read_bytes = strategy->read_strategy;
       client_args->write_bytes = blocking_write_bytes;

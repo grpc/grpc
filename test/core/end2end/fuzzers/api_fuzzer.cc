@@ -439,7 +439,7 @@ grpc_ares_request *my_dns_lookup_ares(
 extern "C" void (*grpc_tcp_client_connect_impl)(
     grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep,
     grpc_pollset_set *interested_parties, const grpc_channel_args *channel_args,
-    const grpc_resolved_address *addr, gpr_timespec deadline);
+    const grpc_resolved_address *addr, grpc_millis deadline);
 
 static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_endpoint **ep, gpr_timespec deadline);
@@ -497,8 +497,9 @@ static void my_tcp_client_connect(grpc_exec_ctx *exec_ctx,
                                   grpc_pollset_set *interested_parties,
                                   const grpc_channel_args *channel_args,
                                   const grpc_resolved_address *addr,
-                                  gpr_timespec deadline) {
-  sched_connect(exec_ctx, closure, ep, deadline);
+                                  grpc_millis deadline) {
+  sched_connect(exec_ctx, closure, ep,
+                grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
