@@ -71,7 +71,7 @@ grpc_cc_library(
         "test_tcp_server.h",
         "trickle_endpoint.h",
     ],
-    language = "C",
+    language = "C++",
     deps = [
         ":gpr_test_util",
         "//:grpc_common",
@@ -83,7 +83,7 @@ grpc_cc_library(
     name = "grpc_test_util",
     srcs = [],
     hdrs = [],
-    language = "C",
+    language = "C++",
     deps = [
         ":grpc_test_util_base",
         "//:grpc",
@@ -94,7 +94,7 @@ grpc_cc_library(
     name = "grpc_test_util_unsecure",
     srcs = [],
     hdrs = [],
-    language = "C",
+    language = "C++",
     deps = [
         ":grpc_test_util_base",
         "//:grpc_unsecure",

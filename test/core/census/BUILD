@@ -21,7 +21,7 @@ licenses(["notice"])  # Apache v2
 grpc_cc_test(
     name = "context_test",
     srcs = ["context_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -33,7 +33,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "mlog_test",
     srcs = ["mlog_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -45,7 +45,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "resource_test",
     srcs = ["resource_test.cc"],
-    language = "C",
+    language = "C++",
     data = [
         ":data/resource_empty_name.pb",
         ":data/resource_full.pb",
@@ -65,7 +65,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "trace_context_test",
     srcs = ["trace_context_test.cc"],
-    language = "C",
+    language = "C++",
     data = [
         ":data/context_empty.pb",
         ":data/context_full.pb",

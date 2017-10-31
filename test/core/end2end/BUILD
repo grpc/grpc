@@ -24,7 +24,7 @@ grpc_cc_library(
     name = "cq_verifier",
     srcs = ["cq_verifier.cc"],
     hdrs = ["cq_verifier.h"],
-    language = "C",
+    language = "C++",
     visibility = ["//test:__subpackages__"],
     deps = [
         "//:gpr",
@@ -42,7 +42,7 @@ grpc_cc_library(
         "data/test_root_cert.cc",
     ],
     hdrs = ["data/ssl_test_data.h"],
-    language = "C",
+    language = "C++",
     visibility = ["//test:__subpackages__"],
 )
 
@@ -51,7 +51,7 @@ grpc_cc_library(
     name = "http_proxy",
     srcs = ["fixtures/http_proxy_fixture.cc"],
     hdrs = ["fixtures/http_proxy_fixture.h"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -63,7 +63,7 @@ grpc_cc_library(
     name = "proxy",
     srcs = ["fixtures/proxy.cc"],
     hdrs = ["fixtures/proxy.h"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

@@ -193,7 +193,7 @@ def grpc_end2end_tests():
       'tests/cancel_test_helpers.h',
       'end2end_tests.h'
     ],
-    language = "C",
+    language = "C++",
     deps = [
       ':cq_verifier',
       ':ssl_test_data',
@@ -206,7 +206,7 @@ def grpc_end2end_tests():
     grpc_cc_binary(
       name = '%s_test' % f,
       srcs = ['fixtures/%s.cc' % f],
-      language = "C",
+      language = "C++",
       deps = [
         ':end2end_tests',
         '//test/core/util:grpc_test_util',

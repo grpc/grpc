@@ -21,7 +21,7 @@ licenses(["notice"])  # Apache v2
 grpc_cc_test(
     name = "dns_resolver_connectivity_test",
     srcs = ["dns_resolver_connectivity_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -33,7 +33,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "dns_resolver_test",
     srcs = ["dns_resolver_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -45,7 +45,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "sockaddr_resolver_test",
     srcs = ["sockaddr_resolver_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -57,7 +57,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "fake_resolver_test",
     srcs = ["fake_resolver_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

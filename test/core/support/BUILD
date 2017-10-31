@@ -21,7 +21,7 @@ grpc_package(name = "test/core/support")
 grpc_cc_test(
     name = "alloc_test",
     srcs = ["alloc_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -31,7 +31,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "avl_test",
     srcs = ["avl_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -41,7 +41,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "cmdline_test",
     srcs = ["cmdline_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -51,7 +51,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "cpu_test",
     srcs = ["cpu_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -61,7 +61,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "env_test",
     srcs = ["env_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -71,7 +71,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "histogram_test",
     srcs = ["histogram_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -81,7 +81,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "host_port_test",
     srcs = ["host_port_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -91,7 +91,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "log_test",
     srcs = ["log_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -101,7 +101,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "mpscq_test",
     srcs = ["mpscq_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -111,7 +111,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "murmur_hash_test",
     srcs = ["murmur_hash_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -121,7 +121,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "stack_lockfree_test",
     srcs = ["stack_lockfree_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -131,7 +131,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "string_test",
     srcs = ["string_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -141,7 +141,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "spinlock_test",
     srcs = ["spinlock_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -151,7 +151,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "sync_test",
     srcs = ["sync_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -161,7 +161,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "thd_test",
     srcs = ["thd_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -171,7 +171,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "time_test",
     srcs = ["time_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -181,7 +181,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "tls_test",
     srcs = ["tls_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",
@@ -191,7 +191,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "useful_test",
     srcs = ["useful_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//test/core/util:gpr_test_util",

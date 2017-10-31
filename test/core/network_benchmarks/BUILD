@@ -23,7 +23,7 @@ licenses(["notice"])  # Apache v2
 grpc_cc_binary(
     name = "low_level_ping_pong",
     srcs = ["low_level_ping_pong.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

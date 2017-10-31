@@ -31,7 +31,7 @@ grpc_cc_library(
 grpc_cc_test(
     name = "fake_transport_security_test",
     srcs = ["fake_transport_security_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         ":transport_security_test_lib",
         "//:grpc",
@@ -58,7 +58,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
-    language = "C",
+    language = "C++",
     deps = [
         ":transport_security_test_lib",
         "//:grpc",
@@ -71,7 +71,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "transport_security_test",
     srcs = ["transport_security_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:grpc",
         "//:gpr",

@@ -23,7 +23,7 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 grpc_fuzzer(
     name = "percent_encode_fuzzer",
     srcs = ["percent_encode_fuzzer.cc"],
-    language = "C",
+    language = "C++",
     corpus = "percent_encode_corpus",
     deps = [
         "//:gpr",
@@ -35,7 +35,7 @@ grpc_fuzzer(
 grpc_fuzzer(
     name = "percent_decode_fuzzer",
     srcs = ["percent_decode_fuzzer.cc"],
-    language = "C",
+    language = "C++",
     corpus = "percent_decode_corpus",
     deps = [
         "//:gpr",
@@ -47,7 +47,7 @@ grpc_fuzzer(
 grpc_cc_test(
     name = "percent_encoding_test",
     srcs = ["percent_encoding_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -60,13 +60,13 @@ grpc_cc_test(
     name = "slice_test",
     srcs = ["slice_test.cc"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    language = "C",
+    language = "C++",
 )
 
 grpc_cc_test(
     name = "slice_string_helpers_test",
     srcs = ["slice_string_helpers_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -79,20 +79,20 @@ grpc_cc_test(
     name = "slice_buffer_test",
     srcs = ["slice_buffer_test.cc"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    language = "C",
+    language = "C++",
 )
 
 grpc_cc_test(
     name = "slice_hash_table_test",
     srcs = ["slice_hash_table_test.cc"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
-    language = "C",
+    language = "C++",
 )
 
 grpc_cc_test(
     name = "b64_test",
     srcs = ["b64_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

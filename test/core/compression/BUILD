@@ -21,7 +21,7 @@ licenses(["notice"])  # Apache v2
 grpc_cc_test(
     name = "algorithm_test",
     srcs = ["algorithm_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -33,7 +33,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "compression_test",
     srcs = ["compression_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -45,7 +45,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "message_compress_test",
     srcs = ["message_compress_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

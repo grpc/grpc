@@ -26,7 +26,7 @@ package(
 grpc_cc_test(
     name = "backoff_test",
     srcs = ["backoff_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",

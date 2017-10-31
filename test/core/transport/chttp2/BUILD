@@ -33,7 +33,7 @@ grpc_fuzzer(
 grpc_cc_test(
     name = "alpn_test",
     srcs = ["alpn_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -45,7 +45,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bin_decoder_test",
     srcs = ["bin_decoder_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -57,7 +57,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bin_encoder_test",
     srcs = ["bin_encoder_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -69,7 +69,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "hpack_encoder_test",
     srcs = ["hpack_encoder_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -81,7 +81,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "hpack_parser_test",
     srcs = ["hpack_parser_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -93,7 +93,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "hpack_table_test",
     srcs = ["hpack_table_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -105,7 +105,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "stream_map_test",
     srcs = ["stream_map_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -117,7 +117,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "varint_test",
     srcs = ["varint_test.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

@@ -24,7 +24,7 @@ grpc_cc_binary(
     name = "client",
     testonly = 1,
     srcs = ["client.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -38,7 +38,7 @@ grpc_cc_binary(
     name = "server",
     testonly = 1,
     srcs = ["server.cc"],
-    language = "C",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
