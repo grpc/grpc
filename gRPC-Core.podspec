@@ -34,6 +34,10 @@ Pod::Spec.new do |s|
     :tag => "v#{version}",
   }
 
+  # gRPC podspecs depend on fix for https://github.com/CocoaPods/CocoaPods/issues/6024,
+  # which was released in Cocoapods v1.2.0.
+  s.cocoapods_version = '>= 1.2.0'
+
   s.ios.deployment_target = '7.0'
   s.osx.deployment_target = '10.9'
   s.requires_arc = false

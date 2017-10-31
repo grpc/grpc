@@ -27,6 +27,10 @@ Pod::Spec.new do |s|
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
+  # gRPC podspecs depend on fix for https://github.com/CocoaPods/CocoaPods/issues/6024,
+  # which was released in Cocoapods v1.2.0.
+  s.cocoapods_version = '>= 1.2.0'
+
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
     :tag => "v#{version}",
