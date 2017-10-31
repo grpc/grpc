@@ -19,9 +19,11 @@
 #ifndef GRPC_CORE_LIB_SUPPORT_CLOSURE_REF_H
 #define GRPC_CORE_LIB_SUPPORT_CLOSURE_REF_H
 
+#include <grpc/support/log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <utility>
+#include "src/core/lib/support/memory.h"
 #include "src/core/lib/support/tuple.h"
 
 namespace grpc_core {
@@ -44,16 +46,35 @@ class ClosureRef {
   };
 
   ClosureRef() : vtable_(&null_vtable_), env_(nullptr) {}
+  ClosureRef(const ClosureRef&) = delete;
+  ClosureRef(ClosureRef&& other) : vtable_(other.vtable_), env_(other.env_) {
+    other.vtable_ = &null_vtable_;
+  }
+  ClosureRef& operator=(const ClosureRef&) = delete;
+  ClosureRef& operator=(ClosureRef&& other) {
+    // can only assign over an empty ClosureRef
+    GPR_ASSERT(vtable_ == &null_vtable_);
+    vtable_ = other.vtable_;
+    env_ = other.env_;
+    other.vtable_ = &null_vtable_;
+    return *this;
+  }
+  ~ClosureRef() {
+    // a ClosureRef must be invoked before being destroyed
+    GPR_ASSERT(vtable_ == &null_vtable_);
+  }
 
   // Run this closure, in-place if possible
   // Requires that no grpc-locks be held in the current callstack
   void UnsafeRun(Args&&... args) {
     vtable_->run(env_, std::forward<Args>(args)...);
+    vtable_ = &null_vtable_;
   }
 
   // Schedule this closure for execution in a safe environment
   void Schedule(Args&&... args) {
     vtable_->schedule(env_, std::forward<Args>(args)...);
+    vtable_ = &null_vtable_;
   }
 
  private:
@@ -131,6 +152,39 @@ class MakesClosuresForScheduler {
       Tuple<Args...> args_;
     };
 
+    template <class F>
+    class FunctorClosure {
+     public:
+      static const typename ClosureRef<Args...>::VTable vtable;
+
+      explicit FunctorClosure(F&& f) : f_(std::move(f)) {}
+
+      static void Schedule(void* env, Args&&... args) {
+        static_cast<FunctorClosure*>(env)->args_ =
+            Tuple<Args...>(std::forward<Args>(args)...);
+        Scheduler::Schedule(
+            [](FunctorClosure* functor) {
+              TupleCall(functor->f_, std::move(functor->args_));
+              Delete(functor);
+            },
+            static_cast<FunctorClosure*>(env));
+      }
+      static void Run(void* env, Args&&... args) {
+        static_cast<FunctorClosure*>(env)->args_ =
+            Tuple<Args...>(std::forward<Args>(args)...);
+        Scheduler::UnsafeRun(
+            [](FunctorClosure* functor) {
+              TupleCall(functor->f_, std::move(functor->args_));
+              Delete(functor);
+            },
+            static_cast<FunctorClosure*>(env));
+      }
+
+     private:
+      F f_;
+      Tuple<Args...> args_;
+    };
+
    public:
     template <void (*F)(Args...), typename Env = void>
     static ClosureRef<Args...> FromFreeFunction(Env* env = nullptr) {
@@ -140,6 +194,12 @@ class MakesClosuresForScheduler {
     template <class C, void (C::*F)(Args...)>
     static ClosureRef<Args...> FromMemberFunction(C* p) {
       return ClosureRef<Args...>(&MemberClosure<C, F>::vtable, p);
+    }
+
+    template <class F>
+    static ClosureRef<Args...> FromFunctor(F&& f) {
+      return ClosureRef<Args...>(&FunctorClosure<F>::vtable,
+                                 New<FunctorClosure<F>>(std::move(f)));
     }
   };
 };
@@ -156,6 +216,13 @@ template <class... Args>
 template <class C, void (C::*F)(Args...)>
 const typename ClosureRef<Args...>::VTable MakesClosuresForScheduler<
     Scheduler>::MakeClosureWithArgs<Args...>::MemberClosure<C, F>::vtable = {
+    Schedule, Run};
+
+template <class Scheduler>
+template <class... Args>
+template <class F>
+const typename ClosureRef<Args...>::VTable MakesClosuresForScheduler<
+    Scheduler>::MakeClosureWithArgs<Args...>::FunctorClosure<F>::vtable = {
     Schedule, Run};
 
 }  // namespace closure_impl

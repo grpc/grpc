@@ -84,6 +84,8 @@ class TupleImpl<IntSeq<Indices...>, Types...>
   TupleImpl() = default;
   TupleImpl(const TupleImpl&) = default;
   TupleImpl(TupleImpl&&) = default;
+  TupleImpl& operator=(const TupleImpl&) = default;
+  TupleImpl& operator=(TupleImpl&&) = default;
 
   template <typename... OtherTypes>
   TupleImpl(OtherTypes&&... values) : Element<Indices, Types>(values)... {}
@@ -106,6 +108,8 @@ class Tuple
   Tuple() = default;
   Tuple(const Tuple&) = default;
   Tuple(Tuple&&) = default;
+  Tuple& operator=(const Tuple&) = default;
+  Tuple& operator=(Tuple&&) = default;
 
   template <typename... OtherTypes,
             typename = typename std::enable_if<sizeof...(OtherTypes) ==

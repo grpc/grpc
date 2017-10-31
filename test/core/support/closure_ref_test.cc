@@ -52,11 +52,45 @@ TEST(ClosureRef, SimpleTests) {
   cb2.UnsafeRun(2);
   cb3.UnsafeRun();
 
+  EXPECT_DEATH_IF_SUPPORTED(cb1.UnsafeRun(), "");
+  EXPECT_DEATH_IF_SUPPORTED(cb2.UnsafeRun(7), "");
+  EXPECT_DEATH_IF_SUPPORTED(cb3.UnsafeRun(), "");
+
   EXPECT_EQ(4, counter);
 
   // empty closure test
   ClosureRef<> empty;
   EXPECT_DEATH_IF_SUPPORTED(empty.UnsafeRun(), "");
+}
+
+TEST(ClosureRef, Lambda) {
+  counter = 0;
+  ClosureRef<> cb =
+      AcquiresNoLocks::MakeClosureWithArgs<>::FromFunctor([]() { counter++; });
+  EXPECT_EQ(0, counter);
+  cb.UnsafeRun();
+  EXPECT_EQ(1, counter);
+}
+
+TEST(ClosureRef, Move) {
+  counter = 0;
+  ClosureRef<> cb1 =
+      AcquiresNoLocks::MakeClosureWithArgs<>::FromFreeFunction<IncCounter>();
+  ClosureRef<> cb2 = std::move(cb1);
+  cb2.UnsafeRun();
+  EXPECT_DEATH_IF_SUPPORTED(cb1.UnsafeRun(), "");
+  EXPECT_DEATH_IF_SUPPORTED(cb2.UnsafeRun(), "");
+}
+
+TEST(ClosureRef, Movier) {
+  counter = 0;
+  ClosureRef<> cb1 =
+      AcquiresNoLocks::MakeClosureWithArgs<>::FromFreeFunction<IncCounter>();
+  ClosureRef<> cb2 = std::move(cb1);
+  cb1 = std::move(cb2);
+  cb1.UnsafeRun();
+  EXPECT_DEATH_IF_SUPPORTED(cb1.UnsafeRun(), "");
+  EXPECT_DEATH_IF_SUPPORTED(cb2.UnsafeRun(), "");
 }
 
 }  // namespace testing
