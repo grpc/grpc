@@ -53,8 +53,8 @@ typedef struct {
   grpc_millis current_deadline;
 
   /// Deadline to be used for the next attempt, following the backoff strategy.
-  grpc_millis next_backoff_deadline;
-} grpc_backoff_deadlines;
+  grpc_millis next_attempt_start_time;
+} grpc_backoff_result;
 
 /// Initialize backoff machinery - does not need to be destroyed
 void grpc_backoff_init(grpc_backoff *backoff, grpc_millis initial_backoff,
@@ -64,13 +64,13 @@ void grpc_backoff_init(grpc_backoff *backoff, grpc_millis initial_backoff,
 
 /// Begin retry loop: returns the deadlines to be used for the current attempt
 /// and the subsequent retry, if any.
-grpc_backoff_deadlines grpc_backoff_begin(grpc_exec_ctx *exec_ctx,
-                                          grpc_backoff *backoff);
+grpc_backoff_result grpc_backoff_begin(grpc_exec_ctx *exec_ctx,
+                                       grpc_backoff *backoff);
 
 /// Step a retry loop: returns the deadlines to be used for the current attempt
 /// and the subsequent retry, if any.
-grpc_backoff_deadlines grpc_backoff_step(grpc_exec_ctx *exec_ctx,
-                                         grpc_backoff *backoff);
+grpc_backoff_result grpc_backoff_step(grpc_exec_ctx *exec_ctx,
+                                      grpc_backoff *backoff);
 
 /// Reset the backoff, so the next grpc_backoff_step will be a
 /// grpc_backoff_begin.

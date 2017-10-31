@@ -117,13 +117,10 @@ struct grpc_subchannel {
 
   external_state_watcher root_external_state_watcher;
 
-  /** next connect attempt time */
-  grpc_millis next_attempt_deadline;
-  /** next connect attempt time */
-  grpc_millis current_deadline;
-
   /** backoff state */
   grpc_backoff backoff_state;
+  grpc_backoff_result backoff_result;
+
   /** do we have an active alarm? */
   bool have_alarm;
   /** have we started the backoff loop */
@@ -383,7 +380,7 @@ static void continue_connect_locked(grpc_exec_ctx *exec_ctx,
   grpc_connect_in_args args;
 
   args.interested_parties = c->pollset_set;
-  args.deadline = c->current_deadline;
+  args.deadline = c->backoff_result.current_deadline;
   args.channel_args = c->args;
 
   grpc_connectivity_state_set(exec_ctx, &c->state_tracker,
@@ -419,12 +416,6 @@ static void on_external_state_watcher_done(grpc_exec_ctx *exec_ctx, void *arg,
   GRPC_CLOSURE_RUN(exec_ctx, follow_up, GRPC_ERROR_REF(error));
 }
 
-static void update_deadlines(grpc_subchannel *c,
-                             const grpc_backoff_deadlines &deadlines) {
-  c->current_deadline = deadlines.current_deadline;
-  c->next_attempt_deadline = deadlines.next_backoff_deadline;
-}
-
 static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_subchannel *c = (grpc_subchannel *)arg;
   gpr_mu_lock(&c->mu);
@@ -437,7 +428,7 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   }
   if (error == GRPC_ERROR_NONE) {
     gpr_log(GPR_INFO, "Failed to connect to channel, retrying");
-    update_deadlines(c, grpc_backoff_step(exec_ctx, &c->backoff_state));
+    c->backoff_result = grpc_backoff_step(exec_ctx, &c->backoff_state);
     continue_connect_locked(exec_ctx, c);
     gpr_mu_unlock(&c->mu);
   } else {
@@ -474,21 +465,21 @@ static void maybe_start_connecting_locked(grpc_exec_ctx *exec_ctx,
 
   if (!c->backoff_begun) {
     c->backoff_begun = true;
-    update_deadlines(c, grpc_backoff_begin(exec_ctx, &c->backoff_state));
+    c->backoff_result = grpc_backoff_begin(exec_ctx, &c->backoff_state);
     continue_connect_locked(exec_ctx, c);
   } else {
     GPR_ASSERT(!c->have_alarm);
     c->have_alarm = true;
     const grpc_millis time_til_next =
-        c->next_attempt_deadline - grpc_exec_ctx_now(exec_ctx);
+        c->backoff_result.next_attempt_start_time - grpc_exec_ctx_now(exec_ctx);
     if (time_til_next <= 0) {
       gpr_log(GPR_INFO, "Retry immediately");
     } else {
       gpr_log(GPR_INFO, "Retry in %" PRIdPTR " milliseconds", time_til_next);
     }
     GRPC_CLOSURE_INIT(&c->on_alarm, on_alarm, c, grpc_schedule_on_exec_ctx);
-    grpc_timer_init(exec_ctx, &c->alarm, c->next_attempt_deadline,
-                    &c->on_alarm);
+    grpc_timer_init(exec_ctx, &c->alarm,
+                    c->backoff_result.next_attempt_start_time, &c->on_alarm);
   }
 }
 

@@ -1268,7 +1268,7 @@ static void maybe_restart_lb_call(grpc_exec_ctx *exec_ctx,
     /* if we aren't shutting down, restart the LB client call after some time */
     grpc_millis next_try =
         grpc_backoff_step(exec_ctx, &glb_policy->lb_call_backoff_state)
-            .next_backoff_deadline;
+            .next_attempt_start_time;
     if (GRPC_TRACER_ON(grpc_lb_glb_trace)) {
       gpr_log(GPR_DEBUG, "Connection to LB server lost (grpclb: %p)...",
               (void *)glb_policy);

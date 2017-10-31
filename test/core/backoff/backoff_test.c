@@ -33,18 +33,17 @@ static void test_constant_backoff(void) {
   grpc_backoff_init(&backoff, initial_backoff, multiplier, jitter,
                     min_connect_timeout, max_backoff);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_backoff_deadlines next_deadlines =
-      grpc_backoff_begin(&exec_ctx, &backoff);
+  grpc_backoff_result next_deadlines = grpc_backoff_begin(&exec_ctx, &backoff);
   GPR_ASSERT(next_deadlines.current_deadline - grpc_exec_ctx_now(&exec_ctx) ==
              initial_backoff);
-  GPR_ASSERT(next_deadlines.next_backoff_deadline -
+  GPR_ASSERT(next_deadlines.next_attempt_start_time -
                  grpc_exec_ctx_now(&exec_ctx) ==
              initial_backoff);
   for (int i = 0; i < 10000; i++) {
     next_deadlines = grpc_backoff_step(&exec_ctx, &backoff);
     GPR_ASSERT(next_deadlines.current_deadline - grpc_exec_ctx_now(&exec_ctx) ==
                initial_backoff);
-    GPR_ASSERT(next_deadlines.next_backoff_deadline -
+    GPR_ASSERT(next_deadlines.next_attempt_start_time -
                    grpc_exec_ctx_now(&exec_ctx) ==
                initial_backoff);
     exec_ctx.now = next_deadlines.current_deadline;
@@ -62,14 +61,14 @@ static void test_min_connect(void) {
   grpc_backoff_init(&backoff, initial_backoff, multiplier, jitter,
                     min_connect_timeout, max_backoff);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_backoff_deadlines next = grpc_backoff_begin(&exec_ctx, &backoff);
+  grpc_backoff_result next = grpc_backoff_begin(&exec_ctx, &backoff);
   // Because the min_connect_timeout > initial_backoff, current_deadline is used
   // as the deadline for the current attempt.
   GPR_ASSERT(next.current_deadline - grpc_exec_ctx_now(&exec_ctx) ==
              min_connect_timeout);
   // ... while, if the current attempt fails, the next one will happen after
   // initial_backoff.
-  GPR_ASSERT(next.next_backoff_deadline - grpc_exec_ctx_now(&exec_ctx) ==
+  GPR_ASSERT(next.next_attempt_start_time - grpc_exec_ctx_now(&exec_ctx) ==
              initial_backoff);
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -88,10 +87,9 @@ static void test_no_jitter_backoff(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   exec_ctx.now = 0;
   exec_ctx.now_is_valid = true;
-  grpc_backoff_deadlines next_deadlines =
-      grpc_backoff_begin(&exec_ctx, &backoff);
+  grpc_backoff_result next_deadlines = grpc_backoff_begin(&exec_ctx, &backoff);
   GPR_ASSERT(next_deadlines.current_deadline ==
-             next_deadlines.next_backoff_deadline);
+             next_deadlines.next_attempt_start_time);
   GPR_ASSERT(next_deadlines.current_deadline == 2);
   exec_ctx.now = next_deadlines.current_deadline;
   next_deadlines = grpc_backoff_step(&exec_ctx, &backoff);
@@ -145,11 +143,10 @@ static void test_jitter_backoff(void) {
   backoff.rng_state = 0;  // force consistent PRNG
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_backoff_deadlines next_deadlines =
-      grpc_backoff_begin(&exec_ctx, &backoff);
+  grpc_backoff_result next_deadlines = grpc_backoff_begin(&exec_ctx, &backoff);
   GPR_ASSERT(next_deadlines.current_deadline - grpc_exec_ctx_now(&exec_ctx) ==
              initial_backoff);
-  GPR_ASSERT(next_deadlines.next_backoff_deadline -
+  GPR_ASSERT(next_deadlines.next_attempt_start_time -
                  grpc_exec_ctx_now(&exec_ctx) ==
              initial_backoff);
 
