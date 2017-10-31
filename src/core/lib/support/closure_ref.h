@@ -45,12 +45,10 @@ class ClosureRef {
     void (*run)(void* env, Args&&... args);
   };
 
-  ClosureRef() : vtable_(&null_vtable_), env_(nullptr) {}
-  ClosureRef(const ClosureRef&) = delete;
+  ClosureRef() : vtable_(&null_vtable_) {}
   ClosureRef(ClosureRef&& other) : vtable_(other.vtable_), env_(other.env_) {
     other.vtable_ = &null_vtable_;
   }
-  ClosureRef& operator=(const ClosureRef&) = delete;
   ClosureRef& operator=(ClosureRef&& other) {
     // can only assign over an empty ClosureRef
     GPR_ASSERT(vtable_ == &null_vtable_);
@@ -59,6 +57,10 @@ class ClosureRef {
     other.vtable_ = &null_vtable_;
     return *this;
   }
+  // explicitly disable copying: ClosureRef can be moved, but never copied
+  // This allows us to enforce that a ClosureRef is executed once and only once
+  ClosureRef(const ClosureRef&) = delete;
+  ClosureRef& operator=(const ClosureRef&) = delete;
   ~ClosureRef() {
     // a ClosureRef must be invoked before being destroyed
     GPR_ASSERT(vtable_ == &null_vtable_);
@@ -152,6 +154,34 @@ class MakesClosuresForScheduler {
       Tuple<Args...> args_;
     };
 
+    template <class C, void (C::*F)(Args...)>
+    class RefCountedMemberClosure {
+     public:
+      static const typename ClosureRef<Args...>::VTable vtable;
+
+      static void Schedule(void* env, Args&&... args) {
+        Scheduler::Schedule(
+            RefCountedMemberClosure(std::forward<Args>(args)...),
+            static_cast<C*>(env));
+      }
+      static void Run(void* env, Args&&... args) {
+        Scheduler::UnsafeRun(
+            RefCountedMemberClosure(std::forward<Args>(args)...),
+            static_cast<C*>(env));
+      }
+
+      void operator()(C* p) {
+        TupleCallMember(p, F, std::move(args_));
+        p->Unref();
+      }
+
+     private:
+      RefCountedMemberClosure(Args&&... args)
+          : args_(std::forward<Args>(args)...) {}
+
+      Tuple<Args...> args_;
+    };
+
     template <class F>
     class FunctorClosure {
      public:
@@ -192,8 +222,14 @@ class MakesClosuresForScheduler {
     }
 
     template <class C, void (C::*F)(Args...)>
-    static ClosureRef<Args...> FromMemberFunction(C* p) {
+    static ClosureRef<Args...> FromNonRefCountedMemberFunction(C* p) {
       return ClosureRef<Args...>(&MemberClosure<C, F>::vtable, p);
+    }
+
+    template <class C, void (C::*F)(Args...)>
+    static ClosureRef<Args...> FromRefCountedMemberFunction(C* p) {
+      p->Ref();
+      return ClosureRef<Args...>(&RefCountedMemberClosure<C, F>::vtable, p);
     }
 
     template <class F>
@@ -220,6 +256,13 @@ const typename ClosureRef<Args...>::VTable MakesClosuresForScheduler<
 
 template <class Scheduler>
 template <class... Args>
+template <class C, void (C::*F)(Args...)>
+const typename ClosureRef<Args...>::VTable
+    MakesClosuresForScheduler<Scheduler>::MakeClosureWithArgs<
+        Args...>::RefCountedMemberClosure<C, F>::vtable = {Schedule, Run};
+
+template <class Scheduler>
+template <class... Args>
 template <class F>
 const typename ClosureRef<Args...>::VTable MakesClosuresForScheduler<
     Scheduler>::MakeClosureWithArgs<Args...>::FunctorClosure<F>::vtable = {
@@ -243,68 +286,6 @@ class AcquiresNoLocks
     f(env);
   }
 };
-
-// TODO(ctiller): move this into it's final place
-#if 0
-template <class F>
-void QueueOnExecCtx(F&& f);
-
-class RunInCurrentThread : public closure_impl::MakesClosuresForScheduler<RunInCurrentThread> {
- public:
-  template <class T, class F>
-  static void Schedule(F&& f, T* env) {
-    QueueOnExecCtx([f, env]() { f(env); });
-  }
-  template <class T, class F>
-  static void UnsafeRun(F&& f, T* env) {
-    f(env);
-  }
-};
-
-class RunInCombiner : public closure_impl::MakesClosuresForScheduler<RunInCombiner> {
- public:
-  template <class T, class F>
-  static void Schedule(F&& f, T* env) {
-    env->combiner()->Schedule([f, env]() { f(env); });
-  }
-  template <class T, class F>
-  static void UnsafeRun(F&& f, T* env) {
-    env->combiner()->UnsafeRun([f, env]() { f(env); });
-  }
-};
-
-// Dummy combiner lock impl
-
-class Combiner {
- public:
-  template <class F>
-  void Schedule(F&& f);
-  template <class F>
-  void UnsafeRun(F&& f);
-};
-
-//
-// TEST CODE
-//
-
-void PrintLine();
-void PrintInt(int);
-
-class Foo {
- public:
-  void Callback();
-
-  Combiner* combiner() { return &combiner_; }
-
- private:
-  Combiner combiner_;
-};
-
-ClosureRef<> Hidden();
-
-void test() {
-}
-#endif
 
 }  // namespace grpc_core
 

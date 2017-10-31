@@ -45,8 +45,9 @@ TEST(ClosureRef, SimpleTests) {
   ClosureRef<int> cb2 = AcquiresNoLocks::MakeClosureWithArgs<
       int>::FromFreeFunction<IncCounterBy>();
   Incrementer incrementer(&counter);
-  ClosureRef<> cb3 = AcquiresNoLocks::MakeClosureWithArgs<>::FromMemberFunction<
-      Incrementer, &Incrementer::Inc>(&incrementer);
+  ClosureRef<> cb3 =
+      AcquiresNoLocks::MakeClosureWithArgs<>::FromNonRefCountedMemberFunction<
+          Incrementer, &Incrementer::Inc>(&incrementer);
 
   cb1.UnsafeRun();
   cb2.UnsafeRun(2);
@@ -91,6 +92,35 @@ TEST(ClosureRef, Movier) {
   cb1.UnsafeRun();
   EXPECT_DEATH_IF_SUPPORTED(cb1.UnsafeRun(), "");
   EXPECT_DEATH_IF_SUPPORTED(cb2.UnsafeRun(), "");
+}
+
+TEST(ClosureRef, RefCountedMember) {
+  class Foo {
+   public:
+    int refs = 0;
+    int unrefs = 0;
+    int executes = 0;
+    void Ref() { ++refs; }
+    void Unref() { ++unrefs; }
+    void Execute() { ++executes; }
+  };
+  Foo foo;
+  ClosureRef<> cb =
+      AcquiresNoLocks::MakeClosureWithArgs<>::FromRefCountedMemberFunction<
+          Foo, &Foo::Execute>(&foo);
+  cb.Schedule();
+  EXPECT_EQ(1, foo.refs);
+  EXPECT_EQ(1, foo.unrefs);
+  EXPECT_EQ(1, foo.executes);
+}
+
+TEST(ClosureRef, MustBeScheduled) {
+  auto test_body = []() {
+    ClosureRef<> cb1 =
+        AcquiresNoLocks::MakeClosureWithArgs<>::FromFreeFunction<IncCounter>();
+    // should crash here due to reaching destructor without executing cb1
+  };
+  EXPECT_DEATH_IF_SUPPORTED(test_body(), "");
 }
 
 }  // namespace testing
