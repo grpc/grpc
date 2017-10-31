@@ -56,7 +56,7 @@ typedef struct thread_args {
   int (*write_bytes)(struct thread_args *args, char *buf);
   int (*setup)(struct thread_args *args);
   int epoll_fd;
-  char *strategy_name;
+  const char *strategy_name;
 } thread_args;
 
 /*
