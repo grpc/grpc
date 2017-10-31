@@ -733,7 +733,7 @@ static validator *make_finished_batch_validator(call_state *cs,
   return create_validator(finished_batch, bi);
 }
 
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_slice_hash_seed(0);
   char *grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
   if (squelch && grpc_trace_fuzzer == NULL) gpr_set_log_function(dont_log);
