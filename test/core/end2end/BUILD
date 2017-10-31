@@ -39,7 +39,7 @@ grpc_cc_library(
         "data/client_certs.cc",
         "data/server1_cert.cc",
         "data/server1_key.cc",
-        "data/test_root_cert.c",
+        "data/test_root_cert.cc",
     ],
     hdrs = ["data/ssl_test_data.h"],
     language = "C",

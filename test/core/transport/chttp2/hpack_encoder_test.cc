@@ -100,11 +100,11 @@ static void verify(grpc_exec_ctx *exec_ctx, const verify_params params,
   grpc_transport_one_way_stats stats;
   memset(&stats, 0, sizeof(stats));
   grpc_encode_header_options hopt = {
-      .stream_id = 0xdeadbeef,
-      .is_eof = params.eof,
-      .use_true_binary_metadata = params.use_true_binary_metadata,
-      .max_frame_size = 16384,
-      .stats = &stats,
+      0xdeadbeef,                      /* stream_id */
+      params.eof,                      /* is_eof */
+      params.use_true_binary_metadata, /* use_true_binary_metadata */
+      16384,                           /* max_frame_size */
+      &stats                           /* stats */
   };
   grpc_chttp2_encode_header(exec_ctx, &g_compressor, NULL, 0, &b, &hopt,
                             &output);
@@ -131,7 +131,7 @@ static void test_basic_headers(grpc_exec_ctx *exec_ctx) {
   int i;
 
   verify_params params = {
-      .eof = false, .use_true_binary_metadata = false, .only_intern_key = false,
+      false, false, false,
   };
   verify(exec_ctx, params, "000005 0104 deadbeef 40 0161 0161", 1, "a", "a");
   verify(exec_ctx, params, "000001 0104 deadbeef be", 1, "a", "a");
@@ -167,7 +167,7 @@ static void test_decode_table_overflow(grpc_exec_ctx *exec_ctx) {
   char *expect;
 
   verify_params params = {
-      .eof = false, .use_true_binary_metadata = false, .only_intern_key = false,
+      false, false, false,
   };
 
   for (i = 0; i < 114; i++) {
@@ -226,11 +226,11 @@ static void verify_table_size_change_match_elem_size(grpc_exec_ctx *exec_ctx,
   grpc_transport_one_way_stats stats;
   memset(&stats, 0, sizeof(stats));
   grpc_encode_header_options hopt = {
-      .stream_id = 0xdeadbeef,
-      .is_eof = false,
-      .use_true_binary_metadata = use_true_binary,
-      .max_frame_size = 16384,
-      .stats = &stats};
+      0xdeadbeef,      /* stream_id */
+      false,           /* is_eof */
+      use_true_binary, /* use_true_binary_metadata */
+      16384,           /* max_frame_size */
+      &stats /* stats */};
   grpc_chttp2_encode_header(exec_ctx, &g_compressor, NULL, 0, &b, &hopt,
                             &output);
   grpc_slice_buffer_destroy_internal(exec_ctx, &output);
@@ -250,9 +250,7 @@ static void test_encode_header_size(grpc_exec_ctx *exec_ctx) {
 
 static void test_interned_key_indexed(grpc_exec_ctx *exec_ctx) {
   int i;
-  verify_params params = {
-      .eof = false, .use_true_binary_metadata = false, .only_intern_key = true,
-  };
+  verify_params params = {false, false, true};
   verify(exec_ctx, params, "000009 0104 deadbeef 40 0161 0162 0f2f 0163", 2,
          "a", "b", "a", "c");
   for (i = 0; i < 10; i++) {

@@ -56,7 +56,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   a[0].key = const_cast<char *>(GRPC_ARG_TCP_READ_CHUNK_SIZE);
   a[0].type = GRPC_ARG_INTEGER;
   a[0].value.integer = (int)slice_size;
-  grpc_channel_args args = {.num_args = GPR_ARRAY_SIZE(a), .args = a};
+  grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
   tcp = grpc_iomgr_create_endpoint_pair("fixture", &args);
   grpc_endpoint_add_to_pollset(&exec_ctx, tcp.client, g_pollset);
   grpc_endpoint_add_to_pollset(&exec_ctx, tcp.server, g_pollset);

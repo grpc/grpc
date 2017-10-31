@@ -22,7 +22,7 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
     name = "api_fuzzer",
-    srcs = ["api_fuzzer.c"],
+    srcs = ["api_fuzzer.cc"],
     language = "C",
     corpus = "api_fuzzer_corpus",
     deps = [
@@ -35,7 +35,7 @@ grpc_fuzzer(
 
 grpc_fuzzer(
     name = "client_fuzzer",
-    srcs = ["client_fuzzer.c"],
+    srcs = ["client_fuzzer.cc"],
     language = "C",
     corpus = "client_fuzzer_corpus",
     deps = [
@@ -47,7 +47,7 @@ grpc_fuzzer(
 
 grpc_fuzzer(
     name = "server_fuzzer",
-    srcs = ["server_fuzzer.c"],
+    srcs = ["server_fuzzer.cc"],
     language = "C",
     corpus = "server_fuzzer_corpus",
     deps = [

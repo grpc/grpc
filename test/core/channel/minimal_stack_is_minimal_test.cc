@@ -117,7 +117,7 @@ static int check_stack(const char *file, int line, const char *transport_name,
   grpc_transport_vtable fake_transport_vtable;
   memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
   fake_transport_vtable.name = transport_name;
-  grpc_transport fake_transport = {.vtable = &fake_transport_vtable};
+  grpc_transport fake_transport = {&fake_transport_vtable};
   grpc_channel_stack_builder_set_target(builder, "foo.test.google.fr");
   grpc_channel_args *channel_args = grpc_channel_args_copy(init_args);
   if (transport_name != NULL) {
