@@ -20,7 +20,7 @@ grpc_package(name = "test/core/surface")
 
 grpc_cc_test(
     name = "alarm_test",
-    srcs = ["alarm_test.c"],
+    srcs = ["alarm_test.cc"],
     language = "C",
     deps = [
         "//:gpr",
@@ -32,7 +32,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "grpc_byte_buffer_reader_test",
-    srcs = ["byte_buffer_reader_test.c"],
+    srcs = ["byte_buffer_reader_test.cc"],
     language = "C",
     deps = [
         "//:gpr",
@@ -44,7 +44,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "channel_create_test",
-    srcs = ["channel_create_test.c"],
+    srcs = ["channel_create_test.cc"],
     language = "C",
     deps = [
         "//:gpr",
@@ -56,7 +56,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "grpc_completion_queue_test",
-    srcs = ["completion_queue_test.c"],
+    srcs = ["completion_queue_test.cc"],
     language = "C",
     deps = [
         "//:gpr",
@@ -68,7 +68,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "concurrent_connectivity_test",
-    srcs = ["concurrent_connectivity_test.c"],
+    srcs = ["concurrent_connectivity_test.cc"],
     language = "C",
     deps = [
         "//:gpr",
@@ -80,7 +80,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "init_test",
-    srcs = ["init_test.c"],
+    srcs = ["init_test.cc"],
     language = "C",
     deps = [
         "//:gpr",
@@ -92,7 +92,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "grpc_invalid_channel_args_test",
-    srcs = ["invalid_channel_args_test.c"],
+    srcs = ["invalid_channel_args_test.cc"],
     language = "C",
     deps = [
         "//:gpr",
@@ -104,7 +104,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "lame_client_test",
-    srcs = ["lame_client_test.c"],
+    srcs = ["lame_client_test.cc"],
     language = "C",
     deps = [
         "//:gpr",
@@ -129,7 +129,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "secure_channel_create_test",
-    srcs = ["secure_channel_create_test.c"],
+    srcs = ["secure_channel_create_test.cc"],
     language = "C",
     deps = [
         "//:gpr",
@@ -141,7 +141,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "sequential_connectivity_test",
-    srcs = ["sequential_connectivity_test.c"],
+    srcs = ["sequential_connectivity_test.cc"],
     language = "C",
     deps = [
         "//:gpr",
@@ -154,7 +154,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "server_chttp2_test",
-    srcs = ["server_chttp2_test.c"],
+    srcs = ["server_chttp2_test.cc"],
     language = "C",
     deps = [
         "//:gpr",
@@ -166,7 +166,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "server_test",
-    srcs = ["server_test.c"],
+    srcs = ["server_test.cc"],
     language = "C",
     deps = [
         "//:gpr",

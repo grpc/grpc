@@ -25,7 +25,7 @@ package(
 
 grpc_cc_test(
     name = "backoff_test",
-    srcs = ["backoff_test.c"],
+    srcs = ["backoff_test.cc"],
     language = "C",
     deps = [
         "//:grpc",

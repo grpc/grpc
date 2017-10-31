@@ -234,8 +234,8 @@ static request_sequences request_sequences_create(size_t n) {
   res.n = n;
   res.connections =
       static_cast<int *>(gpr_malloc(sizeof(*res.connections) * n));
-  res.connectivity_states =
-      static_cast<grpc_connectivity_state *>(gpr_malloc(sizeof(*res.connectivity_states) * n));
+  res.connectivity_states = static_cast<grpc_connectivity_state *>(
+      gpr_malloc(sizeof(*res.connectivity_states) * n));
   memset(res.connections, 0, sizeof(*res.connections) * n);
   memset(res.connectivity_states, 0, sizeof(*res.connectivity_states) * n);
   return res;

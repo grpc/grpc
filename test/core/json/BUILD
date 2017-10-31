@@ -22,7 +22,7 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
     name = "json_fuzzer",
-    srcs = ["fuzzer.c"],
+    srcs = ["fuzzer.cc"],
     language = "C",
     corpus = "corpus",
     deps = [
@@ -35,7 +35,7 @@ grpc_fuzzer(
 grpc_cc_binary(
     name = "json_rewrite",
     testonly = 1,
-    srcs = ["json_rewrite.c"],
+    srcs = ["json_rewrite.cc"],
     language = "C",
     deps = [
         "//:gpr",
@@ -47,7 +47,7 @@ grpc_cc_binary(
 
 grpc_cc_test(
     name = "json_rewrite_test",
-    srcs = ["json_rewrite_test.c"],
+    srcs = ["json_rewrite_test.cc"],
     language = "C",
     data = [
         "rewrite_test_input.json",
@@ -65,7 +65,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "json_stream_error_test",
-    srcs = ["json_stream_error_test.c"],
+    srcs = ["json_stream_error_test.cc"],
     language = "C",
     deps = [
         "//:gpr",
@@ -77,7 +77,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "json_test",
-    srcs = ["json_test.c"],
+    srcs = ["json_test.cc"],
     language = "C",
     deps = [
         "//:gpr",

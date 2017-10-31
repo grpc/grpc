@@ -23,7 +23,7 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 grpc_cc_binary(
     name = "client",
     testonly = 1,
-    srcs = ["client.c"],
+    srcs = ["client.cc"],
     language = "C",
     deps = [
         "//:gpr",
@@ -37,7 +37,7 @@ grpc_cc_binary(
 grpc_cc_binary(
     name = "server",
     testonly = 1,
-    srcs = ["server.c"],
+    srcs = ["server.cc"],
     language = "C",
     deps = [
         "//:gpr",
@@ -50,7 +50,7 @@ grpc_cc_binary(
 
 grpc_cc_test(
     name = "fling",
-    srcs = ["fling_test.c"],
+    srcs = ["fling_test.cc"],
     data = [
         ":client",
         ":server",
@@ -66,7 +66,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "fling_stream",
-    srcs = ["fling_stream_test.c"],
+    srcs = ["fling_stream_test.cc"],
     data = [
         ":client",
         ":server",

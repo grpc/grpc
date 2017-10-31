@@ -20,7 +20,7 @@ licenses(["notice"])  # Apache v2
 
 grpc_cc_test(
     name = "client_ssl",
-    srcs = ["client_ssl.c"],
+    srcs = ["client_ssl.cc"],
     language = "C",
     data = [
         "//src/core/tsi/test_creds:ca.pem",
@@ -37,7 +37,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "server_ssl",
-    srcs = ["server_ssl.c"],
+    srcs = ["server_ssl.cc"],
     language = "C",
     data = [
         "//src/core/tsi/test_creds:ca.pem",

@@ -594,8 +594,10 @@ static int run_all_benchmarks(size_t msg_size) {
     test_strategy *strategy = &test_strategies[i];
     size_t j;
     for (j = 0; j < GPR_ARRAY_SIZE(socket_types); ++j) {
-      thread_args *client_args = static_cast<thread_args *>(gpr_malloc(sizeof(thread_args)));
-      thread_args *server_args = static_cast<thread_args *>(gpr_malloc(sizeof(thread_args)));
+      thread_args *client_args =
+          static_cast<thread_args *>(gpr_malloc(sizeof(thread_args)));
+      thread_args *server_args =
+          static_cast<thread_args *>(gpr_malloc(sizeof(thread_args)));
       char *socket_type = socket_types[j];
 
       client_args->read_bytes = strategy->read_strategy;
@@ -618,8 +620,10 @@ static int run_all_benchmarks(size_t msg_size) {
 }
 
 int main(int argc, char **argv) {
-  thread_args *client_args = static_cast<thread_args *>(gpr_malloc(sizeof(thread_args)));
-  thread_args *server_args = static_cast<thread_args *>(gpr_malloc(sizeof(thread_args)));
+  thread_args *client_args =
+      static_cast<thread_args *>(gpr_malloc(sizeof(thread_args)));
+  thread_args *server_args =
+      static_cast<thread_args *>(gpr_malloc(sizeof(thread_args)));
   int msg_size = -1;
   const char *read_strategy = NULL;
   const char *socket_type = NULL;
