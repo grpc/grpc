@@ -435,19 +435,21 @@ static void on_initial_header(grpc_exec_ctx *exec_ctx, void *tp,
     grpc_millis *cached_timeout =
         static_cast<grpc_millis *>(grpc_mdelem_get_user_data(md, free_timeout));
     grpc_millis timeout;
-    if (cached_timeout == NULL) {
-      /* not already parsed: parse it now, and store the result away */
-      cached_timeout = (grpc_millis *)gpr_malloc(sizeof(grpc_millis));
-      if (!grpc_http2_decode_timeout(GRPC_MDVALUE(md), cached_timeout)) {
+    if (cached_timeout != NULL) {
+      timeout = *cached_timeout;
+    } else {
+      if (!grpc_http2_decode_timeout(GRPC_MDVALUE(md), &timeout)) {
         char *val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
         gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
         gpr_free(val);
-        *cached_timeout = GRPC_MILLIS_INF_FUTURE;
+        timeout = GRPC_MILLIS_INF_FUTURE;
       }
-      timeout = *cached_timeout;
-      grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
-    } else {
-      timeout = *cached_timeout;
+      if (GRPC_MDELEM_IS_INTERNED(md)) {
+        /* store the result */
+        cached_timeout = (grpc_millis *)gpr_malloc(sizeof(grpc_millis));
+        *cached_timeout = timeout;
+        grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
+      }
     }
     if (timeout != GRPC_MILLIS_INF_FUTURE) {
       grpc_chttp2_incoming_metadata_buffer_set_deadline(
