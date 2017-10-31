@@ -28,16 +28,16 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
             file_get_contents(dirname(__FILE__).'/../data/server1.key'),
             file_get_contents(dirname(__FILE__).'/../data/server1.pem'));
         $this->server = new Grpc\Server();
-        $this->port = $this->server->addSecureHttp2Port('0.0.0.0:0',
-                                              $server_credentials);
+        $this->port = $this->server->addHttp2Port('0.0.0.0:0'); //, $server_credentials); // addSecureHttp2Port
+        $this->assertTrue($this->port > 0);
         $this->server->start();
         $this->host_override = 'foo.test.google.fr';
         $this->channel = new Grpc\Channel(
             'localhost:'.$this->port,
             [
-            'grpc.ssl_target_name_override' => $this->host_override,
+            /*'grpc.ssl_target_name_override' => $this->host_override,
             'grpc.default_authority' => $this->host_override,
-            'credentials' => $credentials,
+            'credentials' => $credentials,*/
             ]
         );
     }
@@ -63,7 +63,7 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
         $call = new Grpc\Call($this->channel,
                               '/abc/dummy_method',
                               $deadline,
-                              $this->host_override);
+                              null/*$this->host_override*/);
 
         $call_credentials = Grpc\CallCredentials::createFromPlugin(
             array($this, 'callbackFunc'));

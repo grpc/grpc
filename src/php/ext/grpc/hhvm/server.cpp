@@ -92,9 +92,9 @@ void ServerData::destroy(void)
         // wait for all calls to finish
         for(;;)
         {
-            grpc_event event( grpc_completion_queue_pluck(m_pComletionQueue->queue(), nullptr,
+            grpc_event event( grpc_completion_queue_pluck(m_pComletionQueue->queue(), m_pServer,
                                                          gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) );
-            if ((event.type == GRPC_OP_COMPLETE) && (event.tag == m_pServer)) break;
+            if (event.type == GRPC_OP_COMPLETE) break;
         }
 
         // destroy server no calls can be in progress
@@ -188,7 +188,7 @@ Object HHVM_METHOD(Server, requestCall)
                                                         &callDetails.details,
                                                         &callDetails.metadata.array(),
                                                         pServerData->queue()->queue(),
-                                                        pServerData->queue()->queue(), pServerData) };
+                                                        pServerData->queue()->queue(), nullptr) };
 
     if (errorCode != GRPC_CALL_OK)
     {
@@ -197,7 +197,7 @@ Object HHVM_METHOD(Server, requestCall)
         SystemLib::throwBadMethodCallExceptionObject(oSS.str());
     }
 
-    grpc_event event( grpc_completion_queue_pluck(pServerData->queue()->queue(), pServerData,
+    grpc_event event( grpc_completion_queue_pluck(pServerData->queue()->queue(), nullptr,
                                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr) );
 
     if ((event.type != GRPC_OP_COMPLETE) || (event.success == 0))
@@ -226,7 +226,7 @@ Object HHVM_METHOD(Server, requestCall)
     return resultObj;
 }
 
-bool HHVM_METHOD(Server, addHttp2Port,
+int HHVM_METHOD(Server, addHttp2Port,
                  const String& addr)
 {
     VMRegGuard _;
@@ -236,7 +236,7 @@ bool HHVM_METHOD(Server, addHttp2Port,
     ServerData* const pServerData{ Native::data<ServerData>(this_) };
 
     std::string strAddr{ addr.toCppString() };
-    return (grpc_server_add_insecure_http2_port(pServerData->server(), strAddr.c_str()) != 0);
+    return grpc_server_add_insecure_http2_port(pServerData->server(), strAddr.c_str());
 }
 
 int HHVM_METHOD(Server, addSecureHttp2Port,

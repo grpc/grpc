@@ -204,10 +204,10 @@ class Server {
   /**
    * Add a http2 over tcp listener.
    * @param string $addr The address to add
-   * @return bool True on success, false on failure
+   * @return int port on success, 0 on failure
    */
   <<__Native>>
-  public function addHttp2Port(string $addr): bool;
+  public function addHttp2Port(string $addr): int;
 
   /**
    * Add a secure http2 over tcp listener.

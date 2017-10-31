@@ -74,10 +74,10 @@ void HHVM_METHOD(Server, __construct,
 
 Object HHVM_METHOD(Server, requestCall);
 
-bool HHVM_METHOD(Server, addHttp2Port,
+int HHVM_METHOD(Server, addHttp2Port,
                  const String& addr);
 
-bool HHVM_METHOD(Server, addSecureHttp2Port,
+int HHVM_METHOD(Server, addSecureHttp2Port,
                  const String& addr,
                  const Object& server_credentials);
 
