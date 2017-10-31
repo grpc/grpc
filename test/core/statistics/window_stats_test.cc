@@ -44,11 +44,11 @@ void add_proportion_test_stat(double p, void *base, const void *addme) {
 const struct census_window_stats_stat_info kMyStatInfo = {
     sizeof(test_stat), NULL, add_test_stat, add_proportion_test_stat};
 
-const gpr_timespec kMilliSecInterval = {0, 1000000};
-const gpr_timespec kSecInterval = {1, 0};
-const gpr_timespec kMinInterval = {60, 0};
-const gpr_timespec kHourInterval = {3600, 0};
-const gpr_timespec kPrimeInterval = {0, 101};
+const gpr_timespec kMilliSecInterval = {0, 1000000, GPR_CLOCK_MONOTONIC};
+const gpr_timespec kSecInterval = {1, 0, GPR_CLOCK_MONOTONIC};
+const gpr_timespec kMinInterval = {60, 0 GPR_CLOCK_MONOTONIC};
+const gpr_timespec kHourInterval = {3600, 0, GPR_CLOCK_MONOTONIC};
+const gpr_timespec kPrimeInterval = {0, 101, GPR_CLOCK_MONOTONIC};
 
 static int compare_double(double a, double b, double epsilon) {
   if (a >= b) {
@@ -60,7 +60,7 @@ static int compare_double(double a, double b, double epsilon) {
 
 void empty_test(void) {
   census_window_stats_sums result;
-  const gpr_timespec zero = {0, 0};
+  const gpr_timespec zero = {0, 0, GPR_CLOCK_MONOTONIC};
   test_stat sum;
   struct census_window_stats *stats =
       census_window_stats_create(1, &kMinInterval, 5, &kMyStatInfo);
@@ -76,7 +76,7 @@ void empty_test(void) {
 void one_interval_test(void) {
   const test_stat value = {0.1, 4};
   const double epsilon = 1e10 - 11;
-  gpr_timespec when = {0, 0};
+  gpr_timespec when = {0, 0, GPR_CLOCK_MONOTONIC};
   census_window_stats_sums result;
   test_stat sum;
   /* granularity == 5 so width of internal windows should be 12s */
@@ -186,7 +186,7 @@ void many_interval_test(void) {
   gpr_timespec intervals[4];
   const test_stat value = {123.45, 8};
   const double epsilon = 1e10 - 11;
-  gpr_timespec when = {3600, 0}; /* one hour */
+  gpr_timespec when = {3600, 0, GPR_CLOCK_MONOTONIC}; /* one hour */
   census_window_stats_sums result[4];
   test_stat sums[4];
   int i;
@@ -245,11 +245,11 @@ void many_interval_test(void) {
 
 void rolling_time_test(void) {
   const test_stat value = {0.1, 4};
-  gpr_timespec when = {0, 0};
+  gpr_timespec when = {0, 0, GPR_CLOCK_MONOTONIC};
   census_window_stats_sums result;
   test_stat sum;
   int i;
-  gpr_timespec increment = {0, 0};
+  gpr_timespec increment = {0, 0, GPR_CLOCK_MONOTONIC};
   struct census_window_stats *stats =
       census_window_stats_create(1, &kMinInterval, 7, &kMyStatInfo);
   GPR_ASSERT(stats != NULL);
@@ -270,12 +270,13 @@ void rolling_time_test(void) {
 #include <stdio.h>
 void infinite_interval_test(void) {
   const test_stat value = {0.1, 4};
-  gpr_timespec when = {0, 0};
+  gpr_timespec when = {0, 0, GPR_CLOCK_MONOTONIC};
   census_window_stats_sums result;
   test_stat sum;
   int i;
   const int count = 100000;
-  gpr_timespec increment = {0, 0};
+  gpr_timespec increment = {0, 0, GPR_CLOCK_MONOTONIC};
+  gpr_timespec temp = gpr_inf_future(GPR_CLOCK_REALTIME);
   struct census_window_stats *stats = census_window_stats_create(
       1, &gpr_inf_future(GPR_CLOCK_REALTIME), 10, &kMyStatInfo);
   srand(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);

@@ -89,7 +89,7 @@ static void test_table_with_int_key(void) {
     uint64_t *val = NULL;
     census_ht_key key;
     key.val = i;
-    val = census_ht_find(ht, key);
+    val = static_cast<uint64_t *>(census_ht_find(ht, key));
     GPR_ASSERT(val == (void *)(intptr_t)i);
   }
   elements = census_ht_get_all_elements(ht, &num_elements);
@@ -112,22 +112,22 @@ static void test_value_and_key_deleter(void) {
   char *val = NULL;
   char *val2 = NULL;
   key.ptr = gpr_malloc(100);
-  val = gpr_malloc(10);
+  val = static_cast<char *>(gpr_malloc(10));
   strcpy(val, "value");
   strcpy(key.ptr, "some string as a key");
   GPR_ASSERT(ht != NULL);
   GPR_ASSERT(census_ht_get_size(ht) == 0);
   census_ht_insert(ht, key, val);
   GPR_ASSERT(census_ht_get_size(ht) == 1);
-  val = census_ht_find(ht, key);
+  val = static_cast<char *>(census_ht_find(ht, key));
   GPR_ASSERT(val != NULL);
   GPR_ASSERT(strcmp(val, "value") == 0);
   /* Insert same key different value, old value is overwritten. */
-  val2 = gpr_malloc(10);
+  val2 = static_cast<char *>(gpr_malloc(10));
   strcpy(val2, "v2");
   census_ht_insert(ht, key, val2);
   GPR_ASSERT(census_ht_get_size(ht) == 1);
-  val2 = census_ht_find(ht, key);
+  val2 = static_cast<char *>(census_ht_find(ht, key));
   GPR_ASSERT(val2 != NULL);
   GPR_ASSERT(strcmp(val2, "v2") == 0);
   census_ht_destroy(ht);
@@ -214,7 +214,7 @@ static void test_table_with_string_key(void) {
     census_ht_key key;
     int *val_ptr;
     key.ptr = (void *)(keys[i]);
-    val_ptr = census_ht_find(ht, key);
+    val_ptr = static_cast<int *>(census_ht_find(ht, key));
     GPR_ASSERT(*val_ptr == vals[i]);
   }
   {
@@ -225,7 +225,7 @@ static void test_table_with_string_key(void) {
     census_ht_insert(ht, key, (void *)(vals + 8));
     /* expect value to be over written by new insertion */
     GPR_ASSERT(census_ht_get_size(ht) == 9);
-    val_ptr = census_ht_find(ht, key);
+    val_ptr = static_cast<int *>(census_ht_find(ht, key));
     GPR_ASSERT(*val_ptr == vals[8]);
   }
   for (i = 0; i < 9; i++) {
@@ -234,11 +234,11 @@ static void test_table_with_string_key(void) {
     uint32_t expected_tbl_sz = 9 - i;
     GPR_ASSERT(census_ht_get_size(ht) == expected_tbl_sz);
     key.ptr = (void *)(keys[i]);
-    val_ptr = census_ht_find(ht, key);
+    val_ptr = static_cast<int *>(census_ht_find(ht, key));
     GPR_ASSERT(val_ptr != NULL);
     census_ht_erase(ht, key);
     GPR_ASSERT(census_ht_get_size(ht) == expected_tbl_sz - 1);
-    val_ptr = census_ht_find(ht, key);
+    val_ptr = static_cast<int *>(census_ht_find(ht, key));
     GPR_ASSERT(val_ptr == NULL);
   }
   census_ht_destroy(ht);

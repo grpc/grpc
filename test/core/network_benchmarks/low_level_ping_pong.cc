@@ -252,7 +252,7 @@ static int epoll_setup(thread_args *args) {
 #endif
 
 static void server_thread(thread_args *args) {
-  char *buf = gpr_malloc(args->msg_size);
+  char *buf = static_cast<char *>(gpr_malloc(args->msg_size));
   if (args->setup(args) < 0) {
     gpr_log(GPR_ERROR, "Setup failed");
   }
@@ -271,7 +271,7 @@ static void server_thread(thread_args *args) {
 }
 
 static void server_thread_wrap(void *arg) {
-  thread_args *args = arg;
+  thread_args *args = static_cast<thread_args *>(arg);
   server_thread(args);
 }
 
@@ -291,7 +291,7 @@ static double now(void) {
 }
 
 static void client_thread(thread_args *args) {
-  char *buf = gpr_malloc(args->msg_size * sizeof(char));
+  char *buf = static_cast<char *>(gpr_malloc(args->msg_size * sizeof(char)));
   memset(buf, 0, args->msg_size * sizeof(char));
   gpr_histogram *histogram = gpr_histogram_create(0.01, 60e9);
   double start_time;
@@ -538,7 +538,7 @@ void print_usage(char *argv0) {
 }
 
 typedef struct test_strategy {
-  char *name;
+  const char *name;
   int (*read_strategy)(struct thread_args *args, char *buf);
   int (*setup)(struct thread_args *args);
 } test_strategy;
@@ -553,7 +553,7 @@ static test_strategy test_strategies[] = {
     {"spin_read", spin_read_bytes, set_socket_nonblocking},
     {"spin_poll", poll_read_bytes_spin, set_socket_nonblocking}};
 
-static char *socket_types[] = {"tcp", "socketpair", "pipe"};
+static const char *socket_types[] = {"tcp", "socketpair", "pipe"};
 
 int create_socket(char *socket_type, fd_pair *client_fds, fd_pair *server_fds) {
   if (strcmp(socket_type, "tcp") == 0) {
@@ -594,8 +594,8 @@ static int run_all_benchmarks(size_t msg_size) {
     test_strategy *strategy = &test_strategies[i];
     size_t j;
     for (j = 0; j < GPR_ARRAY_SIZE(socket_types); ++j) {
-      thread_args *client_args = gpr_malloc(sizeof(thread_args));
-      thread_args *server_args = gpr_malloc(sizeof(thread_args));
+      thread_args *client_args = static_cast<thread_args *>(gpr_malloc(sizeof(thread_args)));
+      thread_args *server_args = static_cast<thread_args *>(gpr_malloc(sizeof(thread_args)));
       char *socket_type = socket_types[j];
 
       client_args->read_bytes = strategy->read_strategy;
@@ -618,11 +618,11 @@ static int run_all_benchmarks(size_t msg_size) {
 }
 
 int main(int argc, char **argv) {
-  thread_args *client_args = gpr_malloc(sizeof(thread_args));
-  thread_args *server_args = gpr_malloc(sizeof(thread_args));
+  thread_args *client_args = static_cast<thread_args *>(gpr_malloc(sizeof(thread_args)));
+  thread_args *server_args = static_cast<thread_args *>(gpr_malloc(sizeof(thread_args)));
   int msg_size = -1;
-  char *read_strategy = NULL;
-  char *socket_type = NULL;
+  const char *read_strategy = NULL;
+  const char *socket_type = NULL;
   size_t i;
   const test_strategy *strategy = NULL;
   int error = 0;
