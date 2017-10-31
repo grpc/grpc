@@ -40,7 +40,6 @@ def grpc_bad_client_tests():
       name = 'bad_client_test',
       srcs = ['bad_client.cc'],
       hdrs = ['bad_client.h'],
-      copts = ['-std=c99'],
       deps = ['//test/core/util:grpc_test_util', '//:grpc', '//:gpr', '//test/core/end2end:cq_verifier']
   )
   for t, topt in BAD_CLIENT_TESTS.items():
@@ -48,6 +47,5 @@ def grpc_bad_client_tests():
         name = '%s_bad_client_test' % t,
         srcs = ['tests/%s.cc' % t],
         deps = [':bad_client_test'],
-        copts = ['-std=c99'],
     )
 
