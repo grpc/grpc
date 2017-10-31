@@ -103,6 +103,7 @@ class CoreCodegenInterface {
   virtual grpc_slice grpc_slice_ref(grpc_slice slice) = 0;
   virtual grpc_slice grpc_slice_split_tail(grpc_slice* s, size_t split) = 0;
   virtual grpc_slice grpc_slice_split_head(grpc_slice* s, size_t split) = 0;
+  virtual grpc_slice grpc_slice_sub(grpc_slice s, size_t begin, size_t end) = 0;
   virtual void grpc_slice_buffer_add(grpc_slice_buffer* sb,
                                      grpc_slice slice) = 0;
   virtual void grpc_slice_buffer_pop(grpc_slice_buffer* sb) = 0;
