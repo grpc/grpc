@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2017 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,23 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_CENSUS_GRPC_FILTER_H
-#define GRPC_CORE_EXT_CENSUS_GRPC_FILTER_H
+#include "src/core/lib/support/tuple.h"
+#include <gtest/gtest.h>
+#include "test/core/util/test_config.h"
 
-#include "src/core/lib/channel/channel_stack.h"
+namespace grpc_core {
+namespace testing {
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/* Census filters: provides tracing and stats collection functionalities. It
-   needs to reside right below the surface filter in the channel stack. */
-extern const grpc_channel_filter grpc_client_census_filter;
-extern const grpc_channel_filter grpc_server_census_filter;
-
-#ifdef __cplusplus
+TEST(TupleTest, Simple) {
+  Tuple<int, int> tuple(21, 2);
+  EXPECT_EQ(42, TupleCall([](int a, int b) { return a * b; }, tuple));
 }
-#endif
 
-#endif /* GRPC_CORE_EXT_CENSUS_GRPC_FILTER_H */
+}  // namespace testing
+}  // namespace grpc_core
+
+int main(int argc, char** argv) {
+  grpc_test_init(argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

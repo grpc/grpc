@@ -1,2 +1,0 @@
-
-minimal_good

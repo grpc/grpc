@@ -69,6 +69,10 @@ static void me_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 static void me_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                                   grpc_pollset_set *pollset) {}
 
+static void me_delete_from_pollset_set(grpc_exec_ctx *exec_ctx,
+                                       grpc_endpoint *ep,
+                                       grpc_pollset_set *pollset) {}
+
 static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                         grpc_error *why) {
   grpc_mock_endpoint *m = (grpc_mock_endpoint *)ep;
@@ -103,8 +107,15 @@ static grpc_resource_user *me_get_resource_user(grpc_endpoint *ep) {
 static int me_get_fd(grpc_endpoint *ep) { return -1; }
 
 static const grpc_endpoint_vtable vtable = {
-    me_read,     me_write,   me_add_to_pollset,    me_add_to_pollset_set,
-    me_shutdown, me_destroy, me_get_resource_user, me_get_peer,
+    me_read,
+    me_write,
+    me_add_to_pollset,
+    me_add_to_pollset_set,
+    me_delete_from_pollset_set,
+    me_shutdown,
+    me_destroy,
+    me_get_resource_user,
+    me_get_peer,
     me_get_fd,
 };
 

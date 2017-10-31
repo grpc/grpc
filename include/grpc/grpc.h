@@ -143,6 +143,23 @@ GRPCAPI void grpc_completion_queue_shutdown(grpc_completion_queue *cq);
     drained and no threads are executing grpc_completion_queue_next */
 GRPCAPI void grpc_completion_queue_destroy(grpc_completion_queue *cq);
 
+/*********** EXPERIMENTAL API ************/
+/** Initializes a thread local cache for \a cq.
+  * grpc_flush_cq_tls_cache() MUST be called on the same thread,
+  * with the same cq.
+  */
+GRPCAPI void grpc_completion_queue_thread_local_cache_init(
+    grpc_completion_queue *cq);
+
+/*********** EXPERIMENTAL API ************/
+/** Flushes the thread local cache for \a cq.
+  * Returns 1 if there was contents in the cache.  If there was an event
+  * in \a cq tls cache, its tag is placed in tag, and ok is set to the
+  * event success.
+  */
+GRPCAPI int grpc_completion_queue_thread_local_cache_flush(
+    grpc_completion_queue *cq, void **tag, int *ok);
+
 /** Create a completion queue alarm instance */
 GRPCAPI grpc_alarm *grpc_alarm_create(void *reserved);
 
