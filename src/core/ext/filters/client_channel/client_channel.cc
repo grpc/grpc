@@ -1050,20 +1050,11 @@ static void pick_done_locked(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
     /* Create call on subchannel. */
     create_subchannel_call_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
   }
-  GRPC_ERROR_UNREF(error);
-}
-
-// A wrapper around pick_done_locked() that is used in cases where
-// either (a) the pick was deferred pending a resolver result or (b) the
-// pick was done asynchronously.  Removes the call's polling entity from
-// chand->interested_parties before invoking pick_done_locked().
-static void async_pick_done_locked(grpc_exec_ctx *exec_ctx,
-                                   grpc_call_element *elem, grpc_error *error) {
-  channel_data *chand = (channel_data *)elem->channel_data;
-  call_data *calld = (call_data *)elem->call_data;
+  // Remove the call's polling entity from the channel's interested parties
+  // pollset_set.
   grpc_polling_entity_del_from_pollset_set(exec_ctx, calld->pollent,
                                            chand->interested_parties);
-  pick_done_locked(exec_ctx, elem, error);
+  GRPC_ERROR_UNREF(error);
 }
 
 // Note: This runs under the client_channel combiner, but will NOT be
@@ -1086,7 +1077,7 @@ static void pick_callback_cancel_locked(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 // Callback invoked by grpc_lb_policy_pick_locked() for async picks.
-// Unrefs the LB policy and invokes async_pick_done_locked().
+// Unrefs the LB policy and invokes pick_done_locked().
 static void pick_callback_done_locked(grpc_exec_ctx *exec_ctx, void *arg,
                                       grpc_error *error) {
   grpc_call_element *elem = (grpc_call_element *)arg;
@@ -1099,7 +1090,7 @@ static void pick_callback_done_locked(grpc_exec_ctx *exec_ctx, void *arg,
   GPR_ASSERT(calld->lb_policy != NULL);
   GRPC_LB_POLICY_UNREF(exec_ctx, calld->lb_policy, "pick_subchannel");
   calld->lb_policy = NULL;
-  async_pick_done_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
+  pick_done_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
 }
 
 // Takes a ref to chand->lb_policy and calls grpc_lb_policy_pick_locked().
@@ -1186,9 +1177,9 @@ static void pick_after_resolver_result_cancel_locked(grpc_exec_ctx *exec_ctx,
   // pick_after_resolver_result_done_locked() will have been added to
   // chand->waiting_for_resolver_result_closures, and it may not be invoked
   // until after this call has been destroyed.  We mark the operation as
-  // finished, so that when pick_after_resolver_result_done_locked()
-  // is called, it will be a no-op.  We also immediately invoke
-  // async_pick_done_locked() to propagate the error back to the caller.
+  // finished, so that when pick_after_resolver_result_done_locked() is called,
+  // it will be a no-op.  We also immediately invoke pick_done_locked() to
+  // propagate the error back to the caller.
   args->finished = true;
   grpc_call_element *elem = args->elem;
   channel_data *chand = (channel_data *)elem->channel_data;
@@ -1198,14 +1189,13 @@ static void pick_after_resolver_result_cancel_locked(grpc_exec_ctx *exec_ctx,
             "chand=%p calld=%p: cancelling pick waiting for resolver result",
             chand, calld);
   }
-  // Note: Although we are not in the call combiner here, we are
-  // basically stealing the call combiner from the pending pick, so
-  // it's safe to call async_pick_done_locked() here -- we are
-  // essentially calling it here instead of calling it in
-  // pick_after_resolver_result_done_locked().
-  async_pick_done_locked(exec_ctx, elem,
-                         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Pick cancelled", &error, 1));
+  // Note: Although we are not in the call combiner here, we are basically
+  // stealing the call combiner from the pending pick, so it's safe to call
+  // pick_done_locked() here -- we are essentially calling it here instead of
+  // calling it in pick_after_resolver_result_done_locked().
+  pick_done_locked(exec_ctx, elem,
+                   GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                       "Pick cancelled", &error, 1));
 }
 
 static void pick_after_resolver_result_start_locked(grpc_exec_ctx *exec_ctx,
@@ -1233,19 +1223,15 @@ static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver failed to return data",
               chand, calld);
     }
-    async_pick_done_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
+    pick_done_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
   } else if (chand->lb_policy != NULL) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver returned, doing pick",
               chand, calld);
     }
     if (pick_callback_start_locked(exec_ctx, elem)) {
-      // Even if the LB policy returns a result synchronously, we have
-      // already added our polling entity to chand->interested_parties
-      // in order to wait for the resolver result, so we need to
-      // remove it here.  Therefore, we call async_pick_done_locked()
-      // instead of pick_done_locked().
-      async_pick_done_locked(exec_ctx, elem, GRPC_ERROR_NONE);
+      // Pick completed synchronously.
+      pick_done_locked(exec_ctx, elem, GRPC_ERROR_NONE);
     }
   }
   // TODO(roth): It should be impossible for chand->lb_policy to be NULL
@@ -1269,8 +1255,8 @@ static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver disconnected", chand,
               calld);
     }
-    async_pick_done_locked(
-        exec_ctx, elem, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected"));
+    pick_done_locked(exec_ctx, elem,
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected"));
   }
 }
 
@@ -1303,6 +1289,13 @@ static void start_pick_locked(grpc_exec_ctx *exec_ctx, void *arg,
   call_data *calld = (call_data *)elem->call_data;
   channel_data *chand = (channel_data *)elem->channel_data;
   GPR_ASSERT(calld->connected_subchannel == NULL);
+  // We need to add the call's polling entity to the channel's interested
+  // parties pollset_set in order to be notified of all the activity going on as
+  // part of the pick. We need to do this even for synchronous picks in order to
+  // poll for activity on all fds involved (in particular, the ones for the
+  // subchannels within the LB instance).
+  grpc_polling_entity_add_to_pollset_set(exec_ctx, calld->pollent,
+                                         chand->interested_parties);
   if (chand->lb_policy != NULL) {
     // We already have an LB policy, so ask it for a pick.
     if (pick_callback_start_locked(exec_ctx, elem)) {
@@ -1322,13 +1315,6 @@ static void start_pick_locked(grpc_exec_ctx *exec_ctx, void *arg,
     }
     pick_after_resolver_result_start_locked(exec_ctx, elem);
   }
-  // We need to wait for either a resolver result or for an async result
-  // from the LB policy.  Add the polling entity from call_data to the
-  // channel_data's interested_parties, so that the I/O of the LB policy
-  // and resolver can be done under it.  The polling entity will be
-  // removed in async_pick_done_locked().
-  grpc_polling_entity_add_to_pollset_set(exec_ctx, calld->pollent,
-                                         chand->interested_parties);
 }
 
 static void on_complete(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
