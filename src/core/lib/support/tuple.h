@@ -158,7 +158,7 @@ auto TupleCallMemberImpl(C* p, R (C::*f)(Args...), Tuple<Types...>&& args,
 }  // namespace tuple_impl
 
 template <typename F, typename... Types>
-auto TupleCall(F&& f, Tuple<Types...>&& args)
+auto TupleCall(F&& f, Tuple<Types...>& args)
     -> decltype(f(tuple_impl::Example<Types>()...)) {
   return tuple_impl::TupleCallImpl(std::forward<F>(f),
                                    std::forward<Tuple<Types...>>(args),
@@ -166,7 +166,23 @@ auto TupleCall(F&& f, Tuple<Types...>&& args)
 }
 
 template <class C, typename R, typename... Args, typename... Types>
-auto TupleCallMember(C* p, R (C::*f)(Args...), Tuple<Types...>&& args)
+auto TupleCallMember(C* p, R (C::*f)(Args...), Tuple<Types...>& args)
+    -> decltype((p->*f)(tuple_impl::Example<Types>()...)) {
+  return tuple_impl::TupleCallMemberImpl(
+      p, f, std::forward<Tuple<Types...>>(args),
+      tuple_impl::MakeIntSeq<sizeof...(Types)>());
+}
+
+template <typename F, typename... Types>
+auto TupleCall(F&& f, const Tuple<Types...>& args)
+    -> decltype(f(tuple_impl::Example<Types>()...)) {
+  return tuple_impl::TupleCallImpl(std::forward<F>(f),
+                                   std::forward<Tuple<Types...>>(args),
+                                   tuple_impl::MakeIntSeq<sizeof...(Types)>());
+}
+
+template <class C, typename R, typename... Args, typename... Types>
+auto TupleCallMember(C* p, R (C::*f)(Args...), const Tuple<Types...>& args)
     -> decltype((p->*f)(tuple_impl::Example<Types>()...)) {
   return tuple_impl::TupleCallMemberImpl(
       p, f, std::forward<Tuple<Types...>>(args),

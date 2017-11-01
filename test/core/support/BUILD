@@ -216,7 +216,7 @@ grpc_cc_test(
     srcs = ["tuple_test.cc"],
     language = "C++",
     deps = [
-        "//:grpc",
+        "//:support_tuple",
         "//test/core/util:gpr_test_util",
     ],
     external_deps = [
