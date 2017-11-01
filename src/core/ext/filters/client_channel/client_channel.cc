@@ -31,6 +31,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
@@ -712,6 +713,7 @@ static grpc_error *cc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   chand->interested_parties = grpc_pollset_set_create();
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
                                "client_channel");
+  grpc_client_channel_start_backup_polling(exec_ctx, chand->interested_parties);
   // Record client channel factory.
   const grpc_arg *arg = grpc_channel_args_find(args->channel_args,
                                                GRPC_ARG_CLIENT_CHANNEL_FACTORY);
@@ -790,6 +792,7 @@ static void cc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   if (chand->method_params_table != NULL) {
     grpc_slice_hash_table_unref(exec_ctx, chand->method_params_table);
   }
+  grpc_client_channel_stop_backup_polling(exec_ctx, chand->interested_parties);
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
   grpc_pollset_set_destroy(exec_ctx, chand->interested_parties);
   GRPC_COMBINER_UNREF(exec_ctx, chand->combiner, "client_channel");
@@ -898,7 +901,7 @@ static void waiting_for_pick_batches_fail(grpc_exec_ctx *exec_ctx,
   call_data *calld = (call_data *)elem->call_data;
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
     gpr_log(GPR_DEBUG,
-            "chand=%p calld=%p: failing %" PRIdPTR " pending batches: %s",
+            "chand=%p calld=%p: failing %" PRIuPTR " pending batches: %s",
             elem->channel_data, calld, calld->waiting_for_pick_batches_count,
             grpc_error_string(error));
   }
@@ -940,7 +943,7 @@ static void waiting_for_pick_batches_resume(grpc_exec_ctx *exec_ctx,
   channel_data *chand = (channel_data *)elem->channel_data;
   call_data *calld = (call_data *)elem->call_data;
   if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
-    gpr_log(GPR_DEBUG, "chand=%p calld=%p: sending %" PRIdPTR
+    gpr_log(GPR_DEBUG, "chand=%p calld=%p: sending %" PRIuPTR
                        " pending batches to subchannel_call=%p",
             chand, calld, calld->waiting_for_pick_batches_count,
             calld->subchannel_call);
@@ -1205,6 +1208,9 @@ static void pick_after_resolver_result_cancel_locked(grpc_exec_ctx *exec_ctx,
                              "Pick cancelled", &error, 1));
 }
 
+static void pick_after_resolver_result_start_locked(grpc_exec_ctx *exec_ctx,
+                                                    grpc_call_element *elem);
+
 static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
                                                    void *arg,
                                                    grpc_error *error) {
@@ -1228,7 +1234,7 @@ static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
               chand, calld);
     }
     async_pick_done_locked(exec_ctx, elem, GRPC_ERROR_REF(error));
-  } else {
+  } else if (chand->lb_policy != NULL) {
     if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver returned, doing pick",
               chand, calld);
@@ -1241,6 +1247,30 @@ static void pick_after_resolver_result_done_locked(grpc_exec_ctx *exec_ctx,
       // instead of pick_done_locked().
       async_pick_done_locked(exec_ctx, elem, GRPC_ERROR_NONE);
     }
+  }
+  // TODO(roth): It should be impossible for chand->lb_policy to be NULL
+  // here, so the rest of this code should never actually be executed.
+  // However, we have reports of a crash on iOS that triggers this case,
+  // so we are temporarily adding this to restore branches that were
+  // removed in https://github.com/grpc/grpc/pull/12297.  Need to figure
+  // out what is actually causing this to occur and then figure out the
+  // right way to deal with it.
+  else if (chand->resolver != NULL) {
+    // No LB policy, so try again.
+    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      gpr_log(GPR_DEBUG,
+              "chand=%p calld=%p: resolver returned but no LB policy, "
+              "trying again",
+              chand, calld);
+    }
+    pick_after_resolver_result_start_locked(exec_ctx, elem);
+  } else {
+    if (GRPC_TRACER_ON(grpc_client_channel_trace)) {
+      gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver disconnected", chand,
+              calld);
+    }
+    async_pick_done_locked(
+        exec_ctx, elem, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected"));
   }
 }
 
@@ -1599,8 +1629,8 @@ int grpc_client_channel_num_external_connectivity_watchers(
   return count;
 }
 
-static void on_external_watch_complete(grpc_exec_ctx *exec_ctx, void *arg,
-                                       grpc_error *error) {
+static void on_external_watch_complete_locked(grpc_exec_ctx *exec_ctx,
+                                              void *arg, grpc_error *error) {
   external_connectivity_watcher *w = (external_connectivity_watcher *)arg;
   grpc_closure *follow_up = w->on_complete;
   grpc_polling_entity_del_from_pollset_set(exec_ctx, &w->pollent,
@@ -1619,8 +1649,8 @@ static void watch_connectivity_state_locked(grpc_exec_ctx *exec_ctx, void *arg,
   if (w->state != NULL) {
     external_connectivity_watcher_list_append(w->chand, w);
     GRPC_CLOSURE_RUN(exec_ctx, w->watcher_timer_init, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_INIT(&w->my_closure, on_external_watch_complete, w,
-                      grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&w->my_closure, on_external_watch_complete_locked, w,
+                      grpc_combiner_scheduler(w->chand->combiner));
     grpc_connectivity_state_notify_on_state_change(
         exec_ctx, &w->chand->state_tracker, w->state, &w->my_closure);
   } else {

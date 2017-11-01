@@ -623,7 +623,7 @@ static void op_state_machine(grpc_exec_ctx *exec_ctx, void *arg,
       fail_helper_locked(exec_ctx, s, GRPC_ERROR_REF(new_err));
       goto done;
     } else {
-      if (other && !other->closed) {
+      if (!other || !other->closed) {
         fill_in_metadata(exec_ctx, s,
                          s->send_trailing_md_op->payload->send_trailing_metadata
                              .send_trailing_metadata,
@@ -925,7 +925,7 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
         INPROC_LOG(GPR_DEBUG, "Extra initial metadata %p", s);
         error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Extra initial metadata");
       } else {
-        if (!other->closed) {
+        if (!other || !other->closed) {
           fill_in_metadata(
               exec_ctx, s,
               op->payload->send_initial_metadata.send_initial_metadata,
@@ -976,7 +976,7 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                                        (other->recv_trailing_md_op != NULL))) ||
         (op->send_trailing_metadata && !op->send_message) ||
         (op->recv_initial_metadata && s->to_read_initial_md_filled) ||
-        (op->recv_message && (other && other->send_message_op != NULL)) ||
+        (op->recv_message && other && (other->send_message_op != NULL)) ||
         (s->to_read_trailing_md_filled || s->trailing_md_recvd)) {
       if (!s->op_closure_scheduled) {
         GRPC_CLOSURE_SCHED(exec_ctx, &s->op_closure, GRPC_ERROR_NONE);

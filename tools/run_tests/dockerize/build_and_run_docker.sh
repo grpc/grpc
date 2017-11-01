@@ -36,13 +36,13 @@ DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)_$(sha1sum $DOCKERFILE_DIR/Dockerfi
 # Pull the base image to force an update
 if [ "$DOCKER_BASE_IMAGE" != "" ]
 then
-  docker pull $DOCKER_BASE_IMAGE
+  time docker pull $DOCKER_BASE_IMAGE
 fi
 
 if [ "$DOCKERHUB_ORGANIZATION" != "" ]
 then
   DOCKER_IMAGE_NAME=$DOCKERHUB_ORGANIZATION/$DOCKER_IMAGE_NAME
-  docker pull $DOCKER_IMAGE_NAME
+  time docker pull $DOCKER_IMAGE_NAME
 else
   # Make sure docker image has been built. Should be instantaneous if so.
   docker build -t $DOCKER_IMAGE_NAME $DOCKERFILE_DIR

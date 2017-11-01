@@ -40,7 +40,6 @@ namespace grpc {
 class AsyncGenericService;
 class ResourceQuota;
 class CompletionQueue;
-class RpcService;
 class Server;
 class ServerCompletionQueue;
 class ServerCredentials;

@@ -316,6 +316,43 @@ typedef struct grpc_server_credentials grpc_server_credentials;
    */
 GRPCAPI void grpc_server_credentials_release(grpc_server_credentials *creds);
 
+/** Server certificate config object holds the server's public certificates and
+   associated private keys, as well as any CA certificates needed for client
+   certificate validation (if applicable). Create using
+   grpc_ssl_server_certificate_config_create(). */
+typedef struct grpc_ssl_server_certificate_config
+    grpc_ssl_server_certificate_config;
+
+/** Creates a grpc_ssl_server_certificate_config object.
+   - pem_roots_cert is the NULL-terminated string containing the PEM encoding of
+     the client root certificates. This parameter may be NULL if the server does
+     not want the client to be authenticated with SSL.
+   - pem_key_cert_pairs is an array private key / certificate chains of the
+     server. This parameter cannot be NULL.
+   - num_key_cert_pairs indicates the number of items in the private_key_files
+     and cert_chain_files parameters. It must be at least 1.
+   - It is the caller's responsibility to free this object via
+     grpc_ssl_server_certificate_config_destroy(). */
+GRPCAPI grpc_ssl_server_certificate_config *
+grpc_ssl_server_certificate_config_create(
+    const char *pem_root_certs,
+    const grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
+    size_t num_key_cert_pairs);
+
+/** Destroys a grpc_ssl_server_certificate_config object. */
+GRPCAPI void grpc_ssl_server_certificate_config_destroy(
+    grpc_ssl_server_certificate_config *config);
+
+/** Callback to retrieve updated SSL server certificates, private keys, and
+   trusted CAs (for client authentication).
+    - user_data parameter, if not NULL, contains opaque data to be used by the
+      callback.
+    - Use grpc_ssl_server_certificate_config_create to create the config.
+    - The caller assumes ownership of the config. */
+typedef grpc_ssl_certificate_config_reload_status (
+    *grpc_ssl_server_certificate_config_callback)(
+    void *user_data, grpc_ssl_server_certificate_config **config);
+
 /** Deprecated in favor of grpc_ssl_server_credentials_create_ex.
    Creates an SSL server_credentials object.
    - pem_roots_cert is the NULL-terminated string containing the PEM encoding of
@@ -332,7 +369,8 @@ GRPCAPI grpc_server_credentials *grpc_ssl_server_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
     size_t num_key_cert_pairs, int force_client_auth, void *reserved);
 
-/** Same as grpc_ssl_server_credentials_create method except uses
+/** Deprecated in favor of grpc_ssl_server_credentials_create_with_options.
+   Same as grpc_ssl_server_credentials_create method except uses
    grpc_ssl_client_certificate_request_type enum to support more ways to
    authenticate client cerificates.*/
 GRPCAPI grpc_server_credentials *grpc_ssl_server_credentials_create_ex(
@@ -340,6 +378,40 @@ GRPCAPI grpc_server_credentials *grpc_ssl_server_credentials_create_ex(
     size_t num_key_cert_pairs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     void *reserved);
+
+typedef struct grpc_ssl_server_credentials_options
+    grpc_ssl_server_credentials_options;
+
+/** Creates an options object using a certificate config. Use this method when
+   the certificates and keys of the SSL server will not change during the
+   server's lifetime.
+   - Takes ownership of the certificate_config parameter. */
+GRPCAPI grpc_ssl_server_credentials_options *
+grpc_ssl_server_credentials_create_options_using_config(
+    grpc_ssl_client_certificate_request_type client_certificate_request,
+    grpc_ssl_server_certificate_config *certificate_config);
+
+/** Creates an options object using a certificate config fetcher. Use this
+   method to reload the certificates and keys of the SSL server without
+   interrupting the operation of the server. Initial certificate config will be
+   fetched during server initialization.
+   - user_data parameter, if not NULL, contains opaque data which will be passed
+     to the fetcher (see definition of
+     grpc_ssl_server_certificate_config_callback). */
+GRPCAPI grpc_ssl_server_credentials_options *
+grpc_ssl_server_credentials_create_options_using_config_fetcher(
+    grpc_ssl_client_certificate_request_type client_certificate_request,
+    grpc_ssl_server_certificate_config_callback cb, void *user_data);
+
+/** Destroys a grpc_ssl_server_credentials_options object. */
+GRPCAPI void grpc_ssl_server_credentials_options_destroy(
+    grpc_ssl_server_credentials_options *options);
+
+/** Creates an SSL server_credentials object using the provided options struct.
+    - Takes ownership of the options parameter. */
+GRPCAPI grpc_server_credentials *
+grpc_ssl_server_credentials_create_with_options(
+    grpc_ssl_server_credentials_options *options);
 
 /** --- Server-side secure ports. --- */
 
