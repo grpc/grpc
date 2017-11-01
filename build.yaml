@@ -3717,6 +3717,8 @@ targets:
   - --benchmark_min_time=0
   benchmark: true
   defaults: benchmark
+  exclude_configs:
+  - tsan
   excluded_poll_engines:
   - poll
   - poll-cv
@@ -4185,9 +4187,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  excluded_poll_engines:
-  - poll
-  - poll-cv
 - name: grpclb_test
   gtest: false
   build: test
@@ -4202,10 +4201,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  excluded_poll_engines:
-  - poll
-  - poll-cv
-  - epollex
 - name: h2_ssl_cert_test
   gtest: true
   build: test
@@ -4776,7 +4771,6 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
-  timeout_seconds: 1200
 - name: transport_pid_controller_test
   build: test
   language: c++
