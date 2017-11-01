@@ -191,74 +191,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "census_context_test", 
-    "src": [
-      "test/core/census/context_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "census_intrusive_hash_map_test", 
-    "src": [
-      "test/core/census/intrusive_hash_map_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "census_resource_test", 
-    "src": [
-      "test/core/census/resource_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "census_trace_context_test", 
-    "src": [
-      "test/core/census/trace_context_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "channel_create_test", 
     "src": [
       "test/core/surface/channel_create_test.c"
@@ -1222,6 +1154,23 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "grpc_ssl_credentials_test", 
+    "src": [
+      "test/core/security/ssl_credentials_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc"
     ], 
     "headers": [], 
@@ -1687,23 +1636,6 @@
     "name": "minimal_stack_is_minimal_test", 
     "src": [
       "test/core/channel/minimal_stack_is_minimal_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "mlog_test", 
-    "src": [
-      "test/core/census/mlog_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3557,6 +3489,28 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_core_stats", 
+      "grpc++_test_config", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "qps"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "inproc_sync_unary_ping_pong_test", 
+    "src": [
+      "test/cpp/qps/inproc_sync_unary_ping_pong_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
@@ -4915,24 +4869,6 @@
     "name": "initial_settings_frame_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/initial_settings_frame.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "bad_client_test", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "large_metadata_bad_client_test", 
-    "src": [
-      "test/core/bad_client/tests/large_metadata.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7432,7 +7368,6 @@
     "headers": [
       "third_party/benchmark/include/benchmark/benchmark.h", 
       "third_party/benchmark/include/benchmark/benchmark_api.h", 
-      "third_party/benchmark/include/benchmark/macros.h", 
       "third_party/benchmark/include/benchmark/reporter.h", 
       "third_party/benchmark/src/arraysize.h", 
       "third_party/benchmark/src/benchmark_api_internal.h", 
@@ -7440,6 +7375,7 @@
       "third_party/benchmark/src/colorprint.h", 
       "third_party/benchmark/src/commandlineflags.h", 
       "third_party/benchmark/src/complexity.h", 
+      "third_party/benchmark/src/counter.h", 
       "third_party/benchmark/src/cycleclock.h", 
       "third_party/benchmark/src/internal_macros.h", 
       "third_party/benchmark/src/log.h", 
@@ -7727,64 +7663,14 @@
       "nanopb"
     ], 
     "headers": [
-      "include/grpc/census.h", 
-      "src/core/ext/census/aggregation.h", 
-      "src/core/ext/census/base_resources.h", 
-      "src/core/ext/census/census_interface.h", 
-      "src/core/ext/census/census_rpc_stats.h", 
-      "src/core/ext/census/gen/census.pb.h", 
-      "src/core/ext/census/gen/trace_context.pb.h", 
-      "src/core/ext/census/grpc_filter.h", 
-      "src/core/ext/census/intrusive_hash_map.h", 
-      "src/core/ext/census/intrusive_hash_map_internal.h", 
-      "src/core/ext/census/mlog.h", 
-      "src/core/ext/census/resource.h", 
-      "src/core/ext/census/rpc_metric_id.h", 
-      "src/core/ext/census/trace_context.h", 
-      "src/core/ext/census/trace_label.h", 
-      "src/core/ext/census/trace_propagation.h", 
-      "src/core/ext/census/trace_status.h", 
-      "src/core/ext/census/trace_string.h", 
-      "src/core/ext/census/tracing.h"
+      "include/grpc/census.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "census", 
     "src": [
       "include/grpc/census.h", 
-      "src/core/ext/census/aggregation.h", 
-      "src/core/ext/census/base_resources.cc", 
-      "src/core/ext/census/base_resources.h", 
-      "src/core/ext/census/census_interface.h", 
-      "src/core/ext/census/census_rpc_stats.h", 
-      "src/core/ext/census/context.cc", 
-      "src/core/ext/census/gen/census.pb.c", 
-      "src/core/ext/census/gen/census.pb.h", 
-      "src/core/ext/census/gen/trace_context.pb.c", 
-      "src/core/ext/census/gen/trace_context.pb.h", 
-      "src/core/ext/census/grpc_context.cc", 
-      "src/core/ext/census/grpc_filter.cc", 
-      "src/core/ext/census/grpc_filter.h", 
-      "src/core/ext/census/grpc_plugin.cc", 
-      "src/core/ext/census/initialize.cc", 
-      "src/core/ext/census/intrusive_hash_map.cc", 
-      "src/core/ext/census/intrusive_hash_map.h", 
-      "src/core/ext/census/intrusive_hash_map_internal.h", 
-      "src/core/ext/census/mlog.cc", 
-      "src/core/ext/census/mlog.h", 
-      "src/core/ext/census/operation.cc", 
-      "src/core/ext/census/placeholders.cc", 
-      "src/core/ext/census/resource.cc", 
-      "src/core/ext/census/resource.h", 
-      "src/core/ext/census/rpc_metric_id.h", 
-      "src/core/ext/census/trace_context.cc", 
-      "src/core/ext/census/trace_context.h", 
-      "src/core/ext/census/trace_label.h", 
-      "src/core/ext/census/trace_propagation.h", 
-      "src/core/ext/census/trace_status.h", 
-      "src/core/ext/census/trace_string.h", 
-      "src/core/ext/census/tracing.cc", 
-      "src/core/ext/census/tracing.h"
+      "src/core/ext/census/grpc_context.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8446,6 +8332,7 @@
       "grpc_deadline_filter"
     ], 
     "headers": [
+      "src/core/ext/filters/client_channel/backup_poller.h", 
       "src/core/ext/filters/client_channel/client_channel.h", 
       "src/core/ext/filters/client_channel/client_channel_factory.h", 
       "src/core/ext/filters/client_channel/connector.h", 
@@ -8469,6 +8356,8 @@
     "language": "c", 
     "name": "grpc_client_channel", 
     "src": [
+      "src/core/ext/filters/client_channel/backup_poller.cc", 
+      "src/core/ext/filters/client_channel/backup_poller.h", 
       "src/core/ext/filters/client_channel/channel_connectivity.cc", 
       "src/core/ext/filters/client_channel/client_channel.cc", 
       "src/core/ext/filters/client_channel/client_channel.h", 
@@ -8663,7 +8552,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel"
+      "grpc_client_channel", 
+      "grpc_lb_subchannel_list"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -8679,7 +8569,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel"
+      "grpc_client_channel", 
+      "grpc_lb_subchannel_list"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -8687,6 +8578,25 @@
     "name": "grpc_lb_policy_round_robin", 
     "src": [
       "src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_client_channel"
+    ], 
+    "headers": [
+      "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_lb_subchannel_list", 
+    "src": [
+      "src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9028,6 +8938,7 @@
       "src/core/ext/transport/chttp2/transport/bin_decoder.h", 
       "src/core/ext/transport/chttp2/transport/bin_encoder.h", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.h", 
+      "src/core/ext/transport/chttp2/transport/flow_control.h", 
       "src/core/ext/transport/chttp2/transport/frame.h", 
       "src/core/ext/transport/chttp2/transport/frame_data.h", 
       "src/core/ext/transport/chttp2/transport/frame_goaway.h", 
@@ -9057,6 +8968,7 @@
       "src/core/ext/transport/chttp2/transport/chttp2_transport.cc", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.h", 
       "src/core/ext/transport/chttp2/transport/flow_control.cc", 
+      "src/core/ext/transport/chttp2/transport/flow_control.h", 
       "src/core/ext/transport/chttp2/transport/frame.h", 
       "src/core/ext/transport/chttp2/transport/frame_data.cc", 
       "src/core/ext/transport/chttp2/transport/frame_data.h", 

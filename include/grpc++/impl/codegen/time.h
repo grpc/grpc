@@ -19,6 +19,8 @@
 #ifndef GRPCXX_IMPL_CODEGEN_TIME_H
 #define GRPCXX_IMPL_CODEGEN_TIME_H
 
+#include <chrono>
+
 #include <grpc++/impl/codegen/config.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
@@ -58,10 +60,6 @@ class TimePoint<gpr_timespec> {
 };
 
 }  // namespace grpc
-
-#include <chrono>
-
-#include <grpc/impl/codegen/grpc_types.h>
 
 namespace grpc {
 

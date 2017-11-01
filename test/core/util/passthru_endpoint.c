@@ -82,7 +82,7 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   half *m = other_half((half *)ep);
   gpr_mu_lock(&m->parent->mu);
   grpc_error *error = GRPC_ERROR_NONE;
-  m->parent->stats->num_writes++;
+  gpr_atm_no_barrier_fetch_add(&m->parent->stats->num_writes, (gpr_atm)1);
   if (m->parent->shutdown) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Endpoint already shutdown");
   } else if (m->on_read != NULL) {
@@ -106,6 +106,10 @@ static void me_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
 static void me_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                                   grpc_pollset_set *pollset) {}
+
+static void me_delete_from_pollset_set(grpc_exec_ctx *exec_ctx,
+                                       grpc_endpoint *ep,
+                                       grpc_pollset_set *pollset) {}
 
 static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                         grpc_error *why) {
@@ -160,8 +164,15 @@ static grpc_resource_user *me_get_resource_user(grpc_endpoint *ep) {
 }
 
 static const grpc_endpoint_vtable vtable = {
-    me_read,     me_write,   me_add_to_pollset,    me_add_to_pollset_set,
-    me_shutdown, me_destroy, me_get_resource_user, me_get_peer,
+    me_read,
+    me_write,
+    me_add_to_pollset,
+    me_add_to_pollset_set,
+    me_delete_from_pollset_set,
+    me_shutdown,
+    me_destroy,
+    me_get_resource_user,
+    me_get_peer,
     me_get_fd,
 };
 

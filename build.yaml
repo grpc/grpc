@@ -19,42 +19,8 @@ filegroups:
 - name: census
   public_headers:
   - include/grpc/census.h
-  headers:
-  - src/core/ext/census/aggregation.h
-  - src/core/ext/census/base_resources.h
-  - src/core/ext/census/census_interface.h
-  - src/core/ext/census/census_rpc_stats.h
-  - src/core/ext/census/gen/census.pb.h
-  - src/core/ext/census/gen/trace_context.pb.h
-  - src/core/ext/census/grpc_filter.h
-  - src/core/ext/census/intrusive_hash_map.h
-  - src/core/ext/census/intrusive_hash_map_internal.h
-  - src/core/ext/census/mlog.h
-  - src/core/ext/census/resource.h
-  - src/core/ext/census/rpc_metric_id.h
-  - src/core/ext/census/trace_context.h
-  - src/core/ext/census/trace_label.h
-  - src/core/ext/census/trace_propagation.h
-  - src/core/ext/census/trace_status.h
-  - src/core/ext/census/trace_string.h
-  - src/core/ext/census/tracing.h
   src:
-  - src/core/ext/census/base_resources.cc
-  - src/core/ext/census/context.cc
-  - src/core/ext/census/gen/census.pb.c
-  - src/core/ext/census/gen/trace_context.pb.c
   - src/core/ext/census/grpc_context.cc
-  - src/core/ext/census/grpc_filter.cc
-  - src/core/ext/census/grpc_plugin.cc
-  - src/core/ext/census/initialize.cc
-  - src/core/ext/census/intrusive_hash_map.cc
-  - src/core/ext/census/mlog.cc
-  - src/core/ext/census/operation.cc
-  - src/core/ext/census/placeholders.cc
-  - src/core/ext/census/resource.cc
-  - src/core/ext/census/trace_context.cc
-  - src/core/ext/census/tracing.cc
-  plugin: census_grpc_plugin
   uses:
   - grpc_base
   - nanopb
@@ -463,6 +429,7 @@ filegroups:
   - grpc_trace_headers
 - name: grpc_client_channel
   headers:
+  - src/core/ext/filters/client_channel/backup_poller.h
   - src/core/ext/filters/client_channel/client_channel.h
   - src/core/ext/filters/client_channel/client_channel_factory.h
   - src/core/ext/filters/client_channel/connector.h
@@ -482,6 +449,7 @@ filegroups:
   - src/core/ext/filters/client_channel/subchannel_index.h
   - src/core/ext/filters/client_channel/uri_parser.h
   src:
+  - src/core/ext/filters/client_channel/backup_poller.cc
   - src/core/ext/filters/client_channel/channel_connectivity.cc
   - src/core/ext/filters/client_channel/client_channel.cc
   - src/core/ext/filters/client_channel/client_channel_factory.cc
@@ -590,10 +558,20 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
+  - grpc_lb_subchannel_list
 - name: grpc_lb_policy_round_robin
   src:
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   plugin: grpc_lb_policy_round_robin
+  uses:
+  - grpc_base
+  - grpc_client_channel
+  - grpc_lb_subchannel_list
+- name: grpc_lb_subchannel_list
+  headers:
+  - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc
   uses:
   - grpc_base
   - grpc_client_channel
@@ -778,6 +756,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
+  - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/frame_data.h
   - src/core/ext/transport/chttp2/transport/frame_goaway.h
@@ -1833,50 +1812,6 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: census_context_test
-  build: test
-  language: c
-  src:
-  - test/core/census/context_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
-- name: census_intrusive_hash_map_test
-  build: test
-  language: c
-  src:
-  - test/core/census/intrusive_hash_map_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
-- name: census_resource_test
-  build: test
-  language: c
-  src:
-  - test/core/census/resource_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
-- name: census_trace_context_test
-  build: test
-  language: c
-  src:
-  - test/core/census/trace_context_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: channel_create_test
   build: test
   language: c
@@ -2539,6 +2474,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: grpc_ssl_credentials_test
+  build: test
+  language: c
+  src:
+  - test/core/security/ssl_credentials_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_verify_jwt
   build: tool
   language: c
@@ -2869,18 +2814,6 @@ targets:
   language: c
   src:
   - test/core/channel/minimal_stack_is_minimal_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
-- name: mlog_test
-  flaky: true
-  build: test
-  language: c
-  src:
-  - test/core/census/mlog_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -3761,6 +3694,8 @@ targets:
   - grpc++_test_config
   benchmark: true
   defaults: benchmark
+  exclude_configs:
+  - tsan
   excluded_poll_engines:
   - poll
   - poll-cv
@@ -3916,9 +3851,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  excluded_poll_engines:
-  - poll
-  - poll-cv
 - name: codegen_test_full
   gtest: true
   build: test
@@ -4207,9 +4139,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  excluded_poll_engines:
-  - poll
-  - poll-cv
 - name: grpclb_test
   gtest: false
   build: test
@@ -4224,9 +4153,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  excluded_poll_engines:
-  - poll
-  - poll-cv
 - name: h2_ssl_cert_test
   gtest: true
   build: test
@@ -4285,6 +4211,25 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: inproc_sync_unary_ping_pong_test
+  build: test
+  language: c++
+  src:
+  - test/cpp/qps/inproc_sync_unary_ping_pong_test.cc
+  deps:
+  - qps
+  - grpc++_core_stats
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: interop_client
   build: test
   run: false
@@ -4778,7 +4723,6 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
-  timeout_seconds: 1200
 - name: transport_pid_controller_test
   build: test
   language: c++

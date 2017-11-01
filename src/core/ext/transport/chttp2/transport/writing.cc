@@ -146,13 +146,13 @@ static void report_stall(grpc_chttp2_transport *t, grpc_chttp2_stream *s,
       s->flow_controlled_bytes_flowed,
       t->settings[GRPC_ACKED_SETTINGS]
                  [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
-      t->flow_control.remote_window,
+      t->flow_control->remote_window(),
       (uint32_t)GPR_MAX(
           0,
-          s->flow_control.remote_window_delta +
+          s->flow_control->remote_window_delta() +
               (int64_t)t->settings[GRPC_PEER_SETTINGS]
                                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]),
-      s->flow_control.remote_window_delta);
+      s->flow_control->remote_window_delta());
 }
 
 static bool stream_ref_if_not_destroyed(gpr_refcount *r) {
@@ -216,8 +216,7 @@ class WriteContext {
 
   void FlushWindowUpdates(grpc_exec_ctx *exec_ctx) {
     uint32_t transport_announce =
-        grpc_chttp2_flowctl_maybe_send_transport_update(&t_->flow_control,
-                                                        t_->outbuf.count > 0);
+        t_->flow_control->MaybeSendUpdate(t_->outbuf.count > 0);
     if (transport_announce) {
       grpc_transport_one_way_stats throwaway_stats;
       grpc_slice_buffer_add(
@@ -312,7 +311,7 @@ class DataSendContext {
 
   uint32_t stream_remote_window() const {
     return (uint32_t)GPR_MAX(
-        0, s_->flow_control.remote_window_delta +
+        0, s_->flow_control->remote_window_delta() +
                (int64_t)t_->settings[GRPC_PEER_SETTINGS]
                                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
   }
@@ -320,7 +319,7 @@ class DataSendContext {
   uint32_t max_outgoing() const {
     return (uint32_t)GPR_MIN(
         t_->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-        GPR_MIN(stream_remote_window(), t_->flow_control.remote_window));
+        GPR_MIN(stream_remote_window(), t_->flow_control->remote_window()));
   }
 
   bool AnyOutgoing() const { return max_outgoing() != 0; }
@@ -352,8 +351,7 @@ class DataSendContext {
                      grpc_metadata_batch_is_empty(s_->send_trailing_metadata);
     grpc_chttp2_encode_data(s_->id, &s_->compressed_data_buffer, send_bytes,
                             is_last_frame_, &s_->stats.outgoing, &t_->outbuf);
-    grpc_chttp2_flowctl_sent_data(&t_->flow_control, &s_->flow_control,
-                                  send_bytes);
+    s_->flow_control->SentData(send_bytes);
     if (s_->compressed_data_buffer.length == 0) {
       s_->sending_bytes += s_->uncompressed_data_size;
     }
@@ -400,8 +398,8 @@ class StreamWriteContext {
         gpr_log(GPR_DEBUG, "W:%p %s[%d] im-(sent,send)=(%d,%d) announce=%d", t_,
                 t_->is_client ? "CLIENT" : "SERVER", s->id,
                 s->sent_initial_metadata, s->send_initial_metadata != NULL,
-                (int)(s->flow_control.local_window_delta -
-                      s->flow_control.announced_window_delta)));
+                (int)(s->flow_control->local_window_delta() -
+                      s->flow_control->announced_window_delta())));
   }
 
   void FlushInitialMetadata(grpc_exec_ctx *exec_ctx) {
@@ -447,8 +445,7 @@ class StreamWriteContext {
 
   void FlushWindowUpdates(grpc_exec_ctx *exec_ctx) {
     /* send any window updates */
-    uint32_t stream_announce = grpc_chttp2_flowctl_maybe_send_stream_update(
-        &t_->flow_control, &s_->flow_control);
+    const uint32_t stream_announce = s_->flow_control->MaybeSendUpdate();
     if (stream_announce == 0) return;
 
     grpc_slice_buffer_add(
@@ -469,10 +466,10 @@ class StreamWriteContext {
     DataSendContext data_send_context(write_context_, t_, s_);
 
     if (!data_send_context.AnyOutgoing()) {
-      if (t_->flow_control.remote_window == 0) {
+      if (t_->flow_control->remote_window() <= 0) {
         report_stall(t_, s_, "transport");
         grpc_chttp2_list_add_stalled_by_transport(t_, s_);
-      } else if (data_send_context.stream_remote_window() == 0) {
+      } else if (data_send_context.stream_remote_window() <= 0) {
         report_stall(t_, s_, "stream");
         grpc_chttp2_list_add_stalled_by_stream(t_, s_);
       }
@@ -588,7 +585,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
   ctx.FlushQueuedBuffers(exec_ctx);
   ctx.EnactHpackSettings(exec_ctx);
 
-  if (t->flow_control.remote_window > 0) {
+  if (t->flow_control->remote_window() > 0) {
     ctx.UpdateStreamsNoLongerStalled();
   }
 

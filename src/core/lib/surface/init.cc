@@ -64,6 +64,7 @@ static void do_basic_init(void) {
   gpr_log_verbosity_init();
   gpr_mu_init(&g_init_mu);
   grpc_register_built_in_plugins();
+  grpc_cq_global_init();
   g_initializations = 0;
 }
 
