@@ -104,169 +104,176 @@ const typename ClosureRef<Args...>::VTable ClosureRef<Args...>::null_vtable_ = {
 
 namespace closure_impl {
 
+template <class Scheduler, class... Args>
+struct ClosureImpl {
+  template <class Env, void (*F)(Args...)>
+  class FuncClosure {
+   public:
+    static const typename ClosureRef<Args...>::VTable vtable;
+
+    static void Schedule(void* env, Args&&... args) {
+      Scheduler::Schedule(FuncClosure(std::forward<Args>(args)...),
+                          static_cast<Env*>(env));
+    }
+    static void Run(void* env, Args&&... args) {
+      Scheduler::UnsafeRun(FuncClosure(std::forward<Args>(args)...),
+                           static_cast<Env*>(env));
+    }
+
+    void operator()(Env* env) { TupleCall(F, std::move(args_)); }
+
+   private:
+    FuncClosure(Args&&... args) : args_(std::forward<Args>(args)...) {}
+
+    Tuple<Args...> args_;
+  };
+
+  template <class C, void (C::*F)(Args...)>
+  class MemberClosure {
+   public:
+    static const typename ClosureRef<Args...>::VTable vtable;
+
+    static void Schedule(void* env, Args&&... args) {
+      Scheduler::Schedule(MemberClosure(std::forward<Args>(args)...),
+                          static_cast<C*>(env));
+    }
+    static void Run(void* env, Args&&... args) {
+      Scheduler::UnsafeRun(MemberClosure(std::forward<Args>(args)...),
+                           static_cast<C*>(env));
+    }
+
+    void operator()(C* p) { TupleCallMember(p, F, std::move(args_)); }
+
+   private:
+    MemberClosure(Args&&... args) : args_(std::forward<Args>(args)...) {}
+
+    Tuple<Args...> args_;
+  };
+
+  template <class C, void (C::*F)(Args...)>
+  class RefCountedMemberClosure {
+   public:
+    static const typename ClosureRef<Args...>::VTable vtable;
+
+    static void Schedule(void* env, Args&&... args) {
+      Scheduler::Schedule(RefCountedMemberClosure(std::forward<Args>(args)...),
+                          static_cast<C*>(env));
+    }
+    static void Run(void* env, Args&&... args) {
+      Scheduler::UnsafeRun(RefCountedMemberClosure(std::forward<Args>(args)...),
+                           static_cast<C*>(env));
+    }
+
+    void operator()(C* p) {
+      TupleCallMember(p, F, std::move(args_));
+      p->Unref();
+    }
+
+   private:
+    RefCountedMemberClosure(Args&&... args)
+        : args_(std::forward<Args>(args)...) {}
+
+    Tuple<Args...> args_;
+  };
+
+  template <class F>
+  class FunctorClosure {
+   public:
+    static const typename ClosureRef<Args...>::VTable vtable;
+
+    explicit FunctorClosure(F&& f) : f_(std::move(f)) {}
+
+    static void Schedule(void* env, Args&&... args) {
+      static_cast<FunctorClosure*>(env)->args_ =
+          Tuple<Args...>(std::forward<Args>(args)...);
+      Scheduler::Schedule(
+          [](FunctorClosure* functor) {
+            TupleCall(functor->f_, std::move(functor->args_));
+            Delete(functor);
+          },
+          static_cast<FunctorClosure*>(env));
+    }
+    static void Run(void* env, Args&&... args) {
+      static_cast<FunctorClosure*>(env)->args_ =
+          Tuple<Args...>(std::forward<Args>(args)...);
+      Scheduler::UnsafeRun(
+          [](FunctorClosure* functor) {
+            TupleCall(functor->f_, std::move(functor->args_));
+            Delete(functor);
+          },
+          static_cast<FunctorClosure*>(env));
+    }
+
+   private:
+    F f_;
+    Tuple<Args...> args_;
+  };
+};
+
 template <class Scheduler>
 class MakesClosuresForScheduler {
  public:
   template <class... Args>
   class MakeClosureWithArgs {
-   private:
-    template <class Env, void (*F)(Args...)>
-    class FuncClosure {
-     public:
-      static const typename ClosureRef<Args...>::VTable vtable;
-
-      static void Schedule(void* env, Args&&... args) {
-        Scheduler::Schedule(FuncClosure(std::forward<Args>(args)...),
-                            static_cast<Env*>(env));
-      }
-      static void Run(void* env, Args&&... args) {
-        Scheduler::UnsafeRun(FuncClosure(std::forward<Args>(args)...),
-                             static_cast<Env*>(env));
-      }
-
-      void operator()(Env* env) { TupleCall(F, std::move(args_)); }
-
-     private:
-      FuncClosure(Args&&... args) : args_(std::forward<Args>(args)...) {}
-
-      Tuple<Args...> args_;
-    };
-
-    template <class C, void (C::*F)(Args...)>
-    class MemberClosure {
-     public:
-      static const typename ClosureRef<Args...>::VTable vtable;
-
-      static void Schedule(void* env, Args&&... args) {
-        Scheduler::Schedule(MemberClosure(std::forward<Args>(args)...),
-                            static_cast<C*>(env));
-      }
-      static void Run(void* env, Args&&... args) {
-        Scheduler::UnsafeRun(MemberClosure(std::forward<Args>(args)...),
-                             static_cast<C*>(env));
-      }
-
-      void operator()(C* p) { TupleCallMember(p, F, std::move(args_)); }
-
-     private:
-      MemberClosure(Args&&... args) : args_(std::forward<Args>(args)...) {}
-
-      Tuple<Args...> args_;
-    };
-
-    template <class C, void (C::*F)(Args...)>
-    class RefCountedMemberClosure {
-     public:
-      static const typename ClosureRef<Args...>::VTable vtable;
-
-      static void Schedule(void* env, Args&&... args) {
-        Scheduler::Schedule(
-            RefCountedMemberClosure(std::forward<Args>(args)...),
-            static_cast<C*>(env));
-      }
-      static void Run(void* env, Args&&... args) {
-        Scheduler::UnsafeRun(
-            RefCountedMemberClosure(std::forward<Args>(args)...),
-            static_cast<C*>(env));
-      }
-
-      void operator()(C* p) {
-        TupleCallMember(p, F, std::move(args_));
-        p->Unref();
-      }
-
-     private:
-      RefCountedMemberClosure(Args&&... args)
-          : args_(std::forward<Args>(args)...) {}
-
-      Tuple<Args...> args_;
-    };
-
-    template <class F>
-    class FunctorClosure {
-     public:
-      static const typename ClosureRef<Args...>::VTable vtable;
-
-      explicit FunctorClosure(F&& f) : f_(std::move(f)) {}
-
-      static void Schedule(void* env, Args&&... args) {
-        static_cast<FunctorClosure*>(env)->args_ =
-            Tuple<Args...>(std::forward<Args>(args)...);
-        Scheduler::Schedule(
-            [](FunctorClosure* functor) {
-              TupleCall(functor->f_, std::move(functor->args_));
-              Delete(functor);
-            },
-            static_cast<FunctorClosure*>(env));
-      }
-      static void Run(void* env, Args&&... args) {
-        static_cast<FunctorClosure*>(env)->args_ =
-            Tuple<Args...>(std::forward<Args>(args)...);
-        Scheduler::UnsafeRun(
-            [](FunctorClosure* functor) {
-              TupleCall(functor->f_, std::move(functor->args_));
-              Delete(functor);
-            },
-            static_cast<FunctorClosure*>(env));
-      }
-
-     private:
-      F f_;
-      Tuple<Args...> args_;
-    };
-
    public:
     template <void (*F)(Args...), typename Env = void>
     static ClosureRef<Args...> FromFreeFunction(Env* env = nullptr) {
-      return ClosureRef<Args...>(&FuncClosure<Env, F>::vtable, env);
+      return ClosureRef<Args...>(
+          &ClosureImpl<Scheduler, Args...>::template FuncClosure<Env,
+                                                                 F>::vtable,
+          env);
     }
 
     template <class C, void (C::*F)(Args...)>
     static ClosureRef<Args...> FromNonRefCountedMemberFunction(C* p) {
-      return ClosureRef<Args...>(&MemberClosure<C, F>::vtable, p);
+      return ClosureRef<Args...>(
+          &ClosureImpl<Scheduler, Args...>::template MemberClosure<C,
+                                                                   F>::vtable,
+          p);
     }
 
     template <class C, void (C::*F)(Args...)>
     static ClosureRef<Args...> FromRefCountedMemberFunction(C* p) {
       p->Ref();
-      return ClosureRef<Args...>(&RefCountedMemberClosure<C, F>::vtable, p);
+      return ClosureRef<Args...>(
+          &ClosureImpl<Scheduler,
+                       Args...>::template RefCountedMemberClosure<C, F>::vtable,
+          p);
     }
 
     template <class F>
     static ClosureRef<Args...> FromFunctor(F&& f) {
-      return ClosureRef<Args...>(&FunctorClosure<F>::vtable,
-                                 New<FunctorClosure<F>>(std::move(f)));
+      typedef
+          typename ClosureImpl<Scheduler, Args...>::template FunctorClosure<F>
+              Impl;
+      return ClosureRef<Args...>(&Impl::vtable, New<Impl>(std::move(f)));
     }
   };
 };
 
-template <class Scheduler>
-template <class... Args>
+template <class Scheduler, class... Args>
 template <class Env, void (*F)(Args...)>
-const typename ClosureRef<Args...>::VTable MakesClosuresForScheduler<
-    Scheduler>::MakeClosureWithArgs<Args...>::FuncClosure<Env, F>::vtable = {
-    Schedule, Run};
+const typename ClosureRef<Args...>::VTable
+    ClosureImpl<Scheduler, Args...>::FuncClosure<Env, F>::vtable = {Schedule,
+                                                                    Run};
 
-template <class Scheduler>
-template <class... Args>
-template <class C, void (C::*F)(Args...)>
-const typename ClosureRef<Args...>::VTable MakesClosuresForScheduler<
-    Scheduler>::MakeClosureWithArgs<Args...>::MemberClosure<C, F>::vtable = {
-    Schedule, Run};
-
-template <class Scheduler>
-template <class... Args>
+template <class Scheduler, class... Args>
 template <class C, void (C::*F)(Args...)>
 const typename ClosureRef<Args...>::VTable
-    MakesClosuresForScheduler<Scheduler>::MakeClosureWithArgs<
-        Args...>::RefCountedMemberClosure<C, F>::vtable = {Schedule, Run};
+    ClosureImpl<Scheduler, Args...>::MemberClosure<C, F>::vtable = {Schedule,
+                                                                    Run};
 
-template <class Scheduler>
-template <class... Args>
+template <class Scheduler, class... Args>
+template <class C, void (C::*F)(Args...)>
+const typename ClosureRef<Args...>::VTable
+    ClosureImpl<Scheduler, Args...>::RefCountedMemberClosure<C, F>::vtable = {
+        Schedule, Run};
+
+template <class Scheduler, class... Args>
 template <class F>
-const typename ClosureRef<Args...>::VTable MakesClosuresForScheduler<
-    Scheduler>::MakeClosureWithArgs<Args...>::FunctorClosure<F>::vtable = {
-    Schedule, Run};
+const typename ClosureRef<Args...>::VTable
+    ClosureImpl<Scheduler, Args...>::FunctorClosure<F>::vtable = {Schedule,
+                                                                  Run};
 
 }  // namespace closure_impl
 
