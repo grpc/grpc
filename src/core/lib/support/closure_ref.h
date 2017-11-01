@@ -46,7 +46,7 @@ class ClosureRef {
     void (*run)(void* env, Args&&... args);
   };
 
-  ClosureRef() : vtable_(&null_vtable_) {}
+  ClosureRef() : vtable_(&null_vtable_), env_(nullptr) {}
   ClosureRef(ClosureRef&& other) : vtable_(other.vtable_), env_(other.env_) {
     other.vtable_ = &null_vtable_;
   }
