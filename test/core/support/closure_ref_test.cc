@@ -123,6 +123,34 @@ TEST(ClosureRef, MustBeScheduled) {
   EXPECT_DEATH_IF_SUPPORTED(test_body(), "");
 }
 
+TEST(ClosureRef, BarrierMember) {
+  class Foo {
+   public:
+    int refs = 0;
+    int unrefs = 0;
+    int executes = 0;
+    int barrier = 2;
+    void Ref() { ++refs; }
+    void Unref() { ++unrefs; }
+    void Execute() { ++executes; }
+    ClosureRef<> MakeClosure() {
+      return AcquiresNoLocks::MakeClosureWithArgs<>::
+          FromRefCountedMemberFunctionWithBarrier<Foo, &Foo::Execute, int,
+                                                  &Foo::barrier>(this);
+    }
+  };
+  Foo foo;
+
+  foo.MakeClosure().UnsafeRun();
+  EXPECT_EQ(1, foo.refs);
+  EXPECT_EQ(1, foo.unrefs);
+  EXPECT_EQ(0, foo.executes);
+  foo.MakeClosure().UnsafeRun();
+  EXPECT_EQ(2, foo.refs);
+  EXPECT_EQ(2, foo.unrefs);
+  EXPECT_EQ(1, foo.executes);
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 

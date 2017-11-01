@@ -19,6 +19,7 @@
 #ifndef GRPC_CORE_LIB_SUPPORT_CLOSURE_REF_H
 #define GRPC_CORE_LIB_SUPPORT_CLOSURE_REF_H
 
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -102,6 +103,27 @@ const typename ClosureRef<Args...>::VTable ClosureRef<Args...>::null_vtable_ = {
 // MakeClosure implementation details...
 //
 
+template <class Barrier>
+struct BarrierOps;
+
+template <>
+struct BarrierOps<gpr_atm> {
+  static bool PassesBarrier(gpr_atm* barrier) {
+    gpr_atm last = gpr_atm_full_fetch_add(barrier, -1);
+    GPR_ASSERT(last > 0);
+    return last == 1;
+  }
+};
+
+template <>
+struct BarrierOps<int> {
+  static bool PassesBarrier(int* barrier) {
+    int value = --*barrier;
+    GPR_ASSERT(value >= 0);
+    return value == 0;
+  }
+};
+
 namespace closure_impl {
 
 template <class Scheduler, class... Args>
@@ -169,11 +191,38 @@ struct ClosureImpl {
       p->Unref();
     }
 
-   private:
+   protected:
     RefCountedMemberClosure(Args&&... args)
         : args_(std::forward<Args>(args)...) {}
 
+   private:
     Tuple<Args...> args_;
+  };
+
+  template <class C, void (C::*F)(Args...), class BarrierType,
+            BarrierType(C::*Barrier)>
+  class RefCountedMemberWithBarrier : public RefCountedMemberClosure<C, F> {
+   public:
+    static const typename ClosureRef<Args...>::VTable vtable;
+
+    static void Schedule(void* env, Args&&... args) {
+      auto p = static_cast<C*>(env);
+      if (BarrierOps<BarrierType>::PassesBarrier(&(p->*Barrier), &args...)) {
+        Scheduler::Schedule(
+            RefCountedMemberWithBarrier(std::forward<Args>(args)...), p);
+      } else {
+        p->Unref();
+      }
+    }
+    static void Run(void* env, Args&&... args) {
+      auto p = static_cast<C*>(env);
+      if (BarrierOps<BarrierType>::PassesBarrier(&(p->*Barrier), &args...)) {
+        Scheduler::UnsafeRun(
+            RefCountedMemberWithBarrier(std::forward<Args>(args)...), p);
+      } else {
+        p->Unref();
+      }
+    }
   };
 
   template <class F>
@@ -241,6 +290,17 @@ class MakesClosuresForScheduler {
           p);
     }
 
+    template <class C, void (C::*F)(Args...), class BarrierType,
+              BarrierType(C::*Barrier)>
+    static ClosureRef<Args...> FromRefCountedMemberFunctionWithBarrier(C* p) {
+      p->Ref();
+      return ClosureRef<Args...>(
+          &ClosureImpl<Scheduler, Args...>::
+              template RefCountedMemberWithBarrier<C, F, BarrierType,
+                                                   Barrier>::vtable,
+          p);
+    }
+
     template <class F>
     static ClosureRef<Args...> FromFunctor(F&& f) {
       typedef
@@ -268,6 +328,13 @@ template <class C, void (C::*F)(Args...)>
 const typename ClosureRef<Args...>::VTable
     ClosureImpl<Scheduler, Args...>::RefCountedMemberClosure<C, F>::vtable = {
         Schedule, Run};
+
+template <class Scheduler, class... Args>
+template <class C, void (C::*F)(Args...), class BarrierType,
+          BarrierType(C::*Barrier)>
+const typename ClosureRef<Args...>::VTable
+    ClosureImpl<Scheduler, Args...>::RefCountedMemberWithBarrier<
+        C, F, BarrierType, Barrier>::vtable = {Schedule, Run};
 
 template <class Scheduler, class... Args>
 template <class F>
