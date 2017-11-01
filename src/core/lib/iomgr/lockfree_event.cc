@@ -70,7 +70,7 @@ void LockfreeEvent::NotifyOn(grpc_exec_ctx *exec_ctx, grpc_closure *closure) {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
-      gpr_log(GPR_ERROR, "lfev_notify_on: %p curr=%p closure=%p", this,
+      gpr_log(GPR_ERROR, "LockfreeEvent::NotifyOn: %p curr=%p closure=%p", this,
               (void *)curr, closure);
     }
     switch (curr) {
@@ -120,7 +120,8 @@ void LockfreeEvent::NotifyOn(grpc_exec_ctx *exec_ctx, grpc_closure *closure) {
 
         /* There is already a closure!. This indicates a bug in the code */
         gpr_log(GPR_ERROR,
-                "notify_on called with a previous callback still pending");
+                "LockfreeEvent::NotifyOn: notify_on called with a previous "
+                "callback still pending");
         abort();
       }
     }
@@ -136,8 +137,8 @@ bool LockfreeEvent::SetShutdown(grpc_exec_ctx *exec_ctx,
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
-      gpr_log(GPR_ERROR, "lfev_set_shutdown: %p curr=%p err=%s", &state_,
-              (void *)curr, grpc_error_string(shutdown_err));
+      gpr_log(GPR_ERROR, "LockfreeEvent::SetShutdown: %p curr=%p err=%s",
+              &state_, (void *)curr, grpc_error_string(shutdown_err));
     }
     switch (curr) {
       case kClosureReady:
@@ -185,7 +186,8 @@ void LockfreeEvent::SetReady(grpc_exec_ctx *exec_ctx) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
 
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
-      gpr_log(GPR_ERROR, "lfev_set_ready: %p curr=%p", &state_, (void *)curr);
+      gpr_log(GPR_ERROR, "LockfreeEvent::SetReady: %p curr=%p", &state_,
+              (void *)curr);
     }
 
     switch (curr) {
