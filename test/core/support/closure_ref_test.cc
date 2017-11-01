@@ -151,6 +151,17 @@ TEST(ClosureRef, BarrierMember) {
   EXPECT_EQ(1, foo.executes);
 }
 
+TEST(ClosureRef, CopyShouldNotCompile) {
+  static_assert(!std::is_copy_constructible<ClosureRef<>>::value,
+                "ClosureRef should not be copyable");
+  static_assert(!std::is_copy_constructible<ClosureRef<int>>::value,
+                "ClosureRef should not be copyable");
+  static_assert(!std::is_copy_assignable<ClosureRef<>>::value,
+                "ClosureRef should not be copyable");
+  static_assert(!std::is_copy_assignable<ClosureRef<int>>::value,
+                "ClosureRef should not be copyable");
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
