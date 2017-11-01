@@ -53,8 +53,8 @@ typedef struct request_sequences {
   size_t n;         /* number of iterations */
   int *connections; /* indexed by the interation number, value is the index of
                        the server it connected to or -1 if none */
-  int *connectivity_states; /* indexed by the interation number, value is the
-                               client connectivity state */
+  /* indexed by the interation number, value is the client connectivity state */
+  grpc_connectivity_state *connectivity_states;
 } request_sequences;
 
 typedef void (*verifier_fn)(const servers_fixture *, grpc_channel *,
