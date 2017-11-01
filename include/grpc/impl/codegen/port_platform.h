@@ -297,8 +297,6 @@
 #endif
 #endif /* GPR_NO_AUTODETECT_PLATFORM */
 
-// Android specifc logic to detect brokeness around TLS support.
-#if defined(__ANDROID__) && defined(__clang__)
 #include "absl/base/config.h"
 
 #if !defined(ABSL_HAVE_TLS) && defined(GPR_GCC_TLS)
