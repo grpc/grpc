@@ -296,23 +296,30 @@ class CLanguage(object):
         if resolver:
           env['GRPC_DNS_RESOLVER'] = resolver
         shortname_ext = '' if polling_strategy=='all' else ' GRPC_POLL_STRATEGY=%s' % polling_strategy
-        timeout_scaling = 1
-
-        if auto_timeout_scaling and polling_strategy == 'poll-cv':
-          timeout_scaling *= 5
-
         if polling_strategy in target.get('excluded_poll_engines', []):
           continue
 
-        # Scale overall test timeout if running under various sanitizers.
-        config = self.args.config
-        if auto_timeout_scaling and ('asan' in config
-                                     or config == 'msan'
-                                     or config == 'tsan'
-                                     or config == 'ubsan'
-                                     or config == 'helgrind'
-                                     or config == 'memcheck'):
-          timeout_scaling *= 20
+        timeout_scaling = 1
+        if auto_timeout_scaling:
+          config = self.args.config
+          if ('asan' in config
+              or config == 'msan'
+              or config == 'tsan'
+              or config == 'ubsan'
+              or config == 'helgrind'
+              or config == 'memcheck'):
+            # Scale overall test timeout if running under various sanitizers.
+            # scaling value is based on historical data analysis
+            timeout_scaling *= 3
+          elif polling_strategy == 'poll-cv':
+            # scale test timeout if running with poll-cv
+            # sanitizer and poll-cv scaling is not cumulative to ensure
+            # reasonable timeout values.
+            # TODO(jtattermusch): based on historical data and 5min default
+            # test timeout poll-cv scaling is currently not useful.
+            # Leaving here so it can be reintroduced if the default test timeout
+            # is decreased in the future.
+            timeout_scaling *= 1
 
         if self.config.build_config in target['exclude_configs']:
           continue

@@ -577,7 +577,6 @@ static grpc_error *kick_one_worker(grpc_exec_ctx *exec_ctx,
                                    grpc_pollset_worker *specific_worker) {
   pollable *p = specific_worker->pollable_obj;
   grpc_core::mu_guard lock(&p->mu);
-  GRPC_STATS_INC_POLLSET_KICK(exec_ctx);
   GPR_ASSERT(specific_worker != NULL);
   if (specific_worker->kicked) {
     if (GRPC_TRACER_ON(grpc_polling_trace)) {
@@ -619,6 +618,7 @@ static grpc_error *kick_one_worker(grpc_exec_ctx *exec_ctx,
 
 static grpc_error *pollset_kick(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                                 grpc_pollset_worker *specific_worker) {
+  GRPC_STATS_INC_POLLSET_KICK(exec_ctx);
   if (GRPC_TRACER_ON(grpc_polling_trace)) {
     gpr_log(GPR_DEBUG,
             "PS:%p kick %p tls_pollset=%p tls_worker=%p pollset.root_worker=%p",
@@ -674,6 +674,7 @@ static grpc_error *pollset_kick_all(grpc_exec_ctx *exec_ctx,
   grpc_pollset_worker *w = pollset->root_worker;
   if (w != NULL) {
     do {
+      GRPC_STATS_INC_POLLSET_KICK(exec_ctx);
       append_error(&error, kick_one_worker(exec_ctx, w), err_desc);
       w = w->links[PWLINK_POLLSET].next;
     } while (w != pollset->root_worker);
