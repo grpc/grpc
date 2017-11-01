@@ -29,6 +29,7 @@ namespace grpc_core {
 
 class LockfreeEvent {
  public:
+  LockfreeEvent() = default;
   ~LockfreeEvent();
 
   LockfreeEvent(const LockfreeEvent &) = delete;
