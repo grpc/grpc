@@ -10,27 +10,26 @@ shared C library.
 * `php` 5.5 or above, 7.0 or above
 * `pecl`
 * `composer`
-* `phpunit` (optional)
 
 **Install PHP and PECL on Ubuntu/Debian:**
 
 For PHP5:
 
 ```sh
-$ sudo apt-get install php5 php5-dev php-pear phpunit
+$ sudo apt-get install php5 php5-dev php-pear
 ```
 
 For PHP7:
 
 ```sh
-$ sudo apt-get install php7.0 php7.0-dev php-pear phpunit
+$ sudo apt-get install php7.0 php7.0-dev php-pear
 ```
 
 **Install PHP and PECL on CentOS/RHEL 7:**
 ```sh
 $ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 $ sudo rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
-$ sudo yum install php56w php56w-devel php-pear phpunit gcc zlib-devel
+$ sudo yum install php56w php56w-devel php-pear gcc zlib-devel
 ```
 
 **Install PECL on Mac:**
@@ -40,17 +39,7 @@ $ sudo php -d detect_unicode=0 go-pear.phar
 ```
 
 **Install Composer (Linux or Mac):**
-```sh
-$ curl -sS https://getcomposer.org/installer | php
-$ sudo mv composer.phar /usr/local/bin/composer
-```
-
-**Install PHPUnit (Linux or Mac):**
-```sh
-$ wget https://phar.phpunit.de/phpunit-old.phar
-$ chmod +x phpunit-old.phar
-$ sudo mv phpunit-old.phar /usr/bin/phpunit
-```
+[Download Composer](https://getcomposer.org/download/)
 
 ## Quick Install
 
