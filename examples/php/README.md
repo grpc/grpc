@@ -45,6 +45,7 @@ TRY IT!
 
    ```
    $ cd examples/php
+   $ composer update -o
    $ ./run_greeter_client.sh
    ```
 
