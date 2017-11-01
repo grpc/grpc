@@ -3879,10 +3879,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  excluded_poll_engines:
-  - poll
-  - poll-cv
-  - epollex
 - name: codegen_test_full
   gtest: true
   build: test
@@ -4171,9 +4167,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  excluded_poll_engines:
-  - poll
-  - poll-cv
 - name: grpclb_test
   gtest: false
   build: test
@@ -4188,10 +4181,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  excluded_poll_engines:
-  - poll
-  - poll-cv
-  - epollex
 - name: h2_ssl_cert_test
   gtest: true
   build: test
