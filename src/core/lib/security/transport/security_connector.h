@@ -60,12 +60,8 @@ typedef struct {
   void (*check_peer)(grpc_exec_ctx *exec_ctx, grpc_security_connector *sc,
                      tsi_peer peer, grpc_auth_context **auth_context,
                      grpc_closure *on_peer_checked);
+  int (*cmp)(grpc_security_connector *sc, grpc_security_connector *other);
 } grpc_security_connector_vtable;
-
-typedef struct grpc_security_connector_handshake_list {
-  void *handshake;
-  struct grpc_security_connector_handshake_list *next;
-} grpc_security_connector_handshake_list;
 
 struct grpc_security_connector {
   const grpc_security_connector_vtable *vtable;
@@ -104,6 +100,10 @@ void grpc_security_connector_check_peer(grpc_exec_ctx *exec_ctx,
                                         grpc_auth_context **auth_context,
                                         grpc_closure *on_peer_checked);
 
+/* Compares two security connectors. */
+int grpc_security_connector_cmp(grpc_security_connector *sc,
+                                grpc_security_connector *other);
+
 /* Util to encapsulate the connector in a channel arg. */
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector *sc);
 
@@ -116,13 +116,14 @@ grpc_security_connector *grpc_security_connector_find_in_args(
 
 /* --- channel_security_connector object. ---
 
-    A channel security connector object represents away to configure the
+    A channel security connector object represents a way to configure the
     underlying transport security mechanism on the client side.  */
 
 typedef struct grpc_channel_security_connector grpc_channel_security_connector;
 
 struct grpc_channel_security_connector {
   grpc_security_connector base;
+  grpc_channel_credentials *channel_creds;
   grpc_call_credentials *request_metadata_creds;
   bool (*check_call_host)(grpc_exec_ctx *exec_ctx,
                           grpc_channel_security_connector *sc, const char *host,
@@ -137,6 +138,10 @@ struct grpc_channel_security_connector {
                           grpc_channel_security_connector *sc,
                           grpc_handshake_manager *handshake_mgr);
 };
+
+/// A helper function for use in grpc_security_connector_cmp() implementations.
+int grpc_channel_security_connector_cmp(grpc_channel_security_connector *sc1,
+                                        grpc_channel_security_connector *sc2);
 
 /// Checks that the host that will be set for a call is acceptable.
 /// Returns true if completed synchronously, in which case \a error will
@@ -161,17 +166,22 @@ void grpc_channel_security_connector_add_handshakers(
 
 /* --- server_security_connector object. ---
 
-    A server security connector object represents away to configure the
+    A server security connector object represents a way to configure the
     underlying transport security mechanism on the server side.  */
 
 typedef struct grpc_server_security_connector grpc_server_security_connector;
 
 struct grpc_server_security_connector {
   grpc_security_connector base;
+  grpc_server_credentials *server_creds;
   void (*add_handshakers)(grpc_exec_ctx *exec_ctx,
                           grpc_server_security_connector *sc,
                           grpc_handshake_manager *handshake_mgr);
 };
+
+/// A helper function for use in grpc_security_connector_cmp() implementations.
+int grpc_server_security_connector_cmp(grpc_server_security_connector *sc1,
+                                       grpc_server_security_connector *sc2);
 
 void grpc_server_security_connector_add_handshakers(
     grpc_exec_ctx *exec_ctx, grpc_server_security_connector *sc,
@@ -182,18 +192,19 @@ void grpc_server_security_connector_add_handshakers(
 /* For TESTING ONLY!
    Creates a fake connector that emulates real channel security.  */
 grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
+    grpc_channel_credentials *channel_creds,
     grpc_call_credentials *request_metadata_creds, const char *target,
     const grpc_channel_args *args);
 
 /* For TESTING ONLY!
    Creates a fake connector that emulates real server security.  */
 grpc_server_security_connector *grpc_fake_server_security_connector_create(
-    void);
+    grpc_server_credentials *server_creds);
 
 /* Config for ssl clients. */
 
 typedef struct {
-  tsi_ssl_pem_key_cert_pair pem_key_cert_pair;
+  tsi_ssl_pem_key_cert_pair *pem_key_cert_pair;
   char *pem_root_certs;
 } grpc_ssl_config;
 
@@ -211,7 +222,8 @@ typedef struct {
   specific error code otherwise.
 */
 grpc_security_status grpc_ssl_channel_security_connector_create(
-    grpc_exec_ctx *exec_ctx, grpc_call_credentials *request_metadata_creds,
+    grpc_exec_ctx *exec_ctx, grpc_channel_credentials *channel_creds,
+    grpc_call_credentials *request_metadata_creds,
     const grpc_ssl_config *config, const char *target_name,
     const char *overridden_target_name, grpc_channel_security_connector **sc);
 
@@ -236,7 +248,7 @@ typedef struct {
   specific error code otherwise.
 */
 grpc_security_status grpc_ssl_server_security_connector_create(
-    grpc_exec_ctx *exec_ctx, const grpc_ssl_server_config *config,
+    grpc_exec_ctx *exec_ctx, grpc_server_credentials *server_credentials,
     grpc_server_security_connector **sc);
 
 /* Util. */

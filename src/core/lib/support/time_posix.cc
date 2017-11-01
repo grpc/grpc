@@ -42,7 +42,7 @@ static struct timespec timespec_from_gpr(gpr_timespec gts) {
   return rv;
 }
 
-#if _POSIX_TIMERS > 0
+#if _POSIX_TIMERS > 0 || defined(__OpenBSD__)
 static gpr_timespec gpr_from_timespec(struct timespec ts,
                                       gpr_clock_type clock_type) {
   /*

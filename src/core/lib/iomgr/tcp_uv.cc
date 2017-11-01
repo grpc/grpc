@@ -304,6 +304,15 @@ static void uv_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   (void)pollset;
 }
 
+static void uv_delete_from_pollset_set(grpc_exec_ctx *exec_ctx,
+                                       grpc_endpoint *ep,
+                                       grpc_pollset_set *pollset) {
+  // No-op. We're ignoring pollsets currently
+  (void)exec_ctx;
+  (void)ep;
+  (void)pollset;
+}
+
 static void shutdown_callback(uv_shutdown_t *req, int status) {}
 
 static void uv_endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
@@ -340,10 +349,16 @@ static grpc_resource_user *uv_get_resource_user(grpc_endpoint *ep) {
 
 static int uv_get_fd(grpc_endpoint *ep) { return -1; }
 
-static grpc_endpoint_vtable vtable = {
-    uv_endpoint_read,      uv_endpoint_write,    uv_add_to_pollset,
-    uv_add_to_pollset_set, uv_endpoint_shutdown, uv_destroy,
-    uv_get_resource_user,  uv_get_peer,          uv_get_fd};
+static grpc_endpoint_vtable vtable = {uv_endpoint_read,
+                                      uv_endpoint_write,
+                                      uv_add_to_pollset,
+                                      uv_add_to_pollset_set,
+                                      uv_delete_from_pollset_set,
+                                      uv_endpoint_shutdown,
+                                      uv_destroy,
+                                      uv_get_resource_user,
+                                      uv_get_peer,
+                                      uv_get_fd};
 
 grpc_endpoint *grpc_tcp_create(uv_tcp_t *handle,
                                grpc_resource_quota *resource_quota,

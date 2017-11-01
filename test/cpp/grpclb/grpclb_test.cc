@@ -42,6 +42,7 @@ extern "C" {
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/support/tmpfile.h"
 #include "src/core/lib/surface/channel.h"
@@ -790,6 +791,9 @@ TEST(GrpclbTest, InvalidAddressInServerlist) {}
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc_test_init(argc, argv);
+  // Make the backup poller poll very frequently in order to pick up
+  // updates from all the subchannels's FDs.
+  gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "1");
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();

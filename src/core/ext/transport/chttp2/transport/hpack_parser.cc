@@ -33,6 +33,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/http2_errors.h"
 
@@ -650,9 +651,14 @@ static const uint8_t inverse_base64[256] = {
 /* emission helpers */
 static grpc_error *on_hdr(grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_parser *p,
                           grpc_mdelem md, int add_to_table) {
-  if (GRPC_TRACER_ON(grpc_http_trace) && !GRPC_MDELEM_IS_INTERNED(md)) {
+  if (GRPC_TRACER_ON(grpc_http_trace)) {
     char *k = grpc_slice_to_c_string(GRPC_MDKEY(md));
-    char *v = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+    char *v = NULL;
+    if (grpc_is_binary_header(GRPC_MDKEY(md))) {
+      v = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX);
+    } else {
+      v = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+    }
     gpr_log(
         GPR_DEBUG,
         "Decode: '%s: %s', elem_interned=%d [%d], k_interned=%d, v_interned=%d",
