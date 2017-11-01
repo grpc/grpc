@@ -38,7 +38,7 @@ g_stands_for = "gambit"
 
 core_version = "5.0.0"
 
-version = "1.7.1"
+version = "1.7.2"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
