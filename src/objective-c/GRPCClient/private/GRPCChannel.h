@@ -65,4 +65,10 @@ struct grpc_channel_credentials;
                                    serverName:(nonnull NSString *)serverName
                                       timeout:(NSTimeInterval)timeout
                               completionQueue:(nonnull GRPCCompletionQueue *)queue;
+
+/**
+ * Makes a channel ping on the wrapped channel. On success, invoke handler.
+ */
+- (void)pingChannelWithSuccessHandler:(void (^ _Nullable)(void))handler;
+
 @end

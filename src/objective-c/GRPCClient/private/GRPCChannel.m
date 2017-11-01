@@ -211,4 +211,15 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
   return call;
 }
 
+- (void)pingChannelWithSuccessHandler:(void (^ _Nullable)(void))handler {
+  grpc_channel_ping(_unmanagedChannel,
+                    [GRPCCompletionQueue completionQueue].unmanagedQueue,
+                    (__bridge_retained void *)(^(bool success) {
+                      if (success) {
+                        handler();
+                      }
+                    }),
+                    nil);
+}
+
 @end

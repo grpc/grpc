@@ -36,11 +36,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 static NSMutableDictionary *kHostCache;
 
-// This connectivity monitor flushes the host cache when connectivity status
-// changes or when connection switch between Wifi and Cellular data, so that a
-// new call will use a new channel. Otherwise, a new call will still use the
-// cached channel which is no longer available and will cause gRPC to hang.
-static GRPCConnectivityMonitor *connectivityMonitor = nil;
+// Prevent too frequent channel update (due to burst of network_change notification from iOS) with a
+// timeout. The channels cannot be ping'ed or flushed for more than once during the timeout period.
+static const NSTimeInterval kChannelFlushTimeout = 10.0;
+static NSDate *lastChannelFlush = nil;
+// If channel ping does not respond within this timeout, we assume it is disconnected and destroy it
+static const NSTimeInterval kChannelPingTimeout = 1.0;
+
+@interface GRPCHost ()
+@property(atomic, strong, nullable) NSTimer *connectivityUpdateTimer;
+@end
 
 @implementation GRPCHost {
   // TODO(mlumish): Investigate whether caching channels with strong links is a good idea.
@@ -54,6 +59,29 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
 - (void)dealloc {
   if (_channelCreds != nil) {
     grpc_channel_credentials_release(_channelCreds);
+  }
+  if (self.connectivityUpdateTimer != nil) {
+    [self.connectivityUpdateTimer invalidate];
+  }
+}
+
+static void networkChangeCallback(CFNotificationCenterRef center,
+                                  void *observer,
+                                  CFStringRef name,
+                                  const void *object,
+                                  CFDictionaryRef userInfo) {
+  NSString *notification = (__bridge NSString*)name;
+  @synchronized (lastChannelFlush) {
+    if ([notification isEqualToString:@"com.apple.system.config.network_change"] &&
+        (lastChannelFlush == nil ||
+         [lastChannelFlush timeIntervalSinceNow] < -kChannelFlushTimeout)) {
+      [kHostCache enumerateKeysAndObjectsUsingBlock:^(id  _Nonnull key,
+                                                      GRPCHost * _Nonnull host,
+                                                      BOOL * _Nonnull stop) {
+        [host updateConnectivityState];
+        lastChannelFlush = [NSDate date];
+      }];
+    }
   }
 }
 
@@ -76,6 +104,11 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
   static dispatch_once_t cacheInitialization;
   dispatch_once(&cacheInitialization, ^{
     kHostCache = [NSMutableDictionary dictionary];
+
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+                                    NULL, networkChangeCallback,
+                                    CFSTR("com.apple.system.config.network_change"),
+                                    NULL, CFNotificationSuspensionBehaviorCoalesce);
   });
   @synchronized(kHostCache) {
     GRPCHost *cachedHost = kHostCache[address];
@@ -87,17 +120,6 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
       _address = address;
       _secure = YES;
       kHostCache[address] = self;
-    }
-    // Keep a single monitor to flush the cache if the connectivity status changes
-    // Thread safety guarded by @synchronized(kHostCache)
-    if (!connectivityMonitor) {
-      connectivityMonitor =
-      [GRPCConnectivityMonitor monitorWithHost:hostURL.host];
-      void (^handler)() = ^{
-        [GRPCHost flushChannelCache];
-      };
-      [connectivityMonitor handleLossWithHandler:handler
-                         wifiStatusChangeHandler:handler];
     }
   }
   return self;
@@ -267,6 +289,36 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
   // This is racing -[GRPCHost unmanagedCallWithPath:completionQueue:].
   @synchronized(self) {
     _channel = nil;
+  }
+}
+
+- (void)connectivityUpdateTimerFire {
+  [self disconnect];
+  self.connectivityUpdateTimer = nil;
+}
+
+- (void)updateConnectivityState {
+  GRPCChannel *channel;
+  @synchronized (self) {
+    channel = _channel;
+  }
+  if (channel != nil) {
+    if (self.connectivityUpdateTimer != nil) {
+      return;
+    }
+    self.connectivityUpdateTimer = [NSTimer scheduledTimerWithTimeInterval:kChannelPingTimeout
+                                                                    target:self
+                                                                  selector:@selector(connectivityUpdateTimerFire)
+                                                                  userInfo:nil
+                                                                   repeats:NO];
+    __weak typeof(self) weakSelf = self;
+    [channel pingChannelWithSuccessHandler:^(void) {
+      __strong typeof(self) strongSelf = weakSelf;
+      if (strongSelf) {
+        [strongSelf.connectivityUpdateTimer invalidate];
+        strongSelf.connectivityUpdateTimer = nil;
+      }
+    }];
   }
 }
 
