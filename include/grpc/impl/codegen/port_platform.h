@@ -298,8 +298,8 @@
 #endif /* GPR_NO_AUTODETECT_PLATFORM */
 
 /*
- *  There are platforms for which TLS should not be used even though the compiler
- * makes it seem like it's supported (Android NDK < r12b for example).
+ *  There are platforms for which TLS should not be used even though the
+ * compiler makes it seem like it's supported (Android NDK < r12b for example).
  * This is primarily because of linker problems and toolchain misconfiguration:
  * TLS isn't supported until NDK r12b per
  * https://developer.android.com/ndk/downloads/revision_history.html
@@ -316,7 +316,7 @@
 #undef GPR_GCC_TLS
 #define GPR_PTHREAD_TLS 1
 #endif
-#endif /* defined(__ANDROID__) && defined(__clang__) && defined(GPR_GCC_TLS) */
+#endif /*defined(__ANDROID__) && defined(__clang__) && defined(GPR_GCC_TLS) */
 
 #if defined(__has_include)
 #if __has_include(<atomic>)
