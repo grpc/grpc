@@ -27,6 +27,7 @@
 
 #include <atomic>
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -56,7 +57,7 @@ unsigned gpr_cpu_current_cpu(void) {
   static auto DeleteValue = [](void *value_ptr) {
     unsigned int *value = static_cast<unsigned int *>(value_ptr);
     if (value) {
-      delete value;
+      gpr_free(value);
     }
   };
   static pthread_key_t thread_id_key;
@@ -69,7 +70,8 @@ unsigned gpr_cpu_current_cpu(void) {
   unsigned int *thread_id =
       static_cast<unsigned int *>(pthread_getspecific(thread_id_key));
   if (thread_id == nullptr) {
-    thread_id = new unsigned int(thread_counter++);
+    thread_id = static_cast<unsigned int *>(gpr_malloc(sizeof(unsigned int)));
+    *thread_id = thread_counter++;
     pthread_setspecific(thread_id_key, thread_id);
   }
 
