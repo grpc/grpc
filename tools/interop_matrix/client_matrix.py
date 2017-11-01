@@ -27,8 +27,8 @@ LANG_RUNTIME_MATRIX = {
     'cxx': ['cxx'],             # This is actually debian8.
     'go': ['go1.7', 'go1.8'],
     'java': ['java_oracle8'],
-    'python': ['python2.7', 'python3'],
-    'node': ['node8'],
+    'python': ['python'],
+    'node': ['node'],
     'ruby': ['ruby'],
 }
 
@@ -63,20 +63,19 @@ LANG_RELEASE_MATRIX = {
         'v1.7.0',
     ],
     'python': [
-        #'v1.0.1',  #Fail to build. Investigating.
+        'v1.0.1',  #Fail to build. Investigating.
         'v1.1.4',
         'v1.2.5',
         'v1.3.9',
         'v1.4.2',
         'v1.6.6',
     ],
-    # Fail to build
     'node': [
-    #    'v1.0.1', 
-    #    'v1.1.4',
-    #    'v1.2.5',
-    #    'v1.3.9',
-    #    'v1.4.2',
+        'v1.0.1',
+        'v1.1.4',
+        'v1.2.5',
+        'v1.3.9',
+        'v1.4.2',
         'v1.6.6',
     ],
     'ruby': [

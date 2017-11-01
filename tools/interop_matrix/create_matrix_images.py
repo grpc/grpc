@@ -116,12 +116,13 @@ def add_files_to_image(image, with_files, label=None):
   subprocess.check_output(build_cmd)
   dockerjob.remove_image(orig_tag, skip_nonexistent=True)
 
-def build_image_jobspec(runtime, env, gcr_tag):
+def build_image_jobspec(runtime, env, gcr_tag, stack_base):
   """Build interop docker image for a language with runtime.
 
   runtime: a <lang><version> string, for example go1.8.
   env:     dictionary of env to passed to the build script.
   gcr_tag: the tag for the docker image (i.e. v1.3.0).
+  stack_base: the local gRPC repo path.
   """
   basename = 'grpc_interop_%s' % runtime
   tag = '%s/%s:%s' % (args.gcr_path, basename, gcr_tag)
@@ -132,7 +133,7 @@ def build_image_jobspec(runtime, env, gcr_tag):
   }
   build_env.update(env)
   build_job = jobset.JobSpec(
-          cmdline=[_IMAGE_BUILDER],
+          cmdline=[os.path.join(stack_base, _IMAGE_BUILDER)],
           environ=build_env,
           shortname='build_docker_%s' % runtime,
           timeout_seconds=30*60)
@@ -172,27 +173,16 @@ def build_all_images_for_release(lang, release):
 
   env = {}
   # If we not using current tree or the sibling for grpc stack, do checkout.
+  stack_base = ''
   if args.git_checkout:
     stack_base = checkout_grpc_stack(lang, release)
     var ={'go': 'GRPC_GO_ROOT', 'java': 'GRPC_JAVA_ROOT', 'node': 'GRPC_NODE_ROOT'}.get(lang, 'GRPC_ROOT')
     env[var] = stack_base
 
-  # Python and Node only have one docker template.
-  if 'python' in lang:
-    runtime = 'python'
-    job = build_image_jobspec(runtime, env, release)
+  for runtime in client_matrix.LANG_RUNTIME_MATRIX[lang]:
+    job = build_image_jobspec(runtime, env, release, stack_base)
     docker_images.append(job.tag)
     build_jobs.append(job)
-  elif 'node' in lang:
-    runtime = 'node'
-    job = build_image_jobspec(runtime, env, release)
-    docker_images.append(job.tag)
-    build_jobs.append(job)
-  else:
-    for runtime in client_matrix.LANG_RUNTIME_MATRIX[lang]:
-      job = build_image_jobspec(runtime, env, release)
-      docker_images.append(job.tag)
-      build_jobs.append(job)
 
   jobset.message('START', 'Building interop docker images.', do_newline=True)
   print('Jobs to run: \n%s\n' % '\n'.join(str(j) for j in build_jobs))
