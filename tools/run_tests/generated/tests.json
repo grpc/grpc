@@ -3425,11 +3425,6 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
-    "excluded_poll_engines": [
-      "poll", 
-      "poll-cv", 
-      "epollex"
-    ], 
     "flaky": false, 
     "gtest": true, 
     "language": "c++", 
@@ -3792,10 +3787,6 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
-    "excluded_poll_engines": [
-      "poll", 
-      "poll-cv"
-    ], 
     "flaky": false, 
     "gtest": true, 
     "language": "c++", 
@@ -3820,11 +3811,6 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
-    "excluded_poll_engines": [
-      "poll", 
-      "poll-cv", 
-      "epollex"
-    ], 
     "flaky": false, 
     "gtest": false, 
     "language": "c++", 
