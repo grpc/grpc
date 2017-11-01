@@ -2012,6 +2012,8 @@ INSTANTIATE_TEST_CASE_P(AsyncEnd2endServerTryCancel,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  // Change the backup poll interval from 5s to 200ms to speed up the
+  // ReconnectChannel test
   gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "200");
   grpc_test_init(argc, argv);
   gpr_tls_init(&g_is_async_end2end_test);
