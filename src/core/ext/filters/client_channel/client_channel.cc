@@ -1476,9 +1476,9 @@ static bool maybe_retry(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   channel_data *chand = (channel_data *)elem->channel_data;
   call_data *calld = (call_data *)elem->call_data;
   // Get retry policy.
-  GPR_ASSERT(calld->method_params != NULL);
+  if (calld->method_params == NULL) return false;
   retry_policy_params *retry_policy = calld->method_params->retry_policy;
-  GPR_ASSERT(retry_policy != NULL);
+  if (retry_policy == NULL) return false;
   // If we've already dispatched a retry from this call, return true.
   // This catches the case where the batch has multiple callbacks
   // (i.e., it includes either recv_message or recv_initial_metadata).
