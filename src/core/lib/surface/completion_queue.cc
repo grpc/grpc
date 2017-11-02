@@ -972,7 +972,6 @@ static grpc_event cq_next(grpc_completion_queue *cq, gpr_timespec deadline,
       break;
     }
     is_finished_arg.first_loop = false;
-    grpc_exec_ctx_invalidate_now(&exec_ctx);
   }
 
   if (cq_event_queue_num_items(&cqd->queue) > 0 &&
