@@ -30,6 +30,7 @@ LANG_RUNTIME_MATRIX = {
     'python': ['python'],
     'node': ['node'],
     'ruby': ['ruby'],
+    'php': ['php', 'php7'],
 }
 
 # Dictionary of releases per language.  For each language, we need to provide
@@ -63,7 +64,7 @@ LANG_RELEASE_MATRIX = {
         'v1.7.0',
     ],
     'python': [
-        'v1.0.1',  #Fail to build. Investigating.
+        #'v1.0.x',  #Fail to run the test. #13230.
         'v1.1.4',
         'v1.2.5',
         'v1.3.9',
@@ -79,12 +80,19 @@ LANG_RELEASE_MATRIX = {
         'v1.6.6',
     ],
     'ruby': [
-        #'v1.0.1',  Can't run the tests because with_rvm.sh is missing.
+        # Ruby v1.0.x doesn't have the fix #8914, therefore not supported.
         'v1.1.4',
         'v1.2.5',
         'v1.3.9',
         'v1.4.2',
         'v1.6.6',
     ],
-
+    'php': [
+        'v1.0.1',
+        'v1.1.4',
+        'v1.2.5',
+        'v1.3.9',
+        'v1.4.2',
+        'v1.6.6',
+    ],
 }
