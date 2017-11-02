@@ -21,6 +21,8 @@
 
 #include "src/core/tsi/transport_security_interface.h"
 
+#include <grpc/support/sync.h>
+
 #define TSI_TEST_TINY_HANDSHAKE_BUFFER_SIZE 32
 #define TSI_TEST_SMALL_HANDSHAKE_BUFFER_SIZE 128
 #define TSI_TEST_SMALL_READ_BUFFER_ALLOCATED_SIZE 41
