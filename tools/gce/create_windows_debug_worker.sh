@@ -32,17 +32,6 @@ else
 fi
 
 MACHINE_TYPE=n1-standard-8
-TMP_DISK_NAME="$INSTANCE_NAME-temp-disk"
-
-gcloud compute disks create $TMP_DISK_NAME \
-    --project="$CLOUD_PROJECT" \
-    --zone "$ZONE" \
-    --image-project google.com:kokoro \
-    --image empty-100g-image \
-    --type pd-ssd
-
-echo 'Created scratch disk, waiting for it to become available.'
-sleep 15
 
 gcloud compute instances create $INSTANCE_NAME \
     --project="$CLOUD_PROJECT" \
@@ -50,6 +39,6 @@ gcloud compute instances create $INSTANCE_NAME \
     --machine-type $MACHINE_TYPE \
     --image-project google.com:kokoro \
     --image kokoro-win7build-v9-prod-debug \
-     --boot-disk-type pd-ssd \
-    --tags=allow-ssh \
-    --disk auto-delete=yes,boot=no,name=$TMP_DISK_NAME
+    --boot-disk-size 500 \
+    --boot-disk-type pd-ssd \
+    --tags=allow-ssh
