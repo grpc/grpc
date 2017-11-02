@@ -990,6 +990,10 @@ typedef struct {
   // Its payload field points to subchannel_call_retry_state.batch_payload.
   grpc_transport_stream_op_batch batch;
   // For send_initial_metadata.
+  // Note that we need to make a copy of the initial metadata for each
+  // subchannel call instead of just referring to the copy in call_data,
+  // because filters in the subchannel stack will probably add entries,
+  // so we need to start in a pristine state for each attempt of the call.
   grpc_linked_mdelem *send_initial_metadata_storage;
   grpc_metadata_batch send_initial_metadata;
   // For send_message.
@@ -2404,6 +2408,12 @@ static void create_subchannel_call(grpc_exec_ctx *exec_ctx,
     pending_batches_fail(exec_ctx, elem, new_error,
                          true /* yield_call_combiner */);
   } else {
+    if (parent_data_size > 0) {
+      subchannel_call_retry_state *retry_state = (subchannel_call_retry_state *)
+          grpc_connected_subchannel_call_get_parent_data(
+              calld->subchannel_call);
+      retry_state->batch_payload.context = calld->subchannel_call_context;
+    }
     pending_batches_resume(exec_ctx, elem);
   }
   GRPC_ERROR_UNREF(error);
