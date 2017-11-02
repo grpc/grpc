@@ -87,9 +87,7 @@ class GrpcBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
 
   grpc::protobuf::int64 ByteCount() const override { return byte_count_; }
 
-  grpc_slice_buffer* SliceBuffer() { return slice_buffer_; }
-
- private:
+ protected:
   friend class GrpcBufferWriterPeer;
   const int block_size_;
   int64_t byte_count_;
