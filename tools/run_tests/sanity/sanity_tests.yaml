@@ -1,4 +1,5 @@
 # a set of tests that are run in parallel for sanity tests
+- script: tools/run_tests/sanity/check_bazel_workspace.py
 - script: tools/run_tests/sanity/check_cache_mk.sh
 - script: tools/run_tests/sanity/check_owners.sh
 - script: tools/run_tests/sanity/check_sources_and_headers.py
