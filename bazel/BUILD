@@ -17,15 +17,24 @@ licenses(["notice"])  # Apache v2
 package(default_visibility = ["//:__subpackages__"])
 
 load(":cc_grpc_library.bzl", "cc_grpc_library")
+load(":compilation_database.bzl", "compilation_database")
 
 proto_library(
     name = "well_known_protos_list",
     srcs = ["@com_google_protobuf//:well_known_protos"],
 )
 
-cc_grpc_library(
-    name = "well_known_protos",
-    srcs = "well_known_protos_list",
-    proto_only = True,
-    deps = [],
+#cc_grpc_library(
+#    name = "well_known_protos",
+#    srcs = "well_known_protos_list",
+#    proto_only = True,
+#    deps = [],
+#    well_known_protos = False,
+#    generate_mock = False,
+#)
+
+compilation_database(
+    name = "compile_commands",
+    targets = ["//:grpc"],
+    #filename = "compile_commands.json",
 )
