@@ -29,9 +29,7 @@ out['libs'] = [{
     'language': 'c++',
     'secure': 'no',
     'defaults': 'absl',
-    'src': sorted(
-        glob.glob('third_party/abseil-cpp/absl/*/*.cc') +
-        glob.glob('third_party/abseil-cpp/absl/*/*/*.cc')),
+    'src': [],
     'headers': sorted(
         glob.glob('third_party/abseil-cpp/absl/*/*.h') +
         glob.glob('third_party/abseil-cpp/absl/*/*/*.h')),
